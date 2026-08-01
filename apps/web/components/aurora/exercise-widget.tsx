@@ -9,6 +9,7 @@ import {
   fmtWeight,
   fmtTonnage,
   paceClock,
+  progressParentage,
   fs,
   type ExerciseWidgetCard,
   type LoggedSession,
@@ -85,20 +86,24 @@ export default function ExerciseWidgetRail({
   const { units } = useLoggerPrefs();
   const { theme } = useTheme();
   const cards = useMemo(() => exerciseWidgetCards(sessions, { bw }), [sessions, bw]);
+  // WAVE-3 PARENTAGE: the head quotes the This-week card's VOLUME column —
+  // the figure this rail breaks down per movement. Same activitySummary, same
+  // week range (core progress-parentage.ts), so the two can never disagree.
+  const parentage = useMemo(() => progressParentage(sessions, { bw }), [sessions, bw]);
   if (cards.length === 0) return null;
 
   return (
     <div>
-      {/* Explore-standard head — promoted from the old nano-mono kicker so every
-          block in the PROGRESS cluster opens the same way (one head tier). The
-          right slot follows the cluster's one rule: a FACT sits in ash, an
-          ACTION sits in lime, and a head carries at most one — this one carries
-          the "All ›" action. */}
+      {/* Explore-standard head — one head tier across the PROGRESS cluster,
+          and the right slot carries ONE item: the FACT this rail decomposes
+          (wave-3 parentage — the This-week card's volume column, quoted from
+          the same core summary). The "All ›" action lives in the rail's
+          trailing ghost tile, per the one-exit rule. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.exw.title")}</span>
-        <button onClick={onAll} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", padding: "4px 0" }}>
-          {t("w.home.exw.all")} ›
-        </button>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>
+          {t("w.home.group.metaWeek").replace("{v}", fmtTonnage(parentage.tonnageKg, units))}
+        </span>
       </div>
       {/* Full-bleed rail: negative margins the width of the shell gutter
           (--page-pad-x) pull the scroll clip to the true screen edge. Cards

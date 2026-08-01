@@ -7,6 +7,7 @@ import {
   fmtWeight,
   fmtTonnage,
   paceClock,
+  progressParentage,
   type ExerciseWidgetCard,
   type LoggedSession,
   type WeightUnit,
@@ -76,6 +77,10 @@ export default function ExerciseWidgetRail({
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
   const cards = useMemo(() => exerciseWidgetCards(sessions, { bw }), [sessions, bw]);
+  // WAVE-3 PARENTAGE: the head quotes the This-week card's VOLUME column —
+  // the figure this rail breaks down per movement. Same activitySummary, same
+  // week range (core progress-parentage.ts), so the two can never disagree.
+  const parentage = useMemo(() => progressParentage(sessions, { bw }), [sessions, bw]);
   // One ref per card's headline figure — only the tapped card is ever measured.
   const heroRefs = useRef<Record<string, Text | null>>({});
   const armHero = useSharedElementSource();
@@ -83,16 +88,16 @@ export default function ExerciseWidgetRail({
 
   return (
     <View style={{ marginTop: 24 }}>
-      {/* Explore-standard head — promoted from the old nano-mono kicker so every
-          block in the PROGRESS cluster opens the same way (one head tier). The
-          right slot follows the cluster's one rule: a FACT sits in ash, an
-          ACTION sits in lime, and a head carries at most one — this one carries
-          the "All ›" action. Mirrors web exercise-widget.tsx. */}
+      {/* Explore-standard head — one head tier across the PROGRESS cluster,
+          and the right slot carries ONE item: the FACT this rail decomposes
+          (wave-3 parentage — the This-week card's volume column, quoted from
+          the same core summary). The "All ›" action lives in the rail's
+          trailing ghost tile, per the one-exit rule. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
-        <Pressable onPress={onAll} accessibilityRole="button" hitSlop={10}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.exw.all")} ›</Text>
-        </Pressable>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.7, textTransform: "uppercase", color: C.ash }}>
+          {t("w.home.group.metaWeek").replace("{v}", fmtTonnage(parentage.tonnageKg, units))}
+        </Text>
       </View>
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 16dp
           gutter pull the scroll clip to the true screen edge, with matching

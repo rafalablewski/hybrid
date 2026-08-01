@@ -156,6 +156,11 @@ export const web_home = {
     "w.home.group.recover": "Recover",
     "w.home.group.progress": "Progress",
     "w.home.group.explore": "Explore",
+    // Wave-3 parentage: the fact a Progress rail head quotes from the This-week
+    // card's columns ({v} pre-formatted with its unit), and the sports' share
+    // of the hours column ({a} of {b}, both one-decimal hours).
+    "w.home.group.metaWeek": "{v} this week",
+    "w.home.group.metaOf": "{a} of {b} h this week",
     // ── This week — the verdict card (Statistics + Analytics, merged onto Today).
     // The lead sentences take {m} = the metric name below; vsAvg takes {v} = this
     // week's value and {b} = the four-week average, both already unit-formatted.
@@ -899,6 +904,8 @@ export const web_home = {
     "w.home.group.recover": "Regeneracja",
     "w.home.group.progress": "Postępy",
     "w.home.group.explore": "Odkrywaj",
+    "w.home.group.metaWeek": "{v} w tym tygodniu",
+    "w.home.group.metaOf": "{a} z {b} h w tym tygodniu",
     "w.home.week.title": "Ten tydzień",
     "w.home.other.title": "Inne sporty",
     "w.home.other.efforts": "Wyjścia",
@@ -1622,6 +1629,8 @@ export const web_home = {
     "w.home.group.recover": "Erholung",
     "w.home.group.progress": "Fortschritt",
     "w.home.group.explore": "Entdecken",
+    "w.home.group.metaWeek": "{v} diese Woche",
+    "w.home.group.metaOf": "{a} von {b} h diese Woche",
     "w.home.week.title": "Diese Woche",
     "w.home.other.title": "Andere Sportarten",
     "w.home.other.efforts": "Einheiten",

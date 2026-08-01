@@ -4,6 +4,7 @@ import Svg, { Polyline, Polygon, Circle, Defs, LinearGradient, Stop } from "reac
 import {
   enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
+  progressParentage,
   DISCIPLINE_META, LANE_CAP, ago,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
@@ -61,6 +62,10 @@ export default function AuroraEnduranceLanes({
   const [expanded, setExpanded] = useState(false);
 
   const lanes = useMemo(() => enduranceLanes(sessions), [sessions]);
+  // WAVE-3 PARENTAGE: the head quotes the This-week card's DISTANCE column —
+  // the figure these lanes break down per discipline. Same activitySummary,
+  // same week range (core progress-parentage.ts), so they cannot disagree.
+  const parentage = useMemo(() => progressParentage(sessions), [sessions]);
   // No endurance logged → no block. A lane exists because something is in it,
   // which is why no lane needs an empty state of its own.
   if (lanes.length === 0) return null;
@@ -68,23 +73,35 @@ export default function AuroraEnduranceLanes({
   const stacked = orderLanes(lanes, order);
   const shown = expanded ? stacked : stacked.slice(0, LANE_CAP);
   const rest = stacked.length - LANE_CAP;
+  const km = Math.round(parentage.distanceKm * 10) / 10;
 
   return (
     <View style={{ marginTop: 24 }}>
-      {/* Explore-standard head: display-face title left, mono action right. */}
+      {/* One item in the head's right slot: the quoted FACT (ash). The sort
+          ACTION moved to its own quiet row below — a head carries at most one
+          right-slot item, and the fact is the one that names the block.
+          Mirrors web endurance-lanes.tsx. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
-        <Pressable
-          onPress={() => setOrder(nextLaneOrder(order))}
-          accessibilityRole="button"
-          accessibilityLabel={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
-          hitSlop={10}
-        >
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>
-            {t(ORDER_KEY[order])} ↓
-          </Text>
-        </Pressable>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.7, textTransform: "uppercase", color: C.ash }}>
+          {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
+        </Text>
       </View>
+      {/* The lane-order toggle — only when there is an order to change. */}
+      {stacked.length > 1 && (
+        <View style={{ flexDirection: "row", justifyContent: "flex-end", marginHorizontal: 2 }}>
+          <Pressable
+            onPress={() => setOrder(nextLaneOrder(order))}
+            accessibilityRole="button"
+            accessibilityLabel={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
+            hitSlop={10}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>
+              {t(ORDER_KEY[order])} ↓
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}
 

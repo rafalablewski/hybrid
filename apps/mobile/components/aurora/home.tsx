@@ -87,7 +87,7 @@ import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import AuroraEnduranceLanes from "./endurance-lanes";
-import AuroraWeekVerdict from "./week-verdict";
+import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
@@ -1002,9 +1002,6 @@ export default function AuroraHome() {
           sessions={sessions}
           units={units}
           bw={bw}
-          showDeep={isAthlete}
-          onArchive={() => router.push("/history")}
-          onDeep={() => router.push("/analytics")}
           onSession={(id) => router.push(`/session/${id}`)}
         />
 
@@ -1045,6 +1042,13 @@ export default function AuroraHome() {
             Renders nothing until a sport is logged. Mirrors web
             aurora/other-sports.tsx. ───── */}
         <AuroraOtherSports sessions={sessions} onOpen={() => router.push("/sport")} />
+
+        {/* THE CLUSTER'S EXIT (wave 3) — the doors past this week, moved here
+            from under the This-week card: summary → breakdowns → ONE exit
+            point, instead of a detour between the summary and the rails that
+            decompose it. Same door-row anatomy, same destinations. */}
+        <DoorRow glyph="▤" title={t("w.home.week.archive")} sub={t("w.home.week.archiveSub")} onPress={() => router.push("/history")} />
+        {isAthlete && <DoorRow glyph="◫" title={t("w.home.week.deep")} sub={t("w.home.week.deepSub")} onPress={() => router.push("/analytics")} />}
 
         {/* ═════ GROUP: EXPLORE — beyond your own data: the premium tier and
             the coach marketplace. The label the old Explore tab left behind.

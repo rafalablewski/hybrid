@@ -2,7 +2,8 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import {
-  otherSportLanes, otherSportTotals, sportWeekBars, OTHER_SPORT_CAP, ago,
+  otherSportLanes, sportWeekBars, OTHER_SPORT_CAP, ago,
+  parentageHours, progressParentage,
   type LoggedSession, type OtherSportLane,
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
@@ -53,21 +54,27 @@ export default function AuroraOtherSports({
   const [expanded, setExpanded] = useState(false);
 
   const lanes = useMemo(() => otherSportLanes(sessions), [sessions]);
+  // WAVE-3 PARENTAGE: the head quotes the sports' share of the This-week
+  // card's HOURS column — the slice these tiles break down per sport. Same
+  // activitySummary, same week range (core progress-parentage.ts).
+  const parentage = useMemo(() => progressParentage(sessions), [sessions]);
   // No sport logged → no block. A lane exists because something is in it, which
   // is why no tile needs an empty state of its own.
   if (lanes.length === 0) return null;
 
-  const totals = otherSportTotals(lanes);
   const shown = expanded ? lanes : lanes.slice(0, OTHER_SPORT_CAP);
   const rest = lanes.length - OTHER_SPORT_CAP;
 
   return (
     <div style={{ marginTop: 26 }}>
-      {/* Explore-standard head: display-face title left, mono meta right. The
-          meta reports the block so the athlete doesn't add up tiles. */}
+      {/* Explore-standard head: display-face title left, ONE mono fact right —
+          the wave-3 parentage quote ("3.1 of 5.2 h this week"), naming the
+          slice of the verdict's hours column this block decomposes. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.other.title")}</span>
-        <span style={kicker}>{totals.sports} {t("w.home.other.sports")}</span>
+        <span style={kicker}>
+          {t("w.home.group.metaOf").replace("{a}", String(parentageHours(parentage.sportMinutes))).replace("{b}", String(parentageHours(parentage.totalMinutes)))}
+        </span>
       </div>
 
       <div

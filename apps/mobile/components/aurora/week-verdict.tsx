@@ -77,8 +77,10 @@ function Lead({ template, word, color }: { template: string; word: string | null
   );
 }
 
-/** One destination row — the doors to everything past this period. */
-function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: string; glyph: string; onPress: () => void }) {
+/** One destination row — the door to everything past this period. Exported
+ *  since wave 3: the doors render at the END of the Progress cluster (in
+ *  home.tsx), as the whole cluster's single exit point, not under this card. */
+export function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: string; glyph: string; onPress: () => void }) {
   const { palette: C } = useTheme();
   return (
     <Pressable
@@ -110,18 +112,11 @@ export default function AuroraWeekVerdict({
   sessions,
   units,
   bw,
-  showDeep,
-  onArchive,
-  onDeep,
   onSession,
 }: {
   sessions: LoggedSession[];
   units: WeightUnit;
   bw?: BodyweightInput;
-  /** The per-lift dashboard is athlete-gated — hide its door when it isn't reachable. */
-  showDeep?: boolean;
-  onArchive: () => void;
-  onDeep: () => void;
   /** Open one logged session from the breakdown. */
   onSession?: (id: string) => void;
 }) {
@@ -424,10 +419,10 @@ export default function AuroraWeekVerdict({
         )}
       </View>
 
-      {/* The doors. Today holds the period; everything longer lives behind one
-          tap, which is what keeps the block from becoming a second screen. */}
-      <DoorRow glyph="▤" title={t("w.home.week.archive")} sub={t("w.home.week.archiveSub")} onPress={onArchive} />
-      {showDeep && <DoorRow glyph="◫" title={t("w.home.week.deep")} sub={t("w.home.week.deepSub")} onPress={onDeep} />}
+      {/* The doors moved OUT of this card (wave 3): they are the whole
+          PROGRESS cluster's single exit now, rendered at the cluster's end in
+          home.tsx — one exit point after all the breakdowns, not a detour
+          between the summary and the rails that decompose it. */}
 
       {/* ── THE MONTH PICKER — the iOS grouped list: sections, a row per
           period, a check on the one in force. ─────────────────────────────── */}

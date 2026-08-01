@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import {
-  otherSportLanes, otherSportTotals, sportWeekBars, OTHER_SPORT_CAP, ago,
+  otherSportLanes, sportWeekBars, OTHER_SPORT_CAP, ago,
+  parentageHours, progressParentage,
   type LoggedSession, type OtherSportLane,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -50,22 +51,26 @@ export default function AuroraOtherSports({
   const [expanded, setExpanded] = useState(false);
 
   const lanes = useMemo(() => otherSportLanes(sessions), [sessions]);
+  // WAVE-3 PARENTAGE: the head quotes the sports' share of the This-week
+  // card's HOURS column — the slice these tiles break down per sport. Same
+  // activitySummary, same week range (core progress-parentage.ts).
+  const parentage = useMemo(() => progressParentage(sessions), [sessions]);
   // No sport logged → no block. A lane exists because something is in it, which
   // is why no tile needs an empty state of its own.
   if (lanes.length === 0) return null;
 
-  const totals = otherSportTotals(lanes);
   const shown = expanded ? lanes : lanes.slice(0, OTHER_SPORT_CAP);
   const rest = lanes.length - OTHER_SPORT_CAP;
 
   return (
     <View style={{ marginTop: 24 }}>
-      {/* Explore-standard head: display-face title left, mono meta right. The
-          meta reports the block so the athlete doesn't add up tiles. */}
+      {/* Explore-standard head: display-face title left, ONE mono fact right —
+          the wave-3 parentage quote ("3.1 of 5.2 h this week"), naming the
+          slice of the verdict's hours column this block decomposes. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.other.title")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-          {totals.sports} {t("w.home.other.sports")}
+          {t("w.home.group.metaOf").replace("{a}", String(parentageHours(parentage.sportMinutes))).replace("{b}", String(parentageHours(parentage.totalMinutes)))}
         </Text>
       </View>
 
