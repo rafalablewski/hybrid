@@ -9,6 +9,7 @@ import {
   type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
+import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf } from "../../lib/ui";
@@ -33,10 +34,12 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
  *
  *   • A REAL WEEK. "This week" is MONDAY → SUNDAY now, not a rolling seven days
  *     that reports last Friday under a label claiming the current week.
- *   • A DATE FILTER, in the iOS segmented-control idiom: a track, one thumb
- *     that SLIDES between segments (a spring, not a cut), and the label it
- *     lands on taking the foreground. Week / 7 days / 30 days / YTD, with the
- *     fifth segment opening a sheet of individual months. Persisted per device.
+ *   • A DATE FILTER, in the iOS 26 segmented-control idiom (the shared
+ *     LiquidSeg): a neutral pill at rest that turns into a clear glass lens on
+ *     touch, scrubs under a drag, and springs between segments, with the label
+ *     it lands on taking the foreground. Week / 7 days / 30 days / YTD, with
+ *     the fifth segment opening a sheet of individual months. Persisted per
+ *     device.
  *   • FIGURES THAT OPEN. Every column is a button; pressing one expands a panel
  *     beneath the row — with a caret sliding along to point at the column it
  *     belongs to — carrying the groups the total is made of and the sessions
@@ -224,18 +227,6 @@ export default function AuroraWeekVerdict({
   ];
   const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
 
-  const [trackW, setTrackW] = useState(0);
-  const thumbW = trackW > 0 ? (trackW - 6) / segments.length : 0;
-  const thumbX = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (thumbW <= 0) return;
-    Animated.spring(thumbX, {
-      toValue: segIndex * thumbW,
-      useNativeDriver: true,
-      speed: 16, bounciness: 4,
-    }).start();
-  }, [segIndex, thumbW, thumbX]);
-
   // ── The drawer. Height is measured off the panel and animated, so the detail
   // SLIDES out of the figure row instead of appearing under it.
   const [panelH, setPanelH] = useState(0);
@@ -270,48 +261,33 @@ export default function AuroraWeekVerdict({
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.5, color: C.ash }}>{span}</Text>
       </View>
 
-      {/* ── THE DATE FILTER ──────────────────────────────────────────────── */}
-      <View
-        accessibilityRole="tablist"
-        onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
-        style={{
-          flexDirection: "row", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line,
-          borderRadius: 999, padding: 3, marginBottom: 10,
-        }}
-      >
-        {thumbW > 0 && (
-          <Animated.View
-            pointerEvents="none"
-            style={{
-              position: "absolute", top: 3, bottom: 3, left: 3, width: thumbW,
-              backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999,
-              transform: [{ translateX: thumbX }],
-            }}
-          />
-        )}
-        {segments.map((s) => {
-          const active = s.id === "month" ? range.kind === "month" : range.id === s.id;
-          return (
-            <Pressable
-              key={s.id}
-              onPress={() => (s.id === "month" ? setPicker(true) : pick(s.id))}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              style={{ flex: 1, paddingVertical: 7, paddingHorizontal: 2, alignItems: "center", justifyContent: "center" }}
+      {/* ── THE DATE FILTER — the shared LiquidSeg: neutral pill at rest,
+          clear glass lens on touch/drag, per the iOS 26 system control. The
+          Month segment intercepts to its picker sheet; the pill only lands on
+          it once a month is actually in force (segIndex moves then). ─────── */}
+      <LiquidSeg
+        items={segments.map((s) => ({
+          key: s.id,
+          label: s.label,
+          intercept: s.id === "month" ? () => setPicker(true) : undefined,
+          render: (on: boolean) => (
+            <Text
+              numberOfLines={1}
+              style={{
+                fontFamily: on ? F.monoBold : F.mono, fontSize: 10.5,
+                color: on ? C.chalk : C.ash, paddingHorizontal: 2,
+              }}
             >
-              <Text
-                numberOfLines={1}
-                style={{
-                  fontFamily: active ? F.monoBold : F.mono, fontSize: 10.5,
-                  color: active ? C.chalk : C.ash,
-                }}
-              >
-                {s.label}{s.id === "month" ? " ▾" : ""}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+              {s.label}{s.id === "month" ? " ▾" : ""}
+            </Text>
+          ),
+        }))}
+        index={segIndex}
+        onSelect={(i) => pick(segments[i]!.id)}
+        segHeight={30}
+        pad={3}
+        trackStyle={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, marginBottom: 10 }}
+      />
 
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, paddingHorizontal: 17, paddingVertical: 16 }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}

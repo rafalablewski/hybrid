@@ -9,6 +9,7 @@ import {
   type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
+import { LiquidSeg } from "./liquid-seg";
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { useToday } from "@/lib/use-today";
@@ -31,10 +32,12 @@ import { useToday } from "@/lib/use-today";
  *
  *   • A REAL WEEK. "This week" is MONDAY → SUNDAY now, not a rolling seven days
  *     that reports last Friday under a label claiming the current week.
- *   • A DATE FILTER, in the iOS segmented-control idiom: a track, one thumb
- *     that SLIDES between segments, and the label it lands on taking the
- *     foreground. Week / 7 days / 30 days / YTD, with the fifth segment opening
- *     a sheet of individual months. The choice persists per device.
+ *   • A DATE FILTER, in the iOS 26 segmented-control idiom (the shared
+ *     LiquidSeg): a neutral pill at rest that turns into a clear glass lens on
+ *     touch, scrubs under a drag, and springs between segments, with the label
+ *     it lands on taking the foreground. Week / 7 days / 30 days / YTD, with
+ *     the fifth segment opening a sheet of individual months. The choice
+ *     persists per device.
  *   • FIGURES THAT OPEN. Every column is a button; pressing one expands a panel
  *     beneath the row — with a caret sliding along to point at the column it
  *     belongs to — carrying the groups the total is made of and the sessions
@@ -238,49 +241,37 @@ export default function AuroraWeekVerdict({
         <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".06em", color: C("ash") }}>{span}</span>
       </div>
 
-      {/* ── THE DATE FILTER ──────────────────────────────────────────────── */}
-      <div
-        role="group"
-        aria-label={t("w.home.act.pickTitle")}
-        style={{
-          position: "relative", display: "flex", background: C("ink"),
-          border: `1px solid ${C("line")}`, borderRadius: 999, padding: 3, marginBottom: 10,
-        }}
-      >
-        <span
-          aria-hidden
-          style={{
-            position: "absolute", top: 3, bottom: 3, left: 3,
-            width: `calc((100% - 6px) / ${segments.length})`,
-            transform: `translateX(${segIndex * 100}%)`,
-            background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999,
-            boxShadow: "0 1px 3px rgba(0,0,0,.35)",
-            transition: "transform .34s cubic-bezier(.2,.7,.3,1)",
-          }}
-        />
-        {segments.map((s) => {
-          const active = s.id === "month" ? range.kind === "month" : range.id === s.id;
-          return (
-            <button
-              key={s.id}
-              aria-pressed={active}
-              onClick={() => (s.id === "month" ? setPicker(true) : pick(s.id))}
+      {/* ── THE DATE FILTER — the shared LiquidSeg: neutral pill at rest,
+          clear glass lens on touch/drag, per the iOS 26 system control. The
+          Month segment intercepts to its picker; the pill only lands on it
+          once a month is actually in force (segIndex moves then). ────────── */}
+      <LiquidSeg
+        items={segments.map((s) => ({
+          key: s.id,
+          label: s.label,
+          intercept: s.id === "month" ? () => setPicker(true) : undefined,
+          render: (on: boolean) => (
+            <span
               style={{
-                position: "relative", flex: 1, minWidth: 0, background: "none", border: "none",
-                padding: "7px 4px", cursor: "pointer", borderRadius: 999,
                 fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".04em",
-                color: active ? C("chalk") : C("ash"),
-                fontWeight: active ? 600 : 400,
+                color: on ? C("chalk") : C("ash"),
+                fontWeight: on ? 600 : 400,
                 transition: "color .2s ease",
+                maxWidth: "100%", padding: "0 4px",
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}
             >
               {s.label}
               {s.id === "month" && <span aria-hidden style={{ opacity: .6 }}> ▾</span>}
-            </button>
-          );
-        })}
-      </div>
+            </span>
+          ),
+        }))}
+        index={segIndex}
+        onSelect={(i) => pick(segments[i]!.id)}
+        segHeight={30}
+        pad={3}
+        trackStyle={{ background: C("ink"), border: `1px solid ${C("line")}`, marginBottom: 10 }}
+      />
 
       <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, padding: "16px 17px" }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
