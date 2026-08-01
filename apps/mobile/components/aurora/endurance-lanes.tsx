@@ -87,17 +87,25 @@ export default function AuroraEnduranceLanes({
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}
 
+      {/* The block's exit, in the DOOR-ROW anatomy (the This-week card's
+          idiom): full-width blocks end in a door, rails end in a trailing
+          ghost tile — the cluster's one "see more" rule. The old bare "+N"
+          outline button is retired. Mirrors web endurance-lanes.tsx. */}
       {rest > 0 && (
         <Pressable
           onPress={() => setExpanded(!expanded)}
           accessibilityRole="button"
+          accessibilityState={{ expanded }}
           style={{
-            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-            marginHorizontal: 2, marginTop: 12, paddingHorizontal: 14, paddingVertical: 11,
-            borderWidth: 1, borderColor: C.line, borderRadius: 14,
+            flexDirection: "row", alignItems: "center", gap: 12,
+            marginHorizontal: 2, marginTop: 12, paddingHorizontal: 14, paddingVertical: 12,
+            backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
           }}
         >
-          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>
+          <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 13, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
+          </View>
+          <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
             {expanded ? t("w.home.end.fewer") : t("w.home.end.allSports")}
           </Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{expanded ? "−" : "+"}{rest}</Text>

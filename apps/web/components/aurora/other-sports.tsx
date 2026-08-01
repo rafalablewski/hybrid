@@ -76,22 +76,28 @@ export default function AuroraOtherSports({
         }}
       >
         {shown.map((lane) => <SportTile key={lane.sport} lane={lane} t={t} onOpen={onOpen} />)}
+        {/* The rail's exit — a trailing ghost tile (the exercises rail's ＋ card
+            idiom): rails end in a ghost tile, full-width blocks end in a door
+            row — the cluster's one "see more" rule. The old full-width "+N"
+            outline button below the rail is retired; its count lives here. */}
+        {rest > 0 && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+            style={{
+              flex: "0 0 110px", scrollSnapAlign: "start", minHeight: 132, cursor: "pointer",
+              display: "grid", placeItems: "center", alignContent: "center", gap: 8,
+              background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 16,
+              fontFamily: "var(--font-mono)", fontSize: fs.micro, textAlign: "center", lineHeight: 1.5,
+            }}
+          >
+            <span style={{ fontSize: 18, color: C("ash") }} aria-hidden>{expanded ? "−" : "＋"}</span>
+            <span style={{ fontWeight: 600, color: "var(--lime-text)" }}>
+              {expanded ? t("w.home.other.fewer") : t("w.home.other.all")} {expanded ? `−${rest}` : `+${rest}`}
+            </span>
+          </button>
+        )}
       </div>
-
-      {rest > 0 && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          style={{
-            display: "flex", width: "calc(100% - 4px)", margin: "12px 2px 0", alignItems: "center",
-            justifyContent: "space-between", gap: 10, cursor: "pointer",
-            background: "none", border: `1px solid ${C("line")}`, borderRadius: 14, padding: "10px 14px",
-            fontFamily: "var(--font-display)", fontSize: fs.body, fontWeight: 500, color: C("ash"),
-          }}
-        >
-          {expanded ? t("w.home.other.fewer") : t("w.home.other.all")}
-          <span style={{ ...num, fontSize: fs.micro, color: "var(--lime-text)" }}>{expanded ? "−" : "+"}{rest}</span>
-        </button>
-      )}
     </div>
   );
 }

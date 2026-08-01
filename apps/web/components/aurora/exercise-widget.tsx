@@ -121,9 +121,14 @@ export default function ExerciseWidgetRail({
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 4px 10px" }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.exw.kicker")}</div>
-        <button onClick={onAll} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", padding: 0 }}>
+      {/* Explore-standard head — promoted from the old nano-mono kicker so every
+          block in the PROGRESS cluster opens the same way (one head tier). The
+          right slot follows the cluster's one rule: a FACT sits in ash, an
+          ACTION sits in lime, and a head carries at most one — this one carries
+          the "All ›" action. */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.exw.title")}</span>
+        <button onClick={onAll} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", padding: "4px 0" }}>
           {t("w.home.exw.all")} ›
         </button>
       </div>

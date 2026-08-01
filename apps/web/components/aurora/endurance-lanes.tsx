@@ -287,17 +287,28 @@ export default function AuroraEnduranceLanes({
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}
 
+      {/* The block's exit, in the DOOR-ROW anatomy (the This-week card's
+          idiom): full-width blocks end in a door, rails end in a trailing
+          ghost tile — the cluster's one "see more" rule. The old bare "+N"
+          outline button is retired. */}
       {rest > 0 && (
         <button
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
           style={{
             display: "flex", width: "calc(100% - 4px)", margin: "12px 2px 0", alignItems: "center",
-            justifyContent: "space-between", gap: 10, cursor: "pointer",
-            background: "none", border: `1px solid ${C("line")}`, borderRadius: 14, padding: "10px 14px",
-            fontFamily: "var(--font-display)", fontSize: fs.body, fontWeight: 500, color: C("ash"),
+            gap: 12, cursor: "pointer", textAlign: "left", color: C("chalk"),
+            background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px",
           }}
         >
-          {expanded ? t("w.home.end.fewer") : t("w.home.end.allSports")}
+          <span style={{
+            width: 32, height: 32, borderRadius: 10, background: C("ink"),
+            border: `1px solid ${C("line")}`, display: "flex", alignItems: "center",
+            justifyContent: "center", fontSize: 13, color: C("ash"), flex: "0 0 32px",
+          }} aria-hidden>{expanded ? "−" : "＋"}</span>
+          <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg }}>
+            {expanded ? t("w.home.end.fewer") : t("w.home.end.allSports")}
+          </span>
           <span style={{ ...num, fontSize: fs.micro, color: "var(--lime-text)" }}>{expanded ? "−" : "+"}{rest}</span>
         </button>
       )}

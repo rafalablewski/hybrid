@@ -16,7 +16,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, serifIf } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
@@ -99,7 +99,7 @@ export default function ExerciseWidgetRail({
   onOpen: (name: string) => void;
   onAll: () => void;
 }) {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
@@ -113,9 +113,14 @@ export default function ExerciseWidgetRail({
   const cardW = Math.min(340, Math.round(width * 0.78));
 
   return (
-    <View style={{ marginTop: 18 }}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10, paddingHorizontal: 2 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.exw.kicker")}</Text>
+    <View style={{ marginTop: 24 }}>
+      {/* Explore-standard head — promoted from the old nano-mono kicker so every
+          block in the PROGRESS cluster opens the same way (one head tier). The
+          right slot follows the cluster's one rule: a FACT sits in ash, an
+          ACTION sits in lime, and a head carries at most one — this one carries
+          the "All ›" action. Mirrors web exercise-widget.tsx. */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, marginHorizontal: 2 }}>
+        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
         <Pressable onPress={onAll} accessibilityRole="button" hitSlop={10}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.exw.all")} ›</Text>
         </Pressable>
