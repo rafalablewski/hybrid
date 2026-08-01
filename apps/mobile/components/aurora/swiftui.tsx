@@ -3,20 +3,20 @@ import { Platform, View, StyleSheet, type ViewStyle } from "react-native";
 import { Host, Picker, Button as SwiftButton, Text as SwiftText, RoundedRectangle } from "@expo/ui/swift-ui";
 import { glassEffect, pickerStyle, tag, tint, buttonStyle } from "@expo/ui/swift-ui/modifiers";
 import { useTheme } from "../../lib/theme";
-import { useLiquidGlass } from "../../lib/liquid-glass";
 import { RADIUS } from "./kit";
 
 /**
  * AURORA × SwiftUI — the native iOS layer of the shared kit.
  *
  * `@expo/ui` renders REAL SwiftUI views (Liquid Glass, segmented Picker, glass
- * Buttons) on iOS. SwiftUI is iOS-only AND it's user-toggleable, so the kit
- * reads `useLiquidGlass().active` (lib/liquid-glass.tsx) = iOS && the Settings
- * switch is on. When that's false — Android, web (Next.js keeps its CSS Aurora),
- * or the user flipped it off — the kit falls back to the plain React-Native
- * Aurora treatment. The parity gap is tracked in `capabilities.ts`
- * (`swiftui-kit`). Native rendering needs an EAS/dev build to verify; the JS
- * here is exercised by typecheck + the iOS export bundle.
+ * Buttons) on iOS. SwiftUI is iOS-only, so the kit reads
+ * `LIQUID_GLASS_SUPPORTED` below: on iOS the native treatment is ALWAYS ON —
+ * there is no user toggle (the old Settings switch was removed by request; the
+ * native look IS the product on iOS). Off-iOS — Android, web (Next.js keeps
+ * its CSS Aurora) — the kit falls back to the plain React-Native Aurora
+ * treatment. The parity gap is tracked in `capabilities.ts` (`swiftui-kit`).
+ * Native rendering needs an EAS/dev build to verify; the JS here is exercised
+ * by typecheck + the iOS export bundle.
  *
  * Composition rule: a SwiftUI subtree must live entirely inside a `<Host>`, so
  * we only use SwiftUI for self-contained leaves (segment, button) and for a
@@ -24,10 +24,9 @@ import { RADIUS } from "./kit";
  * children are never placed inside a Host.
  */
 
-/** True only where SwiftUI exists. (Liquid Glass itself needs iOS 26+; on older
- *  iOS the native module degrades and the RN floor below stays visible.) Whether
- *  the kit ACTUALLY renders native depends on the user's runtime toggle too —
- *  see `useLiquidGlass().active` (lib/liquid-glass.tsx), which the kit reads. */
+/** True only where SwiftUI exists — the kit's single gate for the native
+ *  treatment. (Liquid Glass itself needs iOS 26+; on older iOS the native
+ *  module degrades and the RN floor below stays visible.) */
 export const LIQUID_GLASS_SUPPORTED = Platform.OS === "ios";
 
 /** Append an alpha byte to a `#RRGGBB` brand token → `#RRGGBBAA`. */
@@ -48,8 +47,7 @@ function withAlpha(hex: string, alpha: number): string {
  */
 export function GlassSurface({ radius = RADIUS.card, tintColor }: { radius?: number; tintColor?: string }) {
   const { palette } = useTheme();
-  const { active } = useLiquidGlass();
-  if (!active) return null;
+  if (!LIQUID_GLASS_SUPPORTED) return null;
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: "hidden" }]}>
       {/* Visible floor for iOS < 26 / pre-mount. Low opacity so the ambient

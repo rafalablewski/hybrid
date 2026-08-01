@@ -19,7 +19,6 @@ import { springs, springDurationMs } from "@hybrid/core";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
-import { LiquidGlassProvider } from "../lib/liquid-glass";
 import { ThemeProvider, useTheme } from "../lib/theme";
 import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
@@ -145,19 +144,17 @@ export default function RootLayout() {
         <QueryProvider>
           <ThemeProvider>
             <TemplateProvider>
-              <LiquidGlassProvider>
-                <SessionProvider>
-                  <LanguageProvider>
-                    <SheetRecedeProvider>
-                      {/* Above Shell so the flying clone renders over every
-                          screen — it must not be clipped by the navigator. */}
-                      <SharedElementProvider>
-                        <Shell />
-                      </SharedElementProvider>
-                    </SheetRecedeProvider>
-                  </LanguageProvider>
-                </SessionProvider>
-              </LiquidGlassProvider>
+              <SessionProvider>
+                <LanguageProvider>
+                  <SheetRecedeProvider>
+                    {/* Above Shell so the flying clone renders over every
+                        screen — it must not be clipped by the navigator. */}
+                    <SharedElementProvider>
+                      <Shell />
+                    </SharedElementProvider>
+                  </SheetRecedeProvider>
+                </LanguageProvider>
+              </SessionProvider>
             </TemplateProvider>
           </ThemeProvider>
         </QueryProvider>
