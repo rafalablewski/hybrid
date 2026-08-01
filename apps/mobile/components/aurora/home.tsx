@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, RefreshControl, Animated, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { publishTodaySnapshot } from "../../modules/widget-bridge";
@@ -687,7 +687,12 @@ export default function AuroraHome() {
   if (tab === "feed") return <FeedView top={hubHeader} />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
+    // Inset PADDING, not a SafeAreaView: this shell remounts in full view when
+    // the athlete returns from Performance/Feed, and a freshly mounted native
+    // SafeAreaView applies its inset one frame late — the chrome would jump
+    // under the status bar for a visible frame. The provider's insets are
+    // already measured and correct on the very first render.
+    <View style={{ flex: 1, backgroundColor: C.ink, paddingTop: insets.top }}>
       {/* Ambient Aurora gradient backdrop — Today owns its own shell (custom
           entrance + horizontal pager) rather than AuroraScreen, so render the
           same field here so it isn't the one flat tab next to History/More/You. */}
@@ -1193,7 +1198,7 @@ export default function AuroraHome() {
           </Pressable>
         </View>
       </Sheet>
-    </SafeAreaView>
+    </View>
   );
 }
 

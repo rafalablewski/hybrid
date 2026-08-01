@@ -170,8 +170,8 @@ export function AuroraScreen({
   ) : (
     <View style={{ flex: 1, padding, justifyContent: center ? "center" : "flex-start" }}>{top}{inner}</View>
   );
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
+  const shell = (
+    <>
       <AuroraField />
       {/* Lift fields above the keyboard so low inputs / submit buttons (login,
           builder, check-in, nutrition…) aren't hidden when it opens. */}
@@ -179,7 +179,20 @@ export function AuroraScreen({
         <Animated.View style={[{ flex: 1 }, hub ? null : enterStyle]}>{body}</Animated.View>
       </KeyboardAvoidingView>
       {scroll ? stickyTop : null}
-    </SafeAreaView>
+    </>
+  );
+  // AS A HUB TAB the screen MOUNTS IN FULL VIEW on every pill switch, and a
+  // freshly mounted native SafeAreaView applies its inset one frame late — the
+  // chrome renders jammed under the status bar for a visible frame (caught
+  // frame-by-frame in the first TestFlight build of the hub move). The
+  // provider's insets are already measured, so padding with them is correct on
+  // the very first render. Standalone screens keep the native SafeAreaView:
+  // they mount behind a stack transition, where the lag is invisible, and the
+  // native view tracks inset CHANGES (rotation) more tightly.
+  return hub ? (
+    <View style={{ flex: 1, backgroundColor: palette.ink, paddingTop: insets.top }}>{shell}</View>
+  ) : (
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>{shell}</SafeAreaView>
   );
 }
 

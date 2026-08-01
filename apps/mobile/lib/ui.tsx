@@ -129,42 +129,62 @@ export function useEntrance() {
 // (profile row + pills) holds perfectly still and the pills' flying lens owns
 // the motion, so the content cross-dissolves underneath instead of replaying
 // the whole-screen entrance — the same "shared element in flight" rule the web
-// twin applies (globals.css THE TODAY HUB, data-nav-kind="hub"). Runs on focus
-// like useEntrance (a hub tab mounts fresh on every switch, and re-fires when
-// the Today tab regains focus). Reduce Motion keeps the dissolve at the
-// substitution duration — never an instant cut. JS driver for the same Fabric
-// race documented on useEntrance.
+// twin applies (globals.css THE TODAY HUB, data-nav-kind="hub"). Reduce Motion
+// keeps the dissolve at the substitution duration — never an instant cut.
+//
+// Runs on the NATIVE driver, started from the wrapper's first onLayout. Two
+// hard-won constraints meet here (proven on-device, frame-by-frame, in the
+// first TestFlight build of the hub move):
+//  (1) Mounting a hub tab is heavy enough to block the JS thread for the
+//      fade's whole duration, so a JS-driver timing (useEntrance's choice)
+//      reads its progress off wall-clock time on its first real tick and
+//      snaps straight to the end — the dissolve never shows.
+//  (2) A native-driver animation STARTED FROM useFocusEffect can lose the
+//      start-vs-mount race on Fabric and strand the view invisible — the
+//      blank-screen strand documented on useEntrance.
+// Starting the native animation from onLayout threads the needle: the native
+// view provably exists by the time onLayout fires, and the fade then runs off
+// the JS thread no matter how busy mounting leaves it.
 export function useHubDissolve(active: boolean) {
   const fade = useRef(new Animated.Value(active ? 0 : 1)).current;
   const reducedMotion = useReducedMotion();
-  useFocusEffect(
-    useCallback(() => {
-      if (!active) return;
-      fade.setValue(0);
-      const anim = Animated.timing(fade, {
-        toValue: 1,
-        duration: reducedMotion ? durations.reduced : durations.dissolve,
-        // easings.fade — the app's crossfade curve (@hybrid/core motion.ts).
-        easing: reducedMotion ? Easing.linear : Easing.bezier(0.2, 0.7, 0.3, 1),
-        useNativeDriver: false,
-      });
-      anim.start();
-      return () => anim.stop();
-    }, [fade, reducedMotion, active]),
-  );
-  return useMemo(() => ({ opacity: fade }), [fade]);
+  const started = useRef(false);
+  const start = useCallback(() => {
+    if (!active || started.current) return;
+    started.current = true;
+    Animated.timing(fade, {
+      toValue: 1,
+      duration: reducedMotion ? durations.reduced : durations.dissolve,
+      // easings.fade — the app's crossfade curve (@hybrid/core motion.ts).
+      easing: reducedMotion ? Easing.linear : Easing.bezier(0.2, 0.7, 0.3, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [fade, reducedMotion, active]);
+  const style = useMemo(() => ({ opacity: fade }), [fade]);
+  return { style, start };
 }
 
 /** The wrapper form of useHubDissolve, for callers that switch the hub body in
- *  and out of the tree (home.tsx's dashboard) — remounting replays the fade.
- *  `active: false` renders plainly (the first entry into Today already has the
- *  whole-screen entrance; stacking a second fade on it would double up).
+ *  and out of the tree (home.tsx's dashboard, AuroraScreen's hub slot) —
+ *  remounting replays the fade, and the wrapper's own onLayout is what starts
+ *  it. `active: false` renders plainly (the first entry into Today already has
+ *  the whole-screen entrance; stacking a second fade on it would double up).
  *  `onLayout` is forwarded because the wrapper is a real view: children that
  *  report layout.y now measure against IT, so a caller doing scroll geometry
  *  needs the wrapper's own offset to keep its sums honest. */
 export function HubDissolve({ active, children, onLayout }: { active: boolean; children: ReactNode; onLayout?: (e: LayoutChangeEvent) => void }) {
-  const fade = useHubDissolve(active);
-  return <Animated.View style={active ? fade : undefined} onLayout={onLayout}>{children}</Animated.View>;
+  const { style, start } = useHubDissolve(active);
+  return (
+    <Animated.View
+      style={active ? style : undefined}
+      onLayout={(e) => {
+        onLayout?.(e);
+        start();
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
 }
 
 /**
@@ -342,6 +362,7 @@ export function Screen({
   refreshing,
   onRefresh,
   scroll = true,
+  hubTab = false,
 }: {
   children: ReactNode;
   refreshing?: boolean;
@@ -351,14 +372,21 @@ export function Screen({
    *  then owns the RefreshControl + contentContainerStyle padding (see
    *  useScreenBottomPad). */
   scroll?: boolean;
+  /** true when the screen is showing as one of Today's hub tabs, where it
+   *  MOUNTS IN FULL VIEW on every pill switch. A freshly mounted native
+   *  SafeAreaView applies its inset a frame late, so the chrome renders under
+   *  the status bar for one visible frame — the hub shell pads with the
+   *  provider's insets instead, which are correct on the very first render. */
+  hubTab?: boolean;
 }) {
   const { palette } = useTheme();
   const padBottom = useScreenBottomPad();
+  const insets = useSafeAreaInsets();
   // Drive the floating nav's shrink-on-scroll from this screen's scroller too
   // (Aurora is the only template, so classic-Screen screens sit under the pill).
   const navScroll = useNavScrollProps();
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>
+  const inner = (
+    <>
       <GlassField />
       {/* Lift the form above the keyboard so low inputs/submit buttons aren't
           hidden when the keyboard opens (no screen had keyboard avoidance). */}
@@ -385,7 +413,12 @@ export function Screen({
           <View style={{ flex: 1 }}>{children}</View>
         )}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </>
+  );
+  return hubTab ? (
+    <View style={{ flex: 1, backgroundColor: palette.ink, paddingTop: insets.top }}>{inner}</View>
+  ) : (
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>{inner}</SafeAreaView>
   );
 }
 

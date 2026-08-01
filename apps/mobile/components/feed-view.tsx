@@ -76,15 +76,16 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   // chrome renders plainly so it holds still across the switch, and the feed's
   // own content dissolves in beneath it (lib/ui useHubDissolve — the pills'
   // flying lens owns the motion). The list is virtualized, so the fade rides
-  // on the header block and on each card rather than one wrapper.
+  // on the header block and on each card rather than one wrapper; the header's
+  // onLayout starts the native-driver fade for all of them (same commit).
   const hub = top != null;
-  const hubFade = useHubDissolve(hub);
+  const { style: hubFade, start: startHubFade } = useHubDissolve(hub);
   const fade = hub ? hubFade : undefined;
 
   const header = (
     <>
       {top}
-      <Animated.View style={fade}>
+      <Animated.View style={fade} onLayout={startHubFade}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16, marginTop: top ? 16 : 0 }}>
         {!top && <ABack />}
         <View>
@@ -147,7 +148,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   return (
     // scroll={false} → the FlatList is the sole scroller (virtualized); Screen
     // still provides the SafeArea + backdrop + keyboard avoidance chrome.
-    <Screen scroll={false}>
+    // hubTab → inset padding instead of a fresh SafeAreaView, so the chrome
+    // doesn't jump under the status bar for the remount's first frame.
+    <Screen scroll={false} hubTab={hub}>
       <FlatList
         data={feed ?? []}
         keyExtractor={(item) => item.id}
