@@ -609,6 +609,7 @@ export function sessionCardioTotals(blocks: SessionBlock[]): {
 } {
   let distanceKm = 0;
   let minutes = 0;
+  let sec = 0;
   let elevationM = 0;
   let count = 0;
   for (const b of blocks)
@@ -616,9 +617,13 @@ export function sessionCardioTotals(blocks: SessionBlock[]): {
       count++;
       if (b.distance) distanceKm += b.distance;
       if (b.minutes) minutes += b.minutes;
+      // Pace runs off the second-accurate clock where a device recorded one
+      // (`b.seconds`, see device-truth.ts) — deriving it from the whole minutes
+      // shown beside it is how a 7:52 watch run at 5:47 /km came to read 5:53.
+      sec += cardioSeconds(b) ?? 0;
       if (b.elevation) elevationM += b.elevation;
     }
-  const secPerKm = distanceKm > 0 && minutes > 0 ? Math.round((minutes * 60) / distanceKm) : null;
+  const secPerKm = distanceKm > 0 && sec > 0 ? Math.round(sec / distanceKm) : null;
   return { distanceKm, minutes, elevationM, secPerKm, count };
 }
 

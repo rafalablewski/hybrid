@@ -438,6 +438,14 @@ describe("sessionMeta", () => {
     );
   });
 
+  it("paces off the device's second-accurate clock, not the whole minutes shown beside it", () => {
+    // A 7:52 watch run over 1.36 km is 5:47 /km; derived from the rounded
+    // 8 min the row would have read 5:53 — disagreeing with the watch panel.
+    expect(
+      sessionMeta(cardio([{ kind: "cardio", name: "Running", distance: 1.36, minutes: 8, seconds: 472 }])),
+    ).toBe("1.4 km – 8 min – 5:47 /km");
+  });
+
   it("has NO tail when the session can't be paced", () => {
     // A timed sport (no distance) — duration is the whole truth.
     expect(sessionMeta(cardio([{ kind: "cardio", name: "Tennis", minutes: 75 }]))).toBe("75 min");
