@@ -259,7 +259,7 @@ export default function AuroraVolume({ top, unified = false }: {
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         {!top && !unified && <ABack />}
-        <AHeading style={{ fontSize: unified ? fs.heading : fs.display }}>{t("w.analyze.vol.title")}</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
         <Pressable
           onPress={toggleEditing}
           accessibilityRole="button"
@@ -880,8 +880,7 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
           fields, since all five are editable. */}
       {expanded && !editing && (
         <View style={{ marginTop: 12 }}>
-          <MuscleHistory sets={history} color={color} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12 }}>MV {s.landmark.mv}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>MV {s.landmark.mv}</Text>
           {target && verdict && (
             <Text style={{ marginTop: 7, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: verdict === "on" ? txt(C, C.lime) : C.ash }}>
               {t("w.analyze.vol.weekTarget")} {target.target} {t("w.analyze.vol.sets")}
@@ -890,6 +889,7 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
             </Text>
           )}
           <Text style={{ marginTop: 7, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{rowAdvice(s, t)}</Text>
+          <MuscleHistory sets={history} />
         </View>
       )}
       {expanded && editing && (
@@ -918,17 +918,20 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
  *  lit, since "this week" is the number stated above the rail. Silent when the
  *  muscle has never been trained: an empty row of stubs would state a history
  *  that doesn't exist. Mirrors web volume.tsx. */
-function MuscleHistory({ sets, color }: { sets: number[]; color: string }) {
+function MuscleHistory({ sets }: { sets: number[] }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   if (sets.length === 0 || sets.every((n) => n === 0)) return null;
-  const max = Math.max(...sets, 1);
+  const mx = Math.max(...sets, 1);
+  // Geometry, radius, gap and colour are LIFTED VERBATIM from the chart this
+  // replaces (the focus-muscle chart on the old Trends screen). Moving an
+  // element must not restyle it.
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginBottom: 6 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 44, gap: 4 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 14 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
-          <View key={i} style={{ flex: 1, height: Math.max(4, (n / max) * 44), borderRadius: 3, backgroundColor: color, opacity: i === sets.length - 1 ? 0.95 : 0.34 }} />
+          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: 3, backgroundColor: i === sets.length - 1 ? C.blue : `${C.blue}66` }} />
         ))}
       </View>
     </View>

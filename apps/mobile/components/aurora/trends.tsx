@@ -63,7 +63,7 @@ export default function AuroraTrends({ top, unified = false }: {
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         {!top && !unified && <ABack />}
-        <AHeading style={{ fontSize: unified ? fs.heading : fs.display }}>{t("w.analyze.trends.title")}</AHeading>
+        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>
       </View>
       <ASub style={{ marginTop: 10 }}>{t("w.analyze.trends.subtitle")}</ASub>
 

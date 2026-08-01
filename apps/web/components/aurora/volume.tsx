@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { createElement, useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
@@ -231,10 +231,14 @@ export default function AuroraVolume({ sessions, unified = false }: {
     <div style={{ display: "flex", flexDirection: "column", gap: space.md, maxWidth: "100%", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: space.md }}>
         <div>
-          {unified ? (
-            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, margin: 0, letterSpacing: "-0.02em" }}>{t("w.analyze.vol.title")}</h2>
-          ) : (
-            <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-0.02em" }}>{t("w.analyze.vol.title")}</h1>
+          {/* IDENTICAL styling either way — only the heading LEVEL changes, so
+              the unified Performance page doesn't carry three <h1>s. Nothing
+              here may restyle: this section must look exactly as it did when it
+              was its own screen. */}
+          {createElement(
+            unified ? "h2" : "h1",
+            { style: { fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-0.02em" } },
+            t("w.analyze.vol.title"),
           )}
           <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 6, marginBottom: 0 }}>{t("w.analyze.vol.subtitle")}</p>
         </div>
@@ -819,8 +823,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
           fields, since all five are editable. */}
       {expanded && !editing && (
         <div style={{ marginTop: 12 }}>
-          <MuscleHistory sets={history} token={token} />
-          <div style={{ ...mono(fs.caption), color: C("ash"), marginTop: 12 }}>MV {s.landmark.mv}</div>
+          <div style={{ ...mono(fs.caption), color: C("ash") }}>MV {s.landmark.mv}</div>
           {target && verdict && (
             <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: verdict === "on" ? C("lime") : C("ash") }}>
               {t("w.analyze.vol.weekTarget")} {target.target} {t("w.analyze.vol.sets")}
@@ -829,6 +832,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
             </p>
           )}
           <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>
+          <MuscleHistory sets={history} />
         </div>
       )}
       {expanded && editing && (
@@ -853,20 +857,23 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
  *  lit, since "this week" is the number stated above the rail. Silent when the
  *  muscle has never been trained: an empty row of stubs would state a history
  *  that doesn't exist. */
-function MuscleHistory({ sets, token }: { sets: number[]; token: string }) {
+function MuscleHistory({ sets }: { sets: number[] }) {
   const { t } = useLang();
   if (sets.length === 0 || sets.every((n) => n === 0)) return null;
   const max = Math.max(...sets, 1);
+  // Bar geometry and colour are LIFTED VERBATIM from the block ramp already in
+  // this file (BlockCard): ink track, radius 7, the current column at .95 and
+  // the rest at .32. Volume draws every bar that way and imports no chart
+  // library, so this introduces no new visual vocabulary — a moved element must
+  // not become a restyled one.
   return (
     <div>
-      <div style={{ ...mono(9), letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), marginBottom: 6 }}>{t("w.analyze.trends.weeklySets8w")}</div>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 44, maxWidth: 420 }}>
+      <div style={{ ...mono(9), letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), marginTop: 14, marginBottom: 8 }}>{t("w.analyze.trends.weeklySets8w")}</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 56, maxWidth: 420 }}>
         {sets.map((n, i) => (
-          <div
-            key={i}
-            title={`${n}`}
-            style={{ flex: 1, height: `${Math.max(8, (n / max) * 100)}%`, borderRadius: 3, background: C(token), opacity: i === sets.length - 1 ? 0.95 : 0.34 }}
-          />
+          <div key={i} style={{ flex: 1, height: 56, display: "flex", alignItems: "flex-end", background: C("ink"), borderRadius: 7, overflow: "hidden" }}>
+            <div title={`${n}`} style={{ width: "100%", height: pct(n / max), background: C("blue"), opacity: i === sets.length - 1 ? 0.95 : 0.32, borderRadius: "7px 7px 0 0" }} />
+          </div>
         ))}
       </div>
     </div>

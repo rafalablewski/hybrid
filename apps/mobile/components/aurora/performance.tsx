@@ -448,14 +448,14 @@ function Full({ top }: { top?: ReactNode }) {
           until the Performance page absorbed it; nothing was dropped on the way
           over except the SECOND copy of the muscle breakdown, which Trends used
           to draw off the same volumeStatus(). See `performance-unified`. */}
-      <View style={{ marginTop: 22 }}><AuroraVolume unified /></View>
+      <View style={{ marginTop: 14 }}><AuroraVolume unified /></View>
 
       {/* 8 · TREND — the eight-week series (weekly sets, weekly tonnage) and the
           sortable exercise-analytics table. Its muscle-breakdown card and its
           add/ease-off advice line are gone: both were the same engines
           (volumeStatus / volumeAdvice) the Volume sections above already state,
           in more detail and with the landmarks attached. */}
-      <View style={{ marginTop: 22 }}><AuroraTrends unified /></View>
+      <View style={{ marginTop: 14 }}><AuroraTrends unified /></View>
 
       {/* 9 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
       <ACard style={{ marginTop: 14 }}>

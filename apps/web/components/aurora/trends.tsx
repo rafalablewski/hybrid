@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createElement, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, kgToUnit,
@@ -19,13 +19,16 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
 
 /** AURORA Trends (web) — full bespoke analytics hub reusing the exact engines +
  *  recharts volume/tonnage/muscle bars. */
-/** The screen's own title — an <h1> on its own route, demoted to a section head
- *  when these sections render inside the unified Performance page (which
- *  already carries the page's one masthead). */
+/** The screen's own title. IDENTICAL styling on its own route and inside the
+ *  unified Performance page — only the heading LEVEL changes, so the page
+ *  doesn't carry three <h1>s. Nothing here may restyle: this section must look
+ *  exactly as it did when it was its own screen. */
 function Head({ unified, t }: { unified: boolean; t: (k: string) => string }) {
-  return unified
-    ? <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, letterSpacing: "-.02em", margin: 0 }}>{t("w.analyze.trends.title")}</h2>
-    : <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.trends.title")}</h1>;
+  return createElement(
+    unified ? "h2" : "h1",
+    { style: { fontWeight: 900, fontSize: fs.display, margin: 0 } },
+    t("w.analyze.trends.title"),
+  );
 }
 
 export default function AuroraTrends({ sessions, onOpenExercise, unified = false }: {
