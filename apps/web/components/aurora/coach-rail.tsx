@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
-// "Follow a coach" — a horizontally swipeable rail on Today. Pulls the live
+// "Follow a coach" — a horizontally swipeable rail on Today (its only home now
+// that the Explore tab is gone). Pulls the live
 // marketplace (/api/coaches); until coaches publish storefronts it shows the
 // shared placeholder people (coachRailItems falls back), so the section is never
 // empty. Each card is a single tap-target (a chevron says so) that opens the
@@ -99,17 +100,17 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
 }
 
 // `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
-// parent (Explore) can supply the shared, unified SectionHead instead. Today
-// keeps the default header.
+// parent can supply its own section head instead — which is how Today mounts it.
+// The built-in header is kept for any caller that has no head of its own.
 // `bleed` lets the slider run FULL-BLEED: negative margins the width of the
 // shell's --page-pad-x pull the scroll clip out to the true screen edge (with
 // matching internal padding so resting cards still align with the column), so
 // cards slide under the bezel instead of vanishing at the content column. Only
-// for rails sitting directly on the page (Explore) — inside a Sheet the rail
-// must respect the sheet's own padding.
+// for rails sitting directly on the page (Today) — inside a Sheet the rail must
+// respect the sheet's own padding.
 // `seeMore` appends a trailing "See more" button at the end of the rail (the
-// unified Explore affordance — the community rail carries the twin), so the rest
-// of the marketplace is one tap away without an "All →" link up in the header.
+// unified rail affordance — the community rail carries the twin), so the rest of
+// the marketplace is one tap away without an "All →" link up in the header.
 export default function CoachRail({ onOpen, headerless = false, bleed = false, seeMore = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean; seeMore?: boolean }) {
   const { t } = useLang();
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
@@ -146,7 +147,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
       <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollPadding: bleed ? "0 var(--page-pad-x, 16px)" : "0 4px", scrollbarWidth: "none", padding: bleed ? "8px var(--page-pad-x, 16px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 16px)) -14px" : "-8px -4px -14px" }}>
         {items.map((c, i) => <MarqueeCard key={c.userId ?? c.handle ?? i} c={c} onOpen={onOpen} />)}
         {/* Trailing "See more" button — the same treatment as the community
-            rail, so the two Explore rails share one end-of-rail affordance. */}
+            rail, so the two rails share one end-of-rail affordance. */}
         {seeMore && (
           <button
             onClick={onOpen}

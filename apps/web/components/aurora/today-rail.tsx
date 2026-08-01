@@ -15,8 +15,8 @@ import { useLang } from "@/lib/i18n";
 import ReadinessFace from "./readiness-face";
 import type { ReadinessFeeling } from "@hybrid/core";
 
-// Mirrors the mobile useReducedMotion (and explore.tsx's) so the rail's motion
-// is suppressed for users who ask for less of it.
+// Mirrors the mobile useReducedMotion so the rail's motion is suppressed for
+// users who ask for less of it.
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {

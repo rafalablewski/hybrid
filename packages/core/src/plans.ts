@@ -145,24 +145,29 @@ export const PLANS: (GoalPlan & { color: string })[] = GOAL_TREE.flatMap((g) =>
   g.plans[0] ? [{ ...g.plans[0], color: g.color }] : [],
 );
 
-/** Explore plan-library preview — the top plan for each goal that has one,
- *  carrying its goal's name + icon + colour. The SINGLE source for the Explore
- *  preview rail on both clients, so the preview can never drift from the real
- *  library (no duplicated names/metas) and its facts (discipline, scheme) come
- *  straight from the plan data. */
+/** Plan-library preview — the top plan for each goal that has one, carrying its
+ *  goal's name + icon + colour. The SINGLE source for any preview rail on either
+ *  client, so the preview can never drift from the real library (no duplicated
+ *  names/metas) and its facts (discipline, scheme) come straight from the plan
+ *  data. */
 export const PLAN_PREVIEWS: { goalId: string; goalName: string; icon: string; color: string; plan: GoalPlan }[] =
   GOAL_TREE.flatMap((g) => (g.plans[0] ? [{ goalId: g.id, goalName: g.name, icon: g.icon, color: g.color, plan: g.plans[0] }] : []));
 
-/** Editor's-pick plan ids, in cover order — the curated hero slots for the
- *  Explore Cover Flow. Chosen for spread across disciplines (strength, endurance,
+/** Editor's-pick plan ids, in cover order — the curated hero slots for the plan
+ *  Cover Flow. Chosen for spread across disciplines (strength, endurance,
  *  physique), NOT tree order, so the featured trio is intentional rather than
  *  "whatever's first in the goal tree". Ids that don't resolve are skipped. */
 export const FEATURED_PLAN_IDS = ["oly-soviet-8wk", "run-5k-beginner-9wk", "bb-ppl-6day"];
 
 /** PLAN_PREVIEWS reordered so the editor's picks lead (in FEATURED_PLAN_IDS
- *  order), then every other preview in library order. Explore's Cover Flow takes
- *  the first three as covers and the rest as the rail, so curation lives HERE —
- *  never lost, never a raw slice of the tree. Always contains every preview. */
+ *  order), then every other preview in library order. A Cover Flow takes the
+ *  first three as covers and the rest as the rail, so curation lives HERE —
+ *  never lost, never a raw slice of the tree. Always contains every preview.
+ *
+ *  NOTE: no screen mounts this today. The Explore tab that carried the Cover
+ *  Flow is gone (Nutrition took its bar slot); the curation is kept intact so
+ *  the block can be rehomed — tracked as `plans-cover-flow-rehome` in
+ *  capabilities.ts. */
 export const FEATURED_PREVIEWS: typeof PLAN_PREVIEWS = (() => {
   const picks = FEATURED_PLAN_IDS
     .map((id) => PLAN_PREVIEWS.find((p) => p.plan.id === id))

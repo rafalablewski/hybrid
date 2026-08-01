@@ -59,7 +59,6 @@ import {
   type SessionBlock,
   type Experience,
   type Equipment,
-  type AuroraIconName,
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
@@ -177,11 +176,10 @@ export default function AuroraHome() {
   // pop-up list of everything logged today, with a link to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
-  // TIER-3 quick actions, now slide-up sheets (not full-screen routes): the
-  // nutrition tracker and Follow-a-coach. (Readiness is now set inline on the
-  // feeling card, so it no longer opens a sheet.)
+  // TIER-3 quick action, a slide-up sheet (not a full-screen route): the
+  // nutrition tracker. (Readiness is now set inline on the feeling card, and
+  // Follow a coach is a rail on the page rather than a row behind a sheet.)
   const [nutritionOpen, setNutritionOpen] = useState(false);
-  const [coachOpen, setCoachOpen] = useState(false);
   // Quick-start: the fourth "Train your way" path — a sheet to re-launch a saved
   // routine (favourites rail + shuffle-able rest). `routines` stays null until the
   // first fetch resolves so the card doesn't flash before we know whether the
@@ -999,21 +997,30 @@ export default function AuroraHome() {
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/sport") : goUpgrade("today-sport"))} />
         </View>
 
-        {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
-            (coaches). No section head: "Recover & more" labelled a BUCKET, not
-            anything on the screen, and the Fuel widget already titles itself.
-            The 12 here plus Fuel's own 12 keeps the section break intact. ───── */}
-        <View style={{ marginTop: 12 }}>
-          {/* FUEL — the nutrition summary widget (one calendar-style stateful
-              surface: empty → refuel / on-track / over → goal-hit, with a
-              persistent quick-log rail). Real today only; nutrition targets are
-              always today's. State + macros come from @hybrid/core fuelToday() so
-              web matches. Tapping opens the same quick-add sheet the rows use. */}
-          {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
-          <View style={{ gap: 10, marginTop: 10 }}>
-            <DeferRow C={C} icon="user" tint={C.ash} title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onPress={() => setCoachOpen(true)} />
-          </View>
+        {/* ───── FUEL — the nutrition summary widget (one calendar-style
+            stateful surface: empty → refuel / on-track / over → goal-hit, with a
+            persistent quick-log rail). Real today only; nutrition targets are
+            always today's. State + macros come from @hybrid/core fuelToday() so
+            web matches. Tapping opens the same quick-add sheet. No section head
+            — the widget titles itself. ───── */}
+        {dayIsToday && <View style={{ marginTop: 12 }}><AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} /></View>}
+
+        {/* ───── FOLLOW A COACH — moved here from the Explore tab, which is
+            gone. It is on the PAGE now rather than a row that opened a sheet:
+            the rail sells coaches by showing them, and a row reading "Follow a
+            coach" sold nothing. Full-bleed per the slider rule (the cards run
+            under the screen edge), headerless under the section head, with the
+            trailing "See more" carrying through to the marketplace. Mirrors
+            web aurora/today.tsx. ───── */}
+        {/* The descriptor sits UNDER the title, not opposite it: "Find a coach
+            for your goal" is a subtitle, not a meta value, and at 30-odd
+            characters in PL/DE it would collide with the title on a phone. Same
+            anatomy the rail's own built-in header uses. */}
+        <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</Text>
         </View>
+        <CoachRail onOpen={() => router.push("/coaches")} headerless bleed seeMore />
 
         </Animated.View>
       </ScrollView>
@@ -1048,11 +1055,6 @@ export default function AuroraHome() {
           onNavigateFull={() => { setNutritionOpen(false); router.push("/nutrition"); }}
           onUpgrade={() => { setNutritionOpen(false); goUpgrade("today-nutrition-sheet"); }}
         />
-      </Sheet>
-
-      {/* FOLLOW A COACH sheet — the coach rail (renders its own header). */}
-      <Sheet visible={coachOpen} onClose={() => setCoachOpen(false)}>
-        <CoachRail onOpen={() => { setCoachOpen(false); router.push("/coaches"); }} />
       </Sheet>
 
       {/* QUICK START sheet — re-launch a saved routine (favourites + rediscover). */}
@@ -1233,28 +1235,6 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
         ) : null}
       </View>
     </View>
-  );
-}
-
-// A deferred row (Tier 3) — a slim tap-through to a secondary surface
-// (Nutrition, Coaches) as an "airy band": a roomy tap-target on the real palette
-// surface (ink2 + hairline), with a crafted icon tile drawn on the darker ink so
-// it lifts off the row, a display title and a mono descriptor. Same material
-// vocabulary as the cards above it, just laid out with more air.
-function DeferRow({ C, icon, tint, title, sub, onPress }: { C: P; icon: AuroraIconName; tint: string; title: string; sub: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14, flex: 1 }}>
-        <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name={icon} size={20} color={txt(C, tint)} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{sub}</Text>
-        </View>
-      </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
-    </Pressable>
   );
 }
 

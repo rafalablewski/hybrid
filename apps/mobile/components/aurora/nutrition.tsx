@@ -301,8 +301,12 @@ function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onSt
  *  macros read as hairline lines, iconography is one monoline voice, and colour
  *  appears only where it means something. Same engine + Signal logging + personal
  *  library. `compact` renders the focused Today "Add a meal" sheet. */
-export default function AuroraNutrition({ compact = false, onNavigateFull, onUpgrade, openFood, openSource }: {
+export default function AuroraNutrition({ compact = false, root = false, onNavigateFull, onUpgrade, openFood, openSource }: {
   compact?: boolean;
+  /** Rendered as a BOTTOM-NAV tab root (app/(tabs)/nutrition.tsx) rather than a
+   *  pushed screen: there is nothing beneath it in the stack, so the masthead
+   *  drops its back button — a back arrow on a tab root is a dead control. */
+  root?: boolean;
   onNavigateFull?: () => void;
   onUpgrade?: () => void;
   /** land directly on a verified product page — the deep-link entry (app/food/[id]) */
@@ -987,7 +991,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          <ABack />
+          {root ? null : <ABack />}
           <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
         </View>
         <OnboardingGoal goal={goal} setGoal={chooseGoal} onUpgrade={() => { finishOnboarding(); (onUpgrade ? onUpgrade() : router.push("/upgrade")); }} onWeighIn={(kg) => { logWeighIn(kg); finishOnboarding(); }} onContinueFree={finishOnboarding} currentWeightKg={bodyMassKg} />
@@ -1844,7 +1848,7 @@ export default function AuroraNutrition({ compact = false, onNavigateFull, onUpg
       {/* Hub masthead (home), or a sub-screen back-header. */}
       {view === "home" ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          <ABack />
+          {root ? null : <ABack />}
           <View>
             {greeting ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginBottom: 2 }}>{greeting}</Text> : null}
             <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>

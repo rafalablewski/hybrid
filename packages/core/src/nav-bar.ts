@@ -20,8 +20,20 @@ import type { AuroraIconName } from "./theme/icons";
  * the mini-player slot). See the session accessory in each client's nav.
  */
 
-/** The five bar destinations, in order. Five is Apple's ceiling for iPhone. */
-export type AuroraNavTabId = "today" | "explore" | "train" | "more" | "profile";
+/**
+ * The five bar destinations, in order. Five is Apple's ceiling for iPhone.
+ *
+ * NUTRITION holds the second slot, where Explore used to sit. Explore was a
+ * DISCOVERY surface — a coach rail, a plan cover flow, a community preview —
+ * and discovery is not a daily destination: every one of those blocks was a
+ * preview of a screen that still lives in More (Plans, Feed, Find friends), and
+ * the one piece with a daily job, "Follow a coach", now sits on Today next to
+ * the training it applies to. Eating is the opposite kind of thing: it happens
+ * several times a day, every day, and a tracker you must dig for is a tracker
+ * you stop using. So the bar spends its scarcest slot on the loop the user is
+ * actually in.
+ */
+export type AuroraNavTabId = "today" | "nutrition" | "train" | "more" | "profile";
 
 export type AuroraNavTab = {
   id: AuroraNavTabId;
@@ -34,7 +46,7 @@ export type AuroraNavTab = {
 
 export const AURORA_NAV_TABS: readonly AuroraNavTab[] = [
   { id: "today", glyph: "village", labelKey: "nav.today", label: "Today" },
-  { id: "explore", glyph: "globe", labelKey: "nav.explore", label: "Explore" },
+  { id: "nutrition", glyph: "fork-knife", labelKey: "nav.nutrition", label: "Nutrition" },
   { id: "train", glyph: "train", labelKey: "nav.train", label: "Train" },
   { id: "more", glyph: "grid", labelKey: "nav.more", label: "More" },
   { id: "profile", glyph: "user-circle", labelKey: "nav.profile", label: "Profile" },

@@ -4,7 +4,16 @@ import { AURORA_NAV_TABS, AURORA_NAV_GEOMETRY, formatSessionElapsed } from "./na
 describe("aurora nav bar contract", () => {
   it("carries five destinations, within Apple's iPhone ceiling", () => {
     expect(AURORA_NAV_TABS).toHaveLength(5);
-    expect(AURORA_NAV_TABS.map((t) => t.id)).toEqual(["today", "explore", "train", "more", "profile"]);
+    expect(AURORA_NAV_TABS.map((t) => t.id)).toEqual(["today", "nutrition", "train", "more", "profile"]);
+  });
+
+  it("spends the second slot on a daily loop, not on discovery", () => {
+    // Explore was a discovery surface whose blocks were all previews of screens
+    // that still live in More; eating happens several times a day. The bar's
+    // scarcest slot goes to the recurring loop.
+    const ids = AURORA_NAV_TABS.map((t) => t.id) as string[];
+    expect(ids).not.toContain("explore");
+    expect(ids[1]).toBe("nutrition");
   });
 
   it("keeps Train as a tab, not a detached action", () => {
