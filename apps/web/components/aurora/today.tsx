@@ -1087,21 +1087,26 @@ export default function AuroraToday({
   );
 }
 
-/** GROUP MARKER — the wayfinding tier ABOVE the blocks' own heads. Today's
- *  dashboard scroll is organised into four themed clusters
- *  (Train / Recover / Progress / Explore); each opens with this quiet
- *  mono-uppercase label and a hairline running to the margin, so the taxonomy
- *  is scannable without stacking a second bold title over any card. The
- *  largest whitespace on the page sits ABOVE the marker — the space does the
- *  grouping, the label only names it. Not a decorative dot-before-a-heading
- *  (banned); the rule is a trailing divider, the editorial idiom the
- *  FeelingCard already uses inside its card. Mirrored on mobile
- *  (aurora/home.tsx GroupMark). */
+/** GROUP MARKER — the HEADLINE TIER (cluster-marker study, direction 02).
+ *  Today's dashboard scroll is organised into four themed clusters
+ *  (Train / Recover / Progress / Explore); each opens with its name as a TRUE
+ *  typographic tier — the display face at 23, sitting between the masthead
+ *  (34) and the block heads (18) — and nothing else. No rule, no mono, no
+ *  chrome: the whitespace above does all the separating (36px, deliberately
+ *  larger than any gap inside a cluster, so the headline always sits closer
+ *  to its own content than to what precedes it). The first cut was a
+ *  mono-uppercase label with a trailing hairline; it read as the default
+ *  divider every generated layout reaches for, and was retired for pure
+ *  type. Mirrored on mobile (aurora/home.tsx GroupMark), where Kyoto Hour
+ *  sets it in the serif like the masthead. */
 function GroupMark({ label }: { label: string }) {
   return (
-    <div role="heading" aria-level={2} style={{ display: "flex", alignItems: "center", gap: 12, margin: "32px 2px 0" }}>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{label}</span>
-      <span aria-hidden style={{ flex: 1, height: 1, background: C("line") }} />
+    <div
+      role="heading"
+      aria-level={2}
+      style={{ margin: "36px 2px 0", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 23, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk") }}
+    >
+      {label}
     </div>
   );
 }

@@ -1161,21 +1161,26 @@ export default function AuroraHome() {
 }
 
 
-/** GROUP MARKER — the wayfinding tier ABOVE the blocks' own heads. Today's
- *  dashboard scroll is organised into four themed clusters
- *  (Train / Recover / Progress / Explore); each opens with this quiet
- *  mono-uppercase label and a hairline running to the margin, so the taxonomy
- *  is scannable without stacking a second bold title over any card. The
- *  largest whitespace on the page sits ABOVE the marker — the space does the
- *  grouping, the label only names it. Not a decorative dot-before-a-heading
- *  (banned); the rule is a trailing divider. Mirrors web (aurora/today.tsx
- *  GroupMark). */
+/** GROUP MARKER — the HEADLINE TIER (cluster-marker study, direction 02).
+ *  Today's dashboard scroll is organised into four themed clusters
+ *  (Train / Recover / Progress / Explore); each opens with its name as a TRUE
+ *  typographic tier — the display face at 23, between the masthead (34) and
+ *  the block heads (18), serif in Kyoto Hour like the masthead — and nothing
+ *  else. No rule, no mono, no chrome: the whitespace above does all the
+ *  separating (36dp, deliberately larger than any gap inside a cluster, so
+ *  the headline always sits closer to its own content than to what precedes
+ *  it). The first cut was a mono-uppercase label with a trailing hairline;
+ *  it read as the default divider every generated layout reaches for, and
+ *  was retired for pure type. Mirrors web (aurora/today.tsx GroupMark). */
 function GroupMark({ C, label }: { C: P; label: string }) {
+  const { scheme } = useTheme();
   return (
-    <View accessibilityRole="header" style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 32, marginHorizontal: 2 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.8, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
-    </View>
+    <Text
+      accessibilityRole="header"
+      style={{ marginTop: 36, marginHorizontal: 2, fontFamily: serifIf(scheme, F.black), fontSize: 23, letterSpacing: -0.5, lineHeight: 26, color: C.chalk }}
+    >
+      {label}
+    </Text>
   );
 }
 
