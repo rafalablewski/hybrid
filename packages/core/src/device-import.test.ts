@@ -12,7 +12,7 @@ import {
 } from "./device-import";
 import { deviceMarkFor } from "./device-marks";
 import { deviceSourceLabel, type DeviceWorkout } from "./session-device";
-import type { LoggedSession } from "./engines/session";
+import type { CardioBlock, LoggedSession } from "./engines/session";
 
 const T = (h: number, m = 0) => new Date(Date.UTC(2026, 6, 20, h, m)).toISOString();
 
@@ -119,7 +119,7 @@ describe("deviceImportedSession", () => {
   it("self-heals when the athlete edits an imported figure", () => {
     const w = workout({ distanceKm: 1.36 });
     const s = importedSession(w);
-    const b = s.blocks[0]!;
+    const b = s.blocks[0] as CardioBlock;
     expect(deviceImportedSession(s)).toBe(true);
     expect(deviceImportedSession({ ...s, blocks: [{ ...b, distance: 1.4 }] })).toBe(false);
     expect(deviceImportedSession({ ...s, blocks: [{ ...b, minutes: 10 }] })).toBe(false);
@@ -128,7 +128,7 @@ describe("deviceImportedSession", () => {
   it("is false once the session holds more than the recording's one block", () => {
     const w = workout();
     const s = importedSession(w);
-    const extra = { kind: "strength" as const, name: "Bench Press", sets: [{ weight: 80, reps: 5 }] };
+    const extra = { kind: "strength" as const, name: "Bench Press", sets: [{ load: "80", reps: "5" }] };
     expect(deviceImportedSession({ ...s, blocks: [...s.blocks, extra] })).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import type { CardioBlock, CardioDiscipline, LoggedSession } from "./engines/session";
+import { cardioSeconds } from "./engines/session";
 import {
   disciplineSessions,
   paceEffortSplit,
@@ -108,13 +109,17 @@ function lastEffort(sessions: LoggedSession[]): LaneEffort | null {
       if (!isCardio(b)) continue;
       const distanceKm = b.distance && b.distance > 0 ? b.distance : 0;
       const minutes = b.minutes && b.minutes > 0 ? b.minutes : 0;
+      // Second-accurate where a device recorded the effort (see device-truth.ts);
+      // the whole minutes stay for display, but a pace derived from them can
+      // disagree with the watch's own summary.
+      const sec = cardioSeconds(b);
       best = {
         name: b.name,
         startedAt: s.startedAt,
         sessionId: s.id,
         distanceKm: Math.round(distanceKm * 10) / 10,
         minutes: Math.round(minutes),
-        secPerKm: distanceKm > 0 && minutes > 0 ? Math.round((minutes * 60) / distanceKm) : null,
+        secPerKm: distanceKm > 0 && sec != null ? Math.round(sec / distanceKm) : null,
       };
       bestAt = at;
       break; // one effort per session is enough for a "last effort" card

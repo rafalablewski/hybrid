@@ -132,4 +132,11 @@ describe("the engines read the measurement", () => {
   it("session cardio totals read the device", () => {
     expect(sessionCardioSummary(run())).toMatchObject({ distanceKm: 10.42, minutes: 55 });
   });
+
+  it("session cardio totals derive pace from the measured seconds, not whole minutes", () => {
+    // 1.36 km in 7:52 (472 s) → 347 s/km (5:47). Off the rounded 8 min it
+    // would read 353 s/km (5:53) and disagree with the watch's own summary.
+    const short = run({ device: watch({ durationMin: 8, durationSec: 472, distanceKm: 1.36 }) });
+    expect(sessionCardioSummary(short)).toMatchObject({ minutes: 8, secPerKm: 347 });
+  });
 });

@@ -92,6 +92,27 @@ describe("enduranceLanes", () => {
     expect(run!.last?.secPerKm).toBe(345);
   });
 
+  it("paces the last effort off the device's seconds when a recording carries them", () => {
+    // 1.36 km in 7:52 (472 s) → 347 s/km; the rounded 8 min would read 353.
+    const matched = {
+      ...effort("d1", "Watch run", "running", 1, 1.3, 8),
+      device: {
+        provider: "apple",
+        uuid: "hk-lane",
+        activityLabel: "Running",
+        start: new Date(NOW - DAY).toISOString(),
+        end: new Date(NOW - DAY + 472_000).toISOString(),
+        durationMin: 8,
+        durationSec: 472,
+        distanceKm: 1.36,
+        source: "Apple Watch",
+      },
+    } as LoggedSession;
+    const [lane] = enduranceLanes([matched], { now: NOW });
+    expect(lane!.last?.secPerKm).toBe(347);
+    expect(lane!.last?.minutes).toBe(8);
+  });
+
   it("leaves secPerKm null for an unpaced effort", () => {
     const timed = {
       id: "x1",
