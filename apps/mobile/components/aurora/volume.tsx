@@ -689,7 +689,12 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       {adaptive && (
         <Text style={{ marginTop: 10, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>
           {resolved.adapted.length
-            ? `${resolved.adapted.map(ml).join(", ")} — ${resolved.adapted.length} ${t("w.analyze.vol.adaptedCount")}`
+            ? `${resolved.adapted.map((m) => {
+                // The estimate never ships without its stated interval — a
+                // ceiling shown as a bare number reads as a measurement.
+                const e = resolved.estimates[m];
+                return e ? `${ml(m)} ${e.mrv} (${e.lo}–${e.hi})` : ml(m);
+              }).join(", ")} — ${resolved.adapted.length} ${t("w.analyze.vol.adaptedCount")}`
             : t("w.analyze.vol.notEnoughEvidence")}
         </Text>
       )}

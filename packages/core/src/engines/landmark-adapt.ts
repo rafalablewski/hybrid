@@ -371,6 +371,17 @@ export interface MrvEstimate {
   prior: number;
   /** 0…1 — how much evidence backs the estimate. 0 = the prior, untouched. */
   confidence: number;
+  /**
+   * The stated interval: the ceiling is believed to sit between `lo` and `hi`
+   * weekly sets. An estimate without its uncertainty reads as a measurement,
+   * which this is not — so the band ships with the number everywhere.
+   * Unproven (confidence 0) the band is the full corridor the estimator is
+   * allowed to move in; it narrows as qualifying weeks accumulate, and the
+   * evidence itself can pin a side (a symptomatic week caps the top, a
+   * tolerated week props the bottom), so the band is often asymmetric.
+   */
+  lo: number;
+  hi: number;
   /** The weeks that moved it, most recent first. */
   evidence: MrvEvidence[];
 }
@@ -460,13 +471,15 @@ export function estimateMrv(observations: VolumeWeekObservation[], landmark: Vol
     else if (held) evidence.push({ ...row, verdict: "tolerated" });
   }
 
-  if (evidence.length < 2) return { mrv: prior, prior, confidence: 0, evidence };
-
   // The floor is anchored to MEV, not to the prior's MAV band: when the ceiling
   // comes down the band comes down with it (see `adaptLandmarks`), so anchoring
   // to the old band would leave no room to adapt downwards at all.
   const floor = Math.max(landmark.mev + 2, Math.round(prior * 0.65));
   const ceiling = Math.round(prior * 1.35);
+
+  // Unproven: the honest interval is the whole corridor the estimator may move
+  // in, not a tight band around a number no week has tested.
+  if (evidence.length < 2) return { mrv: prior, prior, confidence: 0, lo: Math.min(floor, prior), hi: Math.max(ceiling, prior), evidence };
 
   const overreached = evidence.filter((e) => e.verdict === "overreached").map((e) => e.sets);
   const tolerated = evidence.filter((e) => e.verdict === "tolerated").map((e) => e.sets);
@@ -487,7 +500,19 @@ export function estimateMrv(observations: VolumeWeekObservation[], landmark: Vol
   // Four qualifying weeks is as certain as this ever gets; agreeing weeks are
   // worth more than a lone outlier, so confidence tracks the count.
   const confidence = Math.round(clamp(evidence.length / 4, 0, 1) * 100) / 100;
-  return { mrv, prior, confidence, evidence: evidence.sort((a, b) => a.weeksAgo - b.weeksAgo) };
+
+  // The stated interval. Width tracks the evidence count (2 weeks → ±3,
+  // 3 → ±2, 4+ → ±1), then each side is pinned by what the weeks actually
+  // proved: a tolerated week at S sets shows the ceiling is at least S, and a
+  // symptomatic week at S shows it is under S — so the band collapses toward
+  // the side the evidence nailed down and stays wide on the side it didn't.
+  const half = clamp(5 - evidence.length, 1, 3);
+  let lo = Math.max(mrv - half, floor);
+  let hi = Math.min(mrv + half, ceiling);
+  if (tolerated.length) lo = clamp(Math.max(...tolerated), lo, mrv);
+  if (overreached.length) hi = clamp(Math.min(...overreached) - 1, mrv, hi);
+
+  return { mrv, prior, confidence, lo, hi, evidence: evidence.sort((a, b) => a.weeksAgo - b.weeksAgo) };
 }
 
 export interface AdaptedLandmarks {

@@ -147,6 +147,59 @@ describe("estimating the recoverable ceiling", () => {
     expect(e.confidence).toBe(0);
   });
 
+  it("states the whole allowed corridor as the interval while unproven", () => {
+    const e = estimateMrv([], QUADS);
+    // No week has tested the ceiling: the band is the ±35% corridor, not a
+    // tight interval around a number that is really just the textbook prior.
+    expect(e.lo).toBe(Math.max(QUADS.mev + 2, Math.round(QUADS.mrv * 0.65)));
+    expect(e.hi).toBe(Math.round(QUADS.mrv * 1.35));
+    expect(e.lo).toBeLessThan(e.mrv);
+    expect(e.hi).toBeGreaterThan(e.mrv);
+  });
+
+  it("narrows the interval as qualifying weeks accumulate", () => {
+    const week = (w: number) => obs({ weeksAgo: w, sets: 20 + (w < 2 ? 1 : 0), performance: 100 + (3 - w) * 2, fatigue: 3 });
+    const two = estimateMrv([0, 1].map(week).concat([obs({ weeksAgo: 2, sets: 20, performance: 100 })]), QUADS);
+    const four = estimateMrv([0, 1, 2, 3].map(week).concat([obs({ weeksAgo: 4, sets: 20, performance: 100 })]), QUADS);
+    expect(two.hi - two.lo).toBeGreaterThan(four.hi - four.lo);
+    // The interval always brackets the estimate.
+    for (const e of [two, four]) {
+      expect(e.lo).toBeLessThanOrEqual(e.mrv);
+      expect(e.hi).toBeGreaterThanOrEqual(e.mrv);
+    }
+  });
+
+  it("pins the top of the interval when symptoms found the ceiling", () => {
+    const e = estimateMrv(
+      [
+        obs({ weeksAgo: 0, sets: 18, performance: 92 }),
+        obs({ weeksAgo: 1, sets: 19, performance: 100 }),
+        obs({ weeksAgo: 2, sets: 19, performance: 105 }),
+        obs({ weeksAgo: 3, sets: 18, performance: 100 }),
+      ],
+      QUADS,
+    );
+    // An overreached week at 18 sets proves the ceiling is under 18 — the band
+    // must not reach past what the symptoms disproved.
+    expect(e.hi).toBeLessThan(18);
+    expect(e.lo).toBeLessThanOrEqual(e.mrv);
+  });
+
+  it("props the bottom of the interval with the volume that was tolerated", () => {
+    const e = estimateMrv(
+      [
+        obs({ weeksAgo: 0, sets: 21, performance: 106, fatigue: 3 }),
+        obs({ weeksAgo: 1, sets: 21, performance: 104, fatigue: 3 }),
+        obs({ weeksAgo: 2, sets: 20, performance: 102, fatigue: 3 }),
+        obs({ weeksAgo: 3, sets: 20, performance: 100, fatigue: 3 }),
+      ],
+      QUADS,
+    );
+    // 21 sets were carried with performance intact: the ceiling is at least 21.
+    expect(e.lo).toBeGreaterThanOrEqual(21);
+    expect(e.hi).toBeGreaterThanOrEqual(e.mrv);
+  });
+
   it("ignores weeks that carried too little volume to prove anything", () => {
     // Six sets a week is nowhere near a ceiling, however good it felt.
     const e = estimateMrv(
