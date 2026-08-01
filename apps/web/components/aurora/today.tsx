@@ -79,7 +79,7 @@ import AuroraTodayRail from "./today-rail";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import AuroraEnduranceLanes from "./endurance-lanes";
-import AuroraWeekVerdict from "./week-verdict";
+import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 import { AuroraIcon } from "./icons";
@@ -953,9 +953,6 @@ export default function AuroraToday({
         sessions={sessions}
         units={units}
         bw={bw}
-        showDeep={isAthlete}
-        onArchive={() => (onNavigate ? onNavigate("history") : router.push("/history"))}
-        onDeep={() => (onNavigate ? onNavigate("analytics") : router.push("/analytics"))}
         onSession={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
       />
 
@@ -991,6 +988,13 @@ export default function AuroraToday({
           the NUMBER of sports, not the depth of each. Renders nothing until a
           sport is logged. Mirrors mobile. ───── */}
       <AuroraOtherSports sessions={sessions} onOpen={() => (onNavigate ? onNavigate("sport") : router.push("/sport"))} />
+
+      {/* THE CLUSTER'S EXIT (wave 3) — the doors past this week, moved here
+          from under the This-week card: summary → breakdowns → ONE exit point,
+          instead of a detour between the summary and the rails that decompose
+          it. Same door-row anatomy, same destinations. */}
+      <DoorRow glyph="▤" title={t("w.home.week.archive")} sub={t("w.home.week.archiveSub")} onClick={() => (onNavigate ? onNavigate("history") : router.push("/history"))} />
+      {isAthlete && <DoorRow glyph="◫" title={t("w.home.week.deep")} sub={t("w.home.week.deepSub")} onClick={() => (onNavigate ? onNavigate("analytics") : router.push("/analytics"))} />}
 
       {/* ═════ GROUP: EXPLORE — beyond your own data: the premium tier and the
           coach marketplace. The label the old Explore tab left behind. ═════ */}

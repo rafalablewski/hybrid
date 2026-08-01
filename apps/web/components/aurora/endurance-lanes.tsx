@@ -4,6 +4,7 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
   enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
+  progressParentage,
   DISCIPLINE_META, LANE_CAP, ago,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
@@ -268,6 +269,10 @@ export default function AuroraEnduranceLanes({
   const [expanded, setExpanded] = useState(false);
 
   const lanes = useMemo(() => enduranceLanes(sessions), [sessions]);
+  // WAVE-3 PARENTAGE: the head quotes the This-week card's DISTANCE column —
+  // the figure these lanes break down per discipline. Same activitySummary,
+  // same week range (core progress-parentage.ts), so they cannot disagree.
+  const parentage = useMemo(() => progressParentage(sessions), [sessions]);
   // No endurance logged → no block. A lane exists because something is in it,
   // which is why no lane needs an empty state of its own.
   if (lanes.length === 0) return null;
@@ -275,23 +280,35 @@ export default function AuroraEnduranceLanes({
   const stacked = orderLanes(lanes, order);
   const shown = expanded ? stacked : stacked.slice(0, LANE_CAP);
   const rest = stacked.length - LANE_CAP;
+  const km = Math.round(parentage.distanceKm * 10) / 10;
 
   return (
     <div style={{ marginTop: 26 }}>
+      {/* One item in the head's right slot: the quoted FACT (ash). The sort
+          ACTION moved to its own quiet row below — a head carries at most one
+          right-slot item, and the fact is the one that names the block. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("endurance.title")}</span>
-        <button
-          onClick={() => setOrder(nextLaneOrder(order))}
-          aria-label={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
-          style={{
-            background: "none", border: 0, padding: "4px 0", cursor: "pointer",
-            fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em",
-            textTransform: "uppercase", color: "var(--lime-text)",
-          }}
-        >
-          {t(ORDER_KEY[order])} ↓
-        </button>
+        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".06em", color: C("ash") }}>
+          {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
+        </span>
       </div>
+      {/* The lane-order toggle — only when there is an order to change. */}
+      {stacked.length > 1 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 2px" }}>
+          <button
+            onClick={() => setOrder(nextLaneOrder(order))}
+            aria-label={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
+            style={{
+              background: "none", border: 0, padding: "2px 0", cursor: "pointer",
+              fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em",
+              textTransform: "uppercase", color: "var(--lime-text)",
+            }}
+          >
+            {t(ORDER_KEY[order])} ↓
+          </button>
+        </div>
+      )}
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}
 

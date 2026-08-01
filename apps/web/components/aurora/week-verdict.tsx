@@ -80,8 +80,10 @@ function Lead({ template, word }: { template: string; word: string | null }): Re
   );
 }
 
-/** One destination row — the doors to everything past this period. */
-function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: string; glyph: string; onClick: () => void }) {
+/** One destination row — the door to everything past this period. Exported
+ *  since wave 3: the doors render at the END of the Progress cluster (in
+ *  today.tsx), as the whole cluster's single exit point, not under this card. */
+export function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: string; glyph: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -110,18 +112,11 @@ export default function AuroraWeekVerdict({
   sessions,
   units,
   bw,
-  showDeep,
-  onArchive,
-  onDeep,
   onSession,
 }: {
   sessions: LoggedSession[];
   units: WeightUnit;
   bw?: BodyweightInput;
-  /** The per-lift dashboard is athlete-gated — hide its door when it isn't reachable. */
-  showDeep?: boolean;
-  onArchive: () => void;
-  onDeep: () => void;
   /** Open one logged session from the breakdown. */
   onSession?: (id: string) => void;
 }) {
@@ -395,10 +390,10 @@ export default function AuroraWeekVerdict({
         )}
       </div>
 
-      {/* The doors. Today holds the period; everything longer lives behind one
-          click, which is what keeps the block from becoming a second screen. */}
-      <DoorRow glyph="▤" title={t("w.home.week.archive")} sub={t("w.home.week.archiveSub")} onClick={onArchive} />
-      {showDeep && <DoorRow glyph="◫" title={t("w.home.week.deep")} sub={t("w.home.week.deepSub")} onClick={onDeep} />}
+      {/* The doors moved OUT of this card (wave 3): they are the whole
+          PROGRESS cluster's single exit now, rendered at the cluster's end in
+          today.tsx — one exit point after all the breakdowns, not a detour
+          between the summary and the rails that decompose it. */}
 
       {/* ── THE MONTH PICKER — the iOS grouped list: sections, a row per
           period, a check on the one in force. ─────────────────────────────── */}
