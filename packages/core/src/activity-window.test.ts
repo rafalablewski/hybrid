@@ -24,8 +24,9 @@ function session(id: string, daysAgo: number, blocks: SessionBlock[], minutes: n
   } as LoggedSession;
 }
 
+// Loads and reps are STRINGS on the wire — that's what the loggers write.
 const lift = (kg: number): SessionBlock =>
-  ({ kind: "strength", name: "Deadlift", sets: [{ load: kg, reps: 1 }] } as SessionBlock);
+  ({ kind: "strength", name: "Deadlift", sets: [{ load: String(kg), reps: "1" }] });
 const cardio = (name: string, discipline: string, minutes: number, distance?: number): SessionBlock =>
   ({ kind: "cardio", name, discipline, minutes, distance } as SessionBlock);
 

@@ -14,7 +14,8 @@ const d7 = (now = NOW) => resolveActivityRange("d7", now);
 function s(daysAgo: number, kg: number, minutes = 60): LoggedSession {
   const started = at(daysAgo);
   // 1 set × 1 rep × kg = kg of tonnage, so the arithmetic in each test is plain.
-  const blocks: SessionBlock[] = [{ kind: "strength", name: "Deadlift", sets: [{ load: kg, reps: 1 }] } as SessionBlock];
+  // Loads and reps are STRINGS on the wire — that's what the loggers write.
+  const blocks: SessionBlock[] = [{ kind: "strength", name: "Deadlift", sets: [{ load: String(kg), reps: "1" }] }];
   return {
     id: `s${daysAgo}-${kg}`,
     title: "Session",
