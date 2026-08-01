@@ -95,6 +95,7 @@ import CoachRail from "./coach-rail";
 import AuroraCheckin from "./checkin";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
+import GroupMark from "./group-mark";
 import AuroraTodayRail, { type TodayRailBottoms } from "./today-rail";
 import { TodayTabs } from "./today-tabs";
 // THE HUB's other two tabs — the same full screens their own routes render,
@@ -736,7 +737,7 @@ export default function AuroraHome() {
             GroupMark, the quiet wayfinding tier above the blocks' own heads,
             so the page reads as four thoughts instead of nine competing
             cards. Mirrors web today.tsx. ═════ */}
-        <GroupMark C={C} label={t("w.home.group.train")} />
+        <GroupMark label={t("w.home.group.train")} />
 
         {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
             eyebrow: the screen is already today's training and the plan names
@@ -963,7 +964,7 @@ export default function AuroraHome() {
         {/* ═════ GROUP: RECOVER — how the body is answering. The daily
             check-in ritual: readiness reads, the follow-up questions, the
             day's record. Mirrors web today.tsx. ═════ */}
-        <GroupMark C={C} label={t("w.home.group.recover")} />
+        <GroupMark label={t("w.home.group.recover")} />
 
         {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The
             four faces set the day's readiness inline (one tap, no sheet) —
@@ -992,7 +993,7 @@ export default function AuroraHome() {
             verdict, the favourite movements' deltas, then each sport's own
             read: every retrospective block on Today, in one cluster, widest
             first. Mirrors web today.tsx. ═════ */}
-        <GroupMark C={C} label={t("w.home.group.progress")} />
+        <GroupMark label={t("w.home.group.progress")} />
 
         {/* ───── THIS WEEK — the verdict card. A verdict with its working-out
             shown. Replaces the Statistics and Analytics destinations on Today
@@ -1053,7 +1054,7 @@ export default function AuroraHome() {
         {/* ═════ GROUP: EXPLORE — beyond your own data: the premium tier and
             the coach marketplace. The label the old Explore tab left behind.
             Mirrors web today.tsx. ═════ */}
-        <GroupMark C={C} label={t("w.home.group.explore")} />
+        <GroupMark label={t("w.home.group.explore")} />
 
         {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
             Explore-standard section head (bold display title); the ✦ stays —
@@ -1161,28 +1162,9 @@ export default function AuroraHome() {
 }
 
 
-/** GROUP MARKER — the HEADLINE TIER (cluster-marker study, direction 02).
- *  Today's dashboard scroll is organised into four themed clusters
- *  (Train / Recover / Progress / Explore); each opens with its name as a TRUE
- *  typographic tier — the display face at 23, between the masthead (34) and
- *  the block heads (18), serif in Kyoto Hour like the masthead — and nothing
- *  else. No rule, no mono, no chrome: the whitespace above does all the
- *  separating (36dp, deliberately larger than any gap inside a cluster, so
- *  the headline always sits closer to its own content than to what precedes
- *  it). The first cut was a mono-uppercase label with a trailing hairline;
- *  it read as the default divider every generated layout reaches for, and
- *  was retired for pure type. Mirrors web (aurora/today.tsx GroupMark). */
-function GroupMark({ C, label }: { C: P; label: string }) {
-  const { scheme } = useTheme();
-  return (
-    <Text
-      accessibilityRole="header"
-      style={{ marginTop: 36, marginHorizontal: 2, fontFamily: serifIf(scheme, F.black), fontSize: 23, letterSpacing: -0.5, lineHeight: 26, color: C.chalk }}
-    >
-      {label}
-    </Text>
-  );
-}
+// GroupMark — the headline-tier cluster marker — moved to its own module
+// (aurora/group-mark.tsx) when the Performance page adopted the same
+// clustering; both hub scrolls now import one component.
 
 // One row of the first-session chooser (#3): a tappable option with a title, a
 // one-line sub, and a Free/Full badge.
