@@ -2,8 +2,8 @@ import { useMemo, useState, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  weeklyVolumeTrend, weeklyMuscleSets, exerciseTable, volumeStatus, volumeAdvice, resolveLandmarks, fmtWeight,
-  type LoggedSession, type ExercisePeriod, type TrendDir, type MuscleGroup, type ExerciseTableRow,
+  weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, kgToUnit,
+  type LoggedSession, type ExercisePeriod, type TrendDir, type ExerciseTableRow,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -14,35 +14,36 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 
-const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.trends.muscleQuads", glutes: "w.analyze.trends.muscleGlutes", posterior: "w.analyze.trends.musclePosterior", back: "w.analyze.trends.muscleBack", chest: "w.analyze.trends.muscleChest", shoulders: "w.analyze.trends.muscleShoulders", triceps: "w.analyze.trends.muscleTriceps" };
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
 
 /** AURORA Trends — analytics hub (weekly volume, muscle breakdown, per-exercise
  *  table) reusing the exact engines. */
-export default function AuroraTrends({ top }: { top?: ReactNode }) {
+export default function AuroraTrends({ top, unified = false }: {
+  top?: ReactNode;
+  /** True when these sections render INSIDE the unified Performance page: no
+   *  AuroraScreen wrapper (the page owns the scroller), title demotes to a
+   *  section head. */
+  unified?: boolean;
+}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const router = useRouter();
   const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [period, setPeriod] = useState<ExercisePeriod>("all");
   const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
-  const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
 
   const load = () => refetch();
   useRefreshOnFocus(refetch);
 
   const prefs = useLoggerPrefs();
-  const iw = prefs.countWarmupsInVolume, units = prefs.units, fr = prefs.fractionalVolume;
-  const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
+  const iw = prefs.countWarmupsInVolume, units = prefs.units;
   const bw = useBodyweightLookup();
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw, bw), [sessions, iw, bw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw, bw), [sessions, period, iw, bw]);
-  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
-  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
-  const trained = muscles.some((m) => m.sets > 0);
-  const focusMuscle = selMuscle ?? advice[0]?.muscle ?? [...muscles].sort((a, b) => b.sets - a.sets)[0]?.muscle ?? "chest";
-  const muscleWeeks = useMemo(() => weeklyMuscleSets(sessions, focusMuscle, 8, Date.now(), iw, fr), [sessions, focusMuscle, iw, fr]);
+  // "Has this athlete lifted at all?" — asked of the weekly series this screen
+  // actually draws, rather than of a second volumeStatus() pass whose only other
+  // job (the muscle breakdown) now lives on the Volume rows.
+  const trained = weeks.some((w) => w.sets > 0) || table.length > 0;
   const sortedTable = useMemo(() => {
     const arr = [...table]; const { k, dir } = sort;
     arr.sort((a, b) => (k === "name" ? dir * a.name.localeCompare(b.name) : dir * ((a[k] as number) - (b[k] as number))));
@@ -52,12 +53,17 @@ export default function AuroraTrends({ top }: { top?: ReactNode }) {
 
   const TREND: Record<TrendDir, { g: string; c: string }> = { up: { g: "▲", c: C.lime }, down: { g: "▼", c: C.amber }, flat: { g: "→", c: C.ash } };
   const maxSets = Math.max(...weeks.map((w) => w.sets), 1);
+  // WEEKLY TONNAGE — the second series web has always drawn and mobile never
+  // did. Folding the screens into one page is the moment to close that gap
+  // rather than ship a Performance page that says less on the phone.
+  const tonnes = weeks.map((w) => (units === "kg" ? w.tonnage : kgToUnit(w.tonnage, "lb")) / 1000);
+  const maxTonnes = Math.max(...tonnes, 0.1);
 
-  return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load} top={top}>
+  const body = (
+    <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        {!top && <ABack />}
-        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>
+        {!top && !unified && <ABack />}
+        <AHeading style={{ fontSize: unified ? fs.heading : fs.display }}>{t("w.analyze.trends.title")}</AHeading>
       </View>
       <ASub style={{ marginTop: 10 }}>{t("w.analyze.trends.subtitle")}</ASub>
 
@@ -78,33 +84,19 @@ export default function AuroraTrends({ top }: { top?: ReactNode }) {
             </View>
           </ACard>
 
+          {/* WEEKLY TONNAGE — the tonnes actually moved, week by week. Web has
+              always drawn this second series; mobile hadn't. */}
           <ACard style={{ marginTop: 14 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.trends.muscleBreakdown")}</Text>
-              <Pressable onPress={() => router.push("/volume")}><Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.analyze.trends.volumeDetail")}</Text></Pressable>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>
+              {t("w.analyze.trends.weeklyTonnage")} – {units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}
+            </Text>
+            <View style={{ flexDirection: "row", alignItems: "flex-end", height: 80, gap: 5, marginTop: 12 }}>
+              {tonnes.map((v, i) => <View key={i} style={{ flex: 1, height: 6 + (v / maxTonnes) * 64, borderRadius: 3, backgroundColor: i === tonnes.length - 1 ? C.blue : `${C.blue}66` }} />)}
             </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 12 }}>
-              {muscles.map((m) => {
-                const c = m.zone === "overreaching" ? C.red : m.zone === "under" ? C.amber : m.zone === "peak" ? C.blue : C.lime;
-                const on = m.muscle === focusMuscle;
-                return (
-                  <Pressable key={m.muscle} onPress={() => setSelMuscle(m.muscle)} style={{ flexDirection: "row", alignItems: "center", gap: space.xs, borderWidth: 1, borderColor: on ? c : `${c}55`, backgroundColor: `${c}${on ? "2e" : "14"}`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 6 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{ml(m.muscle)}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, c) }}>{m.sets}</Text>
-                  </Pressable>
-                );
-              })}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{t("w.analyze.trends.weeksAgo")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{fmtTonnage(weeks[weeks.length - 1]?.tonnage ?? 0, units)}</Text>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 14 }}>{ml(focusMuscle)} {t("w.analyze.trends.weeklySets8w")}</Text>
-            <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
-              {muscleWeeks.map((s, i) => { const mx = Math.max(...muscleWeeks, 1); return <View key={i} style={{ flex: 1, height: 4 + (s / mx) * 48, borderRadius: 3, backgroundColor: i === muscleWeeks.length - 1 ? C.blue : `${C.blue}66` }} />; })}
-            </View>
-            {advice.length > 0 && (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 10, lineHeight: 17 }}>
-                {advice.filter((a) => a.action === "add").length > 0 && `${t("w.analyze.trends.addVolume")} ${advice.filter((a) => a.action === "add").map((a) => ml(a.muscle)).join(", ")}. `}
-                {advice.filter((a) => a.action === "reduce").length > 0 && `${t("w.analyze.trends.easeOff")} ${advice.filter((a) => a.action === "reduce").map((a) => ml(a.muscle)).join(", ")}.`}
-              </Text>
-            )}
           </ACard>
 
           <ACard style={{ marginTop: 14 }}>
@@ -133,6 +125,15 @@ export default function AuroraTrends({ top }: { top?: ReactNode }) {
           </ACard>
         </>
       )}
+    </>
+  );
+
+  // Inside the unified Performance page the host owns the scroller, the safe
+  // area and the pull-to-refresh — wrapping again would nest two ScrollViews.
+  if (unified) return body;
+  return (
+    <AuroraScreen refreshing={refreshing} onRefresh={load} top={top}>
+      {body}
     </AuroraScreen>
   );
 }

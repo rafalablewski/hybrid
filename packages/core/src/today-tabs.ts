@@ -8,9 +8,13 @@
  *  - DASHBOARD — the daily guided loop (today's session, feel, this week). The
  *    screen Today has always been, and the default every visit opens on: it
  *    answers "what do I do today?", which is the reason the tab exists.
- *  - PERFORMANCE — the analytical layer, all of it in one place: the
- *    Performance command centre, Volume, and Trends behind a secondary chip
- *    rail (PERFORMANCE_VIEWS below).
+ *  - PERFORMANCE — the analytical layer, all of it, as ONE page: the command
+ *    centre, this week's volume and the eight-week trend read top to bottom in
+ *    a single scroll (see the `performance-unified` capability). It was briefly
+ *    three sub-views behind a chip rail; that made the athlete hunt for which
+ *    tab held a number, and it duplicated work — Volume and Trends both drew
+ *    the muscle breakdown off volumeStatus() and both printed the same
+ *    add/ease-off advice off volumeAdvice(). One page, each fact once.
  *  - FEED — the social surface. Live today (posts, PR cards, kudos, comments)
  *    and the seat for the wider social product still to come.
  *
@@ -40,21 +44,3 @@ export const TODAY_TABS: ReadonlyArray<{ id: TodayTabId; labelKey: string; glyph
  *  Anything we don't recognise falls back to the daily loop — Today's job. */
 export const normalizeTodayTab = (v: unknown): TodayTabId =>
   TODAY_TABS.some((x) => x.id === v) ? (v as TodayTabId) : "dashboard";
-
-/**
- * The Performance tab's own three views. A SECONDARY switcher (the small mono
- * chip rail History already uses), never a second row of the big pills: the
- * hierarchy has to stay readable — three tabs up top, three chips inside one of
- * them. Each view is the existing full screen, rendered in place, so nothing
- * about Performance / Volume / Trends is re-implemented or forked here.
- */
-export type PerformanceViewId = "performance" | "volume" | "trends";
-
-export const PERFORMANCE_VIEWS: ReadonlyArray<{ id: PerformanceViewId; labelKey: string }> = [
-  { id: "performance", labelKey: "nav.performance" },
-  { id: "volume", labelKey: "nav.volume" },
-  { id: "trends", labelKey: "nav.trends" },
-];
-
-export const normalizePerformanceView = (v: unknown): PerformanceViewId =>
-  PERFORMANCE_VIEWS.some((x) => x.id === v) ? (v as PerformanceViewId) : "performance";

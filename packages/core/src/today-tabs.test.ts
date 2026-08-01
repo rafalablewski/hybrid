@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  PERFORMANCE_VIEWS,
-  TODAY_TABS,
-  normalizePerformanceView,
-  normalizeTodayTab,
-} from "./today-tabs";
+import { TODAY_TABS, normalizeTodayTab } from "./today-tabs";
 import { HUB_GLYPHS } from "./theme/icons";
 import { baselineString } from "./i18n";
 
@@ -39,21 +34,5 @@ describe("TODAY_TABS", () => {
 
   it("uses a distinct glyph per tab", () => {
     expect(new Set(TODAY_TABS.map((x) => x.glyph)).size).toBe(TODAY_TABS.length);
-  });
-});
-
-describe("PERFORMANCE_VIEWS", () => {
-  it("carries the three analytical screens the tab folds in", () => {
-    expect(PERFORMANCE_VIEWS.map((x) => x.id)).toEqual(["performance", "volume", "trends"]);
-  });
-
-  it("falls back to the command centre", () => {
-    expect(normalizePerformanceView("volume")).toBe("volume");
-    expect(normalizePerformanceView("statistics")).toBe("performance");
-    expect(normalizePerformanceView(null)).toBe("performance");
-  });
-
-  it("labels every view with a real translation key", () => {
-    for (const v of PERFORMANCE_VIEWS) expect(baselineString("en", v.labelKey)).toBeTruthy();
   });
 });

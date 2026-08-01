@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
-  fs, space, volumeStatus, athleteLandmarks,
+  fs, space, volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
@@ -51,7 +51,14 @@ const sectionTitle: CSSProperties = { fontFamily: "var(--font-heading)", fontWei
  * athlete's own edits, and hands back the provenance so this screen never
  * presents a population average as a personal fact.
  */
-export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }) {
+export default function AuroraVolume({ sessions, unified = false }: {
+  sessions: LoggedSession[];
+  /** True when these sections render INSIDE the unified Performance page
+   *  (aurora/performance.tsx) rather than as their own screen: the page title
+   *  demotes to a section head, since the page already has one masthead. Every
+   *  section, control and number is otherwise identical. */
+  unified?: boolean;
+}) {
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const prefs = useLoggerPrefs();
@@ -173,6 +180,16 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
   );
   const summary = useMemo(() => volumeSummary(rows), [rows]);
   const ranked = useMemo(() => sortByUrgency(rows), [rows]);
+  // EIGHT-WEEK HISTORY, per muscle. This is the chart Trends used to hang off a
+  // second set of muscle chips — the same weeklyMuscleSets() engine, over the
+  // same muscles, drawn twice on two screens. It belongs on the row that names
+  // the muscle: "18 sets" and "and it has been climbing for a month" are one
+  // thought, and the athlete no longer picks a muscle in two places.
+  const history = useMemo(() => {
+    const out = {} as Record<MuscleGroup, number[]>;
+    for (const r of rows) out[r.muscle] = weeklyMuscleSets(sessions, r.muscle, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
+    return out;
+  }, [rows, sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
 
   const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState<MuscleGroup | null>(null);
@@ -214,7 +231,11 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
     <div style={{ display: "flex", flexDirection: "column", gap: space.md, maxWidth: "100%", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: space.md }}>
         <div>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-0.02em" }}>{t("w.analyze.vol.title")}</h1>
+          {unified ? (
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, margin: 0, letterSpacing: "-0.02em" }}>{t("w.analyze.vol.title")}</h2>
+          ) : (
+            <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-0.02em" }}>{t("w.analyze.vol.title")}</h1>
+          )}
           <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 6, marginBottom: 0 }}>{t("w.analyze.vol.subtitle")}</p>
         </div>
         <button
@@ -295,7 +316,7 @@ export default function AuroraVolume({ sessions }: { sessions: LoggedSession[] }
             {ranked.map((r) => (
               <MuscleRow
                 key={r.muscle} s={r} label={ml(r.muscle)} token={ZONE_TOKEN[r.zone]}
-                target={targetFor(r.muscle)}
+                target={targetFor(r.muscle)} history={history[r.muscle] ?? []}
                 expanded={editing || open === r.muscle} editing={editing}
                 zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
                 onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
@@ -709,10 +730,12 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
 
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
-function MuscleRow({ s, label, token, target, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
+function MuscleRow({ s, label, token, target, history, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
   s: MuscleVolumeStatus; label: string; token: string; expanded: boolean; editing: boolean;
   /** This week's block target, when volume is being periodized. */
   target: BlockMuscleTarget | null;
+  /** Weekly hard sets for THIS muscle over the last eight weeks, oldest first. */
+  history: number[];
   /** The band spotlighted across the whole list, if any. */
   zone: VolumeBandKey | null;
   /** True on the row whose scale was clicked — it carries the definition. */
@@ -796,7 +819,8 @@ function MuscleRow({ s, label, token, target, expanded, editing, zone, showGloss
           fields, since all five are editable. */}
       {expanded && !editing && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ ...mono(fs.caption), color: C("ash") }}>MV {s.landmark.mv}</div>
+          <MuscleHistory sets={history} token={token} />
+          <div style={{ ...mono(fs.caption), color: C("ash"), marginTop: 12 }}>MV {s.landmark.mv}</div>
           {target && verdict && (
             <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: verdict === "on" ? C("lime") : C("ash") }}>
               {t("w.analyze.vol.weekTarget")} {target.target} {t("w.analyze.vol.sets")}
@@ -821,6 +845,30 @@ function MuscleRow({ s, label, token, target, expanded, editing, zone, showGloss
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Eight weeks of this muscle's hard sets, oldest to newest — the last column
+ *  lit, since "this week" is the number stated above the rail. Silent when the
+ *  muscle has never been trained: an empty row of stubs would state a history
+ *  that doesn't exist. */
+function MuscleHistory({ sets, token }: { sets: number[]; token: string }) {
+  const { t } = useLang();
+  if (sets.length === 0 || sets.every((n) => n === 0)) return null;
+  const max = Math.max(...sets, 1);
+  return (
+    <div>
+      <div style={{ ...mono(9), letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), marginBottom: 6 }}>{t("w.analyze.trends.weeklySets8w")}</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 44, maxWidth: 420 }}>
+        {sets.map((n, i) => (
+          <div
+            key={i}
+            title={`${n}`}
+            style={{ flex: 1, height: `${Math.max(8, (n / max) * 100)}%`, borderRadius: 3, background: C(token), opacity: i === sets.length - 1 ? 0.95 : 0.34 }}
+          />
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,10 +1,9 @@
 "use client";
 
-import { fs, HUB_GLYPHS, PERFORMANCE_VIEWS, TODAY_TABS, type HubGlyphName, type PerformanceViewId, type TodayTabId } from "@hybrid/core";
+import { HUB_GLYPHS, TODAY_TABS, type HubGlyphName, type TodayTabId } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
-const MONO = "var(--font-mono)";
 
 /** One Today-hub mark. Same 72×72 stroke box and weight as AuroraIcon, so the
  *  pills sit in the app's one monoline icon voice. Decorative here — the button
@@ -20,27 +19,23 @@ function HubGlyph({ name, size = 21, strokeWidth = 3.5 }: { name: HubGlyphName; 
 }
 
 /**
- * TODAY HUB switchers (web) — the pill row that turns Today into a hub, plus
- * the Performance tab's own secondary chip rail. Registry (ids, order, labels)
- * is shared with mobile via @hybrid/core today-tabs.ts; mirrored on mobile
- * (apps/mobile/components/aurora/today-tabs.tsx).
+ * TODAY HUB switcher (web) — the pill row that turns Today into a hub.
+ * Registry (ids, order, labels, glyphs) is shared with mobile via @hybrid/core
+ * today-tabs.ts; mirrored on mobile (apps/mobile/components/aurora/today-tabs.tsx).
  *
- * TWO LEVELS, TWO TREATMENTS — deliberately not the same control twice:
- *  - TodayTabs is a PRIMARY segmented control: three equal full-width segments
- *    in one capsule, the active one filled chartreuse. It sits directly under
- *    the profile header, above the calendar, and it is the first thing on the
- *    screen after the brand — so it has to read as "where am I", loudly. Each
- *    segment carries a GLYPH, never its word: "Dashboard", "Performance" and
- *    "Feed" are three very different lengths, and three unequal words in three
- *    equal segments read as a control that is out of alignment with itself.
- *    Marks of matched weight centre in their thirds and stay centred in every
- *    language. The word is still the button's accessible name and its tooltip.
- *  - PerformanceViews is the SECONDARY chip rail already established by
- *    History's view switcher: small mono chips, hugging their labels, full
- *    bleed to the screen edge. These three words are close in length and the
- *    chips size to their content, so text is right here — and it keeps the two
- *    levels telling apart at a glance. A second row of big pills would flatten
- *    the hierarchy and leave the athlete unsure which row nests inside which.
+ * ONE control, not two. It is a PRIMARY segmented control: three equal
+ * full-width segments in one capsule, the active one filled chartreuse. It sits
+ * directly under the profile header, above the calendar, and it is the first
+ * thing on the screen after the brand — so it has to read as "where am I",
+ * loudly. Each segment carries a GLYPH, never its word: "Dashboard",
+ * "Performance" and "Feed" are three very different lengths, and three unequal
+ * words in three equal segments read as a control that is out of alignment with
+ * itself. Marks of matched weight centre in their thirds and stay centred in
+ * every language. The word is still the button's accessible name and tooltip.
+ *
+ * There is no second row. The Performance tab briefly had its own chip rail for
+ * Performance / Volume / Trends; those three are now ONE page, so the rail had
+ * nothing left to switch between.
  */
 export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (id: TodayTabId) => void }) {
   const { t } = useLang();
@@ -75,30 +70,6 @@ export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (i
             }}
           >
             <HubGlyph name={tab.glyph} />
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/** The Performance tab's three views (Performance / Volume / Trends) — the
- *  History switcher's chip idiom, full-bleed so the rail clips at the true
- *  screen edge and rests on the content column. */
-export function PerformanceViews({ value, onChange }: { value: PerformanceViewId; onChange: (id: PerformanceViewId) => void }) {
-  const { t } = useLang();
-  return (
-    <div style={{ display: "flex", gap: 7, overflowX: "auto", scrollbarWidth: "none", margin: "12px calc(-1 * var(--page-pad-x, 16px)) 0", padding: "0 var(--page-pad-x, 16px) 4px" }}>
-      {PERFORMANCE_VIEWS.map((v) => {
-        const on = v.id === value;
-        return (
-          <button
-            key={v.id}
-            onClick={() => onChange(v.id)}
-            aria-pressed={on}
-            style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 14px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
-          >
-            {t(v.labelKey)}
           </button>
         );
       })}

@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
-  weeklyVolumeTrend, weeklyMuscleSets, exerciseTable, volumeStatus, volumeAdvice, resolveLandmarks, fmtWeight, fmtTonnage, kgToUnit,
-  type LoggedSession, type ExercisePeriod, type TrendDir, type MuscleGroup, type ExerciseTableRow,
+  weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, kgToUnit,
+  type LoggedSession, type ExercisePeriod, type TrendDir, type ExerciseTableRow,
 } from "@hybrid/core";
 import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, BLUE, tip, mono } from "@/lib/ui";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
@@ -14,39 +14,48 @@ import { useLang } from "@/lib/i18n";
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const C = (v: string) => `var(--color-${v})`;
 const TREND_GLYPH: Record<TrendDir, { g: string; c: string }> = { up: { g: "▲", c: "lime" }, down: { g: "▼", c: "amber" }, flat: { g: "→", c: "ash" } };
-const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.trends.muscleQuads", glutes: "w.analyze.trends.muscleGlutes", posterior: "w.analyze.trends.musclePosterior", back: "w.analyze.trends.muscleBack", chest: "w.analyze.trends.muscleChest", shoulders: "w.analyze.trends.muscleShoulders", triceps: "w.analyze.trends.muscleTriceps" };
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
 /** AURORA Trends (web) — full bespoke analytics hub reusing the exact engines +
  *  recharts volume/tonnage/muscle bars. */
-export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }: { sessions: LoggedSession[]; onOpenExercise?: (name: string) => void; onOpenVolume?: () => void }) {
+/** The screen's own title — an <h1> on its own route, demoted to a section head
+ *  when these sections render inside the unified Performance page (which
+ *  already carries the page's one masthead). */
+function Head({ unified, t }: { unified: boolean; t: (k: string) => string }) {
+  return unified
+    ? <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, letterSpacing: "-.02em", margin: 0 }}>{t("w.analyze.trends.title")}</h2>
+    : <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.trends.title")}</h1>;
+}
+
+export default function AuroraTrends({ sessions, onOpenExercise, unified = false }: {
+  sessions: LoggedSession[];
+  onOpenExercise?: (name: string) => void;
+  /** True when these sections render INSIDE the unified Performance page: the
+   *  page title demotes to a section head. */
+  unified?: boolean;
+}) {
   const { t } = useLang();
-  const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const [period, setPeriod] = useState<ExercisePeriod>("all");
   const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
-  const [selMuscle, setSelMuscle] = useState<MuscleGroup | null>(null);
   const prefs = useLoggerPrefs();
-  const iw = prefs.countWarmupsInVolume, units = prefs.units, fr = prefs.fractionalVolume;
-  const lm = useMemo(() => resolveLandmarks(prefs.landmarkOverrides), [prefs.landmarkOverrides]);
+  const iw = prefs.countWarmupsInVolume, units = prefs.units;
   const bw = useBodyweightLookup();
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw, bw), [sessions, iw, bw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw, bw), [sessions, period, iw, bw]);
-  const advice = useMemo(() => volumeAdvice(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
-  const muscles = useMemo(() => volumeStatus(sessions, { includeWarmups: iw, fractional: fr, landmarks: lm }), [sessions, iw, fr, lm]);
-  const trained = muscles.some((m) => m.sets > 0);
-  const focusMuscle = selMuscle ?? advice[0]?.muscle ?? [...muscles].sort((a, b) => b.sets - a.sets)[0]?.muscle ?? "chest";
-  const muscleWeeks = useMemo(() => weeklyMuscleSets(sessions, focusMuscle, 8, Date.now(), iw, fr), [sessions, focusMuscle, iw, fr]);
+  // "Has this athlete lifted at all?" — asked of the weekly series this screen
+  // actually draws, rather than of a second volumeStatus() pass whose only other
+  // job (the muscle breakdown) now lives on the Volume rows.
+  const trained = weeks.some((w) => w.sets > 0) || table.length > 0;
   const sortedTable = useMemo(() => { const arr = [...table]; const { k, dir } = sort; arr.sort((a, b) => (k === "name" ? dir * a.name.localeCompare(b.name) : dir * ((a[k] as number) - (b[k] as number)))); return arr; }, [table, sort]);
   const sortBy = (k: keyof ExerciseTableRow) => setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "name" ? 1 : -1 }));
   const weekData = weeks.map((w) => ({ w: fmtWeek(w.weekStart), sets: w.sets, t: Number(((units === "kg" ? w.tonnage : kgToUnit(w.tonnage, "lb")) / 1000).toFixed(1)) }));
-  const muscleZone = (z: string) => (z === "overreaching" ? "red" : z === "under" ? "amber" : z === "peak" ? "blue" : "lime");
   const frameHead = (color: string, kicker: string) => <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color), marginBottom: 10 }}>{kicker}</div>;
 
   if (!trained) {
     return (
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.trends.title")}</h1>
+        <Head unified={unified} t={t} />
         <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.analyze.trends.empty")}</span></div>
       </div>
     );
@@ -54,7 +63,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.trends.title")}</h1>
+      <Head unified={unified} t={t} />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: space.lg }}>
         <div style={card}>{frameHead("lime", t("w.analyze.trends.weeklySets"))}
@@ -63,31 +72,6 @@ export default function AuroraTrends({ sessions, onOpenExercise, onOpenVolume }:
         <div style={card}>{frameHead("blue", `${t("w.analyze.trends.weeklyTonnage")} – ${units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}`)}
           <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${units === "kg" ? "t" : "k lb"}`} /><Bar dataKey="t" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
         </div>
-      </div>
-
-      <div style={card}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.trends.muscleBreakdown")}</span>
-          {onOpenVolume && <button onClick={onOpenVolume} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), background: "none", border: "none", cursor: "pointer" }}>{t("w.analyze.trends.volumeDetail")}</button>}
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 12 }}>
-          {muscles.map((m) => { const c = C(muscleZone(m.zone)); const on = m.muscle === focusMuscle; return (
-            <button key={m.muscle} onClick={() => setSelMuscle(m.muscle)} style={{ display: "flex", alignItems: "center", gap: space.xs, border: `1px solid ${on ? c : `color-mix(in srgb, ${c} 40%, transparent)`}`, background: `color-mix(in srgb, ${c} ${on ? 18 : 8}%, transparent)`, borderRadius: 999, padding: "6px 12px", cursor: "pointer" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk") }}>{ml(m.muscle)}</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 800, color: c }}>{m.sets}</span>
-            </button>
-          ); })}
-        </div>
-        <div style={{ marginTop: 14 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4, color: C("ash") }}>{ml(focusMuscle)} {t("w.analyze.trends.weeklySets8w")}</div>
-          <ResponsiveContainer width="100%" height={120}><BarChart data={muscleWeeks.map((s, i) => ({ w: fmtWeek(weeks[i]?.weekStart ?? ""), sets: s }))}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.nano }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.nano }} width={26} allowDecimals={false} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${t("w.analyze.vol.sets")}`} /><Bar dataKey="sets" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
-        </div>
-        {advice.length > 0 && (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 10 }}>
-            {advice.filter((a) => a.action === "add").length > 0 && `${t("w.analyze.trends.addVolume")} ${advice.filter((a) => a.action === "add").map((a) => ml(a.muscle)).join(", ")}. `}
-            {advice.filter((a) => a.action === "reduce").length > 0 && `${t("w.analyze.trends.easeOff")} ${advice.filter((a) => a.action === "reduce").map((a) => ml(a.muscle)).join(", ")}.`}
-          </div>
-        )}
       </div>
 
       <div style={card}>

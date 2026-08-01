@@ -20,6 +20,8 @@ import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F, serifIf } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark, withAlpha } from "./kit";
+import AuroraVolume from "./volume";
+import AuroraTrends from "./trends";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
@@ -439,7 +441,23 @@ function Full({ top }: { top?: ReactNode }) {
       {/* 6 · BREAKDOWN — disciplines, tabbed */}
       {hasData && <Breakdown C={C} scheme={scheme} state={state} recap={recap} totals={totals} sport={sport} profiles={profiles} onOpen={(h) => router.push(h)} />}
 
-      {/* 7 · HORIZON — Sport S&C · Velocity · Endurance · AI Coach */}
+      {/* 7 · VOLUME — this week's hard sets against the athlete's own
+          MEV/MAV/MRV: the hero shape, the block ramp, the week's prescription,
+          the per-muscle rails (each carrying its own eight-week history),
+          whose numbers these are, and the band glossary. Was its own screen
+          until the Performance page absorbed it; nothing was dropped on the way
+          over except the SECOND copy of the muscle breakdown, which Trends used
+          to draw off the same volumeStatus(). See `performance-unified`. */}
+      <View style={{ marginTop: 22 }}><AuroraVolume unified /></View>
+
+      {/* 8 · TREND — the eight-week series (weekly sets, weekly tonnage) and the
+          sortable exercise-analytics table. Its muscle-breakdown card and its
+          add/ease-off advice line are gone: both were the same engines
+          (volumeStatus / volumeAdvice) the Volume sections above already state,
+          in more detail and with the landmarks attached. */}
+      <View style={{ marginTop: 22 }}><AuroraTrends unified /></View>
+
+      {/* 9 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
       <ACard style={{ marginTop: 14 }}>
         <SHead C={C} scheme={scheme} title={t("w.home.cockpit.horizon")} />
         <Mod C={C} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/sport")} />

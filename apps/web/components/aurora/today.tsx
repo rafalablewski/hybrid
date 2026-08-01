@@ -53,7 +53,6 @@ import { fs, space,
   READINESS_FACE,
   logbookWeek,
   todayDoneState,
-  type PerformanceViewId,
   type TodayTabId,
   type ReadinessFeeling,
   type SemanticRole,
@@ -92,15 +91,13 @@ import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
-import { PerformanceViews, TodayTabs } from "./today-tabs";
+import { TodayTabs } from "./today-tabs";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
 const AuroraCheckins = dynamic(() => import("./checkins"), { ssr: false });
 // THE HUB's other two tabs. Lazy for the same reason: an athlete who only ever
 // opens the daily loop should never pay for recharts or the social feed.
 const AuroraPerformance = dynamic(() => import("./performance"), { ssr: false });
-const AuroraVolume = dynamic(() => import("./volume"), { ssr: false });
-const AuroraTrends = dynamic(() => import("./trends"), { ssr: false });
 const SocialFeed = dynamic(() => import("../social-feed"), { ssr: false });
 
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
@@ -187,11 +184,8 @@ export default function AuroraToday({
   // THE HUB — which of Today's three top-level views is showing (see
   // @hybrid/core today-tabs.ts). Deliberately NOT persisted: Today is the app's
   // home and its job is "what do I do today?", so every visit opens on the
-  // daily loop rather than wherever the athlete last wandered. The Performance
-  // tab's own sub-view IS remembered for the session, so switching away and
-  // back doesn't throw away the chip they picked.
+  // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
-  const [perfView, setPerfView] = useState<PerformanceViewId>("performance");
   const selectTab = useCallback((id: TodayTabId) => { setTab(id); track("today_tab", { tab: id }); }, []);
 
   const [intake, setIntake] = useState<Intake>({});
@@ -595,28 +589,25 @@ export default function AuroraToday({
   // every hook above has already run (order is stable), and the dashboard body
   // below stays exactly as it was.
   if (tab === "performance") {
+    // ONE page — the command centre, this week's volume and the eight-week
+    // trend in a single scroll. AuroraPerformance owns that composition, so
+    // there is nothing to switch between here.
     return (
       <div style={shell}>
         {hubHeader}
-        <PerformanceViews value={perfView} onChange={setPerfView} />
         <div style={{ marginTop: 16 }}>
-          {perfView === "performance" && (
-            <AuroraPerformance
-              sessions={sessions}
-              bio={bio}
-              macro={macro}
-              currentWeek={currentWeek}
-              sessionsReady={sessionsReady}
-              macroReady={macroReady}
-              macroSettled={macroSettled}
-              setScreen={(s) => (onNavigate ? onNavigate(s) : router.push(`/${s}`))}
-              onEnrolled={() => { onEnrolled?.(); setTab("dashboard"); }}
-            />
-          )}
-          {perfView === "volume" && <AuroraVolume sessions={sessions} />}
-          {perfView === "trends" && (
-            <AuroraTrends sessions={sessions} onOpenExercise={onOpenExercise} onOpenVolume={() => setPerfView("volume")} />
-          )}
+          <AuroraPerformance
+            sessions={sessions}
+            bio={bio}
+            macro={macro}
+            currentWeek={currentWeek}
+            sessionsReady={sessionsReady}
+            macroReady={macroReady}
+            macroSettled={macroSettled}
+            setScreen={(s) => (onNavigate ? onNavigate(s) : router.push(`/${s}`))}
+            onOpenExercise={onOpenExercise}
+            onEnrolled={() => { onEnrolled?.(); setTab("dashboard"); }}
+          />
         </div>
       </div>
     );

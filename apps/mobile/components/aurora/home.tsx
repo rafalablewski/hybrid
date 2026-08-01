@@ -50,7 +50,6 @@ import {
   type ReadinessFeeling,
   logbookWeek,
   todayDoneState,
-  type PerformanceViewId,
   type TodayTabId,
   sessionsOnDay,
   sessionShape,
@@ -103,13 +102,11 @@ import AuroraCheckin from "./checkin";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
 import AuroraTodayRail, { type TodayRailBottoms } from "./today-rail";
-import { PerformanceViews, TodayTabs } from "./today-tabs";
+import { TodayTabs } from "./today-tabs";
 // THE HUB's other two tabs — the same full screens their own routes render,
 // handed Today's header + pills through the `top` slot so the chrome above
 // them never changes as the athlete switches tab.
 import AuroraPerformance from "./performance";
-import AuroraVolume from "./volume";
-import AuroraTrends from "./trends";
 import FeedView from "../feed-view";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
 
@@ -169,11 +166,8 @@ export default function AuroraHome() {
   // THE HUB — which of Today's three top-level views is showing (see
   // @hybrid/core today-tabs.ts). Deliberately NOT persisted: Today is the app's
   // home and its job is "what do I do today?", so every visit opens on the
-  // daily loop rather than wherever the athlete last wandered. The Performance
-  // tab's own sub-view IS remembered for the session, so switching away and
-  // back doesn't throw away the chip they picked.
+  // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
-  const [perfView, setPerfView] = useState<PerformanceViewId>("performance");
   const selectTab = useCallback((id: TodayTabId) => { setTab(id); track("today_tab", { tab: id }); }, []);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
@@ -666,17 +660,10 @@ export default function AuroraHome() {
   // safe area — nesting them inside Today's own ScrollView would have doubled
   // both. Early-return rather than wrapping the daily loop in a conditional:
   // every hook above has already run, and the dashboard body stays untouched.
-  if (tab === "performance") {
-    const perfTop = (
-      <>
-        {hubHeader}
-        <PerformanceViews value={perfView} onChange={setPerfView} />
-      </>
-    );
-    if (perfView === "volume") return <AuroraVolume top={perfTop} />;
-    if (perfView === "trends") return <AuroraTrends top={perfTop} />;
-    return <AuroraPerformance top={perfTop} />;
-  }
+  // ONE page — the command centre, this week's volume and the eight-week trend
+  // in a single scroll. AuroraPerformance owns that composition, so there is
+  // nothing to switch between here.
+  if (tab === "performance") return <AuroraPerformance top={hubHeader} />;
 
   if (tab === "feed") return <FeedView top={hubHeader} />;
 
