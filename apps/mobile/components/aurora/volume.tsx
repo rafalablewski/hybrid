@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -48,7 +48,7 @@ const pct = (v: number): DimensionValue => `${v * 100}%` as DimensionValue;
  * own edits, and hands back the provenance so this screen never presents a
  * population average as a personal fact.
  */
-export default function AuroraVolume() {
+export default function AuroraVolume({ top }: { top?: ReactNode }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
@@ -239,9 +239,9 @@ export default function AuroraVolume() {
   })();
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={refetch}>
+    <AuroraScreen refreshing={refreshing} onRefresh={refetch} top={top}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
+        {!top && <ABack />}
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
         <Pressable
           onPress={toggleEditing}

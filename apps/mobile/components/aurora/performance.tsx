@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -39,17 +39,17 @@ const acwrColor = (b: AcwrBand, C: Palette): string =>
  *  columns, readiness + nudge) → the 14-day trajectory → injury risk (summary
  *  card with the per-tissue probability table as a disclosure) → this week →
  *  breakdown → horizon → goal + season → return-to-play. */
-export default function AuroraPerformance() {
+export default function AuroraPerformance({ top }: { top?: ReactNode }) {
   const persona = usePersona();
   const { entitlement } = useSession();
   const router = useRouter();
   if (persona === "casual") {
-    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : router.push("/upgrade"))} />;
+    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : router.push("/upgrade"))} top={top} />;
   }
-  return <Full />;
+  return <Full top={top} />;
 }
 
-function Full() {
+function Full({ top }: { top?: ReactNode }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
@@ -155,14 +155,14 @@ function Full() {
   const maxBar = 96;
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} top={top}>
       {/* 1 · CONTEXT RAIL — a LIVING MASTHEAD in Today's idiom (mono season
           caption, one oversized editorial headline, a warm sub) + sliding pills.
           Deliberately the same masthead anatomy as the home tab so the two
           screens read as siblings: Today answers "what do I do?", this page
           answers "how am I doing?". */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
+        {!top && <ABack />}
         <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
           {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : " "}
         </Text>
@@ -811,13 +811,13 @@ const TEASE: { key: string }[] = [
   { key: "sportSC" }, { key: "velocity" }, { key: "endurance" },
 ];
 
-function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
+function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; top?: ReactNode }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <AuroraScreen>
+    <AuroraScreen top={top}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
+        {!top && <ABack />}
         <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>
       </View>
       <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -19,7 +19,7 @@ const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.anal
 
 /** AURORA Trends — analytics hub (weekly volume, muscle breakdown, per-exercise
  *  table) reusing the exact engines. */
-export default function AuroraTrends() {
+export default function AuroraTrends({ top }: { top?: ReactNode }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
@@ -54,9 +54,9 @@ export default function AuroraTrends() {
   const maxSets = Math.max(...weeks.map((w) => w.sets), 1);
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} top={top}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
+        {!top && <ABack />}
         <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>
       </View>
       <ASub style={{ marginTop: 10 }}>{t("w.analyze.trends.subtitle")}</ASub>

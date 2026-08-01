@@ -805,7 +805,7 @@ export default function AppShell() {
         {screen === "aicoach" && <AuroraAskCoach />}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
         )}
 
         {screen === "profile" && (
