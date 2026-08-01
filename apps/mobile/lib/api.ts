@@ -863,6 +863,19 @@ export async function updateAssignment(id: string, status: "completed" | "skippe
   }
 }
 
+// The Program Efficacy Index — the same PUBLIC k-anonymous dataset behind the
+// web's /programs page (no auth: it contains no per-user data by construction).
+export async function fetchEfficacyCard(planId: string): Promise<import("@hybrid/core").ProgramEfficacy | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/efficacy`);
+    if (!res.ok) return null;
+    const j = (await res.json()) as { rows?: { planId: string; card: import("@hybrid/core").ProgramEfficacy | null }[] };
+    return j.rows?.find((r) => r.planId === planId)?.card ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function enrollPlan(goal: string, planId?: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/macrocycles`, {

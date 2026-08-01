@@ -35,6 +35,7 @@ import {
   type LiftKind,
 } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
+import MeasuredOutcome from "./measured-outcome";
 import { useRevalidate } from "../lib/queries";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
@@ -184,6 +185,8 @@ export default function PercentProgram({
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{view.progression}</Text>
       </View>
+
+      <MeasuredOutcome planId={plan.id} />
 
       {state === "error" && (
         <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 4 }}>

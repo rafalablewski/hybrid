@@ -12,6 +12,7 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { ACard, AField, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
+import MeasuredOutcome from "../measured-outcome";
 import PlanCoverScreen, { CoverScreen, PlanDockPill, type CoverScreenApi } from "../plan-hero";
 
 /** Cover ink — the goal tiles are dark in BOTH themes, exactly like the covers
@@ -378,6 +379,7 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
         ))}
 
         <Field label={t("w.train.plans.progression")} value={d.progression} />
+        <MeasuredOutcome planId={plan.id} />
 
         {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>{t("plans.enrollError")}</Text>}
         {leaveSection}
