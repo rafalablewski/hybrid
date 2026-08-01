@@ -32,6 +32,7 @@ import { fs, space,
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { WorkoutWrapped } from "@/components/aurora/workout-wrapped";
 import { SessionEditSheet } from "@/components/session-edit";
+import PrAttestationPanel from "@/components/pr-attestation";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useIsMobile } from "@/lib/use-media-query";
 import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
@@ -157,6 +158,18 @@ export function SessionDetail({
             ))}
           </div>
         </Card>
+      )}
+
+      {/* The Verified Strength Record's read on this session's PRs — tier
+          badges + the ask-a-witness flow (owner only). See core/attestation.ts. */}
+      {prs.length > 0 && (
+        <PrAttestationPanel
+          sessionId={session.id}
+          lifts={prs.map((p) => ({ lift: p.lift, topLoad: p.topLoad }))}
+          hasDevice={!!session.device}
+          canRequest={!!(onDelete || onEdited)}
+          units={units}
+        />
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: !isMobile && series.length > 1 ? "repeat(2, 1fr)" : "1fr", gap: space.lg }}>

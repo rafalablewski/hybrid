@@ -888,6 +888,52 @@ create policy review_read on "CoachReview" for select using (true);
 
 
 -- ===========================================================================
+-- SECTION 4b — Verified Strength Record (RecordAttestation)
+-- Source: sql-verified-record.sql (verbatim). Appended after the Jul 2026 run,
+-- NOT YET APPLIED — re-running the whole bundle adds only this (and the other
+-- not-yet-run appendices), everything above is a no-op.
+--
+-- Depends on public.app_user_id() from section 2. Until this exists the
+-- /api/records/attest routes soft-degrade and PR badges read Claimed/Sensed.
+-- ===========================================================================
+
+create table if not exists "RecordAttestation" (
+  "id"          text primary key default gen_random_uuid()::text,
+  "ownerId"     text not null references "User"("id") on delete cascade,
+  "witnessId"   text not null references "User"("id") on delete cascade,
+  "sessionId"   text not null,
+  "lift"        text not null,
+  "e1rm"        double precision,
+  "topLoad"     double precision,
+  "status"      text not null default 'pending', -- pending | cosigned | declined
+  "createdAt"   timestamp(3) not null default now(),
+  "respondedAt" timestamp(3),
+  unique ("sessionId", "lift", "witnessId")
+);
+create index if not exists "RecordAttestation_witnessId_status_idx" on "RecordAttestation" ("witnessId", "status");
+create index if not exists "RecordAttestation_ownerId_createdAt_idx" on "RecordAttestation" ("ownerId", "createdAt");
+create index if not exists "RecordAttestation_sessionId_idx" on "RecordAttestation" ("sessionId");
+
+alter table "RecordAttestation" enable row level security;
+
+drop policy if exists recordattestation_party_read on "RecordAttestation";
+create policy recordattestation_party_read on "RecordAttestation" for select
+  using ("ownerId" = public.app_user_id() or "witnessId" = public.app_user_id());
+
+drop policy if exists recordattestation_owner_write on "RecordAttestation";
+create policy recordattestation_owner_write on "RecordAttestation" for insert
+  with check ("ownerId" = public.app_user_id());
+drop policy if exists recordattestation_owner_delete on "RecordAttestation";
+create policy recordattestation_owner_delete on "RecordAttestation" for delete
+  using ("ownerId" = public.app_user_id() and "status" = 'pending');
+
+drop policy if exists recordattestation_witness_update on "RecordAttestation";
+create policy recordattestation_witness_update on "RecordAttestation" for update
+  using ("witnessId" = public.app_user_id())
+  with check ("witnessId" = public.app_user_id());
+
+
+-- ===========================================================================
 -- SECTION 5 / 6 — RE-APPLY THE ANON REVOKE (belt and braces)
 --
 -- Section 2 ends with a blanket revoke of PostgREST anon access to every table

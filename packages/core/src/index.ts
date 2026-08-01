@@ -31,6 +31,7 @@ export * from "./plan-program";
 export * from "./plan-programs";
 export * from "./plan-schedule";
 export * from "./program-efficacy";
+export * from "./attestation";
 export * from "./logbook-week";
 export * from "./today-rail";
 export * from "./today-tabs";

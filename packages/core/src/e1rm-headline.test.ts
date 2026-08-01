@@ -54,6 +54,11 @@ const REVIEWED: Record<string, string> = {
   // rows written before #231 — see the migration tests in social.test.ts.
   "apps/web/app/api/social/posts/route.ts":
     "writes topLoad as the headline; e1rm retained as the labelled estimate",
+  // The attestation snapshot stores BOTH figures: topLoad is what the witness
+  // is shown ("their Back Squat at 180 kg"); e1rm rides along as the labelled
+  // estimate so the record row is complete. See core/attestation.ts.
+  "apps/web/app/api/records/attest/route.ts":
+    "snapshots topLoad as the witnessed headline; e1rm stored as the labelled estimate",
 };
 
 const HERE = dirname(fileURLToPath(import.meta.url));

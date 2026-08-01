@@ -108,6 +108,8 @@ model User {
   followers        Follow[]            @relation("followee") // people who follow me
   kudosGiven       Kudos[]             @relation("kudosGiver")
   kudosReceived    Kudos[]             @relation("kudosOwner")
+  attestationsOwned     RecordAttestation[] @relation("attestationOwner")
+  attestationsWitnessed RecordAttestation[] @relation("attestationWitness")
   commentsAuthored Comment[]           @relation("commentAuthor")
   commentsReceived Comment[]           @relation("commentOwner")
   blocksMade       Block[]             @relation("blocker")
@@ -271,6 +273,33 @@ model Comment {
 
   @@index([ownerId, subjectType, subjectId])
   @@index([userId])
+}
+
+// The Verified Strength Record's tier-2 evidence: one witness request / co-sign
+// on ONE lift in ONE session. Anchored like Kudos — (sessionId, lift) is the
+// subject — with the claim SNAPSHOTTED at request time (e1rm/topLoad in kg), so
+// what the witness signed can never drift under them if the session is edited.
+// Append-only by convention: the snapshot never changes; status moves once,
+// pending → cosigned | declined, stamped with respondedAt. Tier grading lives
+// in core/attestation.ts; a PR is "witnessed" only while a cosigned row exists.
+model RecordAttestation {
+  id          String    @id @default(cuid())
+  owner       User      @relation("attestationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String // the lifter whose PR this is
+  witness     User      @relation("attestationWitness", fields: [witnessId], references: [id], onDelete: Cascade)
+  witnessId   String // the co-signer staking their name
+  sessionId   String // the session the lift was logged in (owner's)
+  lift        String // the lift name exactly as logged in the strength block
+  e1rm        Float? // claim snapshot at request time, kg
+  topLoad     Float? // claim snapshot at request time, kg
+  status      String    @default("pending") // pending | cosigned | declined
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  @@unique([sessionId, lift, witnessId])
+  @@index([witnessId, status])
+  @@index([ownerId, createdAt])
+  @@index([sessionId])
 }
 
 // A first-class feed POST — a status update or a shared card (a PR, a workout).
