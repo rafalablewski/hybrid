@@ -1881,7 +1881,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       </Pressable>
 
       {coachDiet?.diet && (
-        <ACard style={{ marginTop: 16 }}>
+        <ACard solid style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>
             {t("w.recovery.nutrition.assignedBy")} {coachDiet.coachName ?? t("w.recovery.nutrition.yourCoach")} ({t("w.recovery.nutrition.readOnly")})
           </Text>
@@ -1902,7 +1902,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           {/* CALORIE RING — the hero. Calories LEFT is the number; the ring fills
               as the day is consumed. */}
           <View onLayout={(e) => measureHud({ energyY: e.nativeEvent.layout.y, energyH: e.nativeEvent.layout.height })}>
-          <ACard style={{ marginTop: 16, paddingVertical: 26, alignItems: "center" }}>
+          <ACard solid style={{ marginTop: 16, paddingVertical: 26, alignItems: "center" }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.6, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
             <View style={{ marginTop: 18 }}>
               <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={today.kcal > targets.kcal * 1.05 ? C.red : C.lime} track={C.line}>
@@ -1924,7 +1924,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
           {/* Macros — their own card, hairline lines beneath the hero. */}
           <View onLayout={(e) => measureHud({ macroY: e.nativeEvent.layout.y, macroH: e.nativeEvent.layout.height })}>
-          <ACard style={{ marginTop: 12 }}>
+          <ACard solid style={{ marginTop: 12 }}>
             {([["w.recovery.nutrition.protein", today.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", today.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
               <View key={label} style={{ marginTop: i ? 18 : 0 }}>
                 <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
@@ -2038,7 +2038,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       )}
 
       {view === "body" && (
-        <ACard style={{ marginTop: 16 }}>
+        <ACard solid style={{ marginTop: 16 }}>
           {/* Weight is a PROFILE attribute — one canonical source. This reads the
               latest profile weigh-in; updating here writes straight to the
               profile (no separate nutrition weight silo). */}
@@ -2061,7 +2061,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
       {/* Bodyweight trend — EWMA-smoothed weight line + weekly rate. */}
       {view === "body" && weight.points.length > 0 && (
-        <ACard style={{ marginTop: 16 }}>
+        <ACard solid style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.bodyweightTrend")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, weight.ratePerWeek <= 0 ? C.lime : C.amber) }}>{weight.ratePerWeek > 0 ? "+" : ""}{weight.ratePerWeek} kg/wk</Text>
@@ -2072,7 +2072,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
       {/* LOG — the unified manual entry + scan + one-tap premade meals. */}
       {view === "log" && (
-      <ACard style={{ marginTop: 16 }}>
+      <ACard solid style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
             <AuroraIcon name="add" size={20} color={txt(C, C.lime)} />
@@ -2125,7 +2125,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
       {/* MY MEALS — the user's own saved-meal library. */}
       {view === "meals" && (
-      <ACard style={{ marginTop: 16 }}>
+      <ACard solid style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.yourMeals")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`}</Text>
@@ -2187,7 +2187,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           for any food or barcode; a hit can be logged to today or saved to the
           library. Below sits your own saved foods + a manual builder. */}
       {view === "foods" && (
-      <ACard style={{ marginTop: 16 }}>
+      <ACard solid style={{ marginTop: 16 }}>
         {/* Search — text or barcode */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 }}>
           <AuroraIcon name="search" size={18} color={C.ash} />
@@ -2317,7 +2317,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       <>
       {/* DAY SUMMARY — pick any date with ‹ ›, see the whole day's totals vs
           target. Read from Signals so it works for every day, migrated or not. */}
-      <ACard style={{ marginTop: 16 }}>
+      <ACard solid style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <Pressable onPress={() => shiftDiaryDay(-1)} accessibilityLabel={t("w.recovery.nutrition.prevDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><View style={{ transform: [{ rotate: "180deg" }] }}><IChevRight size={16} color={C.chalk} /></View></Pressable>
           <View style={{ alignItems: "center" }}>
@@ -2375,7 +2375,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
       {/* PER-PART BREAKDOWN — each part's total, then its individual editable
           entries (from FoodLog when present). */}
-      <ACard style={{ marginTop: 12 }}>
+      <ACard solid style={{ marginTop: 12 }}>
         <View style={{ marginTop: 0 }}>
           {partList.map((p, i) => {
             const entries = dayLogs.filter((l) => l.source === p.key);
@@ -2409,7 +2409,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       ); })()}
 
       {view === "diary" && (
-      <ACard style={{ marginTop: 12 }}>
+      <ACard solid style={{ marginTop: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.recovery.nutrition.recentDays")}</Text>
           {streakDays > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{streakDays}/7</Text> : null}
@@ -2573,7 +2573,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
     [t("w.recovery.nutrition.protein"), summary.avgProtein != null ? `${summary.avgProtein}g` : "—", t("w.recovery.nutrition.perDay").replace("kcal", "avg"), txt(C, C.violet)],
   ];
   return (
-    <ACard style={{ marginTop: 16 }}>
+    <ACard solid style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.summary")}</Text>
         <View style={{ flexDirection: "row", width: 132, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 999, padding: 3 }}>
@@ -2679,7 +2679,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
           <AHeading style={{ fontSize: fs.title }}>{t("w.recovery.nutrition.pickActivity")}</AHeading>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickActivitySub")}</Text>
           {MACT.map((a) => choice(activity === a.id, t(a.labelKey), t(a.subKey), () => setActivity(a.id)))}
-          <ACard style={{ marginTop: 4 }}>
+          <ACard solid style={{ marginTop: 4 }}>
             {currentWeightKg != null ? (
               /* Profile already has a weight — reuse it, don't ask again. */
               <>
@@ -2704,7 +2704,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
 
       {step === 2 ? (
         <View style={{ marginTop: 22 }}>
-          <ACard style={{ alignItems: "center", paddingVertical: 22, backgroundColor: `${pa.fill}14`, borderColor: `${pa.fill}4d` }}>
+          <ACard solid style={{ alignItems: "center", paddingVertical: 22, backgroundColor: `${pa.fill}14`, borderColor: `${pa.fill}4d` }}>
             <View style={{ backgroundColor: `${pa.fill}28`, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
             <AHeading style={{ fontSize: 22, marginTop: 14, textAlign: "center" }}>{t("w.recovery.nutrition.trialTitle")}</AHeading>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 18 }}>{t("w.recovery.nutrition.trialSub")}</Text>
@@ -2715,7 +2715,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
           {/* The FREE alternative — a limited plan to start on now, no card
               needed. Full is the trial card above; this is the way out that
               isn't an upgrade. */}
-          <ACard style={{ marginTop: 12 }}>
+          <ACard solid style={{ marginTop: 12 }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.freePlanTitle")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.8, color: C.ash }}>{t("w.recovery.nutrition.freePlanSub")}</Text>
