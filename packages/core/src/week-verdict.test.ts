@@ -1,13 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { weekVerdict, VERDICT_METRICS, verdictLeadKey, verdictWhyKey, type WeekVerdict } from "./week-verdict";
+import { activityVerdict, weekVerdict, VERDICT_METRICS, verdictLeadKey, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
+import { resolveActivityRange } from "./activity-window";
+import { addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 
-const NOW = Date.parse("2026-07-31T12:00:00.000Z");
-const WEEK = 7 * 86_400_000;
+// A local-noon anchor, so every window boundary below is the same distance away
+// whatever timezone the suite runs in (the ranges are LOCAL-midnight aligned).
+const NOW = new Date(2026, 6, 31, 12, 0, 0).getTime();
+const at = (daysAgo: number) => addLocalDays(NOW, -daysAgo);
+const d7 = (now = NOW) => resolveActivityRange("d7", now);
 
 /** One strength session `daysAgo` back, moving `kg` of tonnage over `minutes`. */
 function s(daysAgo: number, kg: number, minutes = 60): LoggedSession {
-  const started = NOW - daysAgo * 86_400_000;
+  const started = at(daysAgo);
   // 1 set × 1 rep × kg = kg of tonnage, so the arithmetic in each test is plain.
   const blocks: SessionBlock[] = [{ kind: "strength", name: "Deadlift", sets: [{ load: kg, reps: 1 }] } as SessionBlock];
   return {
@@ -29,9 +34,9 @@ const run = (daysAgo: number, km: number): LoggedSession => ({
 /** Four prior weeks each carrying one session of `kg`, so the baseline is `kg`. */
 const fourFlatWeeks = (kg: number) => [s(9, kg), s(16, kg), s(23, kg), s(30, kg)];
 
-describe("weekVerdict", () => {
+describe("activityVerdict — the rolling seven days", () => {
   it("is cold with no sessions at all, and still returns three figures", () => {
-    const v = weekVerdict([], NOW);
+    const v = activityVerdict([], d7());
     expect(v.cold).toBe(true);
     expect(v.metric).toBeNull();
     expect(v.direction).toBe("flat");
@@ -42,18 +47,18 @@ describe("weekVerdict", () => {
 
   it("stays cold until two of the four prior weeks carry training", () => {
     // One prior week only — a percentage off that is a coin flip.
-    const one = weekVerdict([s(2, 1000), s(9, 100)], NOW);
+    const one = activityVerdict([s(2, 1000), s(9, 100)], d7());
     expect(one.cold).toBe(true);
-    expect(one.baselineWeeks).toBe(1);
+    expect(one.baselinePeriods).toBe(1);
 
-    const two = weekVerdict([s(2, 1000), s(9, 100), s(16, 100)], NOW);
+    const two = activityVerdict([s(2, 1000), s(9, 100), s(16, 100)], d7());
     expect(two.cold).toBe(false);
-    expect(two.baselineWeeks).toBe(2);
+    expect(two.baselinePeriods).toBe(2);
   });
 
   it("names the metric and the direction when tonnage falls past the threshold", () => {
     // baseline 10 000 kg/wk, this week 7 900 → −21%.
-    const v = weekVerdict([s(2, 7900), ...fourFlatWeeks(10_000)], NOW);
+    const v = activityVerdict([s(2, 7900), ...fourFlatWeeks(10_000)], d7());
     expect(v.metric).toBe("tonnage");
     expect(v.direction).toBe("down");
     expect(v.deltaPct).toBe(-21);
@@ -61,7 +66,7 @@ describe("weekVerdict", () => {
   });
 
   it("reads the same rise as up", () => {
-    const v = weekVerdict([s(2, 12_000), ...fourFlatWeeks(10_000)], NOW);
+    const v = activityVerdict([s(2, 12_000), ...fourFlatWeeks(10_000)], d7());
     expect(v.metric).toBe("tonnage");
     expect(v.direction).toBe("up");
     expect(v.deltaPct).toBe(20);
@@ -69,7 +74,7 @@ describe("weekVerdict", () => {
 
   it("says nothing when every metric sits inside the threshold", () => {
     // 10 800 vs a 10 000 baseline is +8% — real, but not worth a sentence.
-    const v = weekVerdict([s(2, 10_800, 60), ...fourFlatWeeks(10_000)], NOW);
+    const v = activityVerdict([s(2, 10_800, 60), ...fourFlatWeeks(10_000)], d7());
     expect(v.metric).toBeNull();
     expect(v.direction).toBe("flat");
     expect(v.deltaPct).toBe(0);
@@ -86,7 +91,7 @@ describe("weekVerdict", () => {
       s(23, 5000), s(24, 5000),
       s(30, 5000), s(31, 5000),
     ];
-    const v = weekVerdict([s(2, 8000), ...prior], NOW);
+    const v = activityVerdict([s(2, 8000), ...prior], d7());
     expect(v.metric).toBe("sessions");
     expect(v.deltaPct).toBe(-50);
   });
@@ -94,8 +99,8 @@ describe("weekVerdict", () => {
   it("counts an empty prior week into the baseline rather than dropping it", () => {
     // Trained weeks 2, 3, 4 at 10 000; week 1 off. Baseline = 30 000 / 4 = 7 500,
     // so this week's 10 000 reads as +33% — a real return, not a flat week.
-    const v = weekVerdict([s(2, 10_000), s(16, 10_000), s(23, 10_000), s(30, 10_000)], NOW);
-    expect(v.baselineWeeks).toBe(3);
+    const v = activityVerdict([s(2, 10_000), s(16, 10_000), s(23, 10_000), s(30, 10_000)], d7());
+    expect(v.baselinePeriods).toBe(3);
     expect(v.figures[0]!.baseline).toBe(7500);
     expect(v.direction).toBe("up");
     expect(v.deltaPct).toBe(33);
@@ -108,16 +113,16 @@ describe("weekVerdict", () => {
       ...s(daysAgo, 0),
       blocks: [{ kind: "cardio", name: "Run", discipline: "running", minutes: 30, distance: 5 } as SessionBlock],
     });
-    const v = weekVerdict([s(2, 5000), s(3, 5000), s(4, 5000), cardio(9), cardio(16)], NOW);
+    const v = activityVerdict([s(2, 5000), s(3, 5000), s(4, 5000), cardio(9), cardio(16)], d7());
     expect(Number.isFinite(v.deltaPct)).toBe(true);
     expect(v.metric).toBe("sessions");
   });
 
   it("only carries a distance column for an athlete who logs endurance", () => {
-    const lifter = weekVerdict([s(2, 10_000), ...fourFlatWeeks(10_000)], NOW);
+    const lifter = activityVerdict([s(2, 10_000), ...fourFlatWeeks(10_000)], d7());
     expect(lifter.figures.some((f) => f.metric === "distance")).toBe(false);
 
-    const hybrid = weekVerdict([s(2, 10_000), run(3, 8), ...fourFlatWeeks(10_000)], NOW);
+    const hybrid = activityVerdict([s(2, 10_000), run(3, 8), ...fourFlatWeeks(10_000)], d7());
     const dist = hybrid.figures.find((f) => f.metric === "distance");
     expect(dist?.value).toBe(8);
     // Order is VERDICT_METRICS order — distance sits last.
@@ -127,7 +132,7 @@ describe("weekVerdict", () => {
   it("lets distance carry the verdict when it is the metric that moved", () => {
     // Same session count, same time on feet, 8 km instead of the usual 20 —
     // only the distance moved, so only distance has a sentence to offer.
-    const v = weekVerdict([run(2, 8), run(9, 20), run(16, 20), run(23, 20), run(30, 20)], NOW);
+    const v = activityVerdict([run(2, 8), run(9, 20), run(16, 20), run(23, 20), run(30, 20)], d7());
     expect(v.metric).toBe("distance");
     expect(v.direction).toBe("down");
     expect(v.deltaPct).toBe(-60);
@@ -136,7 +141,7 @@ describe("weekVerdict", () => {
   it("keeps the distance column for a runner who took this week off", () => {
     // Ran the four prior weeks, nothing this week — the column has to survive,
     // or the week they most need to see is the week the number disappears.
-    const v = weekVerdict([run(9, 20), run(16, 20), run(23, 20), run(30, 20)], NOW);
+    const v = activityVerdict([run(9, 20), run(16, 20), run(23, 20), run(30, 20)], d7());
     const dist = v.figures.find((f) => f.metric === "distance");
     expect(dist?.value).toBe(0);
     expect(dist?.baseline).toBe(20);
@@ -146,15 +151,61 @@ describe("weekVerdict", () => {
     expect(v.deltaPct).toBe(-100);
   });
 
-  it("is stable across the window edges — a session exactly a week old is prior", () => {
-    const edge = weekVerdict([s(7.001, 10_000), ...fourFlatWeeks(10_000)], NOW);
+  it("is stable across the window edges — a session a week and a minute old is prior", () => {
+    const older: LoggedSession = { ...s(7, 10_000), startedAt: new Date(at(7) - 60_000).toISOString() };
+    const edge = activityVerdict([older, ...fourFlatWeeks(10_000)], d7());
     expect(edge.figures[0]!.value).toBe(0);
+  });
+
+  it("weekVerdict() is the same read, without having to name a range", () => {
+    const range = activityVerdict([s(2, 12_000), ...fourFlatWeeks(10_000)], d7(NOW));
+    const short = weekVerdict([s(2, 12_000), ...fourFlatWeeks(10_000)], NOW);
+    expect(short.metric).toBe(range.metric);
+    expect(short.deltaPct).toBe(range.deltaPct);
+  });
+});
+
+describe("activityVerdict — other periods", () => {
+  it("a MONTH is compared against the three months before it, not four weeks", () => {
+    const july = resolveActivityRange("m:2026-07", NOW);
+    const v = activityVerdict([s(2, 10_000)], july);
+    expect(v.range.kind).toBe("month");
+    expect(v.baselineOf).toBe(3);
+    // The working-out has to name the period it compared against.
+    expect(verdictWhyKey({ ...v, cold: false, metric: "tonnage" })).toBe("w.home.act.vsMonths");
+  });
+
+  it("a year-to-date read isn't permanently cold for want of four windows", () => {
+    // Only two prior years exist to compare with, so the cold threshold has to
+    // fall to what the range can actually offer.
+    const ytd = resolveActivityRange("ytd", NOW);
+    const lastYear = new Date(2025, 2, 3, 12).getTime();
+    const v = activityVerdict(
+      [s(2, 10_000), { ...s(2, 4000), id: "ly", startedAt: new Date(lastYear).toISOString(), completedAt: new Date(lastYear + 3.6e6).toISOString() }],
+      ytd,
+    );
+    expect(v.baselineOf).toBe(2);
+    expect(v.cold).toBe(false);
+  });
+
+  it("speaks in period-neutral words outside a week", () => {
+    const month = resolveActivityRange("m:2026-07", NOW);
+    const v: ActivityVerdict = {
+      range: month, figures: [], metric: "tonnage", direction: "up",
+      deltaPct: 30, cold: false, baselinePeriods: 3, baselineOf: 3,
+    };
+    expect(verdictLeadKey(v)).toBe("w.home.act.upLeadP");
+    expect(verdictLeadKey({ ...v, direction: "down" })).toBe("w.home.act.downLeadP");
+    expect(verdictLeadKey({ ...v, metric: null })).toBe("w.home.act.flatLeadP");
+    // …and in the week's own words inside one.
+    expect(verdictLeadKey({ ...v, range: d7() })).toBe("w.home.week.upLead");
   });
 });
 
 describe("verdict i18n key helpers", () => {
-  const base: WeekVerdict = {
-    figures: [], metric: null, direction: "flat", deltaPct: 0, cold: false, baselineWeeks: 4,
+  const base: ActivityVerdict = {
+    range: d7(), figures: [], metric: null, direction: "flat", deltaPct: 0,
+    cold: false, baselinePeriods: 4, baselineOf: 4,
   };
 
   it("maps every state to its own sentence and working-out", () => {

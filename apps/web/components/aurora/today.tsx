@@ -871,6 +871,7 @@ export default function AuroraToday({
         showDeep={isAthlete}
         onArchive={() => (onNavigate ? onNavigate("history") : router.push("/history"))}
         onDeep={() => (onNavigate ? onNavigate("analytics") : router.push("/analytics"))}
+        onSession={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
       />
 
       {/* ───── ENDURANCE — sport lanes, directly under This week because the
