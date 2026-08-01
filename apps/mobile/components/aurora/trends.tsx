@@ -68,12 +68,12 @@ export default function AuroraTrends({ top, unified = false }: {
       <ASub style={{ marginTop: 10 }}>{t("w.analyze.trends.subtitle")}</ASub>
 
       {!trained ? (
-        <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
+        <ACard solid style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.trends.empty")}</Text>
         </ACard>
       ) : (
         <>
-          <ACard style={{ marginTop: 14 }}>
+          <ACard solid style={{ marginTop: 14 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.trends.weeklySets")}</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", height: 80, gap: 5, marginTop: 12 }}>
               {weeks.map((w, i) => <View key={i} style={{ flex: 1, height: 6 + (w.sets / maxSets) * 64, borderRadius: 3, backgroundColor: i === weeks.length - 1 ? C.lime : `${C.lime}66` }} />)}
@@ -86,7 +86,7 @@ export default function AuroraTrends({ top, unified = false }: {
 
           {/* WEEKLY TONNAGE — the tonnes actually moved, week by week. Web has
               always drawn this second series; mobile hadn't. */}
-          <ACard style={{ marginTop: 14 }}>
+          <ACard solid style={{ marginTop: 14 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>
               {t("w.analyze.trends.weeklyTonnage")} – {units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}
             </Text>
@@ -99,7 +99,7 @@ export default function AuroraTrends({ top, unified = false }: {
             </View>
           </ACard>
 
-          <ACard style={{ marginTop: 14 }}>
+          <ACard solid style={{ marginTop: 14 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.trends.exerciseAnalytics")}</Text>
             <View style={{ flexDirection: "row", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4, gap: space.xxs, marginTop: 12 }}>
               {PERIODS.map((p) => { const on = period === p.id; return (
