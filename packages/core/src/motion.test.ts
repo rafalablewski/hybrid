@@ -109,22 +109,30 @@ describe("SHARED_ELEMENTS", () => {
 
 describe("screenTransition", () => {
   it("slides between bottom-nav destinations in bar order", () => {
-    expect(screenTransition("today", "explore")).toEqual({ kind: "sibling", dir: 1 });
-    expect(screenTransition("explore", "today")).toEqual({ kind: "sibling", dir: -1 });
+    expect(screenTransition("today", "nutrition")).toEqual({ kind: "sibling", dir: 1 });
+    expect(screenTransition("nutrition", "today")).toEqual({ kind: "sibling", dir: -1 });
     expect(screenTransition("today", "profile")).toEqual({ kind: "sibling", dir: 1 });
-    expect(screenTransition("profile", "explore")).toEqual({ kind: "sibling", dir: -1 });
+    expect(screenTransition("profile", "nutrition")).toEqual({ kind: "sibling", dir: -1 });
   });
 
   it("resolves client-specific ids onto their nav root", () => {
     expect(navRootRank("log")).toBe(NAV_ROOT_ORDER.indexOf("train"));
     expect(navRootRank("you")).toBe(NAV_ROOT_ORDER.indexOf("profile"));
-    expect(navRootRank("feed")).toBe(NAV_ROOT_ORDER.indexOf("explore"));
     expect(screenTransition("today", "log")).toEqual({ kind: "sibling", dir: 1 });
   });
 
   it("pushes into a detail screen and pops back out", () => {
-    expect(screenTransition("explore", "plans")).toEqual({ kind: "push", dir: 0 });
-    expect(screenTransition("plans", "explore")).toEqual({ kind: "pop", dir: 0 });
+    expect(screenTransition("today", "plans")).toEqual({ kind: "push", dir: 0 });
+    expect(screenTransition("plans", "today")).toEqual({ kind: "pop", dir: 0 });
+  });
+
+  it("drills into the social screens now that Explore is not a root", () => {
+    // feed / discover / coaches / leaderboard used to alias onto the Explore
+    // root and travel sideways; they are reached from More (and Today's coach
+    // rail) now, so they are pushes.
+    expect(navRootRank("feed")).toBe(-1);
+    expect(screenTransition("today", "coaches")).toEqual({ kind: "push", dir: 0 });
+    expect(screenTransition("coaches", "today")).toEqual({ kind: "pop", dir: 0 });
   });
 
   it("crossfades between two unrelated leaves rather than inventing a direction", () => {
@@ -132,7 +140,7 @@ describe("screenTransition", () => {
   });
 
   it("honours an explicit back-navigation", () => {
-    expect(screenTransition("explore", "plans", true)).toEqual({ kind: "pop", dir: 0 });
+    expect(screenTransition("today", "plans", true)).toEqual({ kind: "pop", dir: 0 });
   });
 
   it("is a no-op onto itself", () => {
@@ -142,8 +150,8 @@ describe("screenTransition", () => {
 
 describe("screenAnimation", () => {
   it("makes back the exact inverse of forward", () => {
-    const fwd = screenTransition("today", "explore");
-    const back = screenTransition("explore", "today");
+    const fwd = screenTransition("today", "nutrition");
+    const back = screenTransition("nutrition", "today");
     expect(screenAnimation(fwd, "enter").name).toBe("motionSlideInRight");
     expect(screenAnimation(back, "enter").name).toBe("motionSlideInLeft");
     expect(screenAnimation(fwd, "exit").name).toBe("motionSlideOutLeft");
@@ -151,7 +159,7 @@ describe("screenAnimation", () => {
   });
 
   it("SUBSTITUTES a cross-dissolve under Reduce Motion — never removes motion", () => {
-    const t = screenTransition("today", "explore");
+    const t = screenTransition("today", "nutrition");
     for (const role of ["enter", "exit"] as const) {
       const a = screenAnimation(t, role, true);
       expect(a.durationMs).toBe(durations.reduced);
@@ -161,7 +169,7 @@ describe("screenAnimation", () => {
   });
 
   it("leaves faster than it arrives", () => {
-    const t = screenTransition("explore", "plans");
+    const t = screenTransition("today", "plans");
     expect(screenAnimation(t, "exit").durationMs).toBeLessThan(screenAnimation(t, "enter").durationMs);
     expect(screenAnimation(t, "exit").easing).toBe(easings.exit);
   });

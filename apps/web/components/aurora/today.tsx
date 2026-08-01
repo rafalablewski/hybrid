@@ -190,10 +190,9 @@ export default function AuroraToday({
   // (everything logged today, with a link through to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
-  // TIER-3 quick action, now a slide-up sheet (not full-screen nav):
-  // Follow-a-coach. (Readiness is now set inline on the feeling card, so it no
-  // longer opens a sheet.)
-  const [coachOpen, setCoachOpen] = useState(false);
+  // Today has no TIER-3 sheets left. Readiness is set inline on the feeling
+  // card; fuelling left this screen entirely (it has its own Nutrition tab);
+  // and Follow a coach is a rail on the page rather than a row behind a sheet.
   // Quick-start: the fourth "Train your way" path — a sheet to re-launch a saved
   // routine (favourites rail + shuffle-able rest). `routines` stays null until the
   // first fetch resolves so the Quick-start card doesn't flash before we know
@@ -992,22 +991,31 @@ export default function AuroraToday({
         />
       </div>
 
-      {/* ───── MORE — the deferred row (coaches). No section head: it labelled a
-          BUCKET, not anything on the screen. Nutrition is NOT summarised here:
-          Today is the training loop, and fuelling has its own destination.
-          Mirrors mobile. ───── */}
-      <div style={{ display: "grid", gap: 10, marginTop: 22 }}>
-        <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
+      {/* ───── FOLLOW A COACH — Today's last block, and the only thing left
+          below the premium cards. Nutrition is NOT summarised here: Today is the
+          training loop, and fuelling has its own destination — a bottom-nav tab
+          now, so it is one tap from anywhere rather than a widget competing for
+          this screen.
+
+          The coach rail moved here from the Explore tab, which is gone. It is on
+          the PAGE rather than a row that opened a sheet: the rail sells coaches
+          by showing them, and a row reading "Follow a coach" sold nothing.
+          Full-bleed per the slider rule (the cards run under the screen edge),
+          headerless under the section head, with the trailing "See more"
+          carrying through to the marketplace. Mirrors mobile. ───── */}
+      {/* The descriptor sits UNDER the title, not opposite it: "Find a coach for
+          your goal" is a subtitle, not a meta value, and at 30-odd characters in
+          PL/DE it would collide with the title on a phone. Same anatomy the
+          rail's own built-in header uses. */}
+      <div style={{ margin: "26px 2px 12px" }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.rowCoach")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</div>
       </div>
+      <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} headerless bleed seeMore />
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet open={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
         <QuickSportLog sessions={sessions} onSaved={() => { onSaved?.(); setQuickOpen(false); }} solid />
-      </Sheet>
-
-      {/* FOLLOW A COACH sheet — the coach rail (renders its own header). */}
-      <Sheet open={coachOpen} onClose={() => setCoachOpen(false)} label={t("w.home.today.rowCoach")}>
-        <CoachRail onOpen={() => { setCoachOpen(false); if (onNavigate) onNavigate("coaches"); else router.push("/coaches"); }} />
       </Sheet>
 
       {/* QUICK START sheet — re-launch a saved routine (favourites + rediscover). */}
@@ -1122,28 +1130,6 @@ function Ring({ value, color, size = 44, ticks = 32, center }: { value: number; 
 
 // A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦
 // Full accent + a lime rim; an unlocked one shows the → chevron.
-// A deferred row (Tier 3) — a slim tap-through to a secondary surface
-// (Coaches), with a tinted glyph, title + sub, and a chevron. An "airy band":
-// a roomy tap-target on the real palette
-// surface (ink2 + hairline), with a crafted icon tile that lifts off the row
-// (drawn on the darker ink so it reads as its own object), a display title and a
-// mono descriptor. The whole row is the same material vocabulary as the cards
-// above it, just laid out with more air.
-function DeferRow({ glyph, tint, title, sub, onClick }: { glyph: string; tint: string; title: string; sub: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "15px 16px", cursor: "pointer", color: C("chalk") }}>
-      <span style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-        <span style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink"), border: `1px solid ${C("line")}`, color: C(tint), fontSize: 19 }}>{glyph}</span>
-        <span style={{ minWidth: 0 }}>
-          <span style={{ display: "block", fontWeight: 700, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</span>
-          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{sub}</span>
-        </span>
-      </span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)`, flexShrink: 0 }}>›</span>
-    </button>
-  );
-}
-
 // The "Done today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
 // stat strip taps through to the Done-Today sheet — with EVERY done session as

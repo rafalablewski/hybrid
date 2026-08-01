@@ -50,10 +50,11 @@ import { AuroraIcon } from "./icons";
  * inline dumbbell for Train. "More" opens a sheet with the full persona-
  * filtered nav.
  */
-// The bar reads Today, Explore, Train, More, Profile — five, which is Apple's
-// ceiling for iPhone. Explore opens the social/discovery surface (the Feed);
-// Profile also lives in the Today header. Plans/History/Cockpit stay reachable
-// from the More sheet.
+// The bar reads Today, Nutrition, Train, More, Profile — five, which is Apple's
+// ceiling for iPhone. Nutrition holds the slot Explore used to (see @hybrid/core
+// nav-bar.ts: discovery is not a daily destination, eating is); Profile also
+// lives in the Today header. Plans/History/Cockpit/Feed stay reachable from the
+// More sheet.
 const TABS = AURORA_NAV_TABS;
 
 // Geometry + material are shared with mobile via @hybrid/core so the two
@@ -404,7 +405,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 }}
               />
             )}
-            {/* Today, Explore, Train, More, Profile */}
+            {/* Today, Nutrition, Train, More, Profile */}
             {TABS.map((tab) => (
               <PillButton
                 key={tab.id}

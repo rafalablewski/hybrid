@@ -56,6 +56,7 @@ const SOURCES: Record<AuroraIconName, ReturnType<typeof require>> = {
   copy: require("../../assets/icons/copy.png"),
   edit: require("../../assets/icons/edit.png"),
   grid: require("../../assets/icons/grid.png"),
+  "fork-knife": require("../../assets/icons/fork-knife.png"),
 };
 
 export function AuroraIcon({

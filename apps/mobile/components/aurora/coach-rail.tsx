@@ -38,8 +38,8 @@ function Stat({ C, value, label, first, star }: { C: Palette; value: string; lab
 }
 
 // `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
-// parent (Explore) can supply the shared, unified SectionHead instead. Today
-// keeps the default header.
+// parent can supply its own section head instead — which is how Today mounts it.
+// The built-in header is kept for any caller that has no head of its own.
 // AuroraScreen's 16dp side gutter (kit.tsx) — a full-bleed rail pulls itself
 // back out by exactly that so its scroll clip reaches the true screen edge.
 const SCREEN_PAD = 16;
@@ -48,11 +48,11 @@ const SCREEN_PAD = 16;
 // Screen padding pull the scroll clip out to the physical edge (with matching
 // internal padding so resting cards still align with the column), so cards
 // slide under the bezel instead of vanishing at the content column. Only for
-// rails sitting directly on a Screen (Explore) — inside a sheet the rail must
+// rails sitting directly on a Screen (Today) — inside a sheet the rail must
 // respect the sheet's own padding.
 // `seeMore` appends a trailing "See more" button at the end of the rail (the
-// unified Explore affordance — the community rail carries the twin), so the rest
-// of the marketplace is one tap away without an "All →" link up in the header.
+// unified rail affordance — the community rail carries the twin), so the rest of
+// the marketplace is one tap away without an "All →" link up in the header.
 export default function CoachRail({ onOpen, headerless = false, bleed = false, seeMore = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean; seeMore?: boolean }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -137,7 +137,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
           );
         })}
         {/* Trailing "See more" button — the same treatment as the community
-            rail, so the two Explore rails share one end-of-rail affordance. */}
+            rail, so the two rails share one end-of-rail affordance. */}
         {seeMore && (
           <Pressable
             onPress={onOpen}

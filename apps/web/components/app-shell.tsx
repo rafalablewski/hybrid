@@ -83,7 +83,6 @@ const SocialFeed = dynamic(() => import("./social-feed"), { ssr: false });
 const SocialDiscover = dynamic(() => import("./social-discover"), { ssr: false });
 const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: false });
 const CoachesScreen = dynamic(() => import("./coaches"), { ssr: false });
-const AuroraExplore = dynamic(() => import("./aurora/explore"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
 import PremiumAccentStyle from "./premium-accent-style";
 import CoachInviteBanner from "./coach-invite-banner";
@@ -930,9 +929,9 @@ export default function AppShell() {
         {screen === "longevity" && <AuroraLongevity />}
 
         {/* Social + coach marketplace — template-aware single components (radii
-            soften under Aurora), like the tools below. Everyone (casual+). */}
-        {screen === "explore" && <AuroraExplore onNavigate={navigate} />}
-
+            soften under Aurora), like the tools below. Everyone (casual+). The
+            Explore screen that used to front these is gone: its coach rail sits
+            on Today and each destination below is reached from More. */}
         {screen === "feed" && <SocialFeed />}
         {screen === "discover" && <SocialDiscover />}
         {screen === "leaderboard" && <SocialLeaderboard />}

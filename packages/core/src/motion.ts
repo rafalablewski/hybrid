@@ -225,23 +225,23 @@ export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELE
    ──────────────────────────────────────────────────────────────────────── */
 
 /**
- * The bottom-nav destinations, in BAR ORDER (Today – Explore – [Train] – More –
- * Profile). Moving between two of these is a SIBLING move and travels
+ * The bottom-nav destinations, in BAR ORDER (Today – Nutrition – [Train] – More
+ * – Profile). Moving between two of these is a SIBLING move and travels
  * horizontally in this order; anything else is a drill-down.
  *
  * Kept here rather than in nav.ts because it is the *motion* ordering (what sits
  * left of what on screen), not the nav taxonomy.
  */
-export const NAV_ROOT_ORDER = ["today", "explore", "train", "more", "profile"] as const;
+export const NAV_ROOT_ORDER = ["today", "nutrition", "train", "more", "profile"] as const;
 
 /** Aliases so a client's own screen id resolves to its nav root. */
+// The social screens (feed / discover / coaches / leaderboard) used to alias to
+// the Explore root and so travelled SIDEWAYS from Today. With Explore gone they
+// are what they always were underneath — leaves reached from More or from
+// Today's coach rail — so they drill down and pop back out instead.
 const ROOT_ALIAS: Record<string, string> = {
   log: "train",
   logger: "train",
-  feed: "explore",
-  discover: "explore",
-  coaches: "explore",
-  leaderboard: "explore",
   you: "profile",
 };
 

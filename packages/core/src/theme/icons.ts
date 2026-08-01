@@ -53,7 +53,8 @@ export type AuroraIconName =
   | "download"
   | "copy"
   | "edit"
-  | "grid";
+  | "grid"
+  | "fork-knife";
 
 /** name → one or more SVG path `d` strings (72×72 viewBox, fill:none stroke). */
 export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
@@ -138,6 +139,16 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
     "M44 40h12a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4H44a4 4 0 0 1-4-4V44a4 4 0 0 1 4-4z",
   ],
   edit: ["M51 9L63 21L22.5 61.5L6 66L10.5 49.5Z", "M44 16L56 28"],
+  // Fork + knife — the NUTRITION glyph, and a bottom-nav destination since Fuel
+  // took the Explore slot. The same cutlery the Fuel widget's PlateGlyph draws
+  // at 24×24 (aurora/fuel.tsx), redrawn in the kit's 72×72 stroke box so it
+  // carries identical optical weight beside village/grid in the bar.
+  "fork-knife": [
+    "M13.5 9V30C13.5 36.6274 18.8726 42 25.5 42C32.1274 42 37.5 36.6274 37.5 30V9",
+    "M25.5 9V63",
+    "M52.5 9C48 13.5 46.5 21 46.5 30C46.5 39 48 42 52.5 42C57 42 58.5 39 58.5 30C58.5 21 57 13.5 52.5 9Z",
+    "M52.5 42V63",
+  ],
 };
 
 /**
@@ -260,7 +271,7 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   video: "list-play",
   history: "copy",
   checkin: "check",
-  nutrition: "store",
+  nutrition: "fork-knife",
   progress: "user-square",
   longevity: "heart",
   coach: "user",

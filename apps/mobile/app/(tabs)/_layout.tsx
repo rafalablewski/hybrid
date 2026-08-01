@@ -50,7 +50,12 @@ import SessionAccessory from "../../components/aurora/session-accessory";
 // — which matters when the sandbox can't render the bar to look at it.
 const ICONS = {
   today: { sf: { default: "house", selected: "house.fill" }, src: require("../../assets/icons/village.png") },
-  explore: { sf: { default: "globe", selected: "globe.americas.fill" }, src: require("../../assets/icons/globe.png") },
+  // Nutrition has no filled counterpart in SF Symbols (`fork.knife` ships alone;
+  // the only .fill variants change the SHAPE by adding a circle, which would
+  // read as a different icon on selection). One symbol for both states, and the
+  // tint carries the selection — which is what iOS does for symbols without a
+  // fill pair. The Android/fallback PNG is the kit's own fork-knife glyph.
+  nutrition: { sf: "fork.knife", src: require("../../assets/icons/fork-knife.png") },
   train: { sf: { default: "dumbbell", selected: "dumbbell.fill" }, src: require("../../assets/icons/list-add.png") },
   more: { sf: { default: "square.grid.2x2", selected: "square.grid.2x2.fill" }, src: require("../../assets/icons/grid.png") },
   profile: { sf: { default: "person.crop.circle", selected: "person.crop.circle.fill" }, src: require("../../assets/icons/user-circle.png") },
@@ -59,7 +64,7 @@ const ICONS = {
 // Route name inside this directory, per tab id.
 const ROUTE: Record<string, string> = {
   today: "index",
-  explore: "explore",
+  nutrition: "nutrition",
   train: "log",
   more: "more",
   profile: "you",
