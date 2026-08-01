@@ -305,7 +305,11 @@ export function sessionWrapped(
     effort != null ? { labelKey: "session.wrapped.effort", value: `${effort}` } : null;
   const volume: WrappedStat | null =
     receipt.tonnageKg > 0 ? { labelKey: "summary.volumeMoved", value: fmtTonnage(receipt.tonnageKg, units) } : null;
-  const sets: WrappedStat | null = receipt.sets > 0 ? { labelKey: "summary.sets", value: String(receipt.sets) } : null;
+  // Strength sets only — the discipline gate below already keeps this tile away
+  // from a swim or a match, and `strengthSets` keeps a MIXED day's count honest
+  // (the effort counter would have padded it with one per cardio block).
+  const sets: WrappedStat | null =
+    receipt.strengthSets > 0 ? { labelKey: "summary.sets", value: String(receipt.strengthSets) } : null;
   const repsStat: WrappedStat | null = reps > 0 ? { labelKey: "session.wrapped.reps", value: String(reps) } : null;
   const roundsStat: WrappedStat | null =
     rounds > 0 ? { labelKey: "session.wrapped.rounds", value: String(rounds) } : null;

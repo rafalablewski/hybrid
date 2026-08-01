@@ -133,6 +133,43 @@ describe("doneReceiptStats", () => {
     expect(stats[2]!.value).toBe("11");
   });
 
+  // ── sets are a STRENGTH figure ────────────────────────────────────────────
+  it("never reports sets for a swim (a cardio effort is not a set)", () => {
+    const swim = doneReceipt(
+      session({
+        title: "Swimming",
+        completedAt: "2026-07-16T10:40:00.000Z",
+        blocks: [{ kind: "cardio", name: "Swimming", distance: 0.2, minutes: 10 }],
+      }),
+    );
+    // the effort counter still sees one effort — the display figure does not
+    expect(swim.sets).toBe(1);
+    expect(swim.strengthSets).toBe(0);
+    expect(doneReceiptStats(swim, "kg").map((s) => s.labelKey)).toEqual([
+      "w.home.rail.duration",
+      "w.home.today.distance",
+    ]);
+  });
+
+  it("never reports sets for a tennis or squash match", () => {
+    for (const name of ["Tennis", "Squash"]) {
+      const match = doneReceipt(
+        session({ title: name, completedAt: "2026-07-16T11:30:00.000Z", blocks: [{ kind: "cardio", name, minutes: 60 }] }),
+      );
+      expect(match.strengthSets).toBe(0);
+      expect(doneReceiptStats(match, "kg").map((s) => s.labelKey)).toEqual(["w.home.rail.duration"]);
+    }
+  });
+
+  it("counts only the lifted sets on a day that lifted and swam", () => {
+    const mixed = doneReceipt(
+      session({ blocks: [strength(11), { kind: "cardio", name: "Swimming", distance: 1, minutes: 20 }] }),
+    );
+    expect(mixed.sets).toBe(12); // 11 sets + 1 swim effort
+    expect(mixed.strengthSets).toBe(11);
+    expect(doneReceiptStats(mixed, "kg").find((s) => s.labelKey === "w.home.today.sets")?.value).toBe("11");
+  });
+
   it("omits what it cannot vouch for instead of rendering it", () => {
     const stats = doneReceiptStats(
       doneReceipt(session({ completedAt: "2026-07-16T10:31:00.000Z" })),

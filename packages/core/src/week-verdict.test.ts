@@ -9,9 +9,7 @@ const WEEK = 7 * 86_400_000;
 function s(daysAgo: number, kg: number, minutes = 60): LoggedSession {
   const started = NOW - daysAgo * 86_400_000;
   // 1 set × 1 rep × kg = kg of tonnage, so the arithmetic in each test is plain.
-  // A StrengthSet's load/reps are STRINGS (they come from text inputs) — the
-  // numeric literals here only typechecked behind the `as SessionBlock` cast
-  // until tsc started rejecting the conversion outright.
+  // A StrengthSet's load/reps are the athlete's typed DISPLAY strings, not numbers.
   const blocks: SessionBlock[] = [{ kind: "strength", name: "Deadlift", sets: [{ load: String(kg), reps: "1" }] }];
   return {
     id: `s${daysAgo}-${kg}`,
