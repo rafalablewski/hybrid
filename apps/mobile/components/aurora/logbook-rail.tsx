@@ -5,6 +5,9 @@ import {
   mergeDoneReceipts,
   doneReceipt,
   doneReceiptStats,
+  dayStamp,
+  dayStampText,
+  streak,
   type LogbookDay,
   type LoggedSession,
   type WeightUnit,
@@ -77,6 +80,10 @@ export default function AuroraLogbookRail({
     [daySessions, bw],
   );
 
+  // The athlete's current run — the done-today card's corner reports it in
+  // place of a date the week strip has already shown (core day-stamp.ts).
+  const streakDays = useMemo(() => streak(sessions, 1).current, [sessions]);
+
   return (
     <View
       style={{
@@ -118,6 +125,7 @@ export default function AuroraLogbookRail({
         daySessions={daySessions}
         receipt={receipt}
         units={units}
+        streakDays={streakDays}
         onLog={onLog}
         onHistory={() => onNavigate?.("history")}
         t={t}
@@ -161,18 +169,26 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
   );
 }
 
-function DayDetail({ C, scheme, day, daySessions, receipt, units, onLog, onHistory, t }: {
+function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, onLog, onHistory, t }: {
   C: Pal;
   scheme: "dark" | "light";
   day: LogbookDay;
   daySessions: LoggedSession[];
   receipt: ReturnType<typeof mergeDoneReceipts>;
   units: WeightUnit;
+  /** the athlete's current day-streak, for the done-today stamp. */
+  streakDays: number;
   onLog: () => void;
   onHistory: () => void;
   t: (k: string) => string;
 }) {
-  const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
+  // The corner stamp — how far this day sits from now, never a second copy of
+  // the chip above it or of the headline beside it (core day-stamp.ts).
+  const stamp = dayStampText(
+    dayStamp({ dateKey: day.dateKey, done: day.logged, streakDays }),
+    t,
+    `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`,
+  );
 
   // LOGGED — the day collapses to a receipt, exactly like the plan rail's done
   // state: one headline, the day's work as an en-dash meta line, only
@@ -191,7 +207,7 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, onLog, onHisto
               {t(day.isToday ? "w.home.rail.allDone" : "w.home.logbook.loggedDay")}
             </Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+          {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: 17 }}>
           {daySessions.map((s) => s.title).join(" – ")}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
@@ -224,7 +240,7 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, onLog, onHisto
       <View>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk, flex: 1 }}>{t("w.home.logbook.emptyToday")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+          {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>{t("w.home.logbook.emptyTodaySub")}</Text>
         <Pressable onPress={onLog} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
@@ -240,7 +256,7 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, onLog, onHisto
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.ash, flex: 1 }}>{t("w.home.logbook.emptyPast")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dateLine}</Text>
+        {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>{t("w.home.today.doneModalEmptyDay")}</Text>
     </View>

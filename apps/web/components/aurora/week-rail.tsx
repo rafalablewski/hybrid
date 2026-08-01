@@ -6,6 +6,9 @@ import {
   doneReceipt,
   doneReceiptStats,
   stripWeekdayPrefix,
+  dayStamp,
+  dayStampText,
+  streak,
   fs,
   type DoneReceipt,
   type LoggedSession,
@@ -141,6 +144,10 @@ export default function AuroraWeekRail({
     return doneSession ? doneReceipt(doneSession, { bodyweightKg: bw(doneSession.startedAt) }) : null;
   }, [schedule, selectedIndex, sessions, bw]);
 
+  // The athlete's current run — what the done-today card's corner reports in
+  // place of a date the week strip has already shown (see core day-stamp.ts).
+  const streakDays = useMemo(() => streak(sessions, 1).current, [sessions]);
+
   if (!schedule || !schedule.days.length) return null;
   const sel = schedule.days[selectedIndex] ?? schedule.days[schedule.todayIndex]!;
 
@@ -184,6 +191,7 @@ export default function AuroraWeekRail({
         day={sel}
         receipt={receipt}
         units={units}
+        streakDays={streakDays}
         onStart={(b) => onStart(b, titleFor(sel))}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
@@ -287,11 +295,13 @@ function LiftRow({ r, showSession, first }: { r: { name: string; session?: strin
   );
 }
 
-function DayDetail({ day, receipt, units, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   day: ScheduledDay;
   /** the fulfilled day's summary (null when the logged session isn't loaded). */
   receipt: DoneReceipt | null;
   units: WeightUnit;
+  /** the athlete's current day-streak, for the done-today stamp. */
+  streakDays: number;
   onStart: (b?: SessionBlock[]) => void;
   onSkip: () => void;
   onUnskip: () => void;
@@ -300,7 +310,14 @@ function DayDetail({ day, receipt, units, onStart, onSkip, onUnskip, onPostpone,
   onHistory: () => void;
   t: (k: string) => string;
 }) {
-  const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
+  // The corner stamp — how far this day sits from now, never a second copy of
+  // the chip above it or of the headline beside it (core day-stamp.ts). Null
+  // when the card has already said it; the absolute date past the near window.
+  const stamp = dayStampText(
+    dayStamp({ dateKey: day.dateKey, done: day.status === "done", streakDays }),
+    t,
+    `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`,
+  );
   // Group the day into sessions so a multi-session day (AM + PM, or several
   // untimed trainings) draws one tab per session — the title stays welded to its
   // own lifts. Single-session days fall back to the day's flat rows/blocks.
@@ -364,7 +381,7 @@ function DayDetail({ day, receipt, units, onStart, onSkip, onUnskip, onPostpone,
               {t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
             </div>
           </div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dateLine}</span>
+          {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
           {stripWeekdayPrefix(day.title)}<span style={{ opacity: 0.65 }}>{finished}</span>
@@ -391,7 +408,7 @@ function DayDetail({ day, receipt, units, onStart, onSkip, onUnskip, onPostpone,
     <div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19, letterSpacing: "-.02em" }}>{day.title}</div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dateLine}</span>
+        {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
       </div>
 
       {/* a short state note only where it carries meaning (moved / missed / skipped) */}
