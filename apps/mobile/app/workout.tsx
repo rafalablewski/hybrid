@@ -121,8 +121,7 @@ import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha } from "../components/aurora/kit";
-import { GlassSurface } from "../components/aurora/swiftui";
-import { useLiquidGlass } from "../lib/liquid-glass";
+import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
@@ -2082,7 +2081,7 @@ function SummaryOrb({
   on?: boolean;
 }) {
   const C = useTheme().palette;
-  const { active: glass } = useLiquidGlass();
+  const glass = LIQUID_GLASS_SUPPORTED;
   return (
     <Pressable
       onPress={onPress}

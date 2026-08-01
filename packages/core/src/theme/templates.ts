@@ -34,14 +34,11 @@ export const DEFAULT_TEMPLATE: TemplateName = "aurora";
  */
 export const TEMPLATE_STORAGE_KEY = "hybrid.template";
 
-/**
- * Persistence key for the "Liquid Glass" preference — the native SwiftUI kit on
- * iOS (see apps/mobile/components/aurora/swiftui.tsx). Per-device, defaults ON;
- * a user can flip it OFF in Settings to restore the plain RN Aurora look. Lives
- * here with the theme so the key string is a single source of truth (it's
- * iOS-only by nature — there's nothing to toggle on web/Android).
- */
-export const LIQUID_GLASS_STORAGE_KEY = "hybrid.liquid-glass";
+// NOTE: the "Liquid Glass" per-device preference (LIQUID_GLASS_STORAGE_KEY)
+// was removed: the native SwiftUI treatment is ALWAYS ON on iOS now — the
+// look is the product, not a setting (see apps/mobile/components/aurora/
+// swiftui.tsx LIQUID_GLASS_SUPPORTED). A stale "hybrid.liquid-glass" value
+// may linger in AsyncStorage on old installs; it is simply never read.
 
 /** Runtime guard. Only "aurora" is a valid template now. */
 export function isTemplateName(v: unknown): v is TemplateName {

@@ -24,8 +24,7 @@ import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
-import { GlassSurface, GlassSegment } from "./swiftui";
-import { useLiquidGlass } from "../../lib/liquid-glass";
+import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 
 /**
  * AURORA template UI kit (mobile). Soft, rounded primitives adapted from the
@@ -277,7 +276,7 @@ export function Spark({
 
 export function ACard({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const { palette } = useTheme();
-  const { active: glass } = useLiquidGlass();
+  const glass = LIQUID_GLASS_SUPPORTED;
   // When Liquid Glass is active (iOS + toggle on) the surface is a native SwiftUI
   // layer dropped behind the content (transparent RN base so the glass refracts
   // the screen field); otherwise the solid ink2 card. The glass clips itself to
@@ -325,7 +324,7 @@ export function APill({
   style?: ViewStyle;
 }) {
   const { palette } = useTheme();
-  const { active: glass } = useLiquidGlass();
+  const glass = LIQUID_GLASS_SUPPORTED;
   // The bright primary/light fills stay on brand on every client. The neutral
   // `soft` pill becomes a native Liquid Glass surface when active (iOS + toggle
   // on): transparent RN base + GlassSurface behind the label; ink2 otherwise.
@@ -422,7 +421,7 @@ export function ASegment<T extends string>({
   onPick: (v: T) => void;
 }) {
   const { palette } = useTheme();
-  const { active: glass } = useLiquidGlass();
+  const glass = LIQUID_GLASS_SUPPORTED;
   // When active (iOS + toggle on) a real SwiftUI segmented Picker (tinted with
   // the brand lime); the RN pill segment below is the fallback everywhere else.
   if (glass) {

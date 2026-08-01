@@ -12,7 +12,6 @@ import { useAccountSettings } from "../../lib/account";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
-import { useLiquidGlass } from "../../lib/liquid-glass";
 import { fs, space, F } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, ABack, RADIUS } from "./kit";
@@ -58,7 +57,6 @@ export default function AuroraSettings() {
   const { t, lang, setLang } = useLang();
   const { signOut, name, role, entitlement } = useSession();
   const { pref, setPref } = useTheme();
-  const lg = useLiquidGlass();
   const acct = useAccountSettings();
   // Mode toggle — Full (athlete) is a paid upgrade; a CLIENT chooses casual vs
   // athlete, mirroring web's useClientPersonaChoice()/setClientPersona().
@@ -147,11 +145,9 @@ export default function AuroraSettings() {
         <Section label={t("w.account.settings.language")}>
           <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
         </Section>
-        {lg.supported && (
-          <Section label={t("w.account.settings.display")}>
-            <ToggleRow C={C} title={t("w.account.settings.liquid-glass")} desc={t("w.account.settings.liquid-glass-help")} on={lg.enabled} onToggle={() => lg.setEnabled(!lg.enabled)} noBorder />
-          </Section>
-        )}
+        {/* The Liquid Glass switch is gone on purpose: the native SwiftUI
+            treatment is ALWAYS ON on iOS — the look is the product, not a
+            preference (see swiftui.tsx LIQUID_GLASS_SUPPORTED). */}
       </>
         );
       case "notifications":

@@ -3,8 +3,7 @@ import { Animated, PanResponder, Platform, Pressable, StyleSheet, View, type Vie
 import * as Haptics from "expo-haptics";
 import { useTheme } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { useLiquidGlass } from "../../lib/liquid-glass";
-import { GlassSurface } from "./swiftui";
+import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { withAlpha } from "./kit";
 
 /**
@@ -25,11 +24,11 @@ import { withAlpha } from "./kit";
  * Motion is SwiftUI's default spring (response 0.55 / dampingFraction 0.75 →
  * stiffness ≈ 130, damping ≈ 17), so the travel reads native, not eased.
  *
- * THE LENS MATERIAL: with the Liquid Glass toggle on (useLiquidGlass().active,
- * iOS) the inflated lens is REAL SwiftUI `glassEffect` via GlassSurface — the
- * system's material, not a blur imitation. Everywhere else (Android, toggle
- * off) a translucent RN lens keeps the identical interaction. Honours
- * Reduce Motion: springs collapse to instant moves, no inflation.
+ * THE LENS MATERIAL: on iOS the inflated lens is REAL SwiftUI `glassEffect`
+ * via GlassSurface — the system's material, not a blur imitation — always on,
+ * no user toggle. On Android a translucent RN lens keeps the identical
+ * interaction. Honours Reduce Motion: springs collapse to instant moves, no
+ * inflation.
  *
  * Segments are equal-width. An item may `intercept` selection (the date
  * filter's Month segment opens its picker sheet instead of taking the pill).
@@ -66,7 +65,7 @@ export function LiquidSeg({
   trackStyle?: ViewStyle;
 }) {
   const { palette: C, scheme } = useTheme();
-  const { active: nativeGlass } = useLiquidGlass();
+  const nativeGlass = LIQUID_GLASS_SUPPORTED;
   const reduced = useReducedMotion();
 
   const [trackW, setTrackW] = useState(0);
