@@ -137,6 +137,43 @@ export function deviceWorkoutBlocks(w: DeviceWorkout): SessionBlock[] {
 }
 
 /**
+ * Is this session's "logged" side just an ECHO of its own recording?
+ *
+ * True for a session the import CREATED: its one cardio block was written from
+ * the device workout (`deviceWorkoutBlocks`), so the athlete never typed a
+ * figure — the block's minutes/distance/elevation ARE the recording's, rounded.
+ * The summary's comparison panel must not present those echoes as "you logged"
+ * next to the measurement they were copied from; it renders the measured column
+ * alone instead.
+ *
+ * Decided from the shape, not a stored flag, so it also covers sessions
+ * imported before this check existed — and self-heals the moment the athlete
+ * genuinely edits a figure (a corrected distance or duration makes the logged
+ * column worth showing again). Two signals, both required:
+ *
+ *   • the session's interval IS the recording's, to the millisecond — only the
+ *     import writes `startedAt`/`completedAt` from the workout; a quick log is
+ *     stamped at typing time and a live log by human fingers, so neither lands
+ *     on the recording's exact clock. This is what separates an import from a
+ *     hand-logged "Tennis, 60 min" that HAPPENS to match its recording's length.
+ *   • the block's figures are the recording's, unedited.
+ */
+export function deviceImportedSession(
+  session: Pick<LoggedSession, "blocks" | "device" | "startedAt" | "completedAt">,
+): boolean {
+  const d = session.device;
+  if (!d) return false;
+  if (Date.parse(session.startedAt) !== Date.parse(d.start)) return false;
+  if (!session.completedAt || Date.parse(session.completedAt) !== Date.parse(d.end)) return false;
+  if (session.blocks.length !== 1) return false;
+  const b = session.blocks[0]!;
+  if (b.kind !== "cardio") return false;
+  const same = (typed: number | undefined, measured: number | undefined) =>
+    typed == null ? measured == null : measured != null && Math.abs(typed - measured) < 1e-9;
+  return b.minutes === d.durationMin && same(b.distance, d.distanceKm) && same(b.elevation, d.elevationM);
+}
+
+/**
  * WHERE a recording can come from.
  *
  * `live` — the app can actually read this device today.

@@ -4,6 +4,7 @@ import {
   DEVICE_IMPORT_PROVIDERS,
   deviceImportCounts,
   deviceImportMeta,
+  deviceImportedSession,
   deviceWorkoutBlocks,
   deviceWorkoutTitle,
   planDeviceImport,
@@ -84,6 +85,51 @@ describe("deviceWorkoutTitle / deviceWorkoutBlocks", () => {
 
   it("stamps the discipline so a swim never reads as generic cardio", () => {
     expect(deviceWorkoutBlocks(workout({ activityLabel: "Swimming" }))[0]).toMatchObject({ discipline: "swimming" });
+  });
+});
+
+describe("deviceImportedSession", () => {
+  // Exactly what the import route writes for a `create`: the recording's
+  // interval as the session's, and the block built from the recording.
+  const importedSession = (w: DeviceWorkout): LoggedSession =>
+    session({ startedAt: w.start, completedAt: w.end, blocks: deviceWorkoutBlocks(w), device: w });
+
+  it("recognises a session the import created — nothing there was typed", () => {
+    const w = workout({ distanceKm: 1.36, elevationM: 23, kcal: 102, avgHr: 165 });
+    expect(deviceImportedSession(importedSession(w))).toBe(true);
+  });
+
+  it("is false without a recording attached", () => {
+    const w = workout();
+    expect(deviceImportedSession({ ...importedSession(w), device: null })).toBe(false);
+  });
+
+  it("is false for a hand-logged session matched to its recording", () => {
+    // Quick-logged "Running, 60 min" at 09:00, attached to the 07:00 recording:
+    // same figures, but the session's stamp is the athlete's, not the watch's.
+    const s = session({
+      startedAt: T(9),
+      completedAt: T(9),
+      blocks: [{ kind: "cardio", name: "Running", minutes: 60 }],
+      device: workout(),
+    });
+    expect(deviceImportedSession(s)).toBe(false);
+  });
+
+  it("self-heals when the athlete edits an imported figure", () => {
+    const w = workout({ distanceKm: 1.36 });
+    const s = importedSession(w);
+    const b = s.blocks[0]!;
+    expect(deviceImportedSession(s)).toBe(true);
+    expect(deviceImportedSession({ ...s, blocks: [{ ...b, distance: 1.4 }] })).toBe(false);
+    expect(deviceImportedSession({ ...s, blocks: [{ ...b, minutes: 10 }] })).toBe(false);
+  });
+
+  it("is false once the session holds more than the recording's one block", () => {
+    const w = workout();
+    const s = importedSession(w);
+    const extra = { kind: "strength" as const, name: "Bench Press", sets: [{ weight: 80, reps: 5 }] };
+    expect(deviceImportedSession({ ...s, blocks: [...s.blocks, extra] })).toBe(false);
   });
 });
 

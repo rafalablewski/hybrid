@@ -41,6 +41,7 @@ import {
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   deviceComparisonRows,
+  deviceImportedSession,
   deviceMarkFor,
   deviceSourceLabel,
   deviceTrueSession,
@@ -280,16 +281,24 @@ export function WorkoutWrapped({
   // panel shows the measured read next to the logged one; until then (and only
   // when nothing is measuring this athlete) it is the connect-a-device prompt.
   const showDeviceAd = !device && deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+  // A session the import CREATED has no logged side at all — its block is the
+  // recording, copied. Showing those echoes as "you logged" would invent a
+  // second reading out of our own rounding, so the panel goes single-column.
+  const imported = device != null && deviceImportedSession({ ...session, device });
   // Both columns come from the LOGGED read — the device's own figures are the
   // other column, and passing the effective ones would print them twice.
   const comparison = device
-    ? deviceComparisonRows({
-        device,
-        durationMin: logged.durationMin,
-        estimatedKcal: sessionEnergy(session, { bodyweightKg: bwHere, durationMin: logged.durationMin, ignoreDevice: true })?.kcal ?? null,
-        distanceKm: logged.distanceKm,
-        elevationM: logged.elevationM,
-      })
+    ? deviceComparisonRows(
+        imported
+          ? { device }
+          : {
+              device,
+              durationMin: logged.durationMin,
+              estimatedKcal: sessionEnergy(session, { bodyweightKg: bwHere, durationMin: logged.durationMin, ignoreDevice: true })?.kcal ?? null,
+              distanceKm: logged.distanceKm,
+              elevationM: logged.elevationM,
+            },
+      )
     : [];
   const deviceName = deviceSourceLabel(device);
   // Whether this connector ships artwork. When it doesn't, every lockup below
@@ -433,11 +442,14 @@ export function WorkoutWrapped({
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(80% 45% at 90% 15%, color-mix(in srgb, ${LIME} 12%, transparent), transparent 60%)` }} />
           {eyebrow(t("session.device.panelTitle"))}
           <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(26px, 8vw, 34px)", letterSpacing: "-.02em", lineHeight: 1.05, marginTop: 12, position: "relative" }}>{device.activityLabel}</div>
-          <Mono s={{ fontSize: fs.caption, marginTop: 10, lineHeight: 1.5, position: "relative", display: "block" }}>{t("session.device.lead")}</Mono>
+          <Mono s={{ fontSize: fs.caption, marginTop: 10, lineHeight: 1.5, position: "relative", display: "block" }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Mono>
           <div style={{ marginTop: 20, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
             <div style={{ display: "flex", padding: "10px 14px", background: "#0e0f0d" }}>
               <div style={{ flex: 1.1 }} />
-              <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Mono>
+              {/* An imported session has no logged column — the recording IS the log. */}
+              {!imported && (
+                <Mono s={{ flex: 1, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Mono>
+              )}
               {/* The lockup heads the measured column instead of the device's
                   name, and the column's figures below are chalk with it — the
                   whole measured side reads in one ink. */}
@@ -453,12 +465,14 @@ export function WorkoutWrapped({
               <div key={r.labelKey} style={{ display: "flex", alignItems: "baseline", padding: "12px 14px", background: "#0e0f0d", borderTop: `1px solid ${LINE}` }}>
                 <Mono s={{ flex: 1.1, fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase" }}>{t(r.labelKey)}</Mono>
                 {/* A modelled figure wears a "~" — never presented as a measurement. */}
-                <span style={{ ...disp, flex: 1, fontWeight: 700, fontSize: fs.caption, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</span>
+                {!imported && (
+                  <span style={{ ...disp, flex: 1, fontWeight: 700, fontSize: fs.caption, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</span>
+                )}
                 <span style={{ ...disp, flex: 1, fontWeight: 900, fontSize: fs.caption, textAlign: "right", color: txt(CHALK), fontVariantNumeric: "tabular-nums" }}>{r.device ?? "—"}</span>
               </div>
             ))}
           </div>
-          <Mono s={{ fontSize: fs.micro, marginTop: 12, lineHeight: 1.5, position: "relative", display: "block" }}>{t("session.device.truth")}</Mono>
+          <Mono s={{ fontSize: fs.micro, marginTop: 12, lineHeight: 1.5, position: "relative", display: "block" }}>{t(imported ? "session.device.truthImported" : "session.device.truth")}</Mono>
           <div style={{ display: "flex", gap: 16, marginTop: 18, position: "relative" }}>
             <button onClick={() => void unlinkDevice()} disabled={unlinking} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: unlinking ? "default" : "pointer", padding: 0, opacity: unlinking ? 0.5 : 1 }}>{t("session.device.unlink")}</button>
           </div>

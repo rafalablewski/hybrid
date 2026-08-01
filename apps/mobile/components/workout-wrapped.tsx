@@ -35,6 +35,7 @@ import {
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   deviceComparisonRows,
+  deviceImportedSession,
   deviceMarkFor,
   deviceSourceLabel,
   deviceTrueSession,
@@ -287,16 +288,24 @@ export function WorkoutWrapped({
   // measured read next to the logged one; until then (and only when nothing is
   // measuring this athlete) it is the connect-a-device prompt.
   const showDeviceAd = !device && deviceConnected === false && (wrapped.sparse || wrapped.energy == null);
+  // A session the import CREATED has no logged side at all — its block is the
+  // recording, copied. Showing those echoes as "you logged" would invent a
+  // second reading out of our own rounding, so the panel goes single-column.
+  const imported = device != null && deviceImportedSession({ ...session, device });
   // Both columns come from the LOGGED read — the device's own figures are the
   // other column, and passing the effective ones would print them twice.
   const comparison = device
-    ? deviceComparisonRows({
-        device,
-        durationMin: logged.durationMin,
-        estimatedKcal: sessionEnergy(session, { bodyweightKg: bwHere, durationMin: logged.durationMin, ignoreDevice: true })?.kcal ?? null,
-        distanceKm: logged.distanceKm,
-        elevationM: logged.elevationM,
-      })
+    ? deviceComparisonRows(
+        imported
+          ? { device }
+          : {
+              device,
+              durationMin: logged.durationMin,
+              estimatedKcal: sessionEnergy(session, { bodyweightKg: bwHere, durationMin: logged.durationMin, ignoreDevice: true })?.kcal ?? null,
+              distanceKm: logged.distanceKm,
+              elevationM: logged.elevationM,
+            },
+      )
     : [];
   const deviceName = deviceSourceLabel(device);
   // Whether this connector ships artwork. When it doesn't, every lockup below
@@ -449,11 +458,14 @@ export function WorkoutWrapped({
           <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}14`} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.device.panelTitle"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.6, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t("session.device.lead")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
             <View style={{ marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 14, backgroundColor: "#0e0f0d" }}>
                 <View style={{ flex: 1.1 }} />
-                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
+                {/* An imported session has no logged column — the recording IS the log. */}
+                {!imported && (
+                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
+                )}
                 {/* The lockup heads the measured column instead of the device's
                     name, and the column's figures below are chalk with it — the
                     whole measured side reads in one ink. */}
@@ -469,12 +481,14 @@ export function WorkoutWrapped({
                 <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: 1, borderTopColor: C.line }}>
                   <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.5, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
                   {/* A modelled figure wears a "~" — never presented as a measurement. */}
-                  <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 14, color: C.chalk, textAlign: "right" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</Text>
+                  {!imported && (
+                    <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 14, color: C.chalk, textAlign: "right" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</Text>
+                  )}
                   <Text style={{ flex: 1, fontFamily: F.black, fontSize: 14, color: C.chalk, textAlign: "right" }}>{r.device ?? "—"}</Text>
                 </View>
               ))}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, lineHeight: 16, color: C.ash, marginTop: 12 }}>{t("session.device.truth")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, lineHeight: 16, color: C.ash, marginTop: 12 }}>{t(imported ? "session.device.truthImported" : "session.device.truth")}</Text>
             <View style={{ flexDirection: "row", gap: 16, marginTop: 20 }}>
               <Pressable onPress={() => setMatchOpen(true)}>
                 <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.chalk }}>{t("session.device.rematch")}</Text>
