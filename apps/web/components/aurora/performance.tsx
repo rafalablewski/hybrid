@@ -18,6 +18,7 @@ import { useCheckins } from "@/lib/use-checkins";
 import { useToday } from "@/lib/use-today";
 import { useIsMobile } from "@/lib/use-media-query";
 import AuroraOnboarding from "./onboarding";
+import GroupMark from "./group-mark";
 import RtpPanel from "../rtp-panel";
 import AuroraVolume from "./volume";
 import AuroraTrends from "./trends";
@@ -99,11 +100,13 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
 }
 
 /** AURORA Performance (web) — the merged athlete hub (ex-Cockpit + the analyze
- *  Performance screen, one page): living masthead → Performance State (the
- *  classic card: big HPI + sparkline, STR/END/REC columns, readiness + nudge) →
- *  the 14-day trajectory → injury risk (summary card with the tissue body-map +
- *  probability table as a disclosure) → this week → breakdown → horizon →
- *  goal + season → return-to-play. Same live engines as before. */
+ *  Performance screen, one page), organised into FOUR NAMED CLUSTERS under the
+ *  same headline-tier GroupMark grammar as Today's daily loop: living masthead,
+ *  then STATE (Performance State → 14-day trajectory → injury risk →
+ *  return-to-play) → TRAINING (this week → breakdown → volume → trend) →
+ *  SEASON (goal + season + setup) → EXPLORE (the horizon doors). Same live
+ *  engines as before; nothing removed — RTP moved up beside the injury card it
+ *  serves, the horizon doors close the page like Today's Explore. */
 export default function AuroraPerformance({
   sessions, bio, macro, currentWeek = 1, setScreen, onEnrolled, onOpenExercise,
   sessionsReady = true, macroReady = true, macroSettled = true,
@@ -237,6 +240,15 @@ export default function AuroraPerformance({
       </div>
 
       <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
+        {/* ═════ GROUP: STATE — how the body is doing right now: the headline
+            read, its 14-day trajectory, what's at risk, and the protocols for
+            what already broke. First of the FOUR named clusters this page is
+            organised into (State / Training / Season / Explore) — the same
+            headline-tier GroupMark grammar as Today's daily loop, so the two
+            hub scrolls read as siblings. `mt` compensates the grid's own gap,
+            keeping the optical 36 above every marker. ═════ */}
+        <GroupMark label={t("w.home.group.state")} mt={22} />
+
         {/* 2 · PERFORMANCE STATE — the headline read (the classic anatomy):
             big HPI + band/limiter caption + sparkline, STR/END/REC in three
             columns, the top driver, and today's readiness (with the check-in
@@ -448,7 +460,19 @@ export default function AuroraPerformance({
           </div>
         )}
 
-        {/* 5 · THIS WEEK — recap & PRs */}
+        {/* 5 · RETURN-TO-PLAY — gated protocols (from the retired analyze
+            screen). Moved up from the page's foot into the STATE cluster
+            (Performance categorisation): it is injury management, and when a
+            tissue is flagged in the card directly above, the protocol you
+            open now sits beside the flag rather than a whole page away. */}
+        <RtpPanel />
+
+        {/* ═════ GROUP: TRAINING — the work itself: what this week produced,
+            per discipline, the week's dose against the athlete's own
+            landmarks, and the eight-week trend. ═════ */}
+        <GroupMark label={t("w.home.group.training")} mt={22} />
+
+        {/* 6 · THIS WEEK — recap & PRs */}
         {hasData && (
           <button onClick={() => setScreen("statistics")} style={{ ...CARD, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
             <SHead
@@ -477,10 +501,10 @@ export default function AuroraPerformance({
           </button>
         )}
 
-        {/* 6 · BREAKDOWN — disciplines, tabbed */}
+        {/* 7 · BREAKDOWN — disciplines, tabbed */}
         {hasData && <Breakdown state={state} recap={recap} totals={totals} sport={sport} profiles={profiles} setScreen={setScreen} />}
 
-        {/* 7 · VOLUME — this week's hard sets against the athlete's own
+        {/* 8 · VOLUME — this week's hard sets against the athlete's own
             MEV/MAV/MRV: the hero shape, the block ramp, the week's
             prescription, the per-muscle rails (each carrying its own eight-week
             history), whose numbers these are, and the band glossary. Was its
@@ -490,22 +514,16 @@ export default function AuroraPerformance({
             See the `performance-unified` capability. */}
         <AuroraVolume sessions={sessions} unified />
 
-        {/* 8 · TREND — the eight-week series (weekly sets, weekly tonnage) and
+        {/* 9 · TREND — the eight-week series (weekly sets, weekly tonnage) and
             the sortable exercise-analytics table. Its muscle-breakdown card and
             its add/ease-off advice line are gone: both were the same engines
             (volumeStatus / volumeAdvice) the Volume sections above already
             state, in more detail and with the landmarks attached. */}
         <AuroraTrends sessions={sessions} onOpenExercise={onOpenExercise} unified />
 
-        {/* 9 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach: quick rails out */}
-        <div style={CARD}>
-          <SHead title={t("w.home.cockpit.horizon")} />
-          <Mod label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
-          <Mod label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
-          <Mod label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onClick={() => setScreen("endurance")} />
-          {/* The AI coach's one door on the web — the prescription lives here. */}
-          <Mod label={t("w.home.cockpit.aiCoach")} value={t("w.home.cockpit.aiCoachValue")} mono onClick={() => setScreen("aicoach")} last />
-        </div>
+        {/* ═════ GROUP: SEASON — the long arc: the goal, the phase, how far
+            through, and the setup that changes them. ═════ */}
+        <GroupMark label={t("w.home.group.season")} mt={22} />
 
         {/* 10 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo);
             reflows to a single column on very narrow viewports. */}
@@ -545,10 +563,19 @@ export default function AuroraPerformance({
         </div>
         {setupOpen && <div style={CARD}><AuroraOnboarding onEnrolled={() => { setSetupOpen(false); onEnrolled(); }} /></div>}
 
-        {/* 11 · RETURN-TO-PLAY — gated protocols (from the retired analyze screen).
-            Bottom placement matches its cadence: empty most days; when a tissue is
-            flagged above, the protocol you open lands on the same page. */}
-        <RtpPanel />
+        {/* ═════ GROUP: EXPLORE — beyond this page: the doors to the deeper
+            tools. Closes the scroll, exactly as Explore closes Today. ═════ */}
+        <GroupMark label={t("w.home.group.explore")} mt={22} />
+
+        {/* 11 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach: quick rails out */}
+        <div style={CARD}>
+          <SHead title={t("w.home.cockpit.horizon")} />
+          <Mod label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
+          <Mod label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
+          <Mod label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onClick={() => setScreen("endurance")} />
+          {/* The AI coach's one door on the web — the prescription lives here. */}
+          <Mod label={t("w.home.cockpit.aiCoach")} value={t("w.home.cockpit.aiCoachValue")} mono onClick={() => setScreen("aicoach")} last />
+        </div>
       </div>
     </div>
   );

@@ -23,6 +23,7 @@ import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark,
 import AuroraVolume from "./volume";
 import AuroraTrends from "./trends";
 import { AuroraIcon } from "./icons";
+import GroupMark from "./group-mark";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 
@@ -36,11 +37,13 @@ const acwrColor = (b: AcwrBand, C: Palette): string =>
   b === "sweet-spot" ? C.lime : b === "caution" ? C.amber : b === "danger" ? C.red : b === "detraining" ? C.blue : C.ash;
 
 /** AURORA Performance — the merged athlete hub (ex-Cockpit + the standalone
- *  Performance State screen, one page — mirrors web): living masthead →
- *  Performance State (the classic card: big HPI + sparkline, STR/END/REC
- *  columns, readiness + nudge) → the 14-day trajectory → injury risk (summary
- *  card with the per-tissue probability table as a disclosure) → this week →
- *  breakdown → horizon → goal + season → return-to-play. */
+ *  Performance State screen, one page — mirrors web), organised into FOUR
+ *  NAMED CLUSTERS under the same headline-tier GroupMark grammar as the home
+ *  tab's daily loop: living masthead, then STATE (Performance State → 14-day
+ *  trajectory → injury risk → return-to-play) → TRAINING (this week →
+ *  breakdown → volume → trend) → SEASON (goal + season) → EXPLORE (the
+ *  horizon doors). Same live engines; nothing removed — RTP moved up beside
+ *  the injury card it serves, the horizon doors close the page. */
 export default function AuroraPerformance({ top }: { top?: ReactNode }) {
   const persona = usePersona();
   const { entitlement } = useSession();
@@ -189,6 +192,14 @@ function Full({ top }: { top?: ReactNode }) {
           the page keeps rendering it and the pull-to-refresh retry sits on top,
           which beats blanking a screen the athlete was reading. */}
       {failed && !sessionsRead.ready && <FetchError onRetry={load} style={{ marginTop: 14 }} />}
+
+      {/* ═════ GROUP: STATE — how the body is doing right now: the headline
+          read, its 14-day trajectory, what's at risk, and the protocols for
+          what already broke. First of the FOUR named clusters this page is
+          organised into (State / Training / Season / Explore) — the same
+          headline-tier GroupMark grammar as the home tab's daily loop, so the
+          two hub scrolls read as siblings. Mirrors web performance.tsx. ═════ */}
+      <GroupMark label={t("w.home.group.state")} />
 
       {/* 2 · PERFORMANCE STATE — the headline read (the classic anatomy):
           big HPI + band/limiter caption + sparkline, STR/END/REC in three
@@ -406,7 +417,19 @@ function Full({ top }: { top?: ReactNode }) {
         </ACard>
       )}
 
-      {/* 5 · THIS WEEK — recap & PRs */}
+      {/* 5 · RETURN-TO-PLAY — gated protocols (from the standalone screen).
+          Moved up from the page's foot into the STATE cluster (Performance
+          categorisation): it is injury management, and when a tissue is
+          flagged in the card directly above, the protocol you open now sits
+          beside the flag rather than a whole page away. */}
+      <RtpPanel />
+
+      {/* ═════ GROUP: TRAINING — the work itself: what this week produced,
+          per discipline, the week's dose against the athlete's own landmarks,
+          and the eight-week trend. ═════ */}
+      <GroupMark label={t("w.home.group.training")} />
+
+      {/* 6 · THIS WEEK — recap & PRs */}
       {hasData && (
         <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 14 }}>
           <ACard>
@@ -438,10 +461,10 @@ function Full({ top }: { top?: ReactNode }) {
         </Pressable>
       )}
 
-      {/* 6 · BREAKDOWN — disciplines, tabbed */}
+      {/* 7 · BREAKDOWN — disciplines, tabbed */}
       {hasData && <Breakdown C={C} scheme={scheme} state={state} recap={recap} totals={totals} sport={sport} profiles={profiles} onOpen={(h) => router.push(h)} />}
 
-      {/* 7 · VOLUME — this week's hard sets against the athlete's own
+      {/* 8 · VOLUME — this week's hard sets against the athlete's own
           MEV/MAV/MRV: the hero shape, the block ramp, the week's prescription,
           the per-muscle rails (each carrying its own eight-week history),
           whose numbers these are, and the band glossary. Was its own screen
@@ -450,24 +473,18 @@ function Full({ top }: { top?: ReactNode }) {
           to draw off the same volumeStatus(). See `performance-unified`. */}
       <View style={{ marginTop: 14 }}><AuroraVolume unified /></View>
 
-      {/* 8 · TREND — the eight-week series (weekly sets, weekly tonnage) and the
+      {/* 9 · TREND — the eight-week series (weekly sets, weekly tonnage) and the
           sortable exercise-analytics table. Its muscle-breakdown card and its
           add/ease-off advice line are gone: both were the same engines
           (volumeStatus / volumeAdvice) the Volume sections above already state,
           in more detail and with the landmarks attached. */}
       <View style={{ marginTop: 14 }}><AuroraTrends unified /></View>
 
-      {/* 9 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
-      <ACard style={{ marginTop: 14 }}>
-        <SHead C={C} scheme={scheme} title={t("w.home.cockpit.horizon")} />
-        <Mod C={C} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/sport")} />
-        <Mod C={C} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/velocity")} />
-        <Mod C={C} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onPress={() => router.push("/endurance")} />
-        {/* The AI coach's one door on mobile — the prescription lives here. */}
-        <Mod C={C} label={t("w.home.cockpit.aiCoach")} value={t("w.home.cockpit.aiCoachValue")} mono onPress={() => router.push("/ai-coach")} last />
-      </ACard>
+      {/* ═════ GROUP: SEASON — the long arc: the goal, the phase, how far
+          through, and the setup that changes them. ═════ */}
+      <GroupMark label={t("w.home.group.season")} />
 
-      {/* 8 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
+      {/* 10 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
       <View style={{ flexDirection: "row", gap: 12, marginTop: 14 }}>
         {/* widget 1 — goal */}
         <ACard style={{ flex: 1 }}>
@@ -507,10 +524,19 @@ function Full({ top }: { top?: ReactNode }) {
         </ACard>
       </View>
 
-      {/* 9 · RETURN-TO-PLAY — gated protocols (from the standalone screen).
-          Bottom placement matches its cadence: empty most days; when a tissue is
-          flagged above, the protocol you open lands on the same page. */}
-      <RtpPanel />
+      {/* ═════ GROUP: EXPLORE — beyond this page: the doors to the deeper
+          tools. Closes the scroll, exactly as Explore closes the home tab. ═════ */}
+      <GroupMark label={t("w.home.group.explore")} />
+
+      {/* 11 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
+      <ACard style={{ marginTop: 14 }}>
+        <SHead C={C} scheme={scheme} title={t("w.home.cockpit.horizon")} />
+        <Mod C={C} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/sport")} />
+        <Mod C={C} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/velocity")} />
+        <Mod C={C} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onPress={() => router.push("/endurance")} />
+        {/* The AI coach's one door on mobile — the prescription lives here. */}
+        <Mod C={C} label={t("w.home.cockpit.aiCoach")} value={t("w.home.cockpit.aiCoachValue")} mono onPress={() => router.push("/ai-coach")} last />
+      </ACard>
     </AuroraScreen>
   );
 }

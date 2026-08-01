@@ -82,6 +82,7 @@ import AuroraEnduranceLanes from "./endurance-lanes";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
+import GroupMark from "./group-mark";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
@@ -1087,29 +1088,9 @@ export default function AuroraToday({
   );
 }
 
-/** GROUP MARKER — the HEADLINE TIER (cluster-marker study, direction 02).
- *  Today's dashboard scroll is organised into four themed clusters
- *  (Train / Recover / Progress / Explore); each opens with its name as a TRUE
- *  typographic tier — the display face at 23, sitting between the masthead
- *  (34) and the block heads (18) — and nothing else. No rule, no mono, no
- *  chrome: the whitespace above does all the separating (36px, deliberately
- *  larger than any gap inside a cluster, so the headline always sits closer
- *  to its own content than to what precedes it). The first cut was a
- *  mono-uppercase label with a trailing hairline; it read as the default
- *  divider every generated layout reaches for, and was retired for pure
- *  type. Mirrored on mobile (aurora/home.tsx GroupMark), where Kyoto Hour
- *  sets it in the serif like the masthead. */
-function GroupMark({ label }: { label: string }) {
-  return (
-    <div
-      role="heading"
-      aria-level={2}
-      style={{ margin: "36px 2px 0", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 23, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk") }}
-    >
-      {label}
-    </div>
-  );
-}
+// GroupMark — the headline-tier cluster marker — moved to its own module
+// (aurora/group-mark.tsx) when the Performance page adopted the same
+// clustering; both hub scrolls now import one component.
 
 // One row of the first-session chooser: a tappable option with title, sub, badge.
 /** One card of the first-run chooser — the Go-Full AccessCard anatomy (corner

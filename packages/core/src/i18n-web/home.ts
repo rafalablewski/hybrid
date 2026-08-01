@@ -161,6 +161,11 @@ export const web_home = {
     // of the hours column ({a} of {b}, both one-decimal hours).
     "w.home.group.metaWeek": "{v} this week",
     "w.home.group.metaOf": "{a} of {b} h this week",
+    // The Performance page's clusters (State / Training / Season, plus the
+    // shared Explore label above) — same headline-tier GroupMark, same grammar.
+    "w.home.group.state": "State",
+    "w.home.group.training": "Training",
+    "w.home.group.season": "Season",
     // ── This week — the verdict card (Statistics + Analytics, merged onto Today).
     // The lead sentences take {m} = the metric name below; vsAvg takes {v} = this
     // week's value and {b} = the four-week average, both already unit-formatted.
@@ -906,6 +911,9 @@ export const web_home = {
     "w.home.group.explore": "Odkrywaj",
     "w.home.group.metaWeek": "{v} w tym tygodniu",
     "w.home.group.metaOf": "{a} z {b} h w tym tygodniu",
+    "w.home.group.state": "Stan",
+    "w.home.group.training": "Trening",
+    "w.home.group.season": "Sezon",
     "w.home.week.title": "Ten tydzień",
     "w.home.other.title": "Inne sporty",
     "w.home.other.efforts": "Wyjścia",
@@ -1631,6 +1639,9 @@ export const web_home = {
     "w.home.group.explore": "Entdecken",
     "w.home.group.metaWeek": "{v} diese Woche",
     "w.home.group.metaOf": "{a} von {b} h diese Woche",
+    "w.home.group.state": "Zustand",
+    "w.home.group.training": "Training",
+    "w.home.group.season": "Saison",
     "w.home.week.title": "Diese Woche",
     "w.home.other.title": "Andere Sportarten",
     "w.home.other.efforts": "Einheiten",
