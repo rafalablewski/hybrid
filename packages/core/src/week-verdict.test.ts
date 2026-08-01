@@ -9,7 +9,10 @@ const WEEK = 7 * 86_400_000;
 function s(daysAgo: number, kg: number, minutes = 60): LoggedSession {
   const started = NOW - daysAgo * 86_400_000;
   // 1 set × 1 rep × kg = kg of tonnage, so the arithmetic in each test is plain.
-  const blocks: SessionBlock[] = [{ kind: "strength", name: "Deadlift", sets: [{ load: kg, reps: 1 }] } as SessionBlock];
+  // load/reps are STRINGS on StrengthSet — that is what the logger stores and
+  // what sessionVolume coerces — so the fixture carries the real shape and needs
+  // no cast to pretend otherwise.
+  const blocks: SessionBlock[] = [{ kind: "strength", name: "Deadlift", sets: [{ load: String(kg), reps: "1" }] }];
   return {
     id: `s${daysAgo}-${kg}`,
     title: "Session",
