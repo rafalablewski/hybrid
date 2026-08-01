@@ -65,14 +65,13 @@ export const REVENUE_STREAMS: RevenueStream[] = [
   },
   {
     id: "coach",
-    label: "Coaching seats (B2B2C)",
-    whoPays: "PTs & online coaches (per roster)",
+    label: "Coach marketplace (B2B2C)",
+    whoPays: "Nobody today — later, the coach's CLIENTS (HYBRID takes a platform fee)",
     howItWorks:
-      "The coach pays a monthly seat fee scaled to roster size; their rostered athletes get the full adaptive (Pro) experience included ON THE COACH'S SEAT — no per-client subscription. The coach builds a plan and assigns it straight into a client's account (or to a whole client group at once); the weekly check-in (the coaching heartbeat) is the recurring ritual clients stay for, so the seat compounds with retention.",
+      "COACH TOOLING IS FREE — the strategy decision from the Jul 2026 review. Coaches are the cheapest acquisition channel in fitness (one coach brings 30–200 athletes at zero CAC), so roster, invites, the program builder, groups, squad monitor and check-in replies cost a verified coach nothing, forever; the only roster cap is an anti-abuse guardrail. The revenue on this side arrives LATER and points the other way: when a coach sells a paid program through the marketplace, the client pays the coach and HYBRID takes a platform fee on the transaction (see the social-paid-coaching capability). Tool fees tax the channel; transaction fees grow with it.",
     tiers: [
-      { name: "Starter", price: "$29/mo", note: "Up to 10 athletes." },
-      { name: "Pro", price: "$79/mo", note: "Up to 40 athletes + client groups & bulk plan assignment." },
-      { name: "Business", price: "$199/mo", note: "Up to 150 athletes + Team OS (org graph, roles, segmentation)." },
+      { name: "Coach tooling", price: "$0", note: "Everything a coach needs to run a roster — free, permanently. The channel, not the product." },
+      { name: "Marketplace fee (later)", price: "~10–15% of program sales", note: "Charged on paid coaching programs once Stripe checkout lands; the coach sets the price." },
     ],
   },
   {
@@ -213,7 +212,12 @@ export interface MarketPricing {
   /** Consumer Pro — monthly + annual, in local currency. */
   proMonthly: number;
   proAnnual: number;
-  /** Coaching seats — monthly, local currency. */
+  /**
+   * Coaching seats — monthly, local currency. SHELVED COUNTERFACTUAL: coach
+   * tooling is free (the Jul 2026 decision — coaches are the acquisition
+   * channel), so nothing here is charged. Kept so the what-if model can still
+   * answer "what would seat fees have been worth" against the free strategy.
+   */
   coachStarter: number;
   coachPro: number;
   coachBusiness: number;
@@ -350,7 +354,7 @@ export interface PlanColumn {
 export const PLAN_COLUMNS: PlanColumn[] = [
   { id: "free", label: "Free", price: "$0", who: "Guest & casual — track and share" },
   { id: "pro", label: "Pro", price: "$12.99/mo – $99/yr", who: "The individual athlete (paid)" },
-  { id: "coach", label: "Coach", price: "$29–199/mo seat", who: "Coach + their roster (Pro included)" },
+  { id: "coach", label: "Coach", price: "$0 — tooling is free", who: "Verified coach + their roster (Pro included)" },
   { id: "org", label: "Org", price: "Custom / athlete / yr", who: "Clubs – federations – units" },
 ];
 
@@ -402,13 +406,13 @@ export const ENTITLEMENT_MATRIX: EntitlementRow[] = [
   { group: "Coaching & teams (Coach seat)", feature: "Roster, client notes & check-in replies", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Assign plans into a client's account", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Build & assign multi-week programs", free: false, pro: false, coach: true, org: true },
-  { group: "Coaching & teams (Coach seat)", feature: "Client groups + bulk plan/program assignment", free: false, pro: false, coach: "Pro seat+", org: true },
+  { group: "Coaching & teams (Coach seat)", feature: "Client groups + bulk plan/program assignment", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Rostered clients get the adaptive experience (no per-client sub)", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Squad monitor & team compare", free: false, pro: false, coach: true, org: true },
   { group: "Coaching & teams (Coach seat)", feature: "Private coaching notes", free: false, pro: false, coach: true, org: true },
 
   // Organization — the enterprise layer
-  { group: "Organization (Enterprise)", feature: "Org graph (roles × team subtree)", free: false, pro: false, coach: "Business tier", org: true },
+  { group: "Organization (Enterprise)", feature: "Org graph (roles × team subtree)", free: false, pro: false, coach: false, org: true },
   { group: "Organization (Enterprise)", feature: "Medical-tier injury detail & return-to-play", free: false, pro: false, coach: false, org: true },
   { group: "Organization (Enterprise)", feature: "Video intelligence & talent graph", free: false, pro: false, coach: false, org: true },
 ];
@@ -435,7 +439,9 @@ export interface EconomicAssumptions {
   annualMixPct: number; // % of Pro subs paying annually
   proPriceAnnual: number; // $/yr (effective monthly = /12)
 
-  // --- coaching ---
+  // --- coaching (a WHAT-IF lever: coach tooling is free in the live product —
+  //     coaches are the acquisition channel — so the live coach revenue is $0;
+  //     these inputs model the shelved seat-fee counterfactual) ---
   coachTierMix: CoachTierMix;
   coachStarterPrice: number; // $/mo
   coachProPrice: number; // $/mo

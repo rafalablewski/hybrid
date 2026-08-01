@@ -15,10 +15,12 @@ const tableMissing = (e: unknown) => {
   return code === "P2021" || code === "P2010"; // table does not exist
 };
 
-// Until coach-seat billing tiers are wired, cap live invites + ACTIVE clients at
-// the largest tier (Business = 150) as a guardrail. TODO: read the coach's real
-// tier once coach billing lands, and enforce 10 / 40 / 150.
-const MAX_ROSTER = 150;
+// Coach tooling is FREE — coaches are the acquisition channel, not a revenue
+// line (one coach brings 30–200 athletes at zero CAC), so there are no seat
+// tiers and no roster sizes to sell. The cap below is an anti-abuse guardrail
+// only (a compromised coach account mass-inviting), sized above any real
+// individual roster; raising it costs nothing.
+const MAX_ROSTER = 200;
 const INVITE_TTL_DAYS = 30;
 
 function inviteUrl(request: Request, token: string): string {
