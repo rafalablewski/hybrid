@@ -1000,6 +1000,7 @@ export default function AuroraHome() {
           showDeep={isAthlete}
           onArchive={() => router.push("/history")}
           onDeep={() => router.push("/analytics")}
+          onSession={(id) => router.push(`/session/${id}`)}
         />
 
         {/* ───── ENDURANCE — sport lanes, directly under This week because the
