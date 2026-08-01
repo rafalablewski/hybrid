@@ -1147,7 +1147,15 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}
+                  {/* NO CLOCK TIME HERE. This line used to end with the session's
+                      startedAt as "21:33" — which reads as WHEN YOU TRAINED but,
+                      for a quick-logged sport, is stamped at save time: it is the
+                      moment the record was typed, not the moment the swim
+                      happened. A number that answers a question nobody asked with
+                      a value that isn't true of the thing it sits under. The row
+                      says what was DONE (distance/time, or tonnage + blocks); when
+                      it was entered is bookkeeping and belongs nowhere on Today. */}
+                  {sessionMeta(s, units, bw(s.startedAt))}
                 </span>
               </span>
               {onPlanRow && (

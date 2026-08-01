@@ -1215,7 +1215,10 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
+                {/* NO CLOCK TIME HERE — see the web twin (aurora/today.tsx). The
+                    trailing "21:33" was the record's save time masquerading as the
+                    workout's time; the row states what was done, nothing else. */}
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
               </View>
               {onPlanRow ? (
                 <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
