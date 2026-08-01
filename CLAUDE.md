@@ -55,6 +55,20 @@ other in the SAME change. If you genuinely can't reach parity in that change
 (e.g. a native-only constraint), record the gap explicitly in `capabilities.ts`
 (as `planned`/`blocked` with `blockedBy`) so the missing side is never lost.
 
+## RULE: the device's recording is the source of truth (always)
+When a session is matched to an Apple Watch (or other device) recording, the
+**measured figures outrank the typed ones — everywhere**. `Session.device`
+carries the recording and `packages/core/src/device-truth.ts` projects it onto
+the session's blocks (`deviceTrueSession(s)` — including second-accurate
+`seconds` for pace); every engine, summary line, row, card, and stat must read
+through that projection, never the raw typed blocks. Derived figures (pace,
+rates) must come from the device's exact values (`cardioSeconds`, unrounded
+distance), NOT from display-rounded ones — a pace computed from "8 min" when
+the watch recorded 7:52 contradicts the device panel beside it. The ONE
+exception: the summary's logged-vs-measured comparison panel deliberately reads
+the raw session (`ignoreDevice`). When adding any new surface or aggregate that
+touches duration/distance/pace, wire it through device-truth in the same change.
+
 ## RULE: keep the Capabilities registry current (always)
 `packages/core/src/capabilities.ts` is the single source of truth for **every**
 app capability. It is surfaced in the web admin **Capabilities** screen
