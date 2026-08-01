@@ -51,10 +51,7 @@ import {
   logbookWeek,
   todayDoneState,
   sessionsOnDay,
-  sessionShape,
-  sessionCardioSummary,
-  sessionVolume,
-  fmtTonnage,
+  sessionMeta,
   type LoggedSession,
   type SessionBlock,
   type Experience,
@@ -1124,22 +1121,9 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
   );
 }
 
-// One-line meta for a session logged today — sport-adaptive so a run/match reads
-// as distance·time (not the gym Sets/Volume framing) and a lift reads as tonnage.
-function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): string {
-  if (sessionShape(s) !== "strength") {
-    // Measured where a device recorded it (see core/device-truth.ts).
-    const ct = sessionCardioSummary(s);
-    const p: string[] = [];
-    if (ct.distanceKm) p.push(`${ct.distanceKm.toFixed(1)} km`);
-    if (ct.minutes) p.push(`${ct.minutes} min`);
-    if (p.length) return p.join(" – ");
-    return s.blocks.map((b) => b.name).join(" – ");
-  }
-  const vol = sessionVolume(s.blocks, false, bw);
-  const names = s.blocks.map((b) => b.name).join(" – ");
-  return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
-}
+// The row's meta line (sport-adaptive: distance/time/pace, or tonnage + lifts)
+// now lives in core/engines/session.ts — it was this exact function twice, once
+// here and once in web today.tsx, which is how two clients drift.
 
 // The "Also today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
@@ -1195,7 +1179,10 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
+                {/* NO CLOCK TIME HERE — see the web twin (aurora/today.tsx). The
+                    trailing "21:33" was the record's save time masquerading as the
+                    workout's time; the row states what was done, nothing else. */}
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
               </View>
               {onPlanRow ? (
                 <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
