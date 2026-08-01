@@ -205,7 +205,7 @@ function Full({ top }: { top?: ReactNode }) {
           big HPI + band/limiter caption + sparkline, STR/END/REC in three
           columns, the top driver, and today's readiness (with the check-in
           nudge) below. */}
-      <ACard style={{ marginTop: 14 }}>
+      <ACard solid style={{ marginTop: 14 }}>
         <SHead C={C} scheme={scheme} title={t("w.home.cockpit.perfTwin")} />
         {hasData ? (
           <>
@@ -271,7 +271,7 @@ function Full({ top }: { top?: ReactNode }) {
           native primitives instead of an SVG chart (form carries the series
           identity: bar vs tick, hue second). */}
       {hasData && (
-        <ACard style={{ marginTop: 14 }}>
+        <ACard solid style={{ marginTop: 14 }}>
           <SHead
             C={C} scheme={scheme}
             title={t("w.analyze.perf.trajectory")}
@@ -305,7 +305,7 @@ function Full({ top }: { top?: ReactNode }) {
           probability table (the old standalone depth) lives in the "Tissue
           detail" disclosure so the glance stays a glance. */}
       {hasData && (
-        <ACard style={{ marginTop: 14, borderColor: calm ? C.line : `${C.red}73`, backgroundColor: calm ? undefined : `${C.red}12` }}>
+        <ACard solid style={{ marginTop: 14, borderColor: calm ? C.line : `${C.red}73`, backgroundColor: calm ? undefined : `${C.red}12` }}>
           <SHead
             C={C} scheme={scheme}
             title={t("w.home.today.injuryRisk")}
@@ -432,7 +432,7 @@ function Full({ top }: { top?: ReactNode }) {
       {/* 6 · THIS WEEK — recap & PRs */}
       {hasData && (
         <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 14 }}>
-          <ACard>
+          <ACard solid>
             <SHead
               C={C} scheme={scheme}
               title={t("w.home.today.yourWeek")}
@@ -487,7 +487,7 @@ function Full({ top }: { top?: ReactNode }) {
       {/* 10 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
       <View style={{ flexDirection: "row", gap: 12, marginTop: 14 }}>
         {/* widget 1 — goal */}
-        <ACard style={{ flex: 1 }}>
+        <ACard solid style={{ flex: 1 }}>
           <SHead C={C} scheme={scheme} title={t("w.home.cockpit.goal")} small />
           {macro ? (
             <>
@@ -503,7 +503,7 @@ function Full({ top }: { top?: ReactNode }) {
           )}
         </ACard>
         {/* widget 2 — season progress / plan controls */}
-        <ACard style={{ flex: 1 }}>
+        <ACard solid style={{ flex: 1 }}>
           {/* The HEADING itself is a claim ("Set up" vs "Season") — hold it
               until enrollment is known, or an enrolled athlete is briefly told
               to set up a season they already have. */}
@@ -529,7 +529,7 @@ function Full({ top }: { top?: ReactNode }) {
       <GroupMark label={t("w.home.group.explore")} />
 
       {/* 11 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
-      <ACard style={{ marginTop: 14 }}>
+      <ACard solid style={{ marginTop: 14 }}>
         <SHead C={C} scheme={scheme} title={t("w.home.cockpit.horizon")} />
         <Mod C={C} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/sport")} />
         <Mod C={C} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/velocity")} />
@@ -563,7 +563,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
   const bestProfile = useMemo(() => Object.entries(profiles).filter(([, p]) => p.estimated1rm > 0).sort((a, b) => b[1].estimated1rm - a[1].estimated1rm)[0], [profiles]);
 
   return (
-    <ACard style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 14 }}>
       <SHead C={C} scheme={scheme} title={t("w.home.cockpit.breakdown")} />
       {/* segmented tabs */}
       <View style={{ flexDirection: "row", gap: 0, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4 }}>
@@ -756,7 +756,7 @@ function RtpPanel() {
   const active = protocols.filter((p) => p.status !== "abandoned");
 
   return (
-    <ACard style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 14 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>Return-to-play – gated protocols</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
@@ -866,7 +866,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
       </View>
       <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
       {TEASE.map((s) => (
-        <ACard key={s.key} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
+        <ACard solid key={s.key} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime }} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</Text>

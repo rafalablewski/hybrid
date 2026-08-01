@@ -272,7 +272,7 @@ export default function AuroraVolume({ top, unified = false }: {
       </View>
 
       {/* ── HERO — the whole week as one number and one shape ─────────────── */}
-      <ACard style={{ marginTop: 16, paddingBottom: 18 }}>
+      <ACard solid style={{ marginTop: 16, paddingBottom: 18 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
           {customized && (
@@ -344,7 +344,7 @@ export default function AuroraVolume({ top, unified = false }: {
 
       {/* ── BY MUSCLE — one legend, then the stack of comparable rails ────── */}
       {!summary.empty && (
-        <ACard style={{ marginTop: 14 }}>
+        <ACard solid style={{ marginTop: 14 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
             <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
@@ -370,7 +370,7 @@ export default function AuroraVolume({ top, unified = false }: {
       <SourceCard resolved={resolved} tested={replay} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
 
       {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
-      <ACard style={{ marginTop: 14 }}>
+      <ACard solid style={{ marginTop: 14 }}>
         <Pressable onPress={() => setGloss((v) => !v)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whatBands")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{gloss ? "–" : "+"}</Text>
@@ -432,7 +432,7 @@ function Prescription({ title, why, items, color, ml, unit }: {
   const { palette: C, scheme } = useTheme();
   if (!items.length) return null;
   return (
-    <ACard style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{unit}</Text>
@@ -501,7 +501,7 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
   const { t } = useLang();
   const current = ramp.find((c) => c.current) ?? ramp[0];
   return (
-    <ACard style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.thisBlock")}</Text>
         <Toggle on={on} label={t("w.analyze.vol.periodize")} onPress={() => setLoggerPref("periodizeVolume", !on)} />
@@ -593,7 +593,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
   const field = { textAlign: "center" as const, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 7 };
 
   return (
-    <ACard style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: resolved.source === "population" ? C.ash : txt(C, C.lime) }}>{t(sourceLabelKey(resolved.source))}</Text>

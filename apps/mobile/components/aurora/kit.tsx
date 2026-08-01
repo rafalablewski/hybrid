@@ -274,13 +274,16 @@ export function Spark({
   );
 }
 
-export function ACard({ children, style }: { children: ReactNode; style?: ViewStyle }) {
+export function ACard({ children, style, solid }: { children: ReactNode; style?: ViewStyle; solid?: boolean }) {
   const { palette } = useTheme();
-  const glass = LIQUID_GLASS_SUPPORTED;
+  const glass = LIQUID_GLASS_SUPPORTED && !solid;
   // When Liquid Glass is active (iOS + toggle on) the surface is a native SwiftUI
   // layer dropped behind the content (transparent RN base so the glass refracts
   // the screen field); otherwise the solid ink2 card. The glass clips itself to
-  // the same radius, so honour a caller-supplied borderRadius.
+  // the same radius, so honour a caller-supplied borderRadius. `solid` opts a
+  // card out of the glass even on iOS — for data-dense read surfaces (charts,
+  // stat columns) where translucency costs contrast and the solid ink2 panel
+  // (the web treatment, and Today's) reads better.
   const radius = typeof style?.borderRadius === "number" ? style.borderRadius : RADIUS.card;
   return (
     <View
