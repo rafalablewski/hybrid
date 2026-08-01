@@ -863,6 +863,75 @@ export async function updateAssignment(id: string, status: "completed" | "skippe
   }
 }
 
+// ── Verified Strength Record (tier 2 — witness co-signing) ──────────────────
+
+export interface AttestInboxItem {
+  id: string;
+  sessionId: string;
+  lift: string;
+  e1rm: number | null;
+  topLoad: number | null;
+  ownerHandle: string | null;
+  ownerName: string | null;
+  createdAt: string;
+}
+
+export async function fetchAttestations(sessionId?: string): Promise<{
+  attestations: import("@hybrid/core").PrAttestation[];
+  inbox: AttestInboxItem[];
+  unavailable?: boolean;
+} | null> {
+  try {
+    const qs = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : "";
+    const res = await fetchWithTimeout(`${API_URL}/api/records/attest${qs}`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    return (await res.json()) as { attestations: import("@hybrid/core").PrAttestation[]; inbox: AttestInboxItem[]; unavailable?: boolean };
+  } catch {
+    return null;
+  }
+}
+
+export async function requestAttestation(sessionId: string, lift: string, witnessHandle: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/records/attest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ sessionId, lift, witnessHandle }),
+    });
+    if (res.ok) return { ok: true };
+    const j = (await res.json().catch(() => null)) as { error?: string } | null;
+    return { ok: false, error: j?.error };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function respondAttestation(id: string, action: "cosign" | "decline"): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/records/attest/respond`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ id, action }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// The Program Efficacy Index — the same PUBLIC k-anonymous dataset behind the
+// web's /programs page (no auth: it contains no per-user data by construction).
+export async function fetchEfficacyCard(planId: string): Promise<import("@hybrid/core").ProgramEfficacy | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/efficacy`);
+    if (!res.ok) return null;
+    const j = (await res.json()) as { rows?: { planId: string; card: import("@hybrid/core").ProgramEfficacy | null }[] };
+    return j.rows?.find((r) => r.planId === planId)?.card ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function enrollPlan(goal: string, planId?: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/macrocycles`, {

@@ -47,6 +47,7 @@ import { useTemplate } from "../../lib/template";
 import { AuroraScreen, ABack } from "../../components/aurora/kit";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
 import { SessionEditSheet } from "../../components/session-edit";
+import PrAttestationPanel from "../../components/pr-attestation";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -153,6 +154,17 @@ export default function SessionDetail() {
             <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>🏃 {cardioPrLineDetail(p, t)}</Text>
           ))}
         </View>
+      )}
+
+      {/* The Verified Strength Record's read on this session's PRs — tier
+          badges + the ask-a-witness flow. See core/attestation.ts. */}
+      {prs.length > 0 && (
+        <PrAttestationPanel
+          sessionId={session.id}
+          lifts={prs.map((p) => ({ lift: p.lift, topLoad: p.topLoad }))}
+          hasDevice={!!session.device}
+          units={units}
+        />
       )}
 
       <MuscleFocus blocks={session.blocks} bodyweightKg={bwHere} t={t} />

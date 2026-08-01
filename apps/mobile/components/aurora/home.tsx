@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { publishTodaySnapshot } from "../../modules/widget-bridge";
 import {
   prescribeSession,
   computeAccountability,
@@ -423,6 +424,25 @@ export default function AuroraHome() {
       }),
     [railWeek, sched],
   );
+  // ── The widget + Watch snapshot ───────────────────────────────────────────
+  // Publish "today at a glance" to the native surfaces whenever the inputs
+  // settle: the home-screen widget reads it from the App Group, the Watch app
+  // receives it over WatchConnectivity (modules/widget-bridge). A no-op on
+  // builds without the native targets (and on Android/web), so this costs
+  // nothing where the surfaces don't exist. Always REAL today, never the
+  // rail-scrubbed day — a widget shows today by definition.
+  useEffect(() => {
+    if (initialLoad) return;
+    const done = railDoneState === "done";
+    publishTodaySnapshot({
+      title: plan ? `${plan.planName} — ${plan.day}` : done ? "Training done" : "Train today",
+      sub: plan ? `Day ${plan.dayIndex + 1} of ${plan.totalDays}` : "",
+      streak: acc.streak.current,
+      done,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [initialLoad, plan, railDoneState, acc.streak.current]);
+
   // The viewed day's check-in (if any) → its feeling + logged-at time, plus the
   // most recent check-in WRITE anywhere (createdAt) — that mirrors the server's
   // global 6h re-log cooldown, which also holds when back-logging a past day.

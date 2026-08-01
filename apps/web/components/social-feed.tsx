@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, ScreenHead, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
+import { CosignInbox } from "./pr-attestation";
 import { useLang } from "@/lib/i18n";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 
 type FeedItem = FeedItemView;
 
@@ -45,6 +47,7 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
 export default function SocialFeed() {
   const { t } = useLang();
   const { aurora } = useSocialTheme();
+  const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
@@ -78,6 +81,10 @@ export default function SocialFeed() {
   return (
     <div style={{ maxWidth: 600 }}>
       <ScreenHead title={t("w.social.feedTitle")} sub={t("w.social.feedSub")} />
+
+      {/* Verified-record witness requests addressed to ME — answering one is a
+          social act, so the inbox lives on the feed. See core/attestation.ts. */}
+      <CosignInbox units={units} />
 
       {/* COMPOSER — share a status or your latest PR card with your followers. */}
       <div style={card(aurora, { marginBottom: 16 })}>

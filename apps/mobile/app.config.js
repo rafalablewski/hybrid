@@ -29,11 +29,39 @@ function resolveBuildNumber() {
   return Math.floor(Date.now() / 1000 - EPOCH_SECONDS);
 }
 
+// ── Apple targets (widget + Watch app), strictly opt-in ─────────────────────
+// WITH_APPLE_TARGETS=1 at prebuild time adds @bacons/apple-targets (which
+// generates the WidgetKit extension and the watchOS app from targets/*) and
+// the App Group entitlement the widget's data path needs. Opt-in, not default,
+// because each target is its own bundle id + provisioning profile: the plain
+// release pipeline must keep working until the portal knows about
+// com.hybriddomain.xyz.widget / .watchkitapp and the shared App Group (the
+// release workflow's with_targets input does that registration). Without the
+// flag, prebuild output is byte-identical to before this existed.
+const WITH_APPLE_TARGETS = process.env.WITH_APPLE_TARGETS === "1";
+const APP_GROUP = "group.com.hybriddomain.xyz";
+
 export default ({ config }) => {
   const build = resolveBuildNumber();
   return {
     ...config,
-    ios: { ...config.ios, buildNumber: String(build) },
+    // No appleTeamId on purpose: in CI, codemagic's `xcode-project use-profiles`
+    // stamps the team + profile onto every generated target after prebuild.
+    plugins: WITH_APPLE_TARGETS
+      ? [...(config.plugins ?? []), "@bacons/apple-targets"]
+      : config.plugins,
+    ios: {
+      ...config.ios,
+      buildNumber: String(build),
+      ...(WITH_APPLE_TARGETS
+        ? {
+            entitlements: {
+              ...(config.ios?.entitlements ?? {}),
+              "com.apple.security.application-groups": [APP_GROUP],
+            },
+          }
+        : {}),
+    },
     android: { ...config.android, versionCode: build },
   };
 };

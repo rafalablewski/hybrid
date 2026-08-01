@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fs, space, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar } from "@hybrid/core";
+import { fs, space, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRevalidate } from "@/lib/use-invalidate";
@@ -338,6 +338,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
       ))}
 
       <Info label={t("w.train.plans.progression")} value={d.progression} />
+      <MeasuredOutcome planId={plan.id} />
       {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }} role="alert">{t("w.train.plans.enrollError")}</div>}
       <LeavePlanSection forPlanId={plan.id} />
       <PlanDock docked={docked} state={displayState} idleLabel={`${t("w.train.plans.enrollIn")} ${plan.name}`} busyLabel={t("w.train.plans.enrolling")} doneLabel={t("w.train.plans.enrolledSee")} onClick={enroll} />
@@ -347,6 +348,33 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
 
 function Info({ label, value }: { label: string; value: string }) {
   return <div style={card}><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div><p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 6, color: C("chalk") }}>{value}</p></div>;
+}
+
+/** The Program Efficacy Index's read on THIS plan — what it measurably
+ *  produced for the athletes who ran it, or an honest "not yet measured".
+ *  Same /api/efficacy dataset as the public /programs page; copy comes from
+ *  core (`efficacyLine`) so web and mobile print the identical sentence. */
+function MeasuredOutcome({ planId }: { planId: string }) {
+  const [card_, setCard] = useState<ProgramEfficacy | null | undefined>(undefined);
+  useEffect(() => {
+    let on = true;
+    fetch("/api/efficacy")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { rows?: { planId: string; card: ProgramEfficacy | null }[] } | null) => {
+        if (on) setCard(j?.rows?.find((r) => r.planId === planId)?.card ?? null);
+      })
+      .catch(() => { if (on) setCard(null); });
+    return () => { on = false; };
+  }, [planId]);
+  if (card_ === undefined) return null; // no skeleton for a one-liner
+  const line = efficacyLine(card_);
+  return (
+    <div style={{ ...card, marginTop: 16 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: line.measured ? C("lime") : C("ash") }}>Measured outcome</div>
+      <p style={{ fontWeight: 700, fontSize: fs.bodyLg, margin: "8px 0 0", color: C("chalk") }}>{line.headline}</p>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, lineHeight: 1.5, margin: "6px 0 0", color: C("ash") }}>{line.sub}</p>
+    </div>
+  );
 }
 
 /** The full-bleed collapsing cover + the stats HEM (rule-topped editorial
@@ -496,6 +524,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
       </div>
 
       <Info label={t("w.train.plans.progression")} value={view.progression} />
+      <MeasuredOutcome planId={plan.id} />
       {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }} role="alert">{t("w.train.plans.enrollError")}</div>}
       <LeavePlanSection forPlanId={plan.id} />
       <PlanDock docked={docked} state={displayState} idleLabel={`${t("w.train.plans.enrollIn")} ${plan.name}`} busyLabel={t("w.train.plans.enrolling")} doneLabel={t("w.train.plans.enrolledSee")} onClick={enroll} />

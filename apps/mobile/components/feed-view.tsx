@@ -7,6 +7,8 @@ import { useLang } from "../lib/i18n";
 import type { FeedItemView, CommentView } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
+import { CosignInbox } from "./pr-attestation";
+import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScrollProps } from "../lib/nav-scroll";
 
 function Comments({ item }: { item: FeedItemView }) {
@@ -41,6 +43,7 @@ function Comments({ item }: { item: FeedItemView }) {
 export default function FeedView({ top }: { top?: ReactNode }) {
   const C = useTheme().palette;
   const { t } = useLang();
+  const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItemView[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
@@ -89,6 +92,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
           <Text style={{ color: C.ash, fontSize: 13 }}>{t("w.social.feedSub")}</Text>
         </View>
       </View>
+
+      {/* Verified-record witness requests addressed to ME — answering one is a
+          social act, so the inbox lives on the feed. See core/attestation.ts. */}
+      <CosignInbox units={units} />
 
       {/* COMPOSER — share a status or your latest PR card. */}
       <Card>

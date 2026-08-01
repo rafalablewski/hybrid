@@ -24,6 +24,11 @@ name: Mobile — build & TestFlight
 
 on:
   workflow_dispatch:
+    inputs:
+      with_targets:
+        description: "Include the widget + Watch app targets (needs the extra bundle ids + App Group in the portal — see the signing step)"
+        type: boolean
+        default: false
   push:
     tags:
       - "mobile-v*"
@@ -42,6 +47,13 @@ jobs:
       APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APPLE_ASC_API_KEY_P8 }}
       CERTIFICATE_PRIVATE_KEY: ${{ secrets.APPLE_CERT_PRIVATE_KEY }}
       BUNDLE_ID: com.hybriddomain.xyz
+      # Widget + Watch app targets are OPT-IN (workflow_dispatch input): each is
+      # its own bundle id + provisioning profile + the shared App Group, so the
+      # plain release path stays untouched until they exist in the portal.
+      WITH_APPLE_TARGETS: ${{ inputs.with_targets && '1' || '' }}
+      WIDGET_BUNDLE_ID: com.hybriddomain.xyz.widget
+      WATCH_BUNDLE_ID: com.hybriddomain.xyz.watchkitapp
+      APP_GROUP_ID: group.com.hybriddomain.xyz
     steps:
       - uses: actions/checkout@v6
 
@@ -65,6 +77,10 @@ jobs:
       - name: Install signing helper (codemagic-cli-tools — not the codemagic.io service)
         run: pipx install codemagic-cli-tools
 
+      # With targets on, prebuild also generates the widget + Watch targets
+      # (@bacons/apple-targets reads targets/*). No team id is passed here on
+      # purpose: `xcode-project use-profiles` below assigns the team + profile
+      # to EVERY target from the fetched signing files, which is its whole job.
       - name: Generate native iOS project (local expo prebuild — no Expo account)
         working-directory: apps/mobile
         run: npx expo prebuild --platform ios --clean
@@ -102,6 +118,30 @@ jobs:
             --type IOS_APP_STORE \
             --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
             --create
+
+          # ── Widget + Watch app (opt-in, see the with_targets input) ─────────
+          # Each embedded target needs its own App ID + App Store profile, and
+          # the widget shares data with the app through the App Group. The
+          # registrations are idempotent (`|| true` where the resource already
+          # exists). ONE THING the API key cannot do here: ASSIGNING the App
+          # Group to an App ID needs capabilitySettings the codemagic CLI can't
+          # express — if the archive fails with "doesn't include the
+          # com.apple.security.application-groups entitlement", create the
+          # group and tick it for BOTH the app and the widget App IDs once in
+          # developer.apple.com → Identifiers, delete the stale profiles, and
+          # re-run; everything else below stays automated.
+          if [ "$WITH_APPLE_TARGETS" = "1" ]; then
+            app-store-connect bundle-ids register "$WIDGET_BUNDLE_ID" --name "HYBRID Widget" --platform IOS || true
+            app-store-connect bundle-ids register "$WATCH_BUNDLE_ID" --name "HYBRID Watch" --platform IOS || true
+            for EXTRA_ID in "$WIDGET_BUNDLE_ID" "$WATCH_BUNDLE_ID"; do
+              app-store-connect fetch-signing-files "$EXTRA_ID" \
+                --platform IOS \
+                --type IOS_APP_STORE \
+                --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+                --create
+            done
+          fi
+
           keychain add-certificates
           cd apps/mobile/ios && xcode-project use-profiles
 
