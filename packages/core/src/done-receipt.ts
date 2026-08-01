@@ -41,8 +41,25 @@ export interface DoneReceipt {
   durationSec: number | null;
   /** working tonnage, kg (0 for a cardio-only day). */
   tonnageKg: number;
-  /** logged sets (a cardio/conditioning effort counts as 1). */
+  /**
+   * Logged EFFORTS — strength sets plus one per cardio/conditioning block.
+   * This is the plausibility floor's unit (a swim is one effort, and one
+   * minute of wall clock is enough to have swum it), NOT a display figure.
+   * Nothing renders it as "sets": see `strengthSets`.
+   */
   sets: number;
+  /**
+   * Sets logged on STRENGTH blocks — the only sets there are.
+   *
+   * A set is a resistance-training unit: a bout of reps against a load, with
+   * rest around it. Swimming, tennis and squash have no such thing, so a swim
+   * that read "1 SETS" on the done card was the data model talking (`sets`
+   * counts one per cardio effort) rather than the sport. The same rule the
+   * Wrapped already applies per discipline — never a set count for a match —
+   * applies here at the source: the receipt carries the strength figure
+   * separately, and it is 0 for every swim, match and conditioning piece.
+   */
+  strengthSets: number;
   /** total cardio distance, km. */
   distanceKm: number;
   /** total elevation gain, m (0 when nothing climbed or nothing recorded it). */
@@ -60,6 +77,18 @@ export interface DoneReceipt {
  * workout's, and must not render as one.
  */
 const MIN_MINUTES_PER_SET = 1;
+
+/** A set counts once the athlete has typed reps or a load into it — the same
+ *  rule liveSessionStats applies, so the two can't disagree on what's logged. */
+const filled = (v: unknown): boolean => typeof v === "string" && v.trim().length > 0;
+
+/** Sets logged on strength blocks — the session's only true set count. */
+function strengthSetCount(session: LoggedSession): number {
+  let n = 0;
+  for (const b of session.blocks)
+    if (b.kind === "strength") n += b.sets.filter((s) => filled(s.reps) || filled(s.load)).length;
+  return n;
+}
 
 /**
  * Build the receipt for the logged session that fulfilled a plan day.
@@ -107,6 +136,7 @@ export function doneReceipt(
     durationSec: measured && device!.durationSec != null ? device!.durationSec : null,
     tonnageKg: stats.volume,
     sets: stats.sets,
+    strengthSets: strengthSetCount(session),
     // Rounded to the METRE, not to 0.1 km. A 510 m pool swim is 0.51 km, and
     // rounding it to 0.5 here erased the ten metres the watch measured — the
     // summary then printed "500 m" beside the device panel's "510 m" and derived
@@ -130,6 +160,12 @@ export interface DoneReceiptStat {
  * sets — each included only when it has something true to say. Unit lives in
  * the value; the uppercase label stays a bare word (one grammar, per the
  * design's trust pass).
+ *
+ * SETS IS A STRENGTH FIGURE. It reads `strengthSets`, so a swim, a tennis
+ * match or a squash game — none of which have sets — shows its duration and
+ * distance and stops there, instead of the "1 SETS" the effort counter used to
+ * produce. A day that lifted and swam still reports the sets it actually
+ * lifted, not the swim padded into the count.
  */
 export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceiptStat[] {
   const out: DoneReceiptStat[] = [];
@@ -137,7 +173,7 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
   if (r.tonnageKg > 0) out.push({ value: fmtTonnage(r.tonnageKg, units), labelKey: "w.home.today.volume" });
   // The receipt keeps metre precision; a rail stat reads in tenths of a km.
   if (r.distanceKm > 0) out.push({ value: `${Math.round(r.distanceKm * 10) / 10} km`, labelKey: "w.home.today.distance" });
-  if (r.sets > 0) out.push({ value: String(r.sets), labelKey: "w.home.today.sets" });
+  if (r.strengthSets > 0) out.push({ value: String(r.strengthSets), labelKey: "w.home.today.sets" });
   return out;
 }
 

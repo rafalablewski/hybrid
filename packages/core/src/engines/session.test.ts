@@ -34,6 +34,7 @@ import {
   blockBestE1rm,
   moveItem,
   moveItemTo,
+  sessionMeta,
 } from "./session";
 import type { LoggedSession, StrengthBlock, SessionBlock } from "./session";
 
@@ -414,5 +415,75 @@ describe("strengthPrDelta", () => {
     expect(strengthPrDelta({ topLoad: 90, previousTopLoad: null }, labels)).toBe("first!");
     expect(strengthPrDelta({ topLoad: 90, previousTopLoad: 80 }, labels)).toBe("+10 kg");
     expect(strengthPrDelta({ topLoad: 90, previousTopLoad: 90 }, labels)).toBe("more reps");
+  });
+});
+
+describe("sessionMeta", () => {
+  const at = "2026-08-01T19:33:00.000Z";
+  const cardio = (blocks: SessionBlock[]): LoggedSession => ({ id: "m", title: "Swimming", startedAt: at, blocks });
+
+  it("reads a run as distance, time and pace per km", () => {
+    expect(sessionMeta(cardio([{ kind: "cardio", name: "Running", distance: 8.4, minutes: 44 }]))).toBe(
+      "8.4 km – 44 min – 5:14 /km",
+    );
+  });
+
+  it("labels the pace in the SPORT's split — a swim reads per 100 m", () => {
+    // 0.2 km in 10 min = 3000 s/km = 5:00 per 100 m.
+    expect(sessionMeta(cardio([{ kind: "cardio", name: "Swimming", distance: 0.2, minutes: 10 }]))).toBe(
+      "0.2 km – 10 min – 5:00 /100m",
+    );
+    expect(sessionMeta(cardio([{ kind: "cardio", name: "Rowing", distance: 5, minutes: 20 }]))).toBe(
+      "5.0 km – 20 min – 2:00 /500m",
+    );
+  });
+
+  it("has NO tail when the session can't be paced", () => {
+    // A timed sport (no distance) — duration is the whole truth.
+    expect(sessionMeta(cardio([{ kind: "cardio", name: "Tennis", minutes: 75 }]))).toBe("75 min");
+    // Distance but no clock.
+    expect(sessionMeta(cardio([{ kind: "cardio", name: "Running", distance: 5 }]))).toBe("5.0 km");
+    // Neither — fall back to naming what was done.
+    expect(sessionMeta(cardio([{ kind: "cardio", name: "Walk" }]))).toBe("Walk");
+  });
+
+  it("refuses a pace when the session mixes sports with DIFFERENT splits", () => {
+    // secPerKm is distance-weighted across both, so one figure under one label
+    // would describe neither. Distance + time stay; the tail goes.
+    expect(
+      sessionMeta(
+        cardio([
+          { kind: "cardio", name: "Swimming", distance: 1, minutes: 20 },
+          { kind: "cardio", name: "Running", distance: 5, minutes: 25 },
+        ]),
+      ),
+    ).toBe("6.0 km – 45 min");
+    // Same split on both blocks — one honest pace across the session.
+    expect(
+      sessionMeta(
+        cardio([
+          { kind: "cardio", name: "Running", distance: 5, minutes: 25 },
+          { kind: "cardio", name: "Race Walking", distance: 5, minutes: 35 },
+        ]),
+      ),
+    ).toBe("10.0 km – 60 min – 6:00 /km");
+  });
+
+  it("reads a lift as tonnage and the lifts trained, in the athlete's units", () => {
+    const lift: LoggedSession = {
+      id: "s", title: "Lower", startedAt: at,
+      blocks: [
+        { kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }] },
+        { kind: "strength", name: "Romanian Deadlift", sets: [{ load: "80", reps: "8" }] },
+      ],
+    };
+    expect(sessionMeta(lift)).toBe("1.1 t – Back Squat – Romanian Deadlift");
+    expect(sessionMeta(lift, "lb")).toContain("Back Squat – Romanian Deadlift");
+  });
+
+  it("never mentions the clock — the line describes the training, not the record", () => {
+    const s = cardio([{ kind: "cardio", name: "Swimming", distance: 0.2, minutes: 10 }]);
+    expect(sessionMeta(s)).not.toMatch(/\d{1,2}:\d{2}\s*$/); // no trailing wall-clock time
+    expect(sessionMeta(s)).not.toContain("19:33");
   });
 });

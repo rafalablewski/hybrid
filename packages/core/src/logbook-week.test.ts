@@ -67,6 +67,7 @@ describe("mergeDoneReceipts", () => {
     durationSec: null,
     tonnageKg: 0,
     sets: 0,
+    strengthSets: 0,
     distanceKm: 0,
     elevationM: 0,
     measured: false,

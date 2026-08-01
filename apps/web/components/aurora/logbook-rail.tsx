@@ -6,6 +6,9 @@ import {
   mergeDoneReceipts,
   doneReceipt,
   doneReceiptStats,
+  dayStamp,
+  dayStampText,
+  streak,
   fs,
   type LogbookDay,
   type LoggedSession,
@@ -79,6 +82,10 @@ export default function AuroraLogbookRail({
     [daySessions, bw],
   );
 
+  // The athlete's current run — the done-today card's corner reports it in
+  // place of a date the week strip has already shown (core day-stamp.ts).
+  const streakDays = useMemo(() => streak(sessions, 1).current, [sessions]);
+
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
   return (
@@ -105,6 +112,7 @@ export default function AuroraLogbookRail({
         daySessions={daySessions}
         receipt={receipt}
         units={units}
+        streakDays={streakDays}
         onLog={onLog}
         onHistory={() => (onNavigate ? onNavigate("history") : undefined)}
         t={t}
@@ -140,16 +148,24 @@ function DayChip({ day, selected, onSelect, t }: { day: LogbookDay; selected: bo
   );
 }
 
-function DayDetail({ day, daySessions, receipt, units, onLog, onHistory, t }: {
+function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHistory, t }: {
   day: LogbookDay;
   daySessions: LoggedSession[];
   receipt: ReturnType<typeof mergeDoneReceipts>;
   units: WeightUnit;
+  /** the athlete's current day-streak, for the done-today stamp. */
+  streakDays: number;
   onLog: () => void;
   onHistory: () => void;
   t: (k: string) => string;
 }) {
-  const dateLine = `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`;
+  // The corner stamp — how far this day sits from now, never a second copy of
+  // the chip above it or of the headline beside it (core day-stamp.ts).
+  const stamp = dayStampText(
+    dayStamp({ dateKey: day.dateKey, done: day.logged, streakDays }),
+    t,
+    `${day.weekdayShort} ${day.dayOfMonth} ${day.monthShort}`,
+  );
 
   // LOGGED — the day collapses to a receipt, exactly like the plan rail's done
   // state: one headline, the day's work as an en-dash meta line, only
@@ -168,7 +184,7 @@ function DayDetail({ day, daySessions, receipt, units, onLog, onHistory, t }: {
               {t(day.isToday ? "w.home.rail.allDone" : "w.home.logbook.loggedDay")}
             </div>
           </div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dateLine}</span>
+          {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
           {daySessions.map((s) => s.title).join(" – ")}<span style={{ opacity: 0.65 }}>{finished}</span>
@@ -197,7 +213,7 @@ function DayDetail({ day, daySessions, receipt, units, onLog, onHistory, t }: {
       <div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19, letterSpacing: "-.02em" }}>{t("w.home.logbook.emptyToday")}</div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dateLine}</span>
+          {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>{t("w.home.logbook.emptyTodaySub")}</div>
         <button
@@ -217,7 +233,7 @@ function DayDetail({ day, daySessions, receipt, units, onLog, onHistory, t }: {
     <div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("ash") }}>{t("w.home.logbook.emptyPast")}</div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dateLine}</span>
+        {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
       </div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>{t("w.home.today.doneModalEmptyDay")}</div>
     </div>

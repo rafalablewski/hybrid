@@ -51,10 +51,7 @@ import {
   logbookWeek,
   todayDoneState,
   sessionsOnDay,
-  sessionShape,
-  sessionCardioSummary,
-  sessionVolume,
-  fmtTonnage,
+  sessionMeta,
   type LoggedSession,
   type SessionBlock,
   type Experience,
@@ -88,8 +85,6 @@ import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
-import AuroraNutrition from "./nutrition";
-import AuroraFuel from "./fuel";
 import AuroraEnduranceLanes from "./endurance-lanes";
 import AuroraWeekVerdict from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
@@ -176,10 +171,9 @@ export default function AuroraHome() {
   // pop-up list of everything logged today, with a link to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
-  // TIER-3 quick action, a slide-up sheet (not a full-screen route): the
-  // nutrition tracker. (Readiness is now set inline on the feeling card, and
-  // Follow a coach is a rail on the page rather than a row behind a sheet.)
-  const [nutritionOpen, setNutritionOpen] = useState(false);
+  // Home has no TIER-3 sheets left. Readiness is set inline on the feeling
+  // card; fuelling left this screen entirely (it has its own Nutrition tab);
+  // and Follow a coach is a rail on the page rather than a row behind a sheet.
   // Quick-start: the fourth "Train your way" path — a sheet to re-launch a saved
   // routine (favourites rail + shuffle-able rest). `routines` stays null until the
   // first fetch resolves so the card doesn't flash before we know whether the
@@ -969,9 +963,9 @@ export default function AuroraHome() {
             at opposite ends of the scroll. One full-bleed rail per logged
             discipline carrying that sport's whole read (efforts / distance /
             time, 8-week volume, pace trend, pace zones, last effort). NOT gated
-            on dayIsToday, unlike Fuel below: an eight-week volume chart is not a
-            property of the day you happen to be scrubbed to. Renders nothing
-            until there's endurance to show. Mirrors web
+            on dayIsToday: an eight-week volume chart is not a property of the
+            day you happen to be scrubbed to. Renders nothing until there's
+            endurance to show. Mirrors web
             aurora/endurance-lanes.tsx. ───── */}
         {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
 
@@ -997,21 +991,19 @@ export default function AuroraHome() {
           <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/sport") : goUpgrade("today-sport"))} />
         </View>
 
-        {/* ───── FUEL — the nutrition summary widget (one calendar-style
-            stateful surface: empty → refuel / on-track / over → goal-hit, with a
-            persistent quick-log rail). Real today only; nutrition targets are
-            always today's. State + macros come from @hybrid/core fuelToday() so
-            web matches. Tapping opens the same quick-add sheet. No section head
-            — the widget titles itself. ───── */}
-        {dayIsToday && <View style={{ marginTop: 12 }}><AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} /></View>}
+        {/* ───── FOLLOW A COACH — Today's last block, and the only thing left
+            below the premium cards. Nutrition is NOT summarised here: Today is
+            the training loop, and fuelling has its own destination — a
+            bottom-nav tab now, so it is one tap from anywhere rather than a
+            widget competing for this screen.
 
-        {/* ───── FOLLOW A COACH — moved here from the Explore tab, which is
-            gone. It is on the PAGE now rather than a row that opened a sheet:
-            the rail sells coaches by showing them, and a row reading "Follow a
-            coach" sold nothing. Full-bleed per the slider rule (the cards run
-            under the screen edge), headerless under the section head, with the
-            trailing "See more" carrying through to the marketplace. Mirrors
-            web aurora/today.tsx. ───── */}
+            The coach rail moved here from the Explore tab, which is gone. It is
+            on the PAGE rather than a row that opened a sheet: the rail sells
+            coaches by showing them, and a row reading "Follow a coach" sold
+            nothing. Full-bleed per the slider rule (the cards run under the
+            screen edge), headerless under the section head, with the trailing
+            "See more" carrying through to the marketplace. Mirrors web
+            aurora/today.tsx. ───── */}
         {/* The descriptor sits UNDER the title, not opposite it: "Find a coach
             for your goal" is a subtitle, not a meta value, and at 30-odd
             characters in PL/DE it would collide with the title on a phone. Same
@@ -1046,15 +1038,6 @@ export default function AuroraHome() {
         <View style={{ marginTop: 14 }}>
           <QuickSportLog sessions={sessions} onSaved={() => { load(); setQuickOpen(false); }} solid />
         </View>
-      </Sheet>
-
-      {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}
-      <Sheet visible={nutritionOpen} onClose={() => setNutritionOpen(false)}>
-        <AuroraNutrition
-          compact
-          onNavigateFull={() => { setNutritionOpen(false); router.push("/nutrition"); }}
-          onUpgrade={() => { setNutritionOpen(false); goUpgrade("today-nutrition-sheet"); }}
-        />
       </Sheet>
 
       {/* QUICK START sheet — re-launch a saved routine (favourites + rediscover). */}
@@ -1146,22 +1129,9 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
   );
 }
 
-// One-line meta for a session logged today — sport-adaptive so a run/match reads
-// as distance·time (not the gym Sets/Volume framing) and a lift reads as tonnage.
-function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): string {
-  if (sessionShape(s) !== "strength") {
-    // Measured where a device recorded it (see core/device-truth.ts).
-    const ct = sessionCardioSummary(s);
-    const p: string[] = [];
-    if (ct.distanceKm) p.push(`${ct.distanceKm.toFixed(1)} km`);
-    if (ct.minutes) p.push(`${ct.minutes} min`);
-    if (p.length) return p.join(" – ");
-    return s.blocks.map((b) => b.name).join(" – ");
-  }
-  const vol = sessionVolume(s.blocks, false, bw);
-  const names = s.blocks.map((b) => b.name).join(" – ");
-  return vol > 0 ? `${fmtTonnage(vol, units)} – ${names}` : names;
-}
+// The row's meta line (sport-adaptive: distance/time/pace, or tonnage + lifts)
+// now lives in core/engines/session.ts — it was this exact function twice, once
+// here and once in web today.tsx, which is how two clients drift.
 
 // The "Also today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
@@ -1217,7 +1187,10 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{[sessionMeta(s, units, bw(s.startedAt)), sessionClockTime(s.startedAt)].filter(Boolean).join(" – ")}</Text>
+                {/* NO CLOCK TIME HERE — see the web twin (aurora/today.tsx). The
+                    trailing "21:33" was the record's save time masquerading as the
+                    workout's time; the row states what was done, nothing else. */}
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
               </View>
               {onPlanRow ? (
                 <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
