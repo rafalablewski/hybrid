@@ -80,8 +80,6 @@ import AuroraLogbookRail from "./logbook-rail";
 import AuroraTodayRail from "./today-rail";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
-import AuroraNutrition from "./nutrition";
-import AuroraFuel from "./fuel";
 import AuroraEnduranceLanes from "./endurance-lanes";
 import AuroraWeekVerdict from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
@@ -103,8 +101,9 @@ const readyColor = (v: number) => roleColor(readinessRole(v));
  * AURORA Today (web) — the DAILY GUIDED LOOP. Today answers "what do I do, how do
  * I feel, what's my circle up to?" and walks the athlete through it top to
  * bottom: Train (today's session + AI coach note) → Recover/Feel (a slim
- * on-track strip + the check-in & nutrition SQUARE widgets) → Plan (this week) →
- * Connect (coaches + friends' feed). The strategic/analytical layer — Performance
+ * on-track strip + the check-in widget) → Plan (this week) → Connect (coaches
+ * + friends' feed). Fuelling is NOT on this screen — it has its own Nutrition
+ * destination. The strategic/analytical layer — Performance
  * Twin (HPI), readiness & injury risk, the season timeline and the weekly recap —
  * lives on the COCKPIT now (athlete command center), so the two screens no longer
  * duplicate each other. Casual users get the same lean daily loop. Mirrored on
@@ -168,10 +167,9 @@ export default function AuroraToday({
   // (everything logged today, with a link through to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
-  // TIER-3 quick actions, now slide-up sheets (not full-screen nav): the
-  // nutrition tracker and Follow-a-coach. (Readiness is now set inline on the
-  // feeling card, so it no longer opens a sheet.)
-  const [nutritionOpen, setNutritionOpen] = useState(false);
+  // TIER-3 quick action, now a slide-up sheet (not full-screen nav):
+  // Follow-a-coach. (Readiness is now set inline on the feeling card, so it no
+  // longer opens a sheet.)
   const [coachOpen, setCoachOpen] = useState(false);
   // Quick-start: the fourth "Train your way" path — a sheet to re-launch a saved
   // routine (favourites rail + shuffle-able rest). `routines` stays null until the
@@ -878,10 +876,10 @@ export default function AuroraToday({
           its per-sport detail now read as one thought instead of sitting at
           opposite ends of the scroll. One full-bleed rail per logged discipline
           carrying that sport's whole read (efforts / distance / time, 8-week
-          volume, pace trend, pace zones, last effort). NOT gated on dayIsToday,
-          unlike Fuel below: an eight-week volume chart is not a property of the
-          day you happen to be scrubbed to. Renders nothing until there's
-          endurance to show. Mirrors mobile. ───── */}
+          volume, pace trend, pace zones, last effort). NOT gated on dayIsToday:
+          an eight-week volume chart is not a property of the day you happen to
+          be scrubbed to. Renders nothing until there's endurance to show.
+          Mirrors mobile. ───── */}
       {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => (onNavigate ? onNavigate("endurance") : router.push("/endurance"))} />}
 
       {/* ───── OTHER SPORTS — tennis, squash, five-a-side: everything logged as
@@ -915,31 +913,17 @@ export default function AuroraToday({
         />
       </div>
 
-      {/* ───── RECOVER & MORE — the nutrition Fuel summary + deferred rows
-          (coaches). No section head: "Recover & more" labelled a BUCKET, not
-          anything on the screen, and the Fuel widget already titles itself. The
-          12 here plus Fuel's own 12 keeps the section break intact. ───── */}
-      <div style={{ marginTop: 12 }}>
-        {/* FUEL — the nutrition summary widget (one calendar-style stateful surface:
-            empty → refuel / on-track / over → goal-hit, with a persistent quick-log
-            rail). Shows on the real today only; a scrubbed past/future day scopes
-            the cards above but nutrition targets are always today's. State + macros
-            come from @hybrid/core fuelToday() so mobile matches. Tapping opens the
-            same quick-add sheet the coach/nutrition rows use. */}
-        {dayIsToday && <AuroraFuel sessions={sessions} onOpen={() => setNutritionOpen(true)} />}
-        <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-          <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
-        </div>
+      {/* ───── MORE — the deferred row (coaches). No section head: it labelled a
+          BUCKET, not anything on the screen. Nutrition is NOT summarised here:
+          Today is the training loop, and fuelling has its own destination.
+          Mirrors mobile. ───── */}
+      <div style={{ display: "grid", gap: 10, marginTop: 22 }}>
+        <DeferRow glyph="★" tint="ash" title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} onClick={() => setCoachOpen(true)} />
       </div>
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet open={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
         <QuickSportLog sessions={sessions} onSaved={() => { onSaved?.(); setQuickOpen(false); }} solid />
-      </Sheet>
-
-      {/* NUTRITION sheet — the compact "Add a meal" quick-add + premade meals. */}
-      <Sheet open={nutritionOpen} onClose={() => setNutritionOpen(false)} label={t("w.home.today.w.nutrition")}>
-        <AuroraNutrition compact onNavigate={(s) => { setNutritionOpen(false); onNavigate?.(s); }} />
       </Sheet>
 
       {/* FOLLOW A COACH sheet — the coach rail (renders its own header). */}
@@ -1073,8 +1057,8 @@ function sessionMeta(s: LoggedSession, units: "kg" | "lb", bw?: number | null): 
 // A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦
 // Full accent + a lime rim; an unlocked one shows the → chevron.
 // A deferred row (Tier 3) — a slim tap-through to a secondary surface
-// (Nutrition, Coaches), with a tinted glyph, title + sub, and a chevron.
-// Recover & more — an "airy band": a roomy tap-target on the real palette
+// (Coaches), with a tinted glyph, title + sub, and a chevron. An "airy band":
+// a roomy tap-target on the real palette
 // surface (ink2 + hairline), with a crafted icon tile that lifts off the row
 // (drawn on the darker ink so it reads as its own object), a display title and a
 // mono descriptor. The whole row is the same material vocabulary as the cards
