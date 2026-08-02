@@ -536,6 +536,18 @@ export function HeroScreen({
               transform: [{ translateY: frameShift as never }],
             }}
           >
+            {/* THE BAR'S MATERIAL. A dark ground is already opaque, so it needs
+                nothing; the `field` ground is transparent, and without this the
+                page would scroll BEHIND the inline title once the hero is
+                barred. Fades in on the hairline's ramp, so the bar's edge and
+                its substrate arrive together. */}
+            {!dark && (
+              <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: geom.barHeight, overflow: "hidden", opacity: hairlineOpacity as never }}>
+                <BlurView intensity={26} tint={scheme === "light" ? "light" : "dark"} style={StyleSheet.absoluteFill} />
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(C.ink, 0.72) }]} />
+              </Animated.View>
+            )}
+
             <HeroBackground
               backdrop={backdrop}
               accent={accent}

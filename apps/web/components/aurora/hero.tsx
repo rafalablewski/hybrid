@@ -340,6 +340,13 @@ export function HeroScreen({
           color: onDark ? "#fff" : C("chalk"),
         }}
       >
+        {/* THE BAR'S MATERIAL — see the mobile twin. A dark ground is already
+            opaque; the `field` ground is transparent, and without this the page
+            would scroll BEHIND the inline title once the hero is barred. */}
+        {!onDark && (
+          <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: geom.barHeight, background: "color-mix(in srgb, var(--color-ink) 72%, transparent)", backdropFilter: "blur(18px) saturate(1.4)", WebkitBackdropFilter: "blur(18px) saturate(1.4)", opacity: ramp(hairlineIn, 1) }} />
+        )}
+
         <HeroBackground backdrop={backdrop} accent={accent} glyph={hero.glyph} emblem={hero.emblem} colourArt={hero.colourArt} />
 
         {/* THE RAIL — counter-translates the frame so the nav button never
