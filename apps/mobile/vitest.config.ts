@@ -9,6 +9,6 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   test: {
-    include: ["lib/health-quantities.test.ts"],
+    include: ["lib/health-quantities.test.ts", "lib/ui.test.ts"],
   },
 });

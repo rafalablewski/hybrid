@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, type ComponentProps, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import {
   View,
   Text,
@@ -290,6 +290,33 @@ export function GlassField() {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+/** Pressable's two accepted `style` shapes. */
+export type PressStyle = StyleProp<ViewStyle> | ((s: { pressed: boolean }) => StyleProp<ViewStyle>);
+
+/**
+ * Merge a caller's `style` with the press effect, for an ANIMATED component.
+ *
+ * Extracted and exported for one reason: the invariant it encodes was violated
+ * in production and nothing caught it. `Animated.createAnimatedComponent` walks
+ * the `style` prop to find the AnimatedValues inside it. Handed a FUNCTION it
+ * can walk nothing, and it passes down a style carrying none of the caller's
+ * declarations — every background, border, radius, width and flexDirection
+ * silently gone, on every Pressable in the app. That shipped in build 81628102.
+ *
+ * So: the return value must ALWAYS be an array, and it must always contain the
+ * caller's resolved style. `ui.test.ts` asserts exactly that. Typecheck cannot
+ * — `style` accepts both shapes by design — and the bundle export cannot,
+ * because neither one renders.
+ */
+export function resolvePressStyle(
+  style: PressStyle | undefined,
+  pressed: boolean,
+  fx: StyleProp<ViewStyle> | null,
+): StyleProp<ViewStyle>[] {
+  const base = typeof style === "function" ? style({ pressed }) : style;
+  return [base, fx];
+}
+
 /**
  * Press feedback — the ONE tap affordance both clients share (web has the
  * `.pressable` CSS utility; this is the RN twin). The surface scales to .97 on
@@ -327,6 +354,13 @@ export function PressScale({
 }) {
   const reducedMotion = useReducedMotion();
   const pressed = useRef(new Animated.Value(0)).current;
+  // Pressable's function-form `style` needs a real `pressed` boolean, but the
+  // ANIMATED component below cannot be handed a function (see the style prop) —
+  // so the rare caller that uses the function form gets a React state, and
+  // everyone else gets none. Tracking this unconditionally would add a
+  // re-render to every press in the app for the benefit of a handful of sites.
+  const isFn = typeof style === "function";
+  const [isPressed, setIsPressed] = useState(false);
   // Down is quick and definite; up is a slower recovery. Timings rather than a
   // single symmetric spring, because a spring on the release reads as the
   // surface being snatched back out from under the finger.
@@ -357,16 +391,19 @@ export function PressScale({
       disabled={disabled}
       onPressIn={(e) => {
         to(1);
+        if (isFn) setIsPressed(true);
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
         to(0);
+        if (isFn) setIsPressed(false);
         onPressOut?.(e);
       }}
-      // Skip the animated opacity when disabled so a caller's static
-      // `opacity: 0.5` dim isn't overridden by the (later) animated 1.
-      // `style` may be Pressable's function form; resolve it before merging.
-      style={(state) => [typeof style === "function" ? style(state) : style, disabled ? null : fx]}
+      // ALWAYS an array, never a function — see resolvePressStyle for why, and
+      // ui.test.ts for the guard. `disabled` skips the animated opacity so a
+      // caller's static `opacity: 0.5` dim isn't overridden by the (later)
+      // animated 1.
+      style={resolvePressStyle(style, isPressed, disabled ? null : (fx as StyleProp<ViewStyle>))}
     >
       {children}
     </AnimatedPressable>
