@@ -8,7 +8,7 @@ import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
   isFullAccess, canUseRecipes, MEAL_PRESETS, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
-  fuelToday, nutritionHudSlots,
+  fuelToday,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, recipeCoverView, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
@@ -28,7 +28,6 @@ import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
 import { CoverHero, useHeroCollapse } from "./cover-hero";
-import AuroraNutritionHud from "./nutrition-hud";
 
 // The Create Food form's blank state — one constant, so the reset paths can
 // never fall out of step with the fields the form actually has.
@@ -911,25 +910,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // fuelToday() — the SAME composition the hero ring draws, with the same
   // opts as `targets` above — so the capsule and the ring cannot disagree.
   const fuel = useMemo(() => fuelToday(signals, { goal, trainingKcal }), [signals, goal, trainingKcal]);
-  const hudSlots = useMemo(() => nutritionHudSlots(fuel), [fuel]);
-  // The two source cards the capsules are the residue of.
-  const ringRef = useRef<HTMLDivElement | null>(null);
-  const macroRef = useRef<HTMLDivElement | null>(null);
-  const hudAnchors = useMemo(() => ({ energy: ringRef, macros: macroRef }), []);
-  /** The hub measures its two cards; every sub-screen has no ring to scroll
-   *  past, so it pins from the first pixel and a tap goes back to the hub. */
-  const hud = (mode: "hub" | "always") => (
-    <AuroraNutritionHud
-      slots={hudSlots}
-      anchors={mode === "hub" ? hudAnchors : undefined}
-      always={mode === "always"}
-      onReveal={
-        mode === "hub"
-          ? (key) => (key === "kcal" ? ringRef : macroRef).current?.scrollIntoView({ behavior: "smooth", block: "center" })
-          : () => setView("home")
-      }
-    />
-  );
   // Time-of-day greeting (client-only) + anchors for the quick-action tiles.
   const [greeting, setGreeting] = useState("");
   useEffect(() => { const h = new Date().getHours(); setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening")); }, [t]);
@@ -1306,7 +1286,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const q = foodQuery.trim();
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {hud("always")}
         {screenHead(
           <button className="pressable" onClick={() => setMealPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19 }}>
             {partLabel(mealType)}<IChevDown size={16} color={C("chalk")} />
@@ -1623,7 +1602,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const fresh = verifiedFreshness(f);
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {hud("always")}
         {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), {
           icon: "back",
           right: (
@@ -1791,7 +1769,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   if (view === "sources") {
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {hud("always")}
         {screenHead(t("w.recovery.nutrition.verifiedFoods"), () => setView("home"), { icon: "back" })}
         <p style={{ fontFamily: "var(--font-display)", fontSize: fs.bodyLg, color: C("ash"), lineHeight: 1.55, margin: "6px 0 0" }}>{t("w.recovery.nutrition.verifiedIntro")}</p>
         <div style={{ marginTop: 20 }}>
@@ -1826,7 +1803,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const checked = sourceCheckedOn(src.id);
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {hud("always")}
         {screenHead(t("w.recovery.nutrition.verifiedSourceTitle"), () => setView(pageBack === "food" ? "add" : pageBack), { icon: "back" })}
 
         <div style={{ marginTop: 6 }}>
@@ -1882,7 +1858,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const list = filterRecipes(RECIPES, recipeFilter);
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {hud("always")}
         {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 calc(-1 * var(--page-pad-x, 16px))", paddingLeft: "var(--page-pad-x, 16px)", paddingRight: "var(--page-pad-x, 16px)" }}>
           {RECIPE_FILTERS.map((rf) => (
@@ -1972,13 +1947,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* THE STICKY HUD — what the hub leaves behind, and the only budget the
-          library screens ever have. Insights and Body are analysis screens with
-          their own charts, so they get none. With the intake load failed the
-          totals would read "nothing logged yet"; the rail must not repeat that
-          lie above the retry card. */}
-      {(view === "home" ? !(loadErr && signals.length === 0) : view === "meals" || view === "foods" || view === "diary" || view === "log") &&
-        hud(view === "home" ? "hub" : "always")}
       {/* Hub masthead (home), or a sub-screen back-header. */}
       {view === "home" ? (
         <div>
@@ -2060,7 +2028,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               anchors on the two inner sections — getBoundingClientRect is
               viewport-space, so the nesting changes nothing for it. */}
           <button onClick={() => setView("diary")} aria-label={t("w.recovery.nutrition.menuDiary")} className="pressable" style={{ ...card, display: "block", width: "100%", marginTop: 16, padding: "28px 20px 24px", textAlign: "center", cursor: "pointer", color: C("chalk") }}>
-            <div ref={ringRef}>
+            <div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.caloriesLeft")}</div>
               <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
                 <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} color={kcalOver ? C("red") : C("lime")} size={200} center={
@@ -2083,7 +2051,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               )}
             </div>
             {/* Macros — hairline lines beneath the hero, same card. */}
-            <div ref={macroRef} style={{ marginTop: 24, textAlign: "left" }}>
+            <div style={{ marginTop: 24, textAlign: "left" }}>
               {([["w.recovery.nutrition.protein", today.protein, targets.protein, C("blue"), "var(--blue-text)"], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C("amber"), "var(--amber-text)"], ["w.recovery.nutrition.fat", today.fat, targets.fat, C("violet"), "var(--violet-text)"]] as const).map(([label, cur, tgt, col, colT], i) => (
                 <div key={label} style={{ marginTop: i ? 16 : 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>

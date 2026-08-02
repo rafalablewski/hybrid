@@ -40,9 +40,6 @@ export function AuroraScreen({
   padding = 16,
   refreshing,
   onRefresh,
-  stickyTop,
-  stickyTopReserve = 0,
-  onScrollY,
   top,
 }: {
   children: ReactNode;
@@ -79,27 +76,13 @@ export function AuroraScreen({
   /** Content rendered ABOVE the screen's own body, inside the same scroller —
    *  the slot Today's hub uses to hand a screen its profile header + tab pills
    *  when the screen is showing as one of Today's tabs rather than as its own
-   *  destination. Unlike `stickyTop` this is ordinary content: it scrolls away
-   *  with everything else, and it reserves no space when absent. */
+   *  destination. It is ordinary content: it scrolls away with everything
+   *  else, and it reserves no space when absent. */
   top?: ReactNode;
-  /** A rail drawn OVER the scroll view at the screen's top edge — never in its
-   *  content, so nothing below it moves as the rail appears. The overlay is
-   *  laid out from this screen's border box, so it reaches up under the status
-   *  bar and the rail itself pads its content down by the safe-area inset (the
-   *  shape Today's pill rail already uses). Ignored when `scroll` is false. */
-  stickyTop?: ReactNode;
-  /** Space (dp) reserved at the top of the content for a `stickyTop` that is
-   *  ALWAYS visible. A transient rail overlays — that's the point of it — but a
-   *  permanent one would sit on the screen head and cover the back button, so
-   *  those screens push their content down by the bar's height instead. */
-  stickyTopReserve?: number;
-  /** Live scroll offset, for a `stickyTop` that captures on scroll. Chained
-   *  after the nav pill's own listener so the pill still hides on scroll. */
-  onScrollY?: (y: number) => void;
 }) {
   // A hero means the HERO SYSTEM owns the shell — safe area, rail, collapse
   // track and scroll clearance all come from it. Dispatched before ANY hook
-  // runs, so the two shells never share a hook order. (`top`/`stickyTop` belong
+  // runs, so the two shells never share a hook order. (`top` belongs
   // to the hub-tab shape, which by definition has no hero to establish, so the
   // two paths never need to compose.)
   if (hero) {
@@ -110,7 +93,7 @@ export function AuroraScreen({
     );
   }
   return (
-    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} stickyTop={stickyTop} stickyTopReserve={stickyTopReserve} onScrollY={onScrollY} top={top}>
+    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} top={top}>
       {children}
     </AuroraPlainScreen>
   );
@@ -127,9 +110,6 @@ function AuroraPlainScreen({
   padding = 16,
   refreshing,
   onRefresh,
-  stickyTop,
-  stickyTopReserve = 0,
-  onScrollY,
   top,
 }: {
   children: ReactNode;
@@ -139,9 +119,6 @@ function AuroraPlainScreen({
   refreshing?: boolean;
   onRefresh?: () => void;
   top?: ReactNode;
-  stickyTop?: ReactNode;
-  stickyTopReserve?: number;
-  onScrollY?: (y: number) => void;
 }) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
@@ -165,11 +142,11 @@ function AuroraPlainScreen({
       // Clear the floating Aurora pill nav so the last content row never hides
       // under the bar — derived from the real bar height + safe-area inset (one
       // source of truth in lib/layout), not a hand-copied magic number.
-      contentContainerStyle={{ padding, paddingTop: padding + stickyTopReserve, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      contentContainerStyle={{ padding, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
       {...navScroll}
       // The nav pill owns its own scroll listener; chain ours after it rather
       // than replacing it, so the pill still hides on scroll.
-      onScroll={onScrollY ? (e) => { navScroll.onScroll?.(e); onScrollY(e.nativeEvent.contentOffset.y); } : navScroll.onScroll}
+      onScroll={navScroll.onScroll}
       scrollEventThrottle={16}
       keyboardShouldPersistTaps="handled"
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={palette.lime} colors={[palette.lime]} /> : undefined}
@@ -188,7 +165,6 @@ function AuroraPlainScreen({
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.View style={[{ flex: 1 }, hub ? null : enterStyle]}>{body}</Animated.View>
       </KeyboardAvoidingView>
-      {scroll ? stickyTop : null}
     </>
   );
   // AS A HUB TAB the screen MOUNTS IN FULL VIEW on every pill switch, and a

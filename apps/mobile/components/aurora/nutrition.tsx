@@ -7,11 +7,11 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  HERO,
+  HERO_INLINE_TITLE,
   todayNutrition,
   adaptiveTargets,
   fuelToday,
-  nutritionHudSlots,
-  NUTRITION_HUD_BAR_H,
   estimateMaintenance,
   dailyNutrition,
   weightTrend,
@@ -59,14 +59,13 @@ import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { fs, space, F, PressScale, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, F, serifIf, PressScale, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS, Ring, withAlpha } from "./kit";
 import { HeroNav } from "./hero";
 import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
-import AuroraNutritionHud, { type NutritionHudBottoms } from "./nutrition-hud";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -319,7 +318,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   /** land directly on a verified source page (app/source/[id]) */
   openSource?: string;
 } = {}) {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
@@ -783,7 +782,6 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const summary = useMemo(() => nutritionSummary(sig, { targets, windowDays: summaryWindow }), [signals, targets, summaryWindow]);
   const nudge = useMemo(() => nutritionNudge(today, targets), [today, targets]);
 
-  // ── The sticky HUD ────────────────────────────────────────────────────────
   // The one number you came for is what's LEFT, and it used to exist only at
   // the top of the hub: scroll into the picker or the libraries to choose food
   // and the budget was off screen. The rail keeps it there. It reads from
@@ -791,59 +789,19 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // as `targets` above — so the capsule and the ring cannot disagree.
   const insets = useSafeAreaInsets();
   const fuel = useMemo(() => fuelToday(sig, { goal, trainingKcal }), [signals, goal, trainingKcal]);
-  const hudSlots = useMemo(() => nutritionHudSlots(fuel), [fuel]);
-  const [hudScrollY, setHudScrollY] = useState(0);
-  // onLayout reports a frame relative to its parent. The ring + macro sections
-  // now live INSIDE one merged hero card, so each section reports a frame
-  // relative to the card and the card's wrapper (a direct child of the scroll
-  // content) reports the card's content-space y — summed, that's the same
-  // content-space bottom web derives from getBoundingClientRect.
-  const [hudGeom, setHudGeom] = useState({ energyY: 0, energyH: 0, macroY: 0, macroH: 0 });
-  const measureHud = useCallback(
-    (patch: Partial<typeof hudGeom>) =>
-      setHudGeom((g) => {
-        const next = { ...g, ...patch };
-        return (Object.keys(patch) as (keyof typeof g)[]).every((k) => g[k] === next[k]) ? g : next;
-      }),
-    [],
-  );
-  const hubCardY = useRef(0);
-  const heroRel = useRef({ y: 0, h: 0 });
-  const macroRel = useRef({ y: 0, h: 0 });
-  const pushHudGeom = useCallback(
-    () =>
-      measureHud({
-        energyY: hubCardY.current + heroRel.current.y,
-        energyH: heroRel.current.h,
-        macroY: hubCardY.current + macroRel.current.y,
-        macroH: macroRel.current.h,
-      }),
-    [measureHud],
-  );
-  const hudBottoms: NutritionHudBottoms = useMemo(
-    () => ({
-      energy: hudGeom.energyH ? hudGeom.energyY + hudGeom.energyH : null,
-      macros: hudGeom.macroH ? hudGeom.macroY + hudGeom.macroH : null,
-    }),
-    [hudGeom],
-  );
-  /** The hub measures its two cards; every sub-screen has no ring to scroll
-   *  past, so it pins from the first pixel and a tap goes back to the hub. */
-  const hud = useCallback(
-    (mode: "hub" | "always") => (
-      <AuroraNutritionHud
-        slots={hudSlots}
-        scrollY={hudScrollY}
-        bottoms={mode === "hub" ? hudBottoms : undefined}
-        always={mode === "always"}
-        topInset={insets.top}
-        onReveal={mode === "hub" ? undefined : () => setView("home")}
-      />
-    ),
-    [hudSlots, hudScrollY, hudBottoms, insets.top],
-  );
+  // ONE name for the screen's subject, read by the hero on every view. The
+  // greeting rides the hero's EYEBROW on the hub, where it used to be a
+  // hand-rolled mono line above a hand-rolled AHeading.
   const [greeting, setGreeting] = useState("");
   useEffect(() => { const h = new Date().getHours(); setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening")); }, [t]);
+  const viewTitle =
+    view === "log" ? t("w.recovery.nutrition.logMealCta")
+    : view === "insights" ? t("w.recovery.nutrition.menuInsights")
+    : view === "diary" ? t("w.recovery.nutrition.menuDiary")
+    : view === "body" ? t("w.recovery.nutrition.menuBody")
+    : view === "meals" ? t("w.recovery.nutrition.yourMeals")
+    : view === "foods" ? t("w.recovery.nutrition.yourProducts")
+    : t("w.recovery.nutrition.title");
   const kcalRef = useRef<TextInput>(null);
   const week = useMemo(() => {
     const logged = new Set(dailyNutrition(sig).filter((d) => d.kcal > 0).map((d) => d.date));
@@ -1161,11 +1119,22 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
   // Full-screen chrome for the redesigned modal screens (Add / Create / Cook) —
   // an X (or back) at the left, a centred title, an optional right slot.
+  /** THE HERO SYSTEM'S `bar` RANK, rendered in content. These sub-views are
+   *  presented over the hub rather than pushed, so their head rides with the
+   *  content instead of pinning — but every measurement is the system's: a
+   *  44pt row, the 40pt circular control, the inline-title type, and one
+   *  trailing slot. See reference/hero-system.md. */
   const screenHead = (title: ReactNode, onBack: () => void, opts?: { icon?: "x" | "back"; right?: ReactNode }) => (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, height: HERO.rail.height, marginBottom: HERO.rail.bottom }}>
       <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} material="clear" />
-      <View style={{ flex: 1, alignItems: "center" }}>{typeof title === "string" ? <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{title}</Text> : title}</View>
-      <View style={{ width: 44, alignItems: "center" }}>{opts?.right}</View>
+      <View style={{ flex: 1, alignItems: "center" }}>
+        {typeof title === "string" ? (
+          <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: C.chalk }}>{title}</Text>
+        ) : (
+          title
+        )}
+      </View>
+      <View style={{ width: HERO.nav.hit, alignItems: "center" }}>{opts?.right}</View>
     </View>
   );
 
@@ -1177,7 +1146,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       : products.map((p) => ({ key: `p:${p.id}`, name: p.name, subname: p.subname, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat }));
     const q = foodQuery.trim();
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(
           <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
@@ -1483,7 +1452,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // five-year-old transcription looked exactly as confident as this morning's.
     const fresh = verifiedFreshness(f);
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), {
           icon: "back",
           right: (
@@ -1651,7 +1620,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // something you could look at. This is the way in.
   if (view === "sources") {
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(t("w.recovery.nutrition.verifiedFoods"), () => setView("home"), { icon: "back" })}
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 23, marginTop: 6 }}>{t("w.recovery.nutrition.verifiedIntro")}</Text>
         <View style={{ marginTop: 20 }}>
@@ -1685,7 +1654,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const items = verifiedFoodsBySource(src.id);
     const checked = sourceCheckedOn(src.id);
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(t("w.recovery.nutrition.verifiedSourceTitle"), () => setView(pageBack === "food" ? "add" : pageBack), { icon: "back" })}
 
         <View style={{ marginTop: 6 }}>
@@ -1737,7 +1706,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   if (view === "recipes") {
     const list = filterRecipes(RECIPES, recipeFilter);
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load} stickyTop={hud("always")} stickyTopReserve={NUTRITION_HUD_BAR_H}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
           {RECIPE_FILTERS.map((rf) => (
@@ -1864,21 +1833,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
   const body = (
     <>
-      {/* Hub masthead (home), or a sub-screen back-header. */}
-      {view === "home" ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          {root ? null : <HeroNav onPress={() => router.back()} onDark={false} material="clear" />}
-          <View>
-            {greeting ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 2 }}>{greeting}</Text> : null}
-            <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
-          </View>
-        </View>
-      ) : (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <HeroNav onPress={() => setView("home")} onDark={false} material="clear" />
-          <AHeading style={{ fontSize: 26 }}>{view === "log" ? t("w.recovery.nutrition.logMealCta") : view === "insights" ? t("w.recovery.nutrition.menuInsights") : view === "diary" ? t("w.recovery.nutrition.menuDiary") : view === "body" ? t("w.recovery.nutrition.menuBody") : view === "meals" ? t("w.recovery.nutrition.yourMeals") : t("w.recovery.nutrition.yourProducts")}</AHeading>
-        </View>
-      )}
+      {/* The head — hub masthead or sub-screen title — is the HERO's now (see
+          the AuroraScreen below). Nothing renders here. */}
 
       {view === "home" && (signalsError && signals.length === 0 ? (
         /* SIGNALS FAILED TO LOAD — with no cached intake the day summary would
@@ -1920,13 +1876,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
           {/* CALORIE RING + MACROS — the hero, ONE card: ring on top, the three
               macro hairlines beneath. The whole card presses into the Diary
-              (web parity). The two inner sections still feed the HUD: each
-              reports its frame relative to the card, the wrapper reports the
-              card's content-space y, and pushHudGeom sums them. */}
-          <View style={{ marginTop: 16 }} onLayout={(e) => { hubCardY.current = e.nativeEvent.layout.y; pushHudGeom(); }}>
+              (web parity). */}
+          <View style={{ marginTop: 16 }}>
           <PressScale onPress={() => setView("diary")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.menuDiary")}>
           <ACard solid style={{ paddingVertical: 24, alignItems: "center" }}>
-            <View style={{ alignSelf: "stretch", alignItems: "center" }} onLayout={(e) => { heroRel.current = { y: e.nativeEvent.layout.y, h: e.nativeEvent.layout.height }; pushHudGeom(); }}>
+            <View style={{ alignSelf: "stretch", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
               <View style={{ marginTop: 16 }}>
                 {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
@@ -1946,7 +1900,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               ) : null}
             </View>
             {/* Macros — hairline lines beneath the hero, same card. */}
-            <View style={{ alignSelf: "stretch", marginTop: 24 }} onLayout={(e) => { macroRel.current = { y: e.nativeEvent.layout.y, h: e.nativeEvent.layout.height }; pushHudGeom(); }}>
+            <View style={{ alignSelf: "stretch", marginTop: 24 }}>
               {([["w.recovery.nutrition.protein", today.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", today.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
                 <View key={label} style={{ marginTop: i ? 18 : 0 }}>
                   <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
@@ -2486,20 +2440,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     <AuroraScreen
       refreshing={refreshing}
       onRefresh={load}
-      onScrollY={setHudScrollY}
-      /* THE STICKY HUD — what the hub leaves behind, and the only budget the
-         library screens ever have. Insights and Body are analysis screens with
-         their own charts, so they get none. With the signals load failed the
-         totals would read "nothing logged yet"; the rail must not repeat that
-         lie above the retry card. */
-      stickyTop={
-        (view === "home" ? !(signalsError && signals.length === 0) : view === "meals" || view === "foods" || view === "diary" || view === "log")
-          ? hud(view === "home" ? "hub" : "always")
-          : undefined
-      }
-      // The hub's rail is transient and overlays; a sub-screen's is permanent,
-      // so it takes its space rather than sitting on the back button.
-      stickyTopReserve={view === "meals" || view === "foods" || view === "diary" || view === "log" ? NUTRITION_HUD_BAR_H : 0}
+      // THE HEAD IS THE SYSTEM'S. The sticky HUD that used to sit here — and
+      // that occupied exactly the rail's y — is gone, so Nutrition's screens
+      // take the same hero every other screen does. `root` means this is
+      // showing as a Today hub tab, where Today owns the head.
+      hero={root && view === "home" ? undefined : { rank: "title", title: viewTitle, eyebrow: view === "home" ? greeting || undefined : undefined }}
+      back={view === "home" ? (root ? false : undefined) : () => setView("home")}
+      backLabel={view === "home" ? undefined : t("w.recovery.nutrition.title")}
     >
       {body}
     </AuroraScreen>

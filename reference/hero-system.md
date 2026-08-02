@@ -373,7 +373,7 @@ away, and there is never a second copy of it.
 
 ## Part 11 — Migration
 
-**The sweep is done.** Every screen head on both clients is the system's.
+**The sweep is done.** Every screen head on both clients is the system's, with no exceptions.
 
 | screen | rank / mode | status |
 |---|---|---|
@@ -382,7 +382,7 @@ away, and there is never a second copy of it.
 | Workout Wrapped | `cover` + `takeover` | shipped |
 | Statistics, Analytics, Trends, Volume, Velocity, Video, Force plate, Endurance, Longevity, Progress, Exercises, Exercise detail, Calendar, Check-in, Periodize, Builder, Run track, Sport, Coach, Connections, Competition, Talent, Tactical, Team monitor, Team compare, Org, AI coach, Logger settings, Profile edit, Coach apply, Notifications, Interval timer, Admin sections, Coaches, Discover, Leaderboard, Feed, Performance, Settings sub-pages | `title` | shipped |
 | Login | `bar` | shipped |
-| Nutrition | — | control only, see below |
+| Nutrition | `title` + `bar` | shipped |
 
 `ABack` — the 44x44 line-bordered square that 45 mobile files hand-rolled a
 header row around — is **deleted**. Web's bare `<h1 style={{fontSize:
@@ -413,9 +413,11 @@ its own `FlatList` — a screen never trades virtualization for a hero.
   the day exercises get an accent, and not before.
 - **Login is `bar`.** The brand mark and the form *are* the screen; there is no
   subject to name, so a display title would be chrome.
-- **Editors inside a Card take the control, not a hero.** The social-profile
-  field editor and Nutrition's sub-views are not screens — they have no screen
-  head to own — so they use `HeroNav` at the system's geometry without a rail.
+- **Presented sub-views take the `bar` rank in content.** The social-profile
+  field editor and Nutrition's seven sub-views are presented over their host
+  rather than pushed, so their head rides with the content instead of pinning —
+  but every measurement is the system's: a 44pt row, the 40pt circular control,
+  the inline-title type, one trailing slot.
 - **Decoration was dropped, not relocated.** Calendar's calendar glyph,
   Longevity's heart, Check-in's heart and Endurance's GPS pin sat beside their
   titles. The rail's trailing slot carries one label or one control, so they are
@@ -428,13 +430,25 @@ its own `FlatList` — a screen never trades virtualization for a hero.
 - **Data stayed data.** Statistics' weekly-volume readout is a figure, not
   metadata, so it stayed in the body rather than riding the rail.
 
-### The one open conflict
+### The HUD that owned the rail
 
-**Nutrition** keeps a sticky HUD bar pinned at exactly the rail's y. Its nav
-control is the system's everywhere, but its head and the hero want the same
-44pt, and resolving that is a decision about Nutrition's information
-architecture — is the HUD a sub-rail that docks under the hero's rail, or is it
-the screen's head? — not a mechanical migration. Tracked as its own capability.
+Nutrition used to keep a sticky HUD — four capsules carrying kcal and macros
+left — pinned at exactly the rail's y. That made it the one screen whose head
+could not be the system's: two bars competing for one 44pt row.
+
+**It was removed, not docked.** `HeroScreen`'s `rail` slot could have taken it,
+but a persistent numeric rail riding every sub-screen is a *second head*, and
+the rank rule says a screen has one. The budget it carried is one tap away: the
+hub's calorie ring and macro card are the source, and every sub-view's back
+control returns there.
+
+With the HUD gone, `AuroraScreen`'s `stickyTop` / `stickyTopReserve` /
+`onScrollY` slot had no users left and was deleted with it — the slot existed
+only to host a competing bar.
+
+If a persistent budget rail is ever wanted again, it comes back through the
+`rail` slot, which docks *beneath* the hero's rail rather than replacing it —
+never as a screen-top overlay.
 
 ### One sequencing rule, still
 

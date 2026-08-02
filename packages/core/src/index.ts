@@ -35,7 +35,6 @@ export * from "./attestation";
 export * from "./logbook-week";
 export * from "./today-rail";
 export * from "./today-tabs";
-export * from "./nutrition-hud";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";
