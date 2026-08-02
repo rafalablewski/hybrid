@@ -101,3 +101,50 @@ describe("PressScale wiring", () => {
     expect(jsx, "style must not be an inline arrow — Animated cannot walk it").not.toMatch(/style=\{\s*\(/);
   });
 });
+
+describe("the React Native gate this violated", () => {
+  /**
+   * Not a paraphrase — this reads the CONDITION out of the installed React
+   * Native source and runs our value through it.
+   *
+   * AnimatedProps.js decides whether to process `style` with:
+   *
+   *     if (key === 'style') {
+   *       // Ignore `style` if it is not an object (or array).
+   *       if (typeof value === 'object' && value != null) { ... }
+   *
+   * A function is `typeof 'function'`, so the branch is skipped entirely:
+   * AnimatedStyle.from() never runs, the AnimatedValues in the press effect are
+   * never wired into the animated node graph, and they reach the view as raw
+   * objects sitting where numbers belong — which is what destroyed every card.
+   *
+   * Reading it from node_modules rather than restating it means that if RN ever
+   * changes the rule, this test changes with it instead of quietly going stale.
+   */
+  const ANIMATED_PROPS = join(
+    __dirname, "..", "..", "..", "node_modules", "react-native",
+    "Libraries", "Animated", "nodes", "AnimatedProps.js",
+  );
+
+  it("still gates on the condition we think it does", () => {
+    const src = readFileSync(ANIMATED_PROPS, "utf8");
+    const at = src.indexOf("if (key === 'style')");
+    expect(at, "RN moved the style branch — re-read AnimatedProps.js").toBeGreaterThan(-1);
+    expect(src.slice(at, at + 200)).toContain("typeof value === 'object' && value != null");
+  });
+
+  it("passes what PressScale actually hands over through that condition", () => {
+    const gate = (value: unknown) => typeof value === "object" && value != null;
+    const fx = { opacity: 1 };
+    const card = { backgroundColor: "#151715", borderRadius: 16 };
+
+    // What we ship now — processed, so the AnimatedValues get wired.
+    expect(gate(resolvePressStyle(card, false, fx))).toBe(true);
+    expect(gate(resolvePressStyle(() => card, false, fx))).toBe(true);
+    expect(gate(resolvePressStyle(undefined, false, fx))).toBe(true);
+
+    // What shipped in 81628102 — SKIPPED by the gate, styles destroyed.
+    const shipped = (state: { pressed: boolean }) => [card, fx, state];
+    expect(gate(shipped)).toBe(false);
+  });
+});
