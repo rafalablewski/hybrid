@@ -791,9 +791,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const fuel = useMemo(() => fuelToday(sig, { goal, trainingKcal }), [signals, goal, trainingKcal]);
   const hudSlots = useMemo(() => nutritionHudSlots(fuel), [fuel]);
   const [hudScrollY, setHudScrollY] = useState(0);
-  // onLayout reports a frame relative to its parent — both source cards are
-  // direct children of the scroll content, so y + height IS the content-space
-  // bottom web derives from getBoundingClientRect.
+  // onLayout reports a frame relative to its parent. The ring + macro sections
+  // now live INSIDE one merged hero card, so each section reports a frame
+  // relative to the card and the card's wrapper (a direct child of the scroll
+  // content) reports the card's content-space y — summed, that's the same
+  // content-space bottom web derives from getBoundingClientRect.
   const [hudGeom, setHudGeom] = useState({ energyY: 0, energyH: 0, macroY: 0, macroH: 0 });
   const measureHud = useCallback(
     (patch: Partial<typeof hudGeom>) =>
@@ -802,6 +804,19 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         return (Object.keys(patch) as (keyof typeof g)[]).every((k) => g[k] === next[k]) ? g : next;
       }),
     [],
+  );
+  const hubCardY = useRef(0);
+  const heroRel = useRef({ y: 0, h: 0 });
+  const macroRel = useRef({ y: 0, h: 0 });
+  const pushHudGeom = useCallback(
+    () =>
+      measureHud({
+        energyY: hubCardY.current + heroRel.current.y,
+        energyH: heroRel.current.h,
+        macroY: hubCardY.current + macroRel.current.y,
+        macroH: macroRel.current.h,
+      }),
+    [measureHud],
   );
   const hudBottoms: NutritionHudBottoms = useMemo(
     () => ({
@@ -1872,7 +1887,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       ) : (<>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
-      <PressScale onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16 }}>
+      <PressScale onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
           <Glyph name="target" size={20} color={C.ash} strokeWidth={5} />
           <View>
@@ -1902,43 +1917,47 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </ACard>
       )}
 
-          {/* CALORIE RING — the hero. Calories LEFT is the number; the ring fills
-              as the day is consumed. */}
-          <View onLayout={(e) => measureHud({ energyY: e.nativeEvent.layout.y, energyH: e.nativeEvent.layout.height })}>
-          <ACard solid style={{ marginTop: 16, paddingVertical: 26, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.6, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
-            <View style={{ marginTop: 18 }}>
-              {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
-              <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
-                <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1.4, color: today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - today.kcal)}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{Math.round(today.kcal)} / {targets.kcal}</Text>
+          {/* CALORIE RING + MACROS — the hero, ONE card: ring on top, the three
+              macro hairlines beneath. The whole card presses into the Diary
+              (web parity). The two inner sections still feed the HUD: each
+              reports its frame relative to the card, the wrapper reports the
+              card's content-space y, and pushHudGeom sums them. */}
+          <View style={{ marginTop: 16 }} onLayout={(e) => { hubCardY.current = e.nativeEvent.layout.y; pushHudGeom(); }}>
+          <PressScale onPress={() => setView("diary")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.menuDiary")}>
+          <ACard solid style={{ paddingVertical: 26, alignItems: "center" }}>
+            <View style={{ alignSelf: "stretch", alignItems: "center" }} onLayout={(e) => { heroRel.current = { y: e.nativeEvent.layout.y, h: e.nativeEvent.layout.height }; pushHudGeom(); }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.6, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
+              <View style={{ marginTop: 18 }}>
+                {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
+                <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
+                  <View style={{ alignItems: "center" }}>
+                    <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1.4, color: today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - today.kcal)}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{Math.round(today.kcal)} / {targets.kcal}</Text>
+                  </View>
+                </Ring>
+              </View>
+              {maint.kcal != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 18, textAlign: "center" }}>{t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}</Text> : null}
+              {trainingKcal > 0 ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}47`, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 13 }}>
+                  <Glyph name="spark" size={13} color={txt(C, C.lime)} strokeWidth={5} />
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.lime) }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</Text>
                 </View>
-              </Ring>
+              ) : null}
             </View>
-            {maint.kcal != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 18, textAlign: "center" }}>{t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}</Text> : null}
-            {trainingKcal > 0 ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}47`, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 13 }}>
-                <Glyph name="spark" size={13} color={txt(C, C.lime)} strokeWidth={5} />
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: txt(C, C.lime) }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</Text>
-              </View>
-            ) : null}
-          </ACard>
-          </View>
-
-          {/* Macros — their own card, hairline lines beneath the hero. */}
-          <View onLayout={(e) => measureHud({ macroY: e.nativeEvent.layout.y, macroH: e.nativeEvent.layout.height })}>
-          <ACard solid style={{ marginTop: 12 }}>
-            {([["w.recovery.nutrition.protein", today.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", today.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
-              <View key={label} style={{ marginTop: i ? 18 : 0 }}>
-                <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.4, textTransform: "uppercase", color: colT }}>{t(label)}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{Math.round(cur)} / {tgt} g</Text>
+            {/* Macros — hairline lines beneath the hero, same card. */}
+            <View style={{ alignSelf: "stretch", marginTop: 22 }} onLayout={(e) => { macroRel.current = { y: e.nativeEvent.layout.y, h: e.nativeEvent.layout.height }; pushHudGeom(); }}>
+              {([["w.recovery.nutrition.protein", today.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", today.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
+                <View key={label} style={{ marginTop: i ? 18 : 0 }}>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.4, textTransform: "uppercase", color: colT }}>{t(label)}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{Math.round(cur)} / {tgt} g</Text>
+                  </View>
+                  <View style={{ height: 4, borderRadius: 99, backgroundColor: C.ink, overflow: "hidden", marginTop: 8 }}><View style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: 4, borderRadius: 99, backgroundColor: col }} /></View>
                 </View>
-                <View style={{ height: 4, borderRadius: 99, backgroundColor: C.ink, overflow: "hidden", marginTop: 8 }}><View style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: 4, borderRadius: 99, backgroundColor: col }} /></View>
-              </View>
-            ))}
+              ))}
+            </View>
           </ACard>
+          </PressScale>
           </View>
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
@@ -1951,7 +1970,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <Pressable onPress={() => setView("diary")}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.menuDiary")} →</Text></Pressable>
           </View>
           {partList.map((p) => { const kcal = mealTotals[p.key] ?? 0; return (
-            <PressScale key={p.key} onPress={() => openAdd(p.key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 15, marginTop: 10 }}>
+            <PressScale key={p.key} onPress={() => openAdd(p.key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 16, marginTop: 10 }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Glyph name={mealGlyph(p.key)} size={19} color={C.ash} strokeWidth={5} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{p.label}</Text>
@@ -1961,32 +1980,30 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </PressScale>
           ); })}
           {full ? (
-            <PressScale onPress={() => setPartSheet(true)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 18, paddingVertical: 13, paddingHorizontal: 15, marginTop: 10 }}>
+            <PressScale onPress={() => setPartSheet(true)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 18, paddingVertical: 14, paddingHorizontal: 16, marginTop: 10 }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", alignItems: "center", justifyContent: "center" }}><IPlus size={18} color={C.ash} strokeWidth={2.2} /></View>
               <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.subtitle, color: C.ash }}>{t("w.recovery.nutrition.addPart")}</Text>
             </PressScale>
           ) : null}
 
-          {/* Menu — the deliberate way into every deeper feature. Recipes and
-              the verified tier are NOT here: both are libraries you browse, so
-              they ride their own rails at the very bottom of this screen. */}
-          {([
-            ["diary", <AuroraIcon key="d" name="calendar" size={20} color={C.ash} />, t("w.recovery.nutrition.menuDiary"), t("w.recovery.nutrition.menuDiarySub"), undefined],
-            ["insights", <Glyph key="i" name="spark" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.menuInsights"), t("w.recovery.nutrition.menuInsightsSub"), undefined],
-            ["body", <AuroraIcon key="b" name="heart" size={20} color={C.ash} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
-            ["meals", <Glyph key="m" name="bowl" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
-            ["foods", <AuroraIcon key="f" name="store" size={20} color={C.ash} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
-          ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
-            <PressScale key={key} onPress={() => setView(key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: i ? 10 : 24 }}>
-              {icon}
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{title}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{sub}</Text>
-              </View>
-              {badge ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{badge}</Text> : null}
-              <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
-            </PressScale>
-          ))}
+          {/* Menu — one compact link row into every deeper feature, so the
+              daily essentials above aren't followed by five more full-width
+              rows. Recipes and the verified tier are NOT here: both are
+              libraries you browse, so they ride their own rails at the very
+              bottom of this screen. */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 16, rowGap: 8, marginTop: 24, marginHorizontal: 2 }}>
+            {([
+              ["diary", t("w.recovery.nutrition.menuDiary")],
+              ["insights", t("w.recovery.nutrition.menuInsights")],
+              ["body", t("w.recovery.nutrition.menuBody")],
+              ["meals", t("w.recovery.nutrition.yourMeals")],
+              ["foods", t("w.recovery.nutrition.yourProducts")],
+            ] as [NutView, string][]).map(([key, label]) => (
+              <Pressable key={key} onPress={() => setView(key)} accessibilityRole="button" hitSlop={8}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
 
           {/* ── The two libraries, at the very bottom, as left/right rails —
               the "Train your way" idiom. A list of recipes and a list of the

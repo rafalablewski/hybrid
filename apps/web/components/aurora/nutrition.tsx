@@ -2001,7 +2001,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
-      <button onClick={() => setGoalPicker(true)} aria-label={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "13px 16px", marginTop: 18, cursor: "pointer", color: C("chalk") }}>
+      <button onClick={() => setGoalPicker(true)} aria-label={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "14px 16px", marginTop: 18, cursor: "pointer", color: C("chalk") }}>
         <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
           <Glyph name="target" size={20} color={C("ash")} />
           <div>
@@ -2105,7 +2105,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <button onClick={() => setView("diary")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.menuDiary")} →</button>
           </div>
           {partList.map((p) => { const kcal = mealTotals[p.key] ?? 0; return (
-            <button key={p.key} onClick={() => openAdd(p.key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 15px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
+            <button key={p.key} onClick={() => openAdd(p.key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 16px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
               <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><Glyph name={mealGlyph(p.key)} size={19} color={C("ash")} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{p.label}</div>
@@ -2116,33 +2116,28 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           ); })}
           {/* Full users can add their own parts of the day (e.g. Pre-workout). */}
           {full && (
-            <button onClick={() => setPartSheet(true)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 18, padding: "13px 15px", marginTop: 10, cursor: "pointer", color: C("ash") }}>
+            <button onClick={() => setPartSheet(true)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 18, padding: "14px 16px", marginTop: 10, cursor: "pointer", color: C("ash") }}>
               <span style={{ width: 40, height: 40, borderRadius: 12, border: `1px dashed ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={18} color={C("ash")} strokeWidth={2.2} /></span>
               <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.addPart")}</span>
             </button>
           )}
 
-          {/* Menu — the deliberate way into every deeper feature, so the daily
-              essentials above aren't buried under one long scroll. Recipes and
-              the verified tier are NOT here: both are libraries you browse, so
-              they ride their own rails at the very bottom of this screen. */}
-          {([
-            ["diary", <AuroraIcon key="d" name="calendar" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuDiary"), t("w.recovery.nutrition.menuDiarySub"), undefined],
-            ["insights", <Glyph key="i" name="spark" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuInsights"), t("w.recovery.nutrition.menuInsightsSub"), undefined],
-            ["body", <AuroraIcon key="b" name="heart" size={20} color={C("ash")} />, t("w.recovery.nutrition.menuBody"), t("w.recovery.nutrition.menuBodySub"), undefined],
-            ["meals", <Glyph key="m" name="bowl" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
-            ["foods", <AuroraIcon key="f" name="store" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
-          ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
-            <button key={key} onClick={() => setView(key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "15px 16px", marginTop: i ? 10 : 24, cursor: "pointer", color: C("chalk") }}>
-              {icon}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.body }}>{title}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{sub}</div>
-              </div>
-              {badge && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{badge}</span>}
-              <Glyph name="chevron" size={16} color={C("ash")} />
-            </button>
-          ))}
+          {/* Menu — one compact link row into every deeper feature, so the
+              daily essentials above aren't followed by five more full-width
+              rows. Recipes and the verified tier are NOT here: both are
+              libraries you browse, so they ride their own rails at the very
+              bottom of this screen. */}
+          <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 8, margin: "24px 2px 0" }}>
+            {([
+              ["diary", t("w.recovery.nutrition.menuDiary")],
+              ["insights", t("w.recovery.nutrition.menuInsights")],
+              ["body", t("w.recovery.nutrition.menuBody")],
+              ["meals", t("w.recovery.nutrition.yourMeals")],
+              ["foods", t("w.recovery.nutrition.yourProducts")],
+            ] as [NutView, string][]).map(([key, label]) => (
+              <button key={key} onClick={() => setView(key)} className="pressable" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{label}</button>
+            ))}
+          </div>
 
           {/* ── The two libraries, at the very bottom, as left/right rails —
               the "Train your way" idiom. A list of recipes and a list of the
