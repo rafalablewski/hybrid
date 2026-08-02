@@ -274,7 +274,7 @@ function UserDetail({
 
       {d.orgs.length > 0 && (
         <View style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
             Organizations
           </Text>
           {d.orgs.map((o) => (
@@ -285,7 +285,7 @@ function UserDetail({
 
       {/* role / language editor */}
       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
           Manage access
         </Text>
 
@@ -329,7 +329,7 @@ function UserDetail({
 
       {/* danger zone */}
       <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: `${palette.red}44`, paddingTop: 14 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
           Danger zone
         </Text>
         <Mono color={palette.ash} style={{ lineHeight: 18, marginBottom: 12 }}>

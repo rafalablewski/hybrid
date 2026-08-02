@@ -127,10 +127,10 @@ export default function AuroraUpgrade() {
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* badge */}
           <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
           </View>
 
-          <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.6, color: C.chalk, textAlign: "center", marginTop: 14 }}>{t("w.account.upgrade.sheet-title")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 14 }}>{t("w.account.upgrade.sheet-title")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
 
           {/* benefits */}
@@ -139,8 +139,8 @@ export default function AuroraUpgrade() {
               <View key={b.t} style={{ flexDirection: "row", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                 <Text style={{ fontSize: 15, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 14.5, color: C.chalk }}>{b.t}</Text>
-                  <Text style={{ fontFamily: F.reg, fontSize: 12.5, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.t}</Text>
+                  <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
                 </View>
               </View>
             ))}
@@ -151,7 +151,7 @@ export default function AuroraUpgrade() {
             <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.5, color: C.chalk }}>
               {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
             </Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: 0.3 }}>{t("w.account.upgrade.trial-note")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: 0.9 }}>{t("w.account.upgrade.trial-note")}</Text>
           </View>
 
           {!!error && (

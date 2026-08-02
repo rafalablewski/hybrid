@@ -69,7 +69,7 @@ function Swatch({ C, label, opacity }: { C: Palette; label: string; opacity: num
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: C.lime, opacity, borderWidth: 1, borderColor: C.line }} />
-      <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.6, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash }}>{label}</Text>
     </View>
   );
 }

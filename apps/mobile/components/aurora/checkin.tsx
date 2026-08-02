@@ -354,7 +354,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
         </View>
       ) : isDetails ? (
         <>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash, marginTop: 18 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18 }}>
             {t("w.recovery.checkins.step")} {steps.length} / {steps.length} — {t("w.recovery.checkins.detailsStep")}
           </Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("w.recovery.checkins.reviewTitle")}</Text>
@@ -384,7 +384,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                   ) : (
                     <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>–</Text>
                   )}
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{t(m.labelKey)}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t(m.labelKey)}</Text>
                 </Pressable>
               );
             })}
@@ -452,10 +452,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           const def = FEELS.find((f) => f.value === val);
           return (
             <View style={{ alignItems: "center" }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash, marginTop: 18 }}>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18 }}>
                 {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t("w.recovery.checkins.effort")}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk, textAlign: "center", marginTop: 14, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 14, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
               <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, maxWidth: 260 }}>{sess.title}</Text>
               <Text style={{ fontFamily: F.bold, fontSize: fs.title, marginTop: 20, color: def && touched ? txt(C, C[def.tone as "lime"] ?? C.chalk) : C.ash }}>
                 {touched && def ? t(def.labelKey) : t("w.recovery.checkins.notAnswered")}
@@ -501,10 +501,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           const touched = answered.has(m.key);
           return (
             <View style={{ alignItems: "center" }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.4, color: C.ash, marginTop: 18 }}>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18 }}>
                 {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t(m.labelKey)}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk, textAlign: "center", marginTop: 14, maxWidth: 280 }}>{t(m.questionKey)}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 14, maxWidth: 280 }}>{t(m.questionKey)}</Text>
               {/* Untouched, the face is a placeholder, not a reading — dimmed,
                   and captioned "Not answered" rather than "Okay". */}
               <View style={{ marginTop: 22, marginBottom: 4, opacity: touched ? 1 : 0.3 }}><ReadinessFace feeling={feeling} scale={2.5} /></View>

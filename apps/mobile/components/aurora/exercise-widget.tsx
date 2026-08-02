@@ -95,7 +95,7 @@ export default function ExerciseWidgetRail({
           trailing ghost tile, per the one-exit rule. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.7, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.group.metaWeek").replace("{v}", fmtTonnage(parentage.tonnageKg, units))}
         </Text>
       </View>
@@ -116,7 +116,7 @@ export default function ExerciseWidgetRail({
         {cards.map((card) => {
           const h = headline(card, units, t);
           const stroke = kindStroke(C, card.kind);
-          const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: -0.8, color: C.chalk } as const;
+          const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk } as const;
           return (
             <Pressable
               key={card.name}
@@ -148,8 +148,8 @@ export default function ExerciseWidgetRail({
                 <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
-                <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 9.5, color: C.ash }}>{h.label}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: C.ash }}>{t(KIND_KEY[card.kind])}</Text>
+                <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{t(KIND_KEY[card.kind])}</Text>
               </View>
             </Pressable>
           );

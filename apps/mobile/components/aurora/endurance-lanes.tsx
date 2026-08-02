@@ -83,7 +83,7 @@ export default function AuroraEnduranceLanes({
           Mirrors web endurance-lanes.tsx. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.7, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
         </Text>
       </View>
@@ -144,7 +144,7 @@ function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscip
           {DISCIPLINE_META[lane.discipline].emoji} {t(lane.labelKey)}
         </Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
             {lane.efforts} {t("endurance.efforts")}
           </Text>
           {onOpen && (
@@ -189,7 +189,7 @@ function Tile({ w, label, right, children }: { w: number; label: string; right?:
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
         {right}
       </View>
       {children}
@@ -212,7 +212,7 @@ function SummaryTile({ lane }: { lane: EnduranceLane }) {
   const { t } = useLang();
   return (
     <Tile w={126} label={t("endurance.efforts")}>
-      <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.7, color: C.chalk }}>{lane.efforts}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.efforts}</Text>
       <View style={{ gap: 3, marginTop: "auto" }}>
         <MetaRow l="KM" r={String(lane.distanceKm)} strong />
         <MetaRow l="H" r={String(Math.round(lane.minutes / 6) / 10)} strong />
@@ -230,7 +230,7 @@ function VolumeTile({ lane }: { lane: EnduranceLane }) {
   return (
     <Tile w={178} label={t("w.home.exw.volume")}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.8, color: C.chalk }}>{lane.thisWeek.km}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.thisWeek.km}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>km</Text>
       </View>
       <View style={{ marginTop: "auto" }}>
@@ -261,12 +261,12 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
       w={176}
       label={t("session.paceTrend")}
       right={delta ? (
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, color: txt(C, delta.faster ? C.lime : C.red) }}>
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, delta.faster ? C.lime : C.red) }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </Text>
       ) : undefined}
     >
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.8, color: C.chalk }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>
         {formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
       </Text>
       <View style={{ marginTop: "auto" }}>

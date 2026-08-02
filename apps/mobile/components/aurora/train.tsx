@@ -101,7 +101,7 @@ export default function AuroraTrain() {
       )}
 
       {/* MINIMAL LIST — the other ways to start. Thin accents, hairline rows. */}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash, marginTop: 22, marginBottom: 4, marginHorizontal: 4 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginTop: 22, marginBottom: 4, marginHorizontal: 4 }}>
         {prescribedDone ? t("train.trainAgain") : t("train.moreWays")}
       </Text>
       <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line }}>
@@ -241,13 +241,13 @@ function ListRow({
         <AuroraIcon name={icon} size={19} color={iconColor} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.1 }}>{title}</Text>
+        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.3 }}>{title}</Text>
         {!!meta && <View style={{ marginTop: 4 }}><MetaLine text={meta} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }} /></View>}
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         {premium && (
           <View style={{ borderWidth: 1, borderColor: withAlpha(pa.fill, 0.33), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, textTransform: "uppercase", color: pa.text }}>{t("train.premium")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: pa.text }}>{t("train.premium")}</Text>
           </View>
         )}
         {right}

@@ -32,7 +32,7 @@ function Stat({ C, value, label, first, star }: { C: Palette; value: string; lab
       <Text numberOfLines={1} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 13, color: C.chalk }}>
         {star ? <Text style={{ color: C.gold }}>★ </Text> : null}{value}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1, textTransform: "uppercase", color: `${C.ash}b3`, marginTop: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: `${C.ash}b3`, marginTop: 4 }}>{label}</Text>
     </View>
   );
 }
@@ -79,7 +79,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>{t("w.explore.coaches")}</Text>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>{t("w.explore.coachSwipe")}</Text>
           </View>
-          <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</Text></Pressable>
+          <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</Text></Pressable>
         </View>
       )}
 
@@ -111,10 +111,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
                   {/* Name + check as row siblings: nested inside one truncating
                       Text the ✓ would be the first thing ellipsized away. */}
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 16.5, flexShrink: 1 }}>{c.name}</Text>
+                    <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 16, flexShrink: 1 }}>{c.name}</Text>
                     {c.verified ? <Text style={{ color: accentText, fontSize: 12, marginLeft: 4 }}>✓</Text> : null}
                   </View>
-                  <Text numberOfLines={1} style={{ marginTop: 5, fontFamily: F.mono, fontSize: 9.5, fontWeight: "600", letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
+                  <Text numberOfLines={1} style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, fontWeight: "600", letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
                 </View>
               </View>
 
@@ -148,7 +148,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
               <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>
             </View>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
+            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
           </Pressable>
         )}
       </ScrollView>

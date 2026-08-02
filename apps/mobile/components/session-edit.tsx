@@ -16,7 +16,7 @@ import { F, fs, space } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 
 const labelStyle = (C: Palette) =>
-  ({ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
+  ({ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
 const fieldStyle = (C: Palette) =>
   ({
     fontFamily: F.mono,

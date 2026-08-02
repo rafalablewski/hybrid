@@ -95,7 +95,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
             <Text style={{ fontSize: 26 }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{shortSport(name)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
           </Pressable>
         ))}
       </View>
@@ -123,7 +123,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
             <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
               {filtered.map((g) => (
                 <View key={g.category} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
                   {g.sports.map((s) => {
                     const hint = sportTracksDistance(s.name) ? sportDistanceUnit(s.name) : g.category;
                     return (
@@ -199,12 +199,12 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
           <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end", marginTop: 16 }}>
             {tracksDist && (
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
                 <TextInput value={distance} onChangeText={setDistance} keyboardType="numeric" placeholder={sportDistanceUnit(name) === "m" ? "400" : "8"} placeholderTextColor={C.ash} autoFocus style={field} />
               </View>
             )}
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>Minutes</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 6 }}>Minutes</Text>
               <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} autoFocus={!tracksDist} style={field} />
             </View>
             <Pressable onPress={save} disabled={saving} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}>

@@ -205,10 +205,10 @@ export default function AuroraWeekRail({
     >
       {/* header: plan name + progress on one baseline row */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.4, color: C.chalk }}>
+        <Text numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
           {schedule.planName}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11.5, letterSpacing: 0.4, textTransform: "uppercase", color: C.ash }}>{dayLine}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{dayLine}</Text>
       </View>
 
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
@@ -276,7 +276,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`}
       style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5, opacity: day.isRest ? 0.45 : 1 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.5, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
           hairline disc (preview cue); otherwise a bare tonal number. */}
       <View style={{ height: 28, alignItems: "center", justifyContent: "center" }}>
@@ -379,7 +379,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
   // Sessions postponed ONTO this date — a light catch-up list (all states).
   const catchUp = day.postponedIn.length > 0 && (
     <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.home.rail.catchUp")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.home.rail.catchUp")}</Text>
       {day.postponedIn.map((it, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
           <View style={{ flex: 1 }}>
@@ -407,7 +407,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12, flex: 1 }}>
             <Text style={{ fontFamily: F.black, fontSize: 19, lineHeight: 22, color: txt(C, C.lime) }}>✓</Text>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk }}>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
               {t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
             </Text>
           </View>
@@ -421,7 +421,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
             {stats.map((s) => (
               <View key={s.labelKey}>
                 <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: -0.3, color: C.chalk, fontVariant: ["tabular-nums"] }}>{s.value}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.3, textTransform: "uppercase", color: C.ash, marginTop: 5 }}>{t(s.labelKey)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginTop: 5 }}>{t(s.labelKey)}</Text>
               </View>
             ))}
           </View>
@@ -441,7 +441,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk, flex: 1 }}>{day.title}</Text>
+        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.5, color: C.chalk, flex: 1 }}>{day.title}</Text>
         {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
       </View>
 
@@ -469,7 +469,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
                 accessibilityLabel={sessionLabel(s, t)}
                 style={{ paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: on ? "600" : "400", letterSpacing: 0.4, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: on ? "600" : "400", letterSpacing: 0.9, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
               </Pressable>
             );
           })}
@@ -486,7 +486,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
       </View>
       {hasMore && (
         <Pressable onPress={() => setOpen((v) => !v)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.4, color: C.ash }}>{open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}</Text>
           <Caret c={C.ash} open={open} />
         </Pressable>
       )}

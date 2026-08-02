@@ -175,7 +175,7 @@ function Metric({ label, value, color }: { label: string; value: string; color?:
   return (
     <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: 14, alignItems: "center" }}>
       <Text style={{ fontFamily: F.black, fontSize: 22, color: color ? txt(C, color) : C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -192,5 +192,5 @@ function Legend({ c, label }: { c: string; label: string }) {
 
 function ColHead({ children, flex = 1 }: { children: React.ReactNode; flex?: number }) {
   const { palette: C } = useTheme();
-  return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{children}</Text>;
+  return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9 }}>{children}</Text>;
 }

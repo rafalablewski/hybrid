@@ -245,7 +245,7 @@ export default function AuroraOrg() {
 
             {canManage && detail.invites.length > 0 ? (
               <View style={{ marginTop: 14 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.teams.org.pendingInvites")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.teams.org.pendingInvites")}</Text>
                 {detail.invites.map((iv) => (
                   <View key={iv.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
                     <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{iv.email} – {iv.role.toLowerCase()}</Text>
@@ -296,7 +296,7 @@ export default function AuroraOrg() {
   );
 }
 
-const kicker = (color: string) => ({ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase" as const, letterSpacing: 1.4, color });
+const kicker = (color: string) => ({ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase" as const, letterSpacing: 1.2, color });
 
 function Field({ C, value, onChange, placeholder, keyboardType }: { C: Palette; value: string; onChange: (v: string) => void; placeholder: string; keyboardType?: "email-address" }) {
   return (

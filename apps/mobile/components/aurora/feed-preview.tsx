@@ -101,7 +101,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
             </View>
 
             {/* body prose — full width */}
-            {!!v.body && <Text style={{ color: C.chalk, fontSize: 14.5, lineHeight: 20, marginTop: 12 }}>{v.body}</Text>}
+            {!!v.body && <Text style={{ color: C.chalk, fontSize: 15, lineHeight: 20, marginTop: 12 }}>{v.body}</Text>}
 
               {/* attached content — the session/PR summary: a lead line + stat
                   pills (each chip its own element, never a ·-joined string) */}
@@ -112,8 +112,8 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
                       Hour — prose stays sans, mono is reserved for the fact
                       line + counts. All-mono flattened every card into the
                       same texture. */}
-                  {!!v.lead && <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.bold), fontSize: 16.5, lineHeight: 21 }}>{v.lead}</Text>}
-                  {v.chips.length > 0 && <View style={{ marginTop: v.lead ? 6 : 0 }}><MetaLine parts={v.chips} textStyle={{ fontFamily: F.mono, fontSize: 12.5, color: C.ash }} /></View>}
+                  {!!v.lead && <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.bold), fontSize: 16, lineHeight: 21 }}>{v.lead}</Text>}
+                  {v.chips.length > 0 && <View style={{ marginTop: v.lead ? 6 : 0 }}><MetaLine parts={v.chips} textStyle={{ fontFamily: F.mono, fontSize: 13, color: C.ash }} /></View>}
                 </View>
               )}
 
@@ -140,7 +140,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>
           </View>
-          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
+          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
         </Pressable>
       )}
     </Wrap>

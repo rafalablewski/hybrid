@@ -174,13 +174,13 @@ export function DeviceMatchSheet({
                       </View>
                       {best && (
                         <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
-                          <Text style={{ fontFamily: F.black, fontSize: 9, letterSpacing: 1, color: C.onAccent, textTransform: "uppercase" }}>
+                          <Text style={{ fontFamily: F.black, fontSize: 9, letterSpacing: 0.9, color: C.onAccent, textTransform: "uppercase" }}>
                             ✓ {t("session.device.best")}
                           </Text>
                         </View>
                       )}
                       {!best && linked && (
-                        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: txt(C, C.lime), textTransform: "uppercase" }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: txt(C, C.lime), textTransform: "uppercase" }}>
                           {t("session.device.matchedChip")}
                         </Text>
                       )}

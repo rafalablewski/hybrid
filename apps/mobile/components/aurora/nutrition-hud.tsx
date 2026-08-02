@@ -108,20 +108,20 @@ export default function AuroraNutritionHud({
               label={t(key === "kcal" ? "w.recovery.nutrition.hud.energyAria" : "w.recovery.nutrition.hud.macrosAria")}
             >
               {letter ? (
-                <Text style={{ fontFamily: F.mono, fontSize: 10.5, fontWeight: "700", color: fg, opacity: 0.72, marginRight: 4 }}>{letter}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "700", color: fg, opacity: 0.72, marginRight: 4 }}>{letter}</Text>
               ) : null}
-              <Text style={{ fontFamily: F.mono, fontSize: 10.5, fontWeight: "700", letterSpacing: 0.5, color: fg }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "700", letterSpacing: 0.9, color: fg }}>
                 {Math.round(slot.left)}
               </Text>
               {/* kcal keeps the word "left" — it is the whole point of the rail.
                   The macro capsules shed their `g` at the ceiling instead. */}
               {key === "kcal" ? (
-                <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, textTransform: "uppercase", color: fg, opacity: 0.72, marginLeft: 5 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: fg, opacity: 0.72, marginLeft: 5 }}>
                   {t("w.recovery.nutrition.hud.left")}
                 </Text>
               ) : (
                 <Contract open={!state.tight} reduced={reduced}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 8.5, color: fg, opacity: 0.72 }}>g</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, color: fg, opacity: 0.72 }}>g</Text>
                 </Contract>
               )}
             </Pill>

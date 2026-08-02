@@ -106,7 +106,7 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
 }
 
 function DayLabel({ C, text, today }: { C: Palette; text: string; today?: boolean }) {
-  return <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.4, textTransform: "uppercase", color: today ? (txt(C, C.lime) as string) : C.ash }}>{text}</Text>;
+  return <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: today ? (txt(C, C.lime) as string) : C.ash }}>{text}</Text>;
 }
 
 function RestGapRow({ C, days }: { C: Palette; days: number }) {
@@ -239,7 +239,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
         <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: RADIUS.card, padding: 16, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, 0.3) : C.line }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
-            {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: 1.4, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
+            {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: 1.2, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
           </View>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, height: 34, marginTop: 12, marginBottom: 4 }}>
             {w.days.map((d) => {
@@ -342,8 +342,8 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16 } as const;
   const Mini = ({ label, value }: { label: string; value: string }) => (
     <View style={{ ...cardStyle, flex: 1, padding: 14 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.4, marginTop: 4, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.5, marginTop: 4, color: C.chalk }}>{value}</Text>
     </View>
   );
 
@@ -360,7 +360,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
               accessibilityState={{ selected: on }}
               style={{ flex: 1, paddingVertical: 8, borderRadius: 999, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
             >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.8, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
                 {t(rg.key)}
               </Text>
             </Pressable>

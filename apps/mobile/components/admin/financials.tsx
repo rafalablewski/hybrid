@@ -224,7 +224,7 @@ function PlanMatrix() {
         return (
           <View key={`${row.group}-${i}`}>
             {groupHeader && (
-              <Mono color={palette.amber} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, marginTop: 14, marginBottom: 4 }}>
+              <Mono color={palette.amber} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 14, marginBottom: 4 }}>
                 {row.group}
               </Mono>
             )}
@@ -313,7 +313,7 @@ function FixedOpexBreakdown() {
         <Mono color={palette.amber} style={{ fontSize: fs.caption }}>{usdFull(total)}</Mono>
       </View>
       {extras.length > 0 && (
-        <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, marginTop: 8 }}>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 8 }}>
           Not in the monthly run-rate
         </Mono>
       )}
@@ -474,7 +474,7 @@ function SegMetric({ label, value, c }: { label: string; value: string; c?: stri
   const { palette } = useTheme();
   return (
     <View style={{ width: "47%", backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line, borderRadius: 10, padding: 8 }}>
-      <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9 }}>{label}</Mono>
       <Text style={{ fontFamily: F.black, fontSize: 17, color: c ? txt(palette, c) : palette.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );
@@ -484,7 +484,7 @@ function Indicator({ label, value, c, note, says }: { label: string; value: stri
   const { palette } = useTheme();
   return (
     <Card accent={c}>
-      <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9 }}>{label}</Mono>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: txt(palette, c), marginTop: 2 }}>{value}</Text>
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{note}</Mono>
       <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{says}</Mono>

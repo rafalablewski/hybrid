@@ -459,7 +459,7 @@ export function CoverScreen({
               >
                 <Text style={{ fontFamily: F.semi, fontSize: 16, color: "#fff" }}>←</Text>
               </Pressable>
-              <Text style={{ fontFamily: F.mono, fontSize: 10.5, fontWeight: "600", letterSpacing: 0.6, color: "rgba(255,255,255,0.88)" }}>{cover.duration}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "600", letterSpacing: 0.9, color: "rgba(255,255,255,0.88)" }}>{cover.duration}</Text>
             </Animated.View>
 
             {/* compact bar title — fades in a beat after the big one leaves */}
@@ -469,18 +469,18 @@ export function CoverScreen({
               importantForAccessibility="no-hide-descendants"
               style={{ position: "absolute", top: insets.top + 4, left: 62, right: 62, height: 44, alignItems: "center", justifyContent: "center", zIndex: 2, opacity: compactFade, transform: [{ translateY: counter }] }}
             >
-              <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 15.5, letterSpacing: -0.2, color: "#fff" }}>{cover.title}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: "#fff" }}>{cover.title}</Text>
             </Animated.View>
 
             {/* the cover proper — chip, title, meta; slides up with the frame */}
             <Animated.View pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: 18, opacity: bigFade }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: chipTint(accent), paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -0.7, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: chipTint(accent), paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -1, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
               {blurbOnFace ? (
                 <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: "rgba(255,255,255,0.85)", maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
               ) : (
                 <View style={{ marginTop: 8 }}>
-                  <MetaLine parts={cover.metaParts} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.3 }} />
+                  <MetaLine parts={cover.metaParts} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.9 }} />
                 </View>
               )}
             </Animated.View>

@@ -120,7 +120,7 @@ export function FeelPrompt({
             }}
           >
             <Text style={{ fontSize: 21, opacity: on ? 1 : 0.55 }}>{l.emoji}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.9, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
           </Pressable>
         );
       })}
@@ -141,14 +141,14 @@ export function FeelPrompt({
       {eyebrow ? (
         eyebrow(t("session.feel.q"))
       ) : (
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.5, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.q")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.q")}</Text>
       )}
-      <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: compact ? 18 : 21, color: C.chalk, letterSpacing: -0.4, lineHeight: compact ? 22 : 25, marginTop: 10 }}>{t("session.feel.lead")}</Text>
+      <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: compact ? 18 : 21, color: C.chalk, letterSpacing: -0.5, lineHeight: compact ? 22 : 25, marginTop: 10 }}>{t("session.feel.lead")}</Text>
       {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
 
       {feel != null && (
         <View style={{ marginTop: 18 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
+          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
           {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
           {/* WHAT THIS ANSWER IS WORTH. "Wrecked" ten minutes after a hard
               session describes the session; the same tap ten hours later
@@ -156,7 +156,7 @@ export function FeelPrompt({
               so it says which one this is rather than scoring in silence. */}
           {reading && (
             <View style={{ marginTop: 12, flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: reading.read === "nextDay" || reading.read === "sameDay" ? txt(C, C.lime) : C.ash }}>
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: reading.read === "nextDay" || reading.read === "sameDay" ? txt(C, C.lime) : C.ash }}>
                 {t(FEEL_READ_KEY[reading.read])}
               </Text>
               <Text numberOfLines={3} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, lineHeight: 15, color: C.ash }}>{t(readNoteKey(reading.read, reading.fatigue))}</Text>
@@ -174,7 +174,7 @@ export function FeelPrompt({
       {load != null && (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
           <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
-          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
+          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{t(LOAD_BAND_KEY[loadBand(load)])}</Text>
             {rel && (

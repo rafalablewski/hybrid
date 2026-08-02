@@ -138,10 +138,10 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           {e.icon
             ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
-            : <Text style={{ fontFamily: F.black, fontSize: 12.5, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
+            : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
         </View>
         <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
+        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
       </Pressable>
     );
   };
@@ -153,7 +153,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   const head = (label: string, count: number) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 18, marginBottom: 10, marginHorizontal: 2 }}>
       <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.ash }}>{count}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{count}</Text>
     </View>
   );
   const customAdd = q.length > 0 && !exact && (
@@ -198,7 +198,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 return (
                   <Pressable key={p.id} onPress={() => { setView(p.id); setRoom(null); }} accessibilityRole="button" accessibilityState={{ selected: on }}
                     style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                   </Pressable>
                 );
               })}
@@ -217,7 +217,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 /* A–Z — display-face letter heads; offsets feed the rail. */
                 az.map((sec) => (
                   <View key={sec.letter} onLayout={(ev) => { letterY.current[sec.letter] = ev.nativeEvent.layout.y; }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 24, letterSpacing: -0.4, color: C.ash, marginTop: 16, marginBottom: 6, marginHorizontal: 2 }}>{sec.letter}</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: 24, letterSpacing: -0.5, color: C.ash, marginTop: 16, marginBottom: 6, marginHorizontal: 2 }}>{sec.letter}</Text>
                     {slab(sec.entries)}
                   </View>
                 ))
@@ -248,10 +248,10 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                           <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
                             {r.icon
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
-                              : <Text style={{ fontFamily: F.black, fontSize: 12.5, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
+                              : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
                           </View>
                           <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.8, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
                         </Pressable>
                       );
                     })}

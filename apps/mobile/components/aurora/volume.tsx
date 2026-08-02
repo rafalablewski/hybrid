@@ -274,9 +274,9 @@ export default function AuroraVolume({ top, unified = false }: {
       {/* ── HERO — the whole week as one number and one shape ─────────────── */}
       <ACard solid style={{ marginTop: 16, paddingBottom: 18 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
           {customized && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.vol.customised")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.vol.customised")}</Text>
           )}
         </View>
 
@@ -305,7 +305,7 @@ export default function AuroraVolume({ top, unified = false }: {
                     style={{ flex: 1, alignItems: "center" }}
                   >
                     <ShapeColumn s={r} color={zoneColor(r.zone)} dim={picked !== null && !on} />
-                    <Text style={{ marginTop: 8, fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: on ? C.chalk : C.ash }}>
+                    <Text style={{ marginTop: 8, fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: on ? C.chalk : C.ash }}>
                       {label.slice(0, 3).toUpperCase()}
                     </Text>
                   </Pressable>
@@ -523,7 +523,7 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
                 <View style={{ width: "100%", height: 56, backgroundColor: C.ink, borderRadius: 7, overflow: "hidden" }}>
                   <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: pct(c.height), backgroundColor: c.kind === "deload" ? C.blue : C.lime, opacity: c.current ? 0.95 : 0.32, borderTopLeftRadius: 7, borderTopRightRadius: 7 }} />
                 </View>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: c.current ? C.chalk : C.ash }}>{c.week}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: c.current ? C.chalk : C.ash }}>{c.week}</Text>
               </View>
             ))}
           </View>
@@ -756,7 +756,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
               const isMeasured = measuredKeys.has(key);
               return (
                 <View key={key} style={{ width: "31%" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: isMeasured ? txt(C, C.lime) : C.ash, textAlign: "center", marginBottom: 5 }}>{label}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: isMeasured ? txt(C, C.lime) : C.ash, textAlign: "center", marginBottom: 5 }}>{label}</Text>
                   <TextInput
                     defaultValue={profile[key] !== undefined ? String(profile[key]) : ""}
                     onEndEditing={(e) => setProfile({ [key]: e.nativeEvent.text.trim() === "" ? undefined : Number(e.nativeEvent.text) } as Partial<AthleteVolumeProfile>)}
@@ -868,7 +868,7 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
               accessibilityLabel={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
               style={{ flex: 1, opacity: zone && !on ? 0.4 : 1 }}
             >
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.5, color: on ? txt(C, C.lime) : C.ash }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: on ? txt(C, C.lime) : C.ash }}>
                 {BAND_LABEL[k]} <Text style={{ fontSize: 11, color: C.chalk }}>{sc[k]}</Text>
               </Text>
             </Pressable>
@@ -901,7 +901,7 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
         <View style={{ flexDirection: "row", gap: 6, marginTop: 12 }}>
           {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
             <View key={k} style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.6, color: C.ash, textAlign: "center", marginBottom: 5 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: C.ash, textAlign: "center", marginBottom: 5 }}>
                 {["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}
               </Text>
               <TextInput
@@ -933,7 +933,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
   // element must not restyle it.
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 14 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 14 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
           <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: 3, backgroundColor: i === sets.length - 1 ? C.blue : `${C.blue}66` }} />

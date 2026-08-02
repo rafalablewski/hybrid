@@ -240,7 +240,7 @@ export default function AuroraSettings() {
                 <>
                   <AuroraIcon name="lock" size={fs.micro + 2} color={C.ash} />
                   <View style={{ borderWidth: 1, borderColor: txt(C, C.lime), backgroundColor: `${C.lime}1a`, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: 0.5 }}>{t("w.account.settings.paid")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: 0.9 }}>{t("w.account.settings.paid")}</Text>
                   </View>
                 </>
               )}
@@ -509,7 +509,7 @@ function Tag({ label, color, upper }: { label: string; color: string; upper?: bo
   const { palette: C } = useTheme();
   return (
     <View style={{ borderWidth: 1, borderColor: `${color}66`, backgroundColor: `${color}1a`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.5, textTransform: upper ? "uppercase" : undefined }}>{label}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.9, textTransform: upper ? "uppercase" : undefined }}>{label}</Text>
     </View>
   );
 }

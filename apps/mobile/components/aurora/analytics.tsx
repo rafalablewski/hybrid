@@ -137,7 +137,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
       <View>
         <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line }}>
           {head.map((h, i) => (
-            <Text key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{h}</Text>
+            <Text key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{h}</Text>
           ))}
         </View>
         {rows.map((r, i) => (

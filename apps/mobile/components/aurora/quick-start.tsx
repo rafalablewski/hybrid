@@ -112,7 +112,7 @@ export default function QuickStartSheet({
           accessibilityRole="button"
           style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 16, paddingVertical: 12, alignItems: "center" }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.4, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
         </Pressable>
       </View>
     </Sheet>
@@ -126,14 +126,14 @@ type P = ReturnType<typeof useTheme>["palette"];
 function SubHead({ C, label, action }: { C: P; label: string; action?: { label: string; onPress: () => void } }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, marginTop: 6, paddingHorizontal: 2 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.3, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       {action && (
         <Pressable
           onPress={action.onPress}
           accessibilityRole="button"
           style={{ backgroundColor: withAlpha(C.violet, 0.12), borderWidth: 1, borderColor: withAlpha(C.violet, 0.32), borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.5, color: txt(C, C.violet) }}>{action.label}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: txt(C, C.violet) }}>{action.label}</Text>
         </Pressable>
       )}
     </View>
@@ -176,9 +176,9 @@ function FavouriteCard({ C, scheme, width, r, t, onLaunch, onToggleFav }: { C: P
         <Star C={C} on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onPress={onToggleFav} />
       </View>
       <Text style={{ fontSize: 16, lineHeight: 18, color: txt(C, accent) }}>{glyph}</Text>
-      <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 15, letterSpacing: -0.2, color: C.chalk, marginTop: 10, paddingRight: 18 }}>{r.name}</Text>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10.5, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.1, textTransform: "uppercase", color: txt(C, accent), marginTop: 12 }}>{t("w.home.quickStart.start")} →</Text>
+      <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 15, letterSpacing: -0.3, color: C.chalk, marginTop: 10, paddingRight: 18 }}>{r.name}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, accent), marginTop: 12 }}>{t("w.home.quickStart.start")} →</Text>
     </Pressable>
   );
 }
@@ -192,7 +192,7 @@ function RoutineRow({ C, first, r, t, onLaunch, onToggleFav }: { C: P; first: bo
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10.5, color: C.ash, marginTop: 2 }}>{metaLine(r.blocks, t)}</Text>
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>{metaLine(r.blocks, t)}</Text>
       </View>
       <Star C={C} on={!!r.favourite} label={r.favourite ? t("w.home.quickStart.removeFav") : t("w.home.quickStart.addFav")} onPress={onToggleFav} />
       <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>›</Text>
