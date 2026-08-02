@@ -116,7 +116,6 @@ export function Card({
   span,
   onClick,
   glass = true,
-  variant,
 }: {
   children: ReactNode;
   style?: CSSProperties;
@@ -124,12 +123,10 @@ export function Card({
   onClick?: () => void;
   /** Liquid Glass surface (default). Pass `glass={false}` for a solid card. */
   glass?: boolean;
-  /** Glass variant — only applies when `glass` is set. */
-  variant?: "thin" | "thick" | "vibrant";
 }) {
   if (glass) {
     return (
-      <Glass span={span} variant={variant} onClick={onClick} style={{ padding: space.xl, ...style }}>
+      <Glass span={span} onClick={onClick} style={{ padding: space.xl, ...style }}>
         {children}
       </Glass>
     );
@@ -161,7 +158,6 @@ export function Glass({
   style,
   span,
   onClick,
-  variant,
   hover = true,
   className = "",
 }: {
@@ -169,13 +165,11 @@ export function Glass({
   style?: CSSProperties;
   span?: number;
   onClick?: () => void;
-  variant?: "thin" | "thick" | "vibrant";
   hover?: boolean;
   className?: string;
 }) {
   const cls = [
     "liquid-glass",
-    variant ? `lg-${variant}` : "",
     hover ? "lg-hover" : "",
     className,
   ]
@@ -222,15 +216,20 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
   );
 }
 
-/** Pill button — mirrors mobile lib/ui Button (fill | outline). Fill paints the
- *  brand accent (or an explicit `color`) with onAccent ink; outline is a
- *  transparent ghost with a hairline border, `color` tinting the label + border
- *  (muted ash/line when omitted) — e.g. destructive actions. */
+/** Pill button — mirrors mobile lib/ui Button (fill | outline): same face
+ *  (Archivo bold), same size (fs.note), same ~44px height, so the two clients
+ *  share one button. Fill paints the brand accent (or an explicit `color`) with
+ *  onAccent ink; outline is a transparent ghost with a hairline border, `color`
+ *  tinting the label + border (muted ash/line when omitted) — e.g. destructive
+ *  actions. `size="compact"` is for dense admin rows only — never a screen's
+ *  primary action. Press/hover feedback comes from the shared `.pressable`
+ *  utility (globals.css). */
 export function Button({
   label,
   onClick,
   color,
   variant = "fill",
+  size = "regular",
   disabled,
   style,
 }: {
@@ -238,23 +237,27 @@ export function Button({
   onClick: () => void;
   color?: string;
   variant?: "fill" | "outline";
+  size?: "regular" | "compact";
   disabled?: boolean;
   style?: CSSProperties;
 }) {
   const outline = variant === "outline";
+  const compact = size === "compact";
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      className="pressable"
       style={{
-        ...mono,
-        fontSize: fs.caption,
+        ...disp,
+        fontSize: compact ? fs.body : fs.note,
         fontWeight: 700,
         color: outline ? txt(color ?? ASH) : ON_ACCENT,
         background: outline ? "none" : color ?? LIME,
         border: outline ? `1px solid ${color ? `color-mix(in srgb, ${color} 45%, transparent)` : LINE}` : "none",
         borderRadius: 999,
-        padding: "9px 20px",
+        padding: compact ? "8px 16px" : "12px 24px",
+        minHeight: compact ? 32 : 44,
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.5 : 1,
         whiteSpace: "nowrap",

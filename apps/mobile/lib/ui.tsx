@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ComponentProps, type ReactNode } from "react";
 import {
   View,
   Text,
@@ -12,13 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   type LayoutChangeEvent,
+  type StyleProp,
   type ViewStyle,
   type TextStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { BlurView } from "expo-blur";
-import { colors, fs, space, springs, springDurationMs, durations } from "@hybrid/core";
+import { colors, fs, space, springs, springDurationMs, springToRN, durations } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -42,14 +42,6 @@ export const MAX_FONT_SCALE = 1.4; // reflow-safe surfaces — generous headroom
 export const FIXED_FONT_SCALE = 1.15; // fixed-height chrome — must not clip
 
 // Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
-export const glassShadow: ViewStyle = {
-  shadowColor: "#000",
-  shadowOpacity: 0.5,
-  shadowRadius: 18,
-  shadowOffset: { width: 0, height: 12 },
-  elevation: 8,
-};
-
 // FOCUS GLOW — the primary Start CTA's lime halo (parity with web `.start-glow`
 // in apps/web/app/globals.css). RN has no hover, so the pill carries a soft
 // resting glow and blooms brighter on press — the same "alive, tappable" cue.
@@ -92,15 +84,13 @@ export function useEntrance() {
   useFocusEffect(
     useCallback(() => {
       enter.setValue(0);
-      const anim = Animated.timing(enter, {
-        toValue: 1,
-        // The entrance is the tail of the stack transition, so it rides the
-        // shared `sheet` spring's settle time rather than a hand-picked 240ms —
-        // one source of truth with the web (@hybrid/core motion.ts).
-        duration: reducedMotion ? durations.reduced : springDurationMs(springs.sheet),
-        easing: reducedMotion ? Easing.linear : Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      });
+      // The entrance is the tail of the stack transition, so it rides the
+      // shared `sheet` SPRING — the same curve the web runs via its generated
+      // CSS linear() easing (@hybrid/core motion.ts), not a timing approximation
+      // at the spring's duration. Reduce Motion keeps the fade as a timing.
+      const anim = reducedMotion
+        ? Animated.timing(enter, { toValue: 1, duration: durations.reduced, easing: Easing.linear, useNativeDriver: false })
+        : Animated.spring(enter, { toValue: 1, ...springToRN(springs.sheet), useNativeDriver: false });
       anim.start();
       return () => anim.stop();
     }, [enter, reducedMotion]),
@@ -184,55 +174,6 @@ export function HubDissolve({ active, children, onLayout }: { active: boolean; c
     >
       {children}
     </Animated.View>
-  );
-}
-
-/**
- * Liquid Glass surface for React Native. BlurView frosts whatever is behind it;
- * a brand tint film + a top rim-highlight + a soft border reproduce the web
- * `.liquid-glass` look (grain is omitted — no perf-free noise primitive on RN).
- * Mirrors the @hybrid/core palette so web and mobile stay in lockstep. This is
- * the base surface for `Card` (glass by default), matching web where every
- * `<Card>` renders on glass.
- */
-export function GlassCard({
-  children,
-  style,
-  intensity = 38,
-  tint,
-  accent,
-  padding = space.lg,
-}: {
-  children: ReactNode;
-  style?: ViewStyle;
-  intensity?: number;
-  /** Override the blur tint; defaults to the active theme. */
-  tint?: "dark" | "light";
-  /** Optional left accent bar (e.g. the lime accent) matching the web cards. */
-  accent?: string;
-  padding?: number;
-}) {
-  const { scheme } = useTheme();
-  const t = tint ?? scheme;
-  const light = t === "light";
-  const film = light ? "rgba(255,255,255,0.34)" : "rgba(22,24,22,0.34)";
-  const rim = light ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.22)";
-  const border = light ? "rgba(20,30,15,0.12)" : "rgba(255,255,255,0.10)";
-  // `overflow: hidden` (needed to clip the blur to the radius) would also clip
-  // the drop shadow on iOS, so keep them on separate views: the OUTER view
-  // carries the shadow (and matches its radius for a rounded shadow), the INNER
-  // view does the clipping. Honour a caller-supplied borderRadius on both.
-  const radius = typeof style?.borderRadius === "number" ? style.borderRadius : 18;
-  return (
-    <View style={[glassShadow, { marginBottom: space.md, borderRadius: radius }, style]}>
-      <View style={{ borderRadius: radius, overflow: "hidden", borderWidth: 1, borderColor: border }}>
-        <BlurView intensity={intensity} tint={t} style={StyleSheet.absoluteFill} />
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: film }]} />
-        <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, backgroundColor: rim }} />
-        {accent && <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: accent }} />}
-        <View style={{ padding }}>{children}</View>
-      </View>
-    </View>
   );
 }
 
@@ -347,6 +288,61 @@ export function GlassField() {
   );
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** Press feedback — the ONE tap affordance both clients share (web has the
+ *  `.pressable` CSS utility; this is the RN twin). The surface scales to .97 on
+ *  the shared nav spring while pressed, so a tap physically lands — RN's
+ *  Pressable has no default feedback, which left most taps visually silent.
+ *  Under Reduce Motion the scale is dropped and a small opacity dip substitutes
+ *  (feedback, not motion). Drop-in replacement for Pressable. */
+export function PressScale({
+  style,
+  children,
+  onPressIn,
+  onPressOut,
+  disabled,
+  ...rest
+}: Omit<ComponentProps<typeof Pressable>, "style"> & { style?: StyleProp<ViewStyle> }) {
+  const reducedMotion = useReducedMotion();
+  const pressed = useRef(new Animated.Value(0)).current;
+  const to = useCallback(
+    (v: number) => {
+      Animated.spring(pressed, { toValue: v, ...springToRN(springs.nav), useNativeDriver: true }).start();
+    },
+    [pressed],
+  );
+  const fx = useMemo(
+    () =>
+      reducedMotion
+        ? { opacity: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.72] }) }
+        : {
+            opacity: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] }),
+            transform: [{ scale: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] }) }],
+          },
+    [pressed, reducedMotion],
+  );
+  return (
+    <AnimatedPressable
+      {...rest}
+      disabled={disabled}
+      onPressIn={(e) => {
+        to(1);
+        onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        to(0);
+        onPressOut?.(e);
+      }}
+      // Skip the animated opacity when disabled so a caller's static
+      // `opacity: 0.5` dim isn't overridden by the (later) animated 1.
+      style={[style, disabled ? null : fx]}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+}
+
 /** The scroll bottom-inset a Screen reserves so content clears the floating
  *  Aurora pill nav (classic keeps the tight 48). Exported so a screen that
  *  supplies its OWN scroller (a FlatList via `Screen scroll={false}`) can apply
@@ -393,7 +389,7 @@ export function Screen({
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         {scroll ? (
           <ScrollView
-            contentContainerStyle={{ padding: 18, paddingBottom: padBottom }}
+            contentContainerStyle={{ padding: 16, paddingBottom: padBottom }}
             {...navScroll}
             keyboardShouldPersistTaps="handled"
             refreshControl={
@@ -431,50 +427,41 @@ export function Loading() {
   );
 }
 
+/** The ONE card shadow, theme-aware — the mobile twin of web's --shadow-card.
+ *  Dark: soft black lift. Light (Kyoto Hour): a warm umbra — a pure-black
+ *  shadow on the washi paper reads like a hole (globals.css documents the same
+ *  fix for web); this mirrors its rgba(88,74,52,…) tone. */
+export function cardShadow(scheme: "dark" | "light"): ViewStyle {
+  return scheme === "light"
+    ? { shadowColor: "#584a34", shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 }
+    : { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 };
+}
+
 export function Card({
   children,
   style,
-  glass = true,
   accent,
 }: {
   children: ReactNode;
   style?: ViewStyle;
-  /** Liquid Glass surface (default), matching web where `<Card>` is glass by
-   *  default. Pass `glass={false}` for a solid card. */
-  glass?: boolean;
-  /** Optional left accent bar — only applies on glass. */
+  /** Optional left accent rail (used for admin grouping). */
   accent?: string;
 }) {
-  const { palette } = useTheme();
-  // Aurora gives every card the reference card radius (28 — matches the kit's
-  // RADIUS.card and the /hybrid design). Callers can override via style. Classic
-  // radius is untouched.
-  const aurora = useTemplate().template === "aurora";
-  // Aurora cards are SOLID ink2 surfaces (matching the kit's ACard + the web
-  // Aurora cards). The frosted GlassCard reads as the old "liquid glass" look, so
-  // under Aurora the shared Card renders solid even when `glass` is requested;
-  // GlassCard stays available for deliberate glass (e.g. the shareable summary).
-  if (glass && !aurora) {
-    return (
-      <GlassCard style={style} accent={accent}>
-        {children}
-      </GlassCard>
-    );
-  }
+  const { palette, scheme } = useTheme();
+  // The solid ink2 card — matching the kit's ACard and the web Aurora cards.
+  // (The old frosted GlassCard branch is gone with the dead glass layer.)
   return (
     <View
       style={[
         {
-          backgroundColor: aurora ? palette.ink2 : palette.card,
+          backgroundColor: palette.ink2,
           borderWidth: 1,
           borderColor: palette.line,
-          borderRadius: aurora ? 28 : 16,
+          borderRadius: 28,
           padding: space.lg,
           marginBottom: space.md,
-          // soft, low depth — the kit's ACard shadow, not the heavy glass one.
-          ...(aurora ? { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } : {}),
+          ...cardShadow(scheme),
         },
-        // keep the optional left accent rail (used for admin grouping) on the solid card.
         accent ? { borderLeftWidth: 3, borderLeftColor: accent } : null,
         style,
       ]}

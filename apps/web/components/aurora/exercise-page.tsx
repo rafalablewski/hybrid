@@ -26,7 +26,7 @@ import { useTheme } from "@/lib/use-theme";
 import { sharedElementStyle } from "@/lib/shared-element";
 
 const C = (v: string) => `var(--color-${v})`;
-const LINE_HEX = "#2a2d2a", INK_HEX = "#0c0d0c";
+const LINE_HEX = "#242724", INK_HEX = "#0c0d0c";
 // Chart-only raw hexes (mirror mobile exercise-page): the CVD-validated deep
 // chartreuse/sand pair for stacked tonnage, and the lime landscape ramp.
 const DEEP_BASE = "#84a01e", DEEP_HARD = "#bd871e";

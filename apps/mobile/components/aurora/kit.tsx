@@ -19,7 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, serifIf, useEntrance, HubDissolve } from "../../lib/ui";
+import { fs, space, F, serifIf, useEntrance, HubDissolve, cardShadow, PressScale } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
@@ -295,7 +295,7 @@ export function Spark({
 }
 
 export function ACard({ children, style, solid }: { children: ReactNode; style?: ViewStyle; solid?: boolean }) {
-  const { palette } = useTheme();
+  const { palette, scheme } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED && !solid;
   // When Liquid Glass is active (iOS + toggle on) the surface is a native SwiftUI
   // layer dropped behind the content (transparent RN base so the glass refracts
@@ -315,12 +315,8 @@ export function ACard({ children, style, solid }: { children: ReactNode; style?:
           borderRadius: RADIUS.card,
           padding: 20,
           // A touch of depth — soft, low, lifted off the field (not the heavy
-          // classic glass shadow). Keeps cards reading as floating surfaces.
-          shadowColor: "#000",
-          shadowOpacity: 0.18,
-          shadowRadius: 14,
-          shadowOffset: { width: 0, height: 8 },
-          elevation: 3,
+          // classic glass shadow), warm-toned on the light washi (cardShadow).
+          ...cardShadow(scheme),
         },
         style,
       ]}
@@ -356,7 +352,7 @@ export function APill({
     variant === "primary" ? palette.lime : variant === "light" ? palette.chalk : glassSoft ? "transparent" : palette.ink2;
   const fg = variant === "soft" ? palette.chalk : palette.onAccent;
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       disabled={disabled}
       style={[
@@ -375,7 +371,7 @@ export function APill({
     >
       {glassSoft && <GlassSurface radius={RADIUS.pill} />}
       <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -508,7 +504,7 @@ export function ABack({ onPress, label, style }: { onPress?: () => void; label?:
   const router = useRouter();
   const soft = scheme === "light";
   return (
-    <Pressable
+    <PressScale
       accessibilityRole="button"
       accessibilityLabel={label ?? t("common.back")}
       onPress={onPress ?? (() => router.back())}
@@ -520,7 +516,7 @@ export function ABack({ onPress, label, style }: { onPress?: () => void; label?:
       ]}
     >
       <AuroraIcon name="back" size={20} color={palette.chalk} />
-    </Pressable>
+    </PressScale>
   );
 }
 

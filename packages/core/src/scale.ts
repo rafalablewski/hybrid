@@ -22,9 +22,13 @@ export type TypeRole =
   | "subtitle" //16 — small headings
   | "title" //  18 — section titles
   | "heading" //20 — screen sub-headings
-  | "display"; //26 — big numbers / hero
+  | "display" //26 — screen headings
+  | "hero" //   34 — mastheads / cover titles
+  | "stat"; //  46 — the one hero figure on a screen (ring kcal, exercise 1RM)
 
-/** Font-size scale (fs.body = the default reading size). px on web, dp on RN. */
+/** Font-size scale (fs.body = the default reading size). px on web, dp on RN.
+ *  The ladder ends at `stat` on purpose: there is no rung above it, so a figure
+ *  larger than 46 is a design smell, not a missing token. */
 export const fs: Record<TypeRole, number> = {
   nano: 10,
   micro: 11,
@@ -36,6 +40,8 @@ export const fs: Record<TypeRole, number> = {
   title: 18,
   heading: 20,
   display: 26,
+  hero: 34,
+  stat: 46,
 };
 
 export type SpaceToken =

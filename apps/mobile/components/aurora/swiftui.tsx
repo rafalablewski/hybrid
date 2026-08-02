@@ -1,9 +1,8 @@
-import { type ReactNode } from "react";
-import { Platform, View, StyleSheet, type ViewStyle } from "react-native";
-import { Host, Picker, Button as SwiftButton, Text as SwiftText, RoundedRectangle } from "@expo/ui/swift-ui";
-import { glassEffect, pickerStyle, tag, tint, buttonStyle } from "@expo/ui/swift-ui/modifiers";
+import { Platform, View, StyleSheet } from "react-native";
+import { Host, Picker, Text as SwiftText, RoundedRectangle } from "@expo/ui/swift-ui";
+import { glassEffect, pickerStyle, tag, tint } from "@expo/ui/swift-ui/modifiers";
 import { useTheme } from "../../lib/theme";
-import { RADIUS } from "./kit";
+import { RADIUS, withAlpha } from "./kit";
 
 /**
  * AURORA × SwiftUI — the native iOS layer of the shared kit.
@@ -28,15 +27,6 @@ import { RADIUS } from "./kit";
  *  treatment. (Liquid Glass itself needs iOS 26+; on older iOS the native
  *  module degrades and the RN floor below stays visible.) */
 export const LIQUID_GLASS_SUPPORTED = Platform.OS === "ios";
-
-/** Append an alpha byte to a `#RRGGBB` brand token → `#RRGGBBAA`. */
-function withAlpha(hex: string, alpha: number): string {
-  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
-  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
-    .toString(16)
-    .padStart(2, "0");
-  return `${hex}${a}`;
-}
 
 /**
  * Liquid Glass surface — a native SwiftUI `glassEffect` rounded rectangle that
@@ -99,48 +89,5 @@ export function GlassSegment<T extends string>({
         ))}
       </Picker>
     </Host>
-  );
-}
-
-/**
- * Native Liquid Glass button — content-sized (`matchContents`), so it suits
- * compact / inline actions. The kit's full-width `APill` keeps its RN layout and
- * borrows `GlassSurface` for its glass material instead; this is the opt-in
- * "true" SwiftUI button for places where a self-contained native control fits.
- */
-export function GlassButton({
-  label,
-  onPress,
-  prominent = false,
-  accent,
-  role,
-}: {
-  label: string;
-  onPress: () => void;
-  prominent?: boolean;
-  accent?: string;
-  role?: "default" | "cancel" | "destructive";
-}) {
-  return (
-    <Host matchContents>
-      <SwiftButton
-        label={label}
-        onPress={onPress}
-        role={role}
-        modifiers={accent ? [buttonStyle(prominent ? "glassProminent" : "glass"), tint(accent)] : [buttonStyle(prominent ? "glassProminent" : "glass")]}
-      />
-    </Host>
-  );
-}
-
-/** Convenience wrapper: any RN content rendered on a Liquid Glass surface. Used
- *  by the kit's `ACard` on iOS; exported for screens that build bespoke glass
- *  panels and want the same backdrop + radius behaviour. */
-export function GlassPanel({ children, radius = RADIUS.card, style }: { children: ReactNode; radius?: number; style?: ViewStyle }) {
-  return (
-    <View style={style}>
-      <GlassSurface radius={radius} />
-      {children}
-    </View>
   );
 }
