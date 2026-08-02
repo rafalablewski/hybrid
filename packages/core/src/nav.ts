@@ -242,6 +242,40 @@ export function resolvePersona(
   return "casual";
 }
 
+/**
+ * The client's EFFECTIVE Simple/Full choice — the stored choice read in the
+ * light of WHEN it was made. Both clients pipe their persisted choice through
+ * this before {@link resolvePersona}.
+ *
+ * The choice lives on the DEVICE (localStorage / AsyncStorage); the entitlement
+ * lives on the ACCOUNT. A "casual" recorded while the account was still FREE is
+ * just the onboarding answer of someone who had no other option — it is NOT a
+ * decision to decline Full, and it must not survive the upgrade. Without this,
+ * a user who becomes paid any way OTHER than tapping upgrade in that very app
+ * instance (paid on the web and opened the phone, restored an IAP, or was
+ * granted Full by an admin) keeps the free surface on every device still
+ * holding that old answer — Cockpit/Performance, HPI and Recipes stay locked
+ * with a "Switch to Full" button as the only escape, and no server-side signal
+ * can clear it. So a stale free-era "casual" is dropped once the account is
+ * paid.
+ *
+ * A "casual" chosen DELIBERATELY while already paid (Settings → Mode → Simple)
+ * is a real preference and is honoured — that's what `storedWhilePaid` records.
+ *
+ * @param stored the persisted choice (null/undefined = never chosen).
+ * @param storedWhilePaid whether the account was already paid when it was
+ *   stored. Legacy values written before this was tracked read as `false`,
+ *   which is exactly right: they predate the upgrade.
+ */
+export function effectiveClientChoice(
+  stored: ClientPersona | null | undefined,
+  storedWhilePaid: boolean,
+  entitlement: Entitlement = "free",
+): ClientPersona | undefined {
+  if (stored === "casual" && !storedWhilePaid && entitlement === "paid") return undefined;
+  return stored ?? undefined;
+}
+
 /** The nav items a persona should see (nested — a higher persona sees more),
  *  honouring any admin `PersonaAccess` override. */
 export function navForPersona(persona: Persona, items: NavItem[] = NAV_ITEMS, access?: PersonaAccess): NavItem[] {

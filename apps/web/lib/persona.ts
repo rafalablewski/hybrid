@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { resolvePersona, type ClientPersona, type Persona } from "@hybrid/core";
+import { effectiveClientChoice, resolvePersona, type ClientPersona, type Persona } from "@hybrid/core";
 import { useSession } from "./session";
 
 /**
@@ -11,6 +11,10 @@ import { useSession } from "./session";
  * localStorage and read wherever the nav is shaped (sidebar, ⌘K hub, home).
  */
 const KEY = "hybrid.persona";
+/** Whether the stored choice was made while the account ALREADY carried a paid
+ *  entitlement — see core `effectiveClientChoice`. Absent (legacy) reads as
+ *  false, so a free-era onboarding answer can't outlive the upgrade. */
+const KEY_PAID = "hybrid.persona.paid";
 
 function readInitial(): ClientPersona | null {
   if (typeof window === "undefined") return null;
@@ -22,7 +26,17 @@ function readInitial(): ClientPersona | null {
   }
 }
 
+function readInitialWhilePaid(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(KEY_PAID) === "1";
+  } catch {
+    return false;
+  }
+}
+
 let choice: ClientPersona | null = readInitial();
+let choiceWhilePaid = readInitialWhilePaid();
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -46,10 +60,19 @@ function ensureCoachFetch() {
     .catch(() => {});
 }
 
-export function setClientPersona(c: ClientPersona): void {
+/** Set (and persist) the client persona choice.
+ *  @param whilePaid whether the account is ALREADY paid as this is chosen — pass
+ *    it from the surface making the choice (Settings' mode cards). Only a
+ *    Simple choice made by a PAID user counts as declining Full; a free user's
+ *    onboarding answer is cleared by their later upgrade (core
+ *    `effectiveClientChoice`). */
+export function setClientPersona(c: ClientPersona, whilePaid = false): void {
   choice = c;
+  choiceWhilePaid = whilePaid;
   try {
     localStorage.setItem(KEY, c);
+    if (whilePaid) localStorage.setItem(KEY_PAID, "1");
+    else localStorage.removeItem(KEY_PAID);
   } catch {
     /* ignore (private mode) */
   }
@@ -65,10 +88,12 @@ export function setClientPersona(c: ClientPersona): void {
  */
 export function resetPersona(): void {
   choice = null;
+  choiceWhilePaid = false;
   activeCoach = false;
   coachFetched = false;
   try {
     localStorage.removeItem(KEY);
+    localStorage.removeItem(KEY_PAID);
   } catch {
     /* ignore (private mode) */
   }
@@ -92,13 +117,23 @@ export function useHasActiveCoach(): boolean {
   );
 }
 
-/** The raw client choice (null until set). SSR snapshot is null (casual). */
+/** The client's EFFECTIVE choice (null until set). SSR snapshot is null (casual).
+ *  A "casual" stored while the account was still FREE is dropped once the
+ *  account is paid — that answer predates the upgrade and must not keep a
+ *  paying user on the free surface (core `effectiveClientChoice`). */
 export function useClientPersonaChoice(): ClientPersona | null {
-  return useSyncExternalStore(
+  const { entitlement } = useSession();
+  const stored = useSyncExternalStore(
     subscribe,
     () => choice,
     () => null,
   );
+  const whilePaid = useSyncExternalStore(
+    subscribe,
+    () => choiceWhilePaid,
+    () => false,
+  );
+  return effectiveClientChoice(stored, whilePaid, entitlement) ?? null;
 }
 
 /** The resolved persona for the signed-in user (role + client choice + billing).

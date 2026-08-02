@@ -51,7 +51,9 @@ const THEME_SWATCHES: { id: "dark" | "light"; label: string; colors: [string, st
 export default function AccountSettings() {
   const isMobile = useIsMobile();
   const { logout, session, entitlement } = useSession();
-  const personaChoice = useClientPersonaChoice() ?? "casual";
+  // No stored choice = the resolvePersona default: Full for a paid account
+  // (paying shouldn't require flipping a toggle), Simple for a free one.
+  const personaChoice = useClientPersonaChoice() ?? (entitlement === "paid" ? "athlete" : "casual");
   const { theme, setTheme } = useTheme();
   const { template } = useTemplate();
   // Aurora rounds everything more. The Card surfaces already adapt via the
@@ -534,11 +536,11 @@ export default function AccountSettings() {
           <Section label={t("w.account.settings.mode")}>
             <Mono s={{ fontSize: fs.body, display: "block" }} c={CHALK}>{t("w.account.settings.mode-desc")}</Mono>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.sm, marginTop: 12 }}>
-              <button className="pressable" onClick={() => setClientPersona("casual")} style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent" }}>
+              <button className="pressable" onClick={() => setClientPersona("casual", paid)} style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent" }}>
                 <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: txt(personaChoice === "casual" ? LIME : CHALK) }}>{t("w.account.settings.simple")}</div>
                 <Mono s={{ fontSize: fs.micro }}>{t("w.account.settings.simple-tags")}</Mono>
               </button>
-              <button className="pressable" onClick={() => (paid ? setClientPersona("athlete") : undefined)} aria-disabled={!paid} style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", opacity: paid ? 1 : 0.7 }}>
+              <button className="pressable" onClick={() => (paid ? setClientPersona("athlete", true) : undefined)} aria-disabled={!paid} style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", opacity: paid ? 1 : 0.7 }}>
                 <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, display: "flex", alignItems: "center", gap: space.xs, color: txt(paid && personaChoice === "athlete" ? LIME : CHALK) }}>
                   {t("w.account.settings.full")}
                   {!paid && (

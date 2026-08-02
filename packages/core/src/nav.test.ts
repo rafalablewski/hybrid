@@ -6,6 +6,7 @@ import {
   groupedNavWithLocks,
   navVisibleTo,
   resolvePersona,
+  effectiveClientChoice,
   sanitizePersonaAccess,
   analyticsScopesFor,
   resolveAnalyticsScope,
@@ -78,6 +79,35 @@ describe("persona resolution", () => {
     // choice on a paid account resolves to Full (athlete), never coach.
     // @ts-expect-error "coach" is no longer a valid ClientPersona
     expect(resolvePersona("client", "coach", "paid")).toBe("athlete");
+  });
+});
+
+describe("effectiveClientChoice", () => {
+  it("drops a free-era 'casual' once the account is paid (the paywall-after-upgrade bug)", () => {
+    // The device holds the onboarding answer; the account has since gone paid
+    // (bought on another client, restored an IAP, or granted by an admin).
+    // That stale answer must NOT keep a paying user on the free surface.
+    expect(effectiveClientChoice("casual", false, "paid")).toBeUndefined();
+    expect(resolvePersona("client", effectiveClientChoice("casual", false, "paid"), "paid")).toBe("athlete");
+  });
+
+  it("honours a 'casual' chosen deliberately WHILE paid (Settings → Simple)", () => {
+    expect(effectiveClientChoice("casual", true, "paid")).toBe("casual");
+    expect(resolvePersona("client", effectiveClientChoice("casual", true, "paid"), "paid")).toBe("casual");
+  });
+
+  it("leaves a free account's choice exactly as stored", () => {
+    expect(effectiveClientChoice("casual", false, "free")).toBe("casual");
+    expect(effectiveClientChoice("athlete", false, "free")).toBe("athlete");
+    expect(resolvePersona("client", effectiveClientChoice("athlete", false, "free"), "free")).toBe("casual");
+  });
+
+  it("passes 'athlete' and 'never chosen' straight through", () => {
+    expect(effectiveClientChoice("athlete", false, "paid")).toBe("athlete");
+    expect(effectiveClientChoice(null, false, "paid")).toBeUndefined();
+    expect(effectiveClientChoice(undefined, false, "free")).toBeUndefined();
+    // Defaults to the free reading when no entitlement is passed.
+    expect(effectiveClientChoice("casual", false)).toBe("casual");
   });
 });
 

@@ -60,8 +60,10 @@ export default function AuroraSettings() {
   const acct = useAccountSettings();
   // Mode toggle — Full (athlete) is a paid upgrade; a CLIENT chooses casual vs
   // athlete, mirroring web's useClientPersonaChoice()/setClientPersona().
-  const personaChoice = useClientPersonaChoice() ?? "casual";
   const paid = entitlement === "paid";
+  // No stored choice = the resolvePersona default: Full for a paid account
+  // (paying shouldn't require flipping a toggle), Simple for a free one.
+  const personaChoice = useClientPersonaChoice() ?? (paid ? "athlete" : "casual");
   const isClient = role === "client";
   // Drill-in navigation: null = the category list; a category id = its sub-page.
   const [cat, setCat] = useState<SettingsCategoryId | null>(null);
@@ -253,8 +255,8 @@ export default function AuroraSettings() {
         <Section label={t("w.account.settings.mode")}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18, marginBottom: 12 }}>{t("w.account.settings.mode-desc")}</Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <ModeCard on={personaChoice === "casual"} title={t("w.account.settings.simple")} tags={t("w.account.settings.simple-tags")} onPress={() => setClientPersona("casual")} />
-            <ModeCard on={paid && personaChoice === "athlete"} title={t("w.account.settings.full")} tags={t("w.account.settings.full-tags")} locked={!paid} onPress={() => (paid ? setClientPersona("athlete") : goUpgrade())} />
+            <ModeCard on={personaChoice === "casual"} title={t("w.account.settings.simple")} tags={t("w.account.settings.simple-tags")} onPress={() => setClientPersona("casual", paid)} />
+            <ModeCard on={paid && personaChoice === "athlete"} title={t("w.account.settings.full")} tags={t("w.account.settings.full-tags")} locked={!paid} onPress={() => (paid ? setClientPersona("athlete", true) : goUpgrade())} />
           </View>
           {!paid ? (
             <>
