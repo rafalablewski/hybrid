@@ -72,7 +72,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { fs, space, F, serifIf, startGlow, useEntrance, HubDissolve } from "../../lib/ui";
+import { fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring, withAlpha } from "./kit";
 import ExerciseWidgetRail from "./exercise-widget";
@@ -1217,7 +1217,7 @@ export default function AuroraHome() {
 function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
   const { scheme } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, overflow: "hidden" }}>
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, overflow: "hidden" }}>
       {/* path-accent glow blooming from the top-right corner (Go-Full anatomy) */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
@@ -1225,7 +1225,7 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: 18 }}>{sub}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.3, textTransform: "uppercase", color: txt(C, accent), marginTop: 14 }}>{cta} →</Text>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -1238,7 +1238,7 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
 function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { C: P; width: number; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
   const { scheme } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 18, overflow: "hidden" }}>
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 18, overflow: "hidden" }}>
       {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
@@ -1246,7 +1246,7 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
       <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, accent), marginTop: 12 }}>{cta} →</Text>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -1591,11 +1591,11 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           const on = selected === key;
           const accent = txt(C, C[READINESS_FACE[key].accent]);
           return (
-            <Pressable key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
+            <PressScale key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
               style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
               <ReadinessFace feeling={key} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
-            </Pressable>
+            </PressScale>
           );
         })}
       </View>
@@ -1721,7 +1721,7 @@ function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; s
   const pa = usePremiumAccent();
   const { t } = useLang();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, minHeight: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, overflow: "hidden" }}>
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, minHeight: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, overflow: "hidden" }}>
       {/* premium-accent glow (admin-set) blooming from the top-right corner */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${pa.fill}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${pa.fill}2b`, `${pa.fill}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
@@ -1734,7 +1734,7 @@ function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; s
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 10, lineHeight: 20 }}>{sub}</Text>
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.3, textTransform: "uppercase", color: pa.text, marginTop: 18 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</Text>
-    </Pressable>
+    </PressScale>
   );
 }
 

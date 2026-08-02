@@ -15,7 +15,7 @@ import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
@@ -85,9 +85,9 @@ export default function AuroraTrain() {
           </View>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{draft.title || "Workout"}</Text>
           <View style={{ marginTop: 2 }}><MetaLine parts={[`${draft.exercises.length} ${t("workout.exercises")}`, t("train.inProgress")]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
-          <Pressable onPress={() => start("empty")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 12 }}>
+          <PressScale onPress={() => start("empty")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 12 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>▶  {t("train.resume")}</Text>
-          </Pressable>
+          </PressScale>
         </ACard>
       )}
 
@@ -145,9 +145,9 @@ export default function AuroraTrain() {
       </View>
 
       {/* Build a reusable routine. */}
-      <Pressable onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 16 }}>
+      <PressScale onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center", marginTop: 16 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>＋ {t("train.buildRoutine")}</Text>
-      </Pressable>
+      </PressScale>
 
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("train.finishedNote")}</Text>
     </AuroraScreen>
@@ -163,17 +163,17 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
     : t("train.aiEmptyTitle");
   const blurb = hasHistory ? rx.why : t("train.aiEmptyBlurb");
   return (
-    <Pressable onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, padding: 20, marginTop: 16 }}>
+    <PressScale onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, padding: 20, marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
         {t("home.readiness")} {rx.readiness}/100
       </Text>
-      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.onAccent, marginTop: 10, letterSpacing: -0.4 }}>{title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 25, lineHeight: 28, color: C.onAccent, marginTop: 10, letterSpacing: -0.5 }}>{title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: 17 }} numberOfLines={2}>{blurb}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, backgroundColor: C.ink, borderRadius: 14, paddingVertical: 14, marginTop: 16 }}>
         <AuroraIcon name="play" size={15} color={C.lime} />
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
       </View>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -187,7 +187,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: pa.text }}>{t("train.aiCoach")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: pa.text }}>{t("w.home.today.unlockFullBtn")}</Text>
         </View>
-        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 22, lineHeight: 25, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }} numberOfLines={3}>{t("train.aiLockedBlurb")}</Text>
       </ACard>
     </Pressable>
@@ -233,7 +233,7 @@ function ListRow({
   const { t } = useLang();
   const pa = usePremiumAccent();
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       style={{ flexDirection: "row", alignItems: "center", gap: 15, paddingVertical: 18, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
     >
@@ -252,7 +252,7 @@ function ListRow({
         )}
         {right}
       </View>
-    </Pressable>
+    </PressScale>
   );
 }
 

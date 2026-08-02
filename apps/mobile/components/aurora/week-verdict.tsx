@@ -12,7 +12,7 @@ import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf } from "../../lib/ui";
+import { fs, F, serifIf, PressScale } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 
@@ -86,7 +86,7 @@ function Lead({ template, word, color }: { template: string; word: string | null
 export function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: string; glyph: string; onPress: () => void }) {
   const { palette: C } = useTheme();
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title} – ${sub}`}

@@ -12,7 +12,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -57,7 +57,7 @@ export default function AuroraExercises() {
   const open = (name: string) => router.push({ pathname: "/exercise", params: { name } });
 
   const Row = ({ e, last }: { e: ExerciseBrowseEntry; last: boolean }) => (
-    <Pressable
+    <PressScale
       onPress={() => open(e.name)}
       accessibilityRole="button"
       accessibilityLabel={e.name}
@@ -69,7 +69,7 @@ export default function AuroraExercises() {
       <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
-    </Pressable>
+    </PressScale>
   );
 
   const Card = ({ list }: { list: ExerciseBrowseEntry[] }) => (
@@ -106,15 +106,15 @@ export default function AuroraExercises() {
             ]).map((p) => {
               const on = mode === p.id;
               return (
-                <Pressable
+                <PressScale
                   key={p.id}
                   onPress={() => setMode(p.id)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
-                </Pressable>
+                  <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 10.5, letterSpacing: 0.8, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                </PressScale>
               );
             })}
           </View>

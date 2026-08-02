@@ -58,7 +58,7 @@ import { useLang } from "../../lib/i18n";
 import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS, Ring, withAlpha } from "./kit";
 import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";
@@ -99,6 +99,9 @@ type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods
 // string, not a closed union.
 type MealType = string;
 const MEAL_TYPES = DEFAULT_MEAL_PART_KEYS;
+// Over-target: the calorie ring and its number flip red past the SAME 5% grace
+// band (web parity — one threshold, both surfaces).
+const KCAL_OVER_THRESHOLD = 1.05;
 const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunrise" : m === "lunch" ? "sun" : m === "dinner" ? "moon" : m === "snack" ? "cup" : "bowl";
 const UNIT_OPTIONS = ["gram", "ml", "oz", "piece", "serving"];
 // A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
@@ -1869,7 +1872,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       ) : (<>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
-      <Pressable onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16 }}>
+      <PressScale onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
           <Glyph name="target" size={20} color={C.ash} strokeWidth={5} />
           <View>
@@ -1878,7 +1881,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           </View>
         </View>
         <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
-      </Pressable>
+      </PressScale>
 
       {coachDiet?.diet && (
         <ACard solid style={{ marginTop: 16 }}>
@@ -1905,9 +1908,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <ACard solid style={{ marginTop: 16, paddingVertical: 26, alignItems: "center" }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.6, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
             <View style={{ marginTop: 18 }}>
-              <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={today.kcal > targets.kcal * 1.05 ? C.red : C.lime} track={C.line}>
+              {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
+              <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
                 <View style={{ alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1.4, color: today.kcal > targets.kcal ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - today.kcal)}</Text>
+                  <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1.4, color: today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - today.kcal)}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{Math.round(today.kcal)} / {targets.kcal}</Text>
                 </View>
               </Ring>
@@ -1947,20 +1951,20 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <Pressable onPress={() => setView("diary")}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.menuDiary")} →</Text></Pressable>
           </View>
           {partList.map((p) => { const kcal = mealTotals[p.key] ?? 0; return (
-            <Pressable key={p.key} onPress={() => openAdd(p.key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 15, marginTop: 10 }}>
+            <PressScale key={p.key} onPress={() => openAdd(p.key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 15, marginTop: 10 }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Glyph name={mealGlyph(p.key)} size={19} color={C.ash} strokeWidth={5} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{p.label}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: kcal > 0 ? C.ash : txt(C, C.lime), marginTop: 2 }}>{kcal > 0 ? `${Math.round(kcal)} kcal` : t("w.recovery.nutrition.addFirstFood")}</Text>
               </View>
               <View style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.4} /></View>
-            </Pressable>
+            </PressScale>
           ); })}
           {full ? (
-            <Pressable onPress={() => setPartSheet(true)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 18, paddingVertical: 13, paddingHorizontal: 15, marginTop: 10 }}>
+            <PressScale onPress={() => setPartSheet(true)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 13, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 18, paddingVertical: 13, paddingHorizontal: 15, marginTop: 10 }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", alignItems: "center", justifyContent: "center" }}><IPlus size={18} color={C.ash} strokeWidth={2.2} /></View>
               <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.subtitle, color: C.ash }}>{t("w.recovery.nutrition.addPart")}</Text>
-            </Pressable>
+            </PressScale>
           ) : null}
 
           {/* Menu — the deliberate way into every deeper feature. Recipes and
@@ -1973,7 +1977,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             ["meals", <Glyph key="m" name="bowl" size={20} color={C.ash} strokeWidth={5} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
             ["foods", <AuroraIcon key="f" name="store" size={20} color={C.ash} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
           ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
-            <Pressable key={key} onPress={() => setView(key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: i ? 10 : 24 }}>
+            <PressScale key={key} onPress={() => setView(key)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 16, marginTop: i ? 10 : 24 }}>
               {icon}
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{title}</Text>
@@ -1981,7 +1985,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               </View>
               {badge ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }}>{badge}</Text> : null}
               <Glyph name="chevron" size={16} color={C.ash} strokeWidth={6} />
-            </Pressable>
+            </PressScale>
           ))}
 
           {/* ── The two libraries, at the very bottom, as left/right rails —
@@ -1995,14 +1999,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <RailHead C={C} title={t("w.recovery.nutrition.recipes")} actionLabel={`${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`} actionColor={recipesUnlocked ? C.ash : pa.text} onAction={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
             {RECIPES.map((r) => (
-              <Pressable key={r.id} onPress={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" accessibilityLabel={r.name} style={{ width: recipeCardW, borderWidth: 1, borderColor: C.line, borderRadius: 20, overflow: "hidden", backgroundColor: C.ink2 }}>
+              <PressScale key={r.id} onPress={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" accessibilityLabel={r.name} style={{ width: recipeCardW, borderWidth: 1, borderColor: C.line, borderRadius: 20, overflow: "hidden", backgroundColor: C.ink2 }}>
                 <RecipeHero tint={r.tint} emoji={r.emoji} height={96} fontSize={40} />
                 <View style={{ paddingHorizontal: 12, paddingTop: 11, paddingBottom: 13 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
                   <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 7 }}>{r.macros.kcal} kcal</Text>
                 </View>
-              </Pressable>
+              </PressScale>
             ))}
           </ScrollView>
 
@@ -2015,7 +2019,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
               return (
-                <Pressable key={src.id} onPress={() => openSourcePage(src.id, "home")} accessibilityRole="button" accessibilityLabel={src.name} style={{ width: sourceCardW, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, padding: 14 }}>
+                <PressScale key={src.id} onPress={() => openSourcePage(src.id, "home")} accessibilityRole="button" accessibilityLabel={src.name} style={{ width: sourceCardW, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, padding: 14 }}>
                   {/* The business's own logo leads the card — this rail IS the
                       businesses, so recognising one at a glance is its whole job. */}
                   <MarkPlate C={C} src={src} height={34} full />
@@ -2024,7 +2028,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                     <VerifiedMark C={C} size={12} />
                   </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4, paddingHorizontal: 2 }}>{t("w.recovery.nutrition.itemsCheckedN").replace("{n}", String(n))}</Text>
-                </Pressable>
+                </PressScale>
               );
             })}
           </ScrollView>
