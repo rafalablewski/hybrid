@@ -509,13 +509,13 @@ export function WorkoutWrapped({
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.5, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
             <View style={{ marginTop: 24, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               {([
-                ["♥", "session.wrapped.device.hr"],
-                ["🔥", "session.wrapped.device.energy"],
-                ["⏱", "session.wrapped.device.time"],
-                ["🌙", "session.wrapped.device.recovery"],
-              ] as const).map(([glyph, key], i) => (
+                ["heart", C.red, "session.wrapped.device.hr"],
+                ["flame", C.red, "session.wrapped.device.energy"],
+                ["stopwatch", C.chalk, "session.wrapped.device.time"],
+                ["moon", GOLD, "session.wrapped.device.recovery"],
+              ] as const).map(([icon, tint, key], i) => (
                 <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: "#0e0f0d", borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                  <Text style={{ fontSize: 15 }}>{glyph}</Text>
+                  <AuroraIcon name={icon} size={16} color={tint} />
                   <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{t(key)}</Text>
                 </View>
               ))}
