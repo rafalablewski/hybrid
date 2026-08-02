@@ -59,10 +59,17 @@ describe("globals.css motion tokens", () => {
   });
 
   it("times every shared-element pair on the zoom spring", () => {
+    // Read the rule each name belongs to rather than measuring a character
+    // distance: pairs share one selector list, so the gap between a name and
+    // its declarations grows every time a pair is added.
     for (const name of Object.values(SHARED_ELEMENTS)) {
-      expect(css, `no CSS for shared element ${name}`).toContain(`::view-transition-group(${name})`);
+      const sel = `::view-transition-group(${name})`;
+      expect(css, `no CSS for shared element ${name}`).toContain(sel);
+      const at = css.indexOf(sel);
+      const block = css.slice(at, css.indexOf("}", at));
+      expect(block, `${name} is not timed on the zoom spring`).toContain("var(--d-zoom)");
+      expect(block, `${name} does not use the zoom easing`).toContain("var(--e-zoom)");
     }
-    expect(css).toMatch(/::view-transition-group\(hybrid-exercise-hero\)[\s\S]{0,240}var\(--d-zoom\)/);
   });
 
   it("holds the hub chrome still while the hub content dissolves", () => {

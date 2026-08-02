@@ -8,7 +8,9 @@
 // workout-wrapped.tsx.
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { sharedElementStyle } from "@/lib/shared-element";
 import {
+  SHARED_ELEMENTS,
   sessionWrapped,
   fitScale,
   HERO_FIT_EM,
@@ -364,7 +366,13 @@ export function WorkoutWrapped({
       <section style={panelStyle}>
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(120% 60% at 85% 6%, color-mix(in srgb, ${VIOLET} 20%, transparent), transparent 55%), radial-gradient(90% 55% at 0% 100%, color-mix(in srgb, ${LIME} 12%, transparent), transparent 60%)` }} />
         {eyebrow(t("session.wrapped.title"))}
-        <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative" }}>{session.title}</div>
+        {/* SHARED ELEMENT (destination). The title the clicked row was showing
+            travels here and scales up instead of the page re-rendering it.
+            DECLINED while `cel` is true: a celebration session runs its own
+            reveal over this panel, and two things moving at once is the
+            "don't stack effects" rule — the armed source then simply expires
+            and the ordinary push carries the change. */}
+        <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative", ...(cel ? {} : sharedElementStyle(SHARED_ELEMENTS.sessionHero)) }}>{session.title}</div>
         <div style={{ flex: 1 }} />
         <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.03em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 12, color: txt(cel ? LIME : CHALK), position: "relative" }}>{heroSub}</div>

@@ -362,6 +362,15 @@ export const SHARED_ELEMENTS = {
    *  of a stats page — but the NUMBER is the same fact in both places, and
    *  numbers are what this app is about. */
   exerciseHero: "hybrid-exercise-hero",
+  /** A logged session's TITLE on its row/card ⇄ the same title heading its
+   *  breakdown. The highest-traffic card→screen move in the app.
+   *
+   *  The title rather than a figure, deliberately: it is literally the same
+   *  string at both ends (`session.title`), so the travelling element cannot
+   *  show one value and land on another. A figure would have to be derived
+   *  identically in two places to make that guarantee, and a shared element
+   *  that lies mid-flight is worse than a hard cut. */
+  sessionHero: "hybrid-session-hero",
 } as const;
 
 export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELEMENTS];
