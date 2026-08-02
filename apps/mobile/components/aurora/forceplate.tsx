@@ -6,7 +6,7 @@ import { fetchSignals, importSignal, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 
 /** AURORA Force plate — CSV import of jump-test data into the Signal ontology +
  *  jump-height trend, reusing the exact parseForcePlateCsv + import flow. */
@@ -43,11 +43,7 @@ export default function AuroraForcePlate() {
   const chip = (color: string, label: string) => <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.fp.title")}</AHeading>
-      </View>
+    <AuroraScreen hero={{ rank: "title", title: t("w.analyze.fp.title") }}>
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{t("w.analyze.fp.importBody-mobile")}</Text>

@@ -35,11 +35,7 @@ export default function AuroraPeriodize() {
 
   if (!macro) {
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
-          <ABack />
-          <AHeading style={{ fontSize: fs.display }}>{t("w.train.periodize.noActivePlan")}</AHeading>
-        </View>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} hero={{ rank: "title", title: t("w.train.periodize.noActivePlan") }}>
         <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
             {loaded ? t("w.train.periodize.emptyBodyMobile") : t("w.train.periodize.loadingSeason")}

@@ -4,7 +4,7 @@ import { askAiCoach, type CoachNote } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 
 /** AURORA AI coach — same /api/ai-coach call (server-side Claude, engine
  *  fallback) and rendered note as the classic, in the rounded look.
@@ -68,11 +68,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
   if (embedded) return body;
 
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.home.today.aiCoach")}</AHeading>
-      </View>
+    <AuroraScreen hero={{ rank: "title", title: t("w.home.today.aiCoach") }}>
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{t("w.home.aicoach.todaysNote")}</Text>

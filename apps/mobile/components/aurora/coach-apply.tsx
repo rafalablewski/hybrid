@@ -51,10 +51,7 @@ export default function AuroraCoachApply() {
     s === "approved" ? C.lime : s === "denied" ? C.red : C.ash;
 
   return (
-    <AuroraScreen>
-      <ABack />
-
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("w.account.settings.become-coach")}</AHeading>
+    <AuroraScreen hero={{ rank: "title", title: t("w.account.settings.become-coach") }}>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
         {t("w.account.settings.coach-apply-intro")}
       </Text>

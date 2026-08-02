@@ -170,9 +170,7 @@ export default function AuroraTeamMonitor() {
   };
 
   return (
-    <AuroraScreen>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("nav.squad")}</AHeading>
+    <AuroraScreen hero={{ rank: "title", title: t("nav.squad") }}>
       {body()}
       <View style={{ height: RADIUS.card }} />
     </AuroraScreen>

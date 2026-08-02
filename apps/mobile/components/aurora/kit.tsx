@@ -11,6 +11,7 @@ import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { HeroScreen, type HeroSpec } from "./hero";
 
 /**
  * AURORA template UI kit (mobile). Soft, rounded primitives adapted from the
@@ -20,65 +21,16 @@ import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
  */
 export const RADIUS = { card: 28, field: 16, pill: 999 } as const;
 
-/** Append an alpha byte to a `#RRGGBB` brand token → `#RRGGBBAA` (passthrough
- *  for anything that isn't a 6-digit hex). */
-export function withAlpha(hex: string, alpha: number): string {
-  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
-  const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
-    .toString(16)
-    .padStart(2, "0");
-  return `${hex}${a}`;
-}
-
-/** Ambient AURORA backdrop — soft accent gradients that bleed in from the edges
- *  and fade to transparent, giving the rounded screens a smooth gradient wash
- *  (the classic Aurora look). Built from layered `LinearGradient`s rather than
- *  hard-edged blobs so it reads as a gradient, not discs — the RN parity of the
- *  web `.lg-field` (which blurs its blobs 70px to the same effect). Renders in
- *  both modes: with Liquid Glass on it's the colour the glass cards refract;
- *  with it off it's the plain Aurora gradient. Exported so screens that own
- *  their own shell (e.g. the live logger) can drop the same backdrop behind
- *  their content. */
-export function AuroraField() {
-  const { palette, scheme } = useTheme();
-  const fill = StyleSheet.absoluteFill;
-  // KYOTO HOUR (light): the lime/violet/blue accent wash turns the warm paper
-  // green/cold, so the calm theme gets warm, low-chroma washi tones with a
-  // whisper of pine instead. Aurora (dark) keeps its accent glow. (Parity with
-  // web's [data-theme=light] .lg-field retint.)
-  const japandi = scheme === "light";
-  const c1 = japandi ? "#e7e0cc" : palette.lime;
-  const c2 = japandi ? "#e3dcc8" : palette.violet;
-  const c3 = japandi ? "#d9ddd0" : palette.blue;
-  return (
-    <View pointerEvents="none" style={[fill, { overflow: "hidden" }]}>
-      {/* warm sand / lime — bleeds from the top-left corner. */}
-      <LinearGradient
-        colors={[withAlpha(c1, japandi ? 0.5 : 0.14), "transparent"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0.9, y: 0.9 }}
-        style={fill}
-      />
-      {/* warm clay / violet — bleeds from the bottom-left. */}
-      <LinearGradient
-        colors={[withAlpha(c2, japandi ? 0.45 : 0.16), "transparent"]}
-        start={{ x: 0, y: 1 }}
-        end={{ x: 0.9, y: 0.15 }}
-        style={fill}
-      />
-      {/* warm stone / blue — a faint depth glow from the right edge. */}
-      <LinearGradient
-        colors={["transparent", withAlpha(c3, japandi ? 0.4 : 0.1)]}
-        start={{ x: 0.25, y: 0.4 }}
-        end={{ x: 1, y: 0.4 }}
-        style={fill}
-      />
-    </View>
-  );
-}
+export { AuroraField, withAlpha } from "./field";
+import { AuroraField, withAlpha } from "./field";
 
 export function AuroraScreen({
   children,
+  hero,
+  back,
+  backLabel,
+  accessory,
+  rail,
   scroll = true,
   center = false,
   // 16dp side gutter — matches the web app-shell's mobile gutter (16px) so a
@@ -93,6 +45,29 @@ export function AuroraScreen({
   top,
 }: {
   children: ReactNode;
+  /** THE HERO. Give a screen a `hero` and AuroraScreen hands the whole shell to
+   *  the HERO SYSTEM (components/aurora/hero.tsx): the system's rail at the
+   *  system's y, the one nav button, the one title ramp, the one metadata
+   *  voice, and a collapse track — instead of the screen hand-rolling a header
+   *  row out of ABack + AHeading, which is how every screen used to invent its
+   *  own. See reference/hero-system.md.
+   *
+   *  Screens with NO hero (a Today hub tab, the live logger's own shell) keep
+   *  the plain scaffold below — a root tab has nothing to pop and no title to
+   *  establish, so a rail there would be chrome for its own sake. */
+  hero?: HeroSpec;
+  /** What the nav button does. Defaults to `router.back()` — the same default
+   *  the retired ABack had, so a pushed screen needs only a `hero`. Pass
+   *  `false` on a ROOT screen: the rail renders with an empty leading slot, so
+   *  the title's y is unchanged and nothing shifts between a root and a pushed
+   *  screen. */
+  back?: (() => void) | false;
+  /** Names the ORIGIN, not the action ("Olympic Weightlifting", not "Back"). */
+  backLabel?: string;
+  /** The rail's trailing slot — one label or one control. */
+  accessory?: ReactNode;
+  /** A sub-rail that docks beneath the collapsed bar (a segmented control). */
+  rail?: ReactNode;
   scroll?: boolean;
   center?: boolean;
   padding?: number;
@@ -117,6 +92,52 @@ export function AuroraScreen({
   stickyTopReserve?: number;
   /** Live scroll offset, for a `stickyTop` that captures on scroll. Chained
    *  after the nav pill's own listener so the pill still hides on scroll. */
+  onScrollY?: (y: number) => void;
+}) {
+  // A hero means the HERO SYSTEM owns the shell — safe area, rail, collapse
+  // track and scroll clearance all come from it. Dispatched before ANY hook
+  // runs, so the two shells never share a hook order. (`top`/`stickyTop` belong
+  // to the hub-tab shape, which by definition has no hero to establish, so the
+  // two paths never need to compose.)
+  if (hero) {
+    return (
+      <HeroScreen hero={hero} back={back} backLabel={backLabel} accessory={accessory} rail={rail} refreshing={refreshing} onRefresh={onRefresh} center={center}>
+        {children}
+      </HeroScreen>
+    );
+  }
+  return (
+    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} stickyTop={stickyTop} stickyTopReserve={stickyTopReserve} onScrollY={onScrollY} top={top}>
+      {children}
+    </AuroraPlainScreen>
+  );
+}
+
+/** The pre-hero shell — the Aurora field + safe area + scroller, with no screen
+ *  head of its own. Still the right scaffold for the surfaces that genuinely
+ *  have no hero: a Today hub tab (its chrome is Today's, handed down through
+ *  `top`) and screens that own their own head. */
+function AuroraPlainScreen({
+  children,
+  scroll = true,
+  center = false,
+  padding = 16,
+  refreshing,
+  onRefresh,
+  stickyTop,
+  stickyTopReserve = 0,
+  onScrollY,
+  top,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+  center?: boolean;
+  padding?: number;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  top?: ReactNode;
+  stickyTop?: ReactNode;
+  stickyTopReserve?: number;
   onScrollY?: (y: number) => void;
 }) {
   const { palette } = useTheme();

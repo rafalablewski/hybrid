@@ -1,10 +1,11 @@
 import { useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { Animated, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from "react-native";
+import { Animated, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import {
   HERO,
   HERO_INK,
@@ -32,7 +33,7 @@ import { F, serifIf, useEntrance, PressScale } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
-import { AuroraField, withAlpha } from "./kit";
+import { AuroraField, withAlpha } from "./field";
 import { AuroraIcon } from "./icons";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 
@@ -364,12 +365,22 @@ export function HeroScreen({
   rail,
   dock,
   scroller,
+  refreshing,
+  onRefresh,
+  center,
   children,
 }: {
   hero: HeroSpec;
-  back?: () => void;
+  /** Defaults to `router.back()`; `false` renders no button (a root screen). */
+  back?: (() => void) | false;
   backLabel?: string;
   accessory?: ReactNode;
+  /** Pull-to-refresh, for the screens that had it on AuroraScreen. */
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  /** Centre the content in the remaining space (short screens: empty states,
+   *  a single form). The hero is unaffected — it is always at the top. */
+  center?: boolean;
   /** A sub-rail (segmented control, category chips) that docks beneath the
    *  collapsed bar. It is NOT part of the hero — the hero's rail is the nav
    *  row, and this rides under it. */
@@ -401,6 +412,10 @@ export function HeroScreen({
   const ns = useNavScroll();
   const reduced = useReducedMotion();
   const entrance = useEntrance();
+  const router = useRouter();
+  // A pushed screen needs only a `hero` — popping is what a nav button does
+  // unless it is told otherwise, which is the default the retired ABack had.
+  const onBack = back === false ? null : (back ?? (() => router.back()));
 
   const d = geom.delta;
   // Every layer reads the SAME detents core publishes — the ONE reason web and
@@ -455,7 +470,12 @@ export function HeroScreen({
     },
     onMomentumScrollEnd: (e) => snap(e.nativeEvent.contentOffset.y),
     scrollEventThrottle: 16,
-    contentContainerStyle: { paddingTop: geom.height, paddingBottom: auroraScrollClearance(insets.bottom) + (dock ? 66 : 0) },
+    contentContainerStyle: {
+      paddingTop: geom.height,
+      paddingBottom: auroraScrollClearance(insets.bottom) + (dock ? 66 : 0),
+      flexGrow: center ? 1 : undefined,
+      justifyContent: center ? "center" : undefined,
+    },
     keyboardShouldPersistTaps: "handled",
   };
 
@@ -516,7 +536,11 @@ export function HeroScreen({
           {scroller ? (
             scroller(scrollProps, railNode)
           ) : (
-            <ScrollView ref={scrollRef} {...scrollProps}>
+            <ScrollView
+              ref={scrollRef}
+              {...scrollProps}
+              refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={C.lime} colors={[C.lime]} progressViewOffset={geom.barHeight} /> : undefined}
+            >
               {body}
             </ScrollView>
           )}
@@ -576,7 +600,7 @@ export function HeroScreen({
                 transform: [{ translateY: railCounter as never }],
               }}
             >
-              {back ? <HeroNav onPress={back} fromLabel={backLabel} mode={mode} material={navMaterial} onDark={onDark} /> : <View style={{ width: HERO.nav.hit }} />}
+              {onBack ? <HeroNav onPress={onBack} fromLabel={backLabel} mode={mode} material={navMaterial} onDark={onDark} /> : <View style={{ width: HERO.nav.hit }} />}
               {/* the collapsed bar's inline title — arrives only after the
                   display title has fully left, so the two are never both up */}
               <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: "absolute", left: HERO.nav.hit + 8, right: HERO.nav.hit + 8, alignItems: "center", justifyContent: "center", height: HERO.rail.height, opacity: inlineOpacity as never }}>

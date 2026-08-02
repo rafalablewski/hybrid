@@ -64,12 +64,7 @@ export default function AuroraCalendar() {
   );
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("nav.calendar")}</AHeading>
-        <View style={{ marginLeft: "auto" }}><AuroraIcon name="calendar" size={24} color={txt(C, C.lime)} /></View>
-      </View>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} hero={{ rank: "title", title: t("nav.calendar") }}>
 
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>

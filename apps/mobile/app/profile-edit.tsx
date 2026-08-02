@@ -13,11 +13,7 @@ export default function ProfileEdit() {
   const router = useRouter();
   const { t } = useLang();
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
-        <ABack />
-        <AHeading style={{ fontSize: 28 }}>{t("w.profile.editProfile")}</AHeading>
-      </View>
+    <AuroraScreen hero={{ rank: "title", title: t("w.profile.editProfile") }}>
       <ASub style={{ marginTop: 8, marginBottom: 14 }}>{t("w.profile.editSub")}</ASub>
       <MySocialProfileEdit onDone={() => router.back()} />
     </AuroraScreen>

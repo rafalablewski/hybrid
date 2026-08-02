@@ -114,9 +114,7 @@ export default function AuroraOrg() {
   const teamName = (tid: string | null) => tree.find((n) => n.id === tid)?.name ?? "—";
 
   return (
-    <AuroraScreen>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("nav.org")}</AHeading>
+    <AuroraScreen hero={{ rank: "title", title: t("nav.org") }}>
 
       {/* org picker + create */}
       <ACard style={{ marginTop: space.md }}>

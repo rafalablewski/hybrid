@@ -142,9 +142,7 @@ export default function AuroraTeamCompare() {
   };
 
   return (
-    <AuroraScreen>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("nav.teamcompare")}</AHeading>
+    <AuroraScreen hero={{ rank: "title", title: t("nav.teamcompare") }}>
       {body()}
       <View style={{ height: RADIUS.card }} />
     </AuroraScreen>

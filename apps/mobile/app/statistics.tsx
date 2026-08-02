@@ -14,7 +14,7 @@ import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
 import { useBodyweightLookup } from "../lib/use-bodyweight";
 import { useTheme, txt } from "../lib/theme";
 import { fs, space, F } from "../lib/ui";
-import { ABack, AuroraScreen, ACard, ASegment, AHeading, RADIUS } from "../components/aurora/kit";
+import { AuroraScreen, ACard, ASegment, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
 const RANGES: { id: StatRange; label: string }[] = [
@@ -52,12 +52,8 @@ export default function Statistics() {
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
   return (
-    <AuroraScreen>
+    <AuroraScreen hero={{ rank: "title", title: "Your Statistics" }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <View style={{ flexDirection: "row", gap: space.ms, alignItems: "center" }}>
-          <ABack />
-          <AHeading style={{ fontSize: fs.display }}>Your{"\n"}Statistics</AHeading>
-        </View>
         <View style={{ alignItems: "flex-end", marginTop: 6 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>Weekly volume</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.xs, marginTop: 2 }}>

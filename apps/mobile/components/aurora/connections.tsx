@@ -5,7 +5,7 @@ import { fetchConnections, type Conn, type Provider } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, ASub, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -36,11 +36,7 @@ export default function AuroraConnections() {
   );
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.account.connections.title")}</AHeading>
-      </View>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} hero={{ rank: "title", title: t("w.account.connections.title") }}>
       <ASub style={{ marginTop: 10 }}>{t("w.account.connections.intro-mobile")}</ASub>
 
       {providers.map((p) => {
