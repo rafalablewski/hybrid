@@ -183,7 +183,7 @@ function Card({ children }: { children: React.ReactNode }) {
 // The all-prose week card's header (endurance weeks keep the one-card layout).
 function WeekHeader({ title, right }: { title: string; right: string | null }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "13px 18px", borderBottom: `1px solid ${HAIR}` }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "12px 18px", borderBottom: `1px solid ${HAIR}` }}>
       <span style={{ fontFamily: disp, fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", color: CHALK }}>{title}</span>
       {right && <span style={{ fontFamily: mono, fontSize: 10, color: ASH }}>{right}</span>}
     </div>
@@ -217,7 +217,7 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
         disabled={!expandable}
         onClick={onToggle}
         aria-expanded={open}
-        style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "13px 18px", cursor: expandable ? "pointer" : "default" }}
+        style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", cursor: expandable ? "pointer" : "default" }}
       >
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontFamily: disp, fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -229,7 +229,7 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
         <Pulse day={day} />
         {right && <span style={{ fontFamily: mono, fontSize: 10, color: ASH, flex: "none" }}>{right}</span>}
         {expandable && (
-          <span aria-hidden style={{ flex: "none", width: 26, height: 26, borderRadius: 13, border: `1px solid ${open ? LIME : "color-mix(in srgb, var(--color-chalk) 25%, transparent)"}`, background: open ? LIME : "transparent", color: open ? "var(--on-accent)" : ASH, display: "grid", placeItems: "center", fontFamily: mono, fontSize: 13, lineHeight: 1 }}>
+          <span aria-hidden style={{ flex: "none", width: 26, height: 26, borderRadius: 999, border: `1px solid ${open ? LIME : "color-mix(in srgb, var(--color-chalk) 25%, transparent)"}`, background: open ? LIME : "transparent", color: open ? "var(--on-accent)" : ASH, display: "grid", placeItems: "center", fontFamily: mono, fontSize: 13, lineHeight: 1 }}>
             {open ? "−" : "+"}
           </span>
         )}
@@ -250,7 +250,7 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
 // session volume on the right. No background wash.
 function SessionRule({ marker, color, volume, top }: { marker: string; color: LoadColor; volume: string | null; top: boolean }) {
   return (
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, padding: "9px 18px 6px", borderBottom: `1px solid ${HAIR}`, borderTop: top ? `1px solid ${HAIR}` : undefined }}>
+    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, padding: "8px 18px 6px", borderBottom: `1px solid ${HAIR}`, borderTop: top ? `1px solid ${HAIR}` : undefined }}>
       <span style={{ fontFamily: mono, fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: HEX_T[color] }}>{marker}</span>
       {volume && <span style={{ fontFamily: mono, fontSize: 9.5, color: ASH }}>{volume}</span>}
     </div>
@@ -360,11 +360,11 @@ function QuietMatrix({ lifts, dayMax, label, onPress }: { lifts: ProgramLiftView
           <table style={{ width: "100%", minWidth: 132 + cols.length * 62, borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${HAIR}` }}>
-                <th scope="col" style={{ ...sticky, width: 132, textAlign: "left", padding: "7px 8px 5px 18px", fontFamily: mono, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: ASH, fontWeight: 400 }}>
+                <th scope="col" style={{ ...sticky, width: 132, textAlign: "left", padding: "8px 8px 5px 18px", fontFamily: mono, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: ASH, fontWeight: 400 }}>
                   {label ?? <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Exercise</span>}
                 </th>
                 {cols.map((c) => (
-                  <th key={c.load} scope="col" style={{ minWidth: 62, padding: "7px 4px 5px", fontFamily: mono, fontSize: 10, fontWeight: 400, textAlign: "center", color: ASH }}>
+                  <th key={c.load} scope="col" style={{ minWidth: 62, padding: "8px 4px 5px", fontFamily: mono, fontSize: 10, fontWeight: 400, textAlign: "center", color: ASH }}>
                     {c.load}
                   </th>
                 ))}
@@ -375,7 +375,7 @@ function QuietMatrix({ lifts, dayMax, label, onPress }: { lifts: ProgramLiftView
                 const byLoad = new Map((l.steps ?? []).map((st) => [st.load, st]));
                 return (
                   <tr key={i} onClick={() => onPress(l)} style={{ borderTop: i > 0 ? `1px solid ${HAIR}` : undefined, cursor: "pointer" }}>
-                    <th scope="row" style={{ ...sticky, textAlign: "left", padding: "11px 8px 11px 18px", fontWeight: 400 }}>
+                    <th scope="row" style={{ ...sticky, textAlign: "left", padding: "12px 8px 12px 18px", fontWeight: 400 }}>
                       <button type="button" onClick={(e) => { e.stopPropagation(); onPress(l); }} style={rowBtn} aria-label={`${l.name} — details`}>
                         <NameCell lift={l} />
                       </button>
@@ -384,7 +384,7 @@ function QuietMatrix({ lifts, dayMax, label, onPress }: { lifts: ProgramLiftView
                       const st = byLoad.get(c.load);
                       // An empty cell is SILENT — absence is the information.
                       return (
-                        <td key={c.load} style={{ padding: "11px 4px", textAlign: "center" }}>
+                        <td key={c.load} style={{ padding: "12px 4px", textAlign: "center" }}>
                           {st ? <RepsText reps={st.reps} sets={st.sets} tier={loadTier(st.pct, dayMax)} /> : null}
                         </td>
                       );
@@ -446,7 +446,7 @@ function AccessoryRows({ lifts, label, onPress }: { lifts: ProgramLiftView[]; la
 // bodybuilding row — Sets×Reps + RPE heat (RPE keeps its semantic heat colour).
 function HeatRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTop: string; onPress: () => void }) {
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", padding: "13px 18px", borderTop }}>
+    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", padding: "12px 18px", borderTop }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <NameCell lift={lift} />
       </span>
@@ -461,7 +461,7 @@ function HeatRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTo
 // way the % matrix colours its loads; otherwise it stays chalk.
 function FallbackRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTop: string; onPress: () => void }) {
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", gap: 14, padding: "13px 18px", alignItems: "baseline", borderTop }}>
+    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", gap: 14, padding: "12px 18px", alignItems: "baseline", borderTop }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <NameCell lift={lift} />
       </span>
@@ -477,7 +477,7 @@ function ProseRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderT
   return (
     <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, padding: "12px 18px", borderTop }}>
       <span style={{ display: "block", fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
-        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 7, verticalAlign: "middle", background: HEX[liftColor(lift)] }} />
+        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 8, verticalAlign: "middle", background: HEX[liftColor(lift)] }} />
         {lift.name}
       </span>
       {detail && <span style={{ display: "block", fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5, marginLeft: 14 }}>{detail}</span>}
@@ -501,7 +501,7 @@ function ExerciseSheet({ sel, onClose }: { sel: SheetSel | null; onClose: () => 
   const where = marker ? `${day} — ${marker}` : day;
   const sub = lift.nl > 0 ? `${where} — ${lift.nl} lifts` : where;
   const steps = lift.steps ?? [];
-  const row: React.CSSProperties = { display: "flex", alignItems: "baseline", gap: 10, padding: "11px 0", borderTop: `1px solid ${HAIR}` };
+  const row: React.CSSProperties = { display: "flex", alignItems: "baseline", gap: 10, padding: "12px 0", borderTop: `1px solid ${HAIR}` };
   return (
     <Sheet open={!!sel} onClose={onClose} title={lift.name} sub={sub} maxWidth={480}>
       {lift.note && <div style={{ fontFamily: mono, fontSize: 12, color: ASH, lineHeight: 1.55, marginBottom: 10 }}>{lift.note}</div>}
@@ -578,7 +578,7 @@ function WeekRow({ lift, restName, first }: { lift?: ProgramLiftView; restName?:
   return (
     <div style={{ marginTop: first ? 0 : 9 }}>
       <div style={{ fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
-        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 7, verticalAlign: "middle", background: HEX[lift ? liftColor(lift) : "ash"] }} />
+        <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 8, verticalAlign: "middle", background: HEX[lift ? liftColor(lift) : "ash"] }} />
         {name}
       </div>
       {detail && <div style={{ fontFamily: mono, fontSize: 11, color: ASH, marginTop: 3, lineHeight: 1.5, marginLeft: 14 }}>{detail}</div>}

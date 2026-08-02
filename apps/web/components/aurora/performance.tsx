@@ -63,7 +63,7 @@ function StateSkeleton() {
       </div>
       <div style={{ display: "flex", gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
         {[0, 1, 2].map((i) => (
-          <div key={i} style={{ flex: 1, display: "grid", gap: 7 }}><Bar w="55%" h={18} /><Bar w="80%" h={9} /></div>
+          <div key={i} style={{ flex: 1, display: "grid", gap: 8 }}><Bar w="55%" h={18} /><Bar w="80%" h={9} /></div>
         ))}
       </div>
     </div>
@@ -292,7 +292,7 @@ export default function AuroraPerformance({
                     const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
                     const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
                     return (
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 8, padding: "5px 11px", borderRadius: 999, background: `color-mix(in srgb, ${tint} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${tint} 34%, transparent)` }}>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 8, padding: "5px 12px", borderRadius: 999, background: `color-mix(in srgb, ${tint} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${tint} 34%, transparent)` }}>
                         <ReadinessFace feeling={adj.feeling} size={15} />
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: ".01em", color: `var(--${READINESS_FACE[adj.feeling].accent}-text)` }}>{label}</span>
                       </div>
@@ -364,7 +364,7 @@ export default function AuroraPerformance({
                 <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.sm }}>
                   {risk.flagged.map((ti) => (
                     <div key={ti.tissue} style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, color: C(riskVar(ti.band)), border: `1px solid color-mix(in srgb, ${C(riskVar(ti.band))} 55%, transparent)`, borderRadius: 999, padding: "2px 9px" }}>{ti.risk}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, color: C(riskVar(ti.band)), border: `1px solid color-mix(in srgb, ${C(riskVar(ti.band))} 55%, transparent)`, borderRadius: 999, padding: "2px 8px" }}>{ti.risk}</span>
                       <span style={{ fontSize: fs.caption, textTransform: "capitalize" }}>{ti.tissue}</span>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : `ACWR ${ti.acwr.toFixed(2)}`}</span>
                     </div>
@@ -477,7 +477,7 @@ export default function AuroraPerformance({
           <button onClick={() => setScreen("statistics")} style={{ ...CARD, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
             <SHead
               title={t("w.home.today.yourWeek")}
-              meta={recap.prs.length > 0 ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "3px 11px" }}><AuroraIcon name="trophy" size={13} /> {recap.prs.length} {t("w.home.cockpit.newPrs")}</span> : undefined}
+              meta={recap.prs.length > 0 ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "3px 12px" }}><AuroraIcon name="trophy" size={13} /> {recap.prs.length} {t("w.home.cockpit.newPrs")}</span> : undefined}
             />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
               <Stat label={t("w.home.today.sessions")} value={`${recap.sessions}`} />
@@ -549,7 +549,7 @@ export default function AuroraPerformance({
                 told to set up a season they already have. */}
             <SHead title={!macroSettled ? "\u00a0" : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} />
             {macro ? (
-              <div style={{ height: 6, borderRadius: 99, background: C("ink"), border: `1px solid ${C("line")}`, overflow: "hidden", margin: "2px 0 12px" }}>
+              <div style={{ height: 6, borderRadius: 999, background: C("ink"), border: `1px solid ${C("line")}`, overflow: "hidden", margin: "2px 0 12px" }}>
                 <div style={{ width: `${seasonPct}%`, height: "100%", background: C("violet") }} />
               </div>
             ) : macroSettled ? (
@@ -613,7 +613,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
         {TABS.map((x) => {
           const on = x.id === tab;
           return (
-            <button key={x.id} onClick={() => setTab(x.id)} style={{ position: "relative", zIndex: 1, padding: "9px 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, letterSpacing: ".02em", color: on ? C("ink") : C("ash"), transition: "color .2s" }}>{x.label}</button>
+            <button key={x.id} onClick={() => setTab(x.id)} style={{ position: "relative", zIndex: 1, padding: "8px 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, letterSpacing: ".02em", color: on ? C("ink") : C("ash"), transition: "color .2s" }}>{x.label}</button>
           );
         })}
       </div>
@@ -736,7 +736,7 @@ function Spark({ series, color, height = 24 }: { series: number[]; color: string
 
 function Watch({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div style={{ background: C("ink2"), padding: "11px 6px", textAlign: "center" }}>
+    <div style={{ background: C("ink2"), padding: "12px 6px", textAlign: "center" }}>
       <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, color: color ?? C("chalk") }}>{value}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: ".06em", color: C("ash"), marginTop: 4 }}>{label}</div>
     </div>
@@ -745,7 +745,7 @@ function Watch({ label, value, color }: { label: string; value: string; color?: 
 
 function Mod({ label, value, onClick, mono: monoVal, last }: { label: string; value: string; onClick: () => void; mono?: boolean; last?: boolean }) {
   return (
-    <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: "pointer", color: C("chalk"), textAlign: "left" }}>
+    <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: "pointer", color: C("chalk"), textAlign: "left" }}>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</span>
       <span style={{ marginLeft: "auto", fontWeight: monoVal ? 500 : 700, fontSize: monoVal ? fs.caption : fs.body, fontFamily: monoVal ? "var(--font-mono)" : "var(--font-display)", color: monoVal ? C("ash") : C("chalk") }}>{value} →</span>
     </button>
@@ -794,7 +794,7 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
           </div>
         ))}
       </div>
-      <button onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "15px 28px", marginTop: 18, cursor: "pointer" }}>
+      <button onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "16px 28px", marginTop: 18, cursor: "pointer" }}>
         {paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")}
       </button>
     </div>

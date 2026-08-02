@@ -120,7 +120,7 @@ export function FeelPrompt({
             aria-label={t(l.labelKey)}
             style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 2px",
-              borderRadius: 14, cursor: "pointer",
+              borderRadius: 16, cursor: "pointer",
               border: `1px solid ${on ? LIME_HEX : LINE}`,
               background: on ? `color-mix(in srgb, ${LIME} 16%, transparent)` : compact ? "var(--color-ink2)" : "#0e0f0d",
             }}
@@ -137,7 +137,7 @@ export function FeelPrompt({
     <div
       style={
         compact
-          ? { position: "relative", background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 20, padding: 16, marginTop: 16 }
+          ? { position: "relative", background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 28, padding: 16, marginTop: 16 }
           : { position: "relative" }
       }
     >

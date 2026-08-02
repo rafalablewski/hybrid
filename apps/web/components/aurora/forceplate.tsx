@@ -59,7 +59,7 @@ export default function AuroraForcePlate() {
           </label>
         </div>
         <textarea value={csv} onChange={(e) => setCsv(e.target.value)} placeholder={t("w.analyze.fp.pasteCsv")} rows={6}
-          style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", resize: "vertical" }} />
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", resize: "vertical" }} />
         {parsed && (
           <div style={{ marginTop: 10 }}>
             <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginBottom: 8 }}>

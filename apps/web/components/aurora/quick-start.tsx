@@ -121,7 +121,7 @@ export default function QuickStartSheet({
           background: "transparent",
           border: `1px dashed ${C("line")}`,
           borderRadius: 16,
-          padding: "13px",
+          padding: "12px",
           color: C("ash"),
           cursor: "pointer",
           fontFamily: "var(--font-mono)",
@@ -152,7 +152,7 @@ function SubHead({ label, action }: { label: string; action?: { label: string; o
             background: "color-mix(in srgb, var(--color-violet) 12%, transparent)",
             border: "1px solid color-mix(in srgb, var(--color-violet) 32%, transparent)",
             borderRadius: 999,
-            padding: "5px 11px",
+            padding: "5px 12px",
             cursor: "pointer",
           }}
         >
@@ -220,7 +220,7 @@ function FavouriteCard({ r, t, onLaunch, onToggleFav }: { r: QuickRoutine; t: (k
         minWidth: "66%",
         textAlign: "left",
         border: `1px solid ${C("line")}`,
-        borderRadius: 20,
+        borderRadius: 28,
         padding: 14,
         cursor: "pointer",
         color: C("chalk"),
@@ -252,7 +252,7 @@ function RoutineRow({ r, i, t, onLaunch, onToggleFav }: { r: QuickRoutine; i: nu
         display: "flex",
         alignItems: "center",
         gap: 12,
-        padding: "11px 2px",
+        padding: "12px 2px",
         borderTop: i ? `1px solid ${C("line")}` : "none",
         cursor: "pointer",
       }}

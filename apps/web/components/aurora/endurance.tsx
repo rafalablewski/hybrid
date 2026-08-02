@@ -178,7 +178,7 @@ export default function AuroraEndurance({ sessions }: { sessions: LoggedSession[
       {hasEffort && (
         <div style={card}>
           {head("lime", t("running.effortSplit"))}
-          <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", background: C("ink") }}>
+          <div style={{ display: "flex", height: 14, borderRadius: 999, overflow: "hidden", background: C("ink") }}>
             {([["easy", split.easy, C("lime")], ["moderate", split.moderate, C("amber")], ["hard", split.hard, C("red")]] as const).map(
               ([k, v, c]) => v > 0 && <div key={k} style={{ width: `${(v / splitTotal) * 100}%`, background: c }} />,
             )}

@@ -205,7 +205,7 @@ export default function AuroraNutritionHud({
           alignItems: "center",
           justifyContent: "center",
           gap: 6,
-          padding: "8px var(--page-pad-x, 16px) 9px",
+          padding: "8px var(--page-pad-x, 16px) 8px",
           background: `color-mix(in srgb, ${C("ink")} 82%, transparent)`,
           backdropFilter: "blur(14px)",
           WebkitBackdropFilter: "blur(14px)",

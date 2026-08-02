@@ -115,13 +115,13 @@ function CategoryRail({ categories }: { categories: string[] }) {
     <nav
       ref={navRef}
       aria-label={t("w.train.plans.jumpToCategory")}
-      style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "9px var(--page-pad-x, 16px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
+      style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "8px var(--page-pad-x, 16px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
     >
       {categories.map((c) => (
         <button
           key={c}
           onClick={() => jump(c)}
-          style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".02em", padding: "7px 13px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: "transparent", color: C("ash"), border: `1px solid ${C("line")}` }}
+          style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".02em", padding: "8px 12px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: "transparent", color: C("ash"), border: `1px solid ${C("line")}` }}
         >
           {c}
         </button>
@@ -183,7 +183,7 @@ function GoalShelf({ group, pick }: { group: GoalGroup; pick: (id: string) => vo
       </div>
       {/* always mounted (the thumb ref is what measures the overflow), faded
           out when the shelf fits and there is no tail to report */}
-      <div aria-hidden style={{ height: 2, borderRadius: 2, marginTop: 9, background: `color-mix(in srgb, ${C("chalk")} 10%, transparent)`, overflow: "hidden", opacity: overflows ? 1 : 0 }}>
+      <div aria-hidden style={{ height: 2, borderRadius: 2, marginTop: 8, background: `color-mix(in srgb, ${C("chalk")} 10%, transparent)`, overflow: "hidden", opacity: overflows ? 1 : 0 }}>
         <span ref={thumbRef} style={{ display: "block", height: "100%", borderRadius: 2, background: `color-mix(in srgb, ${C("chalk")} 34%, transparent)` }} />
       </div>
     </section>
@@ -205,7 +205,7 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       aria-label={`${goal.name} – ${cover.count}`}
-      style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 20, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 13, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
+      style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 28, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
     >
       <span aria-hidden style={{ position: "absolute", inset: 0, opacity: cover.ready ? 1 : 0.45, background: `linear-gradient(202deg, color-mix(in srgb, ${cover.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${cover.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
       <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${COVER_INK} 0%, color-mix(in srgb, ${COVER_INK} 55%, transparent) 6%, transparent 58%)` }} />
@@ -314,7 +314,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.train.plans.weeklySplit")}</div>
         <div style={{ display: "flex", gap: space.xs, marginTop: 10, flexWrap: "wrap" }}>
-          {d.split.map((day, i) => <div key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: day.toLowerCase() === "rest" ? C("ash") : C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "8px 12px" }}>{day}</div>)}
+          {d.split.map((day, i) => <div key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: day.toLowerCase() === "rest" ? C("ash") : C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 12px" }}>{day}</div>)}
         </div>
       </div>
 
@@ -406,7 +406,7 @@ function PlanWeekRail({ bars, weeks, week, setWeek, wkLabel }: { bars: PlanWeekB
   const hasBars = bars.length > 0;
   return (
     <div style={{ position: "sticky", top: COVER_BAR, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 16px))", background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}>
-      <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", padding: "8px var(--page-pad-x, 16px) 9px" }}>
+      <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", padding: "8px var(--page-pad-x, 16px) 8px" }}>
         {weeks.map((w) => {
           const on = w === week;
           const v = byWeek.get(w) ?? 0;

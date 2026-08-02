@@ -113,7 +113,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
           onChange={(e) => setDistance(e.target.value)}
           placeholder={t("w.train.runTrack.distancePh")}
           inputMode="decimal"
-          style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, width: "100%", maxWidth: 200, padding: "12px 14px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, width: "100%", maxWidth: 200, padding: "12px 14px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }}
         />
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8 }}>{t("w.train.runTrack.gpsNote")}</div>
       </div>

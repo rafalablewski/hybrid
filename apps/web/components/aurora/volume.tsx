@@ -394,7 +394,7 @@ function Prescription({ title, why, items, token, ml, unit }: {
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
         {items.map((s) => (
-          <span key={s.muscle} style={{ display: "inline-flex", alignItems: "center", gap: space.sm, padding: "9px 14px", borderRadius: 999, border: `1px solid ${mix(token, 35)}`, background: mix(token, 10) }}>
+          <span key={s.muscle} style={{ display: "inline-flex", alignItems: "center", gap: space.sm, padding: "8px 14px", borderRadius: 999, border: `1px solid ${mix(token, 35)}`, background: mix(token, 10) }}>
             <span style={{ fontSize: fs.bodyLg, fontWeight: 600, color: C("chalk") }}>{ml(s.muscle)}</span>
             <span style={{ ...mono(fs.bodyLg), fontWeight: 700, color: C(token) }}>{deltaLabel(s)}</span>
           </span>
@@ -410,7 +410,7 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
   return (
     <button
       onClick={onClick} role="switch" aria-checked={on}
-      style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "7px 13px", borderRadius: 999, cursor: "pointer", color: on ? C("lime") : C("ash"), background: on ? mix("lime", 12) : "transparent", border: `1px solid ${on ? C("lime") : C("line")}` }}
+      style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 12px", borderRadius: 999, cursor: "pointer", color: on ? C("lime") : C("ash"), background: on ? mix("lime", 12) : "transparent", border: `1px solid ${on ? C("lime") : C("line")}` }}
     >
       {label}
     </button>
@@ -421,7 +421,7 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
 function Stepper({ label, value, suffix, min, max, onChange }: {
   label: string; value: number; suffix?: string; min: number; max: number; onChange: (v: number) => void;
 }) {
-  const btn: CSSProperties = { ...mono(fs.body), width: 30, height: 30, borderRadius: 10, cursor: "pointer", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}` };
+  const btn: CSSProperties = { ...mono(fs.body), width: 30, height: 30, borderRadius: 12, cursor: "pointer", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}` };
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
       <span style={{ fontSize: fs.body, color: C("ash") }}>{label}</span>
@@ -538,7 +538,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
   const { t } = useLang();
   const confidence = Math.round(Math.max(resolved.profileConfidence, resolved.observedConfidence) * 100);
   const done = volumeProfileCompleteness(profile, measuredKeys);
-  const field: CSSProperties = { ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "7px 4px", boxSizing: "border-box" };
+  const field: CSSProperties = { ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 4px", boxSizing: "border-box" };
   const fieldLabel: CSSProperties = { ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 };
 
   return (
@@ -557,11 +557,11 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{Math.round(done.score * 100)}% {t("w.analyze.vol.knownAbout")}</span>
           {done.next && <span style={{ ...mono(fs.caption), color: C("lime") }}>{t("w.analyze.vol.nextUp")}: {t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</span>}
         </div>
-        <div style={{ height: 5, borderRadius: 999, background: C("ink"), marginTop: 7, overflow: "hidden" }}>
+        <div style={{ height: 5, borderRadius: 999, background: C("ink"), marginTop: 8, overflow: "hidden" }}>
           <div style={{ width: pct(done.score), height: "100%", background: C("lime"), transition: "width .3s cubic-bezier(.2,.7,.2,1)" }} />
         </div>
         {done.next && (
-          <p style={{ marginTop: 9, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t(done.next.unlocksKey)}</p>
+          <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t(done.next.unlocksKey)}</p>
         )}
       </div>
 
@@ -574,10 +574,10 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           )}
         </div>
         {level.basis === "none" ? (
-          <p style={{ marginTop: 9, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.levelNoData")}</p>
+          <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.levelNoData")}</p>
         ) : (
           <>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 11 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
               {/* Two kinds of evidence, two units. A lift is kg and a multiple
                   of body mass; a run is a distance and a pace. They share a row
                   shape but never a number — see core/engines/fitness-level.ts. */}
@@ -609,7 +609,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       </div>
 
       {resolved.factors.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
           {resolved.factors.map((f) => (
             <div key={f.key} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
               <span style={{ fontSize: fs.body, color: C("chalk") }}>
@@ -660,7 +660,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
             <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.replayNone")}</p>
           ) : (
             <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
                 {tested.slice(0, 4).map((r) => (
                   <div key={r.muscle} style={{ display: "flex", alignItems: "baseline", gap: space.sm }}>
                     <span style={{ flex: 1, minWidth: 80, fontSize: fs.body, color: C("chalk") }}>{ml(r.muscle)}</span>
@@ -767,7 +767,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
         aria-label={`${label} – ${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[s.zone])}`}
         style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit", textAlign: "left" }}
       >
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 8 }}>
           <span style={{ flex: 1, fontSize: fs.note, fontWeight: 600 }}>{label}</span>
           <span style={{ ...mono(fs.note), fontWeight: 700, color: C(token) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</span>
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{target ? `${t("w.analyze.vol.target")} ${target.target}` : t(ZONE_KEY[s.zone])}</span>
@@ -804,7 +804,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
           edge, so the values line up down the whole list instead of floating at
           three different indents. Each cell is a control: click it to spotlight
           that band and read what it means. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 7, maxWidth: 420 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 8, maxWidth: 420 }}>
         {BAND_KEYS.map((k) => {
           const on = zone === k;
           return (
@@ -830,13 +830,13 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
         <div style={{ marginTop: 12 }}>
           <div style={{ ...mono(fs.caption), color: C("ash") }}>MV {s.landmark.mv}</div>
           {target && verdict && (
-            <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: verdict === "on" ? C("lime") : C("ash") }}>
+            <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: verdict === "on" ? C("lime") : C("ash") }}>
               {t("w.analyze.vol.weekTarget")} {target.target} {t("w.analyze.vol.sets")}
               <span style={{ color: C("ash") }}>{" — "}</span>
               {t(TARGET_VERDICT_KEY[verdict])}
             </p>
           )}
-          <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>
+          <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>
           <MuscleHistory sets={history} />
         </div>
       )}
@@ -848,7 +848,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
               <input
                 type="number" min={0} defaultValue={s.landmark[k]} aria-label={`${label} ${k}`}
                 onBlur={(e) => onEdit(s.muscle, k, e.target.value)}
-                style={{ ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "7px 4px", boxSizing: "border-box" }}
+                style={{ ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 4px", boxSizing: "border-box" }}
               />
             </div>
           ))}

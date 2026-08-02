@@ -86,7 +86,7 @@ export default function AuroraLogbookRail({
   // place of a date the week strip has already shown (core day-stamp.ts).
   const streakDays = useMemo(() => streak(sessions, 1).current, [sessions]);
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
   return (
     <div data-tour="today-plan" style={{ ...card }}>
@@ -219,7 +219,7 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
         <button
           onClick={onLog}
           className="start-glow"
-          style={{ marginTop: 16, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
+          style={{ marginTop: 16, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
         >
           <CtaLabel>{t("w.home.today.alsoTodayLogFirst")}</CtaLabel>
         </button>

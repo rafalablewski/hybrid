@@ -99,7 +99,7 @@ export function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: st
       }}
     >
       <span style={{
-        width: 32, height: 32, borderRadius: 10, background: C("ink"),
+        width: 32, height: 32, borderRadius: 12, background: C("ink"),
         border: `1px solid ${C("line")}`, display: "flex", alignItems: "center",
         justifyContent: "center", fontSize: 13, color: C("ash"), flex: "0 0 32px",
       }} aria-hidden>{glyph}</span>
@@ -274,7 +274,7 @@ export default function AuroraWeekVerdict({
         trackStyle={{ background: C("ink"), border: `1px solid ${C("line")}`, marginBottom: 10 }}
       />
 
-      <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, padding: "16px 17px" }}>
+      <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
           <div style={{ flex: 1 }}>
@@ -290,7 +290,7 @@ export default function AuroraWeekVerdict({
 
         {/* THE RECEIPTS — the figures the sentence was drawn from. Each one is
             a button onto its own breakdown. */}
-        <div style={{ position: "relative", display: "flex", marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ position: "relative", display: "flex", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
           {ordered.map((f, i) => {
             const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
@@ -351,7 +351,7 @@ export default function AuroraWeekVerdict({
                 key={detail.metric}
                 style={{
                   background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16,
-                  padding: "13px 14px", animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
+                  padding: "12px 14px", animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
                 }}
               >
                 <MetricDetail
@@ -479,7 +479,7 @@ function MetricDetail({
       {detail.groups.length > 0 && (
         <>
           {/* The share bar — every group's slice of the total, in one line. */}
-          <div style={{ display: "flex", gap: 2, height: 6, marginTop: 11, borderRadius: 999, overflow: "hidden" }} aria-hidden>
+          <div style={{ display: "flex", gap: 2, height: 6, marginTop: 12, borderRadius: 999, overflow: "hidden" }} aria-hidden>
             {detail.groups.map((g, i) => (
               <span key={g.id} style={{
                 flexGrow: Math.max(g.share, 0.02), flexBasis: 0, borderRadius: 999,
@@ -490,7 +490,7 @@ function MetricDetail({
           </div>
 
           {/* One row per activity — tap to narrow the list underneath it. */}
-          <div style={{ marginTop: 9 }}>
+          <div style={{ marginTop: 8 }}>
             {detail.groups.map((g: ActivityGroup) => {
               const active = group === g.id;
               return (
@@ -499,9 +499,9 @@ function MetricDetail({
                   onClick={() => onGroup(active ? null : g.id)}
                   aria-pressed={active}
                   style={{
-                    display: "flex", width: "calc(100% + 16px)", alignItems: "center", gap: 9, textAlign: "left",
+                    display: "flex", width: "calc(100% + 16px)", alignItems: "center", gap: 8, textAlign: "left",
                     padding: "6px 8px", marginLeft: -8, background: active ? C("ink2") : "transparent",
-                    border: "none", borderRadius: 10, cursor: "pointer", color: "inherit",
+                    border: "none", borderRadius: 12, cursor: "pointer", color: "inherit",
                     transition: "background .18s ease",
                   }}
                 >
@@ -532,7 +532,7 @@ function MetricDetail({
                   disabled={!onSession}
                   style={{
                     display: "flex", width: "calc(100% + 16px)", marginLeft: -8, alignItems: "center", gap: 10,
-                    padding: "7px 8px", background: "transparent", border: "none", borderRadius: 10,
+                    padding: "8px 8px", background: "transparent", border: "none", borderRadius: 12,
                     cursor: onSession ? "pointer" : "default", textAlign: "left", color: "inherit",
                   }}
                 >

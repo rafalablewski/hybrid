@@ -158,11 +158,11 @@ export default function AuroraOrg() {
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
-  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "10px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
+  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "10px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
   const btn = (bg: string): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C(bg), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" });
   const orgChip = (active: boolean): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 14px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 16%, transparent)` : "transparent", color: active ? C("lime") : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` });
   const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
-  const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
+  const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "8px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
 
   return (
     <div style={{ display: "grid", gap: space.lg, fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -236,10 +236,10 @@ export default function AuroraOrg() {
                     </div>
                     {canManage ? (
                       <div style={{ display: "flex", gap: space.xs }}>
-                        <select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 7px" }}>
+                        <select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 8px" }}>
                           {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                         </select>
-                        <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 7px" }}>
+                        <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 8px" }}>
                           <option value="">{t("w.teams.org.noTeam")}</option>
                           {tree.map((node) => <option key={node.id} value={node.id}>{"— ".repeat(node.depth)}{node.name}</option>)}
                         </select>

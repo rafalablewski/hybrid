@@ -60,8 +60,8 @@ export default function AccountSettings() {
   const aurora = template === "aurora";
   const r = aurora ? 16 : 10;
   const rCard = aurora ? 16 : 12;
-  const editInput = { ...mono, fontSize: fs.bodyLg, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: r, padding: "9px 12px", outline: "none" } as const;
-  const editBtn = (c: string) => ({ ...mono, fontSize: fs.body, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: r, padding: "9px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
+  const editInput = { ...mono, fontSize: fs.bodyLg, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: r, padding: "8px 12px", outline: "none" } as const;
+  const editBtn = (c: string) => ({ ...mono, fontSize: fs.body, color: txt(c), background: `${c}1a`, border: `1px solid ${c}`, borderRadius: r, padding: "8px 16px", cursor: "pointer", whiteSpace: "nowrap" as const });
   const { lang, setLang, t } = useLang();
   const prefs = useLoggerPrefs();
   // Drill-in navigation: null = the category list; a category id = its sub-page.
@@ -618,7 +618,7 @@ export default function AccountSettings() {
             <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="RESET" autoCapitalize="characters" style={{ ...mono, fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${armed ? RED : LINE}`, outline: "none" }} />
             {msg && <div role="alert"><Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{msg}</Mono></div>}
             <div style={{ display: "flex", gap: space.ms, marginTop: 16, alignItems: "center" }}>
-              <button onClick={reset} disabled={!armed || busy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armed && !busy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "11px 18px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
+              <button onClick={reset} disabled={!armed || busy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armed && !busy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "12px 18px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
                 {busy ? t("w.account.settings.erasing") : t("w.account.settings.erase-everything")}
               </button>
               <button onClick={() => void logout()} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>
@@ -637,7 +637,7 @@ export default function AccountSettings() {
               <input value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} placeholder="DELETE" autoCapitalize="characters" style={{ ...mono, fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${armedDelete ? RED : LINE}`, outline: "none" }} />
               {delMsg && <div role="alert"><Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{delMsg}</Mono></div>}
               <div style={{ marginTop: 16 }}>
-                <button onClick={del} disabled={!armedDelete || delBusy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armedDelete && !delBusy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "11px 18px", cursor: armedDelete && !delBusy ? "pointer" : "not-allowed" }}>
+                <button onClick={del} disabled={!armedDelete || delBusy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armedDelete && !delBusy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "12px 18px", cursor: armedDelete && !delBusy ? "pointer" : "not-allowed" }}>
                   {delBusy ? t("settings.deleting") : t("settings.deleteAccount")}
                 </button>
               </div>
@@ -699,7 +699,7 @@ export default function AccountSettings() {
           {/* Profile header — shared anatomy with mobile: a bordered row card with a
               rounded-square accent-gradient initial avatar, name + email, role/provider
               pills under the name, and the membership FREE/FULL pill pinned right. */}
-          <div style={{ marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 20 }}>
+          <div style={{ marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 28 }}>
             {/* Tappable identity row → opens Edit profile. The avatar is wrapped
                 in a completeness ring; the nudge says what's left to fill. */}
             <button onClick={() => setCat("account")} aria-label={t("w.account.settings.edit-profile")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: CHALK }}>
@@ -723,8 +723,8 @@ export default function AccountSettings() {
             </button>
             {/* Quick actions */}
             <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
-              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--color-lime) 40%, transparent)", borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
-              {socialProfile?.handle && <button onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
+              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--color-lime) 40%, transparent)", borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
+              {socialProfile?.handle && <button onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
               {shareMsg && <Mono s={{ fontSize: fs.micro }} c={LIME}>{shareMsg}</Mono>}
             </div>
           </div>
@@ -734,7 +734,7 @@ export default function AccountSettings() {
             <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: ASH, display: "flex", pointerEvents: "none" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
             </span>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.account.settings.search")} aria-label={t("w.account.settings.search")} style={{ ...mono, width: "100%", boxSizing: "border-box", fontSize: fs.body, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 999, padding: "11px 16px 11px 38px", outline: "none" }} />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.account.settings.search")} aria-label={t("w.account.settings.search")} style={{ ...mono, width: "100%", boxSizing: "border-box", fontSize: fs.body, background: INK2, color: CHALK, border: `1px solid ${LINE}`, borderRadius: 999, padding: "12px 16px 12px 38px", outline: "none" }} />
           </div>
 
           {query ? (
@@ -787,12 +787,12 @@ function Row({ icon, accent, title, subtitle, danger, first, onOpen }: {
         background: "none",
         border: "none",
         borderTop: first ? "none" : `1px solid ${LINE}`,
-        padding: "13px 0",
+        padding: "12px 0",
         cursor: "pointer",
         color: CHALK,
       }}
     >
-      <span style={{ width: 40, height: 40, borderRadius: 13, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `color-mix(in srgb, ${danger ? RED : accent} 14%, transparent)`, color: danger ? txt(RED) : txt(accent) }}>
+      <span style={{ width: 40, height: 40, borderRadius: 12, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: `color-mix(in srgb, ${danger ? RED : accent} 14%, transparent)`, color: danger ? txt(RED) : txt(accent) }}>
         <AuroraIcon name={icon} size={20} color="currentColor" strokeWidth={4} />
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
@@ -833,7 +833,7 @@ function groupRows<T extends { group: string }>(rows: readonly T[]): { group: st
 /** A labelled preference row with an on/off pill — used by Notifications + Privacy. */
 function PrefRow({ title, desc, on, onToggle, disabled, first }: { title: string; desc: string; on: boolean; onToggle: () => void; disabled?: boolean; first?: boolean }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderTop: first ? "none" : `1px solid ${LINE}` }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderTop: first ? "none" : `1px solid ${LINE}` }}>
       <div style={{ flex: 1 }}>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{title}</div>
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>{desc}</Mono>

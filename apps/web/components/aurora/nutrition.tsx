@@ -183,7 +183,7 @@ function MarkPlate({ C, src, height = 34, full }: {
         display: "grid",
         placeItems: "center",
         padding: "0 14px",
-        borderRadius: 14,
+        borderRadius: 16,
         background: `color-mix(in srgb, ${C("chalk")} 7%, ${C("ink")})`,
         border: `1px solid ${C("line")}`,
         overflow: "hidden",
@@ -220,7 +220,7 @@ function SourceMarkView({ C, src, height }: {
 }) {
   if (!src.mark) {
     return (
-      <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: Math.round(height * 0.48), letterSpacing: ".06em", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 6, padding: "5px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
+      <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: Math.round(height * 0.48), letterSpacing: ".06em", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 6, padding: "5px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
         {src.name}
       </span>
     );
@@ -252,7 +252,7 @@ function FactsPanel({ C, facts, per100, scale = 1 }: {
         {p100 && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.facts.per100")}</span>}
       </div>
       {rows.map((r, i) => (
-        <div key={r.key} style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "7px 0", borderTop: i === 0 ? "none" : `1px solid ${C("line")}` }}>
+        <div key={r.key} style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "8px 0", borderTop: i === 0 ? "none" : `1px solid ${C("line")}` }}>
           <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-display)", fontWeight: r.sub ? 500 : 700, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C("ash") : C("chalk"), paddingLeft: r.sub ? 14 : 0 }}>
             {t(r.labelKey)}
           </span>
@@ -301,11 +301,11 @@ function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onSt
         onPointerMove={onDelete ? (e) => { if (start.current != null) setDx(Math.max(-84, Math.min(0, e.clientX - start.current))); } : undefined}
         onPointerUp={onDelete ? () => { setDx(revealed ? -84 : 0); start.current = null; } : undefined}
         onPointerLeave={onDelete ? () => { if (start.current != null) { setDx(revealed ? -84 : 0); start.current = null; } } : undefined}
-        style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, padding: "13px 6px", background: C("ink"), borderBottom: `1px solid ${C("line")}`, transform: `translateX(${dx}px)`, transition: start.current == null ? "transform .22s cubic-bezier(.4,0,.2,1)" : "none", touchAction: "pan-y" }}
+        style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, padding: "12px 6px", background: C("ink"), borderBottom: `1px solid ${C("line")}`, transform: `translateX(${dx}px)`, transition: start.current == null ? "transform .22s cubic-bezier(.4,0,.2,1)" : "none", touchAction: "pan-y" }}
       >
         <button onClick={onAdd} aria-label={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, border: "1.6px solid var(--color-lime)", background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0, cursor: "pointer" }}><IPlus size={20} color="var(--lime-text)" strokeWidth={2.2} /></button>
         <button onClick={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
             <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto", minWidth: 0 }}>{name}</span>
             {verified && <VerifiedMark />}
             {subname ? <span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0 }}>{subname}</span> : null}
@@ -1028,12 +1028,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   };
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
-  const numField = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, flex: "1 1 70px", minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
+  const numField = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, flex: "1 1 70px", minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px", outline: "none", textAlign: "center" as const };
   // A labelled macro field — the colour-coded, big-number input the redesigned
   // meal/product builders are built from (protein=blue, carbs=amber, fat=violet,
   // kcal=lime). A render helper (not a component) so focus survives keystrokes.
   const macroField = (label: string, colorVar: string, value: string, onChange: (v: string) => void, unit = "g") => (
-    <label style={{ flex: "1 1 64px", minWidth: 0, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "10px 13px 11px", display: "block" }}>
+    <label style={{ flex: "1 1 64px", minWidth: 0, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "10px 12px 12px", display: "block" }}>
       <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: colorVar }}>{label}</span>
       <span style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 3 }}>
         <input value={value} onChange={(e) => onChange(e.target.value)} inputMode="numeric" placeholder="0" style={{ width: "100%", minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em" }} />
@@ -1051,11 +1051,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {/* Meal selector — the quick-add is attributed to the chosen meal, matching
             the full picker so today's intake groups the same way. */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 7, marginTop: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginTop: 14 }}>
           {MEAL_TYPES.map((m) => {
             const on = mealType === m;
             return (
-              <button key={m} onClick={() => setMealType(m)} aria-label={t(`w.recovery.nutrition.meal.${m}`)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: on ? C("lime") : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 14, padding: "10px 4px", cursor: "pointer", color: on ? "var(--on-accent)" : C("chalk") }}>
+              <button key={m} onClick={() => setMealType(m)} aria-label={t(`w.recovery.nutrition.meal.${m}`)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: on ? C("lime") : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, padding: "10px 4px", cursor: "pointer", color: on ? "var(--on-accent)" : C("chalk") }}>
                 <Glyph name={mealGlyph(m)} size={18} color={on ? "var(--on-accent)" : C("ash")} />
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".04em", textTransform: "uppercase", fontWeight: on ? 700 : 500 }}>{t(`w.recovery.nutrition.meal.${m}`)}</span>
               </button>
@@ -1066,10 +1066,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {/* Recent — one-tap re-log of a recent food to the chosen meal. */}
         {recent.length > 0 && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.recovery.nutrition.tab.recent")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.recovery.nutrition.tab.recent")}</div>
             <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "0 var(--page-pad-x, 16px) 2px" }}>
               {recent.slice(0, 8).map((q) => (
-                <button key={q.key} onClick={() => relogRecent(q)} style={{ flex: "none", display: "flex", alignItems: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "9px 14px 9px 11px", cursor: "pointer", color: C("chalk") }}>
+                <button key={q.key} onClick={() => relogRecent(q)} style={{ flex: "none", display: "flex", alignItems: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "8px 14px 8px 12px", cursor: "pointer", color: C("chalk") }}>
                   <span style={{ width: 22, height: 22, borderRadius: 999, border: "1.4px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={12} color="var(--lime-text)" strokeWidth={2.4} /></span>
                   <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.caption, whiteSpace: "nowrap" }}>{q.name}</span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), whiteSpace: "nowrap" }}>{Math.round(q.kcal)}</span>
@@ -1091,7 +1091,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           ] as const).map((tile) => {
             const raw = f[tile.k];
             return (
-              <div key={tile.k} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "13px 15px 14px" }}>
+              <div key={tile.k} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px 14px" }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: tile.color }}>{tile.label}</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>
                   <input value={raw} onChange={(e) => setF((s) => ({ ...s, [tile.k]: e.target.value }))} inputMode="numeric" placeholder="0" aria-label={tile.label} style={{ flex: 1, minWidth: 0, boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 28, letterSpacing: "-.03em", padding: 0 }} />
@@ -1115,13 +1115,13 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </button>
         </div>
         <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanFile(file); e.target.value = ""; }} />
-        {mealMsg && <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{mealMsg}</div>}
+        {mealMsg && <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{mealMsg}</div>}
         {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
 
         <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} tier={t("w.account.settings.full")} premium />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {MEAL_PRESETS.map((p) => (
-            <button key={p.id} onClick={() => logPreset(p)} style={{ display: "flex", alignItems: "center", gap: 11, textAlign: "left", background: C("ink2"), border: `1px solid ${full ? C("line") : `color-mix(in srgb, var(--premium-accent) 28%, ${C("line")})`}`, borderRadius: 16, padding: "13px 14px", cursor: "pointer", color: C("chalk") }}>
+            <button key={p.id} onClick={() => logPreset(p)} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${full ? C("line") : `color-mix(in srgb, var(--premium-accent) 28%, ${C("line")})`}`, borderRadius: 16, padding: "12px 14px", cursor: "pointer", color: C("chalk") }}>
               <Glyph name={presetGlyph(p.id)} size={20} color={full ? C("ash") : "var(--premium-accent-text)"} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: fs.body }}>{t(p.labelKey).split(/ [·–] /)[0]}</div>
@@ -1146,7 +1146,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <div style={{ paddingBottom: 6 }}>
         <div style={{ display: "flex", gap: 8 }}>
           <input value={newPart} onChange={(e) => setNewPart(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addPart(); }} maxLength={32} placeholder={t("w.recovery.nutrition.partNamePh")} aria-label={t("w.recovery.nutrition.addPart")} style={{ ...numField, flex: 1, textAlign: "left" }} />
-          <button onClick={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 14, padding: "0 18px", cursor: "pointer", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? 0.5 : 1 }}>{t("w.recovery.nutrition.addPartCta")}</button>
+          <button onClick={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 18px", cursor: "pointer", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? 0.5 : 1 }}>{t("w.recovery.nutrition.addPartCta")}</button>
         </div>
         {customParts.length > 0 && (
           <div style={{ marginTop: 14 }}>
@@ -1171,13 +1171,13 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       {portion && (() => {
         const q = qty > 0 ? qty : 1;
         const s = (v: number) => Math.round(v * q);
-        const stepBtn = { width: 44, height: 44, borderRadius: 14, border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", fontSize: 22, fontWeight: 700, lineHeight: 1, cursor: "pointer", flex: "none" } as const;
+        const stepBtn = { width: 44, height: 44, borderRadius: 12, border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", fontSize: 22, fontWeight: 700, lineHeight: 1, cursor: "pointer", flex: "none" } as const;
         return (
           <div style={{ paddingBottom: 6 }}>
             {portion.verified && (() => {
               const src = verifiedSource(portion.verified.sourceId);
               return (
-                <div style={{ background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 30%, ${C("line")})`, borderRadius: 14, padding: "12px 14px", marginTop: 12 }}>
+                <div style={{ background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 30%, ${C("line")})`, borderRadius: 16, padding: "12px 14px", marginTop: 12 }}>
                   {/* WHO PUBLISHED THE NUMBERS. The operator's mark (or, until we
                       hold artwork, their name set in OUR type — visibly ours, so
                       it can never pass as an approximation of their logo). It
@@ -1194,7 +1194,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                     </div>
                     <IChevRight size={16} color={C("ash")} />
                   </button>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 12, paddingTop: 11, borderTop: `1px solid color-mix(in srgb, var(--color-lime) 22%, ${C("line")})` }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid color-mix(in srgb, var(--color-lime) 22%, ${C("line")})` }}>
                     <VerifiedMark size={14} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{t("w.recovery.nutrition.verified")}</div>
@@ -1204,7 +1204,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                     </div>
                   </div>
                   {src?.trademark && (
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9, lineHeight: 1.5, opacity: .85 }}>{src.trademark}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8, lineHeight: 1.5, opacity: .85 }}>{src.trademark}</div>
                   )}
                 </div>
               );
@@ -1224,7 +1224,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               {([["w.recovery.nutrition.protein", "var(--blue-text)", portion.protein], ["w.recovery.nutrition.carbs", "var(--amber-text)", portion.carbs], ["w.recovery.nutrition.fat", "var(--violet-text)", portion.fat]] as const).map(([lab, col, base]) => (
-                <div key={lab} style={{ flex: 1, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px" }}>
+                <div key={lab} style={{ flex: 1, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px" }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: col }}>{t(lab)}</div>
                   <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{s(base)}<span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}> g</span></div>
                 </div>
@@ -1242,8 +1242,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             />
             {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
             <div style={{ display: "grid", gridTemplateColumns: portion.offFood ? "1fr 1fr" : "1fr", gap: 10, marginTop: 16 }}>
-              {portion.offFood && <button onClick={() => { const ff = portion.offFood; setPortion(null); if (ff) saveFood(ff); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 13, cursor: "pointer" }}>{t("w.recovery.nutrition.saveToFoods")}</button>}
-              <button onClick={commitPortion} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 13, cursor: "pointer" }}>{t("w.recovery.nutrition.logToMeal").replace("{meal}", t(`w.recovery.nutrition.meal.${mealType}`))}</button>
+              {portion.offFood && <button onClick={() => { const ff = portion.offFood; setPortion(null); if (ff) saveFood(ff); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveToFoods")}</button>}
+              <button onClick={commitPortion} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.logToMeal").replace("{meal}", t(`w.recovery.nutrition.meal.${mealType}`))}</button>
             </div>
           </div>
         );
@@ -1263,7 +1263,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             { k: "carbs", label: t("w.recovery.nutrition.carbs"), color: "var(--amber-text)", unit: "g" },
             { k: "fat", label: t("w.recovery.nutrition.fat"), color: "var(--violet-text)", unit: "g" },
           ] as const).map((tile) => (
-            <div key={tile.k} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "13px 15px" }}>
+            <div key={tile.k} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px" }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: tile.color }}>{tile.label}</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>
                 <input value={f[tile.k]} onChange={(e) => setF((s) => ({ ...s, [tile.k]: e.target.value }))} inputMode="numeric" placeholder="0" aria-label={tile.label} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 27, letterSpacing: "-.03em", padding: 0 }} />
@@ -1287,7 +1287,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // — an X (or back) at the left, a centred title, an optional right slot.
   const screenHead = (title: ReactNode, onBack: () => void, opts?: { icon?: "x" | "back"; right?: ReactNode }) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-      <button onClick={onBack} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 14, border: "none", background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
+      <button onClick={onBack} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
         {opts?.icon === "back" ? <IChevRight size={22} color={C("chalk")} strokeWidth={2.2} style={{ transform: "scaleX(-1)" } as React.CSSProperties} /> : <IClose size={22} color={C("chalk")} />}
       </button>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19, letterSpacing: "-.01em", textAlign: "center", flex: 1 }}>{title}</div>
@@ -1307,7 +1307,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
         {hud("always")}
         {screenHead(
-          <button onClick={() => setMealPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19 }}>
+          <button onClick={() => setMealPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19 }}>
             {partLabel(mealType)}<IChevDown size={16} color={C("chalk")} />
           </button>,
           () => setView("home"),
@@ -1317,14 +1317,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <Sheet open={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
             {partList.map((p) => (
-              <button key={p.key} onClick={() => { setMealType(p.key); setMealPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink"), border: `1px solid ${mealType === p.key ? C("lime") : C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}>
+              <button key={p.key} onClick={() => { setMealType(p.key); setMealPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink"), border: `1px solid ${mealType === p.key ? C("lime") : C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}>
                 <Glyph name={mealGlyph(p.key)} size={20} color={mealType === p.key ? "var(--lime-text)" : C("ash")} />
                 <span style={{ flex: 1, fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.bodyLg }}>{p.label}</span>
                 {mealType === p.key && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
               </button>
             ))}
             {full && (
-              <button onClick={() => { setMealPicker(false); setPartSheet(true); }} style={{ display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("ash") }}>
+              <button onClick={() => { setMealPicker(false); setPartSheet(true); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("ash") }}>
                 <IPlus size={18} color={C("ash")} strokeWidth={2.2} />
                 <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>{t("w.recovery.nutrition.addPart")}</span>
               </button>
@@ -1333,26 +1333,26 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </Sheet>
 
         {/* Search — text or barcode */}
-        <div style={{ display: "flex", alignItems: "center", gap: 11, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "13px 15px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px" }}>
           <AuroraIcon name="search" size={18} color={C("ash")} />
           <input value={foodQuery} onChange={(e) => setFoodQuery(e.target.value)} placeholder={t("w.recovery.nutrition.searchPh")} aria-label={t("w.recovery.nutrition.searchPh")} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.subtitle }} />
           {q ? <button onClick={() => setFoodQuery("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 0, display: "grid", placeItems: "center" }}><IClose size={18} color={C("ash")} /></button> : <IBarcode size={20} color={C("ash")} />}
         </div>
 
         {/* Quick Log + Create Food */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginTop: 12 }}>
-          <button onClick={() => setQuickLog(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
+          <button onClick={() => setQuickLog(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
             <IBolt size={18} color={C("chalk")} />{t("w.recovery.nutrition.quickLog")}
           </button>
-          <button onClick={() => openCreate("product")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
+          <button onClick={() => openCreate("product")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
             <IPlusBox size={18} color={C("chalk")} />{t("w.recovery.nutrition.createFood")}
           </button>
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: 4, gap: 4, marginTop: 14 }}>
+        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 4, gap: 4, marginTop: 14 }}>
           {(["recent", "favorites", "meals", "personal"] as const).map((tab) => (
-            <button key={tab} onClick={() => setFoodTab(tab)} style={{ flex: 1, border: "none", borderRadius: 11, padding: "10px 8px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: foodTab === tab ? 700 : 600, fontSize: fs.bodyLg, background: foodTab === tab ? C("lime") : "transparent", color: foodTab === tab ? "var(--on-accent)" : C("ash") }}>
+            <button key={tab} onClick={() => setFoodTab(tab)} style={{ flex: 1, border: "none", borderRadius: 12, padding: "10px 8px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: foodTab === tab ? 700 : 600, fontSize: fs.bodyLg, background: foodTab === tab ? C("lime") : "transparent", color: foodTab === tab ? "var(--on-accent)" : C("ash") }}>
               {t(`w.recovery.nutrition.tab.${tab}`)}
             </button>
           ))}
@@ -1435,9 +1435,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     // summed components (read-only); otherwise they're typed in.
     const fromComps = isMeal && mealComps.length > 0;
     const tile = (label: string, colorVar: string, value: string, onChange: (v: string) => void, fixed?: number) => (
-      <div style={{ flex: 1, minWidth: 0, background: C("ink2"), borderRadius: 16, padding: "14px 13px" }}>
+      <div style={{ flex: 1, minWidth: 0, background: C("ink2"), borderRadius: 16, padding: "14px 12px" }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: colorVar }}>{label}</div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 7 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 8 }}>
           {fixed != null
             ? <span style={{ width: "100%", minWidth: 0, color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 24, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{fixed}</span>
             : <input value={value} onChange={(e) => onChange(e.target.value)} inputMode="numeric" placeholder="0" aria-label={label} style={{ width: "100%", minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 24, letterSpacing: "-.02em", padding: 0 }} />}
@@ -1457,8 +1457,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanIntoCreate(file); e.target.value = ""; }} />
 
         {/* Title plate — Name + the personal Subname, one surface. */}
-        <div style={{ background: "linear-gradient(158deg, color-mix(in srgb, var(--color-lime) 6%, var(--color-ink2)), var(--color-ink2) 72%)", border: `1px solid ${C("line")}`, borderRadius: 22, padding: "18px 18px 20px" }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.recovery.nutrition.foodName")}</div>
+        <div style={{ background: "linear-gradient(158deg, color-mix(in srgb, var(--color-lime) 6%, var(--color-ink2)), var(--color-ink2) 72%)", border: `1px solid ${C("line")}`, borderRadius: 28, padding: "18px 18px 20px" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.recovery.nutrition.foodName")}</div>
           <input value={createForm.name} onChange={(e) => setCF({ name: e.target.value })} placeholder={t("w.recovery.nutrition.foodNamePh")} aria-label={t("w.recovery.nutrition.foodName")} style={{ width: "100%", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", padding: 0 }} />
           <div style={{ height: 1, background: C("line"), margin: "14px 0" }} />
           <input value={createForm.subname} onChange={(e) => setCF({ subname: e.target.value })} placeholder={t("w.recovery.nutrition.subnamePh")} aria-label={t("w.recovery.nutrition.subname")} style={{ width: "100%", border: "none", outline: "none", background: "transparent", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 16, padding: 0 }} />
@@ -1466,7 +1466,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {/* Macro hero — calories as the big number, P/C/F as three tiles. When
             the meal is built from products these show the summed total. */}
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 9, marginTop: 26 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 26 }}>
           {fromComps
             ? <span style={{ width: 172, textAlign: "center", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 60, letterSpacing: "-.04em", fontVariantNumeric: "tabular-nums" }}>{compTotals.kcal}</span>
             : <input value={createForm.kcal} onChange={(e) => setCF({ kcal: e.target.value })} inputMode="numeric" placeholder="0" aria-label={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 60, letterSpacing: "-.04em", padding: 0 }} />}
@@ -1494,7 +1494,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {showPanelFields && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
             {([["satFat", "w.recovery.nutrition.facts.satFat"], ["sugar", "w.recovery.nutrition.facts.sugar"], ["fiber", "w.recovery.nutrition.facts.fiber"], ["salt", "w.recovery.nutrition.facts.salt"]] as const).map(([key, lab]) => (
-              <label key={key} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "10px 13px" }}>
+              <label key={key} style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "10px 12px" }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t(lab)}</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                   <input
@@ -1521,12 +1521,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               {mealComps.length > 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{mealComps.length}</span>}
             </div>
             {mealComps.map((c) => (
-              <div key={c.productId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: `1px solid ${C("line")}` }}>
+              <div key={c.productId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: `1px solid ${C("line")}` }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}><span style={{ fontWeight: 600, fontSize: fs.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>{c.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{c.subname}</span> : null}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><span style={{ fontWeight: 600, fontSize: fs.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>{c.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{c.subname}</span> : null}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{Math.round(c.kcal * c.qty)} kcal — {Math.round(c.protein * c.qty)}P {Math.round(c.carbs * c.qty)}C {Math.round(c.fat * c.qty)}F</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", border: `1px solid ${C("line")}`, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
                   <button onClick={() => setCompQty(c.productId, c.qty - 1)} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 32, height: 32, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 18, cursor: "pointer", display: "grid", placeItems: "center" }}>–</button>
                   <div style={{ minWidth: 26, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.body, fontVariantNumeric: "tabular-nums" }}>{c.qty}</div>
                   <button onClick={() => setCompQty(c.productId, c.qty + 1)} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 32, height: 32, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 18, cursor: "pointer", display: "grid", placeItems: "center" }}>+</button>
@@ -1545,7 +1545,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 24, fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>
             <span>{t("w.recovery.nutrition.per")}</span>
             <input value={createForm.serving} onChange={(e) => setCF({ serving: e.target.value })} inputMode="numeric" placeholder="1" aria-label={t("w.recovery.nutrition.servingLabel2")} style={{ width: 44, textAlign: "right", border: "none", borderBottom: `1px solid ${C("line")}`, outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: 15, padding: "0 0 3px" }} />
-            <button onClick={() => setUnitPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 13px", cursor: "pointer", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>
+            <button onClick={() => setUnitPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>
               {t(`w.recovery.nutrition.unitOpt.${createForm.unit}`)}<IChevDown size={13} color={C("ash")} />
             </button>
           </div>
@@ -1553,14 +1553,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {libMsg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 16, textAlign: "center" }}>{libMsg}</div>}
 
-        <button onClick={submitCreateFood} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 17, marginTop: 28, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
+        <button onClick={submitCreateFood} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, marginTop: 28, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
           <IPlus size={18} color="var(--on-accent)" strokeWidth={2.4} />{isMeal ? t("w.recovery.nutrition.saveMeal") : t("w.recovery.nutrition.saveProduct")}
         </button>
 
         <Sheet open={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
             {UNIT_OPTIONS.map((u) => (
-              <button key={u} onClick={() => { setCF({ unit: u }); setUnitPicker(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C("ink"), border: `1px solid ${createForm.unit === u ? C("lime") : C("line")}`, borderRadius: 14, padding: 14, cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}>
+              <button key={u} onClick={() => { setCF({ unit: u }); setUnitPicker(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C("ink"), border: `1px solid ${createForm.unit === u ? C("lime") : C("line")}`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}>
                 {t(`w.recovery.nutrition.unitOpt.${u}`)}{createForm.unit === u && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
               </button>
             ))}
@@ -1569,7 +1569,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {/* Add product — pick from the saved-products library to compose the meal. */}
         <Sheet open={compPicker} onClose={() => setCompPicker(false)} title={t("w.recovery.nutrition.addProduct")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 11, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px", marginBottom: 10 }}>
             <AuroraIcon name="search" size={17} color={C("ash")} />
             <input value={compQuery} onChange={(e) => setCompQuery(e.target.value)} placeholder={t("w.recovery.nutrition.searchProducts")} aria-label={t("w.recovery.nutrition.searchProducts")} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }} />
           </div>
@@ -1585,7 +1585,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                   <button key={p.id} onClick={() => addMealComp(p)} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
                     <span style={{ width: 36, height: 36, borderRadius: 999, border: "1.6px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} /></span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}><span style={{ fontWeight: 600, fontSize: fs.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>{p.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{p.subname}</span> : null}</div>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><span style={{ fontWeight: 600, fontSize: fs.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>{p.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{p.subname}</span> : null}</div>
                       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{p.servingLabel || t("w.recovery.nutrition.serving")} — {p.kcal} kcal — {p.protein}P {p.carbs}C {p.fat}F</div>
                     </div>
                     {added && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>×{added.qty}</span>}
@@ -1651,7 +1651,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {src && (
           <button
             onClick={() => openSourcePage(src.id, "food")}
-            style={{ display: "flex", alignItems: "center", gap: 13, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "13px 15px", marginTop: 6, cursor: "pointer" }}
+            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", marginTop: 6, cursor: "pointer" }}
           >
             <MarkPlate C={C} src={src} height={26} />
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -1666,7 +1666,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             printing it under the English name put a second name on screen for a
             food we had already named, which read as clutter, not help. */}
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 32, letterSpacing: "-.03em", lineHeight: 1.08, margin: "22px 0 0" }}>{f.name}</h2>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".06em", color: C("ash"), marginTop: 9 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".06em", color: C("ash"), marginTop: 8 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</div>
 
         {/* Energy hero — both units, because a label states both and we finally can. */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 20 }}>
@@ -1676,7 +1676,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
 
         {/* Macro strip — the same four-tile idiom the recipe detail uses. */}
-        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: "16px 6px", marginTop: 18 }}>
+        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "16px 6px", marginTop: 18 }}>
           {([["w.recovery.nutrition.protein", f.facts.protein, "var(--blue-text)"], ["w.recovery.nutrition.carbs", f.facts.carbs, "var(--amber-text)"], ["w.recovery.nutrition.fat", f.facts.fat, "var(--violet-text)"]] as const).map(([lab, val, col]) => (
             <div key={lab} style={{ flex: 1, textAlign: "center" }}>
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 21, letterSpacing: "-.01em", fontVariantNumeric: "tabular-nums" }}>{val}<span style={{ fontSize: 12, color: C("ash") }}>g</span></div>
@@ -1687,14 +1687,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         <FactsPanel C={C} facts={f.facts} per100={p100} />
         {!p100 && (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 9, lineHeight: 1.5 }}>{t("w.recovery.nutrition.noServingWeight")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8, lineHeight: 1.5 }}>{t("w.recovery.nutrition.noServingWeight")}</div>
         )}
 
         {/* FROM THE PACK — what a shelf item declares beyond the numbers. A
             restaurant dish publishes none of this, so the whole card is absent
             rather than rendered empty. */}
         {(f.packSize || f.ingredients || f.mayContain) && (
-          <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "15px 17px", marginTop: 18 }}>
+          <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, marginTop: 18 }}>
             {f.packSize && (
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.packSize")}</span>
@@ -1708,7 +1708,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               </div>
             )}
             {f.mayContain && (
-              <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C("line")}` }}>
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.mayContain")}</div>
                 <div style={{ fontFamily: "var(--font-display)", fontSize: fs.body, color: C("chalk"), marginTop: 6, lineHeight: 1.55 }}>{f.mayContain}</div>
               </div>
@@ -1724,14 +1724,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {/* WHAT WE DID, AND WHEN. The claim, dated, with the operator's own
             wording of where the numbers came from, then the trademark line. */}
         <div style={{ background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 30%, ${C("line")})`, borderRadius: 16, padding: "14px 16px", marginTop: 22 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 9 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
             <VerifiedMark size={15} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: C("chalk") }}>{t("w.recovery.nutrition.verified")}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4, lineHeight: 1.6 }}>
                 {t("w.recovery.nutrition.verifiedSub").replace("{source}", src?.name ?? "").replace("{date}", f.verifiedOn)}
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 7, lineHeight: 1.6 }}>{f.provenance}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8, lineHeight: 1.6 }}>{f.provenance}</div>
               {/* A stale item KEEPS its tick — the numbers were true when we
                   checked, and withdrawing the claim would be its own dishonesty.
                   It says out loud that it is due another look. */}
@@ -1754,9 +1754,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               {src && <button onClick={() => openSourcePage(src.id, "food")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{t("w.explore.seeAll")}</button>}
             </div>
             {related.map((r) => (
-              <button key={r.id} onClick={() => openFoodPage(r.id, "food")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "13px 2px", cursor: "pointer" }}>
+              <button key={r.id} onClick={() => openFoodPage(r.id, "food")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                     <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{r.name}</span>
                     <VerifiedMark size={11} />
                   </div>
@@ -1768,7 +1768,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
         )}
 
-        {mealMsg && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 18 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{mealMsg}</div>}
+        {mealMsg && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 18 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{mealMsg}</div>}
 
         <div style={{ position: "sticky", bottom: 0, background: C("ink"), padding: "16px 0 20px", marginTop: 10, display: "grid", gridTemplateColumns: "auto 1fr", gap: 12 }}>
           <button onClick={() => saveFood(hit)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "16px 20px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
@@ -1797,10 +1797,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           {VERIFIED_SOURCES.map((src) => {
             const n = vfBySource(src.id).length;
             return (
-              <button key={src.id} onClick={() => openSourcePage(src.id, "sources")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 14px", marginBottom: 10, cursor: "pointer" }}>
+              <button key={src.id} onClick={() => openSourcePage(src.id, "sources")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 14px", marginBottom: 10, cursor: "pointer" }}>
                 <MarkPlate C={C} src={src} height={28} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                     <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{src.name}</span>
                     <VerifiedMark size={12} />
                   </div>
@@ -1833,11 +1833,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
 
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 27, letterSpacing: "-.025em", margin: "20px 0 0" }}>{src.name}</h2>
-        <p style={{ fontFamily: "var(--font-display)", fontSize: fs.bodyLg, color: C("ash"), lineHeight: 1.55, margin: "9px 0 0" }}>{src.note}</p>
+        <p style={{ fontFamily: "var(--font-display)", fontSize: fs.bodyLg, color: C("ash"), lineHeight: 1.55, margin: "8px 0 0" }}>{src.note}</p>
 
         <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
           {([[t("w.recovery.nutrition.itemsChecked"), String(items.length)], [t("w.recovery.nutrition.lastChecked"), checked ?? "—"]] as const).map(([lab, val]) => (
-            <div key={lab} style={{ flex: 1, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px" }}>
+            <div key={lab} style={{ flex: 1, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px" }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{lab}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.bodyLg, color: C("chalk"), marginTop: 5, fontVariantNumeric: "tabular-nums" }}>{val}</div>
             </div>
@@ -1851,7 +1851,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {items.map((f) => (
           <button key={f.id} onClick={() => openFoodPage(f.id, "source")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "14px 2px", cursor: "pointer" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                 <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{f.name}</span>
                 <VerifiedMark size={12} />
               </div>
@@ -1885,19 +1885,19 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 calc(-1 * var(--page-pad-x, 16px))", paddingLeft: "var(--page-pad-x, 16px)", paddingRight: "var(--page-pad-x, 16px)" }}>
           {RECIPE_FILTERS.map((rf) => (
-            <button key={rf} onClick={() => setRecipeFilter(rf)} style={{ flex: "none", fontFamily: "var(--font-display)", fontWeight: recipeFilter === rf ? 700 : 600, fontSize: fs.body, border: `1px solid ${recipeFilter === rf ? C("lime") : C("line")}`, borderRadius: 999, padding: "8px 15px", color: recipeFilter === rf ? "var(--on-accent)" : C("ash"), background: recipeFilter === rf ? C("lime") : C("ink2"), whiteSpace: "nowrap", cursor: "pointer" }}>
+            <button key={rf} onClick={() => setRecipeFilter(rf)} style={{ flex: "none", fontFamily: "var(--font-display)", fontWeight: recipeFilter === rf ? 700 : 600, fontSize: fs.body, border: `1px solid ${recipeFilter === rf ? C("lime") : C("line")}`, borderRadius: 999, padding: "8px 16px", color: recipeFilter === rf ? "var(--on-accent)" : C("ash"), background: recipeFilter === rf ? C("lime") : C("ink2"), whiteSpace: "nowrap", cursor: "pointer" }}>
               {t(`w.recovery.nutrition.recipeFilter.${rf}`)}
             </button>
           ))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
           {list.map((r) => (
-            <button key={r.id} onClick={() => openRecipe(r)} style={{ textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
+            <button key={r.id} onClick={() => openRecipe(r)} style={{ textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
               <div style={{ height: 96, display: "grid", placeItems: "center", fontSize: 40, ...recipeHeroBg(r.tint) }}>{r.emoji}</div>
-              <div style={{ padding: "11px 12px 13px" }}>
+              <div style={{ padding: "12px 12px 12px" }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.01em" }}>{r.name}</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontWeight: 600, marginTop: 7 }}>{r.macros.kcal} kcal</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontWeight: 600, marginTop: 8 }}>{r.macros.kcal} kcal</div>
               </div>
             </button>
           ))}
@@ -1930,14 +1930,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk"), display: "flex", flexDirection: "column", minHeight: "70vh" }}>
         {screenHead(recipe.name, () => setView("recipe"))}
-        <div style={{ height: 150, display: "grid", placeItems: "center", fontSize: 64, borderRadius: 24, margin: "2px 0 20px", ...recipeHeroBg(recipe.tint) }}>{recipe.emoji}</div>
+        <div style={{ height: 150, display: "grid", placeItems: "center", fontSize: 64, borderRadius: 28, margin: "2px 0 20px", ...recipeHeroBg(recipe.tint) }}>{recipe.emoji}</div>
         <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
           {recipe.steps.map((_, i) => <span key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= cookStep ? C("lime") : C("line") }} />)}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.stepXofY").replace("{x}", String(cookStep + 1)).replace("{y}", String(recipe.steps.length))}</div>
         <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 23, lineHeight: 1.35, letterSpacing: "-.01em", margin: "12px 0 0" }}>{step.text}</p>
         {step.timerSec != null && (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 20, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "9px 15px", fontFamily: "var(--font-mono)", fontSize: fs.body, color: "var(--amber-text)", alignSelf: "flex-start" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 20, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "8px 16px", fontFamily: "var(--font-mono)", fontSize: fs.body, color: "var(--amber-text)", alignSelf: "flex-start" }}>
             <IClock size={15} color="var(--amber-text)" />{Math.floor(step.timerSec / 60)}:{String(step.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}
           </div>
         )}
@@ -2001,8 +2001,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
-      <button onClick={() => setGoalPicker(true)} aria-label={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "14px 16px", marginTop: 18, cursor: "pointer", color: C("chalk") }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+      <button onClick={() => setGoalPicker(true)} aria-label={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, boxShadow: "var(--shadow-card)", padding: "14px 16px", marginTop: 18, cursor: "pointer", color: C("chalk") }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Glyph name="target" size={20} color={C("ash")} />
           <div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.goalLabel")}</div>
@@ -2017,7 +2017,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           {GOALS.map((g) => {
             const on = goal === g.id;
             return (
-              <button key={g.id} onClick={() => { chooseGoal(g.id); setGoalPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, padding: 15, cursor: "pointer", color: C("chalk") }}>
+              <button key={g.id} onClick={() => { chooseGoal(g.id); setGoalPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.bodyLg }}>{t(g.label)}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{goalSub(g.id)}</div>
@@ -2075,7 +2075,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 </div>
               )}
               {trainingKcal > 0 && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 12, background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-lime) 28%, transparent)`, borderRadius: 999, padding: "6px 13px" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-lime) 28%, transparent)`, borderRadius: 999, padding: "6px 12px" }}>
                   <Glyph name="spark" size={13} color="var(--lime-text)" strokeWidth={4} />
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime-text)" }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</span>
                 </div>
@@ -2089,7 +2089,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: colT }}>{t(label)}</span>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>{Math.round(cur)} / {tgt} g</span>
                   </div>
-                  <div style={{ height: 4, borderRadius: 99, background: C("ink"), overflow: "hidden", marginTop: 8 }}><div style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: "100%", borderRadius: 99, background: col }} /></div>
+                  <div style={{ height: 4, borderRadius: 999, background: C("ink"), overflow: "hidden", marginTop: 8 }}><div style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: "100%", borderRadius: 999, background: col }} /></div>
                 </div>
               ))}
             </div>
@@ -2105,7 +2105,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <button onClick={() => setView("diary")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.menuDiary")} →</button>
           </div>
           {partList.map((p) => { const kcal = mealTotals[p.key] ?? 0; return (
-            <button key={p.key} onClick={() => openAdd(p.key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 16px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
+            <button key={p.key} onClick={() => openAdd(p.key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 16px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
               <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><Glyph name={mealGlyph(p.key)} size={19} color={C("ash")} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{p.label}</div>
@@ -2116,7 +2116,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           ); })}
           {/* Full users can add their own parts of the day (e.g. Pre-workout). */}
           {full && (
-            <button onClick={() => setPartSheet(true)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 18, padding: "14px 16px", marginTop: 10, cursor: "pointer", color: C("ash") }}>
+            <button onClick={() => setPartSheet(true)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 16, padding: "14px 16px", marginTop: 10, cursor: "pointer", color: C("ash") }}>
               <span style={{ width: 40, height: 40, borderRadius: 12, border: `1px dashed ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={18} color={C("ash")} strokeWidth={2.2} /></span>
               <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.addPart")}</span>
             </button>
@@ -2150,12 +2150,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <RailHead title={t("w.recovery.nutrition.recipes")} action={{ label: `${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`, onClick: () => (recipesUnlocked ? setView("recipes") : onNavigate?.("upgrade")), premium: !recipesUnlocked }} />
           <div style={railScroller}>
             {RECIPES.map((r) => (
-              <button key={r.id} onClick={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} className="pressable" style={{ flex: "0 0 min(52%, 196px)", scrollSnapAlign: "center", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
+              <button key={r.id} onClick={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} className="pressable" style={{ flex: "0 0 min(52%, 196px)", scrollSnapAlign: "center", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
                 <div style={{ height: 96, display: "grid", placeItems: "center", fontSize: 40, ...recipeHeroBg(r.tint) }}>{r.emoji}</div>
-                <div style={{ padding: "11px 12px 13px" }}>
+                <div style={{ padding: "12px 12px 12px" }}>
                   <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontWeight: 600, marginTop: 7 }}>{r.macros.kcal} kcal</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontWeight: 600, marginTop: 8 }}>{r.macros.kcal} kcal</div>
                 </div>
               </button>
             ))}
@@ -2170,11 +2170,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
               return (
-                <button key={src.id} onClick={() => openSourcePage(src.id, "home")} className="pressable" style={{ flex: "0 0 min(72%, 268px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "stretch", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 14 }}>
+                <button key={src.id} onClick={() => openSourcePage(src.id, "home")} className="pressable" style={{ flex: "0 0 min(72%, 268px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "stretch", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 14 }}>
                   {/* The business's own logo leads the card — this rail IS the
                       businesses, so recognising one at a glance is its whole job. */}
                   <MarkPlate C={C} src={src} height={34} full />
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginTop: 12, maxWidth: "100%", padding: "0 2px" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 12, maxWidth: "100%", padding: "0 2px" }}>
                     <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{src.name}</span>
                     <VerifiedMark size={12} />
                   </div>
@@ -2209,7 +2209,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8 }}>{t("w.recovery.nutrition.weightProfileSub")}</div>
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <input value={weighIn} onChange={(e) => setWeighIn(e.target.value)} inputMode="decimal" placeholder="kg" aria-label={t("w.recovery.nutrition.updateWeight")} style={{ ...numField, flex: 1 }} />
-            <button onClick={() => { const kg = parseFloat(weighIn); if (Number.isFinite(kg) && kg > 0) { logWeighIn(kg); setWeighIn(""); } }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 14, padding: "0 18px", cursor: "pointer" }}>{t("w.recovery.nutrition.updateWeight")}</button>
+            <button onClick={() => { const kg = parseFloat(weighIn); if (Number.isFinite(kg) && kg > 0) { logWeighIn(kg); setWeighIn(""); } }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 18px", cursor: "pointer" }}>{t("w.recovery.nutrition.updateWeight")}</button>
           </div>
         </div>
       )}
@@ -2243,7 +2243,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <AuroraIcon name="add" size={20} color={C("lime")} />
             <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.addToToday")}</b>
           </div>
-          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", gap: 7, background: "transparent", border: "none", cursor: scanning ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--premium-accent-text)", opacity: scanning ? 0.6 : 1 }}>
+          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none", cursor: scanning ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--premium-accent-text)", opacity: scanning ? 0.6 : 1 }}>
             <Glyph name="scan" size={16} color="var(--premium-accent-text)" />{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}{!full && <span style={{ fontSize: 11 }}>✦</span>}
           </button>
         </div>
@@ -2255,7 +2255,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <input value={f.fat} onChange={(e) => setF((s) => ({ ...s, fat: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.fatPh")} style={numField} />
         </div>
         {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{error}</div>}
-        <button onClick={add} disabled={saving} style={{ width: "100%", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 15, marginTop: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
+        <button onClick={add} disabled={saving} style={{ width: "100%", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, marginTop: 14, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")}
         </button>
         {/* QUICK MEALS — one-tap premade meals as time-of-day rows. Full users log
@@ -2271,7 +2271,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 key={p.id}
                 onClick={() => logPreset(p)}
                 aria-label={t(p.labelKey)}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", padding: "12px 2px", borderTop: i ? `1px solid ${C("line")}` : "none", background: "transparent", border: "none", borderTopStyle: i ? "solid" : "none", cursor: "pointer", color: C("chalk") }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", padding: "12px 2px", borderTop: i ? `1px solid ${C("line")}` : "none", background: "transparent", border: "none", borderTopStyle: i ? "solid" : "none", cursor: "pointer", color: C("chalk") }}
               >
                 <Glyph name={presetGlyph(p.id)} size={22} color={full ? C("ash") : "var(--premium-accent-text)"} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -2283,7 +2283,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               </button>
             ))}
           </div>
-          {mealMsg && <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 12 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{t("w.recovery.nutrition.mealLogged")} — {mealMsg}</div>}
+          {mealMsg && <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 12 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{t("w.recovery.nutrition.mealLogged")} — {mealMsg}</div>}
         </div>
       </div>
 
@@ -2304,10 +2304,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {meals.length > 0 && (
           <div style={{ marginTop: 12 }}>
             {meals.map((m, i) => (
-              <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 13, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
+              <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
                 {m.emoji ? <span style={{ fontSize: 20, width: 22, textAlign: "center" }}>{m.emoji}</span> : <Glyph name="bowl" size={22} color={C("ash")} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{m.name}</span>{m.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{m.subname}</span> : null}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{m.name}</span>{m.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{m.subname}</span> : null}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{m.kcal} kcal — {m.protein}P {m.carbs}C {m.fat}F</div>
                 </div>
                 <button onClick={() => logMeal(m)} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
@@ -2317,9 +2317,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
         )}
         {showMealBuilder ? (
-          <div style={{ marginTop: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: 16 }}>
+          <div style={{ marginTop: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>{t("w.recovery.nutrition.newMeal")}</div>
-            <input value={mealForm.name} onChange={(e) => setMealForm((s) => ({ ...s, name: e.target.value }))} placeholder={t("w.recovery.nutrition.mealNameHint")} aria-label={t("w.recovery.nutrition.mealName")} style={{ width: "100%", boxSizing: "border-box", background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 14px", outline: "none", fontFamily: "var(--font-display)", fontSize: fs.bodyLg }} />
+            <input value={mealForm.name} onChange={(e) => setMealForm((s) => ({ ...s, name: e.target.value }))} placeholder={t("w.recovery.nutrition.mealNameHint")} aria-label={t("w.recovery.nutrition.mealName")} style={{ width: "100%", boxSizing: "border-box", background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", outline: "none", fontFamily: "var(--font-display)", fontSize: fs.bodyLg }} />
             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
               {macroField("kcal", "var(--lime-text)", mealForm.kcal, (v) => setMealForm((s) => ({ ...s, kcal: v })), "kcal")}
               {macroField(t("w.recovery.nutrition.protein"), "var(--blue-text)", mealForm.protein, (v) => setMealForm((s) => ({ ...s, protein: v })))}
@@ -2357,7 +2357,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           {foodQuery ? <button onClick={() => setFoodQuery("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 17, lineHeight: 1 }}>×</button> : <Glyph name="scan" size={17} color={C("ash")} strokeWidth={4} />}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8, letterSpacing: ".02em" }}>{t("w.recovery.nutrition.foodSearchHint")}</div>
-        {foodMsg && <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{foodMsg}</div>}
+        {foodMsg && <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{foodMsg}</div>}
 
         {/* Database results */}
         {foodQuery.trim().length >= 2 && (
@@ -2367,7 +2367,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             ) : foodResults.length === 0 ? (
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "6px 0", lineHeight: 1.5 }}>{t("w.recovery.nutrition.foodNoResults")}</div>
             ) : foodResults.map((food, i) => (
-              <div key={`${food.id || food.code}-${i}`} style={{ display: "flex", alignItems: "center", gap: 11, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
+              <div key={`${food.id || food.code}-${i}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
                 {/* A verified row opens its page from the name, exactly as in the
                     picker — the same food must not be a dead end on one screen
                     and a doorway on another. */}
@@ -2382,7 +2382,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{food.brand ? `${food.brand} — ` : ""}{food.serving} — {food.kcal} kcal — {food.protein}P {food.carbs}C {food.fat}F</div>
                 </button>
                 <button onClick={() => saveFood(food)} aria-label={t("w.recovery.nutrition.saveToFoods")} title={t("w.recovery.nutrition.saveToFoods")} style={{ flex: "none", width: 34, height: 34, borderRadius: "50%", border: `1px solid ${C("line")}`, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="bookmark" size={15} color={C("ash")} /></button>
-                <button onClick={() => logFood(food)} style={{ flex: "none", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "9px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
+                <button onClick={() => logFood(food)} style={{ flex: "none", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
               </div>
             ))}
           </div>
@@ -2399,9 +2399,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {products.length > 0 && (
           <div style={{ marginTop: 10 }}>
             {products.map((p, i) => (
-              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
+              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{p.name}</span>{p.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{p.subname}</span> : null}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{p.name}</span>{p.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{p.subname}</span> : null}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{p.servingLabel} — {p.kcal} kcal — {p.protein}P {p.carbs}C {p.fat}F</div>
                 </div>
                 <button onClick={() => addProductToMeal(p)} aria-label={t("w.recovery.nutrition.addToMeal")} style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="add" size={14} color="var(--lime-text)" /></button>
@@ -2411,10 +2411,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
         )}
         {showProdBuilder && (
-          <div style={{ marginTop: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: 16 }}>
+          <div style={{ marginTop: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>{t("w.recovery.nutrition.newProduct")}</div>
-            <input value={prodForm.name} onChange={(e) => setProdForm((s) => ({ ...s, name: e.target.value }))} placeholder={t("w.recovery.nutrition.productNamePh")} aria-label={t("w.recovery.nutrition.productName")} style={{ width: "100%", boxSizing: "border-box", background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "13px 14px", outline: "none", fontFamily: "var(--font-display)", fontSize: fs.bodyLg }} />
-            <input value={prodForm.serving} onChange={(e) => setProdForm((s) => ({ ...s, serving: e.target.value }))} placeholder={t("w.recovery.nutrition.servingPh")} aria-label={t("w.recovery.nutrition.servingPh")} style={{ width: "100%", boxSizing: "border-box", background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 14px", outline: "none", fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 8 }} />
+            <input value={prodForm.name} onChange={(e) => setProdForm((s) => ({ ...s, name: e.target.value }))} placeholder={t("w.recovery.nutrition.productNamePh")} aria-label={t("w.recovery.nutrition.productName")} style={{ width: "100%", boxSizing: "border-box", background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", outline: "none", fontFamily: "var(--font-display)", fontSize: fs.bodyLg }} />
+            <input value={prodForm.serving} onChange={(e) => setProdForm((s) => ({ ...s, serving: e.target.value }))} placeholder={t("w.recovery.nutrition.servingPh")} aria-label={t("w.recovery.nutrition.servingPh")} style={{ width: "100%", boxSizing: "border-box", background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", outline: "none", fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 8 }} />
             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
               {macroField("kcal", "var(--lime-text)", prodForm.kcal, (v) => setProdForm((s) => ({ ...s, kcal: v })), "kcal")}
               {macroField(t("w.recovery.nutrition.protein"), "var(--blue-text)", prodForm.protein, (v) => setProdForm((s) => ({ ...s, protein: v })))}
@@ -2454,16 +2454,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         const shown = l.derived ? mult : l.qty;
         const time = new Date(l.ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
         return (
-        <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 2px 9px 31px" }}>
+        <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 2px 8px 31px" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name || t("w.recovery.nutrition.loggedEntry")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{l.derived ? `${time} — ` : ""}{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</div>
           </div>
           {/* Quantity stepper — rescales the entry (and its mirror). */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button onClick={() => stepEntry(l, Math.max(0.5, Math.round((shown - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>−</button>
+            <button onClick={() => stepEntry(l, Math.max(0.5, Math.round((shown - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 26, height: 26, borderRadius: 12, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>−</button>
             <span style={{ minWidth: 26, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{l.derived ? `×${shown}` : shown}</span>
-            <button onClick={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
+            <button onClick={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 12, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
           </div>
           <button onClick={() => deleteLog(l.id)} aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
         </div>
@@ -2582,7 +2582,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <div style={{ display: "flex", justifyContent: "space-between", gap: 6, marginTop: 14 }}>
           {week.map((d, i) => (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flex: 1 }}>
-              <div style={{ width: "100%", maxWidth: 30, aspectRatio: "1", borderRadius: 9, background: d.on ? `color-mix(in srgb, var(--color-lime) 22%, ${C("ink")})` : C("ink"), border: `1px solid ${d.on ? `color-mix(in srgb, var(--color-lime) 40%, ${C("line")})` : C("line")}`, display: "grid", placeItems: "center" }}>{d.on && <AuroraIcon name="check" size={13} color="var(--lime-text)" />}</div>
+              <div style={{ width: "100%", maxWidth: 30, aspectRatio: "1", borderRadius: 12, background: d.on ? `color-mix(in srgb, var(--color-lime) 22%, ${C("ink")})` : C("ink"), border: `1px solid ${d.on ? `color-mix(in srgb, var(--color-lime) 40%, ${C("line")})` : C("line")}`, display: "grid", placeItems: "center" }}>{d.on && <AuroraIcon name="check" size={13} color="var(--lime-text)" />}</div>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash") }}>{d.label}</span>
             </div>
           ))}
@@ -2593,7 +2593,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           ) : recentDays.map((d, i) => {
             const on = d.date === diaryDay;
             return (
-            <button key={d.date} onClick={() => setDiaryDay(d.date)} aria-label={`${t("w.recovery.nutrition.viewDay")} ${d.date.slice(5)}`} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, padding: "11px 6px", borderTop: i ? `1px solid ${C("line")}` : "none", background: on ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", borderRadius: on ? 10 : 0, border: "none", borderLeft: on ? "2px solid var(--color-lime)" : "2px solid transparent", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
+            <button key={d.date} onClick={() => setDiaryDay(d.date)} aria-label={`${t("w.recovery.nutrition.viewDay")} ${d.date.slice(5)}`} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, padding: "12px 6px", borderTop: i ? `1px solid ${C("line")}` : "none", background: on ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", borderRadius: on ? 12 : 0, border: "none", borderLeft: on ? "2px solid var(--color-lime)" : "2px solid transparent", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
               <span style={{ color: on ? "var(--lime-text)" : C("ash"), width: 48, textAlign: "left" }}>{d.date.slice(5)}</span>
               <span style={{ fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{Math.round(d.kcal)} kcal</span>
               <span style={{ color: C("ash"), flex: 1, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{Math.round(d.protein)}P {Math.round(d.carbs)}C {Math.round(d.fat)}F</span>
@@ -2708,10 +2708,10 @@ function RecipeDetail({ recipe, serves, setServes, msg, onBack, onSaveMeal, onCo
       {/* The action bar is ALREADY sticky, which is why this screen needs no
           docked CTA the way the plan detail does — Start cooking never leaves. */}
       <div style={{ position: "sticky", bottom: 0, background: C("ink"), padding: "16px 0 20px", marginTop: 8 }}>
-        {msg && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginBottom: 12 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{msg}</div>}
+        {msg && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginBottom: 12 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{msg}</div>}
         <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 12 }}>
-          <button onClick={onSaveMeal} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "17px 22px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}><IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.createMeal")}</button>
-          <button onClick={onCook} style={{ width: "100%", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 17, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.startCooking")}</button>
+          <button onClick={onSaveMeal} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "16px 22px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}><IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.createMeal")}</button>
+          <button onClick={onCook} style={{ width: "100%", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.startCooking")}</button>
         </div>
       </div>
     </div>
@@ -2724,9 +2724,9 @@ function CDivider({ label, tier, premium }: { label: string; tier?: string; prem
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "18px 0 12px" }}>
       <span style={{ flex: 1, height: 1, background: C("line") }} />
-      <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", color: C("ash") }}>{label}</span>
-        {tier && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".08em", textTransform: "uppercase", padding: "2px 7px", borderRadius: 999, border: `1px solid ${premium ? `color-mix(in srgb, var(--premium-accent) 45%, transparent)` : C("line")}`, color: premium ? "var(--premium-accent-text)" : C("ash") }}>{tier}</span>}
+        {tier && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".08em", textTransform: "uppercase", padding: "2px 8px", borderRadius: 999, border: `1px solid ${premium ? `color-mix(in srgb, var(--premium-accent) 45%, transparent)` : C("line")}`, color: premium ? "var(--premium-accent-text)" : C("ash") }}>{tier}</span>}
       </span>
       <span style={{ flex: 1, height: 1, background: C("line") }} />
     </div>
@@ -2803,7 +2803,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
   const C = (v: string) => `var(--color-${v})`;
   const goalLabel = t(goal === "lose" ? "w.recovery.nutrition.goalLose" : goal === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const seg = (w: 7 | 30, label: string) => (
-    <button onClick={() => onWindow(w)} style={{ flex: 1, padding: "7px 0", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, letterSpacing: ".04em", textTransform: "uppercase", background: window === w ? C("lime") : "transparent", color: window === w ? C("ink") : C("ash") }}>{label}</button>
+    <button onClick={() => onWindow(w)} style={{ flex: 1, padding: "8px 0", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, letterSpacing: ".04em", textTransform: "uppercase", background: window === w ? C("lime") : "transparent", color: window === w ? C("ink") : C("ash") }}>{label}</button>
   );
   // Generic stats stay neutral (ash); the macro-average tile keeps its violet.
   const tiles: [string, string, string, string][] = [
@@ -2826,7 +2826,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
         <>
           {/* Goal-progress strip — the chosen goal + the measured 28-day weight
               change (the real signal we have; no invented target). */}
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "13px 15px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 14, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px" }}>
             <div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.goalProgress")} — {goalLabel}</div>
               <div style={{ fontWeight: 900, fontSize: 22, letterSpacing: "-.02em", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{weightChangeKg != null ? `${weightChangeKg > 0 ? "+" : ""}${weightChangeKg.toFixed(1)} kg` : "—"}</div>
@@ -2846,16 +2846,16 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
             <div style={{ marginTop: 16 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>{t("w.recovery.nutrition.macroBalance")}</div>
               {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C("blue"), "var(--blue-text)"], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C("amber"), "var(--amber-text)"], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C("violet"), "var(--violet-text)"]] as const).map(([label, pct, col, colT]) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 9 }}>
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: colT, width: 52, textTransform: "uppercase", letterSpacing: ".06em" }}>{t(label)}</span>
-                  <div style={{ flex: 1, height: 4, borderRadius: 99, background: C("ink2"), overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", borderRadius: 99, background: col }} /></div>
+                  <div style={{ flex: 1, height: 4, borderRadius: 999, background: C("ink2"), overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: col }} /></div>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, width: 30, textAlign: "right", color: C("ash"), fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
                 </div>
               ))}
             </div>
           )}
           {!full && (
-            <button onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, marginTop: 16, textAlign: "left", background: `color-mix(in srgb, var(--premium-accent) 9%, ${C("ink")})`, border: `1px solid color-mix(in srgb, var(--premium-accent) 30%, transparent)`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}>
+            <button onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, marginTop: 16, textAlign: "left", background: `color-mix(in srgb, var(--premium-accent) 9%, ${C("ink")})`, border: `1px solid color-mix(in srgb, var(--premium-accent) 30%, transparent)`, borderRadius: 16, padding: 14, cursor: "pointer", color: C("chalk") }}>
               <Glyph name="spark" size={19} color="var(--premium-accent-text)" />
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: fs.body }}>{t("w.recovery.nutrition.deepInsights")}</div>
@@ -2885,14 +2885,14 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
   const [step, setStep] = useState(0);
   const [activity, setActivity] = useState("moderate");
   const [weight, setWeight] = useState("");
-  const field = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 12px", outline: "none", textAlign: "center" as const };
+  const field = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px", outline: "none", textAlign: "center" as const };
   const GOAL_OPTS: { id: NutritionGoal; label: string; sub: string }[] = [
     { id: "lose", label: t("w.recovery.nutrition.goalLose"), sub: t("w.recovery.nutrition.goalLoseSub") },
     { id: "maintain", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
     { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
   ];
   const choiceCard = (on: boolean, label: string, sub: string, onClick: () => void) => (
-    <button onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 20, boxShadow: on ? `0 0 0 1px ${C("lime")}, var(--shadow-card)` : "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
+    <button onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 28, boxShadow: on ? `0 0 0 1px ${C("lime")}, var(--shadow-card)` : "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
       <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: fs.bodyLg }}>{label}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{sub}</div></div>
       <span style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent", display: "grid", placeItems: "center" }}>{on && <AuroraIcon name="check" size={12} color="var(--on-accent)" />}</span>
     </button>
@@ -2906,7 +2906,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
         {step > 0 && <button onClick={() => setStep((s) => s - 1)} aria-label={t("w.recovery.nutrition.back")} style={{ width: 36, height: 36, borderRadius: 12, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}><AuroraIcon name="back" size={16} color={C("chalk")} /></button>}
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.stepOf").replace("{n}", String(step + 1))}</div>
       </div>
-      <div style={{ height: 4, borderRadius: 99, background: C("ink"), overflow: "hidden", marginTop: 12 }}><div style={{ width: `${((step + 1) / 3) * 100}%`, height: "100%", background: C("lime"), transition: "width .3s" }} /></div>
+      <div style={{ height: 4, borderRadius: 999, background: C("ink"), overflow: "hidden", marginTop: 12 }}><div style={{ width: `${((step + 1) / 3) * 100}%`, height: "100%", background: C("lime"), transition: "width .3s" }} /></div>
 
       {step === 0 && (
         <div style={{ marginTop: 22 }}>
@@ -2937,7 +2937,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 5 }}>{t("w.recovery.nutrition.addWeighInSub")}</div>
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                   <input value={weight} onChange={(e) => setWeight(e.target.value)} inputMode="decimal" placeholder="kg" aria-label={t("w.recovery.nutrition.addWeighIn")} style={{ ...field, flex: 1 }} />
-                  <button onClick={() => { const kg = parseFloat(weight); if (Number.isFinite(kg) && kg > 0) onWeighIn(kg); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 14, padding: "0 18px", cursor: "pointer" }}>{t("w.recovery.nutrition.save")}</button>
+                  <button onClick={() => { const kg = parseFloat(weight); if (Number.isFinite(kg) && kg > 0) onWeighIn(kg); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 18px", cursor: "pointer" }}>{t("w.recovery.nutrition.save")}</button>
                 </div>
               </>
             )}
@@ -2949,14 +2949,14 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
       {step === 2 && (
         <div style={{ marginTop: 22 }}>
           <div style={{ ...cardStyle(C), padding: 22, textAlign: "center", background: `color-mix(in srgb, var(--premium-accent) 8%, ${C("ink2")})`, borderColor: `color-mix(in srgb, var(--premium-accent) 30%, ${C("line")})` }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--premium-accent-text)", background: `color-mix(in srgb, var(--premium-accent) 16%, transparent)`, borderRadius: 999, padding: "6px 13px" }}>✦ {t("w.account.settings.full")}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--premium-accent-text)", background: `color-mix(in srgb, var(--premium-accent) 16%, transparent)`, borderRadius: 999, padding: "6px 12px" }}>✦ {t("w.account.settings.full")}</span>
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", marginTop: 14 }}>{t("w.recovery.nutrition.trialTitle")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8, lineHeight: 1.5 }}>{t("w.recovery.nutrition.trialSub")}</div>
             <div style={{ marginTop: 16 }}>
               <div style={{ fontWeight: 900, fontSize: 26, letterSpacing: "-.02em" }}>$9.99<span style={{ fontWeight: 400, fontSize: 13, color: C("ash") }}> {t("w.account.upgrade.per-month")}</span></div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", marginTop: 3 }}>{t("w.recovery.nutrition.trialNote")}</div>
             </div>
-            <button onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, color: "var(--premium-accent-ink)", background: "var(--premium-accent)", border: "none", borderRadius: 16, padding: 15, marginTop: 16, cursor: "pointer" }}>{t("w.recovery.nutrition.startTrial")} <Glyph name="chevron" size={15} color="var(--premium-accent-ink)" /></button>
+            <button onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, color: "var(--premium-accent-ink)", background: "var(--premium-accent)", border: "none", borderRadius: 16, padding: 16, marginTop: 16, cursor: "pointer" }}>{t("w.recovery.nutrition.startTrial")} <Glyph name="chevron" size={15} color="var(--premium-accent-ink)" /></button>
           </div>
           {/* The FREE alternative — a limited plan the user can start on now,
               no card needed. Full is the trial card above; this is the way out
@@ -2968,7 +2968,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
             </div>
             <div style={{ marginTop: 12 }}>
               {["w.recovery.nutrition.freeBulletLogging", "w.recovery.nutrition.freeBulletMeals", "w.recovery.nutrition.freeBulletProducts", "w.recovery.nutrition.freeBulletInsights"].map((k) => (
-                <div key={k} style={{ display: "flex", alignItems: "center", gap: 11, padding: "7px 0" }}>
+                <div key={k} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
                   <AuroraIcon name="check" size={15} color="var(--lime-text)" />
                   <span style={{ fontSize: fs.body }}>{t(k)}</span>
                 </div>

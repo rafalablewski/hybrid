@@ -50,12 +50,12 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
     return (
       <div style={wrap}>
         {[0, 1].map((i) => (
-          <div key={i} style={{ ...cardWidth, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 26, padding: 16 }}>
+          <div key={i} style={{ ...cardWidth, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16 }}>
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <div className="skeleton" style={{ width: 34, height: 34, borderRadius: 999, background: C("line") }} />
               <div style={{ flex: 1 }}>
                 <div className="skeleton" style={{ width: "40%", height: 11, borderRadius: 6, background: C("line") }} />
-                <div className="skeleton" style={{ width: "55%", height: 9, borderRadius: 6, background: C("line"), marginTop: 7 }} />
+                <div className="skeleton" style={{ width: "55%", height: 9, borderRadius: 6, background: C("line"), marginTop: 8 }} />
               </div>
             </div>
             <div className="skeleton" style={{ width: "90%", height: 12, borderRadius: 6, background: C("line"), marginTop: 14 }} />
@@ -72,7 +72,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
   // facts and action row use the FULL card width beneath (no left avatar gutter,
   // no nested attached-box). Column layout.
   const postStyle = horizontal
-    ? { ...cardWidth, display: "flex", flexDirection: "column" as const, textAlign: "left" as const, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "var(--shadow-card)" }
+    ? { ...cardWidth, display: "flex", flexDirection: "column" as const, textAlign: "left" as const, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "var(--shadow-card)" }
     : { width: "100%", display: "flex", flexDirection: "column" as const, textAlign: "left" as const, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "16px 2px", cursor: "pointer", color: C("chalk") };
   return (
     <div style={wrap}>
@@ -82,7 +82,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
         return (
           <button key={it.id} onClick={onOpen} style={postStyle}>
             {/* header — avatar inline; everything below spans the full width */}
-            <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span style={{ width: 36, height: 36, borderRadius: 999, flexShrink: 0, background: C("ink"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 12, color: C("ash"), overflow: "hidden" }}>
                 {a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -115,9 +115,9 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
 
               {/* action row — monochrome glyphs, full width */}
               <span style={{ display: "flex", justifyContent: "space-between", maxWidth: 300, marginTop: 14, color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 12 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M3 4.5h10v6H7l-3 2.5v-2.5H3Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>{it.comments}</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M4 6 2 8l2 2M2 8h9M12 10l2-2-2-2M14 8H5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>{(it as { reposts?: number }).reposts ?? 0}</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M8 13S2.5 9.5 2.5 5.8A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5.8C13.5 9.5 8 13 8 13Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>{it.kudos}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M3 4.5h10v6H7l-3 2.5v-2.5H3Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>{it.comments}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M4 6 2 8l2 2M2 8h9M12 10l2-2-2-2M14 8H5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>{(it as { reposts?: number }).reposts ?? 0}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M8 13S2.5 9.5 2.5 5.8A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5.8C13.5 9.5 8 13 8 13Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>{it.kudos}</span>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M5 11 11 5M6 5h5v5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </span>
           </button>
@@ -130,7 +130,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
         <button
           onClick={onOpen}
           aria-label={t("w.explore.seeMore")}
-          style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
+          style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
         >
           <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>

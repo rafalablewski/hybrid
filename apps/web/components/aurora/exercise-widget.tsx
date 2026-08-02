@@ -132,9 +132,9 @@ export default function ExerciseWidgetRail({
               aria-label={`${card.name} — ${h.v} ${h.u}`}
               style={{
                 flex: "0 0 200px", scrollSnapAlign: "start", cursor: "pointer", textAlign: "left",
-                minHeight: 132, display: "flex", flexDirection: "column", gap: 7,
+                minHeight: 132, display: "flex", flexDirection: "column", gap: 8,
                 background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
-                boxShadow: "var(--shadow-card)", padding: "11px 12px 12px",
+                boxShadow: "var(--shadow-card)", padding: "12px 12px 12px",
                 color: C("chalk"), fontFamily: "var(--font-display)",
               }}
             >

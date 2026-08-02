@@ -11,7 +11,7 @@ const SPORTS = ["Hyrox", "Triathlon", "Running", "Cycling", "Swimming", "Powerli
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 const mono = { fontFamily: "var(--font-mono)" } as const;
-const tip = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
+const tip = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
 
 /** AURORA Competition (web) — peaking optimizer; back-solves the season so
  *  form peaks on the event date, reusing optimizeForEvent + /api/events. */
@@ -54,7 +54,7 @@ export default function AuroraCompetition() {
   const event = events.find((e) => e.id === selected) ?? null;
   const plan = useMemo(() => (event ? optimizeForEvent(event.sport, event.date) : null), [event]);
 
-  const input: React.CSSProperties = { ...mono, fontSize: fs.body, padding: "10px 14px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
+  const input: React.CSSProperties = { ...mono, fontSize: fs.body, padding: "10px 14px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
 
   return (
     <div style={{ display: "grid", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>

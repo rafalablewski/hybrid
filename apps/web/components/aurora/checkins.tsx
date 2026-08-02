@@ -282,7 +282,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
     ? { background: "transparent", border: "none", borderRadius: 0, boxShadow: "none", padding: 0 } as const
     : { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
   const btnGhost = { flex: "0 0 auto", padding: "14px 22px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" } as const;
-  const btnPrimary = { flex: 1, padding: 15, borderRadius: 999, border: "none", background: C("lime"), color: "var(--on-accent)", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, cursor: "pointer" } as const;
+  const btnPrimary = { flex: 1, padding: 16, borderRadius: 999, border: "none", background: C("lime"), color: "var(--on-accent)", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, cursor: "pointer" } as const;
   /** A 1–5 / effort tile. LOCKED it is a read-back, not a control: the lime
    *  selection drops to a neutral outline and the unpicked options fade back,
    *  so the row shows what was answered instead of inviting another answer. */
@@ -332,7 +332,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
             says the flow is live again so the muted tiles coming back to full
             colour is explained rather than merely observed. */}
         {(locked || (editing && !done)) && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, padding: "11px 13px", borderRadius: 16, background: locked ? `color-mix(in srgb, var(--lime-text) 7%, transparent)` : "transparent", border: `1px solid ${locked ? "color-mix(in srgb, var(--lime-text) 24%, transparent)" : C("line")}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, padding: "12px 12px", borderRadius: 16, background: locked ? `color-mix(in srgb, var(--lime-text) 7%, transparent)` : "transparent", border: `1px solid ${locked ? "color-mix(in srgb, var(--lime-text) 24%, transparent)" : C("line")}` }}>
             <AuroraIcon name={locked ? "check-circle" : "edit"} size={20} color={locked ? "var(--lime-text)" : C("ash")} />
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontWeight: 800, fontSize: fs.body }}>{t(locked ? "w.recovery.checkins.savedTitle" : "w.recovery.checkins.edit")}</span>
@@ -369,7 +369,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
               {!allAnswered && (
                 <button
                   onClick={() => { setDone(false); setStep(Math.max(minStep, steps.findIndex((st) => st.kind !== "details" && !isAnswered(st)))); }}
-                  style={{ ...btnPrimary, flex: "none", padding: "13px 26px" }}
+                  style={{ ...btnPrimary, flex: "none", padding: "12px 26px" }}
                 >
                   {t("w.recovery.checkins.answerRest")}
                 </button>
@@ -378,11 +378,11 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                   themselves — it no longer vanishes out from under the
                   confirmation. */}
               {embedded && onClose ? (
-                <button onClick={onClose} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "13px 26px" } : { ...btnGhost, padding: "13px 26px" }}>
+                <button onClick={onClose} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "12px 26px" } : { ...btnGhost, padding: "12px 26px" }}>
                   {t("w.recovery.checkins.doneClose")}
                 </button>
               ) : (
-                <button onClick={restart} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "13px 26px" } : { ...btnGhost, padding: "13px 26px" }}>
+                <button onClick={restart} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "12px 26px" } : { ...btnGhost, padding: "12px 26px" }}>
                   {t("w.recovery.checkins.newCheckin")}
                 </button>
               )}
@@ -413,7 +413,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                     // colour and still tapping through to its question, it read as
                     // "edit any of this whenever" — which is exactly what the Edit
                     // button is for. Muted here, restored the moment Edit is pressed.
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: C("ink"), border: `1px ${on ? "solid" : "dashed"} ${C("line")}`, borderRadius: 14, padding: "12px 4px", opacity: locked ? 0.45 : on ? 1 : 0.6, cursor: locked ? "default" : "pointer", color: C("chalk"), font: "inherit" }}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: C("ink"), border: `1px ${on ? "solid" : "dashed"} ${C("line")}`, borderRadius: 16, padding: "12px 4px", opacity: locked ? 0.45 : on ? 1 : 0.6, cursor: locked ? "default" : "pointer", color: C("chalk"), font: "inherit" }}
                   >
                     {on ? (
                       <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} size={26} />
@@ -434,7 +434,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
             )}
 
             <button onClick={() => isPaid && toggleShare()} disabled={!isPaid || locked}
-              style={{ display: "flex", alignItems: "center", gap: space.md, width: "100%", textAlign: "left", marginTop: 16, padding: 14, borderRadius: 14, background: sharedWithCoach && isPaid ? `color-mix(in srgb, ${C("lime")} 10%, transparent)` : "transparent", border: `1px solid ${sharedWithCoach && isPaid ? C("lime") : C("line")}`, cursor: isPaid && !locked ? "pointer" : "default", opacity: !isPaid ? 0.6 : locked ? 0.55 : 1, color: C("chalk") }}>
+              style={{ display: "flex", alignItems: "center", gap: space.md, width: "100%", textAlign: "left", marginTop: 16, padding: 14, borderRadius: 16, background: sharedWithCoach && isPaid ? `color-mix(in srgb, ${C("lime")} 10%, transparent)` : "transparent", border: `1px solid ${sharedWithCoach && isPaid ? C("lime") : C("line")}`, cursor: isPaid && !locked ? "pointer" : "default", opacity: !isPaid ? 0.6 : locked ? 0.55 : 1, color: C("chalk") }}>
               <AuroraIcon name={sharedWithCoach && isPaid ? "check" : "lock"} size={20} color={sharedWithCoach && isPaid ? C("lime") : C("ash")} />
               <span style={{ flex: 1 }}>
                 <span style={{ fontWeight: 700, fontSize: fs.body, display: "block" }}>{t("w.recovery.checkins.shareCoach")}</span>
@@ -454,7 +454,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                 <>
                   {/* EDIT LIVES HERE AND ONLY HERE — beside Done, where the
                       athlete already is when they decide the read is wrong. */}
-                  <button onClick={() => setEditing(true)} style={{ ...btnGhost, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                  <button onClick={() => setEditing(true)} style={{ ...btnGhost, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                     <AuroraIcon name="edit" size={16} color={C("ash")} /> {t("w.recovery.checkins.edit")}
                   </button>
                   {onClose && <button onClick={onClose} style={btnPrimary}>{t("w.recovery.checkins.doneClose")}</button>}
@@ -486,7 +486,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                 <div style={{ fontWeight: 800, fontSize: fs.title, marginTop: 20, minHeight: 28, color: def ? `var(--${def.tone}-text)` : C("ash") }}>
                   {touched && def ? t(def.labelKey) : t("w.recovery.checkins.notAnswered")}
                 </div>
-                <div style={{ display: "flex", gap: 9, width: "100%", marginTop: 18 }}>
+                <div style={{ display: "flex", gap: 8, width: "100%", marginTop: 18 }}>
                   {FEELS.map((f) => {
                     const sel = touched && val === f.value;
                     return (
@@ -534,7 +534,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                   {touched ? t(checkinMetricWordKey(m.key, val)) : t("w.recovery.checkins.notAnswered")}
                 </div>
 
-                <div style={{ display: "flex", gap: 9, width: "100%", marginTop: 22 }}>
+                <div style={{ display: "flex", gap: 8, width: "100%", marginTop: 22 }}>
                   {CHECKIN_SCALE.map((n) => {
                     const sel = touched && val === n;
                     return (

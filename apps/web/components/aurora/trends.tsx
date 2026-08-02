@@ -92,7 +92,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
               ))}
             </div>
             {sortedTable.map((r) => { const tr = TREND_GLYPH[r.trend]; return (
-              <button key={r.name} onClick={() => onOpenExercise?.(r.name)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, padding: "9px 0", border: "none", borderTop: `1px solid ${C("line")}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
+              <button key={r.name} onClick={() => onOpenExercise?.(r.name)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, padding: "8px 0", border: "none", borderTop: `1px solid ${C("line")}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
                 <span style={{ color: onOpenExercise ? C("lime") : C("chalk") }}>{r.name}</span>
                 <span>{r.sessions}×</span>
                 <span style={{ color: r.kind === "strength" ? C("chalk") : C("ash") }}>{r.kind === "strength" ? fmtWeight(r.topWeight, units) : "–"}</span>

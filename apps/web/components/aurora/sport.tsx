@@ -62,7 +62,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
                 display: "flex",
                 alignItems: "center",
                 gap: space.xs,
-                padding: "9px 16px",
+                padding: "8px 16px",
                 borderRadius: 999,
                 cursor: "pointer",
                 border: `1px solid ${on ? C("lime") : C("line")}`,
@@ -90,7 +90,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: ".04em",
-                padding: "9px 18px",
+                padding: "8px 18px",
                 borderRadius: 999,
                 cursor: "pointer",
                 border: `1px solid ${on ? C("lime") : C("line")}`,
@@ -147,7 +147,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
               color: "var(--on-accent)",
               border: "none",
               borderRadius: 999,
-              padding: "13px 18px",
+              padding: "12px 18px",
               cursor: "pointer",
             }}
           >

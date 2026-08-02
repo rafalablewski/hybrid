@@ -77,10 +77,10 @@ function CommandCenterCard({ locked, onClick }: { locked: boolean; onClick: () =
     <button
       onClick={onClick}
       aria-label={t("w.account.profile.priv-cockpit-t")}
-      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, var(--premium-accent) 14%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--premium-accent) 5%, ${C("ink2")}), ${C("ink2")})`, boxShadow: "var(--shadow-card)" }}
+      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, var(--premium-accent) 14%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--premium-accent) 5%, ${C("ink2")}), ${C("ink2")})`, boxShadow: "var(--shadow-card)" }}
     >
       <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <span style={{ width: 48, height: 48, borderRadius: 15, flex: "none", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--premium-accent) 14%, transparent)", border: "1px solid color-mix(in srgb, var(--premium-accent) 35%, transparent)" }}>
+        <span style={{ width: 48, height: 48, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--premium-accent) 14%, transparent)", border: "1px solid color-mix(in srgb, var(--premium-accent) 35%, transparent)" }}>
           <AuroraIcon name="navigation" size={22} color="var(--premium-accent-text)" strokeWidth={4} />
         </span>
         <span style={{ flex: 1, minWidth: 0 }}>
@@ -153,7 +153,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
       <button
         onClick={() => setOpen(true)}
         aria-label={t("w.account.profile.priv-body-t")}
-        style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}
+        style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}
       >
         <IconTile icon="user-square" />
         <span style={{ flex: 1, minWidth: 0 }}>
@@ -179,7 +179,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-trends")}</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{t("w.account.profile.priv-trends-sub")}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {trends.map((tr) => <MetricTile key={tr.def.key} tr={tr} units={units} />)}
             </div>
           </>
@@ -205,17 +205,17 @@ function ReportHero({ report, units }: { report: WeeklyReport; units: "kg" | "lb
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".2em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-report-kicker")}</div>
-      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), margin: "9px 0 14px", textWrap: "balance" }}>{t(BODY_VERDICT_KEY[report.verdict])}</div>
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), margin: "8px 0 14px", textWrap: "balance" }}>{t(BODY_VERDICT_KEY[report.verdict])}</div>
       {wv && (
         <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 40, fontWeight: 600, lineHeight: 0.85, letterSpacing: "-.03em", color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{wv.value}<span style={{ fontSize: 15, color: C("ash"), fontWeight: 400, marginLeft: 3 }}>{wv.unit}</span></div>
           {dstr && dir !== "flat" && (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, padding: "4px 8px", borderRadius: 8, marginBottom: 6, color: dirColor(dir), background: `color-mix(in srgb, ${dir === "down" ? C("red") : C("lime")} 16%, transparent)` }}>{dirArrow(dir)} {dstr} {units}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, padding: "4px 8px", borderRadius: 12, marginBottom: 6, color: dirColor(dir), background: `color-mix(in srgb, ${dir === "down" ? C("red") : C("lime")} 16%, transparent)` }}>{dirArrow(dir)} {dstr} {units}</span>
           )}
         </div>
       )}
       <div style={{ marginTop: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginBottom: 7 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>
           <span>{t("w.account.profile.priv-cadence")}</span>
           <span>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</span>
         </div>
@@ -234,7 +234,7 @@ function MetricTile({ tr, units }: { tr: MetricTrend; units: "kg" | "lb" }) {
   const { value, unit } = fmtMetricValue(tr.def, tr.latest, units);
   const dstr = tr.delta != null ? fmtMetricDelta(tr.def, tr.delta, units) : null;
   return (
-    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 15, padding: "12px 12px 9px", display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px 8px", display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t(tr.def.labelKey)}</span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 600, color: dirColor(tr.direction), whiteSpace: "nowrap" }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</span>
@@ -274,7 +274,7 @@ function LogForm({ units, form, setField, onSave, busy }: { units: "kg" | "lb"; 
           <MetricInput key={def.key} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </div>
-      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)", opacity: busy ? 0.6 : 1, marginTop: 2 }}>{t("common.save")}</button>
+      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "16px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)", opacity: busy ? 0.6 : 1, marginTop: 2 }}>{t("common.save")}</button>
     </div>
   );
 }
@@ -285,7 +285,7 @@ function LogForm({ units, form, setField, onSave, busy }: { units: "kg" | "lb"; 
 // system.
 function IconTile({ icon }: { icon: AuroraIconName }) {
   return (
-    <span style={{ width: 46, height: 46, borderRadius: 14, flex: "none", display: "grid", placeItems: "center", background: C("ink"), border: `1px solid ${C("line")}` }}>
+    <span style={{ width: 46, height: 46, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: C("ink"), border: `1px solid ${C("line")}` }}>
       <AuroraIcon name={icon} size={20} color={C("ash")} strokeWidth={4} />
     </span>
   );
@@ -293,7 +293,7 @@ function IconTile({ icon }: { icon: AuroraIconName }) {
 
 function Row({ icon, title, sub, onClick }: { icon: AuroraIconName; title: string; sub: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} aria-label={title} style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: 20, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}>
+    <button onClick={onClick} aria-label={title} style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}>
       <IconTile icon={icon} />
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: "block", fontWeight: 700, fontSize: 16, color: C("chalk") }}>{title}</span>
@@ -347,7 +347,7 @@ function HeightRow({ units, heightCm, onSaved }: { units: "kg" | "lb"; heightCm:
   };
 
   return (
-    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 13px 13px", marginBottom: 10 }}>
+    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px 12px", marginBottom: 10 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-height-t")}</span>
         <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 11, color: heightCm != null ? LIME : C("ash") }}>
@@ -370,7 +370,7 @@ function HeightRow({ units, heightCm, onSaved }: { units: "kg" | "lb"; heightCm:
           <button
             onClick={save}
             disabled={busy || parsed == null}
-            style={{ flex: "none", background: parsed == null ? "transparent" : C("lime"), border: parsed == null ? `1px solid ${C("line")}` : "none", borderRadius: 999, padding: "9px 16px", cursor: parsed == null ? "default" : "pointer", fontWeight: 700, fontSize: 13, color: parsed == null ? C("ash") : "var(--on-accent)", opacity: busy ? 0.6 : 1 }}
+            style={{ flex: "none", background: parsed == null ? "transparent" : C("lime"), border: parsed == null ? `1px solid ${C("line")}` : "none", borderRadius: 999, padding: "8px 16px", cursor: parsed == null ? "default" : "pointer", fontWeight: 700, fontSize: 13, color: parsed == null ? C("ash") : "var(--on-accent)", opacity: busy ? 0.6 : 1 }}
           >
             {t("common.save")}
           </button>
@@ -385,8 +385,8 @@ function HeightRow({ units, heightCm, onSaved }: { units: "kg" | "lb"; heightCm:
 
 function MetricInput({ label, unit, value, onChange }: { label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
-    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "11px 13px 12px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+    <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
         <span style={{ width: 9, height: 9, borderRadius: 3, background: C("lime") }} />{label}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>

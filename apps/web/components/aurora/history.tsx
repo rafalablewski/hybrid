@@ -50,7 +50,7 @@ function SessionNoteView({ s }: { s: LoggedSession }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: m || s.note ? 8 : 0 }}>
           {tags.map((slug) => {
             const k = tagLabelKey(slug);
-            return <span key={slug} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 26%, transparent)`, borderRadius: 6, padding: "2px 7px" }}>#{k ? t(k) : slug}</span>;
+            return <span key={slug} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 26%, transparent)`, borderRadius: 6, padding: "2px 8px" }}>#{k ? t(k) : slug}</span>;
           })}
         </div>
       )}

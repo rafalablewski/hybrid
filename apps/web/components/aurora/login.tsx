@@ -173,7 +173,7 @@ export default function AuroraLogin() {
                   {ROLE_INFO.map((r) => {
                     const on = role === r.id;
                     return (
-                      <button key={r.id} onClick={() => setRole(r.id)} style={{ flex: 1, ...mono, fontSize: fs.body, fontWeight: 700, padding: "11px 0", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? r.accent : LINE}`, background: on ? r.accent : "transparent", color: on ? ON_ACCENT : ASH }}>{r.label}</button>
+                      <button key={r.id} onClick={() => setRole(r.id)} style={{ flex: 1, ...mono, fontSize: fs.body, fontWeight: 700, padding: "12px 0", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? r.accent : LINE}`, background: on ? r.accent : "transparent", color: on ? ON_ACCENT : ASH }}>{r.label}</button>
                     );
                   })}
                 </div>
@@ -229,7 +229,7 @@ export default function AuroraLogin() {
 function Field({ icon, trailing, onTrailingClick, trailingActive, children }: { icon: AuroraIconName; trailing?: AuroraIconName; onTrailingClick?: () => void; trailingActive?: boolean; children: React.ReactNode }) {
   const { t } = useLang();
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: space.md, padding: "0 16px", borderRadius: 16, background: INK2, border: `1px solid ${LINE}`, marginBottom: 13 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: space.md, padding: "0 16px", borderRadius: 16, background: INK2, border: `1px solid ${LINE}`, marginBottom: 12 }}>
       <AuroraIcon name={icon} size={20} color={ASH} />
       {children}
       {trailing && (
@@ -244,8 +244,8 @@ function Field({ icon, trailing, onTrailingClick, trailingActive, children }: { 
     </div>
   );
 }
-const roundField = { ...mono, fontSize: fs.note, width: "100%", padding: "16px 18px", borderRadius: 16, background: INK2, color: CHALK, border: `1px solid ${LINE}`, marginBottom: 13, outline: "none" } as const;
+const roundField = { ...mono, fontSize: fs.note, width: "100%", padding: "16px 18px", borderRadius: 16, background: INK2, color: CHALK, border: `1px solid ${LINE}`, marginBottom: 12, outline: "none" } as const;
 const bareInput = { ...mono, fontSize: fs.note, flex: 1, padding: "16px 0", background: "transparent", color: CHALK, border: "none", outline: "none" } as const;
-const lightPill = { ...disp, fontWeight: 800, fontSize: fs.subtitle, width: "100%", padding: 17, borderRadius: 999, cursor: "pointer", border: "none", background: CHALK, color: ON_ACCENT } as const;
-const softPill = { ...disp, fontWeight: 700, fontSize: fs.note, padding: 15, borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK } as const;
+const lightPill = { ...disp, fontWeight: 800, fontSize: fs.subtitle, width: "100%", padding: 16, borderRadius: 999, cursor: "pointer", border: "none", background: CHALK, color: ON_ACCENT } as const;
+const softPill = { ...disp, fontWeight: 700, fontSize: fs.note, padding: 16, borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK } as const;
 const linkBtn = { display: "block", width: "100%", textAlign: "center" as const, marginTop: 22, background: "none", border: "none", cursor: "pointer" };

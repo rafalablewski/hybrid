@@ -125,9 +125,9 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
       disabled={!interactive}
       style={{
         flex: "0 0 150px", scrollSnapAlign: "start", minHeight: 132,
-        display: "flex", flexDirection: "column", gap: 7, textAlign: "left",
+        display: "flex", flexDirection: "column", gap: 8, textAlign: "left",
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
-        boxShadow: "var(--shadow-card)", padding: "11px 12px 12px",
+        boxShadow: "var(--shadow-card)", padding: "12px 12px 12px",
         cursor: interactive ? "pointer" : "default", color: C("chalk"),
       }}
     >

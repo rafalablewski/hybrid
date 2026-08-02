@@ -22,7 +22,7 @@ import type { RosterRow } from "@/lib/use-roster";
 const C = (v: string) => `var(--color-${v})`;
 const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 };
 const grid: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: space.lg };
-const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
+const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
 const mono = { fontFamily: "var(--font-mono)" } as const;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 

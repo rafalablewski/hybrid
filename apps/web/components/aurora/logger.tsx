@@ -492,12 +492,12 @@ export default function AuroraLogger({
         const accent = over ? C("lime") : C("ash");
         const clock = restTarget == null ? mmss(restNow) : over ? `+${mmss(restNow - restTarget)}` : `${mmss(remaining!)} ${t("workout.restLeft")}`;
         return (
-          <div style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`, borderRadius: 18, padding: "10px 14px", marginBottom: 16 }}>
+          <div style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`, borderRadius: 16, padding: "10px 14px", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: accent }}>
                 {over ? t("workout.restDone") : t("workout.resting")} – {clock}
               </span>
-              <button onClick={() => setRestSince(null)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: accent, background: "transparent", border: `1px solid ${accent}`, borderRadius: 8, padding: "5px 12px", cursor: "pointer" }}>
+              <button onClick={() => setRestSince(null)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: accent, background: "transparent", border: `1px solid ${accent}`, borderRadius: 12, padding: "5px 12px", cursor: "pointer" }}>
                 ■ {t("workout.stopRest")}
               </button>
             </div>
@@ -505,7 +505,7 @@ export default function AuroraLogger({
               {REST_PRESETS.map((sec) => {
                 const on = restTarget === sec;
                 return (
-                  <button key={sec} onClick={() => pickRest(sec)} style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: on ? C("lime") : C("ash"), background: on ? `color-mix(in srgb, ${C("lime")} 18%, transparent)` : "transparent", border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 8, padding: "6px 0", cursor: "pointer" }}>
+                  <button key={sec} onClick={() => pickRest(sec)} style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: on ? C("lime") : C("ash"), background: on ? `color-mix(in srgb, ${C("lime")} 18%, transparent)` : "transparent", border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 12, padding: "6px 0", cursor: "pointer" }}>
                     {sec < 120 ? `${sec}s` : `${sec / 60}m`}
                   </button>
                 );
@@ -963,7 +963,7 @@ function BodyweightNudge({ units }: { units: WeightUnit }) {
     }
   };
   return (
-    <div style={{ background: `color-mix(in srgb, ${a} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${a} 40%, transparent)`, borderRadius: 18, padding: "12px 14px", marginBottom: 14 }}>
+    <div style={{ background: `color-mix(in srgb, ${a} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${a} 40%, transparent)`, borderRadius: 16, padding: "12px 14px", marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: a }}>⚖️ {t("w.train.logger.bwNudgeTitle")}</span>
         <button onClick={() => setDismissed(true)} aria-label={t("w.train.logger.bwNudgeDismiss")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "transparent", border: "none", cursor: "pointer", padding: 4 }}>✕</button>

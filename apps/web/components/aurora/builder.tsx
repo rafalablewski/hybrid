@@ -15,7 +15,7 @@ import { track } from "@/lib/track";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
-const input = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "12px 14px", outline: "none", minWidth: 0, boxSizing: "border-box" } as const;
+const input = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", outline: "none", minWidth: 0, boxSizing: "border-box" } as const;
 
 type Template = { id: string; name: string; description: string | null; blocks: SessionBlock[]; createdAt: string };
 
@@ -183,5 +183,5 @@ function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]
 
 function smallBtn(token: string): React.CSSProperties {
   const c = C(token);
-  return { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "7px 14px", cursor: "pointer" };
+  return { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" };
 }

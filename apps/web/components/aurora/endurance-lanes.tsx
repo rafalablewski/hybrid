@@ -66,7 +66,7 @@ function Tile({ w, label, right, children }: { w: number; label: string; right?:
         flex: `0 0 ${w}px`, scrollSnapAlign: "start", minHeight: 118,
         display: "flex", flexDirection: "column", gap: 6,
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
-        boxShadow: "var(--shadow-card)", padding: "11px 12px 12px",
+        boxShadow: "var(--shadow-card)", padding: "12px 12px 12px",
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
@@ -222,7 +222,7 @@ function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscip
       {/* Explore-standard head: display-face title left, mono meta right, no
           marker dot in front of it. */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
-        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note, color: C("chalk"), display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note, color: C("chalk"), display: "flex", alignItems: "center", gap: 8 }}>
           <span aria-hidden>{DISCIPLINE_META[lane.discipline].emoji}</span>
           {t(lane.labelKey)}
         </span>
@@ -327,7 +327,7 @@ export default function AuroraEnduranceLanes({
           }}
         >
           <span style={{
-            width: 32, height: 32, borderRadius: 10, background: C("ink"),
+            width: 32, height: 32, borderRadius: 12, background: C("ink"),
             border: `1px solid ${C("line")}`, display: "flex", alignItems: "center",
             justifyContent: "center", fontSize: 13, color: C("ash"), flex: "0 0 32px",
           }} aria-hidden>{expanded ? "−" : "＋"}</span>

@@ -101,7 +101,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
           {head("ash", t("w.analyze.vel.zones"))}
           <div style={{ marginTop: 8 }}>
             {VELOCITY_ZONES.slice().reverse().map((z) => (
-              <div key={z.id} style={{ display: "flex", alignItems: "center", gap: space.ms, padding: "7px 0", borderBottom: `1px solid ${C("line")}` }}>
+              <div key={z.id} style={{ display: "flex", alignItems: "center", gap: space.ms, padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
                 <span style={{ width: 10, height: 10, borderRadius: 3, background: C(zoneVar(z.id)), flexShrink: 0 }} />
                 <div style={{ flex: 1 }}><div style={{ fontWeight: 600, fontSize: fs.body }}>{z.label}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{z.focus}</div></div>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, whiteSpace: "nowrap", color: C("chalk") }}>{z.max === Infinity ? `≥${z.min}` : `${z.min}–${z.max}`} m/s</span>

@@ -135,7 +135,7 @@ export default function AuroraTodayRail({
     return {
       display: "inline-flex",
       alignItems: "center",
-      gap: 7,
+      gap: 8,
       overflow: "hidden",
       whiteSpace: "nowrap",
       maxWidth: open ? 240 : 0,
@@ -193,8 +193,8 @@ export default function AuroraTodayRail({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: 7,
-          padding: "8px var(--page-pad-x, 16px) 9px",
+          gap: 8,
+          padding: "8px var(--page-pad-x, 16px) 8px",
           background: `color-mix(in srgb, ${C("ink")} 82%, transparent)`,
           backdropFilter: "blur(14px)",
           WebkitBackdropFilter: "blur(14px)",
@@ -212,7 +212,7 @@ export default function AuroraTodayRail({
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 7,
+              gap: 8,
               overflow: "hidden",
               maxWidth: tight ? 0 : 140,
               opacity: tight ? 0 : 1,

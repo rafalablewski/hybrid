@@ -78,7 +78,7 @@ export default function AuroraProgress() {
         <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 14px" }}>{t("w.recovery.progress.intro")}</p>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         <button onClick={() => fileRef.current?.click()} disabled={busy}
-          style={{ display: "flex", alignItems: "center", gap: space.sm, fontWeight: 700, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
+          style={{ display: "flex", alignItems: "center", gap: space.sm, fontWeight: 700, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
           <AuroraIcon name="add" size={18} color={C("ink")} />{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.addPhoto")}
         </button>
       </div>
@@ -88,7 +88,7 @@ export default function AuroraProgress() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: space.md, marginTop: 16 }}>
           {photos.map((p) => (
-            <div key={p.path} style={{ border: `1px solid ${C("line")}`, borderRadius: 20, overflow: "hidden", background: C("ink2") }}>
+            <div key={p.path} style={{ border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2") }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.url} alt={p.date} style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px" }}>

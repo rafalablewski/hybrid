@@ -341,7 +341,7 @@ export function WorkoutWrapped({
   return (
     <div ref={scrollRef} onScroll={onScroll} style={container}>
       {/* Back — fixed top-left */}
-      <button onClick={onBack} aria-label={t("summary.doneToday")} style={{ position: "fixed", top: 14, left: 14, zIndex: 70, width: 40, height: 40, borderRadius: 13, border: `1px solid ${LINE}`, background: "rgba(0,0,0,.4)", color: txt(CHALK), fontSize: 18, cursor: "pointer" }}>←</button>
+      <button onClick={onBack} aria-label={t("summary.doneToday")} style={{ position: "fixed", top: 14, left: 14, zIndex: 70, width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "rgba(0,0,0,.4)", color: txt(CHALK), fontSize: 18, cursor: "pointer" }}>←</button>
 
       {/* ── REVEAL ── */}
       {cel && (
@@ -500,7 +500,7 @@ export function WorkoutWrapped({
               </div>
             ))}
           </div>
-          <button onClick={() => go("connections")} style={{ ...disp, marginTop: 22, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 24px", cursor: "pointer", position: "relative" }}><CtaLabel>{`${t("session.wrapped.device.cta")} →`}</CtaLabel></button>
+          <button onClick={() => go("connections")} style={{ ...disp, marginTop: 22, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer", position: "relative" }}><CtaLabel>{`${t("session.wrapped.device.cta")} →`}</CtaLabel></button>
           <Mono s={{ fontSize: fs.caption, marginTop: 16, lineHeight: 1.5, position: "relative", display: "block" }}>
             {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
           </Mono>
@@ -545,7 +545,7 @@ export function WorkoutWrapped({
             <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 }}>
               {keys.map((_, i) => (<div key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: 3, background: i === Math.min(panel, keys.length - 1) ? LIME_HEX : LINE }} />))}
             </div>
-            <button onClick={() => { setActive(0); setSheetOpen(true); }} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "17px", fontWeight: 900, fontSize: fs.note, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>↗ {t("summary.share")}</button>
+            <button onClick={() => { setActive(0); setSheetOpen(true); }} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "16px", fontWeight: 900, fontSize: fs.note, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>↗ {t("summary.share")}</button>
           </div>
         </div>
       )}
@@ -562,16 +562,16 @@ export function WorkoutWrapped({
             <div ref={pagerRef} onScroll={onPagerScroll} style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
               {slides.map((s, i) => (
                 <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "center", display: "flex", justifyContent: "center" }}>
-                  <div role="button" tabIndex={0} onClick={cycleStyle} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycleStyle(); } }} aria-label={`${t(st.nameKey)} — ${t("summary.cardHint")}`} style={{ cursor: "pointer", borderRadius: 15, boxShadow: "0 24px 60px rgba(0,0,0,.45)" }}>
+                  <div role="button" tabIndex={0} onClick={cycleStyle} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycleStyle(); } }} aria-label={`${t(st.nameKey)} — ${t("summary.cardHint")}`} style={{ cursor: "pointer", borderRadius: 16, boxShadow: "0 24px 60px rgba(0,0,0,.45)" }}>
                     <StoryCard slide={s} st={st} w={300} t={t} units={units} active={i === activeIdx} />
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 7, margin: "14px 0" }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, margin: "14px 0" }}>
               {slides.map((_, i) => (<button key={i} type="button" onClick={() => goTo(i)} aria-label={slides[i]!.eyebrow} aria-current={i === activeIdx} style={{ width: i === activeIdx ? 20 : 7, height: 7, padding: 0, border: "none", borderRadius: 4, background: i === activeIdx ? LIME_HEX : LINE, cursor: "pointer" }} />))}
             </div>
-            <button onClick={share} disabled={sharing} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 14, padding: "16px 18px", fontWeight: 900, fontSize: fs.note, cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1 }}>{shareMsg || (sharing ? "…" : `↗ ${t("summary.shareStory")}`)}</button>
+            <button onClick={share} disabled={sharing} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "16px 18px", fontWeight: 900, fontSize: fs.note, cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1 }}>{shareMsg || (sharing ? "…" : `↗ ${t("summary.shareStory")}`)}</button>
           </div>
         </div>
       )}

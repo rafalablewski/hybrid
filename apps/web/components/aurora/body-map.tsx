@@ -43,7 +43,7 @@ export default function AuroraBodyMap({ name, t }: { name: string; t: (k: string
 function Shell({ map, hovered, t, children }: { map: ExerciseBodyMap; hovered: MuscleGlow | null; t: (k: string) => string; children: React.ReactNode }) {
   const shown = hovered || map.glow[0];
   return (
-    <div style={{ marginTop: 12, borderRadius: 20, border: `1px solid ${C("line")}`, background: C("ink2"), padding: "14px 14px 12px" }}>
+    <div style={{ marginTop: 12, borderRadius: 28, border: `1px solid ${C("line")}`, background: C("ink2"), padding: "14px 14px 12px" }}>
       {children}
       {/* caption — the hovered muscle, or the top mover by default */}
       <div aria-live="polite" style={{ textAlign: "center", marginTop: 6, minHeight: 18 }}>

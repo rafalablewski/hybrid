@@ -23,8 +23,8 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
 const fieldStyle = (extra: CSSProperties = {}): CSSProperties => ({
   fontFamily: "var(--font-mono)",
   fontSize: fs.bodyLg,
-  padding: "11px 14px",
-  borderRadius: 14,
+  padding: "12px 14px",
+  borderRadius: 16,
   background: C("ink"),
   color: C("chalk"),
   border: `1px solid ${C("line")}`,
@@ -631,7 +631,7 @@ function Select({
         fontFamily: "var(--font-mono)",
         fontSize: fs.body,
         padding: "10px 14px",
-        borderRadius: 14,
+        borderRadius: 16,
         background: C("ink"),
         color: C("chalk"),
         border: `1px solid ${C("line")}`,
@@ -663,7 +663,7 @@ function Btn({ label, color, onClick }: { label: string; color: string; onClick:
         background: ghost ? "transparent" : color,
         border: `1px solid ${ghost ? C("line") : color}`,
         borderRadius: 999,
-        padding: "9px 16px",
+        padding: "8px 16px",
         cursor: "pointer",
       }}
     >

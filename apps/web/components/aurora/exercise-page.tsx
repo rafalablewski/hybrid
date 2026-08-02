@@ -231,7 +231,7 @@ function RepMaxGrid({ slide, units, t }: { slide: SlideOf<"repMax">; units: Weig
         <div
           key={i}
           title={cell ? `${fmtWeight(cell.loadKg, units)} × ${cell.reps} – ${t("w.analyze.ex.e1rmLabel")} ${fmtWeight(cell.e1rm, units)} – ${fmtDate(cell.when)}` : undefined}
-          style={{ border: `1px ${cell ? "solid" : "dashed"} ${cell?.recent ? C("lime") : C("line")}`, borderRadius: 14, padding: "12px 6px", textAlign: "center" }}
+          style={{ border: `1px ${cell ? "solid" : "dashed"} ${cell?.recent ? C("lime") : C("line")}`, borderRadius: 16, padding: "12px 6px", textAlign: "center" }}
         >
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), letterSpacing: ".08em" }}>{i + 1}RM</div>
           <div style={{ fontWeight: 800, fontSize: 18, margin: "5px 0 2px", color: cell ? (cell.recent ? "var(--lime-text)" : C("chalk")) : C("ash") }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</div>

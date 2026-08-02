@@ -278,15 +278,15 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             {/* Identity — avatar + name + role/entitlement (tap → profile) with a
                 Settings cog, matching the mobile More tab's identity card. */}
             {session && (
-              <div style={{ display: "flex", alignItems: "center", gap: 13, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: 15, marginBottom: 16 }}>
-                <button onClick={() => go("profile")} style={{ display: "flex", alignItems: "center", gap: 13, flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
-                  <span style={{ width: 42, height: 42, borderRadius: 21, flexShrink: 0, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 13%, transparent)", border: `1px solid ${C("lime")}`, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.note, color: C("lime") }}>{initials}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, marginBottom: 16 }}>
+                <button onClick={() => go("profile")} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
+                  <span style={{ width: 42, height: 42, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 13%, transparent)", border: `1px solid ${C("lime")}`, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.note, color: C("lime") }}>{initials}</span>
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session.name || t("nav.you")}</span>
                     <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{[session.role.toUpperCase(), session.entitlement === "paid" ? "FULL" : "FREE"].join(" – ")}</span>
                   </span>
                 </button>
-                <button onClick={() => go("settings")} aria-label={label("settings", "Settings")} style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, cursor: "pointer" }}>
+                <button onClick={() => go("settings")} aria-label={label("settings", "Settings")} style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, cursor: "pointer" }}>
                   <AuroraIcon name="settings" size={19} strokeWidth={2.6} color={C("chalk")} />
                 </button>
               </div>
@@ -297,18 +297,18 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             {persona === "casual" && isEnabled("nav.upgrade") && (
               <button
                 onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "more" }); go("upgrade"); }}
-                style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 22, background: C("ink"), border: `1px solid color-mix(in srgb, var(--premium-accent) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--premium-accent) 32%, transparent)" }}
+                style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 28, background: C("ink"), border: `1px solid color-mix(in srgb, var(--premium-accent) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--premium-accent) 32%, transparent)" }}
               >
                 <span style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--premium-accent) 16%, transparent)", pointerEvents: "none" }} />
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".2em", color: "var(--premium-accent-text)" }}>{t("w.home.pillnav.upgradeKicker")}</span>
                 <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>{t("nav.upgrade")}</span>
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>{t("w.home.pillnav.upgradeBlurb")}</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: "var(--premium-accent)", color: "var(--premium-accent-ink)", borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: "var(--premium-accent)", color: "var(--premium-accent-ink)", borderRadius: 999, padding: "8px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
               </button>
             )}
 
             {/* Search — filters the springboard tiles by label (parity with the mobile More tab). */}
-            <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "0 14px", marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "0 14px", marginBottom: 18 }}>
               <AuroraIcon name="search" size={18} strokeWidth={2.4} color={C("ash")} />
               <input
                 value={query}
@@ -317,7 +317,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 aria-label="Search tools"
                 autoCapitalize="none"
                 autoCorrect="off"
-                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.body, padding: "13px 0" }}
+                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.body, padding: "12px 0" }}
               />
               {query.length > 0 && (
                 <button onClick={() => setQuery("")} aria-label="Clear search" style={{ background: "transparent", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
@@ -340,7 +340,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                     const name = label(id, fb);
                     const openItem = () => { if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); go("upgrade"); } else go(id); };
                     return (
-                      <button key={id} onClick={openItem} title={locked ? `${name} (Full)` : name} aria-label={locked ? `${name} (Full)` : name} style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, padding: "12px 4px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, cursor: "pointer", opacity: locked ? 0.6 : 1 }}>
+                      <button key={id} onClick={openItem} title={locked ? `${name} (Full)` : name} aria-label={locked ? `${name} (Full)` : name} style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 4px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, cursor: "pointer", opacity: locked ? 0.6 : 1 }}>
                         <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={22} strokeWidth={2.4} color={locked ? C("ash") : C("chalk")} />
                         <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: locked ? C("ash") : C("chalk"), textAlign: "center", lineHeight: 1.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{name}</span>
                         {locked && (
