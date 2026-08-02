@@ -291,12 +291,17 @@ export default function AuroraProfile() {
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
           // 4th, owner-only tab — this screen is always your own profile.
-          { id: "private" as const, label: `🔒 ${t("w.account.profile.tab-private")}` },
+          // (The lock renders as a drawn AuroraIcon beside the label, not an
+          // emoji inside the string — see the tab renderer below.)
+          { id: "private" as const, label: t("w.account.profile.tab-private") },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
             <PressScale key={tb.id} onPress={() => setTab(tb.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
-              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                {tb.id === "private" && <AuroraIcon name="lock" size={13} color={on ? C.chalk : C.ash} />}
+                <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
+              </View>
               {on && <View style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, backgroundColor: C.lime }} />}
             </PressScale>
           );
@@ -346,7 +351,7 @@ export default function AuroraProfile() {
               <View key={lift} style={{ padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 11, flex: 1 }}>
-                    <Text style={{ fontSize: fs.subtitle }}>🏆</Text>
+                    <AuroraIcon name="trophy" size={fs.subtitle + 2} color={C.chalk} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{lift}</Text>
                       <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, marginTop: 2 }}>{t("w.account.profile.pr-metric")}</Text>

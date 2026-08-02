@@ -539,15 +539,11 @@ export default function AuroraHome() {
   }, [name]);
   const notifCount = useMemo(() => buildActivityFeed({ sessions, assignments }).length, [sessions, assignments]);
 
-  // Time-of-day greeting + date for the daily header.
-  const [greeting, setGreeting] = useState("");
+  // The caption date for the daily header.
   const [dateStr, setDateStr] = useState("");
   useEffect(() => {
-    const h = new Date().getHours();
-    setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening"));
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
-  }, [t]);
-  const firstName = (name ?? "").trim().split(/\s+/)[0] ?? "";
+  }, []);
   // FIRST-RUN CHOOSER state (new user: no plan, no history) — hoisted because
   // the masthead's caption line says "Free" when the chooser (or its demoted
   // logbook-mode form) renders. With history the logbook rail takes over.
@@ -626,31 +622,28 @@ export default function AuroraHome() {
   const hubHeader = (
     <>
       {/* TODAY HEADER (step-1 redesign) — profile, HYBRID wordmark, bell.
-          Replaces the old greeting + search/bell row: the brand sits centre
-          with a lime accent rule, the avatar opens the profile, the bell
-          carries a live activity count. */}
+          Replaces the old greeting + search/bell row: the brand sits centre,
+          the avatar opens the profile, the bell carries a live activity
+          count. */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         {/* profile — avatar opens the You / account tab */}
         <Pressable onPress={() => router.push("/(tabs)/you")} accessibilityRole="button" accessibilityLabel={t("w.home.today.profileAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
-          {/* live dot */}
-          <View style={{ position: "absolute", bottom: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: C.lime, borderWidth: 2.5, borderColor: C.ink }} />
         </Pressable>
-        {/* centred wordmark + lime accent rule */}
-        <View style={{ alignItems: "center", gap: 5 }}>
+        {/* centred wordmark */}
+        <View style={{ alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
             HYBRID<Text style={{ color: txt(C, C.lime) }}>.</Text>
           </Text>
-          <View style={{ width: 26, height: 3, borderRadius: 2, backgroundColor: C.lime }} />
         </View>
-        {/* right group — the day-streak pill (moved up here so the greeting
-            line breathes) + the notifications bell */}
+        {/* right group — the day-streak pill + the notifications bell */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           {acc.streak.current > 0 && (
             // SPECTRUM: the streak wears the warm terracotta accent (Connect),
-            // pairing with the 🔥 and keeping chartreuse for the primary action.
+            // pairing with the flame and keeping chartreuse for the primary action.
             <Pressable onPress={() => setDoneOpen(true)} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.red}24`, borderWidth: 1, borderColor: `${C.red}66`, borderRadius: RADIUS.pill, paddingHorizontal: 11, height: 42, justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>🔥 {acc.streak.current}{t("w.home.today.dayStreak")}</Text>
+              <AuroraIcon name="flame" size={13} color={txt(C, C.red)} />
+              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>{acc.streak.current}{t("w.home.today.dayStreak")}</Text>
             </Pressable>
           )}
           <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
@@ -723,16 +716,16 @@ export default function AuroraHome() {
         <HubDissolve active={awayFromDashboard.current} onLayout={(e) => measureRail({ bodyY: e.nativeEvent.layout.y })}>
 
         {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
-            chooser's "Free", or the scrub-distance tag), ONE big headline, and
-            the greeting demoted to a single warm sentence beneath it. The old
-            layout stacked two near-equal bold headlines (greeting 22 + "How do
-            you want to start?" 18) four lines apart; now the page has one. The
-            headline NAMES THE VIEWED DAY (masthead() in @hybrid/core): "Today"
-            until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the
-            weekday name beyond — a static "Today" over Friday's session would
-            lie in the largest type on screen. Off today, the greeting line
-            becomes the "Back to today" return affordance, teal, in the same
-            spot every time. Mirrors web today.tsx. */}
+            chooser's "Free", or the scrub-distance tag) and ONE big headline.
+            The greeting line was retired (ornament sweep): the caption already
+            says the day, and a "Good morning" sentence under the headline was
+            decoration competing with the Start action. The headline NAMES THE
+            VIEWED DAY (masthead() in @hybrid/core): "Today" until the week
+            rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the weekday name
+            beyond — a static "Today" over Friday's session would lie in the
+            largest type on screen. Off today, a "Back to today" return
+            affordance renders beneath, teal, in the same spot every time.
+            Mirrors web today.tsx. */}
         <View style={{ marginTop: 16 }}>
           <Animated.View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10, opacity: mastSubFade }}>
             <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{mastCaption || " "}</Text>
@@ -761,9 +754,7 @@ export default function AuroraHome() {
               </View>
             )}
           </Animated.View>
-          {dayIsToday ? (
-            <Animated.Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 2, opacity: mastSubFade }}>{greeting ? `${greeting}, ${firstName}.` : " "}</Animated.Text>
-          ) : (
+          {!dayIsToday && (
             <Pressable onPress={backToToday} accessibilityRole="button" hitSlop={8} style={{ alignSelf: "flex-start", marginTop: 4 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: txt(C, C.blue) }}>{t("w.home.today.backToToday")} →</Text>
             </Pressable>
@@ -857,7 +848,7 @@ export default function AuroraHome() {
              page: no wrapper ACard (a box around three cards reads as chrome)
              and one stacked column. NO section head — the "How do you want to
              start?" question was retired with the masthead redesign (the page
-             already opens with "Today" + the greeting, and three cards titled
+             already opens with "Today", and three cards titled
              Follow a plan / Build your own / Log a workout need no sentence
              announcing that a choice is available); "Free" is said ONCE on the
              masthead's caption line. Each full-width card wears the Go-Full
@@ -1096,16 +1087,28 @@ export default function AuroraHome() {
             Mirrors web today.tsx. ═════ */}
         <GroupMark label={t("w.home.group.explore")} />
 
-        {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
-            Explore-standard section head (bold display title); the ✦ stays —
-            it's the semantic premium signifier, not a decorative marker. ───── */}
-        <View style={{ marginTop: 22, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}><Text style={{ color: pa.text }}>✦</Text> {t("w.home.today.goFull")}</Text>
-        </View>
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          <AccessCard C={C} title={t("w.home.today.cockpitTitle")} sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/performance") : goUpgrade("today-cockpit"))} />
-          <AccessCard C={C} title={t("w.home.today.sportTitle")} sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")} locked={!isAthlete} onPress={() => (isAthlete ? router.push("/sport") : goUpgrade("today-sport"))} />
-        </View>
+        {/* ───── GO FULL — demoted from two display-weight AccessCards to ONE
+            compact quiet row (the DoorRow idiom: r16, small glyph tile, bold
+            title + mono micro sub, chevron). The row carries the "Go Full"
+            label itself, so the old "✦ Go Full" section head is gone with it.
+            The ✦ stays as the tile glyph — the semantic premium signifier,
+            the ONLY thing wearing the premium accent. Routes where the first
+            AccessCard (Cockpit) routed. Mirrors web today.tsx. ───── */}
+        <PressScale
+          onPress={() => (isAthlete ? router.push("/performance") : goUpgrade("today-cockpit"))}
+          accessibilityRole="button"
+          accessibilityLabel={`${t("w.home.today.goFull")} – ${t("w.home.today.goFullRowSub")}`}
+          style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 }}
+        >
+          <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 13, color: pa.text }}>✦</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.home.today.goFull")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.home.today.goFullRowSub")}</Text>
+          </View>
+          <Text style={{ fontSize: fs.note, color: C.ash }}>›</Text>
+        </PressScale>
 
         {/* ───── FOLLOW A COACH — Today's last block, and the only thing left
             below the premium cards. Nutrition is NOT summarised here: Today is
@@ -1172,7 +1175,18 @@ export default function AuroraHome() {
         visible={doneOpen}
         onClose={() => setDoneOpen(false)}
         title={dayIsToday ? t("w.home.today.doneModalTitle") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "")}
-        sub={dayIsToday ? `${dateStr}${acc.streak.current > 0 ? ` – 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}` : dayLabel ?? ""}
+        sub={dayIsToday ? (
+          <>
+            {dateStr}
+            {acc.streak.current > 0 ? (
+              <>
+                {" – "}
+                <AuroraIcon name="flame" size={12} color={txt(C, C.red)} />
+                {` ${acc.streak.current}${t("w.home.today.dayStreak")}`}
+              </>
+            ) : null}
+          </>
+        ) : dayLabel ?? ""}
       >
         <View style={{ marginTop: 12 }}>
           {doneOnDay.length === 0 ? (
@@ -1193,8 +1207,9 @@ export default function AuroraHome() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
             </Pressable>
           ))}
-          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>📅 {t("w.home.today.doneCalendar")}</Text>
+          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 14, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" }}>
+            <AuroraIcon name="calendar" size={15} color={C.ash} />
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.home.today.doneCalendar")}</Text>
           </Pressable>
         </View>
       </Sheet>
@@ -1290,7 +1305,9 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
     <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 18, backgroundColor: C.ink2 }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
       <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={`${doneCount} ${doneLabel}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 6, paddingBottom: 4 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -2, lineHeight: 44, color: doneCount > 0 ? C.chalk : quiet }}>{doneCount}</Text>
+        {/* a status count, not a hero — fs.display keeps it below the masthead
+            (34) and the Start action (hierarchy sweep; was 44) */}
+        <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: -1.2, lineHeight: fs.display, color: doneCount > 0 ? C.chalk : quiet }}>{doneCount}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{doneLabel}</Text>
           {copy.subKey ? <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 16, color: quiet, marginTop: 6 }}>{t(copy.subKey)}</Text> : null}
@@ -1332,8 +1349,6 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
   );
 }
 
-// A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦
-// Full accent + a lime rim; an unlocked one shows the → chevron.
 // The feeling-led daily card — "How ready do you feel?" with the four faces set
 // the day's readiness inline (one tap → createCheckin, the same write the full
 // check-in makes). Single-purpose: the done count + log action moved up into the
@@ -1556,8 +1571,10 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           reading yet, and inventing one is the failure this card exists to
           avoid. The i sits with it because it explains THIS reading. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 11, marginTop: 15 }}>
+        {/* display weight, not hero weight — fs.display (was 46), lineHeight
+            proportional: a status reading must never outrank the Start action */}
         <Text style={{
-          fontFamily: shownFeeling ? F.black : F.reg, fontSize: 46, lineHeight: 48, letterSpacing: shownFeeling ? -1.8 : -0.4,
+          fontFamily: shownFeeling ? F.black : F.reg, fontSize: fs.display, lineHeight: 27, letterSpacing: shownFeeling ? -1 : -0.2,
           color: shownFeeling ? txt(C, C[READINESS_FACE[shownFeeling].accent]) : `${C.ash}8c`,
         }}>
           {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}
@@ -1716,26 +1733,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   );
 }
 
-function AccessCard({ C, title, sub, locked, onPress }: { C: P; title: string; sub: string; locked: boolean; onPress: () => void }) {
-  const { scheme } = useTheme();
-  const pa = usePremiumAccent();
-  const { t } = useLang();
-  return (
-    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flex: 1, minHeight: 220, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, overflow: "hidden" }}>
-      {/* premium-accent glow (admin-set) blooming from the top-right corner */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${pa.fill}0d` }]} />
-      <LinearGradient pointerEvents="none" colors={[`${pa.fill}2b`, `${pa.fill}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, letterSpacing: -0.4, color: C.chalk }}>{title}</Text>
-      {/* body grows so the CTA pins to the bottom — both cards stretch to equal
-          height (row alignItems:stretch), so title, body-start and CTA line up
-          across the pair regardless of how many lines the copy runs. Body is the
-          display face (per tokens: display = headings + body, mono = labels). */}
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 10, lineHeight: 20 }}>{sub}</Text>
-      </View>
-      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.3, textTransform: "uppercase", color: pa.text, marginTop: 18 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</Text>
-    </PressScale>
-  );
-}
+// The Go-Full AccessCard pair (Cockpit / Sport, 24px titles, minHeight 220)
+// was demoted to the single quiet row rendered inline above — see GO FULL.
 
 

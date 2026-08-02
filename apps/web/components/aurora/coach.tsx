@@ -16,6 +16,7 @@ import { fs, space,
 import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
 import { useLang } from "@/lib/i18n";
+import { AuroraIcon } from "./icons";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20, marginBottom: 12 } as const;
@@ -562,7 +563,8 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
             )}
             {r.prs.length > 0 && (
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={C("chalk")}>
-                🏆 {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
+                <AuroraIcon name="trophy" size={14} style={{ verticalAlign: "middle", marginRight: 6 }} />
+                {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
               </Mono>
             )}
           </>

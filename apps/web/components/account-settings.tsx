@@ -543,7 +543,7 @@ export default function AccountSettings() {
                   {t("w.account.settings.full")}
                   {!paid && (
                     <>
-                      <span>🔒</span>
+                      <AuroraIcon name="lock" size={fs.micro + 2} color={txt(ASH)} />
                       <span style={{ ...mono, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: 6, padding: "1px 6px" }}>{t("w.account.settings.paid")}</span>
                     </>
                   )}

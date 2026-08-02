@@ -986,7 +986,10 @@ export default function Workout() {
             <LiveStat C={C} label={t("w.train.logger.liveVolume")} value={fmtTonnage(live.volume, prefs.units)} />
             {live.prs + live.cardioPrs > 0 && (
               <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: R.field, paddingVertical: 8, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime }}>
-                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>🏆 {live.prs + live.cardioPrs}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <AuroraIcon name="trophy" size={fs.subtitle + 2} color={txt(C, C.lime)} />
+                  <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{live.prs + live.cardioPrs}</Text>
+                </View>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, C.lime), letterSpacing: 1, marginTop: 2 }}>{live.prs + live.cardioPrs === 1 ? t("live.pr") : t("live.prs")}</Text>
               </View>
             )}
@@ -1328,7 +1331,7 @@ export default function Workout() {
                     accessibilityLabel={t("w.train.blocks.special")}
                     style={{ width: 48, alignItems: "center", justifyContent: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.cta }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.amber) }}>⚡</Text>
+                    <AuroraIcon name="bolt" size={18} color={txt(C, C.amber)} />
                   </Pressable>
                 </View>
                 {/* Popular-preset rail — one tap lays out the whole exercise. A

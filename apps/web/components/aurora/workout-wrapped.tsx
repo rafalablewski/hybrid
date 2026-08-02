@@ -57,6 +57,8 @@ import { useLang } from "@/lib/i18n";
 import { shareWorkoutSlide, shareText, type StorySlide, type ShareBest } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
 import { FeelPrompt } from "./feel-prompt";
+import { AuroraIcon } from "./icons";
+import { CtaLabel } from "./cta-label";
 import { DeviceMark } from "./device-mark";
 import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, disp, mono, Mono, txt } from "@/lib/ui";
 
@@ -350,7 +352,7 @@ export function WorkoutWrapped({
               <span key={i} className="pr-confetti" style={{ position: "absolute", width: 8, height: 8, borderRadius: 2, background: c.color, animationDelay: `${c.delay}s`, "--tx": `${c.tx}px`, "--ty": `${c.ty}px` } as CSSProperties} />
             ))}
           </div>
-          <div className="pr-trophy" style={{ fontSize: 88, lineHeight: 1 }}>🏆</div>
+          <div className="pr-trophy" style={{ lineHeight: 1 }}><AuroraIcon name="trophy" size={88} color={GOLD} /></div>
           <Mono s={{ fontSize: fs.body, letterSpacing: ".2em", textTransform: "uppercase", marginTop: 20 }} c={GOLD}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Mono>
           <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 20vw, 104px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.05em", lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 8 }}>{heroSub}</div>
@@ -498,7 +500,7 @@ export function WorkoutWrapped({
               </div>
             ))}
           </div>
-          <button onClick={() => go("connections")} style={{ ...disp, marginTop: 22, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 24px", cursor: "pointer", position: "relative" }}>{t("session.wrapped.device.cta")} →</button>
+          <button onClick={() => go("connections")} style={{ ...disp, marginTop: 22, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 24px", cursor: "pointer", position: "relative" }}><CtaLabel>{`${t("session.wrapped.device.cta")} →`}</CtaLabel></button>
           <Mono s={{ fontSize: fs.caption, marginTop: 16, lineHeight: 1.5, position: "relative", display: "block" }}>
             {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
           </Mono>

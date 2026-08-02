@@ -37,6 +37,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
 
 // Goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
 // coach's one-click week generator — same list as web.
@@ -575,9 +576,12 @@ function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string)
               </Text>
             )}
             {r.prs.length > 0 && (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 10, lineHeight: 18 }}>
-                🏆 {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 10 }}>
+                <AuroraIcon name="trophy" size={14} color={C.chalk} style={{ marginTop: 2 }} />
+                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, lineHeight: 18 }}>
+                  {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
+                </Text>
+              </View>
             )}
           </>
         )}

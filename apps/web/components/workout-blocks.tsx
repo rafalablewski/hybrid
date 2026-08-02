@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type Dispatch, type PointerEvent as ReactP
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
 import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
+import { AuroraIcon } from "./aurora/icons";
 import { useExercises } from "@/lib/use-exercises";
 import SwipeRow from "@/components/swipe-row";
 import Sheet from "@/components/aurora/sheet";
@@ -874,9 +875,9 @@ export default function WorkoutBlocks({
                   onClick={() => { setSpecialUid((u) => (u === b.uid ? null : b.uid)); setPlanUid(null); }}
                   title={t("w.train.blocks.special")}
                   aria-label={t("w.train.blocks.special")}
-                  style={{ fontSize: 16, color: txt(AMBER), background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, width: 50, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ color: txt(AMBER), background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, width: 50, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                 >
-                  ⚡
+                  <AuroraIcon name="bolt" size={18} />
                 </button>
                 {/* Popular-preset popover — a single horizontal rail replaces the
                     old nested grid + manual planner. The rail bleeds to the

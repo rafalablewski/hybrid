@@ -238,7 +238,7 @@ export default function AuroraSettings() {
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{title}</Text>
               {locked && (
                 <>
-                  <Text style={{ fontSize: fs.micro }}>🔒</Text>
+                  <AuroraIcon name="lock" size={fs.micro + 2} color={C.ash} />
                   <View style={{ borderWidth: 1, borderColor: txt(C, C.lime), backgroundColor: `${C.lime}1a`, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: 0.5 }}>{t("w.account.settings.paid")}</Text>
                   </View>

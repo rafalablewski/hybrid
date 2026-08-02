@@ -51,6 +51,8 @@ import { healthKitAvailability } from "../lib/healthkit";
 import { useRevalidate } from "../lib/queries";
 import { DeviceMatchSheet } from "./device-match";
 import { DeviceMark } from "./aurora/device-mark";
+import { AuroraIcon } from "./aurora/icons";
+import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
@@ -369,7 +371,7 @@ export function WorkoutWrapped({
               {CONFETTI.map((c, i) => (
                 <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", top: -20, width: 7, height: 7, borderRadius: 2, backgroundColor: [C.lime, GOLD, C.blue, C.violet][c.ci], opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) }, { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) }] }} />
               ))}
-              <Animated.Text style={{ fontSize: 84, transform: [{ scale }] }}>🏆</Animated.Text>
+              <Animated.View style={{ transform: [{ scale }] }}><AuroraIcon name="trophy" size={84} color={GOLD} /></Animated.View>
               <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginTop: 22 }}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Text>
               <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: 96, color: C.chalk, letterSpacing: -3, marginTop: 12 }} />
               <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 6, textAlign: "center" }}>{heroSub}</Text>
@@ -519,7 +521,7 @@ export function WorkoutWrapped({
               ))}
             </View>
             <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 22, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>{t("session.wrapped.device.cta")} →</Text>
+              <CtaLabel label={`${t("session.wrapped.device.cta")} →`} color={C.onAccent} fontSize={15} font={F.black} />
             </Pressable>
             <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 16 }}>
               {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}

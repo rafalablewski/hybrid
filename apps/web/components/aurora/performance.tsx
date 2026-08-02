@@ -229,10 +229,10 @@ export default function AuroraPerformance({
           // Full-bleed chip rail — clips at the screen edge, rests on the column.
           <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", margin: "10px calc(-1 * var(--page-pad-x, 16px)) 0", padding: "0 var(--page-pad-x, 16px)" }}>
             {phaseBlock && <Pill dot={C("lime")}><b>{phaseBlock.label}</b> {t("w.home.today.phase")}</Pill>}
-            {macro?.eventInWeeks != null && <Pill>🏁 <b>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</b> {t("w.home.cockpit.eventIn")}</Pill>}
+            {macro?.eventInWeeks != null && <Pill><AuroraIcon name="calendar-event" size={13} /> <b>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</b> {t("w.home.cockpit.eventIn")}</Pill>}
             {/* ACWR rides on training data, not on having a season — a planless
                 athlete still gets their workload ratio at a glance. */}
-            {hasData && <Pill>📈 {load.enoughHistory ? `ACWR ${load.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
+            {hasData && <Pill><AuroraIcon name="arrow-up" size={13} /> {load.enoughHistory ? `ACWR ${load.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
             {/* The headline number is visible before any scroll. */}
             {hasData && <Pill dot={C(hpiVar(state.hpi.band))}>HPI <b>{state.hpi.score}</b> – {state.hpi.band}</Pill>}
           </div>
@@ -477,7 +477,7 @@ export default function AuroraPerformance({
           <button onClick={() => setScreen("statistics")} style={{ ...CARD, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
             <SHead
               title={t("w.home.today.yourWeek")}
-              meta={recap.prs.length > 0 ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "3px 11px" }}>🏆 {recap.prs.length} {t("w.home.cockpit.newPrs")}</span> : undefined}
+              meta={recap.prs.length > 0 ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "3px 11px" }}><AuroraIcon name="trophy" size={13} /> {recap.prs.length} {t("w.home.cockpit.newPrs")}</span> : undefined}
             />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
               <Stat label={t("w.home.today.sessions")} value={`${recap.sessions}`} />

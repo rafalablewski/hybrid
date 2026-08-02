@@ -9,6 +9,7 @@ import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
 import { ViewSwitcher, AgendaView, WeeksView, TimelineView, TrendView, type ViewCtx } from "./history-views";
 import FetchError from "./fetch-error";
+import { AuroraIcon } from "./icons";
 import type { ComponentType } from "react";
 
 // Compile-checked view→component table: adding a HistoryViewId without wiring
@@ -28,7 +29,7 @@ const readView = (): HistoryViewId => {
 const C = (v: string) => `var(--color-${v})`;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
-const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
+const chip = (color: string, label: ReactNode) => <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
 const moodColor = (m: MoodDef) => (m.tone === "red" ? C("red") : m.tone === "amber" ? C("amber") : "var(--lime-text)");
 
 // The owner's PRIVATE post-workout note (mood dot + text + tags), shown on their
@@ -197,7 +198,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
                     : chip(C("ash"), fmtTonnage(sessionVolume(s.blocks, false, bw(s.startedAt)), units))}
                   {chip(C("ash"), `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`)}
                   {typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.hist.readiness")} ${s.readiness}`)}
-                  {prCount > 0 && chip(C("lime"), `🏆 ${prCount} ${t("w.analyze.hist.pr")}`)}
+                  {prCount > 0 && chip(C("lime"), <><AuroraIcon name="trophy" size={13} />{`${prCount} ${t("w.analyze.hist.pr")}`}</>)}
                 </div>
                 {s.blocks.map((b, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontFamily: "var(--font-mono)", fontSize: fs.body }}>

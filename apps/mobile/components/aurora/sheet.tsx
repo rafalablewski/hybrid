@@ -38,7 +38,10 @@ export default function Sheet({
   visible: boolean;
   onClose: () => void;
   title?: string;
-  sub?: string;
+  /** A node, not just a string, so callers can inline an AuroraIcon (e.g. the
+   *  Done sheet's flame beside the streak count) — it renders inside the sub
+   *  <Text>, so pass strings and inline elements only. */
+  sub?: ReactNode;
   children: ReactNode;
   scroll?: boolean;
 }) {

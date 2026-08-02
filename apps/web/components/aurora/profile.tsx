@@ -320,7 +320,9 @@ export default function AuroraProfile({
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
           // 4th, owner-only tab — this screen is always your own profile.
-          { id: "private" as const, label: `🔒 ${t("w.account.profile.tab-private")}` },
+          // (The lock renders as a drawn AuroraIcon beside the label, not an
+          // emoji inside the string — see the tab renderer below.)
+          { id: "private" as const, label: t("w.account.profile.tab-private") },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
@@ -331,7 +333,12 @@ export default function AuroraProfile({
               onClick={() => setTab(tb.id)}
               style={{ flex: 1, textAlign: "center", padding: "12px 0", position: "relative", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.caption, whiteSpace: "nowrap", color: on ? C("chalk") : C("ash") }}
             >
-              {tb.label}
+              {tb.id === "private" ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, verticalAlign: "middle" }}>
+                  <AuroraIcon name="lock" size={13} />
+                  {tb.label}
+                </span>
+              ) : tb.label}
               {on && <span style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, background: C("lime") }} />}
             </button>
           );
@@ -380,7 +387,7 @@ export default function AuroraProfile({
               <div key={lift} style={{ ...card, padding: "13px 14px", marginBottom: 9 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                    <span style={{ fontSize: fs.subtitle }}>🏆</span>
+                    <AuroraIcon name="trophy" size={fs.subtitle + 2} color={C("chalk")} />
                     <div>
                       <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{lift}</div>
                       <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 2 }}>{t("w.account.profile.pr-metric")}</div>

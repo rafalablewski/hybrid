@@ -52,6 +52,7 @@ import { useWorkoutTimer, mmss } from "@/lib/use-workout-timer";
 import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/workout-draft";
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
+import { AuroraIcon } from "./icons";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
@@ -522,7 +523,7 @@ export default function AuroraLogger({
           <LiveStat label={t("w.train.logger.liveVolume")} value={fmtTonnage(live.volume, prefs.units)} />
           {live.prs + live.cardioPrs > 0 && (
             <div style={{ flex: 1, textAlign: "center", borderRadius: 16, padding: "10px 8px", background: `color-mix(in srgb, ${C("lime")} 16%, transparent)`, border: `1px solid ${C("lime")}` }}>
-              <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("lime") }}>🏆 {live.prs + live.cardioPrs}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("lime") }}><AuroraIcon name="trophy" size={20} /> {live.prs + live.cardioPrs}</div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("lime") }}>{live.prs + live.cardioPrs === 1 ? t("w.train.logger.livePr") : t("w.train.logger.livePrs")}</div>
             </div>
           )}

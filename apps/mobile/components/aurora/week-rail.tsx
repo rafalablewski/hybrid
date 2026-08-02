@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   planSchedule,
@@ -34,11 +35,37 @@ import { useBodyweightLookup } from "../../lib/use-bodyweight";
 // upcoming day is greyscale, ranked by presence. The week is a sliding window
 // centred on the selected day, so tapping an edge day walks through the plan
 // (no scroll strip / pagers). Mirrors the web component (aurora/week-rail.tsx)
-// exactly — same props, states, engine + usePlanOverrides for skips. Glyphs are
-// text characters (the mobile idiom — no SVG dep, matching kit.tsx). Renders
-// nothing (caller falls back) unless a program plan + start date resolve.
+// exactly — same props, states, engine + usePlanOverrides for skips. Day-state
+// glyphs are the SAME five SVG shapes web draws (check / cross / skip /
+// postpone / moon), rendered via react-native-svg so the two week strips match
+// stroke for stroke. Renders nothing (caller falls back) unless a program plan
+// + start date resolve.
 
 type Pal = ReturnType<typeof useTheme>["palette"];
+
+// ── Day-state glyphs — the web rail's inline SVGs (week-rail.tsx :44-58),
+// same paths + sizes, drawn with react-native-svg. Colour is passed in (RN has
+// no currentColor inheritance).
+const Check = ({ c, s = 11 }: { c: string; s?: number }) => (
+  <Svg width={s} height={s} viewBox="0 0 12 12" fill="none"><Path d="M2.5 6.3 5 8.6 9.5 3.4" stroke={c} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+);
+const Cross = ({ c, s = 9 }: { c: string; s?: number }) => (
+  <Svg width={s} height={s} viewBox="0 0 12 12" fill="none"><Path d="M3 3l6 6M9 3l-6 6" stroke={c} strokeWidth={1.8} strokeLinecap="round" /></Svg>
+);
+const SkipGlyph = ({ c, s = 12 }: { c: string; s?: number }) => (
+  <Svg width={s} height={s} viewBox="0 0 14 12" fill="none"><Path d="M3 3l3.2 3-3.2 3M7.5 3l3.2 3-3.2 3" stroke={c} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+);
+const Moon = ({ c, s = 12 }: { c: string; s?: number }) => (
+  <Svg width={s} height={s} viewBox="0 0 14 14" fill="none"><Path d="M11 8.2A4.2 4.2 0 1 1 5.8 3a3.3 3.3 0 0 0 5.2 5.2Z" stroke={c} strokeWidth={1.2} strokeLinejoin="round" /></Svg>
+);
+const PostponeGlyph = ({ c, s = 16 }: { c: string; s?: number }) => (
+  <Svg width={s} height={s * 0.86} viewBox="0 0 14 12" fill="none"><Path d="M2 6h8M6.5 2.5 10.5 6l-4 3.5" stroke={c} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" /><Path d="M12.5 2v8" stroke={c} strokeWidth={1.5} strokeLinecap="round" /></Svg>
+);
+const Caret = ({ c, open }: { c: string; open: boolean }) => (
+  <Svg width={11} height={11} viewBox="0 0 12 12" fill="none" style={{ transform: [{ rotate: open ? "180deg" : "0deg" }] }}>
+    <Path d="M3 4.5 6 7.5 9 4.5" stroke={c} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 // Days shown at once, and how many lifts show before the fading disclosure.
 const WINDOW = 7;
