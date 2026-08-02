@@ -368,6 +368,7 @@ export function HeroScreen({
   refreshing,
   onRefresh,
   center,
+  scroll = true,
   children,
 }: {
   hero: HeroSpec;
@@ -381,6 +382,11 @@ export function HeroScreen({
   /** Centre the content in the remaining space (short screens: empty states,
    *  a single form). The hero is unaffected — it is always at the top. */
   center?: boolean;
+  /** `false` → the screen owns its own layout below the hero (a flex column
+   *  with its own virtualized list, say). There is no scroller, so there is no
+   *  collapse track: the hero simply sits at rest. That is consistent, not a
+   *  special case — `heroCollapse` is 0 whenever the track is 0. */
+  scroll?: boolean;
   /** A sub-rail (segmented control, category chips) that docks beneath the
    *  collapsed bar. It is NOT part of the hero — the hero's rail is the nav
    *  row, and this rides under it. */
@@ -533,7 +539,12 @@ export function HeroScreen({
             </Animated.View>
           )}
 
-          {scroller ? (
+          {!scroll ? (
+            <View style={{ flex: 1, paddingTop: geom.height }}>
+              {railNode}
+              {children}
+            </View>
+          ) : scroller ? (
             scroller(scrollProps, railNode)
           ) : (
             <ScrollView

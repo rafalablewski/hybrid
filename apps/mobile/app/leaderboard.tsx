@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { View, Text, ScrollView, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { LEADERBOARD_METRICS, type LeaderboardMetric } from "@hybrid/core";
-import { Screen, Card, Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
-import { ABack } from "../components/aurora/kit";
+import { Card, Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
+import { AuroraScreen } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { getLeaderboard } from "../lib/social-api";
@@ -40,12 +40,8 @@ export default function LeaderboardScreen() {
     // scroll={false} → the ranked list is a virtualized FlatList (inside its Card,
     // which stays a plain View so nesting is fine); the title + metric pills are a
     // fixed header above it.
-    <Screen scroll={false}>
+    <AuroraScreen scroll={false} hero={{ rank: "title", title: t("w.social.leaderboard"), meta: [t("w.social.leaderboardSub")] }}>
       <View style={{ paddingHorizontal: 18, paddingTop: 18 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <ABack />
-          <View><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>{t("w.social.leaderboard")}</Text><Text style={{ color: C.ash, fontSize: 13 }}>{t("w.social.leaderboardSub")}</Text></View>
-        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 16 }}>
           {LEADERBOARD_METRICS.map((m) => <SPill key={m.key} label={m.label} active={metric === m.key} onPress={() => setMetric(m.key as LeaderboardMetric)} />)}
         </ScrollView>
@@ -69,6 +65,6 @@ export default function LeaderboardScreen() {
         </Card>
       )}
       {drawer && <ProfileModal handle={drawer} onClose={() => setDrawer(null)} />}
-    </Screen>
+    </AuroraScreen>
   );
 }

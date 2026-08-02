@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { Screen, Card, Loading, F, PressScale as Pressable } from "../lib/ui";
-import { ABack } from "../components/aurora/kit";
+import { Card, Loading, F, PressScale as Pressable } from "../lib/ui";
+import { AuroraScreen } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type {
@@ -202,11 +202,7 @@ export default function CoachesScreen() {
   useEffect(() => { getCoachProfile().then((d) => setIsCoach(!!d.isCoach)); }, []);
 
   return (
-    <Screen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <ABack />
-        <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>{t("w.coaches.title")}</Text><Text style={{ color: C.ash, fontSize: 13 }}>{t("w.coaches.sub")}</Text></View>
-      </View>
+    <AuroraScreen hero={{ rank: "title", title: t("w.coaches.title"), meta: [t("w.coaches.sub")] }}>
       {isCoach && (
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
           <SPill label={t("w.coaches.browse")} active={tab === "browse"} onPress={() => setTab("browse")} />
@@ -237,6 +233,6 @@ export default function CoachesScreen() {
         </>
       )}
       {detail && <CoachModal handle={detail} onClose={() => { setDetail(null); load(); }} />}
-    </Screen>
+    </AuroraScreen>
   );
 }

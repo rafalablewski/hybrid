@@ -101,7 +101,7 @@ export function AuroraScreen({
   // two paths never need to compose.)
   if (hero) {
     return (
-      <HeroScreen hero={hero} back={back} backLabel={backLabel} accessory={accessory} rail={rail} refreshing={refreshing} onRefresh={onRefresh} center={center}>
+      <HeroScreen hero={hero} back={back} backLabel={backLabel} accessory={accessory} rail={rail} refreshing={refreshing} onRefresh={onRefresh} center={center} scroll={scroll}>
         {children}
       </HeroScreen>
     );
