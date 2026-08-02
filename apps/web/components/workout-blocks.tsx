@@ -889,7 +889,7 @@ export default function WorkoutBlocks({
                     <div onClick={() => setPlanUid(null)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
                     <div style={{ position: "absolute", top: 52, left: 0, zIndex: 31, width: 300, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 16, padding: 16, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
                       <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH), marginBottom: 12 }}>{t("w.train.blocks.presetsTitle")}</div>
-                      <div style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -14px", padding: "0 16px 2px", scrollbarWidth: "none" }}>
+                      <div style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -16px", padding: "0 16px 2px", scrollbarWidth: "none" }}>
                         {([
                           { sets: 3, reps: 3, k: "schemeHeavy" },
                           { sets: 5, reps: 5, k: "schemeStrength" },
