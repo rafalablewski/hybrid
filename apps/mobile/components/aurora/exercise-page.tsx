@@ -276,15 +276,30 @@ function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax
 
 function ScatterChart({ C, slide, stroke, units, t }: { C: Palette; slide: SlideOf<"loadReps">; stroke: string; units: WeightUnit; t: (k: string) => string }) {
   const map = slide.map;
-  const W = 353, H = 220, L = 8, R = 8, T = 12, B = 8;
+  const W = 353, H = 220, L = 30, R = 8, T = 12, B = 20;
   const topIso = map.isolines[map.isolines.length - 1] ?? map.maxLoadKg;
   const yMax = Math.max(map.maxLoadKg, topIso) * 1.06;
   const yMin = Math.min(...map.points.map((p) => p.loadKg)) * 0.9;
   const X = (r: number) => L + ((r - 0.5) * (W - L - R)) / 12;
   const Y = (kg: number) => T + ((yMax - kg) * (H - T - B)) / (yMax - yMin || 1);
+  // reduced-density axes (web draws every step): step sized so ~3-4 lines fit
+  const rawStep = (yMax - yMin) / 3.5;
+  const gridStep = rawStep > 30 ? 40 : rawStep > 15 ? 20 : rawStep > 7 ? 10 : 5;
+  const gridLines: number[] = [];
+  for (let g = Math.ceil(yMin / gridStep) * gridStep; g < yMax; g += gridStep) gridLines.push(g);
+  const repTicks = [1, 3, 5, 8, 10, 12];
   return (
     <View>
       <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>
+        {gridLines.map((g) => (
+          <G key={g}>
+            <SvgLine x1={L} x2={W - R} y1={Y(g)} y2={Y(g)} stroke={C.line} strokeWidth={1} strokeDasharray="3 4" />
+            <SvgText x={L - 6} y={Y(g) + 3} textAnchor="end" fontFamily={F.mono} fontSize={9} fill={C.ash} opacity={0.7}>{Math.round(kgToUnit(g, units))}</SvgText>
+          </G>
+        ))}
+        {repTicks.map((r) => (
+          <SvgText key={r} x={X(r)} y={H - 4} textAnchor="middle" fontFamily={F.mono} fontSize={9} fill={C.ash} opacity={0.7}>{r}</SvgText>
+        ))}
         {map.isolines.map((iso) => {
           let d = "";
           for (let r = 0.6; r <= 12.4; r += 0.3) {
@@ -292,7 +307,13 @@ function ScatterChart({ C, slide, stroke, units, t }: { C: Palette; slide: Slide
             if (kg < yMin || kg > yMax) continue;
             d += `${d ? "L" : "M"}${X(r).toFixed(1)},${Y(kg).toFixed(1)}`;
           }
-          return <Path key={iso} d={d} fill="none" stroke={C.ash} strokeWidth={1.2} strokeDasharray="4 4" opacity={0.7} />;
+          const labelY = Y(Math.min(yMax * 0.985, iso / (1 + 0.6 / 30)));
+          return (
+            <G key={iso}>
+              <Path d={d} fill="none" stroke={C.ash} strokeWidth={1.2} strokeDasharray="4 4" opacity={0.7} />
+              <SvgText x={L + 6} y={labelY - 5} fontFamily={F.mono} fontSize={9} fill={C.ash} opacity={0.7}>{Math.round(kgToUnit(iso, units))}</SvgText>
+            </G>
+          );
         })}
         {map.points.map((p, i) => (
           <Circle key={i} cx={X(p.reps) + ((i % 5) - 2) * 1.6} cy={Y(p.loadKg)} r={p.recent ? 3.6 : 2.8} fill={p.recent ? stroke : C.ash} opacity={p.recent ? 1 : 0.45} />
@@ -323,9 +344,19 @@ function SurfaceChart({ C, slide, t }: { C: Palette; slide: SlideOf<"surface">; 
         <Path key={`t${b}-${w}`} d={`M${x},${y - h} l${wdt},${-dep * 0.5} l${wdt * 0.6},${dep * 0.35} l${-wdt},${dep * 0.5} Z`} fill={c} stroke={C.ink} strokeWidth={0.6} />,
       );
     }
+  // reduced-density week marks (web labels every other week): first / middle / last
+  const weekTicks = Array.from(new Set([0, Math.floor((weeks - 1) / 2), weeks - 1]));
   return (
     <View>
-      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>{nodes}</Svg>
+      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>
+        {nodes}
+        {s.bins.map((bn, b) => (
+          <SvgText key={bn} x={px(weeks - 1, b) + ix * 1.5} y={py(weeks - 1, b) + 8} fontFamily={F.mono} fontSize={10} fill={C.ash} opacity={0.7}>{`${bn} ${t("w.analyze.ex.surfaceReps")}`}</SvgText>
+        ))}
+        {weekTicks.map((w) => (
+          <SvgText key={w} x={px(w, 0) - 4} y={py(w, 0) - zh - 10} fontFamily={F.mono} fontSize={10} fill={C.ash} opacity={0.7}>{`W${w + 1}`}</SvgText>
+        ))}
+      </Svg>
       <CornerLabels C={C} l={`W1 → W${weeks}`} r={`${s.bins.join(" / ")} ${t("w.analyze.ex.surfaceReps")}`} />
     </View>
   );

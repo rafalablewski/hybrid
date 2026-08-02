@@ -7,7 +7,7 @@ import { LiquidSeg } from "./liquid-seg";
 /** One Today-hub mark, drawn as a true vector at the same 72×72 stroke box and
  *  weight as AuroraSvgIcon, so the pills sit in the app's one monoline icon
  *  voice. Decorative — the Pressable carries the tab's real name. */
-function HubGlyph({ name, color, size = 21, strokeWidth = 5 }: { name: HubGlyphName; color: string; size?: number; strokeWidth?: number }) {
+function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: HubGlyphName; color: string; size?: number; strokeWidth?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 72 72" fill="none">
       {HUB_GLYPHS[name].map((d, i) => (
