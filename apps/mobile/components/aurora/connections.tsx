@@ -6,6 +6,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS, withAlpha } from "./kit";
+import { CtaLabel } from "./cta-label";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const statusColor = (s: string, C: Palette) =>
@@ -48,13 +49,13 @@ export default function AuroraConnections() {
         const statusLabel = conn?.status ? t(`w.account.connections.status-${conn.status}`) : status;
         return (
           <Pressable key={p.id} onPress={() => router.push(`/connections/${p.id}`)}>
-            <ACard style={{ marginTop: 14 }}>
+            <ACard style={{ marginTop: 16 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{p.label}</Text>
                 {chip(statusColor(status, C), statusLabel)}
               </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>{t("w.account.connections.provides")} {p.provides.join(", ")}</Text>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, marginTop: 12 }}>{t("w.account.connections.open")} →</Text>
+              <CtaLabel label={`${t("w.account.connections.open")} →`} color={C.chalk} fontSize={fs.caption} style={{ marginTop: 12 }} />
             </ACard>
           </Pressable>
         );

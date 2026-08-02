@@ -65,7 +65,7 @@ export default function CoachInvite() {
 
   return (
     <Card style={{ borderLeft: `3px solid ${LIME}` }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Add a client</Mono>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={LIME}>Add a client</Mono>
       <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, marginTop: 4 }}>Invite someone who isn&apos;t on HYBRID yet</div>
       <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.6 }} c={ASH}>
         Share a link, show the QR, or enter their email. They get the free app and see everything you assign (read-only) — connected to you automatically.

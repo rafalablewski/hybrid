@@ -67,7 +67,7 @@ export default function DataNet() {
   return (
     <div style={{ display: "grid", gap: space.lg }}>
       <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
           Data network – benchmarking intelligence
         </Mono>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
@@ -90,7 +90,7 @@ export default function DataNet() {
         <Card style={{ borderLeft: `3px solid ${cal.n > 0 ? LIME : ASH}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
             <div>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>Injury calibration</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>Injury calibration</Mono>
               <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4 }} c={CHALK}>
                 model {cal.version} – {cal.n > 0 ? `refit on ${cal.n} outcomes` : "synthetic prior"}
               </Mono>
@@ -114,7 +114,7 @@ export default function DataNet() {
       {/* ---- offline evaluation: does the model actually predict? ---- */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: space.lg }}>
         <Card>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
             Model evaluation – on the labeled outcomes
           </Mono>
           {!evals || evals.n === 0 ? (
@@ -167,7 +167,7 @@ export default function DataNet() {
         </Card>
 
         <Card>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
             Reliability – predicted vs observed
           </Mono>
           {reliability.length === 0 ? (
@@ -184,7 +184,7 @@ export default function DataNet() {
       {/* ---- fit history ---- */}
       {fits.length > 0 && (
         <Card>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
             Calibration fit history
           </Mono>
           <div style={{ marginTop: 12, overflowX: "auto" }}>
@@ -215,7 +215,7 @@ export default function DataNet() {
       )}
 
       <Card>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>Cohort norms (released)</Mono>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }}>Cohort norms (released)</Mono>
         <div style={{ marginTop: 12, overflowX: "auto" }}>
           {norms.length === 0 ? (
             <Mono s={{ fontSize: fs.body }}>

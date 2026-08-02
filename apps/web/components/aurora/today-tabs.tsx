@@ -61,7 +61,7 @@ export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (i
       onSelect={(i) => onChange(TODAY_TABS[i]!.id)}
       segHeight={36}
       pad={4}
-      trackStyle={{ marginTop: 14, background: C("ink2"), border: `1px solid ${C("line")}` }}
+      trackStyle={{ marginTop: 16, background: C("ink2"), border: `1px solid ${C("line")}` }}
     />
   );
 }

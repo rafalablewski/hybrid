@@ -7,6 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
 import { MetaLine } from "./meta";
+import { ArrowGlyph } from "./cta-label";
 
 // The CONNECT feed — post cards (avatar header, prose body, stat pills ·
 // kudos/comments/share), the latest few of your circle's activity. `horizontal`
@@ -48,7 +49,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
     return () => loop.stop();
   }, [pulse]);
 
-  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 26, padding: 16, ...(horizontal ? { width: cardW } : {}) } as const;
+  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, ...(horizontal ? { width: cardW } : {}) } as const;
   // Vertical stacks full-width; horizontal is a left/right scroll-snap slider.
   const Wrap = ({ children }: { children: ReactNode }) =>
     horizontal
@@ -65,10 +66,10 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
               <Animated.View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: C.line, opacity: pulse }} />
               <View style={{ flex: 1 }}>
                 <Animated.View style={{ width: "40%", height: 11, borderRadius: 6, backgroundColor: C.line, opacity: pulse }} />
-                <Animated.View style={{ width: "55%", height: 9, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 7 }} />
+                <Animated.View style={{ width: "55%", height: 9, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 8 }} />
               </View>
             </View>
-            <Animated.View style={{ width: "90%", height: 12, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 14 }} />
+            <Animated.View style={{ width: "90%", height: 12, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 16 }} />
           </View>
         ))}
       </Wrap>
@@ -81,7 +82,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
   // X / Twitter-style post — avatar left, name ✓ @handle, time inline, prose,
   // an optional attached-content card, and a reply/repost/like/share row.
   const postStyle = horizontal
-    ? ({ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, width: cardW, ...cardShadow } as const)
+    ? ({ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, width: cardW, ...cardShadow } as const)
     : ({ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line } as const);
   return (
     <Wrap>
@@ -91,7 +92,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
         return (
           <Pressable key={it.id} onPress={onOpen} style={postStyle}>
             {/* header — avatar inline; everything below spans the full width */}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Avatar url={it.author?.avatarUrl} name={it.author?.displayName} handle={handle} size={36} />
               <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, flex: 1, minWidth: 0 }}>
                 <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 14 }}>{v.name}</Text>
@@ -101,7 +102,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
             </View>
 
             {/* body prose — full width */}
-            {!!v.body && <Text style={{ color: C.chalk, fontSize: 14.5, lineHeight: 20, marginTop: 12 }}>{v.body}</Text>}
+            {!!v.body && <Text style={{ color: C.chalk, fontSize: 15, lineHeight: 20, marginTop: 12 }}>{v.body}</Text>}
 
               {/* attached content — the session/PR summary: a lead line + stat
                   pills (each chip its own element, never a ·-joined string) */}
@@ -112,13 +113,13 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
                       Hour — prose stays sans, mono is reserved for the fact
                       line + counts. All-mono flattened every card into the
                       same texture. */}
-                  {!!v.lead && <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.bold), fontSize: 16.5, lineHeight: 21 }}>{v.lead}</Text>}
-                  {v.chips.length > 0 && <View style={{ marginTop: v.lead ? 6 : 0 }}><MetaLine parts={v.chips} textStyle={{ fontFamily: F.mono, fontSize: 12.5, color: C.ash }} /></View>}
+                  {!!v.lead && <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.bold), fontSize: 16, lineHeight: 21 }}>{v.lead}</Text>}
+                  {v.chips.length > 0 && <View style={{ marginTop: v.lead ? 6 : 0 }}><MetaLine parts={v.chips} textStyle={{ fontFamily: F.mono, fontSize: 13, color: C.ash }} /></View>}
                 </View>
               )}
 
               {/* action row — monochrome glyphs, full width */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 300, marginTop: 14 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 300, marginTop: 16 }}>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>↩  {it.comments ?? 0}</Text>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>⇄  {it.reposts ?? 0}</Text>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>♡  {it.kudos ?? 0}</Text>
@@ -135,12 +136,12 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           onPress={onOpen}
           accessibilityRole="button"
           accessibilityLabel={t("w.explore.seeMore")}
-          style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
+          style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 28, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
         >
           <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>
+            <ArrowGlyph size={15} color={C.ash} />
           </View>
-          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
+          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
         </Pressable>
       )}
     </Wrap>

@@ -41,7 +41,7 @@ export default function AuroraCompetition() {
   const minF = Math.min(0, ...forms);
   const maxF = Math.max(1, ...forms);
 
-  const fieldStyle = { fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 } as const;
+  const fieldStyle = { fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16 } as const;
 
   return (
     <AuroraScreen>
@@ -57,7 +57,7 @@ export default function AuroraCompetition() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
           <View style={{ flexDirection: "row", gap: space.xs }}>
             {SPORTS.map((s) => (
-              <Pressable key={s} onPress={() => setSport(s)} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: sport === s ? C.lime : C.line, backgroundColor: sport === s ? `${C.lime}1f` : C.ink }}>
+              <Pressable key={s} onPress={() => setSport(s)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: sport === s ? C.lime : C.line, backgroundColor: sport === s ? `${C.lime}1f` : C.ink }}>
                 <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: sport === s ? txt(C, C.lime) : C.ash }}>{s}</Text>
               </Pressable>
             ))}
@@ -68,15 +68,15 @@ export default function AuroraCompetition() {
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 4 }}>{t("w.train.comp.dateLabel")}</Text>
             <TextInput value={date} onChangeText={setDate} placeholder="2026-09-01" placeholderTextColor={C.ash} autoCapitalize="none" style={fieldStyle} />
           </View>
-          <View style={{ width: 120 }}><APill label={busy ? "…" : t("common.add")} onPress={add} disabled={busy} style={{ paddingVertical: 14 }} /></View>
+          <View style={{ width: 120 }}><APill label={busy ? "…" : t("common.add")} onPress={add} disabled={busy} style={{ paddingVertical: 16 }} /></View>
         </View>
       </ACard>
 
       {events.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 14 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", gap: space.sm }}>
             {events.map((e) => (
-              <Pressable key={e.id} onPress={() => setSelected(e.id)} style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: RADIUS.field, borderWidth: 1, borderColor: selected === e.id ? C.lime : C.line, backgroundColor: selected === e.id ? `${C.lime}1f` : C.ink2 }}>
+              <Pressable key={e.id} onPress={() => setSelected(e.id)} style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.field, borderWidth: 1, borderColor: selected === e.id ? C.lime : C.line, backgroundColor: selected === e.id ? `${C.lime}1f` : C.ink2 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: selected === e.id ? txt(C, C.lime) : C.chalk }}>{e.name}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{fmt(e.date)}</Text>
               </Pressable>
@@ -87,10 +87,10 @@ export default function AuroraCompetition() {
 
       {plan && event && (
         <>
-          <ACard style={{ marginTop: 14 }}>
+          <ACard style={{ marginTop: 16 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{event.name} – {event.sport}</Text>
-              <View style={{ backgroundColor: `${plan.landsPeak ? C.lime : C.amber}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <View style={{ backgroundColor: `${plan.landsPeak ? C.lime : C.amber}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, plan.landsPeak ? C.lime : C.amber) }}>{plan.landsPeak ? t("w.train.comp.peakLands") : `${t("w.train.comp.peakAtWeek")} ${plan.peakWeek}`}</Text>
               </View>
             </View>
@@ -102,7 +102,7 @@ export default function AuroraCompetition() {
             </View>
           </ACard>
 
-          <ACard style={{ marginTop: 14 }}>
+          <ACard style={{ marginTop: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.train.comp.projection")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.train.comp.formNote")}</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: 96, marginTop: 12 }}>

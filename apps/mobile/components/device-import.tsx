@@ -110,7 +110,7 @@ export function DeviceImportSheet({
           style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "88%" }}
           onPress={() => {}}
         >
-          <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 14 }} />
+          <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             {/* A manufacturer's mark reproduces solid only — never the accent. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, paddingRight: 10 }}>
@@ -128,22 +128,22 @@ export function DeviceImportSheet({
           </Text>
 
           {phase === "unavailable" && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 26 }}>{t("session.device.unavailable")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
           )}
           {(phase === "loading" || phase === "importing") && <ActivityIndicator color={C.lime} style={{ marginVertical: 34 }} />}
           {phase === "error" && (
-            <Pressable onPress={() => void load()} style={{ marginVertical: 22 }}>
+            <Pressable onPress={() => void load()} style={{ marginVertical: 24 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber }}>{t("session.device.error")}</Text>
             </Pressable>
           )}
           {phase === "list" && items.length === 0 && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 26 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>
               {t("device.import.empty").replace("{days}", String(DEVICE_IMPORT_DAYS))}
             </Text>
           )}
 
           {phase === "list" && items.length > 0 && (
-            <ScrollView style={{ marginTop: 14 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false}>
               {items.map((item) => {
                 const w = item.workout;
                 const done = item.action === "linked";
@@ -171,7 +171,7 @@ export function DeviceImportSheet({
                       borderWidth: 1,
                       borderColor: off ? C.line : C.lime,
                       borderRadius: 16,
-                      padding: 14,
+                      padding: 16,
                       marginBottom: 10,
                       backgroundColor: off ? "#0e0f0d" : `${C.lime}12`,
                       opacity: done ? 0.55 : 1,
@@ -221,7 +221,7 @@ export function DeviceImportSheet({
             <Pressable
               onPress={() => void run()}
               disabled={pending.length === 0}
-              style={{ marginTop: 6, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 14, alignItems: "center", opacity: pending.length === 0 ? 0.4 : 1 }}
+              style={{ marginTop: 6, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", opacity: pending.length === 0 ? 0.4 : 1 }}
             >
               <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>
                 {t("device.import.cta").replace("{n}", String(pending.length))}
@@ -234,8 +234,8 @@ export function DeviceImportSheet({
               reader yet, and says so rather than being hidden: an athlete
               looking for their Garmin should find the answer here. */}
           {(phase === "list" || phase === "unavailable") && (
-            <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.3, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+            <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
                 {t("device.import.sources")}
               </Text>
               {DEVICE_IMPORT_PROVIDERS.map((p) => (
@@ -251,7 +251,7 @@ export function DeviceImportSheet({
           )}
 
           {(phase === "list" || phase === "unavailable") && (
-            <View style={{ marginTop: 14 }}>
+            <View style={{ marginTop: 16 }}>
               <ToggleRow
                 C={C}
                 title={t("device.import.autoTitle")}

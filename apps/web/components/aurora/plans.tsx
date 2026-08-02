@@ -13,7 +13,7 @@ import { MetaLine } from "./meta";
 import { CoverHero, useHeroCollapse, COVER_INK, COVER_BAR } from "./cover-hero";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 18 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
 /** AURORA Plans (web) — goal grid → plan list → detail + enroll, reusing the
@@ -71,14 +71,14 @@ function Library({ query, setQuery, pick }: { query: string; setQuery: (v: strin
         heroRef={heroRef}
       />
       {shelves.length > 0 && <CategoryRail categories={shelves.map((s) => s.category)} />}
-      <div style={{ position: "relative", margin: "14px 0 0" }}>
+      <div style={{ position: "relative", margin: "16px 0 0" }}>
         <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}><AuroraIcon name="search" size={16} color={C("ash")} /></span>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("w.train.plans.searchGoals")}
           aria-label={t("w.train.plans.searchGoals")}
-          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px 12px 40px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body, outline: "none" }}
+          style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px 12px 40px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body, outline: "none" }}
         />
       </div>
       <div style={{ marginTop: 16 }}><EnrolledCard /></div>
@@ -115,13 +115,13 @@ function CategoryRail({ categories }: { categories: string[] }) {
     <nav
       ref={navRef}
       aria-label={t("w.train.plans.jumpToCategory")}
-      style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "9px var(--page-pad-x, 16px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
+      style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "8px var(--page-pad-x, 16px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
     >
       {categories.map((c) => (
         <button
           key={c}
           onClick={() => jump(c)}
-          style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".02em", padding: "7px 13px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: "transparent", color: C("ash"), border: `1px solid ${C("line")}` }}
+          style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", padding: "8px 12px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: "transparent", color: C("ash"), border: `1px solid ${C("line")}` }}
         >
           {c}
         </button>
@@ -168,7 +168,7 @@ function GoalShelf({ group, pick }: { group: GoalGroup; pick: (id: string) => vo
     <section id={shelfId(group.category)} style={{ marginTop: 24, scrollMarginTop: COVER_BAR + RAIL_H }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "0 0 10px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em", margin: 0 }}>{group.category}</h2>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
         </span>
       </div>
@@ -183,7 +183,7 @@ function GoalShelf({ group, pick }: { group: GoalGroup; pick: (id: string) => vo
       </div>
       {/* always mounted (the thumb ref is what measures the overflow), faded
           out when the shelf fits and there is no tail to report */}
-      <div aria-hidden style={{ height: 2, borderRadius: 2, marginTop: 9, background: `color-mix(in srgb, ${C("chalk")} 10%, transparent)`, overflow: "hidden", opacity: overflows ? 1 : 0 }}>
+      <div aria-hidden style={{ height: 2, borderRadius: 2, marginTop: 8, background: `color-mix(in srgb, ${C("chalk")} 10%, transparent)`, overflow: "hidden", opacity: overflows ? 1 : 0 }}>
         <span ref={thumbRef} style={{ display: "block", height: "100%", borderRadius: 2, background: `color-mix(in srgb, ${C("chalk")} 34%, transparent)` }} />
       </div>
     </section>
@@ -205,13 +205,13 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       aria-label={`${goal.name} – ${cover.count}`}
-      style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 20, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 13, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
+      style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 28, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
     >
       <span aria-hidden style={{ position: "absolute", inset: 0, opacity: cover.ready ? 1 : 0.45, background: `linear-gradient(202deg, color-mix(in srgb, ${cover.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${cover.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
       <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${COVER_INK} 0%, color-mix(in srgb, ${COVER_INK} 55%, transparent) 6%, transparent 58%)` }} />
       <span aria-hidden style={{ position: "absolute", top: -12, right: -10, fontSize: 96, lineHeight: 1, color: `rgba(255,255,255,${cover.ready ? ".09" : ".05"})`, pointerEvents: "none" }}>{cover.glyph}</span>
       <span style={{ position: "relative", alignSelf: "flex-end", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, letterSpacing: ".08em", color: `rgba(255,255,255,${cover.ready ? ".85" : ".5"})` }}>{cover.count}</span>
-      <span style={{ position: "relative", fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 16, lineHeight: 1.1, letterSpacing: "-.025em", color: cover.ready ? "#fff" : "rgba(255,255,255,.62)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{goal.name}</span>
+      <span style={{ position: "relative", fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 16, lineHeight: 1.1, letterSpacing: "-.02em", color: cover.ready ? "#fff" : "rgba(255,255,255,.62)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{goal.name}</span>
     </button>
   );
 }
@@ -271,7 +271,7 @@ function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void
                     <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
                       {s.value}{s.unit && <span style={{ fontSize: 12, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
                     </div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginTop: 4 }}>{s.label}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 4 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -314,7 +314,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.train.plans.weeklySplit")}</div>
         <div style={{ display: "flex", gap: space.xs, marginTop: 10, flexWrap: "wrap" }}>
-          {d.split.map((day, i) => <div key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: day.toLowerCase() === "rest" ? C("ash") : C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: "8px 12px" }}>{day}</div>)}
+          {d.split.map((day, i) => <div key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: day.toLowerCase() === "rest" ? C("ash") : C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 12px" }}>{day}</div>)}
         </div>
       </div>
 
@@ -389,9 +389,9 @@ function PlanHero({ goal, plan, program, back, heroRef }: { goal: GoalNode; plan
  *  right. Used for the maxes ledger and the schedule heads. */
 function PlanSecHead({ title, meta }: { title: string; meta?: string | null }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "22px 0 10px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "24px 0 10px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em" }}>{title}</span>
-      {meta && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), textAlign: "right" }}>{meta}</span>}
+      {meta && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), textAlign: "right" }}>{meta}</span>}
     </div>
   );
 }
@@ -406,7 +406,7 @@ function PlanWeekRail({ bars, weeks, week, setWeek, wkLabel }: { bars: PlanWeekB
   const hasBars = bars.length > 0;
   return (
     <div style={{ position: "sticky", top: COVER_BAR, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 16px))", background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}>
-      <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", padding: "8px var(--page-pad-x, 16px) 9px" }}>
+      <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", padding: "8px var(--page-pad-x, 16px) 8px" }}>
         {weeks.map((w) => {
           const on = w === week;
           const v = byWeek.get(w) ?? 0;
@@ -419,7 +419,7 @@ function PlanWeekRail({ bars, weeks, week, setWeek, wkLabel }: { bars: PlanWeekB
               ) : (
                 <span style={{ width: 22, height: 2, borderRadius: 2, background: on ? C("lime") : `color-mix(in srgb, ${C("chalk")} 16%, transparent)`, marginTop: 16 }} />
               )}
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".06em", textTransform: "uppercase", color: on ? C("lime") : C("ash") }}>{wkLabel} {w}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".08em", textTransform: "uppercase", color: on ? C("lime") : C("ash") }}>{wkLabel} {w}</span>
             </button>
           );
         })}
@@ -519,7 +519,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
       )}
       {multiWeek && <PlanWeekRail bars={cover.weekBars} weeks={view.weeks} week={view.week} setWeek={setWeek} wkLabel={t("w.train.plans.wkShort")} />}
 
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: 16 }}>
         <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} />
       </div>
 

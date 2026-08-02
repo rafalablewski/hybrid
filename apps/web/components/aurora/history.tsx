@@ -9,6 +9,7 @@ import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
 import { ViewSwitcher, AgendaView, WeeksView, TimelineView, TrendView, type ViewCtx } from "./history-views";
 import FetchError from "./fetch-error";
+import { AuroraIcon } from "./icons";
 import type { ComponentType } from "react";
 
 // Compile-checked view→component table: adding a HistoryViewId without wiring
@@ -28,7 +29,7 @@ const readView = (): HistoryViewId => {
 const C = (v: string) => `var(--color-${v})`;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
-const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
+const chip = (color: string, label: ReactNode) => <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
 const moodColor = (m: MoodDef) => (m.tone === "red" ? C("red") : m.tone === "amber" ? C("amber") : "var(--lime-text)");
 
 // The owner's PRIVATE post-workout note (mood dot + text + tags), shown on their
@@ -49,7 +50,7 @@ function SessionNoteView({ s }: { s: LoggedSession }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: m || s.note ? 8 : 0 }}>
           {tags.map((slug) => {
             const k = tagLabelKey(slug);
-            return <span key={slug} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 26%, transparent)`, borderRadius: 6, padding: "2px 7px" }}>#{k ? t(k) : slug}</span>;
+            return <span key={slug} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: `1px solid color-mix(in srgb, var(--color-lime) 26%, transparent)`, borderRadius: 6, padding: "2px 8px" }}>#{k ? t(k) : slug}</span>;
           })}
         </div>
       )}
@@ -143,7 +144,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
   const archivedToggle = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.hist.title")}</h1>
-      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? "var(--lime-text)" : C("ash"), background: "none", border: `1px solid ${showArchived ? C("lime") : C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
+      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? "var(--lime-text)" : C("ash"), background: "none", border: `1px solid ${showArchived ? C("lime") : C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
     </div>
   );
 
@@ -181,7 +182,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
                   <div style={{ fontWeight: 800, fontSize: fs.title }}>{s.title}</div>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{fmtDate(s.startedAt)}</span>
                 </div>
-                <div style={{ display: "flex", gap: space.sm, margin: "10px 0 14px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: space.sm, margin: "10px 0 16px", flexWrap: "wrap" }}>
                   {/* Sport-aware headline chip — a run/match has no tonnage, so
                       cardio sessions read distance/time; conditioning-only
                       sessions fall back to summed minutes (matches the
@@ -197,7 +198,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
                     : chip(C("ash"), fmtTonnage(sessionVolume(s.blocks, false, bw(s.startedAt)), units))}
                   {chip(C("ash"), `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`)}
                   {typeof s.readiness === "number" && chip(C("lime"), `${t("w.analyze.hist.readiness")} ${s.readiness}`)}
-                  {prCount > 0 && chip(C("lime"), `🏆 ${prCount} ${t("w.analyze.hist.pr")}`)}
+                  {prCount > 0 && chip(C("lime"), <><AuroraIcon name="trophy" size={13} />{`${prCount} ${t("w.analyze.hist.pr")}`}</>)}
                 </div>
                 {s.blocks.map((b, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontFamily: "var(--font-mono)", fontSize: fs.body }}>

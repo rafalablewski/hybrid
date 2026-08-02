@@ -141,7 +141,7 @@ export default function AdminAuditLog() {
 
 function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; disabled?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: txt(disabled ? ASH : CHALK), background: CARD, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "10px 14px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 }}>
+    <button onClick={onClick} disabled={disabled} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: txt(disabled ? ASH : CHALK), background: CARD, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "10px 14px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 }}>
       {children}
     </button>
   );

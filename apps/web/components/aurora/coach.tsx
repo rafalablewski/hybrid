@@ -16,14 +16,16 @@ import { fs, space,
 import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
 import { useLang } from "@/lib/i18n";
+import { AuroraIcon } from "./icons";
+import { CtaLabel } from "./cta-label";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20, marginBottom: 12 } as const;
 const fieldStyle = (extra: CSSProperties = {}): CSSProperties => ({
   fontFamily: "var(--font-mono)",
   fontSize: fs.bodyLg,
-  padding: "11px 14px",
-  borderRadius: 14,
+  padding: "12px 16px",
+  borderRadius: 16,
   background: C("ink"),
   color: C("chalk"),
   border: `1px solid ${C("line")}`,
@@ -147,7 +149,7 @@ export default function AuroraCoach() {
       {/* coaching: invite + roster */}
       <Section title={t("w.teams.coach.coaching")} color={C("ash")}>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("w.teams.coach.inviteAnAthlete")}</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }}>{t("w.teams.coach.inviteAnAthlete")}</Mono>
           <div style={{ display: "flex", gap: space.sm, marginTop: 10 }}>
             <input
               value={email}
@@ -177,7 +179,7 @@ export default function AuroraCoach() {
                 <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client, t)}</div>
                 <Mono s={{ fontSize: fs.caption }}>{l.client?.email}</Mono>
               </div>
-              <Mono s={{ fontSize: fs.caption }} c={C("lime")}>{t("w.teams.coach.open")} →</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={C("lime")}><CtaLabel size={12}>{`${t("w.teams.coach.open")} →`}</CtaLabel></Mono>
             </div>
           </div>
         ))}
@@ -348,12 +350,12 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   return (
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <button onClick={back} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>
-        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={C("ash")}>← {t("w.teams.coach.roster")}</Mono>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }} c={C("ash")}>← {t("w.teams.coach.roster")}</Mono>
       </button>
       <h2 style={{ fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{personName(link.client, t)}</h2>
       <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
 
-      <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
         {tags.map((tg) => (
           <span key={tg} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: `color-mix(in srgb, ${C("ash")} 12%, transparent)`, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
             {tg}
@@ -405,7 +407,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
       <Section title={t("w.teams.coach.programming")} color={C("ash")}>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("w.teams.coach.assignWorkout")}</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }}>{t("w.teams.coach.assignWorkout")}</Mono>
           {templates.length === 0 ? (
             <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }}>
               {t("w.teams.coach.noTemplates")}
@@ -424,7 +426,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           )}
         </div>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("ash")}>{t("w.teams.coach.generatePeriodizedWeek")}</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={C("ash")}>{t("w.teams.coach.generatePeriodizedWeek")}</Mono>
           <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
             {sessions.length === 0
               ? t("w.teams.coach.genEmptyHint")
@@ -475,7 +477,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               {c.note && <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
               {c.coachReply ? (
                 <div style={{ marginTop: 10, paddingLeft: 10 }}>
-                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("ash")}>{t("w.teams.coach.yourReply")}</Mono>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={C("ash")}>{t("w.teams.coach.yourReply")}</Mono>
                   <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 4 }} c={C("chalk")}>{c.coachReply}</Mono>
                 </div>
               ) : replyFor === c.id ? (
@@ -546,7 +548,7 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
           <Mono>{t("w.teams.coach.noSessions7d")}</Mono>
         ) : (
           <>
-            <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
               <Metric label={t("w.teams.coach.metricSessions")} value={`${r.sessions}`} c={C("chalk")} />
               <Metric label={t("w.teams.coach.metricVolume")} value={`${r.volume.toLocaleString()} kg`} c={C("lime")} />
               <Metric label={t("w.teams.coach.metricSets")} value={`${r.sets}`} c={C("chalk")} />
@@ -562,7 +564,8 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
             )}
             {r.prs.length > 0 && (
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={C("chalk")}>
-                🏆 {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
+                <AuroraIcon name="trophy" size={14} style={{ verticalAlign: "middle", marginRight: 6 }} />
+                {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
               </Mono>
             )}
           </>
@@ -584,7 +587,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
 function Section({ title, color, children }: { title: string; color: string; children: ReactNode }) {
   return (
     <div style={{ marginBottom: 8 }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "12px 0 8px" }} c={color}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", margin: "12px 0 8px" }} c={color}>
         {title}
       </Mono>
       {children}
@@ -628,8 +631,8 @@ function Select({
       style={{
         fontFamily: "var(--font-mono)",
         fontSize: fs.body,
-        padding: "10px 14px",
-        borderRadius: 14,
+        padding: "10px 16px",
+        borderRadius: 16,
         background: C("ink"),
         color: C("chalk"),
         border: `1px solid ${C("line")}`,
@@ -656,12 +659,12 @@ function Btn({ label, color, onClick }: { label: string; color: string; onClick:
         fontSize: fs.body,
         fontWeight: 700,
         textTransform: "uppercase",
-        letterSpacing: ".04em",
+        letterSpacing: ".08em",
         color: ghost ? C("ash") : C("ink"),
         background: ghost ? "transparent" : color,
         border: `1px solid ${ghost ? C("line") : color}`,
         borderRadius: 999,
-        padding: "9px 16px",
+        padding: "8px 16px",
         cursor: "pointer",
       }}
     >

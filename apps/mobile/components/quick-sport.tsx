@@ -22,6 +22,7 @@ import { RADIUS } from "./aurora/kit";
 import { DeviceMark } from "./aurora/device-mark";
 import { DeviceImportSheet } from "./device-import";
 import { healthKitAvailability } from "../lib/healthkit";
+import { ArrowGlyph } from "./aurora/cta-label";
 
 /**
  * Home quick-log — a horizontal CAROUSEL of one-tap sport cards (likely sports +
@@ -78,7 +79,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
             <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("device.import.cardTitle")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("device.import.cardSub")}</Text>
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
+          <ArrowGlyph size={15} color={txt(C, C.lime)} />
         </Pressable>
       )}
 
@@ -95,7 +96,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
           <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
             <Text style={{ fontSize: 26 }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{shortSport(name)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
           </Pressable>
         ))}
       </View>
@@ -110,20 +111,20 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Pressable onPress={() => setPickerOpen(false)} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
           <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.quickSport.choose")}</Text>
               <Pressable onPress={() => setPickerOpen(false)} hitSlop={10}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text>
               </Pressable>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 16 }}>
               <AuroraIcon name="search" size={18} color={C.ash} />
               <TextInput value={query} onChangeText={setQuery} placeholder={t("w.home.quickSport.search")} placeholderTextColor={C.ash} autoFocus style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }} />
             </View>
             <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
               {filtered.map((g) => (
                 <View key={g.category} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.4, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
                   {g.sports.map((s) => {
                     const hint = sportTracksDistance(s.name) ? sportDistanceUnit(s.name) : g.category;
                     return (
@@ -199,15 +200,15 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
           <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end", marginTop: 16 }}>
             {tracksDist && (
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
                 <TextInput value={distance} onChangeText={setDistance} keyboardType="numeric" placeholder={sportDistanceUnit(name) === "m" ? "400" : "8"} placeholderTextColor={C.ash} autoFocus style={field} />
               </View>
             )}
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>Minutes</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 6 }}>Minutes</Text>
               <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} autoFocus={!tracksDist} style={field} />
             </View>
-            <Pressable onPress={save} disabled={saving} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 22, opacity: saving ? 0.5 : 1 }}>
+            <Pressable onPress={save} disabled={saving} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 20, opacity: saving ? 0.5 : 1 }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{saving ? "…" : t("w.home.quickSport.log")}</Text>
             </Pressable>
           </View>

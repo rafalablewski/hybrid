@@ -71,7 +71,7 @@ export default function AuroraEndurance() {
 
       {/* Discipline picker — one chip per logged endurance discipline */}
       {active.length > 1 && (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 14 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 16 }}>
           {active.map((d) => { const on = d.discipline === discipline; return (
             <Pressable key={d.discipline} onPress={() => { setPick(d.discipline); setMove(""); }} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}1a` : "transparent" }}>
               <Text style={{ fontSize: fs.body }}>{DISCIPLINE_META[d.discipline].emoji}</Text>
@@ -81,14 +81,14 @@ export default function AuroraEndurance() {
         </View>
       )}
 
-      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 14 }}>
+      <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
         <Metric label={t("endurance.efforts")} value={String(totals.efforts)} />
         <Metric label="KM" value={`${totals.distanceKm}`} color={C.blue} />
         <Metric label="H" value={`${Math.round(totals.minutes / 6) / 10}`} />
         {easyPct != null && <Metric label={t("running.easyPct")} value={`${easyPct}%`} color={C.lime} />}
       </View>
 
-      <ACard style={{ marginTop: 14 }}>
+      <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("endurance.weeklyVolume")}</Text>
         <View style={{ flexDirection: "row", alignItems: "flex-end", height: 90, gap: 5, marginTop: 12 }}>
           {mileage.map((w, i) => <View key={i} style={{ flex: 1, alignItems: "center" }}><View style={{ width: "100%", height: 6 + (w.km / maxKm) * 70, borderRadius: 3, backgroundColor: i === mileage.length - 1 ? C.blue : `${C.blue}66` }} /></View>)}
@@ -100,12 +100,12 @@ export default function AuroraEndurance() {
       </ACard>
 
       {hasEffort && (
-        <ACard style={{ marginTop: 14 }}>
+        <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("running.effortSplit")}</Text>
           <View style={{ flexDirection: "row", height: 14, borderRadius: 7, overflow: "hidden", marginTop: 12, backgroundColor: C.ink }}>
             {([["easy", split.easy, C.lime], ["moderate", split.moderate, C.amber], ["hard", split.hard, C.red]] as const).map(([k, v, c]) => v > 0 && <View key={k} style={{ width: `${(v / splitTotal) * 100}%`, backgroundColor: c }} />)}
           </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 10 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 10 }}>
             <Legend c={C.lime} label={`${t("running.easy")} ${split.easy}m`} />
             <Legend c={C.amber} label={`${t("running.moderate")} ${split.moderate}m`} />
             <Legend c={C.red} label={`${t("running.hard")} ${split.hard}m`} />
@@ -115,12 +115,12 @@ export default function AuroraEndurance() {
       )}
 
       {paceMoves.length > 0 && (
-        <ACard style={{ marginTop: 14 }}>
+        <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("session.paceTrend")} – {activeMove}</Text>
           {paceMoves.length > 1 && (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
               {paceMoves.map((m) => { const on = activeMove === m; return (
-                <Pressable key={m} onPress={() => setMove(m)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}1a` : "transparent" }}>
+                <Pressable key={m} onPress={() => setMove(m)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}1a` : "transparent" }}>
                   <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(C, C.blue) : C.ash }}>{m}</Text>
                 </Pressable>
               ); })}
@@ -130,7 +130,7 @@ export default function AuroraEndurance() {
         </ACard>
       )}
 
-      <ACard style={{ marginTop: 14 }}>
+      <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("running.byMove")}</Text>
         <View style={{ flexDirection: "row", marginTop: 10, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
           <ColHead flex={2}>{t("running.move")}</ColHead><ColHead>KM</ColHead><ColHead>{t("running.longest")}</ColHead><ColHead>{disciplinePaceUnit(discipline).replace("/", "")}</ColHead>
@@ -173,9 +173,9 @@ function PaceBars({ series, discipline }: { series: number[]; discipline: Cardio
 function Metric({ label, value, color }: { label: string; value: string; color?: string }) {
   const { palette: C } = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: 14, alignItems: "center" }}>
+    <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: 16, alignItems: "center" }}>
       <Text style={{ fontFamily: F.black, fontSize: 22, color: color ? txt(C, color) : C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -192,5 +192,5 @@ function Legend({ c, label }: { c: string; label: string }) {
 
 function ColHead({ children, flex = 1 }: { children: React.ReactNode; flex?: number }) {
   const { palette: C } = useTheme();
-  return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1 }}>{children}</Text>;
+  return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9 }}>{children}</Text>;
 }

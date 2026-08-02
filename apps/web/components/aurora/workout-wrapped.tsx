@@ -57,8 +57,10 @@ import { useLang } from "@/lib/i18n";
 import { shareWorkoutSlide, shareText, type StorySlide, type ShareBest } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
 import { FeelPrompt } from "./feel-prompt";
+import { AuroraIcon } from "./icons";
+import { CtaLabel } from "./cta-label";
 import { DeviceMark } from "./device-mark";
-import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, disp, mono, Mono, txt } from "@/lib/ui";
+import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, RED, disp, mono, Mono, txt } from "@/lib/ui";
 
 const GOLD = "#e6c34e";
 const PANEL_BG = "#0a0b09";
@@ -332,14 +334,14 @@ export function WorkoutWrapped({
   const showDock = panel < keys.length;
 
   const container: CSSProperties = { position: "fixed", inset: 0, zIndex: 60, background: PANEL_BG, overflowY: "auto", scrollSnapType: "y proximity", color: txt(CHALK), fontFamily: "var(--font-display)" };
-  const panelStyle: CSSProperties = { minHeight: "100dvh", scrollSnapAlign: "start", position: "relative", padding: "72px 26px 150px", display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box", maxWidth: 560, margin: "0 auto" };
-  const eyebrow = (label: string) => <Mono s={{ fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase" }} c={GOLD}>✦ {label}</Mono>;
-  const scrollHint = <Mono s={{ fontSize: fs.micro, letterSpacing: ".1em", textAlign: "center", marginTop: 16, opacity: 0.8 }}>{t("session.wrapped.scroll")} ↑</Mono>;
+  const panelStyle: CSSProperties = { minHeight: "100dvh", scrollSnapAlign: "start", position: "relative", padding: "72px 24px 150px", display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box", maxWidth: 560, margin: "0 auto" };
+  const eyebrow = (label: string) => <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={GOLD}>✦ {label}</Mono>;
+  const scrollHint = <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textAlign: "center", marginTop: 16, opacity: 0.8 }}>{t("session.wrapped.scroll")} ↑</Mono>;
 
   return (
     <div ref={scrollRef} onScroll={onScroll} style={container}>
       {/* Back — fixed top-left */}
-      <button onClick={onBack} aria-label={t("summary.doneToday")} style={{ position: "fixed", top: 14, left: 14, zIndex: 70, width: 40, height: 40, borderRadius: 13, border: `1px solid ${LINE}`, background: "rgba(0,0,0,.4)", color: txt(CHALK), fontSize: 18, cursor: "pointer" }}>←</button>
+      <button onClick={onBack} aria-label={t("summary.doneToday")} style={{ position: "fixed", top: 14, left: 14, zIndex: 70, width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "rgba(0,0,0,.4)", color: txt(CHALK), fontSize: 18, cursor: "pointer" }}>←</button>
 
       {/* ── REVEAL ── */}
       {cel && (
@@ -350,9 +352,9 @@ export function WorkoutWrapped({
               <span key={i} className="pr-confetti" style={{ position: "absolute", width: 8, height: 8, borderRadius: 2, background: c.color, animationDelay: `${c.delay}s`, "--tx": `${c.tx}px`, "--ty": `${c.ty}px` } as CSSProperties} />
             ))}
           </div>
-          <div className="pr-trophy" style={{ fontSize: 88, lineHeight: 1 }}>🏆</div>
-          <Mono s={{ fontSize: fs.body, letterSpacing: ".2em", textTransform: "uppercase", marginTop: 20 }} c={GOLD}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Mono>
-          <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 20vw, 104px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.05em", lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
+          <div className="pr-trophy" style={{ lineHeight: 1 }}><AuroraIcon name="trophy" size={88} color={GOLD} /></div>
+          <Mono s={{ fontSize: fs.body, letterSpacing: ".12em", textTransform: "uppercase", marginTop: 20 }} c={GOLD}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Mono>
+          <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 20vw, 104px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.03em", lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 8 }}>{heroSub}</div>
           {scrollHint}
         </section>
@@ -364,16 +366,16 @@ export function WorkoutWrapped({
         {eyebrow(t("session.wrapped.title"))}
         <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative" }}>{session.title}</div>
         <div style={{ flex: 1 }} />
-        <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.06em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
+        <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.03em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 12, color: txt(cel ? LIME : CHALK), position: "relative" }}>{heroSub}</div>
         {signature.length >= SIGNATURE_MIN_BARS && (
-          <div aria-hidden style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 44, marginTop: 18, position: "relative" }}>
+          <div aria-hidden style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 44, marginTop: 16, position: "relative" }}>
             {signature.map((v, i) => (<div key={i} style={{ flex: 1, height: `${Math.round(v * 100)}%`, borderRadius: 3, background: `linear-gradient(180deg, ${LIME_HEX}, color-mix(in srgb, ${LIME} 15%, transparent))`, opacity: 0.5 + v * 0.5 }} />))}
           </div>
         )}
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(4, wrapped.basics.length)}, 1fr)`, gap: 1, marginTop: 20, background: LINE, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
           {wrapped.basics.map((b) => (
-            <div key={b.labelKey} style={{ background: "#0e0f0d", padding: "14px 6px", textAlign: "center" }}>
+            <div key={b.labelKey} style={{ background: "#0e0f0d", padding: "16px 6px", textAlign: "center" }}>
               {/* A modelled figure wears a "~" — it is never presented as a
                   measurement (see core/energy.ts). */}
               <div style={{ ...disp, fontWeight: 900, fontSize: 22 * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{b.estimate ? "~" : ""}{b.value}</div>
@@ -384,16 +386,16 @@ export function WorkoutWrapped({
         {/* The watch's read of this exact workout rides on the row — matched on
             the phone (HealthKit is native-only); here it shows as synced. */}
         {device && (
-          <div style={{ marginTop: 14, alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 8, border: `1px solid color-mix(in srgb, ${CHALK} 32%, transparent)`, borderRadius: 999, padding: "8px 14px", position: "relative" }}>
+          <div style={{ marginTop: 16, alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 8, border: `1px solid color-mix(in srgb, ${CHALK} 32%, transparent)`, borderRadius: 999, padding: "8px 16px", position: "relative" }}>
             {/* The lockup finishes the sentence, so the copy never repeats the
                 device's name. Chip and mark are both chalk: the artwork can't
                 be tinted, and a white logo next to lime text would read as two
                 claims at once. See core/device-marks.ts. */}
-            <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={CHALK}>{t("session.device.measuredOn")}</Mono>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".08em" }} c={CHALK}>{t("session.device.measuredOn")}</Mono>
             {deviceMark ? (
               <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
             ) : (
-              <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={CHALK}>{deviceName ?? t("session.device.matchedChip")}</Mono>
+              <Mono s={{ fontSize: fs.micro, letterSpacing: ".08em" }} c={CHALK}>{deviceName ?? t("session.device.matchedChip")}</Mono>
             )}
           </div>
         )}
@@ -421,17 +423,17 @@ export function WorkoutWrapped({
       {wrapped.facts.length > 0 && (
         <section style={{ ...panelStyle, justifyContent: "center" }}>
           {eyebrow(t("session.wrapped.premium"))}
-          <div style={{ ...disp, fontWeight: 900, fontSize: 22, marginTop: 8, marginBottom: 18 }}>{t("session.wrapped.premiumLead")}</div>
+          <div style={{ ...disp, fontWeight: 900, fontSize: 22, marginTop: 8, marginBottom: 16 }}>{t("session.wrapped.premiumLead")}</div>
           <div style={{ filter: full ? "none" : "blur(7px)", pointerEvents: full ? "auto" : "none", userSelect: full ? "auto" : "none" }} aria-hidden={!full}>
             {wrapped.facts.map((f) => (
               <div key={f.labelKey + f.value} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "16px 0", borderBottom: `1px solid ${LINE}` }}>
-                <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }}>{t(f.labelKey)}</Mono>
+                <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }}>{t(f.labelKey)}</Mono>
                 <span style={{ ...disp, fontWeight: 900, fontSize: 26, color: f.tone === "up" || f.labelKey === "session.wrapped.est1rm" ? txt(LIME) : txt(VIOLET), fontVariantNumeric: "tabular-nums" }}>{f.value}</span>
               </div>
             ))}
           </div>
           {!full && (
-            <button onClick={() => go("upgrade")} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: VIOLET, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 22px", cursor: "pointer" }}>✦ {t("session.wrapped.unlock")}</button>
+            <button onClick={() => go("upgrade")} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: VIOLET, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 20px", cursor: "pointer" }}>✦ {t("session.wrapped.unlock")}</button>
           )}
         </section>
       )}
@@ -444,7 +446,7 @@ export function WorkoutWrapped({
           <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(26px, 8vw, 34px)", letterSpacing: "-.02em", lineHeight: 1.05, marginTop: 12, position: "relative" }}>{device.activityLabel}</div>
           <Mono s={{ fontSize: fs.caption, marginTop: 10, lineHeight: 1.5, position: "relative", display: "block" }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Mono>
           <div style={{ marginTop: 20, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
-            <div style={{ display: "flex", padding: "10px 14px", background: "#0e0f0d" }}>
+            <div style={{ display: "flex", padding: "10px 16px", background: "#0e0f0d" }}>
               <div style={{ flex: 1.1 }} />
               {/* An imported session has no logged column — the recording IS the log. */}
               {!imported && (
@@ -462,8 +464,8 @@ export function WorkoutWrapped({
               )}
             </div>
             {comparison.map((r) => (
-              <div key={r.labelKey} style={{ display: "flex", alignItems: "baseline", padding: "12px 14px", background: "#0e0f0d", borderTop: `1px solid ${LINE}` }}>
-                <Mono s={{ flex: 1.1, fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase" }}>{t(r.labelKey)}</Mono>
+              <div key={r.labelKey} style={{ display: "flex", alignItems: "baseline", padding: "12px 16px", background: "#0e0f0d", borderTop: `1px solid ${LINE}` }}>
+                <Mono s={{ flex: 1.1, fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase" }}>{t(r.labelKey)}</Mono>
                 {/* A modelled figure wears a "~" — never presented as a measurement. */}
                 {!imported && (
                   <span style={{ ...disp, flex: 1, fontWeight: 700, fontSize: fs.caption, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</span>
@@ -473,7 +475,7 @@ export function WorkoutWrapped({
             ))}
           </div>
           <Mono s={{ fontSize: fs.micro, marginTop: 12, lineHeight: 1.5, position: "relative", display: "block" }}>{t(imported ? "session.device.truthImported" : "session.device.truth")}</Mono>
-          <div style={{ display: "flex", gap: 16, marginTop: 18, position: "relative" }}>
+          <div style={{ display: "flex", gap: 16, marginTop: 16, position: "relative" }}>
             <button onClick={() => void unlinkDevice()} disabled={unlinking} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: unlinking ? "default" : "pointer", padding: 0, opacity: unlinking ? 0.5 : 1 }}>{t("session.device.unlink")}</button>
           </div>
         </section>
@@ -485,20 +487,20 @@ export function WorkoutWrapped({
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(80% 45% at 90% 15%, color-mix(in srgb, ${VIOLET} 18%, transparent), transparent 60%)` }} />
           {eyebrow(t("session.wrapped.device.title"))}
           <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(26px, 8vw, 34px)", letterSpacing: "-.02em", lineHeight: 1.05, marginTop: 12, position: "relative" }}>{t("session.wrapped.device.lead")}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, marginTop: 22, background: LINE, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
-            {[
-              ["♥", "session.wrapped.device.hr"],
-              ["🔥", "session.wrapped.device.energy"],
-              ["⏱", "session.wrapped.device.time"],
-              ["🌙", "session.wrapped.device.recovery"],
-            ].map(([glyph, key]) => (
-              <div key={key} style={{ background: "#0e0f0d", padding: "14px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-                <span aria-hidden style={{ fontSize: 16 }}>{glyph}</span>
-                <span style={{ ...disp, fontWeight: 700, fontSize: fs.caption }}>{t(key!)}</span>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, marginTop: 24, background: LINE, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
+            {([
+              ["heart", RED, "session.wrapped.device.hr"],
+              ["flame", RED, "session.wrapped.device.energy"],
+              ["stopwatch", CHALK, "session.wrapped.device.time"],
+              ["moon", GOLD, "session.wrapped.device.recovery"],
+            ] as const).map(([icon, tint, key]) => (
+              <div key={key} style={{ background: "#0e0f0d", padding: "16px 12px", display: "flex", alignItems: "center", gap: 12 }}>
+                <AuroraIcon name={icon} size={16} color={tint} style={{ flex: "0 0 auto" }} />
+                <span style={{ ...disp, fontWeight: 700, fontSize: fs.caption }}>{t(key)}</span>
               </div>
             ))}
           </div>
-          <button onClick={() => go("connections")} style={{ ...disp, marginTop: 22, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 24px", cursor: "pointer", position: "relative" }}>{t("session.wrapped.device.cta")} →</button>
+          <button onClick={() => go("connections")} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer", position: "relative" }}><CtaLabel>{`${t("session.wrapped.device.cta")} →`}</CtaLabel></button>
           <Mono s={{ fontSize: fs.caption, marginTop: 16, lineHeight: 1.5, position: "relative", display: "block" }}>
             {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
           </Mono>
@@ -514,7 +516,7 @@ export function WorkoutWrapped({
         {standing ? (
           <div style={{ position: "relative" }}>
             {eyebrow(t("session.wrapped.standing"))}
-            <div style={{ ...disp, fontWeight: 900, fontSize: 62, letterSpacing: "-.03em", marginTop: 14 }}>{t("session.wrapped.top")}</div>
+            <div style={{ ...disp, fontWeight: 900, fontSize: 62, letterSpacing: "-.03em", marginTop: 16 }}>{t("session.wrapped.top")}</div>
             <div style={{ ...disp, fontWeight: 900, fontSize: 62, letterSpacing: "-.03em", lineHeight: .95, color: txt(LIME) }}>{standing.topPct}%</div>
             <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 12 }}>{cohort!.sport} — {t("session.wrapped.estimate")}</div>
           </div>
@@ -526,13 +528,13 @@ export function WorkoutWrapped({
             <div aria-hidden style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 3, height: 72 }}>
               {signature.map((v, i) => (<div key={i} style={{ width: 6, height: `${Math.round(v * 100)}%`, borderRadius: 3, background: `linear-gradient(180deg, ${LIME_HEX}, color-mix(in srgb, ${LIME} 12%, transparent))`, opacity: 0.45 + v * 0.55 }} />))}
             </div>
-            <Mono s={{ fontSize: fs.micro, letterSpacing: ".1em", marginTop: 12, display: "block" }}>{t("session.wrapped.signatureCap")}</Mono>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", marginTop: 12, display: "block" }}>{t("session.wrapped.signatureCap")}</Mono>
           </div>
         )}
       </section>
 
       {/* ── DETAILS (charts + breakdown + manage) ── */}
-      <div style={{ background: "var(--color-ink)", padding: "28px 18px 64px", maxWidth: 720, margin: "0 auto" }}>
+      <div style={{ background: "var(--color-ink)", padding: "28px 16px 64px", maxWidth: 720, margin: "0 auto" }}>
         {details}
       </div>
 
@@ -540,10 +542,10 @@ export function WorkoutWrapped({
       {showDock && (
         <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 65, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
           <div style={{ width: "100%", maxWidth: 460, padding: "0 24px 24px", pointerEvents: "auto" }}>
-            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
               {keys.map((_, i) => (<div key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: 3, background: i === Math.min(panel, keys.length - 1) ? LIME_HEX : LINE }} />))}
             </div>
-            <button onClick={() => { setActive(0); setSheetOpen(true); }} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "17px", fontWeight: 900, fontSize: fs.note, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>↗ {t("summary.share")}</button>
+            <button onClick={() => { setActive(0); setSheetOpen(true); }} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "16px", fontWeight: 900, fontSize: fs.note, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>↗ {t("summary.share")}</button>
           </div>
         </div>
       )}
@@ -551,25 +553,25 @@ export function WorkoutWrapped({
       {/* ── SHARE SHEET ── */}
       {sheetOpen && (
         <div onClick={() => setSheetOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(4,4,4,.72)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={(e) => e.stopPropagation()} className="win-pop" style={{ background: "#0e100d", borderRadius: "28px 28px 0 0", borderTop: `1px solid ${LINE}`, padding: "16px 16px 26px", maxWidth: 520, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
-            <div style={{ width: 38, height: 4, borderRadius: 2, background: LINE, margin: "2px auto 14px" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+          <div onClick={(e) => e.stopPropagation()} className="win-pop" style={{ background: "#0e100d", borderRadius: "28px 28px 0 0", borderTop: `1px solid ${LINE}`, padding: "16px 16px 24px", maxWidth: 520, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
+            <div style={{ width: 38, height: 4, borderRadius: 2, background: LINE, margin: "2px auto 16px" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{t("session.wrapped.chooseStory")}</div>
               <button onClick={() => setSheetOpen(false)} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>{t("summary.doneToday")}</button>
             </div>
             <div ref={pagerRef} onScroll={onPagerScroll} style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
               {slides.map((s, i) => (
                 <div key={i} style={{ flex: "0 0 100%", scrollSnapAlign: "center", display: "flex", justifyContent: "center" }}>
-                  <div role="button" tabIndex={0} onClick={cycleStyle} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycleStyle(); } }} aria-label={`${t(st.nameKey)} — ${t("summary.cardHint")}`} style={{ cursor: "pointer", borderRadius: 15, boxShadow: "0 24px 60px rgba(0,0,0,.45)" }}>
+                  <div role="button" tabIndex={0} onClick={cycleStyle} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycleStyle(); } }} aria-label={`${t(st.nameKey)} — ${t("summary.cardHint")}`} style={{ cursor: "pointer", borderRadius: 16, boxShadow: "0 24px 60px rgba(0,0,0,.45)" }}>
                     <StoryCard slide={s} st={st} w={300} t={t} units={units} active={i === activeIdx} />
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 7, margin: "14px 0" }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, margin: "16px 0" }}>
               {slides.map((_, i) => (<button key={i} type="button" onClick={() => goTo(i)} aria-label={slides[i]!.eyebrow} aria-current={i === activeIdx} style={{ width: i === activeIdx ? 20 : 7, height: 7, padding: 0, border: "none", borderRadius: 4, background: i === activeIdx ? LIME_HEX : LINE, cursor: "pointer" }} />))}
             </div>
-            <button onClick={share} disabled={sharing} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 14, padding: "16px 18px", fontWeight: 900, fontSize: fs.note, cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1 }}>{shareMsg || (sharing ? "…" : `↗ ${t("summary.shareStory")}`)}</button>
+            <button onClick={share} disabled={sharing} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "16px 16px", fontWeight: 900, fontSize: fs.note, cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1 }}>{shareMsg || (sharing ? "…" : `↗ ${t("summary.shareStory")}`)}</button>
           </div>
         </div>
       )}

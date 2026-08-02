@@ -86,7 +86,7 @@ export default function AuroraCoachApply() {
           {existing?.status !== "pending" && (
             <ACard style={{ marginTop: 16 }}>
               {/* How it works — the same 3 steps as the web coaching tab. */}
-              <View style={{ marginBottom: 14 }}>
+              <View style={{ marginBottom: 16 }}>
                 {[1, 2, 3].map((n) => (
                   <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 }}>
                     <View style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
@@ -105,13 +105,13 @@ export default function AuroraCoachApply() {
                 multiline
                 numberOfLines={5}
                 textAlignVertical="top"
-                style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, marginTop: 12, minHeight: 120 }}
+                style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16, marginTop: 12, minHeight: 120 }}
               />
               {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
               <Pressable
                 onPress={submit}
                 disabled={!canSubmit}
-                style={{ backgroundColor: canSubmit ? C.lime : `${C.lime}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 14 }}
+                style={{ backgroundColor: canSubmit ? C.lime : `${C.lime}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
               >
                 {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.account.settings.coach-submit")}</Text>}
               </Pressable>

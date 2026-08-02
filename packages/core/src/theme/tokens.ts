@@ -7,13 +7,18 @@
 export const colors = {
   ink: "#0c0d0c", // near-black background
   ink2: "#141614", // raised surface
-  card: "#161816", // card surface
-  line: "#2a2d2a", // hairline borders
+  // card + line MUST match THEMES.dark in palette.ts and the :root defaults in
+  // apps/web/app/globals.css — these were stale (#161816/#2a2d2a) for a while,
+  // which made every chart hairline draw in a different grey than every border.
+  card: "#151715", // card surface
+  line: "#242724", // hairline borders
   // AURORA SPECTRUM accents — the brand's coolors palette (chartreuse / teal /
-  // sand / terracotta), layered over the unchanged dark surfaces. Each daily
-  // Today section maps onto one accent (see semantic.ts SECTION_COLOR), so the
-  // app reads as a guided gradient rather than one flat lime. Surfaces above are
-  // untouched. (The `violet` KEY is a legacy name: it now holds a steel/slate
+  // sand / terracotta), layered over the unchanged dark surfaces. State meaning
+  // routes through semantic.ts ROLE_COLOR; chartreuse stays the ONE action
+  // accent. Surfaces above are untouched. (The old SECTION_COLOR per-section
+  // decoration map was removed with its last consumer — colour now only ever
+  // encodes state, never section identity.)
+  // (The `violet` KEY is a legacy name: it now holds a steel/slate
   // BLUE and is the coach / non-premium 5th accent — the premium-upgrade cue
   // moved to sand/amber, see premium-accent-sand + coach-accent-steel.)
   lime: "#c6f84f", // chartreuse — the primary accent (action / "go" / Train)

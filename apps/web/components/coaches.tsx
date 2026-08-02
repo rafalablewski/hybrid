@@ -105,7 +105,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                             <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: C("ash") }}>{t("w.coaches.week")} {wi + 1}</div>
                             {w.days.map((d: ProgramPreviewDay, di: number) => (
                               <div key={di} style={{ marginTop: 4 }}>
-                                <div style={{ color: C("chalk"), fontSize: 12.5, fontWeight: 600 }}>{d.day || `${t("w.coaches.day")} ${di + 1}`}</div>
+                                <div style={{ color: C("chalk"), fontSize: 13, fontWeight: 600 }}>{d.day || `${t("w.coaches.day")} ${di + 1}`}</div>
                                 <div style={{ color: C("ash"), fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" – ") || "—"}</div>
                               </div>
                             ))}

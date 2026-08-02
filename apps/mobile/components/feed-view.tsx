@@ -136,7 +136,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
           )}
         </View>
       )}
-      <View style={{ flexDirection: "row", gap: 18, marginTop: 12 }}>
+      <View style={{ flexDirection: "row", gap: 16, marginTop: 12 }}>
         <Pressable onPress={() => cheer(item)}><Text style={{ color: item.kudosedByMe ? C.lime : C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>👏 {item.kudos > 0 ? item.kudos : ""} {t("w.social.cheer")}</Text></Pressable>
         <Pressable onPress={() => setOpen(open === item.id ? null : item.id)}><Text style={{ color: C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>💬 {item.comments > 0 ? item.comments : ""} {t("w.social.comment")}</Text></Pressable>
       </View>

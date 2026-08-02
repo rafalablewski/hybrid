@@ -63,7 +63,7 @@ const SHORT_KEY: Record<string, string> = {
 };
 
 const kicker: CSSProperties = {
-  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em",
+  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
   textTransform: "uppercase", whiteSpace: "nowrap",
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
@@ -91,20 +91,21 @@ export function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: st
     <button
       onClick={onClick}
       aria-label={`${title} – ${sub}`}
+      className="pressable"
       style={{
         display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 10,
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
-        padding: "12px 14px", cursor: "pointer", textAlign: "left", color: C("chalk"),
+        padding: "12px 16px", cursor: "pointer", textAlign: "left", color: C("chalk"),
       }}
     >
       <span style={{
-        width: 32, height: 32, borderRadius: 10, background: C("ink"),
+        width: 32, height: 32, borderRadius: 12, background: C("ink"),
         border: `1px solid ${C("line")}`, display: "flex", alignItems: "center",
         justifyContent: "center", fontSize: 13, color: C("ash"), flex: "0 0 32px",
       }} aria-hidden>{glyph}</span>
       <span style={{ flex: 1 }}>
         <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg }}>{title}</span>
-        <span style={{ display: "block", ...kicker, fontSize: 9.5, color: C("ash"), marginTop: 2 }}>{sub}</span>
+        <span style={{ display: "block", ...kicker, fontSize: 10, color: C("ash"), marginTop: 2 }}>{sub}</span>
       </span>
       <span style={{ fontSize: fs.note, color: C("ash") }} aria-hidden>›</span>
     </button>
@@ -233,12 +234,12 @@ export default function AuroraWeekVerdict({
   const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
 
   return (
-    <div style={{ marginTop: 22 }}>
+    <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, mono meta right. The
           head names the window so no figure below it needs a qualifier. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{title}</span>
-        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".06em", color: C("ash") }}>{span}</span>
+        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".08em", color: C("ash") }}>{span}</span>
       </div>
 
       {/* ── THE DATE FILTER — the shared LiquidSeg: neutral pill at rest,
@@ -253,7 +254,7 @@ export default function AuroraWeekVerdict({
           render: (on: boolean) => (
             <span
               style={{
-                fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".04em",
+                fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em",
                 color: on ? C("chalk") : C("ash"),
                 fontWeight: on ? 600 : 400,
                 transition: "color .2s ease",
@@ -273,9 +274,9 @@ export default function AuroraWeekVerdict({
         trackStyle={{ background: C("ink"), border: `1px solid ${C("line")}`, marginBottom: 10 }}
       />
 
-      <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, padding: "16px 17px" }}>
+      <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontSize: fs.bodyLg, lineHeight: 1.4, color: C("chalk") }}>
               <Lead template={t(verdictLeadKey(v))} word={v.metric ? t(verdictMetricKey(v.metric)) : null} />
@@ -289,7 +290,7 @@ export default function AuroraWeekVerdict({
 
         {/* THE RECEIPTS — the figures the sentence was drawn from. Each one is
             a button onto its own breakdown. */}
-        <div style={{ position: "relative", display: "flex", marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ position: "relative", display: "flex", marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
           {ordered.map((f, i) => {
             const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
@@ -350,7 +351,7 @@ export default function AuroraWeekVerdict({
                 key={detail.metric}
                 style={{
                   background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16,
-                  padding: "13px 14px", animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
+                  padding: "12px 16px", animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
                 }}
               >
                 <MetricDetail
@@ -478,7 +479,7 @@ function MetricDetail({
       {detail.groups.length > 0 && (
         <>
           {/* The share bar — every group's slice of the total, in one line. */}
-          <div style={{ display: "flex", gap: 2, height: 6, marginTop: 11, borderRadius: 999, overflow: "hidden" }} aria-hidden>
+          <div style={{ display: "flex", gap: 2, height: 6, marginTop: 12, borderRadius: 999, overflow: "hidden" }} aria-hidden>
             {detail.groups.map((g, i) => (
               <span key={g.id} style={{
                 flexGrow: Math.max(g.share, 0.02), flexBasis: 0, borderRadius: 999,
@@ -489,7 +490,7 @@ function MetricDetail({
           </div>
 
           {/* One row per activity — tap to narrow the list underneath it. */}
-          <div style={{ marginTop: 9 }}>
+          <div style={{ marginTop: 8 }}>
             {detail.groups.map((g: ActivityGroup) => {
               const active = group === g.id;
               return (
@@ -498,9 +499,9 @@ function MetricDetail({
                   onClick={() => onGroup(active ? null : g.id)}
                   aria-pressed={active}
                   style={{
-                    display: "flex", width: "calc(100% + 16px)", alignItems: "center", gap: 9, textAlign: "left",
+                    display: "flex", width: "calc(100% + 16px)", alignItems: "center", gap: 8, textAlign: "left",
                     padding: "6px 8px", marginLeft: -8, background: active ? C("ink2") : "transparent",
-                    border: "none", borderRadius: 10, cursor: "pointer", color: "inherit",
+                    border: "none", borderRadius: 12, cursor: "pointer", color: "inherit",
                     transition: "background .18s ease",
                   }}
                 >
@@ -508,7 +509,7 @@ function MetricDetail({
                   <span style={{ flex: 1, minWidth: 0, fontSize: fs.caption, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {groupName(g)}
                   </span>
-                  <span style={{ ...num, fontSize: 9.5, color: C("ash"), letterSpacing: ".06em" }}>{Math.round(g.share * 100)}%</span>
+                  <span style={{ ...num, fontSize: 10, color: C("ash"), letterSpacing: ".08em" }}>{Math.round(g.share * 100)}%</span>
                   <span style={{ ...num, fontSize: fs.caption, color: C("chalk"), minWidth: 62, textAlign: "right" }}>
                     {fmtValue(detail.metric, g.value, g)}
                   </span>
@@ -531,11 +532,11 @@ function MetricDetail({
                   disabled={!onSession}
                   style={{
                     display: "flex", width: "calc(100% + 16px)", marginLeft: -8, alignItems: "center", gap: 10,
-                    padding: "7px 8px", background: "transparent", border: "none", borderRadius: 10,
+                    padding: "8px 8px", background: "transparent", border: "none", borderRadius: 12,
                     cursor: onSession ? "pointer" : "default", textAlign: "left", color: "inherit",
                   }}
                 >
-                  <span style={{ ...num, fontSize: 9.5, color: C("ash"), width: 44, flex: "0 0 44px", letterSpacing: ".02em" }}>
+                  <span style={{ ...num, fontSize: 10, color: C("ash"), width: 44, flex: "0 0 44px", letterSpacing: ".08em" }}>
                     {dateFmt(new Date(it.startedAt).getTime(), { day: "numeric", month: "short" })}
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
@@ -557,7 +558,7 @@ function MetricDetail({
               onClick={onAll}
               style={{
                 marginTop: 6, background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-                ...kicker, fontSize: 9.5, color: C("ash"),
+                ...kicker, fontSize: 10, color: C("ash"),
               }}
             >
               {all ? t("w.home.act.showFewer") : t("w.home.act.showAll").replace("{n}", String(shownCount))}
@@ -573,7 +574,7 @@ function MetricDetail({
 
 function PickerSection({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div style={{ marginTop: 14 }}>
+    <div style={{ marginTop: 16 }}>
       <div style={{ ...kicker, color: C("ash"), margin: "0 4px 6px" }}>{label}</div>
       <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, overflow: "hidden" }}>
         {children}
@@ -589,7 +590,7 @@ function PickerRow({ label, active, onClick }: { label: string; active: boolean;
       aria-current={active}
       style={{
         display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 10,
-        padding: "12px 14px", background: "transparent", border: "none",
+        padding: "12px 16px", background: "transparent", border: "none",
         borderTop: `1px solid ${C("line")}`, cursor: "pointer", textAlign: "left",
         fontSize: fs.bodyLg, color: active ? C("chalk") : C("ash"),
       }}

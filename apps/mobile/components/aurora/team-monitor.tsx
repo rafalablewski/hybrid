@@ -183,9 +183,9 @@ const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTra
 
 function SummaryCard({ C, label, value, color }: { C: Palette; label: string; value: number; color: string }) {
   return (
-    <ACard style={{ flex: 1, minWidth: 140, padding: 18 }}>
+    <ACard style={{ flex: 1, minWidth: 140, padding: 16 }}>
       <Text style={{ fontFamily: F.black, fontSize: 28, lineHeight: 32, color }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.8, color: C.ash, marginTop: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 4 }}>{label}</Text>
     </ACard>
   );
 }
@@ -194,7 +194,7 @@ function Pill({ C, active, label, onPress }: { C: Palette; active: boolean; labe
   const accent = txt(C, C.lime);
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}>
+      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.caption, textTransform: "uppercase", color: active ? accent : C.ash }}>{label}</Text>
     </Pressable>
   );
@@ -211,7 +211,7 @@ function Chip({ C, color, label }: { C: Palette; color: string; label: string })
 function Metric({ C, label, value, sub, color, dot = false }: { C: Palette; label: string; value: string; sub?: string; color: string; dot?: boolean }) {
   return (
     <View style={{ width: "33.33%", paddingVertical: 6 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 }}>
         {dot ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} /> : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color }}>{value}</Text>

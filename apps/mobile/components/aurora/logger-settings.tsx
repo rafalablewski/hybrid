@@ -41,7 +41,7 @@ export default function AuroraLoggerSettings() {
   // A section label — an uppercase header above its own card (the app-wide
   // Settings grouping treatment).
   const SLabel = ({ children }: { children: string }) => (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginLeft: 4, marginTop: 18, marginBottom: 10 }}>{children}</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginLeft: 4, marginTop: 16, marginBottom: 10 }}>{children}</Text>
   );
 
   // A labelled section of segmented pills (units / rest / increment / start view).
@@ -66,7 +66,7 @@ export default function AuroraLoggerSettings() {
         {ROWS.map((r, i) => (
           <View
             key={r.key}
-            style={{ flexDirection: "row", alignItems: "center", paddingVertical: 13, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
+            style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t(r.titleKey)}</Text>

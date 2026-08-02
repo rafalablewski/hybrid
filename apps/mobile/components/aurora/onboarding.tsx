@@ -58,11 +58,11 @@ export default function AuroraOnboarding() {
             <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= idx ? palette.lime : palette.line }} />
           ))}
         </View>
-        <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "flex-end", marginTop: 14 }}>
+        <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "flex-end", marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>{t("w.account.onboarding.skip")}</Text>
         </Pressable>
 
-        <ScrollView style={{ marginTop: 14 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ marginTop: 16 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
           {loading && questions.length === 0 ? (
             <ASub>{t("common.loading")}</ASub>
           ) : q ? (
@@ -126,7 +126,7 @@ function QuestionBody({
       <>
         {ONBOARDING_GOAL_GROUPS.map((group) => (
           <View key={group.category} style={{ marginTop: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 12, marginBottom: 6 }}>{group.category}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 12, marginBottom: 6 }}>{group.category}</Text>
             {group.goals.map((g) => (
               <Choice key={g.id} active={selected === g.id} title={g.label} sub={g.blurb} onPress={() => setAnswer(q.key, g.id)} />
             ))}

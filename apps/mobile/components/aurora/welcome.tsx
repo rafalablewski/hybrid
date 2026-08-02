@@ -24,7 +24,7 @@ export default function AuroraWelcome() {
       </View>
 
       <APill label={t("welcome.aurora.login")} variant="soft" onPress={() => router.push("/login")} />
-      <APill label={t("welcome.aurora.register")} variant="light" onPress={() => router.push("/login?mode=signup")} style={{ marginTop: 14 }} />
+      <APill label={t("welcome.aurora.register")} variant="light" onPress={() => router.push("/login?mode=signup")} style={{ marginTop: 16 }} />
 
       <Text
         onPress={() => router.push("/workout?source=empty")}

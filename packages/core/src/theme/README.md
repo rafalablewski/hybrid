@@ -13,7 +13,7 @@ of truth** and can never drift.
 
 | File           | Role (WordPress analogy)        | Holds                                                                 |
 | -------------- | ------------------------------- | -------------------------------------------------------------------- |
-| `tokens.ts`    | `style.css` variables           | Raw brand tokens — colours (lime/ink/chalk/…), fonts, radii, the type & spacing scale. |
+| `tokens.ts`    | `style.css` variables           | Raw brand tokens — colours (lime/ink/chalk/…) and font families. The type & spacing scale lives in `../scale.ts`; radii live with each client kit (web `globals.css` `--r-*`, mobile `kit.tsx` `RADIUS`). |
 | `palette.ts`   | colour scheme                   | Light/dark surface + text palettes (`ThemePalette`, `THEMES`, role colours). |
 | `templates.ts` | the active theme switch         | The **skin registry** — `Classic ⇄ Aurora`, the default skin, and the storage key both clients persist the choice under. |
 | `icons.ts`     | the theme's icon set            | The Aurora icon set: the `AuroraIconName` union + 72×72 SVG path data. |

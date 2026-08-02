@@ -50,7 +50,7 @@ export function SButton({ label, onPress, ghost, tone, small, disabled }: { labe
 export function SPill({ label, active, onPress, count }: { label: string; active?: boolean; onPress?: () => void; count?: number }) {
   const C = useTheme().palette;
   return (
-    <Pressable onPress={onPress} style={{ paddingVertical: 7, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: active ? C.lime : C.line, backgroundColor: active ? C.lime : "transparent" }}>
+    <Pressable onPress={onPress} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: active ? C.lime : C.line, backgroundColor: active ? C.lime : "transparent" }}>
       <Text style={{ color: active ? C.onAccent : C.chalk, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>{label}{count ? ` ${count}` : ""}</Text>
     </Pressable>
   );
@@ -97,7 +97,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
           <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0 }}>
             {!data || !p ? <ActivityIndicator color={C.lime} /> : (
               <>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
                   <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`} {p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}>✓</Text> : null}</Text>
@@ -105,7 +105,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                   </View>
                 </View>
                 {p.bio ? <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 21, marginTop: 12 }}>{p.bio}</Text> : null}
-                <View style={{ flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
                   {rel !== "self" && (rel === "requested"
                     ? <SButton label={t("w.social.requested")} ghost small disabled />
                     : following
@@ -115,7 +115,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 </View>
                 {data?.canViewResults ? (
                   data?.stats && (
-                    <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+                    <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
                       {[{ l: t("w.social.statSessions"), v: data.stats.totalSessions }, { l: t("w.social.statVolume"), v: `${Math.round(data.stats.totalVolumeKg / 1000)}t` }, { l: t("w.social.statStreak"), v: `${data.stats.currentStreak}d` }].map((s) => (
                         <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 12, padding: 12, alignItems: "center" }}>
                           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 18 }}>{s.v}</Text>
@@ -125,18 +125,18 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                     </View>
                   )
                 ) : (
-                  <View style={{ marginTop: 14, backgroundColor: C.ink2, borderRadius: 12, padding: 14 }}>
+                  <View style={{ marginTop: 16, backgroundColor: C.ink2, borderRadius: 12, padding: 16 }}>
                     <Text style={{ color: C.ash, fontSize: 13 }}>🔒 {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : t("w.social.followToSee")}</Text>
                   </View>
                 )}
                 {rel !== "self" && (
-                  <View style={{ flexDirection: "row", gap: 18, marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
+                  <View style={{ flexDirection: "row", gap: 16, marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
                     <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: 12, fontFamily: F.bold }}>⚐ {t("w.social.report")}</Text></Pressable>
                     <Pressable onPress={doBlock}><Text style={{ color: txt(C, C.red), fontSize: 12, fontFamily: F.bold }}>⊘ {t("w.social.block")}</Text></Pressable>
                   </View>
                 )}
                 {cmp && (
-                  <View style={{ marginTop: 18 }}>
+                  <View style={{ marginTop: 16 }}>
                     <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 8 }}>{t("w.social.you")} {cmp.score.a} — {cmp.score.b} {p.displayName || "@" + p.handle}</Text>
                     {[...cmp.lines, ...cmp.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
                       <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>

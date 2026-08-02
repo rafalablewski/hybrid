@@ -120,7 +120,7 @@ export function FeelPrompt({
             aria-label={t(l.labelKey)}
             style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 2px",
-              borderRadius: 14, cursor: "pointer",
+              borderRadius: 16, cursor: "pointer",
               border: `1px solid ${on ? LIME_HEX : LINE}`,
               background: on ? `color-mix(in srgb, ${LIME} 16%, transparent)` : compact ? "var(--color-ink2)" : "#0e0f0d",
             }}
@@ -137,16 +137,16 @@ export function FeelPrompt({
     <div
       style={
         compact
-          ? { position: "relative", background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 20, padding: 16, marginTop: 16 }
+          ? { position: "relative", background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 28, padding: 16, marginTop: 16 }
           : { position: "relative" }
       }
     >
-      {eyebrow ? eyebrow(t("session.feel.q")) : <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".15em" }}>{t("session.feel.q")}</Mono>}
+      {eyebrow ? eyebrow(t("session.feel.q")) : <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>{t("session.feel.q")}</Mono>}
       <div style={{ ...disp, fontWeight: 900, fontSize: compact ? "clamp(18px, 4vw, 22px)" : "clamp(21px, 6vw, 28px)", letterSpacing: "-.02em", lineHeight: 1.15, marginTop: 10 }}>{t("session.feel.lead")}</div>
       {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
 
       {feel != null && (
-        <div style={{ marginTop: 18 }}>
+        <div style={{ marginTop: 16 }}>
           <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }}>{t("session.fatigue.q")}</Mono>
           {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
           {/* WHAT THIS ANSWER IS WORTH. "Wrecked" ten minutes after a hard
@@ -155,7 +155,7 @@ export function FeelPrompt({
               so it says which one this is rather than scoring in silence. */}
           {reading && (
             <div style={{ marginTop: 12, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={reading.read === "nextDay" || reading.read === "sameDay" ? LIME_HEX : undefined}>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={reading.read === "nextDay" || reading.read === "sameDay" ? LIME_HEX : undefined}>
                 {t(FEEL_READ_KEY[reading.read])}
               </Mono>
               <Mono s={{ flex: 1, minWidth: 180, fontSize: fs.caption, lineHeight: 1.5 }}>{t(readNoteKey(reading.read, reading.fatigue))}</Mono>
@@ -171,7 +171,7 @@ export function FeelPrompt({
       )}
 
       {load != null && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${LINE}` }}>
           <div style={{ ...disp, fontWeight: 900, fontSize: 30, color: txt(LIME), fontVariantNumeric: "tabular-nums" }}>{load}</div>
           <Mono s={{ flex: 1, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>{t("session.feel.load")}</Mono>
           <div style={{ textAlign: "right" }}>

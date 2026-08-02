@@ -132,7 +132,7 @@ export default function AuroraLogin() {
 
       <AuroraMark size={56} />
       {mfaStep ? (
-        <View style={{ marginTop: 22 }}>
+        <View style={{ marginTop: 24 }}>
           <AHeading>{t("w.account.login.verify-title")}</AHeading>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.ash, marginTop: 8, marginBottom: 20 }}>{t("w.account.login.verify-sub")}</Text>
           <TextInput
@@ -143,23 +143,23 @@ export default function AuroraLogin() {
             placeholder="000000"
             placeholderTextColor={palette.ash}
             accessibilityLabel={t("w.account.login.verify-title")}
-            style={{ fontFamily: F.mono, fontSize: 24, letterSpacing: 8, textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: 16, paddingVertical: 14, backgroundColor: palette.ink2 }}
+            style={{ fontFamily: F.mono, fontSize: 24, letterSpacing: 8, textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: 16, paddingVertical: 16, backgroundColor: palette.ink2 }}
           />
           {!!error && (
             <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.red), marginTop: 10 }}>{error}</Text>
           )}
           <APill label={busy ? "…" : t("w.account.login.verify")} variant="light" onPress={verifyMfa} disabled={busy || !isValidTotpCode(mfaCode)} style={{ marginTop: 16 }} />
-          <Pressable onPress={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={{ marginTop: 18, alignItems: "center" }}>
+          <Pressable onPress={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={{ marginTop: 16, alignItems: "center" }}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.ash }}>← {t("w.account.login.cancel")}</Text>
           </Pressable>
         </View>
       ) : (
       <>
-      <AHeading style={{ marginTop: 22 }}>
+      <AHeading style={{ marginTop: 24 }}>
         {isSignup ? t("w.account.login.signup-title") : t("w.account.login.signin-title")}
       </AHeading>
 
-      <View style={{ marginTop: 26 }}>
+      <View style={{ marginTop: 24 }}>
         {isSignup && <AField value={name} onChange={setName} placeholder={t("w.account.login.username-ph")} icon="user" />}
         <AField value={email} onChange={setEmail} placeholder={t("w.account.login.email-ph")} keyboard="email-address" icon="mail" />
         <AField value={password} onChange={setPassword} placeholder={t("w.account.login.password-ph")} secure icon="lock" />
@@ -206,7 +206,7 @@ export default function AuroraLogin() {
       )}
 
       {!live && (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, textAlign: "center", marginTop: 18 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, textAlign: "center", marginTop: 16 }}>
           {t("w.account.login.anon-key-hint")}
         </Text>
       )}

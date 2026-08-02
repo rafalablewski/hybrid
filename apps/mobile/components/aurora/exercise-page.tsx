@@ -242,9 +242,9 @@ function DeltasChart({ C, runs }: { C: Palette; runs: { date: string; deltaSec: 
 function MeterRows({ C, rows, color }: { C: Palette; rows: { label: string; pct: number; value: string }[]; color: string }) {
   const hi = Math.max(...rows.map((r) => r.pct), 1);
   return (
-    <View style={{ paddingTop: 22, paddingBottom: 8 }}>
+    <View style={{ paddingTop: 24, paddingBottom: 8 }}>
       {rows.map((r) => (
-        <View key={r.label} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 }}>
+        <View key={r.label} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16 }}>
           <Text style={{ width: 64, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{r.label}</Text>
           <View style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: C.line, overflow: "hidden" }}>
             <View style={{ height: "100%", borderRadius: 2, width: `${(r.pct / hi) * 100}%`, backgroundColor: color, opacity: 0.45 + (r.pct / hi) * 0.55 }} />
@@ -262,12 +262,12 @@ type SlideOf<K extends ExercisePageSlide["kind"]> = Extract<ExercisePageSlide, {
 
 function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax">; units: WeightUnit; t: (k: string) => string }) {
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, paddingTop: 16, paddingBottom: 6 }}>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 16, paddingBottom: 6 }}>
       {slide.cells.map((cell, i) => (
-        <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: 14, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.6 }}>{i + 1}RM</Text>
+        <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: 16, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, letterSpacing: 0.9 }}>{i + 1}RM</Text>
           <Text style={{ fontFamily: F.black, fontSize: 16, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 7, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
         </View>
       ))}
     </View>
@@ -276,15 +276,30 @@ function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax
 
 function ScatterChart({ C, slide, stroke, units, t }: { C: Palette; slide: SlideOf<"loadReps">; stroke: string; units: WeightUnit; t: (k: string) => string }) {
   const map = slide.map;
-  const W = 353, H = 220, L = 8, R = 8, T = 12, B = 8;
+  const W = 353, H = 220, L = 30, R = 8, T = 12, B = 20;
   const topIso = map.isolines[map.isolines.length - 1] ?? map.maxLoadKg;
   const yMax = Math.max(map.maxLoadKg, topIso) * 1.06;
   const yMin = Math.min(...map.points.map((p) => p.loadKg)) * 0.9;
   const X = (r: number) => L + ((r - 0.5) * (W - L - R)) / 12;
   const Y = (kg: number) => T + ((yMax - kg) * (H - T - B)) / (yMax - yMin || 1);
+  // reduced-density axes (web draws every step): step sized so ~3-4 lines fit
+  const rawStep = (yMax - yMin) / 3.5;
+  const gridStep = rawStep > 30 ? 40 : rawStep > 15 ? 20 : rawStep > 7 ? 10 : 5;
+  const gridLines: number[] = [];
+  for (let g = Math.ceil(yMin / gridStep) * gridStep; g < yMax; g += gridStep) gridLines.push(g);
+  const repTicks = [1, 3, 5, 8, 10, 12];
   return (
     <View>
       <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>
+        {gridLines.map((g) => (
+          <G key={g}>
+            <SvgLine x1={L} x2={W - R} y1={Y(g)} y2={Y(g)} stroke={C.line} strokeWidth={1} strokeDasharray="3 4" />
+            <SvgText x={L - 6} y={Y(g) + 3} textAnchor="end" fontFamily={F.mono} fontSize={9} fill={C.ash} opacity={0.7}>{Math.round(kgToUnit(g, units))}</SvgText>
+          </G>
+        ))}
+        {repTicks.map((r) => (
+          <SvgText key={r} x={X(r)} y={H - 4} textAnchor="middle" fontFamily={F.mono} fontSize={9} fill={C.ash} opacity={0.7}>{r}</SvgText>
+        ))}
         {map.isolines.map((iso) => {
           let d = "";
           for (let r = 0.6; r <= 12.4; r += 0.3) {
@@ -292,7 +307,13 @@ function ScatterChart({ C, slide, stroke, units, t }: { C: Palette; slide: Slide
             if (kg < yMin || kg > yMax) continue;
             d += `${d ? "L" : "M"}${X(r).toFixed(1)},${Y(kg).toFixed(1)}`;
           }
-          return <Path key={iso} d={d} fill="none" stroke={C.ash} strokeWidth={1.2} strokeDasharray="4 4" opacity={0.7} />;
+          const labelY = Y(Math.min(yMax * 0.985, iso / (1 + 0.6 / 30)));
+          return (
+            <G key={iso}>
+              <Path d={d} fill="none" stroke={C.ash} strokeWidth={1.2} strokeDasharray="4 4" opacity={0.7} />
+              <SvgText x={L + 6} y={labelY - 5} fontFamily={F.mono} fontSize={9} fill={C.ash} opacity={0.7}>{Math.round(kgToUnit(iso, units))}</SvgText>
+            </G>
+          );
         })}
         {map.points.map((p, i) => (
           <Circle key={i} cx={X(p.reps) + ((i % 5) - 2) * 1.6} cy={Y(p.loadKg)} r={p.recent ? 3.6 : 2.8} fill={p.recent ? stroke : C.ash} opacity={p.recent ? 1 : 0.45} />
@@ -323,9 +344,19 @@ function SurfaceChart({ C, slide, t }: { C: Palette; slide: SlideOf<"surface">; 
         <Path key={`t${b}-${w}`} d={`M${x},${y - h} l${wdt},${-dep * 0.5} l${wdt * 0.6},${dep * 0.35} l${-wdt},${dep * 0.5} Z`} fill={c} stroke={C.ink} strokeWidth={0.6} />,
       );
     }
+  // reduced-density week marks (web labels every other week): first / middle / last
+  const weekTicks = Array.from(new Set([0, Math.floor((weeks - 1) / 2), weeks - 1]));
   return (
     <View>
-      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>{nodes}</Svg>
+      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>
+        {nodes}
+        {s.bins.map((bn, b) => (
+          <SvgText key={bn} x={px(weeks - 1, b) + ix * 1.5} y={py(weeks - 1, b) + 8} fontFamily={F.mono} fontSize={10} fill={C.ash} opacity={0.7}>{`${bn} ${t("w.analyze.ex.surfaceReps")}`}</SvgText>
+        ))}
+        {weekTicks.map((w) => (
+          <SvgText key={w} x={px(w, 0) - 4} y={py(w, 0) - zh - 10} fontFamily={F.mono} fontSize={10} fill={C.ash} opacity={0.7}>{`W${w + 1}`}</SvgText>
+        ))}
+      </Svg>
       <CornerLabels C={C} l={`W1 → W${weeks}`} r={`${s.bins.join(" / ")} ${t("w.analyze.ex.surfaceReps")}`} />
     </View>
   );
@@ -393,14 +424,14 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
         {compare.weeklyCur.map((v, i) => <Circle key={i} cx={X(i)} cy={Y(v)} r={3} fill={C.violet} stroke={C.ink} strokeWidth={1} />)}
       </Svg>
       <CornerLabels C={C} l={t("w.analyze.ex.comparePrev")} r={t("w.analyze.ex.compareCur")} />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 16 }}>
         {tiles.map((tile) => (
           <View key={tile.l} style={{ width: "50%", paddingVertical: 8, paddingRight: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{tile.cur}</Text>
               {!tile.same && <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: txt(C, tile.good ? C.blue : C.red) }}>{tile.good ? "▲" : "▼"}</Text>}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano - 1, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
           </View>
         ))}
       </View>
@@ -439,7 +470,7 @@ function ConsistencyHeat({ C, slide, foot, t }: { C: Palette; slide: SlideOf<"co
         {stats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
-            <Text style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano - 1, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
+            <Text style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
           </View>
         ))}
       </View>
@@ -583,7 +614,7 @@ export default function AuroraExercisePage() {
           lifts only; cardio/custom names render nothing). */}
       <AuroraExerciseAnatomy name={name} />
 
-      <View style={{ flexDirection: "row", gap: 18, marginTop: 18, paddingHorizontal: 2 }}>
+      <View style={{ flexDirection: "row", gap: 16, marginTop: 16, paddingHorizontal: 2 }}>
         {PERIODS.map((p) => {
           const on = period === p.id;
           return (
@@ -595,7 +626,7 @@ export default function AuroraExercisePage() {
       </View>
 
       {/* HERO — one number, paired with the visible chart */}
-      <Animated.View style={{ marginTop: 18, marginHorizontal: 2, minHeight: 84, opacity: heroOpacity }}>
+      <Animated.View style={{ marginTop: 16, marginHorizontal: 2, minHeight: 84, opacity: heroOpacity }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
           <Text ref={heroShared.ref} style={[heroStyle, heroShared.hidden ? { opacity: 0 } : null]}>{hero.v}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.subtitle, color: C.ash }}>{hero.u}</Text>
@@ -631,9 +662,9 @@ export default function AuroraExercisePage() {
       ) : (
         <View style={{ marginTop: 10 }}>
           {slides.map((slide, i) => (
-            <View key={slide.kind} style={{ borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line, paddingTop: i === 0 ? 6 : 22, paddingBottom: 26 }}>
+            <View key={slide.kind} style={{ borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line, paddingTop: i === 0 ? 6 : 22, paddingBottom: 24 }}>
               {i > 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 14 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 16 }}>
                   {slideHero(slide, units, t).label}
                 </Text>
               ) : null}
@@ -646,7 +677,7 @@ export default function AuroraExercisePage() {
       <Pressable
         onPress={() => { setShowAll(!showAll); setPage(0); pagerRef.current?.scrollTo({ x: 0, animated: false }); }}
         accessibilityRole="button"
-        style={{ alignSelf: "center", paddingVertical: 8, paddingHorizontal: 14, marginTop: 18 }}
+        style={{ alignSelf: "center", paddingVertical: 8, paddingHorizontal: 12, marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
           {showAll ? t("w.analyze.exp.less") : t("w.analyze.exp.allStats")}
@@ -654,11 +685,11 @@ export default function AuroraExercisePage() {
       </Pressable>
 
       {/* quiet substats — typography over one hairline */}
-      <View style={{ flexDirection: "row", marginTop: 20, marginHorizontal: 2, paddingTop: 18, borderTopWidth: 1, borderTopColor: C.line }}>
+      <View style={{ flexDirection: "row", marginTop: 20, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
         {substats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
-            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.nano - 1, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{st.l}</Text>
+            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{st.l}</Text>
           </View>
         ))}
       </View>
@@ -666,7 +697,7 @@ export default function AuroraExercisePage() {
       {/* BEST SET + velocity — quiet typography over one hairline (the rest of
           the retired dashboard lives IN the slide pager above). */}
       {s.kind === "strength" && s.bestSet && (
-        <View style={{ marginTop: 18, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ marginTop: 16, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</Text></Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</Text>

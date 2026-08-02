@@ -38,7 +38,7 @@ import HistoryStrip from "./history-strip";
 const C = (v: string) => `var(--color-${v})`;
 
 const kicker: CSSProperties = {
-  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em",
+  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
   textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap",
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
@@ -66,7 +66,7 @@ export default function AuroraOtherSports({
   const rest = lanes.length - OTHER_SPORT_CAP;
 
   return (
-    <div style={{ marginTop: 26 }}>
+    <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, ONE mono fact right —
           the wave-3 parentage quote ("3.1 of 5.2 h this week"), naming the
           slice of the verdict's hours column this block decomposes. */}
@@ -125,9 +125,9 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
       disabled={!interactive}
       style={{
         flex: "0 0 150px", scrollSnapAlign: "start", minHeight: 132,
-        display: "flex", flexDirection: "column", gap: 7, textAlign: "left",
+        display: "flex", flexDirection: "column", gap: 8, textAlign: "left",
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
-        boxShadow: "var(--shadow-card)", padding: "11px 12px 12px",
+        boxShadow: "var(--shadow-card)", padding: "12px 12px 12px",
         cursor: interactive ? "pointer" : "default", color: C("chalk"),
       }}
     >
@@ -151,7 +151,7 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
         <HistoryStrip bars={bars} color={C("violet")} />
       </span>
 
-      <span style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 9.5, color: C("ash") }}>
+      <span style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 10, color: C("ash") }}>
         <span>{hours} h</span>
         <span>{ago(lane.lastAt)}</span>
       </span>

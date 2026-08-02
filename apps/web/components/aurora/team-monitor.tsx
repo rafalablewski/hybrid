@@ -207,13 +207,13 @@ function Dot({ c }: { c: string }) {
 
 function pill(active: boolean): React.CSSProperties {
   return {
-    fontFamily: "var(--font-display)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "6px 14px",
+    fontFamily: "var(--font-display)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "6px 16px",
     borderRadius: 999, cursor: "pointer",
     border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? `color-mix(in srgb, ${C("lime")} 16%, transparent)` : "transparent", color: active ? C("lime") : C("ash"),
   };
 }
 
-const th: React.CSSProperties = { padding: "14px 16px", fontWeight: 600, textTransform: "uppercase", fontSize: fs.nano, letterSpacing: ".08em" };
+const th: React.CSSProperties = { padding: "16px 16px", fontWeight: 600, textTransform: "uppercase", fontSize: fs.nano, letterSpacing: ".08em" };
 const thC: React.CSSProperties = { ...th, textAlign: "center" };
 const thR: React.CSSProperties = { ...th, textAlign: "right" };
 const td: React.CSSProperties = { padding: "12px 16px" };

@@ -45,7 +45,9 @@ export default function Sheet({
   open: boolean;
   onClose: () => void;
   title?: string;
-  sub?: string;
+  /** A node, not just a string, so callers can inline an AuroraIcon (e.g. the
+   *  Done sheet's flame beside the streak count). */
+  sub?: ReactNode;
   children: ReactNode;
   maxWidth?: number;
   label?: string;
@@ -65,7 +67,10 @@ export default function Sheet({
       return () => cancelAnimationFrame(r);
     }
     setShown(false);
-    timer.current = setTimeout(() => setMounted(false), 300);
+    // EXIT is fast + complete: the panel leaves on --d-fast (160ms, matching
+    // the mobile sheet's exit) and unmounts exactly when the transition ends —
+    // the old 300ms timeout cut the 378ms sheet spring at 79%.
+    timer.current = setTimeout(() => setMounted(false), 160);
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [open]);
 
@@ -106,7 +111,7 @@ export default function Sheet({
       aria-modal="true"
       aria-label={label ?? title}
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "flex-end", justifyContent: "center", background: `rgba(0,0,0,${shown ? motion.scrimWithRecede : 0})`, transition: "background var(--d-sheet) var(--e-fade)" }}
+      style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "flex-end", justifyContent: "center", background: `rgba(0,0,0,${shown ? motion.scrimWithRecede : 0})`, transition: `background ${open ? "var(--d-sheet)" : "var(--d-fast)"} var(--e-fade)` }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -120,17 +125,22 @@ export default function Sheet({
           border: `1px solid ${C("line")}`,
           borderBottom: "none",
           boxShadow: "0 -10px 44px -14px rgba(0,0,0,.6)",
-          padding: "12px 20px calc(26px + env(safe-area-inset-bottom))",
+          padding: "12px 20px calc(24px + env(safe-area-inset-bottom))",
           maxHeight: "90vh",
           overflowY: "auto",
           transform: shown ? "translateY(0)" : "translateY(100%)",
           opacity: shown ? 1 : 0,
+          // ENTRANCE keeps the sheet spring (from .motion-sheet-panel); the
+          // EXIT overrides it inline to the fast 160ms leave so the panel is
+          // fully off-screen when the unmount timeout fires. Reduced-motion's
+          // !important class rule still outranks this inline override.
+          ...(open ? {} : { transition: "transform var(--d-fast) var(--e-exit), opacity var(--d-fast) var(--e-fade)" }),
         }}
       >
         <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
-        {title && <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, color: C("chalk") }}>{title}</div>}
+        {title && <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 22, letterSpacing: "-.02em", color: C("chalk") }}>{title}</div>}
         {sub && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), margin: "4px 0 0" }}>{sub}</div>}
-        <div style={{ marginTop: title || sub ? 14 : 0 }}>{children}</div>
+        <div style={{ marginTop: title || sub ? 16 : 0 }}>{children}</div>
       </div>
     </div>,
     document.body,

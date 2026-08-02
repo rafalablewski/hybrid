@@ -371,7 +371,7 @@ export default function AppShell() {
             ...disp,
             fontWeight: 900,
             fontSize: 22,
-            letterSpacing: "-.04em",
+            letterSpacing: "-.03em",
             padding: railCollapsed ? "0 0 22px" : "0 4px 22px",
             textAlign: railCollapsed ? "center" : "left",
             flexShrink: 0,
@@ -464,7 +464,7 @@ export default function AppShell() {
                       style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 22, background: INK, border: `1px solid color-mix(in srgb, var(--color-lime) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--color-lime) 32%, transparent)" }}
                     >
                       <span aria-hidden style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--color-lime) 16%, transparent)", pointerEvents: "none" }} />
-                      <span style={{ ...mono, display: "block", fontSize: fs.nano, letterSpacing: ".2em", color: LIME_T }}>{t("w.home.pillnav.upgradeKicker")}</span>
+                      <span style={{ ...mono, display: "block", fontSize: fs.nano, letterSpacing: ".12em", color: LIME_T }}>{t("w.home.pillnav.upgradeKicker")}</span>
                       <span style={{ ...disp, display: "block", fontWeight: 900, fontSize: 22, color: CHALK, marginTop: 8, letterSpacing: "-.02em" }}>{t("nav.upgrade")}</span>
                       <span style={{ ...mono, display: "block", fontSize: fs.micro, color: ASH, marginTop: 5, maxWidth: 240 }}>{t("w.home.pillnav.upgradeBlurb")}</span>
                       <span style={{ ...disp, display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: LIME, color: ON_ACCENT, borderRadius: 999, padding: "9px 18px", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
@@ -490,7 +490,7 @@ export default function AppShell() {
                     return (
                       <div key={group} style={{ marginTop: 18 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px", marginBottom: 10 }}>
-                          <Mono s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase" }} c={ASH}>{groupLabel(group)}</Mono>
+                          <Mono s={{ fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase" }} c={ASH}>{groupLabel(group)}</Mono>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8 }}>
                           {items.map(({ item, locked }) => {
@@ -507,7 +507,7 @@ export default function AppShell() {
                                 style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, background: INK2, border: `1px solid ${LINE}`, borderRadius: 14, padding: "12px 4px", cursor: "pointer", opacity: locked ? 0.6 : 1 }}
                               >
                                 <AuroraIcon name={ic ?? "info"} size={22} color={iconColor} strokeWidth={2.4} />
-                                <span style={{ ...disp, fontSize: 10.5, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: iconColor, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
+                                <span style={{ ...disp, fontSize: 11, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: iconColor, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
                                 {locked && (
                                   <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>
                                     <AuroraIcon name="lock" size={11} color="var(--premium-accent-text)" strokeWidth={2.4} />
@@ -533,7 +533,7 @@ export default function AppShell() {
               <div key={group} style={{ marginBottom: 14 }}>
                 {!railCollapsed && (
                   <Mono
-                    s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 12px", display: "block", marginBottom: 6 }}
+                    s={{ fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", padding: "0 12px", display: "block", marginBottom: 6 }}
                     c={ASH}
                   >
                     {groupLabel(group)}
@@ -572,7 +572,7 @@ export default function AppShell() {
               {!railCollapsed && (
                 <span style={{ flex: 1 }}>
                   <span style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, display: "block" }}>Unlock Full</span>
-                  <Mono s={{ fontSize: 10.5, lineHeight: 1.4 }} c={ASH}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools.</Mono>
+                  <Mono s={{ fontSize: 11, lineHeight: 1.4 }} c={ASH}>Plans, analytics, your Performance State, the Cockpit &amp; 12+ tools.</Mono>
                 </span>
               )}
             </button>
@@ -631,7 +631,7 @@ export default function AppShell() {
                 fontSize: fs.caption,
                 fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: ".05em",
+                letterSpacing: ".08em",
                 color: ON_ACCENT,
                 background: AMBER,
                 border: `1px solid ${AMBER}`,
@@ -655,7 +655,7 @@ export default function AppShell() {
                 fontSize: fs.caption,
                 fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: ".05em",
+                letterSpacing: ".08em",
                 color: txt(ASH),
                 background: INK2,
                 border: `1px solid ${LINE}`,
@@ -680,7 +680,7 @@ export default function AppShell() {
               fontSize: fs.caption,
               fontWeight: 700,
               textTransform: "uppercase",
-              letterSpacing: ".05em",
+              letterSpacing: ".08em",
               color: txt(ASH),
               background: "transparent",
               border: `1px solid ${LINE}`,
@@ -726,7 +726,7 @@ export default function AppShell() {
                 fontWeight: 700,
                 fontSize: fs.body,
                 textTransform: "uppercase",
-                letterSpacing: ".04em",
+                letterSpacing: ".08em",
                 color: CHALK,
                 background: INK2,
                 border: `1px solid ${LINE}`,
@@ -774,7 +774,7 @@ export default function AppShell() {
                       key={id}
                       onClick={() => setScope(id)}
                       aria-pressed={on}
-                      style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", padding: "9px 18px", borderRadius: aurora ? 999 : 10, cursor: "pointer", border: `1px solid ${on ? c : LINE}`, background: on ? c : "transparent", color: on ? ON_ACCENT : ASH }}
+                      style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", padding: "9px 18px", borderRadius: aurora ? 999 : 10, cursor: "pointer", border: `1px solid ${on ? c : LINE}`, background: on ? c : "transparent", color: on ? ON_ACCENT : ASH }}
                     >
                       {t(analyticsScopeLabelKey(id))}
                     </button>

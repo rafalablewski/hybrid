@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
           onPress={this.reset}
           accessibilityRole="button"
           accessibilityLabel="Reload"
-          style={{ marginTop: 22, backgroundColor: "#c6f84f", borderRadius: 999, paddingVertical: 13, paddingHorizontal: 30 }}
+          style={{ marginTop: 24, backgroundColor: "#c6f84f", borderRadius: 999, paddingVertical: 13, paddingHorizontal: 30 }}
         >
           <Text style={{ color: "#0c0d0c", fontWeight: "800", fontSize: 15 }}>Reload</Text>
         </Pressable>

@@ -40,7 +40,7 @@ const METRICS = [
 
 type MetricKey = (typeof METRICS)[number]["key"];
 
-const tip = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
+const tip = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
 
 /** AURORA Team Compare (web) — same /api/coach/compare flow: lines athletes up
  *  side by side on any lift across e1RM / velocity-1RM / bar speed / volume /
@@ -122,7 +122,7 @@ export default function AuroraTeamCompare() {
       </div>
 
       <div style={card}>
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={kicker(meta.color)}>{t("w.teams.compare.teamComparison")}</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginTop: 2 }}>{data?.lift ?? lift}</div>
         </div>
@@ -202,5 +202,5 @@ function pill(active: boolean, c: string): React.CSSProperties {
 
 const th: React.CSSProperties = { padding: "0 0 8px", fontWeight: 600, textTransform: "uppercase", fontSize: fs.nano, letterSpacing: ".08em" };
 const thR: React.CSSProperties = { ...th, textAlign: "right" };
-const td: React.CSSProperties = { padding: "9px 0" };
+const td: React.CSSProperties = { padding: "8px 0" };
 const tdR: React.CSSProperties = { ...td, textAlign: "right", color: C("ash") };

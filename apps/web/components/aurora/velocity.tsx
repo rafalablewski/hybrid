@@ -51,9 +51,9 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 14px" }}>{t("w.analyze.vel.title")}</h1>
+      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.vel.title")}</h1>
       <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginBottom: 16, alignItems: "center" }}>
-        {lifts.map((l) => <button key={l} onClick={() => setLift(l)} style={{ fontFamily: "var(--font-display)", fontSize: fs.body, fontWeight: 700, padding: "6px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${active === l ? C("lime") : C("line")}`, background: active === l ? C("lime") : "transparent", color: active === l ? C("ink") : C("ash") }}>{l}</button>)}
+        {lifts.map((l) => <button key={l} onClick={() => setLift(l)} style={{ fontFamily: "var(--font-display)", fontSize: fs.body, fontWeight: 700, padding: "6px 16px", borderRadius: 999, cursor: "pointer", border: `1px solid ${active === l ? C("lime") : C("line")}`, background: active === l ? C("lime") : "transparent", color: active === l ? C("ink") : C("ash") }}>{l}</button>)}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: space.lg }}>
@@ -101,7 +101,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
           {head("ash", t("w.analyze.vel.zones"))}
           <div style={{ marginTop: 8 }}>
             {VELOCITY_ZONES.slice().reverse().map((z) => (
-              <div key={z.id} style={{ display: "flex", alignItems: "center", gap: space.ms, padding: "7px 0", borderBottom: `1px solid ${C("line")}` }}>
+              <div key={z.id} style={{ display: "flex", alignItems: "center", gap: space.ms, padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>
                 <span style={{ width: 10, height: 10, borderRadius: 3, background: C(zoneVar(z.id)), flexShrink: 0 }} />
                 <div style={{ flex: 1 }}><div style={{ fontWeight: 600, fontSize: fs.body }}>{z.label}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{z.focus}</div></div>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, whiteSpace: "nowrap", color: C("chalk") }}>{z.max === Infinity ? `≥${z.min}` : `${z.min}–${z.max}`} m/s</span>

@@ -62,7 +62,7 @@ export default function AuroraSport() {
         <ABack />
         <AHeading style={{ fontSize: fs.display }}>Sport</AHeading>
       </View>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>{t("sport.intro")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: 20 }}>{t("sport.intro")}</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 12 }}>
         {SPORT_NAMES.map((s) => {
@@ -75,8 +75,8 @@ export default function AuroraSport() {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: space.xs,
-                paddingHorizontal: 14,
-                paddingVertical: 11,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
                 borderRadius: RADIUS.pill,
                 borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
@@ -100,7 +100,7 @@ export default function AuroraSport() {
               style={{
                 flex: 1,
                 alignItems: "center",
-                paddingVertical: 11,
+                paddingVertical: 12,
                 borderRadius: RADIUS.pill,
                 borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
@@ -127,7 +127,7 @@ export default function AuroraSport() {
           as an activity (no wearable needed). */}
       <Pressable
         onPress={() => router.push(`/workout?source=sport&sport=${encodeURIComponent(sport)}`)}
-        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginBottom: 12 }}
+        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginBottom: 12 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>＋ {t("w.train.sport.logSession").replace("{sport}", sport)}</Text>
       </Pressable>
@@ -144,7 +144,7 @@ export default function AuroraSport() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{b.demand}</Text>
             </View>
             <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
-              <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{b.scheme}</Text>
               </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}</Text>

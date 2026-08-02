@@ -5,11 +5,15 @@
  * No React/JSX here — data and helpers only.
  */
 
-// Brand color constants used by the goal tree (hex literals).
-const VIOLET = "#8296c4"; // steel/slate — coach & non-premium 5th accent (was #c9a9f0 lavender)
-const LIME = "#c6f84f";
-const BLUE = "#3c787e";
-const AMBER = "#d0cd94";
+// Goal accent hues — ONE unique hex per goal, hand-authored (never runtime HSL
+// math) so each can be tuned. All sit in the muted, slightly-desaturated
+// register of the five brand accents (chartreuse #c6f84f, teal #3c787e, sand
+// #d0cd94, terracotta #d56f3e, steel #8296c4) and extend the wheel segments the
+// brand already occupies: greens (chartreuse→moss→pine), teals→slate blues,
+// sands→ochres→terracottas, plus a muted plum/mauve and stone grey-greens for
+// the outliers. The hue only ever drives the cover/tile duotone wash (mixed
+// toward cover ink) and the 18% tint in the white chip — never body text — so
+// mid-luminance values are safe. Keep every value unique across the tree.
 
 // ============================================================
 //  Types
@@ -83,59 +87,59 @@ export interface PlanDetail {
 // programFor()); the rest stay empty until authored in their own shape.
 export const GOAL_TREE: GoalNode[] = [
   // ---- Strength ----
-  { id: "power", name: "Powerlifting", icon: "▬", color: VIOLET, category: "Strength", blurb: "One goal: a bigger squat, bench, and deadlift total.",
+  { id: "power", name: "Powerlifting", icon: "▬", color: "#8296c4" /* steel blue — brand accent, kept */, category: "Strength", blurb: "One goal: a bigger squat, bench, and deadlift total.",
     plans: [] },
-  { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: AMBER, category: "Strength", blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
+  { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: "#d0cd94" /* sand — brand accent, kept */, category: "Strength", blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
     plans: [
       { id: "oly-soviet-8wk", name: "Soviet 8-Week Peaking", weeks: 8, sessions: 6, tag: "% of 1RM", desc: "A classic Soviet block: percentage-based snatch, clean & jerk, squat and pull work that waves volume and intensity across 8 weeks and tapers into a competition. AM/PM training days, complexes, tempo pulls — programmed by number of lifts, not reps to failure.", focus: ["Power", "Technique"], hot: true },
     ] },
-  { id: "strongman", name: "Strongman", icon: "◤", color: VIOLET, category: "Strength", blurb: "Carry, press, and pull heavy odd objects. Raw, full-body, real-world strength.",
+  { id: "strongman", name: "Strongman", icon: "◤", color: "#b3814f" /* worn leather bronze */, category: "Strength", blurb: "Carry, press, and pull heavy odd objects. Raw, full-body, real-world strength.",
     plans: [] },
   // ---- Physique ----
-  { id: "bb", name: "Bodybuilding", icon: "■", color: VIOLET, category: "Physique", blurb: "Maximize muscle. Train splits, chase volume and progressive overload.",
+  { id: "bb", name: "Bodybuilding", icon: "■", color: "#a78bba" /* muted plum */, category: "Physique", blurb: "Maximize muscle. Train splits, chase volume and progressive overload.",
     plans: [
       { id: "bb-ppl-6day", name: "6-Day Push/Pull/Legs", weeks: 1, sessions: 6, tag: "Repeat weekly", desc: "The modern bodybuilding split: two push, two pull and two leg days, each built on a big compound you progressively overload. Run the week on repeat, adding weight or reps every cycle.", focus: ["Hypertrophy", "Strength"], hot: true },
     ] },
-  { id: "fatloss", name: "Fat Loss", icon: "◐", color: AMBER, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
+  { id: "fatloss", name: "Fat Loss", icon: "◐", color: "#d56f3e" /* terracotta — brand accent, the burn */, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
     plans: [
       { id: "fatloss-kb-saturday", name: "Saturday Kettlebell Burn", weeks: 1, sessions: 1, tag: "Circuit", desc: "A single ~90-minute kettlebell circuit for fat loss, core tightening and full-body conditioning — a warm-up, five work blocks (legs, push/pull, core, balance), a no-rest finisher and a cool-down. Run it once a week, ideally fasted, and rotate the emphasis (form → speed → volume → heavier) each week.", focus: ["Conditioning", "Core"], hot: true },
     ] },
   // ---- Endurance ----
-  { id: "tri", name: "Triathlon", icon: "◆", color: BLUE, category: "Endurance", blurb: "Swim-bike-run endurance. Strength work that supports, not sabotages.",
+  { id: "tri", name: "Triathlon", icon: "◆", color: "#5b84a8" /* harbor slate blue */, category: "Endurance", blurb: "Swim-bike-run endurance. Strength work that supports, not sabotages.",
     plans: [] },
-  { id: "run", name: "Running", icon: "▶", color: BLUE, category: "Endurance", blurb: "Get faster over 5k, 10k, half or full. Build the aerobic engine and durable legs.",
+  { id: "run", name: "Running", icon: "▶", color: "#3c787e" /* teal — brand accent, kept */, category: "Endurance", blurb: "Get faster over 5k, 10k, half or full. Build the aerobic engine and durable legs.",
     plans: [
       { id: "run-5k-beginner-9wk", name: "5K Beginner — 9 Weeks", weeks: 9, sessions: 4, tag: "Pace-based", desc: "A 9-week build to your first or fastest 5K: a weekly interval/hills day, a tempo day, easy miles and a long run, all run to your goal paces. Waves up the volume, then tapers into race week.", focus: ["Endurance", "Speed"], hot: true },
     ] },
-  { id: "cycling", name: "Cycling", icon: "◉", color: LIME, category: "Endurance", blurb: "More power on the bike — road, gravel, or indoor. Strength that drives the pedal stroke.",
+  { id: "cycling", name: "Cycling", icon: "◉", color: "#9bb85a" /* moss green */, category: "Endurance", blurb: "More power on the bike — road, gravel, or indoor. Strength that drives the pedal stroke.",
     plans: [] },
-  { id: "swim", name: "Swimming", icon: "◑", color: BLUE, category: "Endurance", blurb: "Faster in the water — dryland strength, mobility, and shoulder durability.",
+  { id: "swim", name: "Swimming", icon: "◑", color: "#74a8a2" /* sea-glass aqua */, category: "Endurance", blurb: "Faster in the water — dryland strength, mobility, and shoulder durability.",
     plans: [] },
   // ---- Functional & Sport ----
-  { id: "hyrox", name: "Hyrox", icon: "●", color: LIME, category: "Functional & Sport", blurb: "Race the 8-station functional fitness event. Compromised running is everything.",
+  { id: "hyrox", name: "Hyrox", icon: "●", color: "#b7b34e" /* olive gold */, category: "Functional & Sport", blurb: "Race the 8-station functional fitness event. Compromised running is everything.",
     plans: [] },
-  { id: "crossfit", name: "CrossFit", icon: "✚", color: AMBER, category: "Functional & Sport", blurb: "Constantly varied, high-intensity functional fitness. Be ready for anything.",
+  { id: "crossfit", name: "CrossFit", icon: "✚", color: "#b5533c" /* rust ember */, category: "Functional & Sport", blurb: "Constantly varied, high-intensity functional fitness. Be ready for anything.",
     plans: [] },
-  { id: "hybrid", name: "Hybrid Athlete", icon: "▲", color: LIME, category: "Functional & Sport", blurb: "Lift heavy and train your sport. Strength that carries over to running, combat, court, or crag.",
+  { id: "hybrid", name: "Hybrid Athlete", icon: "▲", color: "#c6f84f" /* chartreuse — brand primary, the flagship goal keeps it */, category: "Functional & Sport", blurb: "Lift heavy and train your sport. Strength that carries over to running, combat, court, or crag.",
     plans: [
       { id: "hybrid-engine-base", name: "Hybrid Base — Strength & Engine", weeks: 1, sessions: 5, tag: "Repeat weekly", desc: "A hybrid base week that carries heavy barbell strength AND an aerobic engine, run on repeat. Two key days are three-a-day — a morning strength session, a midday conditioning piece and an easy evening run — with speed and tempo runs midweek and a long-run-plus-lifting Saturday. Add weight when the lifts feel easy, keep the easy runs easy.", focus: ["Strength", "Endurance"], hot: true },
     ] },
-  { id: "calisthenics", name: "Calisthenics", icon: "◯", color: LIME, category: "Functional & Sport", blurb: "Master your bodyweight — pull-ups, dips, levers, and the big skills.",
+  { id: "calisthenics", name: "Calisthenics", icon: "◯", color: "#9aa78f" /* stone grey-green */, category: "Functional & Sport", blurb: "Master your bodyweight — pull-ups, dips, levers, and the big skills.",
     plans: [] },
-  { id: "kettlebell", name: "Kettlebell", icon: "◔", color: AMBER, category: "Functional & Sport", blurb: "Swing, snatch, and get-up. One tool, full-body strength and conditioning.",
+  { id: "kettlebell", name: "Kettlebell", icon: "◔", color: "#7d8a92" /* gunmetal — cast iron */, category: "Functional & Sport", blurb: "Swing, snatch, and get-up. One tool, full-body strength and conditioning.",
     plans: [
       { id: "kb-12wk-strong", name: "12-Week Kettlebell — Strong & Athletic", weeks: 12, sessions: 4, tag: "Sets × reps", desc: "A complete 12-week kettlebell block that rotates the split every week — full body, then push/pull/legs, then upper/lower — to build strength, muscle, endurance and mobility. 5–7 exercises a day, 3–5 days a week, with one or two bells.", focus: ["Strength", "Muscle"], hot: true },
     ] },
-  { id: "tactical", name: "Tactical & Military", icon: "◣", color: VIOLET, category: "Functional & Sport", blurb: "Ruck, carry, and work capacity under load. Built to pass the test and do the job.",
+  { id: "tactical", name: "Tactical & Military", icon: "◣", color: "#7a8663" /* army drab */, category: "Functional & Sport", blurb: "Ruck, carry, and work capacity under load. Built to pass the test and do the job.",
     plans: [] },
-  { id: "sport", name: "Sport Performance", icon: "★", color: VIOLET, category: "Functional & Sport", blurb: "Speed, power, and agility for field- and court-sport athletes.",
+  { id: "sport", name: "Sport Performance", icon: "★", color: "#d99a6c" /* apricot */, category: "Functional & Sport", blurb: "Speed, power, and agility for field- and court-sport athletes.",
     plans: [] },
   // ---- Health ----
-  { id: "fitness", name: "General Fitness", icon: "✦", color: BLUE, category: "Health", blurb: "Look, feel, and move better. Balanced strength, conditioning, and lasting health.",
+  { id: "fitness", name: "General Fitness", icon: "✦", color: "#85b88d" /* sage green */, category: "Health", blurb: "Look, feel, and move better. Balanced strength, conditioning, and lasting health.",
     plans: [] },
-  { id: "mobility", name: "Mobility & Longevity", icon: "◇", color: BLUE, category: "Health", blurb: "Move freely and stay durable for decades. Mobility, stability, and prehab.",
+  { id: "mobility", name: "Mobility & Longevity", icon: "◇", color: "#4f7f5e" /* pine — evergreen */, category: "Health", blurb: "Move freely and stay durable for decades. Mobility, stability, and prehab.",
     plans: [] },
-  { id: "prenatal", name: "Pre & Postnatal", icon: "◍", color: LIME, category: "Health", blurb: "Train safely and strong through pregnancy and the return after.",
+  { id: "prenatal", name: "Pre & Postnatal", icon: "◍", color: "#c793a2" /* dusty rose */, category: "Health", blurb: "Train safely and strong through pregnancy and the return after.",
     plans: [] },
 ];
 

@@ -178,7 +178,7 @@ const resetBtn: React.CSSProperties = {
   fontSize: fs.caption,
   fontWeight: 700,
   textTransform: "uppercase",
-  letterSpacing: ".04em",
+  letterSpacing: ".08em",
   padding: "8px 10px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",

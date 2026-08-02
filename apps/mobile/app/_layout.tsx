@@ -33,8 +33,6 @@ import { SharedElementProvider } from "../lib/shared-element";
 // The Classic template keeps its floating command orb, which used to be
 // rendered inside the tabs layout — that layout is pure NativeTabs now, so
 // the orb moves up here beside the navigator.
-import { CommandMenu } from "../components/liquid-glass";
-import { useTemplate } from "../lib/template";
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
 // status-bar style + the navigator background so the whole app follows
@@ -42,7 +40,6 @@ import { useTemplate } from "../lib/template";
 // renders the global floating pill nav over every screen (self-gating).
 function Shell() {
   const { scheme, palette } = useTheme();
-  const aurora = useTemplate().template === "aurora";
   // The presenting surface that scales back while a sheet is up. Everything the
   // sheet covers lives inside it — navigator AND the system tab bar — so the
   // whole app recedes as one plane, the way iOS presents a sheet.
@@ -110,7 +107,6 @@ function Shell() {
             panel up itself). */}
         <Stack.Screen name="upgrade" options={{ presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
       </Stack>
-      {!aurora && <CommandMenu />}
       {/* The brightness drop, drawn as a wash rather than a `filter` — RN's
           filter support is uneven across platforms. pointerEvents none so it
           never eats a tap while animating. */}

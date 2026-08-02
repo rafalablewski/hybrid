@@ -1,20 +1,18 @@
-import { Image, type ColorValue, type ImageStyle, type StyleProp } from "react-native";
+import { type ColorValue, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { AURORA_ICON_PATHS, type AuroraIconName } from "@hybrid/core";
+import { AURORA_ICON_PATHS, auroraIconStroke, type AuroraIconName } from "@hybrid/core";
 
 /**
- * Aurora line icons (mobile). Two renderers over the SAME icon names:
- * - AuroraIcon — the design-kit PNGs (black on transparent) recoloured via
- *   `tintColor`. Regenerated at 216px so they stay sharp at app sizes.
- * - AuroraSvgIcon — true vectors via react-native-svg, drawn from the shared
- *   @hybrid/core AURORA_ICON_PATHS (the exact path data the web renderer
- *   strokes), so it is pixel-perfect at ANY size/scale. Used where crispness
- *   is most visible (the bottom-nav pill glyphs).
- * Names are kept in lockstep with @hybrid/core AuroraIconName + the web SVG
- * renderer. Metro needs static require() literals, so the PNG map is spelled
- * out.
+ * Aurora line icons (mobile) — TRUE VECTORS via react-native-svg, stroked from
+ * the shared @hybrid/core path data at the shared `auroraIconStroke(size)`
+ * weight, so the same glyph carries the same optical weight as web at every
+ * size. (The old renderer tinted 216px PNGs baked at a heavier stroke, which
+ * made mobile icons up to ~43% bolder than web's.)
+ *
+ * The PNG map below survives ONLY for the native tab bar's Android fallback
+ * (app/(tabs)/_layout.tsx) — nothing else should consume PNGs.
  */
-const SOURCES: Record<AuroraIconName, ReturnType<typeof require>> = {
+export const SOURCES: Partial<Record<AuroraIconName, ReturnType<typeof require>>> = {
   back: require("../../assets/icons/back.png"),
   mail: require("../../assets/icons/mail.png"),
   lock: require("../../assets/icons/lock.png"),
@@ -68,36 +66,19 @@ export function AuroraIcon({
   name: AuroraIconName;
   size?: number;
   color?: ColorValue;
-  style?: StyleProp<ImageStyle>;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <Image
-      source={SOURCES[name]}
-      style={[{ width: size, height: size, tintColor: color, resizeMode: "contain" }, style]}
-    />
-  );
-}
-
-/**
- * Vector twin of AuroraIcon (react-native-svg over the shared 72×72 path
- * data). strokeWidth is in viewBox units — 6 matches the design-kit rasters'
- * weight, so swapping a PNG for this is visually identical, just crisp.
- */
-export function AuroraSvgIcon({
-  name,
-  size = 22,
-  color = "#fff",
-  strokeWidth = 6,
-}: {
-  name: AuroraIconName;
-  size?: number;
-  color?: ColorValue;
-  strokeWidth?: number;
-}) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 72 72" fill="none">
+    <Svg width={size} height={size} viewBox="0 0 72 72" fill="none" style={style}>
       {AURORA_ICON_PATHS[name].map((d, i) => (
-        <Path key={i} d={d} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          key={i}
+          d={d}
+          stroke={color ?? "#000"}
+          strokeWidth={auroraIconStroke(size)}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       ))}
     </Svg>
   );

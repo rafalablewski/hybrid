@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useRef } from "react";
 import {
   SHARED_ELEMENTS,
+  THEMES,
   exerciseStripBars,
   exerciseWidgetCards,
   fmtWeight,
@@ -24,19 +25,17 @@ import { armSharedElement } from "@/lib/shared-element";
 
 const C = (v: string) => `var(--color-${v})`;
 
-/* Chart strokes are SVG presentation attrs (can't resolve CSS vars) — raw
- * hexes mirror globals.css per THEME: Aurora keeps the dark accents
+/* Chart strokes are SVG presentation attrs (can't resolve CSS vars) — so they
+ * resolve from the core THEMES palette per theme: Aurora keeps the dark accents
  * (chartreuse / lifted teal / sand), Kyoto Hour uses pine / sage-text /
  * amber-text so the chart material matches the washi palette instead of
  * dragging dark-theme teal onto light paper. Parity: the mobile
  * kindStroke(C, kind), which resolves the same channels via the palette. */
 export const kindStroke = (theme: Theme, kind: ExerciseWidgetCard["kind"]): string =>
-  theme === "light"
-    ? kind === "strength" ? "#44584c" : kind === "cardio" ? "#4f5c3a" : "#875427"
-    : kind === "strength" ? "#c6f84f" : kind === "cardio" ? "#6cb6bd" : "#d0cd94";
+  kind === "strength" ? THEMES[theme].accent : kind === "cardio" ? THEMES[theme].accentText.blue : THEMES[theme].accentText.amber;
 /** improvement / regression bar fills (exercise-page deltas chart). */
-export const upHex = (theme: Theme): string => (theme === "light" ? "#44584c" : "#c6f84f");
-export const downHex = (theme: Theme): string => (theme === "light" ? "#a3442f" : "#e58a5c");
+export const upHex = (theme: Theme): string => THEMES[theme].accent;
+export const downHex = (theme: Theme): string => THEMES[theme].accentText.red;
 
 /** "213 kg" → { v: "213", u: "kg" } so the number can lead and the unit recede. */
 const splitVal = (s: string): { v: string; u: string } => {
@@ -101,7 +100,7 @@ export default function ExerciseWidgetRail({
           trailing ghost tile, per the one-exit rule. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.exw.title")}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>
           {t("w.home.group.metaWeek").replace("{v}", fmtTonnage(parentage.tonnageKg, units))}
         </span>
       </div>
@@ -133,9 +132,9 @@ export default function ExerciseWidgetRail({
               aria-label={`${card.name} — ${h.v} ${h.u}`}
               style={{
                 flex: "0 0 200px", scrollSnapAlign: "start", cursor: "pointer", textAlign: "left",
-                minHeight: 132, display: "flex", flexDirection: "column", gap: 7,
+                minHeight: 132, display: "flex", flexDirection: "column", gap: 8,
                 background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
-                boxShadow: "var(--shadow-card)", padding: "11px 12px 12px",
+                boxShadow: "var(--shadow-card)", padding: "12px 12px 12px",
                 color: C("chalk"), fontFamily: "var(--font-display)",
               }}
             >
@@ -150,7 +149,7 @@ export default function ExerciseWidgetRail({
               <span style={{ display: "block", width: "100%", marginTop: "auto" }}>
                 <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
               </span>
-              <span style={{ display: "flex", justifyContent: "space-between", gap: 6, width: "100%", fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash") }}>
+              <span style={{ display: "flex", justifyContent: "space-between", gap: 6, width: "100%", fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>
                 <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.label}</span>
                 <span style={{ whiteSpace: "nowrap" }}>{t(KIND_KEY[card.kind])}</span>
               </span>

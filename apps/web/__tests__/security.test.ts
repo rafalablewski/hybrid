@@ -35,7 +35,10 @@ const read = (f: string) => readFileSync(f, "utf8");
 //   - email/unsubscribe: a marketing-email recipient who may not have an account
 //     opts out via a one-click link; the credential is an HMAC token over their
 //     email (verifyUnsubscribeToken), so no session is possible by design.
-const PUBLIC_ROUTES = [join("api", "anon-sessions"), join("api", "email", "unsubscribe"), join("api", "health")];
+//   - efficacy: the Program Efficacy Index — public BY DESIGN (k-anonymous
+//     aggregates only, cohorts <5 suppressed in core); it is the content
+//     engine and the mobile app's parity source. Rate-limited like the rest.
+const PUBLIC_ROUTES = [join("api", "anon-sessions"), join("api", "email", "unsubscribe"), join("api", "health"), join("api", "efficacy")];
 const isPublic = (f: string) => PUBLIC_ROUTES.some((p) => f.includes(p));
 
 describe("authentication: every API route authenticates", () => {

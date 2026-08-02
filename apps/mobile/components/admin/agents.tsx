@@ -172,7 +172,7 @@ export default function AdminAgents() {
 
       <ErrorNote error={err} onDismiss={() => setErr(null)} />
 
-      <Mono color={palette.ash} style={{ marginBottom: 14, lineHeight: 18 }}>
+      <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
         Define your executive team. Edits to a KPI, responsibility, or guardrail rewrite the agent's live system prompt —
         shown in the preview as you edit. The runtime executes these server-side (needs ANTHROPIC_API_KEY).
       </Mono>
@@ -267,7 +267,7 @@ function Editor({
 
   return (
     <Card style={{ marginTop: 6 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: palette.chalk }}>Edit agent</Text>
         <View style={{ flexDirection: "row", gap: space.sm }}>
           <PillBtn label={dirty ? "Save" : "Saved"} disabled={busy || !dirty} onPress={onSave} />
@@ -379,7 +379,7 @@ function Editor({
         <Mono color={palette.lime} style={{ marginBottom: 8 }}>{showPrompt ? "▾ hide" : "▸ show"} generated prompt</Mono>
       </Pressable>
       {showPrompt && (
-        <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
+        <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
           <Mono color={palette.chalk} style={{ fontSize: fs.micro, lineHeight: 17 }}>{preview}</Mono>
         </View>
       )}
@@ -446,14 +446,14 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
         <View style={{ marginTop: 12 }}>
           {run.steps.map((s, i) => (
             <View key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: palette.violet }}>
-              <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.8 }}>
+              <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9 }}>
                 ↳ delegated to {s.role} — {s.agent}
               </Mono>
               <Mono color={palette.ash} style={{ fontSize: fs.micro, marginVertical: 2 }}>"{s.task}"</Mono>
               <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{s.output}</Mono>
             </View>
           ))}
-          <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
+          <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
             <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{run.output || "(no output)"}</Mono>
           </View>
           {run.usage && (run.usage.input > 0 || run.usage.output > 0) && (
@@ -655,7 +655,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 function SectionHead({ title, hint }: { title: string; hint?: string }) {
   const { palette } = useTheme();
   return (
-    <View style={{ marginTop: 16, marginBottom: 10, paddingTop: 14, borderTopWidth: 1, borderTopColor: palette.line }}>
+    <View style={{ marginTop: 16, marginBottom: 10, paddingTop: 16, borderTopWidth: 1, borderTopColor: palette.line }}>
       <Kicker color={palette.amber}>{title}</Kicker>
       {hint ? <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{hint}</Mono> : null}
     </View>
@@ -666,7 +666,7 @@ function MiniChip({ children, color }: { children: React.ReactNode; color: strin
   const { palette } = useTheme();
   return (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.9 }}>
         {children}
       </Text>
     </View>

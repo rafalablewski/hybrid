@@ -126,8 +126,8 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.6, color: C.chalk }}>{lane.efforts}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.5, color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.other.efforts")}
         </Text>
       </View>
@@ -140,16 +140,16 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: C.ash }}>{hours} h</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: C.ash }}>{ago(lane.lastAt)}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{hours} h</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{ago(lane.lastAt)}</Text>
       </View>
     </>
   );
 
   const style = {
-    width: TILE_W, minHeight: TILE_H, gap: 7,
+    width: TILE_W, minHeight: TILE_H, gap: 8,
     backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-    paddingHorizontal: 12, paddingTop: 11, paddingBottom: 12,
+    paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
   } as const;
 
   return onOpen ? (

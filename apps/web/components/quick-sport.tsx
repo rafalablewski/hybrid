@@ -155,12 +155,12 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string; onClose: () => v
         <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "flex-end", marginTop: 16 }}>
           {tracksDist && (
             <div style={{ flex: "1 1 96px" }}>
-              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 }} c={ASH}>{t("w.home.quickSport.dist")} – {sportDistanceUnit(sport)}</Mono>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }} c={ASH}>{t("w.home.quickSport.dist")} – {sportDistanceUnit(sport)}</Mono>
               <input value={distance} onChange={(e) => setDistance(e.target.value)} placeholder={sportDistanceUnit(sport) === "m" ? "400" : "8"} inputMode="decimal" autoFocus style={{ ...field, width: "100%" }} />
             </div>
           )}
           <div style={{ flex: "1 1 84px" }}>
-            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 6 }} c={ASH}>{t("w.home.quickSport.minutes")}</Mono>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }} c={ASH}>{t("w.home.quickSport.minutes")}</Mono>
             <input value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="45" inputMode="decimal" autoFocus={!tracksDist} style={{ ...field, width: "100%" }} />
           </div>
           <button onClick={save} disabled={saving} style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1, whiteSpace: "nowrap" }}>
@@ -209,7 +209,7 @@ function SportPicker({ onPick, onClose }: { onPick: (name: string) => void; onCl
         <div style={{ overflowY: "auto", flex: 1 }}>
           {groups.map(({ category, sports }) => (
             <div key={category}>
-              <div style={{ position: "sticky", top: 0, background: INK2, padding: "9px 15px 4px", ...mono, fontSize: fs.nano, fontWeight: 600, letterSpacing: ".14em", textTransform: "uppercase", color: ASH }}>{category}</div>
+              <div style={{ position: "sticky", top: 0, background: INK2, padding: "9px 15px 4px", ...mono, fontSize: fs.nano, fontWeight: 600, letterSpacing: ".12em", textTransform: "uppercase", color: ASH }}>{category}</div>
               {sports.map((s) => {
                 const hint = s.metrics.includes("distance") ? sportDistanceUnit(s.name) : category;
                 return (

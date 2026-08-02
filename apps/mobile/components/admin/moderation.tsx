@@ -139,7 +139,7 @@ export default function AdminModeration() {
                     .map(([k, v]) => `${k}: ${v}`)
                     .join(" – ") || "no metrics"}
                 </Mono>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
                   <PillBtn
                     label="Approve"
                     onPress={() => moderateProfile(p.id, "approve")}
@@ -199,7 +199,7 @@ export default function AdminModeration() {
                 <Mono color={palette.ash} style={{ marginTop: 6 }}>
                   reported by {r.reporterEmail} – {new Date(r.createdAt).toLocaleDateString()}
                 </Mono>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
                   <PillBtn
                     label="Take down"
                     onPress={() =>

@@ -158,8 +158,8 @@ export default function AuroraNutritionHud({
       borderColor: open ? C("line") : "transparent",
       background: C("ink2"),
       fontFamily: "var(--font-mono)",
-      fontSize: 10.5,
-      letterSpacing: ".06em",
+      fontSize: 11,
+      letterSpacing: ".08em",
       fontVariantNumeric: "tabular-nums",
       cursor: onReveal ? "pointer" : "default",
       transformOrigin: "50% 50%",
@@ -205,7 +205,7 @@ export default function AuroraNutritionHud({
           alignItems: "center",
           justifyContent: "center",
           gap: 6,
-          padding: "8px var(--page-pad-x, 16px) 9px",
+          padding: "8px var(--page-pad-x, 16px) 8px",
           background: `color-mix(in srgb, ${C("ink")} 82%, transparent)`,
           backdropFilter: "blur(14px)",
           WebkitBackdropFilter: "blur(14px)",
@@ -247,7 +247,7 @@ export default function AuroraNutritionHud({
               {/* kcal keeps the word "left" — it is the whole point of the rail.
                   The macro capsules shed their `g` at the ceiling instead. */}
               {key === "kcal" ? (
-                <span style={{ fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.72 }}>
+                <span style={{ fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", opacity: 0.72 }}>
                   {t("w.recovery.nutrition.hud.left")}
                 </span>
               ) : (
@@ -257,7 +257,7 @@ export default function AuroraNutritionHud({
                     overflow: "hidden",
                     maxWidth: tight ? 0 : 14,
                     opacity: tight ? 0 : 0.72,
-                    fontSize: 8.5,
+                    fontSize: 9,
                     transition: `max-width ${contract.ms}ms ${railCurve(contract)}, opacity ${Math.round(contract.ms * 0.7)}ms ease`,
                   }}
                 >

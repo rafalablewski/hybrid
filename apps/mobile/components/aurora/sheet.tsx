@@ -38,7 +38,10 @@ export default function Sheet({
   visible: boolean;
   onClose: () => void;
   title?: string;
-  sub?: string;
+  /** A node, not just a string, so callers can inline an AuroraIcon (e.g. the
+   *  Done sheet's flame beside the streak count) — it renders inside the sub
+   *  <Text>, so pass strings and inline elements only. */
+  sub?: ReactNode;
   children: ReactNode;
   scroll?: boolean;
 }) {
@@ -90,7 +93,7 @@ export default function Sheet({
   const header = (
     <>
       <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: title || sub ? 16 : 8 }} />
-      {title ? <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, color: C.chalk }}>{title}</Text> : null}
+      {title ? <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk }}>{title}</Text> : null}
       {sub ? <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>{sub}</Text> : null}
     </>
   );

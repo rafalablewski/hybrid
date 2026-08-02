@@ -13,6 +13,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS, withAlpha } from "./kit";
+import { CtaLabel } from "./cta-label";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const statusColor = (s: string, C: Palette) =>
@@ -72,7 +73,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
         marginTop: 10,
       }}
     >
-      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: opts?.filled ? txt(C, C.lime) : C.chalk }}>{label}</Text>
+      <CtaLabel label={label} color={opts?.filled ? txt(C, C.lime) : C.chalk} fontSize={fs.body} />
     </Pressable>
   );
 
@@ -83,7 +84,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
         <AHeading style={{ fontSize: fs.display }}>{p?.label ?? provider}</AHeading>
       </View>
 
-      <ACard style={{ marginTop: 18 }}>
+      <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{t("w.account.connections.title")}</Text>
           <View style={{ backgroundColor: withAlpha(statusColor(status, C), 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
@@ -102,9 +103,9 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
         {p?.auth === "native" ? (
           <AppleHealthSection onChanged={load} />
         ) : p?.auth === "team" ? (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 14 }}>{t("w.account.connections.team-mobile")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 16 }}>{t("w.account.connections.team-mobile")}</Text>
         ) : p && !p.configured ? (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 14 }}>{t("w.account.connections.awaiting-creds-mobile")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 16 }}>{t("w.account.connections.awaiting-creds-mobile")}</Text>
         ) : p && conn ? (
           pillBtn(syncing ? t("w.account.connections.syncing") : t("w.account.connections.sync-now"), sync, { disabled: syncing, filled: true })
         ) : p ? (
@@ -112,7 +113,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
         ) : null}
       </ACard>
 
-      <ACard style={{ marginTop: 14 }}>
+      <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{t("w.account.connections.recent")}</Text>
         {signals.length === 0 ? (
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 10 }}>{t("w.account.connections.recent-empty")}</Text>
@@ -211,14 +212,14 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
 
   if (availability !== "ready") {
     return (
-      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17, marginTop: 14 }}>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17, marginTop: 16 }}>
         {t("w.account.connections.hk-unavailable")}
       </Text>
     );
   }
 
   return (
-    <View style={{ marginTop: 14 }}>
+    <View style={{ marginTop: 16 }}>
       <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.connections.hk-intro")}</Text>
       {!connected ? (
         btn(busy ? t("w.account.connections.syncing") : t("w.account.connections.hk-connect"), connect, true)

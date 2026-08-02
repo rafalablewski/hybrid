@@ -90,7 +90,7 @@ export default function AuroraPlans() {
       scrollApi={scrollApi}
       rail={shelves.length > 0 ? <CategoryRail categories={shelves.map((s) => s.category)} onJump={jumpTo} /> : undefined}
     >
-      <View style={{ marginTop: 14 }}>
+      <View style={{ marginTop: 16 }}>
         <AField value={query} onChange={setQuery} placeholder={t("w.train.plans.searchGoals")} icon="search" />
       </View>
       <EnrolledCard enrolled={enrolled} />
@@ -126,7 +126,7 @@ function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c
       // section, they don't switch panels, and the chips are buttons already.
       accessibilityLabel={t("w.train.plans.jumpToCategory")}
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 9 }}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 8 }}
     >
       {categories.map((c) => (
         <Pressable
@@ -134,7 +134,7 @@ function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c
           onPress={() => onJump(c)}
           accessibilityRole="button"
           hitSlop={6}
-          style={({ pressed }) => ({ backgroundColor: pressed ? withAlpha(C.chalk, 0.1) : "transparent", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 13, paddingVertical: 7 })}
+          style={({ pressed }) => ({ backgroundColor: pressed ? withAlpha(C.chalk, 0.1) : "transparent", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 })}
         >
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c}</Text>
         </Pressable>
@@ -155,10 +155,10 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
   const overflows = rail.content > rail.view + 1;
 
   return (
-    <View onLayout={onLayout} style={{ marginTop: 18 }}>
+    <View onLayout={onLayout} style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
         <Text accessibilityRole="header" style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{group.category}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
         </Text>
       </View>
@@ -193,7 +193,7 @@ function ShelfTrack({ x, view, content }: { x: Animated.Value; view: number; con
   const thumb = Math.max(24, Math.min(1, view / content) * track);
   const maxScroll = Math.max(1, content - view);
   return (
-    <View onLayout={(e) => setTrack(e.nativeEvent.layout.width)} style={{ height: 2, borderRadius: 2, marginTop: 9, backgroundColor: withAlpha(C.chalk, 0.1), overflow: "hidden" }}>
+    <View onLayout={(e) => setTrack(e.nativeEvent.layout.width)} style={{ height: 2, borderRadius: 2, marginTop: 8, backgroundColor: withAlpha(C.chalk, 0.1), overflow: "hidden" }}>
       <Animated.View
         style={{
           height: 2,
@@ -223,12 +223,12 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
       style={({ pressed }) => ({
         width: TILE_W,
         height: TILE_H,
-        borderRadius: 20,
+        borderRadius: RADIUS.card,
         overflow: "hidden",
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.07)",
         backgroundColor: TILE_INK,
-        padding: 13,
+        padding: 12,
         justifyContent: "space-between",
         transform: [{ scale: pressed && !reduce ? 0.97 : 1 }],
       })}
@@ -236,7 +236,9 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
       {({ pressed }) => (
         <>
           <View style={[StyleSheet.absoluteFill, { opacity: cover.ready ? 1 : 0.45 }]} pointerEvents="none">
-            <LinearGradient colors={[`${cover.accent}c8`, `${cover.accent}4d`, `${cover.accent}0d`]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
+            {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
+                15% @ 46% → 0x26, then ink) — web parity: plans.tsx tile */}
+            <LinearGradient colors={[`${cover.accent}85`, `${cover.accent}26`, `${cover.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
           </View>
           <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
           <Text
@@ -245,8 +247,8 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
           >
             {cover.glyph}
           </Text>
-          <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.8, color: cover.ready ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>{cover.count}</Text>
-          <Text numberOfLines={3} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: 18, letterSpacing: -0.4, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
+          <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.9, color: cover.ready ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>{cover.count}</Text>
+          <Text numberOfLines={3} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: 18, letterSpacing: -0.5, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
         </>
       )}
     </Pressable>
@@ -295,17 +297,17 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
               <ACard style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{p.tag}</Text>
-                  {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
+                  {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
                 </View>
                 <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
-                <View style={{ flexDirection: "row", gap: 14, marginTop: 12, marginBottom: 10 }}>
+                <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
                   {hero.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.14), paddingTop: 8 }}>
-                      <Text style={{ fontFamily: F.black, fontSize: 20, lineHeight: 21, letterSpacing: -0.4, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                      <Text style={{ fontFamily: F.black, fontSize: 20, lineHeight: 21, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: 12, color: C.ash }}>{s.unit}</Text>}
                       </Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{s.label}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{s.label}</Text>
                     </View>
                   ))}
                 </View>
@@ -359,7 +361,7 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.weeklySplit")}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
             {d.split.map((day, i) => (
-              <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 11, paddingVertical: 8 }}>
+              <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 8 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: day.toLowerCase() === "rest" ? C.ash : C.chalk }}>{day}</Text>
               </View>
             ))}

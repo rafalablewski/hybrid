@@ -78,7 +78,7 @@ export default function AuroraPeriodize() {
       </ACard>
 
       {macro.blocks.map((b) => (
-        <ACard key={b.key} style={{ marginTop: 14 }}>
+        <ACard key={b.key} style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, b.color) }}>{b.label}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.train.periodize.wk")} {b.startWeek}–{b.endWeek}</Text>

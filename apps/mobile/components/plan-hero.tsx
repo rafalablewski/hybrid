@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
   KeyboardAvoidingView,
@@ -15,6 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
@@ -61,6 +62,15 @@ export function PlanDockPill({ state, idleLabel, busyLabel, doneLabel, onPress }
     </Pressable>
   );
 }
+/** color-mix(in srgb, #fff 82%, accent) — the chip's accent-tinted white, the
+ *  exact mix web's cover chip runs (cover-hero.tsx). Computed here because RN
+ *  has no color-mix(). */
+function chipTint(accent: string): string {
+  const n = parseInt(accent.slice(1, 7), 16);
+  const ch = (shift: number) => Math.round(0.82 * 255 + 0.18 * ((n >> shift) & 0xff));
+  return `#${((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1)}`;
+}
+
 /** Bar content height below the status-bar inset when fully collapsed. */
 const BAR_CONTENT = 56;
 /** Cover content height below the status-bar inset when fully expanded. */
@@ -287,6 +297,9 @@ export function CoverScreen({
       : 0;
 
   const accent = cover.accent;
+  // SVG gradient ids are document-global; scope per mount so stacked covers
+  // (push navigation) can't cross-reference. useId's ":" is illegal in url().
+  const hotspotId = `cover-hotspot-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <View style={{ flex: 1, backgroundColor: C.ink }}>
       {/* the cover is fixed-dark even in the light theme → light status icons */}
@@ -332,7 +345,7 @@ export function CoverScreen({
                 the first content to slide under the pinned cover. */}
             <View style={{ paddingHorizontal: 16 }}>
               {cover.stats.length > 0 && (
-                <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 18, marginBottom: 14 }}>
+                <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 16, marginBottom: 16 }}>
                   {cover.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
                       <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
@@ -386,12 +399,29 @@ export function CoverScreen({
                 on the library so the root never out-shouts the goal accents
                 sitting on the shelves beneath it */}
             <LinearGradient
-              colors={library ? [`${accent}7a`, `${accent}2e`, `${accent}08`] : [`${accent}c8`, `${accent}4d`, `${accent}0d`]}
+              // Alpha-over-ink stops matching web's color-mix recipe exactly:
+              // color-mix(accent 52%, ink) ≈ accent @ 0x85 over the ink base,
+              // 15% ≈ 0x26 at the 46% stop, then pure ink (library: 34%/10% →
+              // 0x57/0x1a). Web parity: cover-hero.tsx layer 1.
+              colors={library ? [`${accent}57`, `${accent}1a`, `${accent}00`] : [`${accent}85`, `${accent}26`, `${accent}00`]}
+              locations={[0, 0.46, 1]}
               start={mirrored ? { x: 0.1, y: 0 } : { x: 0.9, y: 0 }}
               end={mirrored ? { x: 0.8, y: 0.95 } : { x: 0.2, y: 0.95 }}
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
+            {/* radial hotspot at the wash's source corner — web parity:
+                radial-gradient(120% 92% at 86%|14% 8%, accent @ 42%|26%,
+                transparent 55%). SVG radial fill: the closest RN equivalent. */}
+            <Svg pointerEvents="none" style={StyleSheet.absoluteFill}>
+              <Defs>
+                <RadialGradient id={hotspotId} cx={mirrored ? 0.14 : 0.86} cy={0.08} rx={1.2} ry={0.92}>
+                  <Stop offset="0" stopColor={accent} stopOpacity={library ? 0.26 : 0.42} />
+                  <Stop offset="0.55" stopColor={accent} stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${hotspotId})`} />
+            </Svg>
             {/* bottom scrim for title legibility — retired as the title leaves.
                 The last sliver runs out to FULLY opaque cover ink (below the
                 title, so the poster's wash is untouched) so the bleed band
@@ -429,7 +459,7 @@ export function CoverScreen({
               >
                 <Text style={{ fontFamily: F.semi, fontSize: 16, color: "#fff" }}>←</Text>
               </Pressable>
-              <Text style={{ fontFamily: F.mono, fontSize: 10.5, fontWeight: "600", letterSpacing: 0.6, color: "rgba(255,255,255,0.88)" }}>{cover.duration}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "600", letterSpacing: 0.9, color: "rgba(255,255,255,0.88)" }}>{cover.duration}</Text>
             </Animated.View>
 
             {/* compact bar title — fades in a beat after the big one leaves */}
@@ -439,18 +469,18 @@ export function CoverScreen({
               importantForAccessibility="no-hide-descendants"
               style={{ position: "absolute", top: insets.top + 4, left: 62, right: 62, height: 44, alignItems: "center", justifyContent: "center", zIndex: 2, opacity: compactFade, transform: [{ translateY: counter }] }}
             >
-              <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 15.5, letterSpacing: -0.2, color: "#fff" }}>{cover.title}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: "#fff" }}>{cover.title}</Text>
             </Animated.View>
 
             {/* the cover proper — chip, title, meta; slides up with the frame */}
             <Animated.View pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: 18, opacity: bigFade }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: "#edefe8", paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -0.7, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: chipTint(accent), paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -1, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
               {blurbOnFace ? (
                 <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: "rgba(255,255,255,0.85)", maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
               ) : (
-                <View style={{ marginTop: 9 }}>
-                  <MetaLine parts={cover.metaParts} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.3 }} />
+                <View style={{ marginTop: 8 }}>
+                  <MetaLine parts={cover.metaParts} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.9 }} />
                 </View>
               )}
             </Animated.View>

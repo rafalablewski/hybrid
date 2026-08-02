@@ -13,6 +13,7 @@ import { fs, space,
 } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
+import { CtaLabel } from "./cta-label";
 
 type Org = { id: string; name: string; role: OrgRole };
 type Member = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
@@ -158,11 +159,11 @@ export default function AuroraOrg() {
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
-  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "10px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
-  const btn = (bg: string): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C(bg), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" });
-  const orgChip = (active: boolean): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 14px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 16%, transparent)` : "transparent", color: active ? C("lime") : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` });
+  const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "10px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
+  const btn = (bg: string): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C(bg), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 16px", cursor: "pointer" });
+  const orgChip = (active: boolean): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 16px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 16%, transparent)` : "transparent", color: active ? C("lime") : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` });
   const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
-  const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "9px 12px", borderRadius: 14, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
+  const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "8px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
 
   return (
     <div style={{ display: "grid", gap: space.lg, fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -226,7 +227,7 @@ export default function AuroraOrg() {
                     <div style={{ minWidth: 0 }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, display: "block", color: m.role === "ATHLETE" && canSeeAthletes ? "var(--lime-text)" : C("chalk") }}>
                         {m.role === "ATHLETE" && canSeeAthletes ? (
-                          <span role="button" tabIndex={0} style={{ cursor: "pointer" }} onClick={() => viewAthlete(m)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); viewAthlete(m); } }}>{m.name} →</span>
+                          <span role="button" tabIndex={0} style={{ cursor: "pointer" }} onClick={() => viewAthlete(m)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); viewAthlete(m); } }}><CtaLabel size={12}>{`${m.name} →`}</CtaLabel></span>
                         ) : (
                           m.name
                         )}
@@ -236,10 +237,10 @@ export default function AuroraOrg() {
                     </div>
                     {canManage ? (
                       <div style={{ display: "flex", gap: space.xs }}>
-                        <select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 7px" }}>
+                        <select value={m.role} onChange={(e) => setMember(m.id, { role: e.target.value as OrgRole })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 8px" }}>
                           {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                         </select>
-                        <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 7px" }}>
+                        <select value={m.teamId ?? ""} onChange={(e) => setMember(m.id, { teamId: e.target.value || null })} style={{ ...selectStyle, fontSize: fs.micro, padding: "5px 8px" }}>
                           <option value="">{t("w.teams.org.noTeam")}</option>
                           {tree.map((node) => <option key={node.id} value={node.id}>{"— ".repeat(node.depth)}{node.name}</option>)}
                         </select>
@@ -263,8 +264,8 @@ export default function AuroraOrg() {
                 </div>
               )}
               {canManage && detail.invites.length > 0 && (
-                <div style={{ marginTop: 14 }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.teams.org.pendingInvites")}</div>
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.teams.org.pendingInvites")}</div>
                   {detail.invites.map((iv) => (
                     <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{iv.email} – {iv.role.toLowerCase()}</span>

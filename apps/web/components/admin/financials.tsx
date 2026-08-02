@@ -218,12 +218,12 @@ export default function AdminFinancials() {
                     </Chip>
                   ))}
                 </div>
-                <Mono s={{ fontSize: 13.5, lineHeight: 1.5, display: "block", marginTop: 10 }} c={CHALK}>
+                <Mono s={{ fontSize: 14, lineHeight: 1.5, display: "block", marginTop: 10 }} c={CHALK}>
                   {stream.howItWorks}
                 </Mono>
                 <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
                   {stream.tiers.map((t) => (
-                    <Mono key={t.name} s={{ fontSize: 12.5, lineHeight: 1.4 }} c={ASH}>
+                    <Mono key={t.name} s={{ fontSize: 13, lineHeight: 1.4 }} c={ASH}>
                       <span style={{ color: CHALK }}>{t.name}</span> — {t.note}
                     </Mono>
                   ))}
@@ -236,7 +236,7 @@ export default function AdminFinancials() {
 
       {/* ---- focus markets + pricing ---- */}
       <Section title="Focus markets & pricing" kicker={`Where we sell – localized price – FX ${PRICING_REF_DATE}`}>
-        <Mono s={{ fontSize: 13.5, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 14, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
           We focus on five markets. The <span style={{ color: CHALK }}>US is the anchor</span> — every
           other price indexes off it on a purchasing-power lens, then rounds to the point that market
           expects. The <span style={{ color: txt(LIME) }}>≈ USD</span> figure is what we keep before that
@@ -251,7 +251,7 @@ export default function AdminFinancials() {
 
       {/* ---- what each plan gets ---- */}
       <Section title="What each plan includes" kicker="The entitlement matrix – free → org">
-        <Mono s={{ fontSize: 13.5, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 14, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
           What a user actually gets for what they pay. The tiers nest — <span style={{ color: CHALK }}>Pro ⊂ Coach ⊂ Org</span>:
           a coach seat includes Pro for the coach and their roster; org includes everything plus the
           institutional layer. Free is the logging loop, free forever — the top of the funnel.
@@ -270,7 +270,7 @@ export default function AdminFinancials() {
             <Mono s={{ fontSize: fs.bodyLg, display: "block", marginTop: 4 }} c={CHALK}>
               {usdFull(agentCost.spend)} over {agentCost.runs.toLocaleString()} runs (≈ {usdFull(agentCost.spend / 30)}/day)
             </Mono>
-            <Mono s={{ fontSize: 12.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
+            <Mono s={{ fontSize: 13, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
               Measured from real agent runs (tokens × model list price). Use it to calibrate the modeled AI (Anthropic) COGS below — that figure is still an assumption.
             </Mono>
           </Card>
@@ -292,7 +292,7 @@ export default function AdminFinancials() {
                     ≈ {usdFull(live)}/mo{shareOfRev != null ? ` – ${shareOfRev.toFixed(0)}% of revenue` : ""}
                   </Mono>
                 )}
-                <Mono s={{ fontSize: 12.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
+                <Mono s={{ fontSize: 13, lineHeight: 1.45, display: "block", marginTop: 8 }} c={ASH}>
                   {c.note}
                 </Mono>
                 {c.id === "fixed" && <FixedOpexBreakdown />}
@@ -317,7 +317,7 @@ export default function AdminFinancials() {
           {/* inputs */}
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Assumptions</Mono>
+              <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>Assumptions</Mono>
               <div style={{ display: "flex", gap: space.xs }}>
                 <Btn label="Reseed live" active={useLive} onClick={reseed} disabled={!seed} />
                 <Btn label="Defaults" active={false} onClick={reset} />
@@ -398,7 +398,7 @@ export default function AdminFinancials() {
             </ChartFrame>
 
             <Card>
-              <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>
+              <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={ASH}>
                 Monthly P&L
               </Mono>
               <PnL k="Revenue (MRR)" v={usdFull(r.revenue.total)} c={LIME} />
@@ -408,7 +408,7 @@ export default function AdminFinancials() {
               <PnL k="Coach success / support" v={`−${usdFull(r.cogs.support)}`} />
               <PnL k="Fixed opex" v={`−${usdFull(r.cogs.fixed)}`} />
               <PnL k={r.grossProfit >= 0 ? "Contribution" : "Burn"} v={`${r.grossProfit >= 0 ? "" : "−"}${usdFull(Math.abs(r.grossProfit))}`} c={r.grossProfit >= 0 ? LIME : RED} bold />
-              <Mono s={{ fontSize: 12.5, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+              <Mono s={{ fontSize: 13, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
                 Break-even at{" "}
                 <span style={{ color: CHALK }}>
                   {Number.isFinite(r.breakEvenProUsers) ? `${r.breakEvenProUsers.toLocaleString()} Pro subscribers` : "— (Pro contribution ≤ 0)"}
@@ -422,7 +422,7 @@ export default function AdminFinancials() {
 
       {/* ---- segment economics ---- */}
       <Section title="Unit economics by segment" kicker="Who actually pays the bills — B2C vs coach, un-blended">
-        <Mono s={{ fontSize: 13.5, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
+        <Mono s={{ fontSize: 14, lineHeight: 1.55, display: "block", marginBottom: 12 }} c={ASH}>
           A blended LTV hides the truth. A coach seat costs more to win but is stickier and
           worth far more than a consumer sub — these cards price each segment on its own
           ARPU, contribution margin, churn and CAC. The bar on each metric is{" "}
@@ -553,7 +553,7 @@ export default function AdminFinancials() {
             </ComposedChart>
           </ResponsiveContainer>
         </ChartFrame>
-        <Mono s={{ fontSize: 12.5, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
+        <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
           MRR compounds at the net monthly rate (new logos + expansion − churn); variable COGS
           scale with revenue while fixed opex holds. The dashed red line is zero cash — where the
           blue line crosses it is the cash-out month. Assumptions, not booked revenue.
@@ -608,7 +608,7 @@ function MarketCard({ m }: { m: (typeof MARKET_PRICING)[number] }) {
         <PriceBox label="Pro – monthly" value={loc(m.proMonthly)} sub={eq(m.proMonthly)} />
         <PriceBox label="Pro – annual" value={loc(m.proAnnual)} sub={`${eq(m.proAnnual)} – ${loc(m.proAnnual / 12)}/mo`} />
       </div>
-      <Mono s={{ fontSize: 12.5, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
+      <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 10 }} c={ASH}>
         Coach seats{" "}
         <span style={{ color: txt(CHALK) }}>{loc(m.coachStarter)} – {loc(m.coachPro)} – {loc(m.coachBusiness)}</span>/mo
         {" – "}Org <span style={{ color: txt(CHALK) }}>{loc(m.orgLow)}–{loc(m.orgHigh)}</span>/athlete/yr
@@ -616,7 +616,7 @@ function MarketCard({ m }: { m: (typeof MARKET_PRICING)[number] }) {
       <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>
         {m.tax} – Stripe {m.stripeFee}
       </Mono>
-      <Mono s={{ fontSize: 12.5, lineHeight: 1.5, display: "block", marginTop: 8 }} c={CHALK}>
+      <Mono s={{ fontSize: 13, lineHeight: 1.5, display: "block", marginTop: 8 }} c={CHALK}>
         {m.rationale}
       </Mono>
     </Card>
@@ -628,7 +628,7 @@ function PriceBox({ label, value, sub }: { label: string; value: string; sub: st
     <div style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 10px" }}>
       <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={ASH}>{label}</Mono>
       <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, marginTop: 2 }}>{value}</div>
-      <Mono s={{ fontSize: 11.5, display: "block", marginTop: 1 }} c={ASH}>{sub}</Mono>
+      <Mono s={{ fontSize: 12, display: "block", marginTop: 1 }} c={ASH}>{sub}</Mono>
     </div>
   );
 }
@@ -649,7 +649,7 @@ function FixedOpexBreakdown() {
       }}
     >
       <Mono s={{ fontSize: fs.body, fontWeight: muted ? 400 : 600 }} c={muted ? ASH : CHALK}>{label}</Mono>
-      <Mono s={{ fontSize: 12.5, textAlign: "right" }} c={ASH}>{billed}</Mono>
+      <Mono s={{ fontSize: 13, textAlign: "right" }} c={ASH}>{billed}</Mono>
       <Mono s={{ fontSize: fs.body, textAlign: "right", fontWeight: 700 }} c={c}>{monthly}</Mono>
     </div>
   );
@@ -671,7 +671,7 @@ function FixedOpexBreakdown() {
       {recurring.map((i) => row(i.label, i.billed, usdFull(i.monthlyUsd)))}
       {row("Recurring run-rate", "", usdFull(total), AMBER)}
       {extras.length > 0 && (
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginTop: 12, marginBottom: 2 }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginTop: 12, marginBottom: 2 }} c={ASH}>
           Not in the monthly run-rate
         </Mono>
       )}
@@ -716,7 +716,7 @@ function PlanMatrix() {
             {PLAN_COLUMNS.map((c) => (
               <th key={c.id} style={{ padding: "10px 6px", borderBottom: `1px solid ${LINE}`, textAlign: "center", minWidth: 110 }}>
                 <div style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(c.id === "free" ? ASH : c.id === "pro" ? LIME : c.id === "coach" ? VIOLET : BLUE) }}>{c.label}</div>
-                <Mono s={{ fontSize: 10.5, display: "block", marginTop: 2 }} c={ASH}>{c.price}</Mono>
+                <Mono s={{ fontSize: 11, display: "block", marginTop: 2 }} c={ASH}>{c.price}</Mono>
               </th>
             ))}
           </tr>
@@ -729,7 +729,7 @@ function PlanMatrix() {
                 {groupHeader && (
                   <tr>
                     <td colSpan={1 + PLAN_COLUMNS.length} style={{ padding: "12px 6px 4px" }}>
-                      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>{row.group}</Mono>
+                      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={AMBER}>{row.group}</Mono>
                     </td>
                   </tr>
                 )}
@@ -770,7 +770,7 @@ function Indicator({ label, value, c, note, says }: { label: string; value: stri
       </div>
       <div style={{ ...disp, fontWeight: 800, fontSize: 28, color: txt(c), lineHeight: 1.1, margin: "4px 0 2px" }}>{value}</div>
       <Mono s={{ fontSize: fs.caption }} c={ASH}>{note}</Mono>
-      <Mono s={{ fontSize: 12.5, lineHeight: 1.45, display: "block", marginTop: 8 }} c={CHALK}>{says}</Mono>
+      <Mono s={{ fontSize: 13, lineHeight: 1.45, display: "block", marginTop: 8 }} c={CHALK}>{says}</Mono>
     </Card>
   );
 }
@@ -778,14 +778,14 @@ function Indicator({ label, value, c, note, says }: { label: string; value: stri
 function Glossary() {
   return (
     <Card>
-      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
+      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={AMBER}>
         Metric glossary
       </Mono>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: space.md }}>
         {METRIC_GUIDE.map((m) => (
           <div key={m.id} style={{ borderLeft: `2px solid ${LINE}`, paddingLeft: 10 }}>
-            <div style={{ ...disp, fontWeight: 700, fontSize: 13.5 }}>{m.label}</div>
-            <Mono s={{ fontSize: 12.5, lineHeight: 1.45, display: "block", marginTop: 3 }} c={CHALK}>{m.what}</Mono>
+            <div style={{ ...disp, fontWeight: 700, fontSize: 14 }}>{m.label}</div>
+            <Mono s={{ fontSize: 13, lineHeight: 1.45, display: "block", marginTop: 3 }} c={CHALK}>{m.what}</Mono>
             <Mono s={{ fontSize: fs.caption, lineHeight: 1.4, display: "block", marginTop: 4 }} c={ASH}>
               <span style={{ color: txt(VIOLET) }}>= </span>{m.formula}
             </Mono>
@@ -803,7 +803,7 @@ function Section({ title, kicker, children }: { title: string; kicker: string; c
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>{kicker}</Mono>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em" }} c={AMBER}>{kicker}</Mono>
         <div style={{ ...disp, fontWeight: 800, fontSize: 19, marginTop: 2 }}>{title}</div>
       </div>
       {children}
@@ -927,8 +927,8 @@ function Btn({ label, active, onClick, disabled }: { label: string; active: bool
 function PnL({ k, v, c = CHALK, bold }: { k: string; v: string; c?: string; bold?: boolean }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
-      <Mono s={{ fontSize: 13.5, fontWeight: bold ? 700 : 400 }} c={bold ? CHALK : ASH}>{k}</Mono>
-      <Mono s={{ fontSize: 13.5, fontWeight: bold ? 800 : 400 }} c={c}>{v}</Mono>
+      <Mono s={{ fontSize: 14, fontWeight: bold ? 700 : 400 }} c={bold ? CHALK : ASH}>{k}</Mono>
+      <Mono s={{ fontSize: 14, fontWeight: bold ? 800 : 400 }} c={c}>{v}</Mono>
     </div>
   );
 }

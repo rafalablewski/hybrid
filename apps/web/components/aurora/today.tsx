@@ -85,7 +85,7 @@ import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 import GroupMark from "./group-mark";
 import { AuroraIcon } from "./icons";
-import { CtaLabel } from "./cta-label";
+import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
@@ -502,15 +502,12 @@ export default function AuroraToday({
     [log, bio, sessions, intake.experience, intake.equipment, todayFeeling],
   );
 
-  // Time-of-day greeting + date — computed on the client (in an effect) so the
+  // The caption date — computed on the client (in an effect) so the
   // server-rendered markup doesn't mismatch the clock on hydration.
-  const [greeting, setGreeting] = useState("");
   const [dateStr, setDateStr] = useState("");
   useEffect(() => {
-    const h = new Date().getHours();
-    setGreeting(t(h < 12 ? "w.home.today.greetMorning" : h < 18 ? "w.home.today.greetAfternoon" : "w.home.today.greetEvening"));
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
-  }, [t]);
+  }, []);
   // FIRST-RUN CHOOSER state (new user: no plan, no history) — hoisted because
   // the masthead's caption line says "Free" when the chooser (or its demoted
   // logbook-mode form) renders. With history the logbook rail takes over.
@@ -530,8 +527,8 @@ export default function AuroraToday({
       ? t(mast.diffDays < 0 ? "w.home.today.daysBack" : "w.home.today.daysOut").replace("{n}", String(Math.abs(mast.diffDays)))
       : null;
 
-  const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 14, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
+  const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 12, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
   // The shell every hub tab wears: the profile header, then the three pills.
   // Hoisted so the non-dashboard tabs render the SAME masthead chrome without
@@ -547,31 +544,28 @@ export default function AuroraToday({
         <button
           onClick={() => (onNavigate ? onNavigate("profile") : router.push("/profile"))}
           aria-label={t("w.home.today.profileAria")}
-          style={{ position: "relative", width: 44, height: 44, borderRadius: 14, background: `${C("lime")}22`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.bodyLg, color: "var(--lime-text)" }}
+          style={{ position: "relative", width: 44, height: 44, borderRadius: 12, background: `${C("lime")}22`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.bodyLg, color: "var(--lime-text)" }}
         >
           {initials}
-          <span style={{ position: "absolute", bottom: -3, right: -3, width: 12, height: 12, borderRadius: "50%", background: C("lime"), border: `2.5px solid ${C("ink")}` }} />
         </button>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ fontWeight: 900, fontSize: 19, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
             HYBRID<span style={{ color: "var(--lime-text)" }}>.</span>
           </div>
-          <div style={{ width: 26, height: 3, borderRadius: 2, background: C("lime") }} />
         </div>
-        {/* right group — the day-streak pill (moved up here so the greeting line
-            breathes) + the notifications bell */}
+        {/* right group — the day-streak pill + the notifications bell */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {acc.streak.current > 0 && (
             // SPECTRUM: the streak wears the warm terracotta accent (Connect),
-            // pairing with the 🔥 and keeping chartreuse for the primary action.
-            <button onClick={() => setDoneOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 44, background: `color-mix(in srgb, ${C("red")} 14%, transparent)`, color: "var(--red-text)", border: `1px solid color-mix(in srgb, ${C("red")} 40%, transparent)`, borderRadius: 999, padding: "0 13px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>
-              🔥 {acc.streak.current}{t("w.home.today.dayStreak")}
+            // pairing with the flame and keeping chartreuse for the primary action.
+            <button onClick={() => setDoneOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 44, background: `color-mix(in srgb, ${C("red")} 14%, transparent)`, color: "var(--red-text)", border: `1px solid color-mix(in srgb, ${C("red")} 40%, transparent)`, borderRadius: 999, padding: "0 12px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>
+              <AuroraIcon name="flame" size={13} color="var(--red-text)" /> {acc.streak.current}{t("w.home.today.dayStreak")}
             </button>
           )}
           <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
             <AuroraIcon name="bell" size={20} color={C("ash")} />
             {notifCount > 0 && (
-              <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
+              <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 999, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
                 {notifCount > 9 ? "9+" : notifCount}
               </span>
             )}
@@ -648,23 +642,22 @@ export default function AuroraToday({
       />
 
       {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
-          chooser's "Free", or the scrub-distance tag), ONE big headline, and
-          the greeting demoted to a single warm sentence beneath it. The old
-          layout stacked two near-equal bold headlines (greeting 22 + "How do
-          you want to start?" 18) four lines apart; now the page has one. The
-          headline NAMES THE VIEWED DAY (masthead() in @hybrid/core): "Today"
-          until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the
-          weekday name beyond — a static "Today" over Friday's session would
-          lie in the largest type on screen. Off today, the greeting line
-          becomes the "Back to today" return affordance, teal, in the same
-          spot every time. Mirrors mobile home.tsx. */}
-      <div className="motion-masthead" style={{ margin: "16px 2px 2px" }}>
+          chooser's "Free", or the scrub-distance tag) and ONE big headline.
+          The greeting line was retired (ornament sweep): the caption already
+          says the day, and a "Good morning" sentence under the headline was
+          decoration competing with the Start action. The headline NAMES THE
+          VIEWED DAY (masthead() in @hybrid/core): "Today" until the week rail
+          is scrubbed, "Yesterday"/"Tomorrow" at ±1, the weekday name beyond —
+          a static "Today" over Friday's session would lie in the largest type
+          on screen. Off today, a "Back to today" return affordance renders
+          beneath, teal, in the same spot every time. Mirrors mobile home.tsx. */}
+      <div className="motion-masthead" style={{ margin: "16px 0 2px" }}>
         <div className="motion-masthead-sub" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{mastCaption || " "}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{mastCaption || " "}</span>
           {firstRun || (logbookMode && !mastTag) ? (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.badgeFree")}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.badgeFree")}</span>
           ) : mastTag ? (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--amber-text)", whiteSpace: "nowrap" }}>{mastTag}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--amber-text)", whiteSpace: "nowrap" }}>{mastTag}</span>
           ) : null}
         </div>
         <div className="motion-masthead-title" style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), marginTop: 2 }}>
@@ -674,14 +667,12 @@ export default function AuroraToday({
               (.hanko-seal). Mirrors mobile home.tsx. */}
           {dayIsToday && <span className="hanko-seal" aria-hidden>力</span>}
         </div>
-        {dayIsToday ? (
-          <div style={{ fontSize: fs.body, color: C("ash"), marginTop: 2 }}>{greeting ? `${greeting}, ${name.split(/\s+/)[0]}.` : ` `}</div>
-        ) : (
+        {!dayIsToday && (
           <button
             onClick={backToToday}
-            style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--blue-text)" }}
+            style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--blue-text)" }}
           >
-            {t("w.home.today.backToToday")} →
+            <CtaLabel size={12}>{`${t("w.home.today.backToToday")} →`}</CtaLabel>
           </button>
         )}
       </div>
@@ -727,7 +718,7 @@ export default function AuroraToday({
            training, so a plan-less regular gets the calendar from their first
            session instead of the chooser forever. The chooser demotes to slim
            rows under an Explore-standard "Add structure" head. */
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 16 }}>
           <div ref={railSourceCard}>
             <AuroraLogbookRail
               sessions={sessions}
@@ -738,9 +729,9 @@ export default function AuroraToday({
               weekRowRef={railWeekRow}
             />
           </div>
-          <div style={{ margin: "24px 2px 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+          <div style={{ margin: "24px 0 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
             <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.logbook.trainYourWay")}</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.logbook.optional")}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.logbook.optional")}</span>
           </div>
           {/* the chooser as a snap slider — the exercise-widget rail's idiom:
               one card ≈ 72% wide so the next path peeks in from the right,
@@ -764,7 +755,7 @@ export default function AuroraToday({
            stacked column (side-by-side columns crowd the copy and orphan the
            third card at phone widths). NO section head — the "How do you want
            to start?" question was retired with the masthead redesign (the page
-           already opens with "Today" + the greeting, and three cards titled
+           already opens with "Today", and three cards titled
            Follow a plan / Build your own / Log a workout need no sentence
            announcing that a choice is available); "Free" is said ONCE on the
            masthead's caption line. Each full-width card wears the Go-Full
@@ -814,7 +805,7 @@ export default function AuroraToday({
                 const dissolve = "linear-gradient(180deg, #000 0%, #000 14%, rgba(0,0,0,.28) 68%, transparent 100%)";
                 const cells = (r: (typeof rows)[number]) => (
                   <>
-                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
+                    <span style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 8 }}>{r.session}</span> : null}{r.name}{r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}> ({r.note})</span> : null}</span>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), textAlign: "right", flexShrink: 0 }}>{r.detail}</span>
                   </>
                 );
@@ -831,8 +822,8 @@ export default function AuroraToday({
                           ))}
                         </div>
                       </div>
-                      <button ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ marginTop: 6, display: "block", marginLeft: "auto", marginRight: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 15px", fontFamily: "var(--font-mono)", fontSize: 11.5, fontWeight: 600 }}>
-                        {t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →
+                      <button ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ marginTop: 6, display: "block", marginLeft: "auto", marginRight: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 16px", fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600 }}>
+                        <CtaLabel size={12}>{`${t("w.home.today.showAllLifts")} ${rows.length} ${t("w.home.today.liftsWord")} →`}</CtaLabel>
                       </button>
                     </>
                   );
@@ -853,9 +844,9 @@ export default function AuroraToday({
               {!isAthlete && (
                 <button
                   onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
-                  style={{ marginTop: 12, width: "100%", display: "block", padding: "11px 13px", cursor: "pointer", textAlign: "left", border: `1px dashed color-mix(in srgb, var(--premium-accent) 40%, transparent)`, background: "transparent" }}
+                  style={{ marginTop: 12, width: "100%", display: "block", padding: "12px 12px", cursor: "pointer", textAlign: "left", border: `1px dashed color-mix(in srgb, var(--premium-accent) 40%, transparent)`, background: "transparent" }}
                 >
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, lineHeight: 1.5, color: C("ash") }}><span style={{ color: "var(--premium-accent-text)" }}>[note]</span> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, lineHeight: 1.5, color: C("ash") }}><span style={{ color: "var(--premium-accent-text)" }}>[note]</span> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</span>
                 </button>
               )}
               {/* Primary action anchored at the BOTTOM of the plan card, below the note.
@@ -864,7 +855,7 @@ export default function AuroraToday({
               <button
                 onClick={() => onStart(plan.blocks, `${plan.planName} – ${plan.day}`)}
                 className="start-glow"
-                style={{ marginTop: 14, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
+                style={{ marginTop: 16, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
               >
                 <CtaLabel>{t("w.home.today.start")}</CtaLabel>
               </button>
@@ -873,7 +864,7 @@ export default function AuroraToday({
                   this is the on-plan door to a saved routine (a session off-plan). */}
               <button
                 onClick={() => setQuickStartOpen(true)}
-                style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11.5, color: "var(--violet-text)" }}
+                style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--violet-text)" }}
               >
                 ⚡ {t("w.home.today.quickStartLink")}
               </button>
@@ -1008,26 +999,26 @@ export default function AuroraToday({
           coach marketplace. The label the old Explore tab left behind. ═════ */}
       <GroupMark label={t("w.home.group.explore")} />
 
-      {/* ───── GO FULL — Cockpit + Sport premium baits (sand = premium upsell).
-          Explore-standard section head (bold display title); the ✦ stays — it's
-          the semantic premium signifier, not a decorative marker. ───── */}
-      <div style={{ margin: "22px 2px 12px" }}>
-        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}><span style={{ color: "var(--premium-accent-text)" }}>✦</span> {t("w.home.today.goFull")}</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <AccessCard
-          title={t("w.home.today.cockpitTitle")}
-          sub={isAthlete ? t("w.home.today.cockpitSub") : t("w.home.today.cockpitLockSub")}
-          locked={!isAthlete}
-          onClick={() => (isAthlete ? (onNavigate ? onNavigate("performance") : router.push("/performance")) : upsell("today-cockpit"))}
-        />
-        <AccessCard
-          title={t("w.home.today.sportTitle")}
-          sub={isAthlete ? t("w.home.today.sportSub") : t("w.home.today.sportLockSub")}
-          locked={!isAthlete}
-          onClick={() => (isAthlete ? (onNavigate ? onNavigate("sport") : router.push("/sport")) : upsell("today-sport"))}
-        />
-      </div>
+      {/* ───── GO FULL — demoted from two display-weight AccessCards to ONE
+          compact quiet row (the DoorRow idiom: r16, small glyph tile, bold
+          title + mono micro sub, chevron). The row carries the "Go Full"
+          label itself, so the old "✦ Go Full" section head is gone with it.
+          The ✦ stays as the tile glyph — the semantic premium signifier, the
+          ONLY thing wearing the premium accent. Routes where the first
+          AccessCard (Cockpit) routed. Mirrors mobile home.tsx. ───── */}
+      <button
+        onClick={() => (isAthlete ? (onNavigate ? onNavigate("performance") : router.push("/performance")) : upsell("today-cockpit"))}
+        aria-label={`${t("w.home.today.goFull")} – ${t("w.home.today.goFullRowSub")}`}
+        className="pressable"
+        style={{ display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 16, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", cursor: "pointer", textAlign: "left", color: C("chalk") }}
+      >
+        <span aria-hidden style={{ width: 32, height: 32, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "var(--premium-accent-text)", flex: "0 0 32px" }}>✦</span>
+        <span style={{ flex: 1 }}>
+          <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg }}>{t("w.home.today.goFull")}</span>
+          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2 }}>{t("w.home.today.goFullRowSub")}</span>
+        </span>
+        <span style={{ fontSize: fs.note, color: C("ash") }} aria-hidden>›</span>
+      </button>
 
       {/* ───── FOLLOW A COACH — Today's last block, and the only thing left
           below the premium cards. Nutrition is NOT summarised here: Today is the
@@ -1045,7 +1036,7 @@ export default function AuroraToday({
           your goal" is a subtitle, not a meta value, and at 30-odd characters in
           PL/DE it would collide with the title on a phone. Same anatomy the
           rail's own built-in header uses. */}
-      <div style={{ margin: "26px 2px 12px" }}>
+      <div style={{ margin: "24px 0 12px" }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.rowCoach")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</div>
       </div>
@@ -1071,7 +1062,14 @@ export default function AuroraToday({
         open={doneOpen}
         onClose={() => setDoneOpen(false)}
         title={dayIsToday ? t("w.home.today.doneModalTitle") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "")}
-        sub={dayIsToday ? `${dateStr}${acc.streak.current > 0 ? ` – 🔥 ${acc.streak.current}${t("w.home.today.dayStreak")}` : ""}` : dayLabel ?? ""}
+        sub={dayIsToday ? (
+          <>
+            {dateStr}
+            {acc.streak.current > 0 && (
+              <> – <AuroraIcon name="flame" size={12} color="var(--red-text)" style={{ verticalAlign: "-2px" }} /> {acc.streak.current}{t("w.home.today.dayStreak")}</>
+            )}
+          </>
+        ) : dayLabel ?? ""}
       >
         {doneOnDay.length === 0 ? (
           <div style={{ fontSize: fs.body, color: C("ash"), lineHeight: 1.5, padding: "8px 0" }}>{t(dayIsToday ? "w.home.today.doneModalEmpty" : "w.home.today.doneModalEmptyDay")}</div>
@@ -1089,7 +1087,7 @@ export default function AuroraToday({
             ))}
           </div>
         )}
-        <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 14, padding: 14, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>📅 {t("w.home.today.doneCalendar")}</button>
+        <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}><AuroraIcon name="calendar" size={15} color={C("ash")} /> {t("w.home.today.doneCalendar")}</button>
       </Sheet>
     </div>
   );
@@ -1112,12 +1110,13 @@ function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: strin
     <button
       onClick={onClick}
       aria-label={title}
-      style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20, cursor: "pointer", color: C("chalk"), boxShadow: "var(--shadow-card)" }}
+      className="pressable"
+      style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, cursor: "pointer", color: C("chalk"), boxShadow: "var(--shadow-card)" }}
     >
       <span aria-hidden style={{ fontSize: 19, lineHeight: 1, color: text }}>{glyph}</span>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", marginTop: 12 }}>{title}</span>
-      <span style={{ fontSize: fs.note, lineHeight: 1.5, color: C("ash"), marginTop: 7 }}>{sub}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 14 }}>{cta} →</span>
+      <span style={{ fontSize: fs.note, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>{sub}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 16 }}><CtaLabel size={12}>{`${cta} →`}</CtaLabel></span>
     </button>
   );
 }
@@ -1135,12 +1134,13 @@ function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: str
     <button
       onClick={onClick}
       aria-label={title}
-      style={{ flex: "0 0 min(72%, 300px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 24, padding: 18, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+      className="pressable"
+      style={{ flex: "0 0 min(72%, 300px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
     >
       <span aria-hidden style={{ fontSize: 15, lineHeight: 1, color: text }}>{glyph}</span>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.02em", marginTop: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{title}</span>
       <span style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{sub}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 12 }}>{cta} →</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 12 }}><CtaLabel size={12}>{`${cta} →`}</CtaLabel></span>
     </button>
   );
 }
@@ -1170,8 +1170,6 @@ function Ring({ value, color, size = 44, ticks = 32, center }: { value: number; 
 // now lives in core/engines/session.ts — it was this exact function twice, once
 // here and once in mobile home.tsx, which is how two clients drift.
 
-// A compact quick-access tile (Cockpit / Sport). A `locked` tile carries the ✦
-// Full accent + a lime rim; an unlocked one shows the → chevron.
 // The "Done today" card, "number is the card" redesign: the day's TOTAL done
 // count (plan + off-plan) is the card's display-weight headline — the whole
 // stat strip taps through to the Done-Today sheet — with EVERY done session as
@@ -1203,23 +1201,25 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
   const copy = alsoTodayCopy({ doneCount, isToday });
   const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
   return (
-    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
       <button type="button" onClick={onDone} aria-label={`${doneCount} ${doneLabel}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, background: "none", border: "none", padding: "6px 0 4px", cursor: "pointer", textAlign: "left", color: C("chalk") }}>
-        <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 44, letterSpacing: "-.05em", lineHeight: 0.9, fontVariantNumeric: "tabular-nums", flexShrink: 0, color: doneCount > 0 ? C("chalk") : quiet }}>{doneCount}</span>
+        {/* a status count, not a hero — fs.display keeps it below the masthead
+            (34) and the Start action (hierarchy sweep; was 44) */}
+        <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.display, letterSpacing: "-.03em", lineHeight: 0.9, fontVariantNumeric: "tabular-nums", flexShrink: 0, color: doneCount > 0 ? C("chalk") : quiet }}>{doneCount}</span>
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash") }}>{doneLabel}</span>
+          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{doneLabel}</span>
           {copy.subKey && <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.5, color: quiet, marginTop: 6 }}>{t(copy.subKey)}</span>}
         </span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: quiet, flexShrink: 0 }}>→</span>
+        <span style={{ color: quiet, flexShrink: 0, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
       </button>
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
-      <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 4 }}>
         {rows.map((s) => {
           const onPlanRow = planIds.has(s.id);
           return (
             <button type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
-              <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C(onPlanRow ? "lime" : "blue")} 16%, transparent)` }}>
+              <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C(onPlanRow ? "lime" : "blue")} 16%, transparent)` }}>
                 {sessionIcon(s)}
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>
@@ -1237,14 +1237,14 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
                 </span>
               </span>
               {onPlanRow && (
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--lime-text)", flexShrink: 0 }}>{t("w.home.today.kPlan")}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)", flexShrink: 0 }}>{t("w.home.today.kPlan")}</span>
               )}
             </button>
           );
         })}
         {isToday && (
           <button type="button" onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
-            <span style={{ width: 40, height: 40, borderRadius: 13, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: "transparent", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, color: C("ash") }}>＋</span>
+            <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: "transparent", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, color: C("ash") }}>＋</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--lime-text)" }}>{t(copy.logKey)}</span>
           </button>
         )}
@@ -1440,7 +1440,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
     }
   };
   return (
-    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 22, padding: 18, background: C("ink2") }}>
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same
@@ -1455,15 +1455,15 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
         {!isToday && dayLabel ? (
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{dayLabel}</span>
         ) : asking ? (
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--lime-text)", whiteSpace: "nowrap", flexShrink: 0 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime-text)", whiteSpace: "nowrap", flexShrink: 0 }}>
             {t("session.feel.promptRecovery")}
           </span>
         ) : gate.reason === "dayFull" && isToday ? (
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>
             {dayReads.length} / {MAX_READS_PER_DAY}
           </span>
         ) : held && gate.opensAt != null ? (
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>
             {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
           </span>
         ) : null}
@@ -1478,10 +1478,12 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
           day gets a light dash rather than a zero or a middling 3: there is no
           reading yet, and inventing one is the failure this card exists to
           avoid. The ⓘ sits with it because it explains THIS reading. */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 11, flexWrap: "wrap", marginTop: 15 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
+        {/* display weight, not hero weight — fs.display (was 46): a status
+            reading must never outrank the day's Start action */}
         <span style={{
-          fontFamily: "var(--font-heading)", fontWeight: shownFeeling ? 800 : 300, fontSize: 46, lineHeight: .96,
-          letterSpacing: shownFeeling ? "-.04em" : "-.01em",
+          fontFamily: "var(--font-heading)", fontWeight: shownFeeling ? 800 : 300, fontSize: fs.display, lineHeight: .96,
+          letterSpacing: shownFeeling ? "-.03em" : "-.01em",
           color: shownFeeling ? `var(--${READINESS_FACE[shownFeeling].accent}-text)` : `color-mix(in srgb, ${C("ash")} 55%, transparent)`,
         }}>
           {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}
@@ -1506,14 +1508,14 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
         </p>
       )}
 
-      <div style={{ height: 1, background: C("line"), margin: "15px 0 0" }} />
+      <div style={{ height: 1, background: C("line"), margin: "16px 0 0" }} />
 
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "13px 0 2px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 6, margin: "12px 0 2px" }}>
         {READINESS_FEELINGS.map((key, i) => {
           const on = selected === key;
           const at = `var(--${READINESS_FACE[key].accent}-text)`;
           return (
-            <button key={key} onClick={() => pick(i + 2)} disabled={locked} aria-label={t(`w.recovery.readiness.${key}`)} aria-pressed={on}
+            <button key={key} onClick={() => pick(i + 2)} disabled={locked} aria-label={t(`w.recovery.readiness.${key}`)} aria-pressed={on} className="pressable"
               style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "10px 0", borderRadius: 16, cursor: locked ? "default" : "pointer", background: on ? `color-mix(in srgb, ${at} 12%, transparent)` : "transparent", border: on ? `1px solid color-mix(in srgb, ${at} 40%, transparent)` : "1px solid transparent", opacity: locked && !on ? 0.45 : 1, transition: "background .15s, opacity .15s" }}>
               <ReadinessFace feeling={key} size={36} />
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: on ? at : C("ash") }}>{t(`w.recovery.readiness.${key}`)}</span>
@@ -1531,7 +1533,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
           was given at, and how long after training that was. The one training
           is prescribed off is marked; none of them is ever overwritten. */}
       {dayReads.length > 0 && (
-        <div style={{ marginTop: 14, paddingTop: 13, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
           {/* THE DOOR. Shut by default — the hero is what the card is for, and a
               list under it is the thing that made the card grow in the first
               place. The count sits on the door so the day's shape is legible
@@ -1545,10 +1547,10 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
               {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
             </span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{dayReads.length}</span>
-            <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: fs.note, color: C("ash"), transform: readsOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }}>→</span>
+            <span style={{ marginLeft: "auto", display: "grid", placeItems: "center", color: C("ash"), transform: readsOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }}><ArrowGlyph size={13} /></span>
           </button>
           {readsOpen && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 11 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
             {dayReads.map((r) => {
               const governs = decisive != null && r.at === decisive.at;
               return (
@@ -1584,7 +1586,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
         <>
           <button
             onClick={() => setFollowUpOpen(true)}
-            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: done.complete || asking ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete || asking ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
+            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 16, padding: "12px 16px", borderRadius: 16, background: done.complete || asking ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete || asking ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
           >
             <span style={{ flex: 1 }}>
               <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>
@@ -1605,7 +1607,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
                 />
               ))}
             </span>
-            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: done.complete || asking ? C("ash") : "var(--lime-text)" }}>→</span>
+            <span style={{ flexShrink: 0, display: "grid", placeItems: "center", color: done.complete || asking ? C("ash") : "var(--lime-text)" }}><ArrowGlyph size={15} /></span>
           </button>
 
           <Sheet
@@ -1634,23 +1636,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
   );
 }
 
-function AccessCard({ title, sub, locked, onClick }: { title: string; sub: string; locked: boolean; onClick: () => void }) {
-  const { t } = useLang();
-  return (
-    <button
-      onClick={onClick}
-      aria-label={title}
-      style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", minHeight: 220, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, var(--premium-accent) 12%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--premium-accent) 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 24, padding: 20, cursor: "pointer", color: C("chalk"), boxShadow: "var(--shadow-card)" }}
-    >
-      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 26, letterSpacing: "-.02em" }}>{title}</span>
-      {/* body grows so the CTA pins to the card bottom — both cards stretch to equal
-          height (grid 1fr/1fr), so the title, body-start and CTA line up across the
-          pair no matter how many lines the copy runs. Body is the display face
-          (per tokens: display = headings + body, mono = labels/numbers). */}
-      <span style={{ fontSize: fs.bodyLg, lineHeight: 1.5, letterSpacing: "-.005em", color: C("ash"), flexGrow: 1, marginTop: 10 }}>{sub}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", paddingTop: 18 }}>{locked ? t("w.home.today.cardUnlock") : t("w.home.today.cardOpen")} →</span>
-    </button>
-  );
-}
+// The Go-Full AccessCard pair (Cockpit / Sport, 26px titles, minHeight 220)
+// was demoted to the single quiet row rendered inline above — see GO FULL.
 
 

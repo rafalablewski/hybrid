@@ -81,7 +81,7 @@ export default function AuroraLongevity() {
           {report.contributions.length > 0 && (
             <View style={{ marginTop: 12 }}>
               {report.contributions.map((c) => (
-                <View key={c.marker} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 7, borderTopWidth: 1, borderTopColor: C.line }}>
+                <View key={c.marker} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{c.marker}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, c.deltaYears <= 0 ? C.lime : C.amber) }}>{c.deltaYears <= 0 ? "" : "+"}{Math.round(c.deltaYears * 10) / 10} yr</Text>
                 </View>
@@ -110,7 +110,7 @@ function Field({ C, label, value, onChange }: { C: Palette; label: string; value
         keyboardType="numeric"
         placeholder="—"
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 13 }}
+        style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 12 }}
       />
     </View>
   );

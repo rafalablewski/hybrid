@@ -40,7 +40,7 @@ export default function AuroraForcePlate() {
 
   const jumps = useMemo(() => signals.filter((s) => s.kind === "jumpHeight").sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime()), [signals]);
   const maxJ = Math.max(1, ...jumps.map((j) => j.value));
-  const chip = (color: string, label: string) => <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
+  const chip = (color: string, label: string) => <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
   return (
     <AuroraScreen>
@@ -68,7 +68,7 @@ export default function AuroraForcePlate() {
       </ACard>
 
       {jumps.length > 0 && (
-        <ACard style={{ marginTop: 14 }}>
+        <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.fp.jumpTitle-mobile")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.analyze.fp.jumpSubtitle")}</Text>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: space.xxs, height: 90, marginTop: 12 }}>

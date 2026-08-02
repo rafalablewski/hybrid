@@ -5,12 +5,11 @@
  * data (72×72 viewBox, stroke-based).
  *
  * Web renders these as inline <svg> with stroke=currentColor (see
- * apps/web/components/aurora/icons.tsx). Mobile renders them two ways (see
- * apps/mobile/components/aurora/icons.tsx): true vectors via react-native-svg
- * (AuroraSvgIcon — used in the bottom-nav pill) and 216px PNGs from
- * apps/mobile/assets/icons via <Image tintColor> (AuroraIcon, regenerated from
- * this path data) — the names below are kept in lockstep with those asset
- * filenames.
+ * apps/web/components/aurora/icons.tsx). Mobile renders them as true vectors
+ * via react-native-svg (see apps/mobile/components/aurora/icons.tsx), so both
+ * clients stroke the SAME path data at the SAME `auroraIconStroke(size)`
+ * weight. The 216px PNGs in apps/mobile/assets/icons survive only for the
+ * native tab bar's Android fallback.
  */
 export type AuroraIconName =
   | "back"
@@ -54,7 +53,22 @@ export type AuroraIconName =
   | "copy"
   | "edit"
   | "grid"
-  | "fork-knife";
+  | "fork-knife"
+  | "trophy"
+  | "flame"
+  | "bolt"
+  | "stopwatch"
+  | "moon";
+
+/** Stroke weight (in 72-viewBox units) for a rendered icon size, so optical
+ *  weight stays constant: small glyphs draw heavier, large draw lighter.
+ *  THE one size→stroke rule for both clients. */
+export function auroraIconStroke(size: number): number {
+  if (size <= 14) return 5.5;
+  if (size <= 18) return 4.5;
+  if (size <= 24) return 3.5;
+  return 3;
+}
 
 /** name → one or more SVG path `d` strings (72×72 viewBox, fill:none stroke). */
 export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
@@ -81,9 +95,9 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
   calendar: [
     "M60 27H12M21 9V15M51 9V15M18 63H54C57.3137 63 60 60.3137 60 57V21C60 17.6863 57.3137 15 54 15H18C14.6863 15 12 17.6863 12 21V57C12 60.3137 14.6863 63 18 63Z",
   ],
-  check: [
-    "M48 27L30 46.5L22.5 39M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63Z",
-  ],
+  // A bare tick — the circled variant lives at `check-circle` (the two used to
+  // ship identical path data; now `check` is the mark alone).
+  check: ["M13.5 39L28.5 54L58.5 19.5"],
   verified: [
     "M45 30L33 42L27 36M12 15V36.1672C12 45.2577 17.1361 53.568 25.2669 57.6334L36 63L46.7331 57.6334C54.8639 53.568 60 45.2577 60 36.1672V15L57.909 15.2323C50.5627 16.0486 43.1737 14.1241 37.1589 9.82782L36 9L34.8411 9.82782C28.8263 14.1241 21.4373 16.0486 14.091 15.2323L12 15Z",
   ],
@@ -96,7 +110,9 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
   navigation: [
     "M34.577 10.2691C35.0328 8.90152 36.9672 8.90153 37.423 10.2691L52.8548 56.5645C53.2774 57.8323 51.9563 58.9781 50.761 58.3805L36 51L21.239 58.3805C20.0437 58.9781 18.7226 57.8323 19.1452 56.5645L34.577 10.2691Z",
   ],
-  play: ["M15 33H45M15 21H45M15 45H33M45 45V57L57 51L45 45Z"],
+  // A plain play triangle — `list-play` is the list + small triangle (the two
+  // used to ship identical path data).
+  play: ["M25.5 13.5L58.5 36L25.5 58.5V13.5Z"],
   heart: [
     "M58.6066 16.3934C64.4644 22.2513 64.4644 31.7488 58.6066 37.6066L38.1213 58.0919C36.9497 59.2635 35.0502 59.2635 33.8786 58.0919L13.3934 37.6066C7.53553 31.7488 7.53553 22.2513 13.3934 16.3934C18.0504 11.7364 23.6717 10.3105 29.3438 13.0782C31.595 14.1767 34.5468 16.3934 36 19.2891C37.4531 16.3934 40.4049 14.1767 42.6562 13.0782C48.3283 10.3105 53.9496 11.7364 58.6066 16.3934Z",
   ],
@@ -124,7 +140,10 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
   info: ["M36 24V25.5M36 36V48M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63Z"],
   offer: ["M24 24H24.03M34.7574 13.7574L58.7574 37.7574C61.1005 40.1005 61.1005 43.8995 58.7574 46.2426L46.2426 58.7574C43.8995 61.1005 40.1005 61.1005 37.7574 58.7574L13.7574 34.7574C12.6321 33.6321 12 32.106 12 30.5147V18C12 14.6863 14.6863 12 18 12H30.5147C32.106 12 33.6321 12.6321 34.7574 13.7574Z"],
   "add-square": ["M36 24V48M48 36H24M18 60H54C57.3137 60 60 57.3137 60 54V18C60 14.6863 57.3137 12 54 12H18C14.6863 12 12 14.6863 12 18V54C12 57.3137 14.6863 60 18 60Z"],
-  "check-circle": ["M48 27L30 46.5L22.5 39M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63Z"],
+  "check-circle": [
+    "M46.5 28.5L32.25 44.25L25.5 37.5",
+    "M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63Z",
+  ],
   "user-square": ["M18.2197 60C19.3225 52 24.6614 48 36.0004 48C47.3393 48 52.6782 52 53.781 60M36 39C40 39 42 36.8571 42 31.5C42 26.1429 40 24 36 24C32 24 30 26.1429 30 31.5C30 36.8571 32 39 36 39ZM18 60H54C57.3137 60 60 57.3137 60 54V18C60 14.6863 57.3137 12 54 12H18C14.6863 12 12 14.6863 12 18V54C12 57.3137 14.6863 60 18 60Z"],
   download: ["M21 36L36 51L51 36M36 51V12M51 60H21"],
   copy: ["M9 48V12C9 8.68629 11.6863 6 15 6H45M27 66H54C57.3137 66 60 63.3137 60 60V24C60 20.6863 57.3137 18 54 18H27C23.6863 18 21 20.6863 21 24V60C21 63.3137 23.6863 66 27 66Z"],
@@ -149,6 +168,21 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
     "M52.5 9C48 13.5 46.5 21 46.5 30C46.5 39 48 42 52.5 42C57 42 58.5 39 58.5 30C58.5 21 57 13.5 52.5 9Z",
     "M52.5 42V63",
   ],
+  // Semantic marks drawn in the kit's house style (72×72, stroke-only, round
+  // caps). Vector-only on both clients — no PNG twin needed.
+  // stopwatch + moon complete the wrapped device-ad pictograph set (heart-rate,
+  // flame, stopwatch, sleep) so that grid can drop its last emoji.
+  stopwatch: ["M36 24V40L45 46", "M36 18C25 18 16 27 16 38C16 49 25 58 36 58C47 58 56 49 56 38C56 27 47 18 36 18Z", "M30 12H42"],
+  moon: ["M46.5 15C41 17.5 37 23 37 29.5C37 38.5 44.5 46 53.5 46C55.8 46 58 45.5 60 44.6C57.4 53.7 49 60 39.5 60C27.6 60 18 50.4 18 38.5C18 27 26.8 17.6 38 16.1C40.7 15.7 43.6 15.2 46.5 15Z"],
+  trophy: [
+    "M24 12H48V27C48 35.2843 42.6274 42 36 42C29.3726 42 24 35.2843 24 27V12Z",
+    "M24 16.5H13.5V21C13.5 27.6274 18.3726 33 24 33M48 16.5H58.5V21C58.5 27.6274 53.6274 33 48 33",
+    "M36 42V51M28.5 51H43.5L46.5 60H25.5Z",
+  ],
+  flame: [
+    "M36 9C42 18 51 26 51 41C51 53 44.2843 63 36 63C27.7157 63 21 53 21 41C21 32 24.75 26.25 28.5 22.5C28.5 28.5 31.5 32 35 32C33 26 33 17 36 9Z",
+  ],
+  bolt: ["M40.5 9L18 40.5H33L31.5 63L54 31.5H39L40.5 9Z"],
 };
 
 /**
@@ -297,8 +331,7 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
  * icons so it carries identical optical weight beside village/globe/grid in the
  * bottom nav.
  *
- * Deliberately NOT a member of `AuroraIconName`: that union is mirrored one-to-
- * one by the mobile PNG map (apps/mobile/assets/icons/*.png), and this glyph is
- * rendered inline as a vector by both nav components, so it needs no asset.
+ * Deliberately NOT a member of `AuroraIconName`: it is rendered inline as a
+ * vector by both nav components, so it needs no entry in the shared map.
  */
 export const AURORA_TRAIN_GLYPH = "M12 27v18M21 21v30M51 21v30M60 27v18M21 36h30";

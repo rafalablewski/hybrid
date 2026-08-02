@@ -42,7 +42,7 @@ export default function AuroraPeriodize({
         <ReconciledWeek macro={macro} currentWeek={week} sessions={sessions} bio={bio ?? undefined} style={{ marginBottom: 16 }} />
       )}
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>
           {macro.goalOrSport}{macro.model ? ` – ${macro.model}` : ` – ${t("w.train.periodize.enrolledLabel")}`}
         </div>
         <div style={{ fontWeight: 800, fontSize: 22, margin: "6px 0 12px" }}>
@@ -80,7 +80,7 @@ export default function AuroraPeriodize({
                     flex: 1,
                     textAlign: "center",
                     padding: "8px 2px",
-                    borderRadius: 10,
+                    borderRadius: 12,
                     background: m.week === week ? `color-mix(in srgb, ${C("lime")} 12%, transparent)` : C("ink"),
                     border: `1px solid ${m.week === week ? C("lime") : C("line")}`,
                   }}

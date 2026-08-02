@@ -5,6 +5,7 @@ import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, cardioDiscip
 import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
+import { CtaLabel } from "./cta-label";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
@@ -48,7 +49,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
         {t("w.train.sport.intro")}
       </p>
 
-      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 14 }}>
+      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 16 }}>
         {SPORT_NAMES.map((s) => {
           const on = s === sport;
           return (
@@ -62,7 +63,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
                 display: "flex",
                 alignItems: "center",
                 gap: space.xs,
-                padding: "9px 16px",
+                padding: "8px 16px",
                 borderRadius: 999,
                 cursor: "pointer",
                 border: `1px solid ${on ? C("lime") : C("line")}`,
@@ -89,8 +90,8 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
                 fontSize: fs.body,
                 fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: ".04em",
-                padding: "9px 18px",
+                letterSpacing: ".08em",
+                padding: "8px 16px",
                 borderRadius: 999,
                 cursor: "pointer",
                 border: `1px solid ${on ? C("lime") : C("line")}`,
@@ -112,8 +113,8 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{meta.family} – {LEVELS[levelIdx]}</div>
           </div>
         </div>
-        <div style={{ marginTop: 14 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{meta.marker.label}</div>
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{meta.marker.label}</div>
           <input
             value={markers[sport] ?? ""}
             onChange={(e) => setMarkers((m) => ({ ...m, [sport]: e.target.value }))}
@@ -123,7 +124,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
               fontSize: fs.bodyLg,
               width: "100%",
               marginTop: 6,
-              padding: "12px 14px",
+              padding: "12px 16px",
               borderRadius: 16,
               background: C("ink"),
               color: C("chalk"),
@@ -147,17 +148,17 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
               color: "var(--on-accent)",
               border: "none",
               borderRadius: 999,
-              padding: "13px 18px",
+              padding: "12px 16px",
               cursor: "pointer",
             }}
           >
-            + {t("w.train.sport.logSession").replace("{sport}", sport)} →
+            <CtaLabel size={14}>{`+ ${t("w.train.sport.logSession").replace("{sport}", sport)} →`}</CtaLabel>
           </button>
         )}
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>
           {t("w.train.sport.todaysSC")}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 3, color: C("ash") }}>
@@ -187,7 +188,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
       </div>
 
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
           {t("w.train.sport.exercisePool")}
         </div>
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.md }}>

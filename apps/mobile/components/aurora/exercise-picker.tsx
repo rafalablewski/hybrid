@@ -134,30 +134,30 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
     const c = kindColor(e.kind, C);
     const hint = shapeHint(e);
     return (
-      <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
+      <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           {e.icon
             ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
-            : <Text style={{ fontFamily: F.black, fontSize: 12.5, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
+            : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
         </View>
         <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
+        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
       </Pressable>
     );
   };
   const slab = (entries: Entry[]) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 3 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 3 }}>
       {entries.map((e, i) => row(e, i === entries.length - 1))}
     </View>
   );
   const head = (label: string, count: number) => (
-    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 18, marginBottom: 10, marginHorizontal: 2 }}>
+    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, marginBottom: 10, marginHorizontal: 2 }}>
       <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.ash }}>{count}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{count}</Text>
     </View>
   );
   const customAdd = q.length > 0 && !exact && (
-    <Pressable onPress={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
+    <Pressable onPress={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}>
       <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{query.trim()}”</Text>
     </Pressable>
   );
@@ -168,13 +168,13 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
     <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
       <Pressable onPress={close} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
         <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
             <Pressable onPress={close} hitSlop={10}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.builder.close")}</Text>
             </Pressable>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 16 }}>
             <AuroraIcon name="search" size={18} color={C.ash} />
             <TextInput
               value={query}
@@ -197,8 +197,8 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 const on = view === p.id;
                 return (
                   <Pressable key={p.id} onPress={() => { setView(p.id); setRoom(null); }} accessibilityRole="button" accessibilityState={{ selected: on }}
-                    style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                    style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                   </Pressable>
                 );
               })}
@@ -217,7 +217,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 /* A–Z — display-face letter heads; offsets feed the rail. */
                 az.map((sec) => (
                   <View key={sec.letter} onLayout={(ev) => { letterY.current[sec.letter] = ev.nativeEvent.layout.y; }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 24, letterSpacing: -0.4, color: C.ash, marginTop: 16, marginBottom: 6, marginHorizontal: 2 }}>{sec.letter}</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: 24, letterSpacing: -0.5, color: C.ash, marginTop: 16, marginBottom: 6, marginHorizontal: 2 }}>{sec.letter}</Text>
                     {slab(sec.entries)}
                   </View>
                 ))
@@ -239,19 +239,19 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                       {slab(recent!.slice(0, 8))}
                     </>
                   )}
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
                     {rooms.map((r) => {
                       const c = kindColor(r.entries[0]!.kind, C);
                       return (
                         <Pressable key={r.key} onPress={() => setRoom(r.key)} accessibilityRole="button" accessibilityLabel={r.label}
-                          style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14 }}>
+                          style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16 }}>
                           <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
                             {r.icon
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
-                              : <Text style={{ fontFamily: F.black, fontSize: 12.5, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
+                              : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
                           </View>
                           <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.8, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
                         </Pressable>
                       );
                     })}

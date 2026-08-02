@@ -25,7 +25,7 @@ export default function AuroraVideo() {
   const load = () => { setRefreshing(true); fetchVideoAnalyses().then((a) => { setAnalyses(a); setLoaded(true); }).finally(() => setRefreshing(false)); };
   useEffect(() => { load(); }, []);
 
-  const chip = (color: string, label: string) => <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
+  const chip = (color: string, label: string) => <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>

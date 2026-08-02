@@ -73,7 +73,7 @@ export default function AuroraTrends({ top, unified = false }: {
         </ACard>
       ) : (
         <>
-          <ACard solid style={{ marginTop: 14 }}>
+          <ACard solid style={{ marginTop: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.trends.weeklySets")}</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", height: 80, gap: 5, marginTop: 12 }}>
               {weeks.map((w, i) => <View key={i} style={{ flex: 1, height: 6 + (w.sets / maxSets) * 64, borderRadius: 3, backgroundColor: i === weeks.length - 1 ? C.lime : `${C.lime}66` }} />)}
@@ -86,7 +86,7 @@ export default function AuroraTrends({ top, unified = false }: {
 
           {/* WEEKLY TONNAGE — the tonnes actually moved, week by week. Web has
               always drawn this second series; mobile hadn't. */}
-          <ACard solid style={{ marginTop: 14 }}>
+          <ACard solid style={{ marginTop: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>
               {t("w.analyze.trends.weeklyTonnage")} – {units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}
             </Text>
@@ -99,7 +99,7 @@ export default function AuroraTrends({ top, unified = false }: {
             </View>
           </ACard>
 
-          <ACard solid style={{ marginTop: 14 }}>
+          <ACard solid style={{ marginTop: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.trends.exerciseAnalytics")}</Text>
             <View style={{ flexDirection: "row", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4, gap: space.xxs, marginTop: 12 }}>
               {PERIODS.map((p) => { const on = period === p.id; return (
@@ -110,12 +110,12 @@ export default function AuroraTrends({ top, unified = false }: {
             </View>
             <View style={{ flexDirection: "row", marginTop: 12, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
               {([["w.analyze.trends.colExercise", "name", 2, "left"], ["w.analyze.trends.colFreq", "sessions", 1, "center"], ["w.analyze.trends.colHeaviest", "topWeight", 1, "center"]] as const).map(([h, k, fl, al]) => (
-                <Text key={h} onPress={() => sortBy(k)} style={{ flex: fl, textAlign: al, fontFamily: F.mono, fontSize: 9, color: sort.k === k ? txt(C, C.lime) : C.ash, letterSpacing: 1 }}>{t(h)}{sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</Text>
+                <Text key={h} onPress={() => sortBy(k)} style={{ flex: fl, textAlign: al, fontFamily: F.mono, fontSize: 9, color: sort.k === k ? txt(C, C.lime) : C.ash, letterSpacing: 0.9 }}>{t(h)}{sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</Text>
               ))}
               <Text onPress={() => sortBy("volume")} style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: sort.k === "volume" ? txt(C, C.lime) : C.ash }}>↗</Text>
             </View>
             {sortedTable.map((r) => { const tr = TREND[r.trend]; return (
-              <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercise", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercise", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                 <Text style={{ flex: 2, fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{r.name}</Text>
                 <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{r.sessions}×</Text>
                 <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: r.kind === "strength" ? C.chalk : C.ash }}>{r.kind === "strength" ? fmtWeight(r.topWeight, units) : `${r.volume}km`}</Text>

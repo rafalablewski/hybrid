@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
+import { ArrowGlyph, CtaLabel } from "./cta-label";
 
 // "Follow a coach" — a horizontally swipeable rail on Today (its only home now
 // that the Explore tab is gone). Pulls the live
@@ -36,7 +37,7 @@ function Stat({ value, label, first, star }: { value: string; label: string; fir
       <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, color: C("chalk"), whiteSpace: "nowrap" }}>
         {star && <span style={{ color: C("gold"), marginRight: 4 }}>★</span>}{value}
       </div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".12em", textTransform: "uppercase", color: `color-mix(in srgb, ${C("ash")} 70%, transparent)`, marginTop: 4 }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: `color-mix(in srgb, ${C("ash")} 70%, transparent)`, marginTop: 4 }}>{label}</div>
     </div>
   );
 }
@@ -57,24 +58,24 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
       aria-label={`${t("w.explore.coachOpen")} ${c.name}`}
-      style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 290, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, padding: "16px 16px 14px", cursor: "pointer", boxShadow: "var(--shadow-card)", overflow: "hidden", display: "flex", flexDirection: "column" }}
+      style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 290, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "16px 16px 16px", cursor: "pointer", boxShadow: "var(--shadow-card)", overflow: "hidden", display: "flex", flexDirection: "column" }}
     >
       {/* accent wash — the coach's colour bleeding in from the top corner */}
       <span aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(120% 130% at 100% 0%, color-mix(in srgb, ${accent} 14%, transparent), transparent 60%)` }} />
       <span style={{ position: "absolute", top: 16, right: 16, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}><Chevron /></span>
 
-      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 13, paddingRight: 18 }}>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, paddingRight: 16 }}>
         <span style={{ width: 46, height: 46, borderRadius: 999, boxShadow: `inset 0 0 0 1.5px ${accent}`, background: C("ink"), color: accentText, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, flexShrink: 0, display: "grid", placeItems: "center" }}>{initials(c.name)}</span>
         <div style={{ minWidth: 0 }}>
           {/* Name in the display face — Mincho under Kyoto Hour — so the
               person leads the card the way a byline leads an article. */}
           {/* Name + check as flex siblings: inside one truncating box the ✓
               (rightmost inline content) would be the first thing clipped. */}
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16.5, letterSpacing: "-.015em", display: "flex", alignItems: "center" }}>
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", display: "flex", alignItems: "center" }}>
             <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</span>
             {c.verified && <span style={{ color: accentText, fontSize: 12, marginLeft: 4, flexShrink: 0 }}>✓</span>}
           </div>
-          <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div style={{ marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {c.specialties.slice(0, 2).join(" – ")}
           </div>
         </div>
@@ -127,14 +128,14 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
   const items = coaches ?? coachRailItems(null);
 
   return (
-    <div style={{ marginTop: headerless ? 0 : 18 }}>
+    <div style={{ marginTop: headerless ? 0 : 16 }}>
       {!headerless && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div>
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>{t("w.explore.coaches")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{t("w.explore.coachSwipe")}</div>
           </div>
-          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</button>
+          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}><CtaLabel size={12}>{`${t("w.explore.browseAll")} →`}</CtaLabel></button>
         </div>
       )}
 
@@ -152,10 +153,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
           <button
             onClick={onOpen}
             aria-label={t("w.explore.seeMore")}
-            style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 20, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
+            style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
           >
-            <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
+            <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
           </button>
         )}
       </div>

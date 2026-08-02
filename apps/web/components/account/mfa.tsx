@@ -92,7 +92,7 @@ export default function MfaSettings() {
 
   return (
     <Card style={{ borderLeft: `3px solid ${verified.length ? LIME : AMBER}`, marginBottom: 16 }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={verified.length ? LIME : AMBER}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={verified.length ? LIME : AMBER}>
         Two-factor authentication
       </Mono>
       <div style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 8 }}>
@@ -143,7 +143,7 @@ export default function MfaSettings() {
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"
                   placeholder="000000"
-                  style={{ ...mono, fontSize: fs.subtitle, letterSpacing: ".2em", flex: 1, padding: "11px 14px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
+                  style={{ ...mono, fontSize: fs.subtitle, letterSpacing: ".12em", flex: 1, padding: "11px 14px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
                 />
                 <button onClick={confirm} disabled={busy || !isValidTotpCode(code)} style={{ ...primaryBtn, marginTop: 0, width: "auto", padding: "0 18px" }}>
                   Confirm

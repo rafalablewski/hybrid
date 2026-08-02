@@ -26,6 +26,7 @@ import { AuroraIcon } from "./icons";
 import GroupMark from "./group-mark";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
+import { ArrowGlyph, CtaLabel } from "./cta-label";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 type Scheme = ReturnType<typeof useTheme>["scheme"];
@@ -168,7 +169,7 @@ function Full({ top }: { top?: ReactNode }) {
           answers "how am I doing?". */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         {!top && <ABack />}
-        <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
           {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : " "}
         </Text>
       </View>
@@ -178,10 +179,10 @@ function Full({ top }: { top?: ReactNode }) {
         // Full-bleed chip rail — clips at the screen edge, rests on the column.
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
           {phaseBlock && <Pill C={C} dot={C.lime}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{phaseBlock.label}</Text> {t("w.home.today.phase")}</Pill>}
-          {macro?.eventInWeeks != null && <Pill C={C}>🏁 <Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</Pill>}
+          {macro?.eventInWeeks != null && <Pill C={C} icon={<AuroraIcon name="calendar-event" size={13} color={C.chalk} />}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</Pill>}
           {/* ACWR rides on training data, not on having a season — a planless
               athlete still gets their workload ratio at a glance. */}
-          {hasData && <Pill C={C}>📈 {loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
+          {hasData && <Pill C={C} icon={<AuroraIcon name="arrow-up" size={13} color={C.chalk} />}>{loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
           {/* The headline number is visible before any scroll. */}
           {hasData && <Pill C={C} dot={hpiColor(state.hpi.band, C)}>HPI <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.score}</Text> – {state.hpi.band}</Pill>}
         </ScrollView>
@@ -191,7 +192,7 @@ function Full({ top }: { top?: ReactNode }) {
           have nothing cached to fall back on — if a previous value is in hand
           the page keeps rendering it and the pull-to-refresh retry sits on top,
           which beats blanking a screen the athlete was reading. */}
-      {failed && !sessionsRead.ready && <FetchError onRetry={load} style={{ marginTop: 14 }} />}
+      {failed && !sessionsRead.ready && <FetchError onRetry={load} style={{ marginTop: 16 }} />}
 
       {/* ═════ GROUP: STATE — how the body is doing right now: the headline
           read, its 14-day trajectory, what's at risk, and the protocols for
@@ -205,7 +206,7 @@ function Full({ top }: { top?: ReactNode }) {
           big HPI + band/limiter caption + sparkline, STR/END/REC in three
           columns, the top driver, and today's readiness (with the check-in
           nudge) below. */}
-      <ACard solid style={{ marginTop: 14 }}>
+      <ACard solid style={{ marginTop: 16 }}>
         <SHead C={C} scheme={scheme} title={t("w.home.cockpit.perfTwin")} />
         {hasData ? (
           <>
@@ -216,12 +217,12 @@ function Full({ top }: { top?: ReactNode }) {
                 <Spark series={hpiSeries} color={hpiColor(state.hpi.band, C)} height={22} />
               </View>
             </View>
-            <View style={{ flexDirection: "row", marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+            <View style={{ flexDirection: "row", marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
               <Comp C={C} scheme={scheme} label={t("w.home.cockpit.tab.strength")} value={`${state.hpi.components.strength}`} />
               <Comp C={C} scheme={scheme} label={t("w.home.cockpit.tab.endurance")} value={`${state.hpi.components.endurance}`} />
               <Comp C={C} scheme={scheme} label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
             </View>
-            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: space.md, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: space.md, marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
               <Ring value={rx.readiness} size={48} color={readyColor(rx.readiness, C)} track={C.line}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
               </Ring>
@@ -229,7 +230,7 @@ function Full({ top }: { top?: ReactNode }) {
                   lines so the engine's multi-clause explanation scans instead of
                   reading as one wall of text. Mirrors web. */}
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
                 <View style={{ gap: 5, marginTop: 5 }}>
                   {whyLines.map((line, i) => (
                     <Text key={i} style={{ fontFamily: F.reg, fontSize: fs.body, color: i === 0 ? C.chalk : C.ash, lineHeight: 19 }}>{line}</Text>
@@ -271,7 +272,7 @@ function Full({ top }: { top?: ReactNode }) {
           native primitives instead of an SVG chart (form carries the series
           identity: bar vs tick, hue second). */}
       {hasData && (
-        <ACard solid style={{ marginTop: 14 }}>
+        <ACard solid style={{ marginTop: 16 }}>
           <SHead
             C={C} scheme={scheme}
             title={t("w.analyze.perf.trajectory")}
@@ -305,7 +306,7 @@ function Full({ top }: { top?: ReactNode }) {
           probability table (the old standalone depth) lives in the "Tissue
           detail" disclosure so the glance stays a glance. */}
       {hasData && (
-        <ACard solid style={{ marginTop: 14, borderColor: calm ? C.line : `${C.red}73`, backgroundColor: calm ? undefined : `${C.red}12` }}>
+        <ACard solid style={{ marginTop: 16, borderColor: calm ? C.line : `${C.red}73`, backgroundColor: calm ? undefined : `${C.red}12` }}>
           <SHead
             C={C} scheme={scheme}
             title={t("w.home.today.injuryRisk")}
@@ -322,7 +323,7 @@ function Full({ top }: { top?: ReactNode }) {
               <View style={{ marginTop: 12, gap: space.sm }}>
                 {risk.flagged.map((ti) => (
                   <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-                    <View style={{ borderWidth: 1, borderColor: `${riskColor(ti.band, C)}8c`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 2 }}>
+                    <View style={{ borderWidth: 1, borderColor: `${riskColor(ti.band, C)}8c`, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 }}>
                       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "700", color: txt(C, riskColor(ti.band, C)) }}>{ti.risk}</Text>
                     </View>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize" }}>{ti.tissue}</Text>
@@ -352,10 +353,10 @@ function Full({ top }: { top?: ReactNode }) {
           {/* TISSUE DETAIL — the depth the standalone screen used to own: the
               per-tissue calibrated probability table and the plain-language
               driver explanations. Mirrors web (which adds the SVG body map). */}
-          <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
+          <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <Pressable onPress={() => setTissueOpen((v) => !v)} hitSlop={6} accessibilityRole="button" accessibilityState={{ expanded: tissueOpen }} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.8, color: txt(C, calm ? C.lime : C.red) }}>{t("w.analyze.perf.tissueDetail")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: txt(C, calm ? C.lime : C.red) }}>{t("w.analyze.perf.tissueDetail")}</Text>
                 <Text style={{ fontSize: 8, color: txt(C, calm ? C.lime : C.red) }}>{tissueOpen ? "▲" : "▼"}</Text>
               </Pressable>
               {/* The model-version annotation the old screen's header carried —
@@ -368,13 +369,13 @@ function Full({ top }: { top?: ReactNode }) {
                     rides under the tissue name, so the same 5 columns as the web
                     table read on a phone-width row). */}
                 <View style={{ flexDirection: "row", alignItems: "center", paddingBottom: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash, flex: 1 }}>{t("w.analyze.perf.colTissue")}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash, width: 46, textAlign: "right" }}>{t("w.analyze.perf.colAcwr")}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash, width: 62, textAlign: "right" }}>{t("w.analyze.perf.colProb")}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash, width: 46, textAlign: "right" }}>{t("w.analyze.perf.colRisk")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, flex: 1 }}>{t("w.analyze.perf.colTissue")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, width: 46, textAlign: "right" }}>{t("w.analyze.perf.colAcwr")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, width: 62, textAlign: "right" }}>{t("w.analyze.perf.colProb")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, width: 46, textAlign: "right" }}>{t("w.analyze.perf.colRisk")}</Text>
                 </View>
                 {risk.tissues.map((ti) => (
-                  <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+                  <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                     <View style={{ flex: 1, paddingRight: 6 }}>
                       <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{cap(ti.tissue)}</Text>
                       <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : "—"}</Text>
@@ -395,7 +396,7 @@ function Full({ top }: { top?: ReactNode }) {
                     mobile can never disagree about it. */}
                 {risk.awaitingBaseline.length > 0 && (
                   <View style={{ marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: `${C.ash}14` }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
                     <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
                   </View>
                 )}
@@ -405,7 +406,7 @@ function Full({ top }: { top?: ReactNode }) {
                   <View style={{ marginTop: 12, gap: 10 }}>
                     {driverKinds.map((k) => (
                       <View key={k}>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: txt(C, riskColor(risk.band, C)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</Text>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: txt(C, riskColor(risk.band, C)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</Text>
                         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: C.chalk }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</Text>
                       </View>
                     ))}
@@ -431,12 +432,12 @@ function Full({ top }: { top?: ReactNode }) {
 
       {/* 6 · THIS WEEK — recap & PRs */}
       {hasData && (
-        <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 14 }}>
+        <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 16 }}>
           <ACard solid>
             <SHead
               C={C} scheme={scheme}
               title={t("w.home.today.yourWeek")}
-              metaNode={recap.prs.length > 0 ? <View style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>🏆 {recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View> : undefined}
+              metaNode={recap.prs.length > 0 ? <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><AuroraIcon name="trophy" size={13} color={C.onAccent} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>{recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View> : undefined}
             />
             <View style={{ flexDirection: "row" }}>
               <View style={{ flex: 1 }}><Stat C={C} label={t("w.home.today.sessions")} value={`${recap.sessions}`} /></View>
@@ -444,7 +445,7 @@ function Full({ top }: { top?: ReactNode }) {
               <View style={{ flex: 1 }}><Stat C={C} label={t("w.home.today.sets")} value={`${recap.sets}`} /></View>
             </View>
             {recap.prs.length > 0 && (
-              <View style={{ marginTop: 14 }}>
+              <View style={{ marginTop: 16 }}>
                 {recap.prs.slice(0, 4).map((p) => (
                   <View key={p.lift} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{p.lift}</Text>
@@ -471,21 +472,21 @@ function Full({ top }: { top?: ReactNode }) {
           until the Performance page absorbed it; nothing was dropped on the way
           over except the SECOND copy of the muscle breakdown, which Trends used
           to draw off the same volumeStatus(). See `performance-unified`. */}
-      <View style={{ marginTop: 14 }}><AuroraVolume unified /></View>
+      <View style={{ marginTop: 16 }}><AuroraVolume unified /></View>
 
       {/* 9 · TREND — the eight-week series (weekly sets, weekly tonnage) and the
           sortable exercise-analytics table. Its muscle-breakdown card and its
           add/ease-off advice line are gone: both were the same engines
           (volumeStatus / volumeAdvice) the Volume sections above already state,
           in more detail and with the landmarks attached. */}
-      <View style={{ marginTop: 14 }}><AuroraTrends unified /></View>
+      <View style={{ marginTop: 16 }}><AuroraTrends unified /></View>
 
       {/* ═════ GROUP: SEASON — the long arc: the goal, the phase, how far
           through, and the setup that changes them. ═════ */}
       <GroupMark label={t("w.home.group.season")} />
 
       {/* 10 · GOAL + SEASON — two separate widgets (like Today's RECOVER duo) */}
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 14 }}>
+      <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
         {/* widget 1 — goal */}
         <ACard solid style={{ flex: 1 }}>
           <SHead C={C} scheme={scheme} title={t("w.home.cockpit.goal")} small />
@@ -509,7 +510,7 @@ function Full({ top }: { top?: ReactNode }) {
               to set up a season they already have. */}
           <SHead C={C} scheme={scheme} title={!macroRead.settled ? " " : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} small />
           {macro ? (
-            <View style={{ height: 6, borderRadius: 99, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 2, marginBottom: 10 }}>
+            <View style={{ height: 6, borderRadius: RADIUS.pill, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 2, marginBottom: 10 }}>
               <View style={{ width: `${seasonPct}%`, height: 6, backgroundColor: C.violet }} />
             </View>
           ) : macroRead.settled ? (
@@ -518,7 +519,7 @@ function Full({ top }: { top?: ReactNode }) {
             <View style={{ marginTop: 2, marginBottom: 10 }}><Bar C={C} w="90%" h={12} /></View>
           )}
           <View style={{ gap: 8 }}>
-            {macro && <Pressable onPress={() => router.push("/periodize")}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.periodize")} →</Text></Pressable>}
+            {macro && <Pressable onPress={() => router.push("/periodize")}><CtaLabel label={`${t("w.home.cockpit.periodize")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>}
             <Pressable onPress={() => router.push("/onboarding")}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.openSetup")}</Text></Pressable>
           </View>
         </ACard>
@@ -529,7 +530,7 @@ function Full({ top }: { top?: ReactNode }) {
       <GroupMark label={t("w.home.group.explore")} />
 
       {/* 11 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
-      <ACard solid style={{ marginTop: 14 }}>
+      <ACard solid style={{ marginTop: 16 }}>
         <SHead C={C} scheme={scheme} title={t("w.home.cockpit.horizon")} />
         <Mod C={C} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/sport")} />
         <Mod C={C} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/velocity")} />
@@ -563,14 +564,14 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
   const bestProfile = useMemo(() => Object.entries(profiles).filter(([, p]) => p.estimated1rm > 0).sort((a, b) => b[1].estimated1rm - a[1].estimated1rm)[0], [profiles]);
 
   return (
-    <ACard solid style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 16 }}>
       <SHead C={C} scheme={scheme} title={t("w.home.cockpit.breakdown")} />
       {/* segmented tabs */}
       <View style={{ flexDirection: "row", gap: 0, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4 }}>
         {TABS.map((x) => {
           const on = x.id === tab;
           return (
-            <Pressable key={x.id} onPress={() => setTab(x.id)} style={{ flex: 1, paddingVertical: 9, alignItems: "center", borderRadius: RADIUS.pill, backgroundColor: on ? C.chalk : "transparent" }}>
+            <Pressable key={x.id} onPress={() => setTab(x.id)} style={{ flex: 1, paddingVertical: 8, alignItems: "center", borderRadius: RADIUS.pill, backgroundColor: on ? C.chalk : "transparent" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.onAccent : C.ash }}>{x.label}</Text>
             </Pressable>
           );
@@ -580,23 +581,23 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
       <View style={{ marginTop: 16 }}>
         {tab === "strength" && (
           <>
-            <View style={{ flexDirection: "row", gap: 22 }}>
+            <View style={{ flexDirection: "row", gap: 24 }}>
               <Stat C={C} label={t("w.home.cockpit.strIndex")} value={`${state.hpi.components.strength}`} />
               <Stat C={C} label={t("w.home.cockpit.lifts")} value={`${recap.lifts}`} />
               <Stat C={C} label={t("w.home.today.topMuscle")} value={recap.topMuscle ? cap(recap.topMuscle.muscle) : "—"} />
             </View>
-            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 14, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
+            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 16, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
           </>
         )}
         {tab === "endurance" && (
           totals.efforts > 0 ? (
             <>
-              <View style={{ flexDirection: "row", gap: 22 }}>
+              <View style={{ flexDirection: "row", gap: 24 }}>
                 <Stat C={C} label={t("w.home.cockpit.efforts")} value={`${totals.efforts}`} />
                 <Stat C={C} label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
                 <Stat C={C} label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
               </View>
-              <Pressable onPress={() => onOpen("/endurance")} style={{ marginTop: 14 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.tab.endurance")} →</Text></Pressable>
+              <Pressable onPress={() => onOpen("/endurance")} style={{ marginTop: 16 }}><CtaLabel label={`${t("w.home.cockpit.tab.endurance")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>
             </>
           ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.enduranceEmpty")}</Text>
         )}
@@ -604,19 +605,19 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
           sport ? (
             <>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{sport.sport} – {LEVELS[sport.levelIdx]}</Text>
-              <Pressable onPress={() => onOpen("/sport")} style={{ marginTop: 12 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.sport")} →</Text></Pressable>
+              <Pressable onPress={() => onOpen("/sport")} style={{ marginTop: 12 }}><CtaLabel label={`${t("w.home.cockpit.sport")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>
             </>
           ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.sportEmpty")}</Text>
         )}
         {tab === "velocity" && (
           bestProfile ? (
             <>
-              <View style={{ flexDirection: "row", gap: 22 }}>
+              <View style={{ flexDirection: "row", gap: 24 }}>
                 <Stat C={C} label={bestProfile[0]} value={`${Math.round(bestProfile[1].estimated1rm)}kg`} />
                 <Stat C={C} label="R²" value={bestProfile[1].r2.toFixed(2)} />
                 <Stat C={C} label={t("w.home.cockpit.points")} value={`${bestProfile[1].n}`} />
               </View>
-              <Pressable onPress={() => onOpen("/velocity")} style={{ marginTop: 14 }}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.cockpit.velocity")} →</Text></Pressable>
+              <Pressable onPress={() => onOpen("/velocity")} style={{ marginTop: 16 }}><CtaLabel label={`${t("w.home.cockpit.velocity")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>
             </>
           ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.velocityBlurb")}</Text>
         )}
@@ -646,10 +647,10 @@ function StateSkeleton({ C }: { C: Palette }) {
           <Bar C={C} w="100%" h={20} />
         </View>
       </View>
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
-        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
-        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+      <View style={{ flexDirection: "row", gap: 12, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
       </View>
     </View>
   );
@@ -663,18 +664,19 @@ function SHead({ C, scheme, title, meta, metaNode, titleColor, small }: {
 }) {
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 4, columnGap: 12, marginBottom: 12 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: small ? fs.bodyLg : 18, letterSpacing: -0.2, color: titleColor ?? C.chalk }}>{title}</Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: small ? fs.bodyLg : 18, letterSpacing: -0.3, color: titleColor ?? C.chalk }}>{title}</Text>
       {metaNode ?? (meta != null && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{meta}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{meta}</Text>
       ))}
     </View>
   );
 }
 
-function Pill({ C, children, dot }: { C: Palette; children: React.ReactNode; dot?: string }) {
+function Pill({ C, children, dot, icon }: { C: Palette; children: React.ReactNode; dot?: string; icon?: ReactNode }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
       {dot && <View style={{ width: 7, height: 7, borderRadius: 5, backgroundColor: dot }} />}
+      {icon}
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{children}</Text>
     </View>
   );
@@ -685,7 +687,7 @@ function Stat({ C, label, value }: { C: Palette; label: string; value: string })
   return (
     <View>
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.heading, color: C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
     </View>
   );
 }
@@ -693,26 +695,26 @@ function Stat({ C, label, value }: { C: Palette; label: string; value: string })
 function Comp({ C, scheme, label, value }: { C: Palette; scheme: Scheme; label: string; value: string }) {
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, color: C.chalk, letterSpacing: -0.4 }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, color: C.ash, marginTop: 6 }}>{label}</Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, color: C.chalk, letterSpacing: -0.5 }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 6 }}>{label}</Text>
     </View>
   );
 }
 
 function Watch({ C, label, value, color }: { C: Palette; label: string; value: string; color?: string }) {
   return (
-    <View style={{ flex: 1, backgroundColor: C.ink2, paddingVertical: 11, paddingHorizontal: 4, alignItems: "center" }}>
+    <View style={{ flex: 1, backgroundColor: C.ink2, paddingVertical: 12, paddingHorizontal: 4, alignItems: "center" }}>
       <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: color ?? C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 8, textTransform: "uppercase", letterSpacing: 0.4, color: C.ash, marginTop: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 8, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 4 }}>{label}</Text>
     </View>
   );
 }
 
 function Mod({ C, label, value, onPress, mono, last }: { C: Palette; label: string; value: string; onPress: () => void; mono?: boolean; last?: boolean }) {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 11, borderBottomWidth: last ? 0 : 1, borderBottomColor: `${C.line}99` }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
-      <Text style={{ marginLeft: "auto", fontFamily: mono ? F.mono : F.bold, fontSize: mono ? fs.caption : fs.body, color: mono ? C.ash : C.chalk }}>{value} →</Text>
+    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: `${C.line}99` }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
+      <CtaLabel label={`${value} →`} color={mono ? C.ash : C.chalk} fontSize={mono ? fs.caption : fs.body} font={mono ? F.mono : F.bold} style={{ marginLeft: "auto" }} />
     </Pressable>
   );
 }
@@ -756,7 +758,7 @@ function RtpPanel() {
   const active = protocols.filter((p) => p.status !== "abandoned");
 
   return (
-    <ACard solid style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>Return-to-play – gated protocols</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
@@ -769,11 +771,11 @@ function RtpPanel() {
           );
         })}
       </View>
-      <Pressable onPress={create} accessibilityRole="button" style={{ alignSelf: "flex-start", marginTop: 10, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 9 }}>
+      <Pressable onPress={create} accessibilityRole="button" style={{ alignSelf: "flex-start", marginTop: 10, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Open protocol</Text>
       </Pressable>
 
-      <View style={{ marginTop: 14, gap: space.md }}>
+      <View style={{ marginTop: 16, gap: space.md }}>
         {active.length === 0 && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>No active protocols. Open one when an athlete is injured.</Text>
         )}
@@ -782,10 +784,10 @@ function RtpPanel() {
           const cleared = p.stage === "cleared";
           const accent = cleared ? C.lime : C.blue;
           return (
-            <View key={p.id} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 }}>
+            <View key={p.id} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, textTransform: "capitalize" }}>{p.tissue}</Text>
-                <View style={{ backgroundColor: `${accent}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
+                <View style={{ backgroundColor: `${accent}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, accent) }}>{STAGE_LABEL[p.stage]}</Text>
                 </View>
               </View>
@@ -803,13 +805,15 @@ function RtpPanel() {
                     </Pressable>
                   ))}
                   <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
-                    <Pressable onPress={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8, opacity: ev.canAdvance ? 1 : 0.4 }}>
-                      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Advance → {ev.nextStage ? STAGE_LABEL[ev.nextStage] : ""}</Text>
+                    <Pressable onPress={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8, opacity: ev.canAdvance ? 1 : 0.4 }}>
+                      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Advance</Text>
+                      <ArrowGlyph size={13} color={C.onAccent} />
+                      {ev.nextStage ? <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{STAGE_LABEL[ev.nextStage]}</Text> : null}
                     </Pressable>
                     {!ev.canAdvance && (
                       <>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.amber) }}>{ev.blockedBy.length} gate(s) remaining</Text>
-                        <Pressable onPress={() => setOverrideFor(overrideFor === p.id ? null : p.id)} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.red, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+                        <Pressable onPress={() => setOverrideFor(overrideFor === p.id ? null : p.id)} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.red, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
                           <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.red) }}>Override</Text>
                         </Pressable>
                       </>
@@ -823,9 +827,9 @@ function RtpPanel() {
                         placeholder="Reason (logged to audit)"
                         placeholderTextColor={C.ash}
                         accessibilityLabel="Override reason"
-                        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 9 }}
+                        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 8 }}
                       />
-                      <Pressable onPress={() => doOverride(p.id)} accessibilityRole="button" style={{ backgroundColor: C.red, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 9 }}>
+                      <Pressable onPress={() => doOverride(p.id)} accessibilityRole="button" style={{ backgroundColor: C.red, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
                         <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Force advance</Text>
                       </Pressable>
                     </View>
@@ -834,7 +838,7 @@ function RtpPanel() {
               )}
               {p.audit && p.audit.length > 0 && (
                 <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>Audit trail</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>Audit trail</Text>
                   {p.audit.slice(-5).reverse().map((a, i) => (
                     <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.micro, color: a.action === "override" ? txt(C, C.red) : C.ash, marginTop: 4 }}>
                       {new Date(a.ts).toLocaleDateString()} – {a.by} ({a.role.toLowerCase()}) – {auditText(a)}
@@ -875,7 +879,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
           <AuroraIcon name="lock" size={18} color={C.ash} />
         </ACard>
       ))}
-      <APill label={paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")} onPress={onUnlock} style={{ marginTop: 18 }} />
+      <APill label={paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")} onPress={onUnlock} style={{ marginTop: 16 }} />
     </AuroraScreen>
   );
 }

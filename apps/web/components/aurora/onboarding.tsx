@@ -59,13 +59,13 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
 
   return (
     <div style={{ maxWidth: 520, margin: "0 auto", fontFamily: "var(--font-display)" }}>
-      <div style={{ display: "flex", gap: 7 }}>
+      <div style={{ display: "flex", gap: 8 }}>
         {Array.from({ length: total }).map((_, i) => (
           <span key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i <= idx ? C("lime") : C("line") }} />
         ))}
       </div>
 
-      <div style={{ marginTop: 22 }}>
+      <div style={{ marginTop: 24 }}>
         {q ? (
           <Step title={q.title} sub={q.subtitle}>
             <QuestionBody q={q} answers={answers} setAnswer={setAnswer} personaChoice={personaChoice} C={C} />
@@ -105,7 +105,7 @@ function QuestionBody({
   personaChoice: "casual" | "athlete" | null;
   C: (v: string) => string;
 }) {
-  const choice = (active: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: space.ms, border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? `color-mix(in srgb, ${C("lime")} 8%, transparent)` : C("ink2"), borderRadius: 16, padding: 15, cursor: "pointer", textAlign: "left", width: "100%", color: C("chalk") });
+  const choice = (active: boolean): React.CSSProperties => ({ display: "flex", alignItems: "center", gap: space.ms, border: `1px solid ${active ? C("lime") : C("line")}`, background: active ? `color-mix(in srgb, ${C("lime")} 8%, transparent)` : C("ink2"), borderRadius: 16, padding: 16, cursor: "pointer", textAlign: "left", width: "100%", color: C("chalk") });
 
   if (q.kind === "persona") {
     const selected = (answers[q.key] as string) ?? personaChoice;
@@ -127,7 +127,7 @@ function QuestionBody({
       <>
         {ONBOARDING_GOAL_GROUPS.map((g) => (
           <div key={g.category}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
             {g.goals.map((gl) => (
               <button key={gl.id} onClick={() => setAnswer(q.key, gl.id)} style={{ ...choice(selected === gl.id), marginBottom: 8 }}>
                 {selected === gl.id && <AuroraIcon name="check" size={20} color={C("lime")} />}
@@ -152,7 +152,7 @@ function QuestionBody({
     const value = (answers[q.key] as string) ?? "";
     return (
       <input value={value} onChange={(e) => setAnswer(q.key, e.target.value)}
-        style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, width: "100%", padding: "13px 14px", borderRadius: 14, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }} />
+        style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, width: "100%", padding: "12px 16px", borderRadius: 16, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }} />
     );
   }
 
@@ -185,7 +185,7 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
     <div>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-.01em" }}>{title}</h1>
       {sub ? <p style={{ color: C("ash"), fontSize: fs.bodyLg, marginTop: 8 }}>{sub}</p> : null}
-      <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: space.ms }}>{children}</div>
+      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: space.ms }}>{children}</div>
     </div>
   );
 }
@@ -195,7 +195,7 @@ function Seg({ options, value, onPick, C }: { options: { id: string; label: stri
     <div style={{ display: "flex", flexWrap: "wrap", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
       {options.map((o) => {
         const on = value === o.id;
-        return <button key={o.id} onClick={() => onPick(o.id)} style={{ flex: "1 0 auto", padding: "11px 16px", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{o.label}</button>;
+        return <button key={o.id} onClick={() => onPick(o.id)} style={{ flex: "1 0 auto", padding: "12px 16px", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{o.label}</button>;
       })}
     </div>
   );

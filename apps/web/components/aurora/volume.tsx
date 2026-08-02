@@ -33,7 +33,7 @@ const ZONE_TOKEN: Record<VolumeZone, string> = { overreaching: "red", under: "am
 
 const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 };
 const mono = (size: number): CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: size });
-const eyebrow: CSSProperties = { ...mono(fs.nano), textTransform: "uppercase", letterSpacing: ".14em", color: C("ash") };
+const eyebrow: CSSProperties = { ...mono(fs.nano), textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") };
 const sectionTitle: CSSProperties = { fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk"), margin: 0 };
 
 /**
@@ -237,37 +237,37 @@ export default function AuroraVolume({ sessions, unified = false }: {
               was its own screen. */}
           {createElement(
             unified ? "h2" : "h1",
-            { style: { fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-0.02em" } },
+            { style: { fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-.02em" } },
             t("w.analyze.vol.title"),
           )}
           <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 6, marginBottom: 0 }}>{t("w.analyze.vol.subtitle")}</p>
         </div>
         <button
           onClick={() => { setEditing((v) => !v); setOpen(null); }}
-          style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 14px", borderRadius: 999, cursor: "pointer", color: editing ? C("lime") : C("ash"), background: editing ? mix("lime", 12) : "transparent", border: `1px solid ${editing ? C("lime") : C("line")}` }}
+          style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, cursor: "pointer", color: editing ? C("lime") : C("ash"), background: editing ? mix("lime", 12) : "transparent", border: `1px solid ${editing ? C("lime") : C("line")}` }}
         >
           {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
         </button>
       </div>
 
       {/* ── HERO — the whole week as one number and one shape ─────────────── */}
-      <section style={{ ...card, paddingBottom: 18 }}>
+      <section style={{ ...card, paddingBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={eyebrow}>{t("w.analyze.vol.range7d")}</span>
           {customized && <span style={{ ...eyebrow, color: C("lime") }}>{t("w.analyze.vol.customised")}</span>}
         </div>
 
         {summary.empty ? (
-          <p style={{ marginTop: 14, marginBottom: 0, fontSize: fs.note, lineHeight: 1.55, color: C("ash"), maxWidth: 460 }}>{t("w.analyze.vol.empty")}</p>
+          <p style={{ marginTop: 16, marginBottom: 0, fontSize: fs.note, lineHeight: 1.55, color: C("ash"), maxWidth: 460 }}>{t("w.analyze.vol.empty")}</p>
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 10 }}>
-              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 68, lineHeight: 1.06, letterSpacing: "-0.04em" }}>{summary.inRange}</span>
+              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 68, lineHeight: 1.06, letterSpacing: "-.03em" }}>{summary.inRange}</span>
               <span style={{ ...mono(fs.heading), color: C("ash"), marginLeft: 4 }}>/{summary.total}</span>
             </div>
             <p style={{ fontSize: fs.note, lineHeight: 1.4, color: C("ash"), margin: 0, maxWidth: 260 }}>{t("w.analyze.vol.heroCaption")}</p>
 
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: 6, marginTop: 22, maxWidth: 520 }}>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: 6, marginTop: 24, maxWidth: 520 }}>
               {rows.map((r) => {
                 const on = picked === r.muscle;
                 const label = ml(r.muscle);
@@ -279,7 +279,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
                     style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center" }}
                   >
                     <ShapeColumn s={r} token={ZONE_TOKEN[r.zone]} dim={picked !== null && !on} />
-                    <span style={{ marginTop: 8, ...mono(9), letterSpacing: ".06em", color: on ? C("chalk") : C("ash") }}>{label.slice(0, 3).toUpperCase()}</span>
+                    <span style={{ marginTop: 8, ...mono(9), letterSpacing: ".08em", color: on ? C("chalk") : C("ash") }}>{label.slice(0, 3).toUpperCase()}</span>
                   </button>
                 );
               })}
@@ -345,7 +345,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{gloss ? "–" : "+"}</span>
         </button>
         {gloss && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
             {([["MV", "w.analyze.vol.glossMv"], ["MEV", "w.analyze.vol.glossMev"], ["MAV", "w.analyze.vol.glossMav"], ["MRV", "w.analyze.vol.glossMrv"]] as const).map(([k, key]) => (
               <div key={k} style={{ display: "flex", gap: space.md }}>
                 <span style={{ ...mono(fs.caption), fontWeight: 700, color: C("lime"), width: 42, flexShrink: 0 }}>{k}</span>
@@ -357,7 +357,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
       </section>
 
       {editing && customized && (
-        <button onClick={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 4, padding: "10px 18px", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}>
+        <button onClick={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 4, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}>
           {t("w.analyze.vol.resetDefaults")}
         </button>
       )}
@@ -392,15 +392,15 @@ function Prescription({ title, why, items, token, ml, unit }: {
         <h2 style={sectionTitle}>{title}</h2>
         <span style={eyebrow}>{unit}</span>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
         {items.map((s) => (
-          <span key={s.muscle} style={{ display: "inline-flex", alignItems: "center", gap: space.sm, padding: "9px 14px", borderRadius: 999, border: `1px solid ${mix(token, 35)}`, background: mix(token, 10) }}>
+          <span key={s.muscle} style={{ display: "inline-flex", alignItems: "center", gap: space.sm, padding: "8px 16px", borderRadius: 999, border: `1px solid ${mix(token, 35)}`, background: mix(token, 10) }}>
             <span style={{ fontSize: fs.bodyLg, fontWeight: 600, color: C("chalk") }}>{ml(s.muscle)}</span>
             <span style={{ ...mono(fs.bodyLg), fontWeight: 700, color: C(token) }}>{deltaLabel(s)}</span>
           </span>
         ))}
       </div>
-      <p style={{ marginTop: 14, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{why}</p>
+      <p style={{ marginTop: 16, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{why}</p>
     </section>
   );
 }
@@ -410,7 +410,7 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
   return (
     <button
       onClick={onClick} role="switch" aria-checked={on}
-      style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "7px 13px", borderRadius: 999, cursor: "pointer", color: on ? C("lime") : C("ash"), background: on ? mix("lime", 12) : "transparent", border: `1px solid ${on ? C("lime") : C("line")}` }}
+      style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 12px", borderRadius: 999, cursor: "pointer", color: on ? C("lime") : C("ash"), background: on ? mix("lime", 12) : "transparent", border: `1px solid ${on ? C("lime") : C("line")}` }}
     >
       {label}
     </button>
@@ -421,7 +421,7 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
 function Stepper({ label, value, suffix, min, max, onChange }: {
   label: string; value: number; suffix?: string; min: number; max: number; onChange: (v: number) => void;
 }) {
-  const btn: CSSProperties = { ...mono(fs.body), width: 30, height: 30, borderRadius: 10, cursor: "pointer", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}` };
+  const btn: CSSProperties = { ...mono(fs.body), width: 30, height: 30, borderRadius: 12, cursor: "pointer", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}` };
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
       <span style={{ fontSize: fs.body, color: C("ash") }}>{label}</span>
@@ -472,14 +472,14 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
                     style={{ width: "100%", height: pct(c.height), background: c.kind === "deload" ? C("blue") : C("lime"), opacity: c.current ? 0.95 : 0.32, borderRadius: "7px 7px 0 0", transition: "height .3s cubic-bezier(.2,.7,.2,1)" }}
                   />
                 </div>
-                <span style={{ ...mono(9), letterSpacing: ".06em", color: c.current ? C("chalk") : C("ash") }}>{c.week}</span>
+                <span style={{ ...mono(9), letterSpacing: ".08em", color: c.current ? C("chalk") : C("ash") }}>{c.week}</span>
               </div>
             ))}
           </div>
           <p style={{ marginTop: 12, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.rampCaption")}</p>
 
           {editing && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
               <Stepper label={t("w.analyze.vol.currentWeek")} value={block.week} min={1} max={block.weeks} onChange={(v) => setBlock({ week: v })} />
               <Stepper label={t("w.analyze.vol.blockLength")} value={block.weeks} suffix={t("w.analyze.vol.weeksShort")} min={1} max={16} onChange={(v) => setBlock({ weeks: v })} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
@@ -538,8 +538,8 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
   const { t } = useLang();
   const confidence = Math.round(Math.max(resolved.profileConfidence, resolved.observedConfidence) * 100);
   const done = volumeProfileCompleteness(profile, measuredKeys);
-  const field: CSSProperties = { ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "7px 4px", boxSizing: "border-box" };
-  const fieldLabel: CSSProperties = { ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 };
+  const field: CSSProperties = { ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 4px", boxSizing: "border-box" };
+  const fieldLabel: CSSProperties = { ...mono(9), letterSpacing: ".08em", color: C("ash"), textAlign: "center", marginBottom: 5 };
 
   return (
     <section style={card}>
@@ -552,21 +552,21 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       {/* HOW COMPLETE THE PROFILE IS, weighted by influence rather than by
           counting boxes — and what the single most valuable missing answer
           would buy. "Estimated for you" should be able to say how well. */}
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{Math.round(done.score * 100)}% {t("w.analyze.vol.knownAbout")}</span>
           {done.next && <span style={{ ...mono(fs.caption), color: C("lime") }}>{t("w.analyze.vol.nextUp")}: {t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</span>}
         </div>
-        <div style={{ height: 5, borderRadius: 999, background: C("ink"), marginTop: 7, overflow: "hidden" }}>
+        <div style={{ height: 5, borderRadius: 999, background: C("ink"), marginTop: 8, overflow: "hidden" }}>
           <div style={{ width: pct(done.score), height: "100%", background: C("lime"), transition: "width .3s cubic-bezier(.2,.7,.2,1)" }} />
         </div>
         {done.next && (
-          <p style={{ marginTop: 9, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t(done.next.unlocksKey)}</p>
+          <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t(done.next.unlocksKey)}</p>
         )}
       </div>
 
       {/* YOUR LEVEL, FROM YOUR LIFTS. */}
-      <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+      <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
           <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.levelTitle")}</h3>
           {level.basis !== "none" && (
@@ -574,10 +574,10 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           )}
         </div>
         {level.basis === "none" ? (
-          <p style={{ marginTop: 9, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.levelNoData")}</p>
+          <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.levelNoData")}</p>
         ) : (
           <>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 11 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
               {/* Two kinds of evidence, two units. A lift is kg and a multiple
                   of body mass; a run is a distance and a pace. They share a row
                   shape but never a number — see core/engines/fitness-level.ts. */}
@@ -609,7 +609,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       </div>
 
       {resolved.factors.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
           {resolved.factors.map((f) => (
             <div key={f.key} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
               <span style={{ fontSize: fs.body, color: C("chalk") }}>
@@ -631,7 +631,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       )}
 
       {/* The log's correction — what your own training proved. */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}`, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}`, flexWrap: "wrap" }}>
         <span style={{ fontSize: fs.body, color: C("chalk"), flex: 1, minWidth: 160 }}>{t("w.analyze.vol.adaptive")}</span>
         <Toggle on={adaptive} label={adaptive ? t("w.analyze.vol.done") : t("w.analyze.vol.adaptive")} onClick={() => setLoggerPref("adaptiveLandmarks", !adaptive)} />
       </div>
@@ -654,18 +654,18 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           stopped moving is worth training against; one that is still jumping
           says so. See core/engines/landmark-replay.ts. */}
       {adaptive && (
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 16 }}>
           <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.replayTitle")}</h3>
           {tested.length === 0 ? (
             <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.replayNone")}</p>
           ) : (
             <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
                 {tested.slice(0, 4).map((r) => (
                   <div key={r.muscle} style={{ display: "flex", alignItems: "baseline", gap: space.sm }}>
                     <span style={{ flex: 1, minWidth: 80, fontSize: fs.body, color: C("chalk") }}>{ml(r.muscle)}</span>
                     {/* The trajectory itself, not a summary of it. */}
-                    <span style={{ ...mono(fs.caption), color: C("ash"), letterSpacing: ".02em" }}>
+                    <span style={{ ...mono(fs.caption), color: C("ash"), letterSpacing: ".08em" }}>
                       {r.points.filter((p) => p.tested).slice(-5).map((p) => p.mrv).join(" → ")}
                     </span>
                     <span style={{ ...mono(fs.caption), minWidth: 78, textAlign: "right", color: r.verdict === "settled" ? "var(--lime-text)" : r.verdict === "unsettled" ? "var(--amber-text)" : C("ash") }}>
@@ -681,7 +681,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       )}
 
       {editing && (
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
           <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.aboutYou")}</h3>
           {measuredKeys.size > 0 && (
             <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.measuredWhy")}</p>
@@ -726,7 +726,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           {Object.keys(stored).length > 0 && (
             <button
               onClick={() => setLoggerPref("volumeProfile", {})}
-              style={{ marginTop: 14, padding: "8px 0", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}
+              style={{ marginTop: 16, padding: "8px 0", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}
             >
               {t("w.analyze.vol.clearProfile")}
             </button>
@@ -767,7 +767,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
         aria-label={`${label} – ${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[s.zone])}`}
         style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit", textAlign: "left" }}
       >
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 8 }}>
           <span style={{ flex: 1, fontSize: fs.note, fontWeight: 600 }}>{label}</span>
           <span style={{ ...mono(fs.note), fontWeight: 700, color: C(token) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</span>
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{target ? `${t("w.analyze.vol.target")} ${target.target}` : t(ZONE_KEY[s.zone])}</span>
@@ -804,14 +804,14 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
           edge, so the values line up down the whole list instead of floating at
           three different indents. Each cell is a control: click it to spotlight
           that band and read what it means. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 7, maxWidth: 420 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 8, maxWidth: 420 }}>
         {BAND_KEYS.map((k) => {
           const on = zone === k;
           return (
             <button
               key={k} onClick={() => onZone(k)} aria-pressed={on}
               aria-label={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
-              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", ...mono(9), letterSpacing: ".05em", color: on ? C("lime") : C("ash"), opacity: zone && !on ? 0.4 : 1, transition: "opacity .2s ease, color .2s ease" }}
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", ...mono(9), letterSpacing: ".08em", color: on ? C("lime") : C("ash"), opacity: zone && !on ? 0.4 : 1, transition: "opacity .2s ease, color .2s ease" }}
             >
               {BAND_LABEL[k]} <span style={{ fontSize: 11, color: C("chalk") }}>{sc[k]}</span>
             </button>
@@ -830,13 +830,13 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
         <div style={{ marginTop: 12 }}>
           <div style={{ ...mono(fs.caption), color: C("ash") }}>MV {s.landmark.mv}</div>
           {target && verdict && (
-            <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: verdict === "on" ? C("lime") : C("ash") }}>
+            <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: verdict === "on" ? C("lime") : C("ash") }}>
               {t("w.analyze.vol.weekTarget")} {target.target} {t("w.analyze.vol.sets")}
               <span style={{ color: C("ash") }}>{" — "}</span>
               {t(TARGET_VERDICT_KEY[verdict])}
             </p>
           )}
-          <p style={{ marginTop: 7, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>
+          <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>
           <MuscleHistory sets={history} />
         </div>
       )}
@@ -844,11 +844,11 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 6, marginTop: 12 }}>
           {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
             <div key={k}>
-              <div style={{ ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 }}>{["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}</div>
+              <div style={{ ...mono(9), letterSpacing: ".08em", color: C("ash"), textAlign: "center", marginBottom: 5 }}>{["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}</div>
               <input
                 type="number" min={0} defaultValue={s.landmark[k]} aria-label={`${label} ${k}`}
                 onBlur={(e) => onEdit(s.muscle, k, e.target.value)}
-                style={{ ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "7px 4px", boxSizing: "border-box" }}
+                style={{ ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 4px", boxSizing: "border-box" }}
               />
             </div>
           ))}
@@ -873,7 +873,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
   // not become a restyled one.
   return (
     <div>
-      <div style={{ ...mono(9), letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), marginTop: 14, marginBottom: 8 }}>{t("w.analyze.trends.weeklySets8w")}</div>
+      <div style={{ ...mono(9), letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 16, marginBottom: 8 }}>{t("w.analyze.trends.weeklySets8w")}</div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 56, maxWidth: 420 }}>
         {sets.map((n, i) => (
           <div key={i} style={{ flex: 1, height: 56, display: "flex", alignItems: "flex-end", background: C("ink"), borderRadius: 7, overflow: "hidden" }}>

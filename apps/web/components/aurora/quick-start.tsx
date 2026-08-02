@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fs, space, routineSummary, type SessionBlock } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import Sheet from "./sheet";
+import { CtaLabel } from "./cta-label";
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -60,14 +61,14 @@ export default function QuickStartSheet({
   return (
     <Sheet open={open} onClose={onClose} title={t("w.home.quickStart.title")} sub={t("w.home.quickStart.sub")}>
       {routines.length === 0 ? (
-        <div style={{ padding: "18px 2px 8px" }}>
+        <div style={{ padding: "16px 2px 8px" }}>
           <div style={{ fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{t("w.home.quickStart.empty")}</div>
           <div style={{ fontSize: fs.note, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{t("w.home.quickStart.emptySub")}</div>
         </div>
       ) : (
         <>
           {favourites.length > 0 && (
-            <div style={{ marginBottom: rediscover.length > 0 ? 18 : 4 }}>
+            <div style={{ marginBottom: rediscover.length > 0 ? 16 : 4 }}>
               <SubHead label={`★ ${t("w.home.quickStart.favourites")}`} />
               {/* Favourites rail — snap slider that RESPECTS the sheet padding
                   (no negative-margin bleed): a rail hosted in a Sheet honours its
@@ -121,12 +122,12 @@ export default function QuickStartSheet({
           background: "transparent",
           border: `1px dashed ${C("line")}`,
           borderRadius: 16,
-          padding: "13px",
+          padding: "12px",
           color: C("ash"),
           cursor: "pointer",
           fontFamily: "var(--font-mono)",
           fontSize: 12,
-          letterSpacing: ".04em",
+          letterSpacing: ".08em",
         }}
       >
         ＋ {t("w.home.quickStart.buildNew")}
@@ -140,19 +141,19 @@ export default function QuickStartSheet({
 function SubHead({ label, action }: { label: string; action?: { label: string; onClick: () => void } }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "6px 2px 10px" }}>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</span>
       {action && (
         <button
           onClick={action.onClick}
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 10.5,
-            letterSpacing: ".04em",
+            fontSize: 11,
+            letterSpacing: ".08em",
             color: "var(--violet-text)",
             background: "color-mix(in srgb, var(--color-violet) 12%, transparent)",
             border: "1px solid color-mix(in srgb, var(--color-violet) 32%, transparent)",
             borderRadius: 999,
-            padding: "5px 11px",
+            padding: "5px 12px",
             cursor: "pointer",
           }}
         >
@@ -220,8 +221,8 @@ function FavouriteCard({ r, t, onLaunch, onToggleFav }: { r: QuickRoutine; t: (k
         minWidth: "66%",
         textAlign: "left",
         border: `1px solid ${C("line")}`,
-        borderRadius: 20,
-        padding: 14,
+        borderRadius: 28,
+        padding: 16,
         cursor: "pointer",
         color: C("chalk"),
         background: `radial-gradient(120% 80% at 90% -12%, color-mix(in srgb, ${fill} 16%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 6%, ${C("ink2")}), ${C("ink2")})`,
@@ -231,9 +232,9 @@ function FavouriteCard({ r, t, onLaunch, onToggleFav }: { r: QuickRoutine; t: (k
         <Star on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onClick={onToggleFav} />
       </div>
       <span aria-hidden style={{ fontSize: 16, lineHeight: 1, color: text }}>{glyph}</span>
-      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, letterSpacing: "-.01em", marginTop: 10, paddingRight: 18, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: C("ash"), marginTop: 5 }}>{metaLine(r.blocks, t)}</div>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: text, marginTop: 12, display: "block" }}>{t("w.home.quickStart.start")} →</span>
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, letterSpacing: "-.01em", marginTop: 10, paddingRight: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 5 }}>{metaLine(r.blocks, t)}</div>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, marginTop: 12, display: "block" }}><CtaLabel size={12}>{`${t("w.home.quickStart.start")} →`}</CtaLabel></span>
     </button>
   );
 }
@@ -252,7 +253,7 @@ function RoutineRow({ r, i, t, onLaunch, onToggleFav }: { r: QuickRoutine; i: nu
         display: "flex",
         alignItems: "center",
         gap: 12,
-        padding: "11px 2px",
+        padding: "12px 2px",
         borderTop: i ? `1px solid ${C("line")}` : "none",
         cursor: "pointer",
       }}
@@ -276,7 +277,7 @@ function RoutineRow({ r, i, t, onLaunch, onToggleFav }: { r: QuickRoutine; i: nu
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: fs.body, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: C("ash"), marginTop: 2 }}>{metaLine(r.blocks, t)}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 2 }}>{metaLine(r.blocks, t)}</div>
       </div>
       <Star on={!!r.favourite} label={r.favourite ? t("w.home.quickStart.removeFav") : t("w.home.quickStart.addFav")} onClick={onToggleFav} />
       <span aria-hidden style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: C("ash") }}>›</span>

@@ -277,7 +277,7 @@ export default function EngineRoom() {
     <div style={{ display: "grid", gap: space.lg }}>
       {/* ---- intro + source picker ---- */}
       <Card style={{ borderLeft: `3px solid ${LIME}` }}>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={LIME}>
           Engine room – the live intelligence stack
         </Mono>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
@@ -353,7 +353,7 @@ export default function EngineRoom() {
           {err && <Mono s={{ fontSize: fs.caption }} c={RED}>{err}</Mono>}
 
           <div style={{ marginLeft: "auto", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>HPI weights</Mono>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>HPI weights</Mono>
             {PROFILES.map((p) => (
               <button
                 key={p.id}
@@ -426,7 +426,7 @@ export default function EngineRoom() {
       {/* ---- what-if simulator ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
             What-if simulator
           </Mono>
           <div style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
@@ -483,7 +483,7 @@ export default function EngineRoom() {
         {/* named scenarios — save the sliders, add presets, compare in one table */}
         <div style={{ borderTop: `1px solid ${LINE}`, marginTop: 16, paddingTop: 14 }}>
           <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "center" }}>
-            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>Scenarios</Mono>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>Scenarios</Mono>
             {SCENARIO_PRESETS.map((p) => (
               <button
                 key={p.name}
@@ -565,7 +565,7 @@ export default function EngineRoom() {
 
       {/* ---- feeling lab ---- */}
       <Card>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
           Check-in feeling lab – what the one-tap answer does
         </Mono>
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
@@ -617,7 +617,7 @@ export default function EngineRoom() {
       {/* ---- personal model ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
             Personal model – this athlete&apos;s ACWR spike onset
           </Mono>
           {personal?.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
@@ -667,7 +667,7 @@ export default function EngineRoom() {
       {/* ---- effort model ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
             Effort model – what this athlete says the work costs them
           </Mono>
           <div style={{ display: "flex", gap: space.sm, alignItems: "baseline" }}>
@@ -757,14 +757,14 @@ export default function EngineRoom() {
       {/* ---- trajectory + calibration curve ---- */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: space.lg }}>
         <Card>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
             14-day trajectory
           </Mono>
           <TrajectoryChart trace={t} />
         </Card>
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
               Calibration – score → p(injury)
             </Mono>
             <Chip c={BLUE}>{modelVersion}</Chip>
@@ -782,7 +782,7 @@ export default function EngineRoom() {
 
       {/* ---- state drivers ---- */}
       <Card>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
           State drivers – why the score is what it is
         </Mono>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }} c={CHALK}>
@@ -817,7 +817,7 @@ export default function EngineRoom() {
 
       {/* ---- per-tissue injury table ---- */}
       <Card>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
           Per-tissue injury risk – ACWR, components, calibrated probability
         </Mono>
         <div style={{ marginTop: 12, overflowX: "auto" }}>
@@ -867,7 +867,7 @@ export default function EngineRoom() {
         {/* per-tissue derivation — pick a tissue, see the substituted math */}
         <div style={{ borderTop: `1px solid ${LINE}`, marginTop: 14, paddingTop: 14 }}>
           <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "center" }}>
-            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>Show the math for</Mono>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>Show the math for</Mono>
             {ALL_MUSCLES.map((m) => (
               <button
                 key={m}
@@ -897,7 +897,7 @@ export default function EngineRoom() {
 
       {/* ---- formula sheet ---- */}
       <Card>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
           Formula sheet – the live math, rendered from the code
         </Mono>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: space.lg, marginTop: 12 }}>
@@ -995,7 +995,7 @@ function ExplainCard({
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
         <div>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={BLUE}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
             Explain this athlete – grounded narrative
           </Mono>
           <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
@@ -1093,7 +1093,7 @@ function DerivationPanel({ derivation, accent, whatIfActive }: { derivation: Der
       <details>
         <summary style={{ cursor: "pointer", listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.sm, flexWrap: "wrap" }}>
           <span>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={accent}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={accent}>
               How is this calculated – {derivation.title}
             </Mono>
             <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 3 }} c={CHALK}>
@@ -1101,7 +1101,7 @@ function DerivationPanel({ derivation, accent, whatIfActive }: { derivation: Der
               {whatIfActive ? " (simulated inputs)" : ""}
             </Mono>
           </span>
-          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>expand ▾</Mono>
+          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>expand ▾</Mono>
         </summary>
         <DerivationSteps derivation={derivation} />
       </details>
@@ -1201,7 +1201,7 @@ function CompareCard({
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
         <div>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={AMBER}>
             Compare athletes – why does one read better?
           </Mono>
           <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
@@ -1263,7 +1263,7 @@ function CompareCard({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg, marginTop: 12 }}>
             {[{ label: current.label, tr: current.trace, c: LIME }, { label: other.user.name ?? other.user.email, tr: otherTrace, c: BLUE }].map((side) => (
               <div key={side.label} style={{ border: `1px solid ${LINE}`, borderRadius: 10, padding: 12 }}>
-                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={side.c}>{side.label} – drivers</Mono>
+                <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={side.c}>{side.label} – drivers</Mono>
                 {side.tr.state.drivers.length === 0 && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }}>nothing notable</Mono>}
                 {side.tr.state.drivers.map((d) => (
                   <Mono key={d.factor} s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={d.impact === "negative" ? RED : LIME}>
@@ -1303,7 +1303,7 @@ function Slider({
   return (
     <label style={{ display: "block", opacity: disabled ? 0.45 : 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: space.sm, marginBottom: 6 }}>
-        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>{label}</Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>{label}</Mono>
         <Mono s={{ fontSize: fs.micro }} c={CHALK}>{display}</Mono>
       </div>
       <input

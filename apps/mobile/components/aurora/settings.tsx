@@ -1,5 +1,5 @@
 import { useState, useCallback, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
+import { View, Text, TextInput, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount, deleteAccount } from "../../lib/api";
@@ -12,7 +12,7 @@ import { useAccountSettings } from "../../lib/account";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, ABack, RADIUS } from "./kit";
 import MfaSettings from "./mfa-settings";
@@ -132,12 +132,12 @@ export default function AuroraSettings() {
             {THEME_SWATCHES.map((s) => {
               const on = pref === s.id;
               return (
-                <Pressable key={s.id} onPress={() => setPref(s.id)} accessibilityRole="button" accessibilityLabel={s.label} style={{ flex: 1, padding: 11, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
+                <PressScale key={s.id} onPress={() => setPref(s.id)} accessibilityRole="button" accessibilityLabel={s.label} style={{ flex: 1, padding: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
                   <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
                     {s.colors.map((c, i) => <View key={i} style={{ width: 15, height: 15, borderRadius: 5, backgroundColor: c, borderWidth: 1, borderColor: C.line }} />)}
                   </View>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{s.label}</Text>
-                </Pressable>
+                </PressScale>
               );
             })}
           </View>
@@ -198,7 +198,7 @@ export default function AuroraSettings() {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: pwColor, marginTop: 6 }}>{t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}</Text>
                 </View>
               )}
-              <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} style={{ paddingVertical: 13 }} />
+              <APill label={t("w.account.settings.update-password")} variant="soft" disabled={acct.busy || acct.newPw.length < 8} onPress={acct.changePassword} style={{ paddingVertical: 12 }} />
               {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
             </>
           )}
@@ -212,7 +212,7 @@ export default function AuroraSettings() {
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.this-device")}</Text>
           </View>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
-          <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 13 }} />
+          <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 12 }} />
         </Section>
       </>
         );
@@ -233,20 +233,20 @@ export default function AuroraSettings() {
           );
         }
         const ModeCard = ({ on, title, tags, locked, onPress }: { on: boolean; title: string; tags: string; locked?: boolean; onPress: () => void }) => (
-          <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ selected: on }} style={{ flex: 1, padding: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
+          <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ selected: on }} style={{ flex: 1, padding: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{title}</Text>
               {locked && (
                 <>
-                  <Text style={{ fontSize: fs.micro }}>🔒</Text>
+                  <AuroraIcon name="lock" size={fs.micro + 2} color={C.ash} />
                   <View style={{ borderWidth: 1, borderColor: txt(C, C.lime), backgroundColor: `${C.lime}1a`, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: 0.5 }}>{t("w.account.settings.paid")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: 0.9 }}>{t("w.account.settings.paid")}</Text>
                   </View>
                 </>
               )}
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{tags}</Text>
-          </Pressable>
+          </PressScale>
         );
         return (
       <>
@@ -258,11 +258,11 @@ export default function AuroraSettings() {
           </View>
           {!paid ? (
             <>
-              <APill label={t("w.account.settings.upgrade-full")} variant="primary" onPress={goUpgrade} style={{ paddingVertical: 13, marginTop: 16 }} />
+              <APill label={t("w.account.settings.upgrade-full")} variant="primary" onPress={goUpgrade} style={{ paddingVertical: 12, marginTop: 16 }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>{t("w.account.settings.unlocks")}</Text>
             </>
           ) : (
-            <APill label={t("w.account.settings.manage-subscription")} variant="soft" onPress={() => (iapAvailable() ? void manageSubscriptions() : goUpgrade())} style={{ paddingVertical: 13, marginTop: 16 }} />
+            <APill label={t("w.account.settings.manage-subscription")} variant="soft" onPress={() => (iapAvailable() ? void manageSubscriptions() : goUpgrade())} style={{ paddingVertical: 12, marginTop: 16 }} />
           )}
         </Section>
       </>
@@ -281,7 +281,7 @@ export default function AuroraSettings() {
               </View>
             ))}
           </View>
-          {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 13 }} />}
+          {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 12 }} />}
           {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
         </Section>
       </>
@@ -290,7 +290,7 @@ export default function AuroraSettings() {
         return (
       <>
         <Section label={t("common.signout")}>
-          <APill label={t("common.signout")} variant="soft" onPress={() => void signOut()} style={{ paddingVertical: 13 }} />
+          <APill label={t("common.signout")} variant="soft" onPress={() => void signOut()} style={{ paddingVertical: 12 }} />
         </Section>
         <Section label={t("w.account.settings.erase-all")} tone={C.red}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("settings.resetBody")}</Text>
@@ -298,12 +298,12 @@ export default function AuroraSettings() {
           <TextInput
             value={confirm} onChangeText={setConfirm} placeholder="RESET" placeholderTextColor={C.ash}
             autoCapitalize="characters" autoCorrect={false}
-            style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13, marginTop: 8 }}
+            style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
           />
           {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
-          <Pressable onPress={reset} disabled={!armed || busy} style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 12 }}>
+          <PressScale onPress={reset} disabled={!armed || busy} style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("w.account.settings.erase-everything")}</Text>}
-          </Pressable>
+          </PressScale>
         </Section>
         <Section label={t("settings.deleteTitle")} tone={C.red}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("settings.deleteBody")}</Text>
@@ -311,12 +311,12 @@ export default function AuroraSettings() {
           <TextInput
             value={delConfirm} onChangeText={setDelConfirm} placeholder="DELETE" placeholderTextColor={C.ash}
             autoCapitalize="characters" autoCorrect={false}
-            style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 13, marginTop: 8 }}
+            style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
           />
           {!!delError && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{delError}</Text>}
-          <Pressable onPress={del} disabled={!armedDelete || deleting} accessibilityRole="button" accessibilityLabel={t("settings.deleteAccount")} style={{ backgroundColor: armedDelete && !deleting ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 12 }}>
+          <PressScale onPress={del} disabled={!armedDelete || deleting} accessibilityRole="button" accessibilityLabel={t("settings.deleteAccount")} style={{ backgroundColor: armedDelete && !deleting ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}>
             {deleting ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.deleteAccount")}</Text>}
-          </Pressable>
+          </PressScale>
         </Section>
         <Section label={t("legal.section")}>
           <LegalLinks align="left" />
@@ -367,14 +367,14 @@ export default function AuroraSettings() {
     const line = summary(c.id) || c.subtitle;
     const titleColor = c.danger ? (txt(C, C.red) as string) : C.chalk;
     return (
-      <Pressable
+      <PressScale
         key={c.id}
         onPress={() => openCat(c)}
         accessibilityRole="button"
         accessibilityLabel={c.title}
-        style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 13, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
+        style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 12, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
       >
-        <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: c.danger ? `${C.red}24` : tile, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.danger ? `${C.red}24` : tile, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name={c.icon} size={20} color={c.danger ? (txt(C, C.red) as string) : fg} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -382,7 +382,7 @@ export default function AuroraSettings() {
           <View style={{ marginTop: 3 }}><MetaLine text={line} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }} /></View>
         </View>
         <AuroraIcon name="chevron-down" size={18} color={C.ash} style={{ transform: [{ rotate: "-90deg" }] }} />
-      </Pressable>
+      </PressScale>
     );
   };
 
@@ -405,13 +405,13 @@ export default function AuroraSettings() {
   // ── LIST ── screen title, profile header, search, grouped category tiles.
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display, marginBottom: 14 }}>{t("w.account.settings.title")}</AHeading>
+      <AHeading style={{ fontSize: fs.display, marginBottom: 16 }}>{t("w.account.settings.title")}</AHeading>
       {/* Profile header — tappable → Edit profile, with a completeness ring
           around the avatar (a clay accent ring + a proportional bar, since RN has no
           inline SVG here), the % + "add a photo & bio" nudge, the FREE/FULL pill,
           and quick-action chips. Shared completeness math with web. */}
-      <View style={{ padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>
-        <Pressable onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={t("w.account.settings.edit-profile")} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+      <View style={{ padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
+        <PressScale onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={t("w.account.settings.edit-profile")} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2.5, borderColor: txt(C, C.lime), alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {profile?.avatarUrl ? (
               <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
@@ -424,27 +424,27 @@ export default function AuroraSettings() {
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
             <View style={{ marginTop: 3 }}><MetaLine text={`${completeness.percent}% · ${nudge}`} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: completeness.complete ? (txt(C, C.lime) as string) : C.ash }} /></View>
-            <View style={{ height: 5, borderRadius: 5, backgroundColor: C.line, marginTop: 7, overflow: "hidden" }}>
+            <View style={{ height: 5, borderRadius: 5, backgroundColor: C.line, marginTop: 8, overflow: "hidden" }}>
               <View style={{ width: `${completeness.percent}%`, height: "100%", backgroundColor: txt(C, C.lime) }} />
             </View>
           </View>
           <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
-        </Pressable>
+        </PressScale>
         {/* Quick actions */}
-        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
-          <Pressable onPress={openEditProfile} style={{ borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, backgroundColor: `${C.lime}14`, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+        <View style={{ flexDirection: "row", gap: space.sm, marginTop: 16, flexWrap: "wrap" }}>
+          <PressScale onPress={openEditProfile} style={{ borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, backgroundColor: `${C.lime}14`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.settings.edit-profile")}</Text>
-          </Pressable>
+          </PressScale>
           {!!profile?.handle && (
-            <Pressable onPress={shareProfile} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+            <PressScale onPress={shareProfile} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>↗ {t("w.account.settings.share-profile")}</Text>
-            </Pressable>
+            </PressScale>
           )}
         </View>
       </View>
 
       {/* Search */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 14, marginTop: 20 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, marginTop: 20 }}>
         <AuroraIcon name="search" size={18} color={C.ash} />
         <TextInput value={query} onChangeText={setQuery} placeholder={t("w.account.settings.search")} placeholderTextColor={C.ash} autoCapitalize="none" autoCorrect={false} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, paddingVertical: 12 }} />
       </View>
@@ -486,7 +486,7 @@ function Label({ children, color, top, tight }: { children: ReactNode; color: st
 function Section({ label, tone, children }: { label: string; tone?: string; children: ReactNode }) {
   const { palette: C } = useTheme();
   return (
-    <View style={{ marginBottom: 14 }}>
+    <View style={{ marginBottom: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
       <ACard>{children}</ACard>
     </View>
@@ -509,7 +509,7 @@ function Tag({ label, color, upper }: { label: string; color: string; upper?: bo
   const { palette: C } = useTheme();
   return (
     <View style={{ borderWidth: 1, borderColor: `${color}66`, backgroundColor: `${color}1a`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.5, textTransform: upper ? "uppercase" : undefined }}>{label}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.9, textTransform: upper ? "uppercase" : undefined }}>{label}</Text>
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -12,7 +12,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -57,23 +57,23 @@ export default function AuroraExercises() {
   const open = (name: string) => router.push({ pathname: "/exercise", params: { name } });
 
   const Row = ({ e, last }: { e: ExerciseBrowseEntry; last: boolean }) => (
-    <Pressable
+    <PressScale
       onPress={() => open(e.name)}
       accessibilityRole="button"
       accessibilityLabel={e.name}
-      style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 11, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}
     >
       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: e.staple ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
       </View>
       <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
-    </Pressable>
+    </PressScale>
   );
 
   const Card = ({ list }: { list: ExerciseBrowseEntry[] }) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 4 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4 }}>
       {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} />)}
     </View>
   );
@@ -92,13 +92,13 @@ export default function AuroraExercises() {
         </ACard>
       ) : (
         <>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16 }}>
             <AuroraIcon name="search" size={20} color={C.ash} />
-            <TextInput value={query} onChangeText={setQuery} placeholder={t("w.analyze.ex.search")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 14 }} />
+            <TextInput value={query} onChangeText={setQuery} placeholder={t("w.analyze.ex.search")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 16 }} />
           </View>
 
           {/* SORT PILLS — Smart (decay order) / Groups (fixed buckets) / A–Z */}
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
             {([
               { id: "smart" as const, label: t("w.analyze.ex.sortSmart") },
               { id: "groups" as const, label: t("w.analyze.ex.sortGroups") },
@@ -106,34 +106,34 @@ export default function AuroraExercises() {
             ]).map((p) => {
               const on = mode === p.id;
               return (
-                <Pressable
+                <PressScale
                   key={p.id}
                   onPress={() => setMode(p.id)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
-                  style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}
+                  style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
-                </Pressable>
+                  <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                </PressScale>
               );
             })}
           </View>
 
           {/* THIS BLOCK — the gradient band (Profile's cover wash + stat row). */}
           {summary.inRotation > 0 && (
-            <View style={{ marginTop: 16, borderRadius: 20, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
+            <View style={{ marginTop: 16, borderRadius: RADIUS.card, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               <LinearGradient colors={[`${C.violet}52`, `${C.lime}29`, C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
               <View pointerEvents="none" style={{ position: "absolute", top: -40, right: -28, width: 150, height: 150, borderRadius: 75, backgroundColor: C.lime, opacity: 0.16 }} />
-              <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.ex.block")}</Text>
+              <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.ex.block")}</Text>
                 <View style={{ flexDirection: "row", gap: 24, marginTop: 8 }}>
                   {[
                     { v: `${summary.inRotation}`, k: t("w.analyze.ex.inRotation") },
                     { v: `${summary.weekSessions}`, k: t("w.analyze.ex.weekSessions") },
                   ].map((s) => (
                     <View key={s.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-                      <Text style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.4, color: C.chalk }}>{s.v}</Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: C.ash }}>{s.k}</Text>
+                      <Text style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.5, color: C.chalk }}>{s.v}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{s.k}</Text>
                     </View>
                   ))}
                 </View>
@@ -145,9 +145,9 @@ export default function AuroraExercises() {
             sections.map((sec) => (
               <View key={sec.bucket}>
                 {/* Explore's SectionHead — 18px black title, mono count at the baseline. */}
-                <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 22, marginBottom: 11, marginHorizontal: 2 }}>
+                <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
                   <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{t(sec.labelKey)}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.ash }}>{sec.entries.length}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{sec.entries.length}</Text>
                 </View>
                 <Card list={sec.entries} />
               </View>
@@ -158,7 +158,7 @@ export default function AuroraExercises() {
             </View>
           )}
           {filtered.length === 0 && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14 }}>{t("w.analyze.ex.noMatch")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16 }}>{t("w.analyze.ex.noMatch")}</Text>
           )}
         </>
       )}

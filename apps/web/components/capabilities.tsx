@@ -31,7 +31,7 @@ export default function CapabilitiesScreen() {
           const n = capabilitiesByStatus(st).length;
           return (
             <Card key={st} style={{ borderTop: `2px solid ${m.color}` }}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={m.color}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={m.color}>
                 {m.label}
               </Mono>
               <div style={{ ...disp, fontWeight: 800, fontSize: 32, color: CHALK, margin: "4px 0 2px" }}>{n}</div>
@@ -47,7 +47,7 @@ export default function CapabilitiesScreen() {
         const m = STATUS_META[st];
         return (
           <div key={st} style={{ marginBottom: 8 }}>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "10px 0" }} c={m.color}>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", margin: "10px 0" }} c={m.color}>
               {m.label} – {items.length}
             </Mono>
             <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>

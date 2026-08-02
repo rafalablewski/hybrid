@@ -90,7 +90,7 @@ export default function AuroraLogbookRail({
         backgroundColor: C.ink2,
         borderWidth: 1,
         borderColor: C.line,
-        borderRadius: 24,
+        borderRadius: RADIUS.card,
         padding: 20,
         shadowColor: "#000",
         shadowOpacity: 0.18,
@@ -101,21 +101,21 @@ export default function AuroraLogbookRail({
     >
       {/* header: the log's name + the window on one baseline row */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.4, color: C.chalk }}>
+        <Text numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
           {t("w.home.logbook.title")}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11.5, letterSpacing: 0.4, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.window")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.window")}</Text>
       </View>
 
       {/* the seven-day week — the plan rail's chip anatomy, logbook vocabulary */}
-      <View onLayout={(e) => onWeekRowLayout?.(e.nativeEvent.layout.y + e.nativeEvent.layout.height)} style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
+      <View onLayout={(e) => onWeekRowLayout?.(e.nativeEvent.layout.y + e.nativeEvent.layout.height)} style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
         {week.days.map((d) => (
           <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
       </View>
 
       {/* full-bleed hairline — the only separator between week and day */}
-      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 18, marginBottom: 16 }} />
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 16, marginBottom: 16 }} />
 
       <DayDetail
         key={sel.dateKey}
@@ -143,7 +143,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${t(day.logged ? "w.home.logbook.loggedDay" : "w.home.logbook.emptyPast")}`}
       style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.5, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
           hairline disc (preview cue); otherwise a bare tonal number (chalk when
           the day holds training, ash when it doesn't). */}
@@ -203,7 +203,7 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12, flex: 1 }}>
             <Text style={{ fontFamily: F.black, fontSize: 19, lineHeight: 22, color: txt(C, C.lime) }}>✓</Text>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk }}>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
               {t(day.isToday ? "w.home.rail.allDone" : "w.home.logbook.loggedDay")}
             </Text>
           </View>
@@ -213,11 +213,11 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
           {daySessions.map((s) => s.title).join(" – ")}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
         </Text>
         {stats.length > 0 && (
-          <View style={{ flexDirection: "row", gap: 26, marginTop: 16, marginLeft: 31 }}>
+          <View style={{ flexDirection: "row", gap: 24, marginTop: 16, marginLeft: 31 }}>
             {stats.map((s) => (
               <View key={s.labelKey}>
                 <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: -0.3, color: C.chalk, fontVariant: ["tabular-nums"] }}>{s.value}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.3, textTransform: "uppercase", color: C.ash, marginTop: 5 }}>{t(s.labelKey)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginTop: 5 }}>{t(s.labelKey)}</Text>
               </View>
             ))}
           </View>
@@ -225,9 +225,9 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
         <Pressable
           onPress={onHistory}
           accessibilityRole="button"
-          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 18, paddingTop: 14, paddingLeft: 31 }}
+          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 16, paddingTop: 16, paddingLeft: 31 }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.rail.viewHistory")} →</Text>
+          <CtaLabel label={`${t("w.home.rail.viewHistory")} →`} color={C.ash} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase" }} />
         </Pressable>
       </View>
     );
@@ -239,11 +239,11 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
     return (
       <View>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.4, color: C.chalk, flex: 1 }}>{t("w.home.logbook.emptyToday")}</Text>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.5, color: C.chalk, flex: 1 }}>{t("w.home.logbook.emptyToday")}</Text>
           {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>{t("w.home.logbook.emptyTodaySub")}</Text>
-        <Pressable onPress={onLog} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
+        <Pressable onPress={onLog} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", ...startGlow(C.lime, pressed) })}>
           <CtaLabel label={t("w.home.today.alsoTodayLogFirst")} color={C.onAccent} fontSize={fs.bodyLg} />
         </Pressable>
       </View>

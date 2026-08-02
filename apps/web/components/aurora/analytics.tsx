@@ -20,9 +20,9 @@ import type { RosterRow } from "@/lib/use-roster";
  * and the brand accents — a real dashboard, not the token-skinned classic grid.
  */
 const C = (v: string) => `var(--color-${v})`;
-const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 };
+const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 };
 const grid: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: space.lg };
-const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 14, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
+const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
 const mono = { fontFamily: "var(--font-mono)" } as const;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
@@ -34,7 +34,7 @@ function AStat({ label, value, sub, accent = "chalk" }: { label: string; value: 
   return (
     <div style={{ ...card, padding: 20, display: "flex", flexDirection: "column", gap: space.xs }}>
       <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-        <span style={{ ...mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
+        <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
       </div>
       <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 34, lineHeight: 1, color: C(accent === "chalk" ? "chalk" : accent) }}>{value}</div>
       {sub && <div style={{ ...mono, fontSize: fs.micro, color: C("ash") }}>{sub}</div>}
@@ -48,7 +48,7 @@ function AFrame({ title, kicker, accent = "lime", span = 2, children }: { title:
     <div style={{ ...card, gridColumn: `span ${span}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12, gap: space.ms, flexWrap: "wrap" }}>
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, color: C("chalk") }}>{title}</span>
-        {kicker && <span style={{ ...mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: ".12em", color: C(accent) }}>{kicker}</span>}
+        {kicker && <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em", color: C(accent) }}>{kicker}</span>}
       </div>
       {children}
     </div>
@@ -247,7 +247,7 @@ function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
     <div style={{ overflowX: "auto", maxWidth: "100%" }}>
     <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 360 }}>
       <thead>
-        <tr>{head.map((h) => <th key={h} style={{ ...mono, fontSize: 10.5, color: C("ash"), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>{h}</th>)}</tr>
+        <tr>{head.map((h) => <th key={h} style={{ ...mono, fontSize: 11, color: C("ash"), textTransform: "uppercase", letterSpacing: ".08em", textAlign: "left", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>{h}</th>)}</tr>
       </thead>
       <tbody>
         {rows.map((r, i) => (

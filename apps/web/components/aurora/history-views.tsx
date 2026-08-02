@@ -40,7 +40,7 @@ import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const MONO = "var(--font-mono)";
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22, boxShadow: "var(--shadow-card)", padding: 16 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 } as const;
 
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -85,8 +85,8 @@ function SessionCard({ s, ctx }: { s: LoggedSession; ctx: ViewCtx }) {
   const prs = ctx.prs(s.id);
   const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
   return (
-    <div onClick={() => ctx.onOpen(s.id)} style={{ ...card, padding: 15, cursor: "pointer" }}>
-      <div style={{ fontFamily: MONO, fontSize: fs.display, letterSpacing: "-0.02em", lineHeight: 1.1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
+    <div onClick={() => ctx.onOpen(s.id)} style={{ ...card, padding: 16, cursor: "pointer" }}>
+      <div style={{ fontFamily: MONO, fontSize: fs.display, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
         {h.value}
         <span style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C("ash") }}> {unitOf(h, t)}</span>
       </div>
@@ -105,7 +105,7 @@ function SessionCard({ s, ctx }: { s: LoggedSession; ctx: ViewCtx }) {
 
 /** Uppercase mono day label ("MON, JUL 13" — chartreuse for today). */
 const DayLabel = ({ text, today }: { text: string; today?: boolean }) => (
-  <span style={{ fontFamily: MONO, fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: today ? "var(--lime-text)" : C("ash") }}>{text}</span>
+  <span style={{ fontFamily: MONO, fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: today ? "var(--lime-text)" : C("ash") }}>{text}</span>
 );
 
 /** Hairline rest-gap row ("3 REST DAYS ————"). */
@@ -129,14 +129,14 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
   const { t } = useLang();
   return (
     // Full-bleed chip rail — clips at the screen edge, rests on the column.
-    <div style={{ display: "flex", gap: 7, overflowX: "auto", scrollbarWidth: "none", padding: "0 var(--page-pad-x, 16px) 4px", margin: "0 calc(-1 * var(--page-pad-x, 16px))" }}>
+    <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", padding: "0 var(--page-pad-x, 16px) 4px", margin: "0 calc(-1 * var(--page-pad-x, 16px))" }}>
       {HISTORY_VIEWS.map((v) => {
         const on = v.id === view;
         return (
           <button
             key={v.id}
             onClick={() => onChange(v.id)}
-            style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 14px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
+            style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 16px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
           >
             {t(v.labelKey)}
           </button>
@@ -174,7 +174,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
         {week.map((d, i) => (
-          <div key={d.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: "8px 0 9px", borderRadius: 14, background: C("ink2"), border: `1px solid ${d.isToday ? C("lime") : C("line")}`, boxShadow: d.isToday ? `0 0 12px color-mix(in srgb, ${C("lime")} 25%, transparent)` : "none" }}>
+          <div key={d.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: "8px 0 8px", borderRadius: 16, background: C("ink2"), border: `1px solid ${d.isToday ? C("lime") : C("line")}`, boxShadow: d.isToday ? `0 0 12px color-mix(in srgb, ${C("lime")} 25%, transparent)` : "none" }}>
             <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash") }}>{t(WEEKDAY_LABEL_KEYS[i]!).slice(0, 1)}</span>
             <span style={{ fontFamily: MONO, fontSize: fs.body, fontWeight: 700, color: d.isToday ? "var(--lime-text)" : d.future ? C("ash") : C("chalk") }}>{d.dayNum}</span>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: d.dot === 2 ? C("lime") : d.dot === 1 ? `color-mix(in srgb, ${C("lime")} 45%, transparent)` : "transparent" }} />
@@ -190,7 +190,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <DayLabel text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
             {chip(u.isToday ? "var(--lime-text)" : C("ash"), t("histview.planned"))}
           </div>
-          <div style={{ ...card, padding: 15, background: "transparent", boxShadow: "none", border: `1.5px dashed color-mix(in srgb, ${u.isToday ? C("lime") : C("ash")} 38%, transparent)` }}>
+          <div style={{ ...card, padding: 16, background: "transparent", boxShadow: "none", border: `1.5px dashed color-mix(in srgb, ${u.isToday ? C("lime") : C("ash")} 38%, transparent)` }}>
             <div style={{ fontWeight: 800, fontSize: fs.note, color: u.isToday ? C("chalk") : C("ash") }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</div>
             {u.blockNames.length > 0 && (
               <div style={{ fontFamily: MONO, fontSize: fs.caption, color: C("ash"), marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}</div>
@@ -237,7 +237,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
         <div key={w.startKey} style={{ ...card, border: `1px solid ${w.isCurrent ? `color-mix(in srgb, ${C("lime")} 30%, ${C("line")})` : C("line")}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontWeight: 900, fontSize: fs.note }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</span>
-            {w.isCurrent && <span style={{ fontFamily: MONO, fontSize: fs.nano, color: "var(--lime-text)", letterSpacing: ".14em", textTransform: "uppercase" }}>{t("histview.thisWeek")}</span>}
+            {w.isCurrent && <span style={{ fontFamily: MONO, fontSize: fs.nano, color: "var(--lime-text)", letterSpacing: ".12em", textTransform: "uppercase" }}>{t("histview.thisWeek")}</span>}
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 34, margin: "12px 0 4px" }}>
             {w.days.map((d) => {
@@ -257,7 +257,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             const key = localDayKey(s.startedAt);
             const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
             return (
-              <div key={s.id} onClick={() => ctx.onOpen(s.id)} style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 2px", borderTop: `1px solid ${C("line")}`, cursor: "pointer" }}>
+              <div key={s.id} onClick={() => ctx.onOpen(s.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 2px", borderTop: `1px solid ${C("line")}`, cursor: "pointer" }}>
                 <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash"), width: 32, flex: "none", textAlign: "center", lineHeight: 1.25, textTransform: "uppercase" }}>
                   {new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })}<br />
                   <span style={{ fontSize: fs.body, color: C("chalk"), fontWeight: 700 }}>{Number(key.slice(8, 10))}</span>
@@ -297,7 +297,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
             </span>
           </div>
         ) : (
-          <div key={item.dateKey} style={{ position: "relative", marginBottom: 18 }}>
+          <div key={item.dateKey} style={{ position: "relative", marginBottom: 16 }}>
             <div style={{ position: "absolute", left: -56, top: 0, width: 48, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <span style={{ width: item.level >= 3 ? 13 : 10, height: item.level >= 3 ? 13 : 10, borderRadius: "50%", background: item.shape === "cardio" ? C("blue") : C("lime"), border: `3px solid ${C("ink")}`, outline: `2px solid ${item.shape === "cardio" ? C("blue") : item.level >= 3 ? C("lime") : `color-mix(in srgb, ${C("lime")} 55%, transparent)`}`, marginBottom: 5, boxSizing: "content-box" }} />
               <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash"), textAlign: "center", lineHeight: 1.3, textTransform: "uppercase" }}>
@@ -337,8 +337,8 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
   const mini = (label: string, value: string) => (
-    <div style={{ ...card, flex: 1, padding: 14 }}>
-      <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
+    <div style={{ ...card, flex: 1, padding: 16 }}>
+      <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
       <div style={{ fontFamily: MONO, fontVariantNumeric: "tabular-nums", fontSize: fs.heading, letterSpacing: "-.02em", marginTop: 4 }}>{value}</div>
     </div>
   );
@@ -354,7 +354,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
               onClick={() => setRange(rg.id)}
               aria-pressed={on}
               style={{
-                flex: 1, padding: "7px 0", borderRadius: 999, border: "none", cursor: "pointer",
+                flex: 1, padding: "8px 0", borderRadius: 999, border: "none", cursor: "pointer",
                 fontFamily: MONO, fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase",
                 background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash"),
               }}
@@ -370,7 +370,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
           <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.analyze.stats.sessions")}</span>
           <span style={{ fontFamily: MONO, fontSize: fs.micro, color: C("ash") }}>{buckets.total} {t("w.analyze.stats.inRange")} {t(TREND_RANGES.find((r) => r.id === range)!.key).toLowerCase()}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 14, gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 16, gap: 6 }}>
           {buckets.buckets.map((b, i) => (
             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: space.xs }}>
               <div style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, background: i === buckets.peakIndex ? C("lime") : C("line") }} />

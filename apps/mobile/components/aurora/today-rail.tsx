@@ -94,12 +94,12 @@ export default function AuroraTodayRail({
         {/* DATE — the week strip's residue. At the ceiling it sheds its month
             and dot track and contracts to "Sun 26". */}
         <Pill open={has("date")} reduced={reduced} C={C} onPress={onOpenMonth} label={t("w.home.pill.dateAria")}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.chalk }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.chalk }}>
             {todayOf(days) ? `${todayOf(days)!.weekdayShort} ${todayOf(days)!.dayOfMonth}` : ""}
           </Text>
           <Contract open={!state.tight} reduced={reduced}>
-            <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.chalk }}>{todayOf(days)?.monthShort}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 7 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.chalk }}>{todayOf(days)?.monthShort}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 8 }}>
               {days.map((d) => (
                 <View
                   key={d.dateKey}
@@ -126,7 +126,7 @@ export default function AuroraTodayRail({
           label={t(`w.home.pill.${doneState === "none" ? "log" : doneState}Aria`)}
           tint={doneState === "done" ? C.lime : undefined}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: doneState === "done" ? txt(C, C.lime) : C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: doneState === "done" ? txt(C, C.lime) : C.ash }}>
             {doneState === "done" ? "✓ " : ""}
             {t(`w.home.pill.${doneState === "none" ? "log" : doneState}`)}
           </Text>
@@ -140,7 +140,7 @@ export default function AuroraTodayRail({
               <ReadinessFace feeling={feeling} scale={0.5} />
             </View>
           ) : null}
-          <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: feeling ? txt(C, C[READY_ACCENT[feeling]]) : C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: feeling ? txt(C, C[READY_ACCENT[feeling]]) : C.ash }}>
             {feeling ? t(`w.recovery.readiness.${feeling}`) : t("w.home.pill.howReady")}
           </Text>
         </Pill>
@@ -176,10 +176,10 @@ function Bar({ visible, reduced, C, topInset, children }: { visible: boolean; re
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: 7,
+        gap: 8,
         paddingHorizontal: 16,
         paddingTop: topInset + 8,
-        paddingBottom: 9,
+        paddingBottom: 8,
         // No backdrop-filter in RN: an ink wash at the same weight as the web
         // blur keeps the two bars reading the same.
         backgroundColor: C.ink,
@@ -268,7 +268,7 @@ function Contract({ open, reduced, children }: { open: boolean; reduced: boolean
       style={{
         flexDirection: "row",
         alignItems: "center",
-        marginLeft: 7,
+        marginLeft: 8,
         overflow: "hidden",
         opacity: v,
         maxWidth: v.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(1, width.current || 140)] }),

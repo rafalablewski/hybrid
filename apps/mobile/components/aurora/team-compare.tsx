@@ -159,7 +159,7 @@ function Pill({ C, label, active, accent, onPress }: { C: Palette; label: string
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}
+      style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}
     >
       <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: active ? accent : C.ash }}>{label}</Text>
     </Pressable>
@@ -169,7 +169,7 @@ function Pill({ C, label, active, accent, onPress }: { C: Palette; label: string
 function Cell({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View style={{ width: "33.33%", paddingVertical: 5 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );

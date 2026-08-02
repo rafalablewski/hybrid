@@ -51,6 +51,8 @@ import { healthKitAvailability } from "../lib/healthkit";
 import { useRevalidate } from "../lib/queries";
 import { DeviceMatchSheet } from "./device-match";
 import { DeviceMark } from "./aurora/device-mark";
+import { AuroraIcon } from "./aurora/icons";
+import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
@@ -338,15 +340,15 @@ export function WorkoutWrapped({
   const showDock = panel < detailsIndex;
 
   const eyebrow = (label: string) => (
-    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 2, color: GOLD, textTransform: "uppercase" }}>✦ {label}</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, color: GOLD, textTransform: "uppercase" }}>✦ {label}</Text>
   );
   const scrollHint = (
-    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, textAlign: "center", marginTop: 16 }}>{t("session.wrapped.scroll")} ↑</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textAlign: "center", marginTop: 16 }}>{t("session.wrapped.scroll")} ↑</Text>
   );
   const padTop = insets.top + 44;
 
   const Panel = ({ children, center, glows }: { children: ReactNode; center?: boolean; glows?: ReactNode }) => (
-    <View style={{ height: panelH, paddingHorizontal: 26, paddingTop: padTop, paddingBottom: 150, justifyContent: center ? "center" : "flex-start", overflow: "hidden" }}>
+    <View style={{ height: panelH, paddingHorizontal: 24, paddingTop: padTop, paddingBottom: 150, justifyContent: center ? "center" : "flex-start", overflow: "hidden" }}>
       {glows}
       {children}
     </View>
@@ -369,9 +371,9 @@ export function WorkoutWrapped({
               {CONFETTI.map((c, i) => (
                 <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", top: -20, width: 7, height: 7, borderRadius: 2, backgroundColor: [C.lime, GOLD, C.blue, C.violet][c.ci], opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) }, { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) }] }} />
               ))}
-              <Animated.Text style={{ fontSize: 84, transform: [{ scale }] }}>🏆</Animated.Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginTop: 22 }}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Text>
-              <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: 96, color: C.chalk, letterSpacing: -3, marginTop: 12 }} />
+              <Animated.View style={{ transform: [{ scale }] }}><AuroraIcon name="trophy" size={84} color={GOLD} /></Animated.View>
+              <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginTop: 24 }}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Text>
+              <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: 96, color: C.chalk, letterSpacing: -2.5, marginTop: 12 }} />
               <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 6, textAlign: "center" }}>{heroSub}</Text>
             </View>
           </Panel>
@@ -380,17 +382,17 @@ export function WorkoutWrapped({
         {/* ── HERO ── */}
         <Panel glows={<><Glow size={panelH * 0.5} color={`${C.violet}22`} top={-40} right={-80} /><Glow size={panelH * 0.5} color={`${C.lime}14`} bottom={panelH * 0.2} left={-90} /></>}>
           {eyebrow(t("session.wrapped.title"))}
-          <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, letterSpacing: -1.5, lineHeight: 42, marginTop: 12 }}>{session.title}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, letterSpacing: -1, lineHeight: 42, marginTop: 12 }}>{session.title}</Text>
           <View style={{ flex: 1 }} />
-          <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: 96, color: C.chalk, letterSpacing: -3 }} />
+          <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: 96, color: C.chalk, letterSpacing: -2.5 }} />
           <Text style={{ fontFamily: F.bold, fontSize: 17, color: cel ? txt(C, C.lime) : C.chalk, marginTop: 10 }}>{heroSub}</Text>
           <View style={{ flexDirection: "row", marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
             {wrapped.basics.map((b, i) => (
-              <View key={b.labelKey} style={{ flex: 1, paddingVertical: 14, paddingHorizontal: 4, alignItems: "center", backgroundColor: "#0e0f0d", borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
+              <View key={b.labelKey} style={{ flex: 1, paddingVertical: 16, paddingHorizontal: 4, alignItems: "center", backgroundColor: "#0e0f0d", borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
                 {/* A modelled figure wears a "~" — it is never presented as a
                     measurement (see core/energy.ts). */}
                 <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ fontFamily: F.black, fontSize: 22 * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), color: C.chalk }}>{b.estimate ? "~" : ""}{b.value}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 1, color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
               </View>
             ))}
           </View>
@@ -401,16 +403,16 @@ export function WorkoutWrapped({
                device's name. Chip and mark are both chalk: the artwork can't be
                tinted, and a white logo next to lime text would read as two
                claims at once. See core/device-marks.ts. */
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: `${C.chalk}52`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: `${C.chalk}52`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
               {deviceMark ? (
                 <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
               ) : (
-                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.5, color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
               )}
             </Pressable>
           ) : canMatch ? (
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 14, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: "#0e0f0d" }}>
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: "#0e0f0d" }}>
               <DeviceMark provider="apple" form="mark" height={13} on="dark" label="" />
               <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.chalk }}>{t("session.device.matchCta")}</Text>
             </Pressable>
@@ -441,12 +443,12 @@ export function WorkoutWrapped({
             <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, marginBottom: 20 }}>{t("session.wrapped.premiumLead")}</Text>
             {wrapped.facts.map((f) => (
               <View key={f.labelKey + f.value} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
                 <Text style={{ fontFamily: F.black, fontSize: 26, color: f.tone === "up" || f.labelKey === "session.wrapped.est1rm" ? txt(C, C.lime) : C.violet }}>{f.value}</Text>
               </View>
             ))}
             {!full && (
-              <Pressable onPress={() => { onBack(); router.push("/upgrade"); }} style={{ marginTop: 26, alignSelf: "flex-start", backgroundColor: premium.fill, borderRadius: 999, paddingVertical: 12, paddingHorizontal: 22 }}>
+              <Pressable onPress={() => { onBack(); router.push("/upgrade"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: premium.fill, borderRadius: 999, paddingVertical: 12, paddingHorizontal: 20 }}>
                 <Text style={{ fontFamily: F.black, fontSize: 15, color: premium.ink }}>✦ {t("session.wrapped.unlock")}</Text>
               </Pressable>
             )}
@@ -457,14 +459,14 @@ export function WorkoutWrapped({
         {device && (
           <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}14`} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.device.panelTitle"))}
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.6, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.5, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
             <View style={{ marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
-              <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 14, backgroundColor: "#0e0f0d" }}>
+              <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 16, backgroundColor: "#0e0f0d" }}>
                 <View style={{ flex: 1.1 }} />
                 {/* An imported session has no logged column — the recording IS the log. */}
                 {!imported && (
-                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
+                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
                 )}
                 {/* The lockup heads the measured column instead of the device's
                     name, and the column's figures below are chalk with it — the
@@ -474,12 +476,12 @@ export function WorkoutWrapped({
                     <DeviceMark provider={device.provider} height={15} on="dark" label={deviceName ?? undefined} />
                   </View>
                 ) : (
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
+                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
                 )}
               </View>
               {comparison.map((r) => (
-                <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: 1, borderTopColor: C.line }}>
-                  <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.5, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
+                <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 16, backgroundColor: "#0e0f0d", borderTopWidth: 1, borderTopColor: C.line }}>
+                  <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
                   {/* A modelled figure wears a "~" — never presented as a measurement. */}
                   {!imported && (
                     <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 14, color: C.chalk, textAlign: "right" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</Text>
@@ -504,22 +506,22 @@ export function WorkoutWrapped({
         {showDeviceAd && (
           <Panel center glows={<Glow size={panelH * 0.45} color={`${C.violet}18`} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.6, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
-            <View style={{ marginTop: 22, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.5, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
+            <View style={{ marginTop: 24, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               {([
-                ["♥", "session.wrapped.device.hr"],
-                ["🔥", "session.wrapped.device.energy"],
-                ["⏱", "session.wrapped.device.time"],
-                ["🌙", "session.wrapped.device.recovery"],
-              ] as const).map(([glyph, key], i) => (
-                <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                  <Text style={{ fontSize: 15 }}>{glyph}</Text>
+                ["heart", C.red, "session.wrapped.device.hr"],
+                ["flame", C.red, "session.wrapped.device.energy"],
+                ["stopwatch", C.chalk, "session.wrapped.device.time"],
+                ["moon", GOLD, "session.wrapped.device.recovery"],
+              ] as const).map(([icon, tint, key], i) => (
+                <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: "#0e0f0d", borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                  <AuroraIcon name={icon} size={16} color={tint} />
                   <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{t(key)}</Text>
                 </View>
               ))}
             </View>
-            <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 22, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>{t("session.wrapped.device.cta")} →</Text>
+            <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, paddingHorizontal: 24 }}>
+              <CtaLabel label={`${t("session.wrapped.device.cta")} →`} color={C.onAccent} fontSize={15} font={F.black} />
             </Pressable>
             <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 16 }}>
               {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
@@ -547,32 +549,32 @@ export function WorkoutWrapped({
                     <View key={i} style={{ width: 6, height: `${Math.round(v * 100)}%`, borderRadius: 3, backgroundColor: C.lime, opacity: 0.4 + v * 0.6 }} />
                   ))}
                 </View>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1, color: C.ash, marginTop: 12 }}>{t("session.wrapped.signatureCap")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, marginTop: 12 }}>{t("session.wrapped.signatureCap")}</Text>
               </>
             )}
           </View>
         </Panel>
 
         {/* ── DETAILS (breakdown + manage) ── */}
-        <View style={{ backgroundColor: C.ink, paddingHorizontal: 18, paddingTop: 28, paddingBottom: insets.bottom + 40, minHeight: panelH }}>
+        <View style={{ backgroundColor: C.ink, paddingHorizontal: 16, paddingTop: 28, paddingBottom: insets.bottom + 40, minHeight: panelH }}>
           {details}
         </View>
       </ScrollView>
 
       {/* Back — always available, top-left */}
-      <Pressable onPress={onBack} style={{ position: "absolute", top: insets.top + 6, left: 16, width: 40, height: 40, borderRadius: 13, borderWidth: 1, borderColor: C.line, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" }}>
+      <Pressable onPress={onBack} style={{ position: "absolute", top: insets.top + 6, left: 16, width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" }}>
         <Text style={{ color: C.chalk, fontSize: 18 }}>←</Text>
       </Pressable>
 
       {/* Sticky share dock — over the wrapped panels only */}
       {showDock && (
         <View style={{ position: "absolute", left: 24, right: 24, bottom: insets.bottom + 20 }}>
-          <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 14 }}>
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 16 }}>
             {keys.map((_, i) => (
               <View key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === Math.min(panel, keys.length - 1) ? C.lime : C.line }} />
             ))}
           </View>
-          <Pressable onPress={() => { setActive(0); setSheetOpen(true); }} style={{ backgroundColor: C.lime, borderRadius: 16, paddingVertical: 18, alignItems: "center" }}>
+          <Pressable onPress={() => { setActive(0); setSheetOpen(true); }} style={{ backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center" }}>
             <Text style={{ fontFamily: F.black, fontSize: 16, color: C.onAccent }}>↗ {t("summary.share")}</Text>
           </Pressable>
         </View>
@@ -593,8 +595,8 @@ export function WorkoutWrapped({
       <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
         <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={() => setSheetOpen(false)}>
           <Pressable style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 16, paddingBottom: insets.bottom + 24 }} onPress={() => {}}>
-            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 14 }} />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
               <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{t("session.wrapped.chooseStory")}</Text>
               <Pressable onPress={() => setSheetOpen(false)}><Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>{t("summary.doneToday")}</Text></Pressable>
             </View>
@@ -607,12 +609,12 @@ export function WorkoutWrapped({
                 </View>
               ))}
             </ScrollView>
-            <View style={{ flexDirection: "row", justifyContent: "center", gap: 7, marginVertical: 14 }}>
+            <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginVertical: 16 }}>
               {slides.map((_, i) => (
                 <View key={i} style={{ width: i === activeIdx ? 20 : 7, height: 7, borderRadius: 4, backgroundColor: i === activeIdx ? C.lime : C.line }} />
               ))}
             </View>
-            <Pressable onPress={shareNow} style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center" }}>
+            <Pressable onPress={shareNow} style={{ backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: 16, color: C.onAccent }}>↗ {t("summary.shareStory")}</Text>
             </Pressable>
           </Pressable>

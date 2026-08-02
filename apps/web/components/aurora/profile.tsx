@@ -28,6 +28,7 @@ import { usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { ArrowGlyph } from "./cta-label";
 import PrivateTab from "./private-tab";
 
 /**
@@ -160,7 +161,7 @@ export default function AuroraProfile({
     return [...topLoadMap(sessions).entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
   }, [sessions]);
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 22 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28 } as const;
 
   // Social summary — owner-only "set up your profile" nudge, the public bio +
   // avatar, the following/followers counts and (derived) friends rank.
@@ -233,7 +234,7 @@ export default function AuroraProfile({
   }, [followersN, followingN, rank, t]);
 
   const sectionHead = (title: string, action?: string) => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "26px 2px 13px" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 2px 12px" }}>
       {/* Display face per the SectionHead standard — Mincho under Kyoto Hour. */}
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</div>
       {action && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{action}</div>}
@@ -246,16 +247,16 @@ export default function AuroraProfile({
       {socialP && !sComplete && (
         <button
           onClick={go("settings", "/settings")}
-          style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, color-mix(in srgb, var(--color-lime) 12%, transparent), transparent)", borderRadius: 20, padding: 16, display: "flex", alignItems: "center", gap: 14, color: C("chalk") }}
+          style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 16, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, color-mix(in srgb, var(--color-lime) 12%, transparent), transparent)", borderRadius: 28, padding: 16, display: "flex", alignItems: "center", gap: 16, color: C("chalk") }}
         >
-          <span style={{ width: 44, height: 44, borderRadius: 14, background: C("lime"), display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <span style={{ width: 44, height: 44, borderRadius: 12, background: C("lime"), display: "grid", placeItems: "center", flexShrink: 0 }}>
             <AuroraIcon name="user-circle" size={22} color={C("ink")} />
           </span>
           <span style={{ flex: 1 }}>
             <span style={{ display: "block", fontWeight: 800, fontSize: 16 }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</span>
             <span style={{ display: "block", color: C("ash"), fontSize: 13, marginTop: 2, lineHeight: 1.4 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</span>
           </span>
-          <span style={{ color: C("lime"), fontWeight: 800, fontSize: 18 }}>→</span>
+          <span style={{ color: C("lime"), display: "grid", placeItems: "center" }}><ArrowGlyph size={16} /></span>
         </button>
       )}
 
@@ -264,7 +265,7 @@ export default function AuroraProfile({
           (the classic "edit cover" spot) — out of the content flow, away from
           the avatar and name. Uses the shared "edit" glyph (a dedicated pencil
           asset is a blocked follow-up). */}
-      <div style={{ position: "relative", height: 96, borderRadius: 20, overflow: "hidden", background: "linear-gradient(120deg, color-mix(in srgb, var(--color-violet) 45%, transparent), color-mix(in srgb, var(--color-lime) 22%, transparent) 45%, var(--color-ink2))" }}>
+      <div style={{ position: "relative", height: 96, borderRadius: 28, overflow: "hidden", background: "linear-gradient(120deg, color-mix(in srgb, var(--color-violet) 45%, transparent), color-mix(in srgb, var(--color-lime) 22%, transparent) 45%, var(--color-ink2))" }}>
         <span style={{ position: "absolute", top: -34, right: -24, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, color-mix(in srgb, var(--color-lime) 32%, transparent), transparent 70%)", pointerEvents: "none" }} />
         <button
           onClick={go("settings", "/settings")}
@@ -289,26 +290,26 @@ export default function AuroraProfile({
       </div>
 
       {/* NAME + membership pill (pill UNCHANGED from the original design). */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 12, padding: "0 4px" }}>
-        <span style={{ fontWeight: 900, fontSize: 23, letterSpacing: "-.025em" }}>{name}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: "var(--lime-text)", borderRadius: 999, padding: "3px 9px", letterSpacing: ".08em" }}>{tier}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "0 4px" }}>
+        <span style={{ fontWeight: 900, fontSize: 23, letterSpacing: "-.02em" }}>{name}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: "var(--lime-text)", borderRadius: 999, padding: "3px 8px", letterSpacing: ".08em" }}>{tier}</span>
       </div>
 
       {/* BIO + quiet HYBRID ID line. */}
-      <div style={{ marginTop: 7, padding: "0 4px" }}>
-        {!!bioText && <div style={{ fontSize: 13.5, color: C("chalk"), opacity: 0.9, lineHeight: 1.5 }}>{bioText}</div>}
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: bioText ? 6 : 0, letterSpacing: ".02em", lineHeight: 1.6 }}>
+      <div style={{ marginTop: 8, padding: "0 4px" }}>
+        {!!bioText && <div style={{ fontSize: 14, color: C("chalk"), opacity: 0.9, lineHeight: 1.5 }}>{bioText}</div>}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: bioText ? 6 : 0, letterSpacing: ".08em", lineHeight: 1.6 }}>
           <div><span style={{ opacity: 0.75 }}>HYBRID ID</span>&nbsp;&nbsp;{athleteId}</div>
           <div style={{ opacity: 0.75 }}>{t("w.account.profile.member-since")} {memberSince}</div>
         </div>
       </div>
 
       {/* SOCIAL COUNTS — followers / following / (derived) friends rank. */}
-      <div style={{ display: "flex", gap: 22, marginTop: 14, padding: "0 4px" }}>
+      <div style={{ display: "flex", gap: 20, marginTop: 16, padding: "0 4px" }}>
         {socialCounts.map((c) => (
           <div key={c.k} style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
             <span style={{ fontWeight: 900, fontSize: 17 }}>{c.n}</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", color: C("ash"), textTransform: "uppercase" }}>{c.k}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase" }}>{c.k}</span>
           </div>
         ))}
       </div>
@@ -320,7 +321,9 @@ export default function AuroraProfile({
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
           // 4th, owner-only tab — this screen is always your own profile.
-          { id: "private" as const, label: `🔒 ${t("w.account.profile.tab-private")}` },
+          // (The lock renders as a drawn AuroraIcon beside the label, not an
+          // emoji inside the string — see the tab renderer below.)
+          { id: "private" as const, label: t("w.account.profile.tab-private") },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
@@ -331,7 +334,12 @@ export default function AuroraProfile({
               onClick={() => setTab(tb.id)}
               style={{ flex: 1, textAlign: "center", padding: "12px 0", position: "relative", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.caption, whiteSpace: "nowrap", color: on ? C("chalk") : C("ash") }}
             >
-              {tb.label}
+              {tb.id === "private" ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, verticalAlign: "middle" }}>
+                  <AuroraIcon name="lock" size={13} />
+                  {tb.label}
+                </span>
+              ) : tb.label}
               {on && <span style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, background: C("lime") }} />}
             </button>
           );
@@ -343,9 +351,9 @@ export default function AuroraProfile({
         <div style={{ marginTop: 16 }}>
           {/* THIS WEEK — a current-focus snapshot above the lifetime tiles. */}
           {thisWeek.count > 0 && (
-            <div style={{ border: `1px solid ${C("line")}`, borderRadius: 14, background: C("ink2"), padding: "12px 14px", marginBottom: space.sm }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.ov-tw")}</div>
-              <div style={{ display: "flex", gap: 26, marginTop: 8 }}>
+            <div style={{ border: `1px solid ${C("line")}`, borderRadius: 16, background: C("ink2"), padding: "12px 16px", marginBottom: space.sm }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.ov-tw")}</div>
+              <div style={{ display: "flex", gap: 24, marginTop: 8 }}>
                 {[{ v: String(thisWeek.count), k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
                   <div key={s.k} style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                     <span style={{ fontWeight: 900, fontSize: 19, letterSpacing: "-.02em" }}>{s.v}</span>
@@ -377,10 +385,10 @@ export default function AuroraProfile({
         <div style={{ marginTop: 16 }}>
           {prs.length ? (
             prs.map(([lift, wt]) => (
-              <div key={lift} style={{ ...card, padding: "13px 14px", marginBottom: 9 }}>
+              <div key={lift} style={{ ...card, padding: "12px 16px", marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                    <span style={{ fontSize: fs.subtitle }}>🏆</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <AuroraIcon name="trophy" size={fs.subtitle + 2} color={C("chalk")} />
                     <div>
                       <div style={{ fontWeight: 700, fontSize: fs.bodyLg }}>{lift}</div>
                       <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 2 }}>{t("w.account.profile.pr-metric")}</div>
@@ -388,7 +396,7 @@ export default function AuroraProfile({
                   </div>
                   <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, color: "var(--lime-text)" }}>{fmtWeight(wt, units)}</div>
                 </div>
-                <div style={{ height: 4, borderRadius: 2, background: C("line"), marginTop: 11, overflow: "hidden" }}>
+                <div style={{ height: 4, borderRadius: 2, background: C("line"), marginTop: 12, overflow: "hidden" }}>
                   <div style={{ width: `${Math.max(8, Math.round((wt / prs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, background: C("lime") }} />
                 </div>
               </div>
@@ -404,7 +412,7 @@ export default function AuroraProfile({
       {tab === "activity" && (
         <div style={{ marginTop: 16 }}>
           {/* 26-week training heatmap */}
-          <div style={{ border: `1px solid ${C("line")}`, borderRadius: 22, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))", padding: 16 }}>
+          <div style={{ border: `1px solid ${C("line")}`, borderRadius: 28, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))", padding: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash"), letterSpacing: ".08em", marginBottom: 8, padding: "0 2px" }}>
               {monthLabels.map((m, i) => <span key={i}>{m}</span>)}
             </div>
@@ -419,7 +427,7 @@ export default function AuroraProfile({
                 )),
               )}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 11, fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash") }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 12, fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash") }}>
               <span style={{ color: "var(--lime-text)" }}>{weekStreak > 0 ? `${weekStreak}${t("w.account.profile.week-streak-suffix")}` : dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : t("w.account.profile.no-streak")}</span>
               <span style={{ flex: 1 }} />
               {t("w.account.profile.less")}
@@ -443,7 +451,7 @@ export default function AuroraProfile({
                   <div
                     title={a.detail}
                     style={{
-                      width: 76, height: 76, borderRadius: 20, display: "grid", placeItems: "center", fontSize: 27, margin: "0 auto",
+                      width: 76, height: 76, borderRadius: 16, display: "grid", placeItems: "center", fontSize: 27, margin: "0 auto",
                       border: `1px solid ${a.earned ? "color-mix(in srgb, var(--color-lime) 45%, transparent)" : C("line")}`,
                       background: a.earned ? "linear-gradient(160deg, color-mix(in srgb, var(--color-lime) 12%, var(--color-ink2)), var(--color-ink))" : C("ink2"),
                       boxShadow: a.earned ? "0 0 22px -10px color-mix(in srgb, var(--color-lime) 60%, transparent)" : "none",
@@ -451,10 +459,10 @@ export default function AuroraProfile({
                   >
                     <span style={{ opacity: a.earned ? 1 : 0.4, filter: a.earned ? "none" : "grayscale(0.5)" }}>{a.icon}</span>
                   </div>
-                  <div style={{ width: 60, height: 4, borderRadius: 2, background: C("line"), margin: "9px auto 0", overflow: "hidden" }}>
+                  <div style={{ width: 60, height: 4, borderRadius: 2, background: C("line"), margin: "8px auto 0", overflow: "hidden" }}>
                     <div style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, background: a.earned ? C("lime") : "color-mix(in srgb, var(--color-lime) 60%, transparent)" }} />
                   </div>
-                  <div style={{ fontSize: fs.nano, color: C("ash"), marginTop: 7, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</div>
+                  <div style={{ fontSize: fs.nano, color: C("ash"), marginTop: 8, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: a.earned ? "var(--lime-text)" : C("ash"), marginTop: 2 }}>{a.earned ? "✓" : `${pct}%`}</div>
                 </div>
               );
@@ -691,10 +699,10 @@ function HighlightGrid({
                   {minus}
                 </button>
               )}
-              <div className="hl-wig" style={{ width: "100%", height: "100%", border: `1px solid ${C("line")}`, borderRadius: 14, background: C("ink2"), display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 8, textAlign: "center", boxShadow: editMode ? "0 6px 18px -12px rgba(0,0,0,.6)" : "none" }}>
+              <div className="hl-wig" style={{ width: "100%", height: "100%", border: `1px solid ${C("line")}`, borderRadius: 16, background: C("ink2"), display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 8, textAlign: "center", boxShadow: editMode ? "0 6px 18px -12px rgba(0,0,0,.6)" : "none" }}>
                 <AuroraIcon name={tile.icon} size={22} color={C("lime")} />
                 <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", marginTop: 6 }}>{tile.v}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".06em", color: C("ash"), textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.k}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".08em", color: C("ash"), textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.k}</div>
               </div>
             </div>
           );
@@ -703,18 +711,18 @@ function HighlightGrid({
 
       {/* HIDDEN — restore tray. Shown whenever anything is hidden. */}
       {hiddenKeys.length > 0 && (
-        <div data-hl-keep style={{ marginTop: 16, borderTop: `1px dashed ${C("line")}`, paddingTop: 13 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase", marginBottom: 10 }}>
+        <div data-hl-keep style={{ marginTop: 16, borderTop: `1px dashed ${C("line")}`, paddingTop: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase", marginBottom: 10 }}>
             <AuroraIcon name="eye" size={12} color={C("ash")} />{t("w.account.profile.ov-restore")}
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {hiddenKeys.map((key) => {
               const tile = tileMap.get(key)!;
               return (
                 <button
                   key={key}
                   onClick={() => onToggleHidden(key, false)}
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 11px 7px 8px", border: `1px solid ${C("line")}`, borderRadius: 12, background: C("ink2"), color: C("ash"), cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".04em", textTransform: "uppercase" }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px 8px 8px", border: `1px solid ${C("line")}`, borderRadius: 12, background: C("ink2"), color: C("ash"), cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase" }}
                 >
                   <span style={{ width: 20, height: 20, borderRadius: "50%", background: C("lime"), color: C("ink"), display: "grid", placeItems: "center", fontWeight: 900, fontSize: 15, lineHeight: 1 }}>+</span>
                   {tile.k}
@@ -725,14 +733,14 @@ function HighlightGrid({
         </div>
       )}
 
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash"), marginTop: 10, letterSpacing: ".02em" }}>{editMode ? t("w.account.profile.ov-edit-hint") : t("w.account.profile.ov-hint")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 10, letterSpacing: ".08em" }}>{editMode ? t("w.account.profile.ov-edit-hint") : t("w.account.profile.ov-hint")}</div>
 
       {/* DONE — fixed bar while editing. */}
       {editMode && (
         <div data-hl-keep style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: 16, zIndex: 60, pointerEvents: "none" }}>
           <button
             onClick={() => setEditMode(false)}
-            style={{ pointerEvents: "auto", background: C("chalk"), color: C("ink"), border: "none", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, letterSpacing: ".16em", textTransform: "uppercase", padding: "14px 40px", borderRadius: 16, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.5)" }}
+            style={{ pointerEvents: "auto", background: C("chalk"), color: C("ink"), border: "none", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", padding: "16px 40px", borderRadius: 16, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.5)" }}
           >
             {t("w.account.profile.ov-done")}
           </button>

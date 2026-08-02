@@ -52,7 +52,7 @@ function Capabilities() {
 
   return (
     <View>
-      <Mono color={palette.ash} style={{ fontSize: fs.body, marginBottom: 14 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.body, marginBottom: 16 }}>
         Living registry of every capability — kept current as features ship, block, or get planned.
       </Mono>
 
@@ -79,7 +79,7 @@ function Capabilities() {
         );
       })}
 
-      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 14 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 16 }}>
         Source: packages/core/src/capabilities.ts – {CAPABILITIES.length} capabilities tracked.
       </Mono>
     </View>
@@ -94,7 +94,7 @@ function CapRow({ cap, color }: { cap: Capability; color: string }) {
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, flex: 1 }}>{cap.title}</Text>
         <Chip color={palette.ash}>{cap.area}</Chip>
       </View>
-      <Mono color={palette.chalk} style={{ fontSize: 12.5, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>
+      <Mono color={palette.chalk} style={{ fontSize: 13, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>
       {cap.blockedBy ? (
         <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: `${palette.amber}12`, borderWidth: 1, borderColor: `${palette.amber}40` }}>
           <Kicker color={palette.amber}>Needs</Kicker>

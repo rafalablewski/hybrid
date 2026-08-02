@@ -16,7 +16,7 @@ import { F, fs, space } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 
 const labelStyle = (C: Palette) =>
-  ({ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
+  ({ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
 const fieldStyle = (C: Palette) =>
   ({
     fontFamily: F.mono,
@@ -125,7 +125,7 @@ export function SessionEditSheet({
             onPress={() => {}}
             style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "88%" }}
           >
-            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 14 }} />
+            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
               <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, flex: 1, paddingRight: 10 }}>{t("session.edit.title")}</Text>
               <Pressable onPress={onClose} hitSlop={10}>
@@ -152,7 +152,7 @@ export function SessionEditSheet({
                   elevation: orig && orig.kind === "cardio" ? orig.elevation : undefined,
                 });
                 return (
-                  <View key={`${b.name}-${i}`} style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
+                  <View key={`${b.name}-${i}`} style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{b.name}</Text>
 
                     {fields.sets ? (
@@ -204,10 +204,10 @@ export function SessionEditSheet({
                   else — say so here rather than let a corrected figure look like
                   it changed nothing. */}
               {session.device && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 16, color: C.ash, marginTop: 18 }}>{t("session.edit.matched")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 16, color: C.ash, marginTop: 16 }}>{t("session.edit.matched")}</Text>
               )}
               {error && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber, marginTop: 14 }}>{t("session.edit.error")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber, marginTop: 16 }}>{t("session.edit.error")}</Text>
               )}
             </ScrollView>
 

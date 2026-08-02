@@ -165,25 +165,25 @@ export default function AuroraWeekRail({
   const multiWeek = (schedule.days[schedule.days.length - 1]?.week ?? 1) > 1;
   const titleFor = (d: ScheduledDay) => `${schedule.planName} – ${multiWeek ? `Week ${d.week}, ` : ""}${d.title}`;
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "var(--shadow-card)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
   return (
     <div data-tour="today-plan" style={{ ...card }}>
       {/* header: plan name + progress on one baseline row */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 21, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{schedule.planName}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{dayLine}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{dayLine}</div>
       </div>
 
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
-      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
+      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "16px 0 0" }}>
         {windowDays.map((d) => (
           <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
       </div>
 
       {/* full-bleed hairline — the only separator between week and session */}
-      <div style={{ height: 1, background: C("line"), margin: "18px -20px 16px" }} />
+      <div style={{ height: 1, background: C("line"), margin: "16px -20px 16px" }} />
 
       {/* state-aware session, flowing directly on the card (no nested surface) */}
       <DayDetail
@@ -277,11 +277,11 @@ function LiftRow({ r, showSession, first }: { r: { name: string; session?: strin
   return (
     <div style={{ padding: "12px 0", borderTop: first ? "none" : `1px solid ${C("line")}` }}>
       <div style={{ fontWeight: 600, fontSize: fs.bodyLg, letterSpacing: "-.01em", marginBottom: 8 }}>
-        {showSession && r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 7 }}>{r.session}</span> : null}
+        {showSession && r.session ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginRight: 8 }}>{r.session}</span> : null}
         {r.name}
         {r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), fontWeight: 400 }}> ({r.note})</span> : null}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "7px 18px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px" }}>
         {steps ? steps.map((s, i) => (
           <span key={i} style={{ display: "inline-flex", alignItems: "baseline", gap: 6 }}>
             <b style={{ fontWeight: 600, fontSize: fs.bodyLg, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{s.load}</b>
@@ -337,7 +337,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
 
   if (day.isRest) {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <span style={{ color: C("ash"), display: "grid", placeItems: "center", flexShrink: 0 }}><Moon c={C("ash")} s={26} /></span>
         <div>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.home.rail.restDay")}</div>
@@ -350,14 +350,14 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
   // Sessions postponed ONTO this date — a light catch-up list (all states).
   const catchUp = day.postponedIn.length > 0 && (
     <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 9 }}>{t("w.home.rail.catchUp")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.home.rail.catchUp")}</div>
       {day.postponedIn.map((it, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
           <span style={{ minWidth: 0 }}>
             <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
             <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
           </span>
-          <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
+          <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 16px" }}>{t("w.home.rail.doItNow")}</button>
         </div>
       ))}
     </div>
@@ -387,17 +387,17 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
           {stripWeekdayPrefix(day.title)}<span style={{ opacity: 0.65 }}>{finished}</span>
         </div>
         {stats.length > 0 && (
-          <div style={{ display: "flex", gap: 26, margin: "16px 0 0 31px" }}>
+          <div style={{ display: "flex", gap: 24, margin: "16px 0 0 31px" }}>
             {stats.map((s) => (
               <span key={s.labelKey}>
                 <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
               </span>
             ))}
           </div>
         )}
-        <button onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "18px 0 0", padding: "14px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
-          {t("w.home.rail.viewHistory")} →
+        <button onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: "16px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+          <CtaLabel size={12}>{`${t("w.home.rail.viewHistory")} →`}</CtaLabel>
         </button>
         {catchUp}
       </div>
@@ -425,12 +425,12 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
       {/* session toggle — an underlined text switch (no boxed segment), only when
           the day holds more than one training. Label = time-of-day or "Training N". */}
       {multi && (
-        <div role="tablist" aria-label={day.title} style={{ display: "flex", gap: 20, margin: "14px 0 2px" }}>
+        <div role="tablist" aria-label={day.title} style={{ display: "flex", gap: 20, margin: "16px 0 2px" }}>
           {sessions.map((s, i) => {
             const on = i === activeIdx;
             return (
               <button key={i} role="tab" aria-selected={on} onClick={() => setActive(i)}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0 7px", position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: ".05em", fontWeight: on ? 600 : 400, color: on ? "var(--lime-text)" : C("ash") }}>
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0 8px", position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: ".08em", fontWeight: on ? 600 : 400, color: on ? "var(--lime-text)" : C("ash") }}>
                 {sessionLabel(s, t)}
                 {on && <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 2, background: C("lime"), borderRadius: 2 }} />}
               </button>
@@ -444,7 +444,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
           <LiftRow key={i} r={r} showSession={!multi} first={i === 0} />
         ))}
         {hasMore && (
-          <button onClick={() => setOpen((v) => !v)} style={{ position: "relative", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0 2px", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".04em", color: C("ash"), display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <button onClick={() => setOpen((v) => !v)} style={{ position: "relative", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0 2px", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em", color: C("ash"), display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             {!open && <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: "100%", height: 40, pointerEvents: "none", background: `linear-gradient(to top, ${C("ink2")} 14%, transparent)` }} />}
             {open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}
             <Caret open={open} />
@@ -453,7 +453,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
       </div>
 
       {/* actions by state — one accent (Start), the rest neutral glyph/ghosts */}
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: 9, marginTop: 16 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: 8, marginTop: 16 }}>
         {(day.status === "today" || day.status === "missed") && (<>
           <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}><CtaLabel>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</CtaLabel></button>
           <button onClick={onSkip} aria-label={t("w.home.rail.skip")} title={t("w.home.rail.skip")} style={iconBtn}><SkipGlyph /></button>
@@ -477,7 +477,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
   );
 }
 
-const primaryBtn: CSSProperties = { flex: 1, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, letterSpacing: "-.01em", cursor: "pointer" };
+const primaryBtn: CSSProperties = { flex: 1, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, letterSpacing: "-.01em", cursor: "pointer" };
 // Neutral secondary — undo / history / unpostpone. No second accent colour.
 const neutralGhostBtn: CSSProperties = { flex: 1, background: "transparent", border: `1px solid ${C("line")}`, color: C("ash"), borderRadius: 999, padding: "12px", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" };
 // Compact glyph button for rare secondary actions (skip / postpone).

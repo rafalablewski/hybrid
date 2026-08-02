@@ -86,25 +86,25 @@ export default function AuroraLogbookRail({
   // place of a date the week strip has already shown (core day-stamp.ts).
   const streakDays = useMemo(() => streak(sessions, 1).current, [sessions]);
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 24, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)", padding: 20 } as const;
 
   return (
     <div data-tour="today-plan" style={{ ...card }}>
       {/* header: the log's name + the window on one baseline row */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 21, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{t("w.home.logbook.title")}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{t("w.home.logbook.window")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{t("w.home.logbook.window")}</div>
       </div>
 
       {/* the seven-day week — the plan rail's chip anatomy, logbook vocabulary */}
-      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
+      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "16px 0 0" }}>
         {week.days.map((d) => (
           <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
       </div>
 
       {/* full-bleed hairline — the only separator between week and day */}
-      <div style={{ height: 1, background: C("line"), margin: "18px -20px 16px" }} />
+      <div style={{ height: 1, background: C("line"), margin: "16px -20px 16px" }} />
 
       <DayDetail
         key={sel.dateKey}
@@ -190,17 +190,17 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
           {daySessions.map((s) => s.title).join(" – ")}<span style={{ opacity: 0.65 }}>{finished}</span>
         </div>
         {stats.length > 0 && (
-          <div style={{ display: "flex", gap: 26, margin: "16px 0 0 31px" }}>
+          <div style={{ display: "flex", gap: 24, margin: "16px 0 0 31px" }}>
             {stats.map((s) => (
               <span key={s.labelKey}>
                 <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
               </span>
             ))}
           </div>
         )}
-        <button onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "18px 0 0", padding: "14px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
-          {t("w.home.rail.viewHistory")} →
+        <button onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: "16px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+          <CtaLabel size={12}>{`${t("w.home.rail.viewHistory")} →`}</CtaLabel>
         </button>
       </div>
     );
@@ -219,7 +219,7 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
         <button
           onClick={onLog}
           className="start-glow"
-          style={{ marginTop: 16, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
+          style={{ marginTop: 16, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
         >
           <CtaLabel>{t("w.home.today.alsoTodayLogFirst")}</CtaLabel>
         </button>

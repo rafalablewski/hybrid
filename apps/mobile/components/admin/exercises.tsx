@@ -240,7 +240,7 @@ export default function AdminExercises() {
       <Input value={q} onChangeText={setQ} placeholder="Search the library…" />
 
       {editing === null && (
-        <View style={{ marginBottom: 14 }}>
+        <View style={{ marginBottom: 16 }}>
           <PillBtn label="+ New exercise" onPress={openNew} />
         </View>
       )}
