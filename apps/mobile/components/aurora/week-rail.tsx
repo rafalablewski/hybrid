@@ -245,24 +245,18 @@ export default function AuroraWeekRail({
   );
 }
 
-/** The single glyph a day wears in the rail, by status (text chars — the mobile
- *  idiom). Upcoming/today carry none (a plain day IS a training day; today's disc
- *  is its own mark). done ✓, missed ✕, skipped », postponed ↦, rest ☾. */
-function chipGlyphChar(day: ScheduledDay): string | null {
-  if (day.isRest) return "☾";
+/** The single glyph a day wears in the rail, by status — the SAME SVG marks (and
+ *  sizes) as the web rail's chipGlyph. Upcoming/today carry none (a plain day IS
+ *  a training day; today's disc is its own mark). */
+function chipGlyph(day: ScheduledDay, C: Pal): ReactNode {
+  if (day.isRest) return <Moon c={C.ash} />;
   switch (day.status) {
-    case "done": return "✓";
-    case "missed": return "✕";
-    case "skipped": return "»";
-    case "postponed": return "↦";
+    case "done": return <Check c={C.chalk} s={10} />;
+    case "missed": return <Cross c={txt(C, C.red) as string} s={9} />;
+    case "skipped": return <SkipGlyph c={C.ash} s={11} />;
+    case "postponed": return <PostponeGlyph c={C.ash} s={12} />;
     default: return null; // upcoming / today
   }
-}
-function chipGlyphColor(day: ScheduledDay, C: Pal): string {
-  if (day.isRest) return C.ash;
-  if (day.status === "done") return C.chalk;
-  if (day.status === "missed") return txt(C, C.red);
-  return C.ash;
 }
 function chipNumColor(day: ScheduledDay, C: Pal): string {
   if (day.isRest) return C.ash;
@@ -273,7 +267,7 @@ function chipNumColor(day: ScheduledDay, C: Pal): string {
 
 function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay; selected: boolean; onSelect: () => void; t: (k: string) => string }) {
   const isTodayDisc = day.isToday;
-  const glyph = chipGlyphChar(day);
+  const glyph = chipGlyph(day, C);
   return (
     <Pressable
       onPress={onSelect}
@@ -298,8 +292,8 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
           <Text style={{ fontFamily: F.bold, fontSize: 15, color: chipNumColor(day, C), textDecorationLine: day.status === "skipped" ? "line-through" : "none" }}>{day.dayOfMonth}</Text>
         )}
       </View>
-      <View style={{ height: 12, alignItems: "center", justifyContent: "center" }}>
-        {glyph ? <Text style={{ fontFamily: F.mono, fontSize: day.status === "skipped" ? 11 : 10, lineHeight: 12, color: chipGlyphColor(day, C), opacity: day.status === "done" ? 0.7 : 1 }}>{glyph}</Text> : null}
+      <View style={{ height: 12, alignItems: "center", justifyContent: "center", opacity: day.status === "done" ? 0.7 : 1 }}>
+        {glyph}
       </View>
     </Pressable>
   );
@@ -373,7 +367,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
   if (day.isRest) {
     return (
       <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 24, lineHeight: 26, color: C.ash }}>☾</Text>
+        <Moon c={C.ash} s={26} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 17 }}>{t("w.home.rail.restNote")}</Text>
@@ -493,7 +487,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
       {hasMore && (
         <Pressable onPress={() => setOpen((v) => !v)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 2 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.4, color: C.ash }}>{open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{open ? "⌃" : "⌄"}</Text>
+          <Caret c={C.ash} open={open} />
         </Pressable>
       )}
 
@@ -502,22 +496,22 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
         {day.status === "today" && (
           <>
             <PrimaryBtn C={C} label={t("w.home.today.start")} onPress={() => onStart(startBlocks)} />
-            <IconBtn C={C} glyph="»" label={t("w.home.rail.skip")} onPress={onSkip} />
-            {canPostpone && <IconBtn C={C} glyph="↦" label={t("w.home.rail.postpone")} onPress={onPostpone} />}
+            <IconBtn C={C} glyph={<SkipGlyph c={C.ash} />} label={t("w.home.rail.skip")} onPress={onSkip} />
+            {canPostpone && <IconBtn C={C} glyph={<PostponeGlyph c={C.ash} />} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
           </>
         )}
         {day.status === "missed" && (
           <>
             <PrimaryBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(startBlocks)} />
-            <IconBtn C={C} glyph="»" label={t("w.home.rail.skip")} onPress={onSkip} />
-            {canPostpone && <IconBtn C={C} glyph="↦" label={t("w.home.rail.postpone")} onPress={onPostpone} />}
+            <IconBtn C={C} glyph={<SkipGlyph c={C.ash} />} label={t("w.home.rail.skip")} onPress={onSkip} />
+            {canPostpone && <IconBtn C={C} glyph={<PostponeGlyph c={C.ash} />} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
           </>
         )}
         {day.status === "skipped" && <GhostBtn C={C} label={t("w.home.rail.undoSkip")} onPress={onUnskip} flex1 />}
         {day.status === "upcoming" && (
           <>
             <PrimaryBtn C={C} label={t("w.home.rail.startEarly")} onPress={() => onStart(startBlocks)} />
-            {canPostpone && <IconBtn C={C} glyph="↦" label={t("w.home.rail.postpone")} onPress={onPostpone} />}
+            {canPostpone && <IconBtn C={C} glyph={<PostponeGlyph c={C.ash} />} label={t("w.home.rail.postpone")} onPress={onPostpone} />}
           </>
         )}
         {day.status === "postponed" && (
@@ -541,8 +535,9 @@ function PrimaryBtn({ C, label, onPress }: { C: Pal; label: string; onPress: () 
   );
 }
 
-/** Compact glyph button for rare secondary actions (skip / postpone). */
-function IconBtn({ C, glyph, label, onPress }: { C: Pal; glyph: string; label: string; onPress: () => void }) {
+/** Compact glyph button for rare secondary actions (skip / postpone) — carries
+ *  the same SVG mark as the web rail's iconBtn. */
+function IconBtn({ C, glyph, label, onPress }: { C: Pal; glyph: ReactNode; label: string; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
@@ -550,7 +545,7 @@ function IconBtn({ C, glyph, label, onPress }: { C: Pal; glyph: string; label: s
       accessibilityLabel={label}
       style={{ width: 48, height: 48, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: 16, lineHeight: 18, color: C.ash }}>{glyph}</Text>
+      {glyph}
     </Pressable>
   );
 }
