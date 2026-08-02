@@ -19,7 +19,7 @@ import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark, withAlpha } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, Spark, withAlpha } from "./kit";
 import AuroraVolume from "./volume";
 import AuroraTrends from "./trends";
 import { AuroraIcon } from "./icons";
@@ -160,21 +160,26 @@ function Full({ top }: { top?: ReactNode }) {
   const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
   const maxBar = 96;
 
+  const season = macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : "";
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load} top={top}>
-      {/* 1 · CONTEXT RAIL — a LIVING MASTHEAD in Today's idiom (mono season
-          caption, one oversized editorial headline, a warm sub) + sliding pills.
-          Deliberately the same masthead anatomy as the home tab so the two
-          screens read as siblings: Today answers "what do I do?", this page
-          answers "how am I doing?". */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        {!top && <ABack />}
-        <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-          {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : " "}
-        </Text>
-      </View>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 32, letterSpacing: -1, color: C.chalk, marginTop: 6 }}>{t("w.home.cockpit.commandCenter")}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 2 }}>{t("w.home.cockpit.commandSub")}</Text>
+    <AuroraScreen
+      refreshing={refreshing}
+      onRefresh={load}
+      top={top}
+      // The "living masthead" this screen invented — mono season caption over
+      // an oversized headline — turns out to BE the hero: the caption is the
+      // eyebrow (what kind of thing this is), the headline the title. So it
+      // stops being a bespoke masthead and becomes the system's, at the
+      // system's size. As a hub tab Today owns the head, so it renders inline.
+      hero={top ? undefined : { rank: "title", title: t("w.home.cockpit.commandCenter"), eyebrow: season || undefined }}
+    >
+      {top && (
+        <>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{season || " "}</Text>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 32, letterSpacing: -1, color: C.chalk, marginTop: 6 }}>{t("w.home.cockpit.commandCenter")}</Text>
+        </>
+      )}
+      <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: top ? 2 : 0 }}>{t("w.home.cockpit.commandSub")}</Text>
       {(macro || hasData) && (
         // Full-bleed chip rail — clips at the screen edge, rests on the column.
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
@@ -863,12 +868,9 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
   const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <AuroraScreen top={top}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        {!top && <ABack />}
-        <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>
-      </View>
-      <ASub style={{ marginTop: 8 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
+    <AuroraScreen top={top} hero={top ? undefined : { rank: "title", title: t("w.home.cockpit.teaseTitle") }}>
+      {top && <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>}
+      <ASub style={{ marginTop: top ? 8 : 0 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
       {TEASE.map((s) => (
         <ACard solid key={s.key} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime }} />

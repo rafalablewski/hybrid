@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
-import { auroraScrollClearance } from "../../lib/layout";
-import { useNavScrollProps } from "../../lib/nav-scroll";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePlanOverrides } from "../../lib/plan-overrides";
@@ -16,7 +13,8 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ABack, APill, RADIUS } from "./kit";
+import { ACard, APill, RADIUS } from "./kit";
+import { HeroScreen, HeroAccessory } from "./hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import { ViewSwitcher, AgendaView, WeeksView, TimelineView, TrendView, type ViewCtx } from "./history-views";
@@ -99,8 +97,6 @@ export default function AuroraHistory() {
     AsyncStorage.setItem(VIEW_KEY, v).catch(() => {});
   };
 
-  const insets = useSafeAreaInsets();
-  const navScroll = useNavScrollProps();
   const q = useSessionsQuery({ archived: showArchived });
   const sessions = q.data ?? [];
   const loading = q.isPending;
@@ -181,16 +177,14 @@ export default function AuroraHistory() {
   // so the saved layout never flashes another one first.
   const hydrated = view !== null || showArchived;
 
-  const header = (
+  // THE HERO — rank `title`. History is an INFORMATION page: its subject is a
+  // collection, and a collection has no portrait, so there is no art and the
+  // ground is the ambient field. The nav button, the rail's y and the title's
+  // baseline are the system's, identical to every other screen (see
+  // components/aurora/hero.tsx and packages/core/src/hero.ts).
+  const header = (railNode: ReactNode) => (
     <>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("nav.history")}</AHeading>
-        <Pressable onPress={() => setShowArchived((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.lime : C.line, backgroundColor: showArchived ? `${C.lime}1a` : "transparent" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.lime) : C.ash }}>{t("history.archived")}</Text>
-        </Pressable>
-      </View>
-      {!showArchived && view !== null && <ViewSwitcher view={view} onChange={pickView} />}
+      {railNode}
       {/* Swipe hint, once at the top of the archived list. */}
       {showArchived && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 16, marginBottom: 8 }}>{t("w.analyze.hist.swipeHint")}</Text>}
       {/* The merged History × Calendar layouts render inside the list header, so
@@ -219,26 +213,37 @@ export default function AuroraHistory() {
   );
 
   return (
-    // scroll={false} → the FlatList (below) is the sole scroller, so the list is
-    // actually virtualized (nesting it inside AuroraScreen's ScrollView would
-    // defeat that). AuroraScreen still provides the SafeArea + Aurora backdrop +
-    // entrance animation chrome.
-    <AuroraScreen scroll={false} padding={0}>
-      <FlatList
-        data={showArchived && !loading && !q.isError ? sessions : []}
-        keyExtractor={(s) => s.id}
-        renderItem={renderItem}
-        ListHeaderComponent={header}
-        ListEmptyComponent={!hydrated || loading || q.isError || sessions.length === 0 ? empty : null}
-        {...navScroll}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={8}
-        windowSize={11}
-        removeClippedSubviews
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: auroraScrollClearance(insets.bottom) }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => q.refetch()} tintColor={C.lime} colors={[C.lime]} />}
-      />
-    </AuroraScreen>
+    // `scroller` → the FlatList stays the sole scroller, so the archived list is
+    // actually virtualized; the hero still owns the safe area, the collapse
+    // track and the scroll clearance. A screen never trades virtualization for
+    // a hero.
+    <HeroScreen
+      hero={{ rank: "title", title: t("nav.history"), meta: [sessions.length ? `${sessions.length} ${t(showArchived ? "history.archived" : "nav.history")}` : null] }}
+      back={() => router.back()}
+      // The rail's trailing slot — ONE control, in the metadata voice. It used
+      // to be a bordered pill in the title row, which is where History invented
+      // its own hero.
+      accessory={<HeroAccessory label={t("history.archived")} active={showArchived} onPress={() => setShowArchived((v) => !v)} onDark={false} />}
+      // The view switcher is a SUB-rail: it docks beneath the collapsed bar
+      // rather than scrolling away, so the layout you are in stays addressable.
+      rail={!showArchived && view !== null ? <View style={{ paddingVertical: 10 }}><ViewSwitcher view={view} onChange={pickView} /></View> : undefined}
+      scroller={(scrollProps, railNode) => (
+        <FlatList
+          data={showArchived && !loading && !q.isError ? sessions : []}
+          keyExtractor={(s) => s.id}
+          renderItem={renderItem}
+          ListHeaderComponent={header(railNode)}
+          ListEmptyComponent={!hydrated || loading || q.isError || sessions.length === 0 ? empty : null}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={8}
+          windowSize={11}
+          removeClippedSubviews
+          {...scrollProps}
+          contentContainerStyle={[scrollProps.contentContainerStyle, { paddingHorizontal: 16 }]}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => q.refetch()} tintColor={C.lime} colors={[C.lime]} />}
+        />
+      )}
+    />
   );
 }
 

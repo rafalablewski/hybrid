@@ -12,7 +12,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, ASub, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -78,11 +78,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
   );
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{p?.label ?? provider}</AHeading>
-      </View>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} hero={{ rank: "title", title: p?.label ?? provider }}>
 
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>

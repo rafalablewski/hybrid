@@ -1,8 +1,8 @@
 import { View, Text, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Screen, Mono, Kicker, F } from "../../lib/ui";
+import { Screen, Mono } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { ABack } from "../../components/aurora/kit";
+import { AuroraScreen } from "../../components/aurora/kit";
 import { ADMIN_SECTIONS, type AdminSectionId } from "../../components/admin/sections";
 
 import AdminOverview from "../../components/admin/overview";
@@ -56,16 +56,11 @@ export default function AdminSectionScreen() {
   const Body = meta ? BODIES[meta.id] : undefined;
 
   return (
-    <Screen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <ABack onPress={() => (router.canGoBack() ? router.back() : router.replace("/admin"))} />
-        <View style={{ flex: 1 }}>
-          <Kicker color={palette.amber}>admin.hybrid.app</Kicker>
-          <Text style={{ fontFamily: F.black, fontSize: 24, color: palette.chalk, letterSpacing: -0.6 }}>{meta?.label ?? "Section"}</Text>
-        </View>
-      </View>
-
+    <AuroraScreen
+      hero={{ rank: "title", title: meta?.label ?? "Section", eyebrow: "admin.hybrid.app", accent: palette.amber }}
+      back={() => (router.canGoBack() ? router.back() : router.replace("/admin"))}
+    >
       {Body ? <Body /> : <Mono color={palette.ash}>Unknown section.</Mono>}
-    </Screen>
+    </AuroraScreen>
   );
 }

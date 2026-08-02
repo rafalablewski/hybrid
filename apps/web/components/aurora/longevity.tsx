@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fs, space, longevityReport } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { HeroScreen } from "./hero";
 
 type ApiSignal = { kind: string; value: number; ts: string };
 
@@ -43,9 +44,9 @@ export default function AuroraLongevity() {
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.recovery.longevity.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.longevity.title")}</h1>
         <AuroraIcon name="heart" size={24} color={C("lime")} />
       </div>
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>{t("w.recovery.longevity.intro")}</p>
@@ -89,5 +90,6 @@ export default function AuroraLongevity() {
         </div>
       )}
     </div>
+    </HeroScreen>
   );
 }

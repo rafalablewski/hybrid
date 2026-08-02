@@ -13,7 +13,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type SortMode = "smart" | "groups" | "az";
@@ -79,11 +79,7 @@ export default function AuroraExercises() {
   );
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={() => refetch()}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.ex.title")}</AHeading>
-      </View>
+    <AuroraScreen refreshing={refreshing} onRefresh={() => refetch()} hero={{ rank: "title", title: t("w.analyze.ex.title") }}>
       <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 4 }}>{t("w.analyze.ex.sub")}</Text>
 
       {entries.length === 0 ? (

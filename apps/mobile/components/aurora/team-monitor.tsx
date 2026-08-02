@@ -5,7 +5,7 @@ import { fetchSquad, type SquadRow, type SquadSummary } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—");
 
@@ -170,9 +170,7 @@ export default function AuroraTeamMonitor() {
   };
 
   return (
-    <AuroraScreen>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("nav.squad")}</AHeading>
+    <AuroraScreen hero={{ rank: "title", title: t("nav.squad") }}>
       {body()}
       <View style={{ height: RADIUS.card }} />
     </AuroraScreen>

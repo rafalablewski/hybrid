@@ -7,7 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
 import { useAccountSettings } from "../../lib/account";
 import { SButton, SPill } from "../social-kit";
-import { ABack } from "./kit";
+import { HeroNav } from "./hero";
 
 // The unified EDIT PROFILE screen (Instagram-style): a live preview + the avatar
 // (with branded presets) on top, then a tap-a-row list. Tapping a row opens a
@@ -83,10 +83,11 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     const titles: Record<FieldKey, string> = { name: t("w.profile.titleName"), handle: t("w.profile.username"), displayName: t("w.profile.displayName"), bio: t("w.profile.bioLabel"), email: t("w.profile.email"), visibility: t("w.profile.whoCanSee") };
     return (
       <Card>
-        {/* Boxed ABack — the same back affordance the rest of the app uses, so the
-            focused editor no longer shows a lone ‹ chevron. */}
+        {/* An editor inside a Card, not a screen — so it has no rail of its
+            own and takes the system's nav CONTROL rather than a hero. Same
+            circle, same 40pt, same glyph as every screen head. */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <ABack onPress={back} />
+          <HeroNav onPress={back} onDark={false} material="clear" />
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{titles[editing]}</Text>
         </View>
 

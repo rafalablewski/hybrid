@@ -7,6 +7,7 @@ import {
   runStats, weeklyMileage, paceEffortSplit, pacedRunMoves, paceSeries,
   type CardioDiscipline, type LoggedSession,
 } from "@hybrid/core";
+import { HeroScreen } from "./hero";
 import { fs, space, LINE_HEX, ASH, BLUE, tip, mono } from "@/lib/ui";
 import { AuroraIcon } from "./icons";
 import { useLang } from "@/lib/i18n";
@@ -82,22 +83,14 @@ export default function AuroraEndurance({ sessions }: { sessions: LoggedSession[
     [dSessions, activeMove],
   );
 
-  const title = (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("endurance.title")}</h1>
-      <AuroraIcon name="gps" size={24} color={C("blue")} />
-    </div>
-  );
-
   if (!discipline || !totals) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {title}
-        <div style={{ ...card, textAlign: "center", padding: 40 }}>
-          <div style={{ fontWeight: 800, fontSize: fs.heading, color: C("chalk") }}>{t("endurance.emptyTitle")}</div>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), lineHeight: 1.6, maxWidth: 460, margin: "10px auto 0" }}>{t("endurance.emptyBody")}</p>
-        </div>
+    <HeroScreen hero={{ rank: "title", title: t("endurance.title") }}>
+      <div style={{ ...card, textAlign: "center", padding: 40 }}>
+        <div style={{ fontWeight: 800, fontSize: fs.heading, color: C("chalk") }}>{t("endurance.emptyTitle")}</div>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), lineHeight: 1.6, maxWidth: 460, margin: "10px auto 0" }}>{t("endurance.emptyBody")}</p>
       </div>
+    </HeroScreen>
     );
   }
 
@@ -110,8 +103,8 @@ export default function AuroraEndurance({ sessions }: { sessions: LoggedSession[
   const paceUnit = disciplinePaceUnit(discipline);
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("endurance.title") }}>
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {title}
 
       {/* Discipline picker — one chip per discipline with logged cardio. */}
       {active.length > 1 && (
@@ -228,6 +221,7 @@ export default function AuroraEndurance({ sessions }: { sessions: LoggedSession[
         <span aria-hidden>{meta.emoji}</span> {dName(discipline)}
       </div>
     </div>
+    </HeroScreen>
   );
 }
 

@@ -4,7 +4,7 @@ import { fetchTeamCompare, type TeamCompareResponse, type TeamCompareAthlete } f
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
  *  (apps/web/components/aurora/team-compare.tsx), so a coach reads the same
@@ -142,9 +142,7 @@ export default function AuroraTeamCompare() {
   };
 
   return (
-    <AuroraScreen>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("nav.teamcompare")}</AHeading>
+    <AuroraScreen hero={{ rank: "title", title: t("nav.teamcompare") }}>
       {body()}
       <View style={{ height: RADIUS.card }} />
     </AuroraScreen>

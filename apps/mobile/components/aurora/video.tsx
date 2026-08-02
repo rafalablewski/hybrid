@@ -6,7 +6,7 @@ import { fetchVideoAnalyses, type VideoAnalysis } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
+import { AuroraScreen, ACard, ASub, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 // Technique score (0–100) on the shared good-score scale (green→amber→red).
@@ -28,11 +28,7 @@ export default function AuroraVideo() {
   const chip = (color: string, label: string) => <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vid.title")}</AHeading>
-      </View>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} hero={{ rank: "title", title: t("w.analyze.vid.title") }}>
       <ASub style={{ marginTop: 10 }}>{t("w.analyze.vid.intro-mobile")}</ASub>
 
       {analyses.length === 0 ? (

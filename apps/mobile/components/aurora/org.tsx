@@ -12,7 +12,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, APill, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, APill, RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 
 const hpiColor = (C: Palette, b: string) =>
@@ -114,9 +114,7 @@ export default function AuroraOrg() {
   const teamName = (tid: string | null) => tree.find((n) => n.id === tid)?.name ?? "—";
 
   return (
-    <AuroraScreen>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("nav.org")}</AHeading>
+    <AuroraScreen hero={{ rank: "title", title: t("nav.org") }}>
 
       {/* org picker + create */}
       <ACard style={{ marginTop: space.md }}>

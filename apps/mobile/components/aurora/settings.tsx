@@ -14,7 +14,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
 import { fs, space, F, PressScale } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
-import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import MfaSettings from "./mfa-settings";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
@@ -394,11 +394,11 @@ export default function AuroraSettings() {
   // ── SUB-PAGE ── a focused category with a back button.
   if (active) {
     return (
-      <AuroraScreen>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 4, marginBottom: 10 }}>
-          <ABack onPress={() => setCat(null)} />
-          <AHeading style={{ fontSize: fs.display, color: active.danger ? (txt(C, C.red) as string) : C.chalk }}>{active.title}</AHeading>
-        </View>
+      <AuroraScreen
+        hero={{ rank: "title", title: active.title, accent: active.danger ? C.red : undefined }}
+        back={() => setCat(null)}
+        backLabel={t("nav.settings")}
+      >
         {renderBody(active.id)}
       </AuroraScreen>
     );

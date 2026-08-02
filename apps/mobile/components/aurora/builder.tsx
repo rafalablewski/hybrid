@@ -36,7 +36,7 @@ import { useLang } from "../../lib/i18n";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import ExercisePickerSheet from "./exercise-picker";
@@ -84,11 +84,7 @@ export default function AuroraBuilder() {
   };
 
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.train.builder.title")}</AHeading>
-      </View>
+    <AuroraScreen hero={{ rank: "title", title: t("w.train.builder.title") }}>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: 20 }}>
         {t("w.train.builder.intro")}
       </Text>

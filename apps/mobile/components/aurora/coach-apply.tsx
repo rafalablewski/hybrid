@@ -6,7 +6,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 /** AURORA Become a coach — same verification-gated application flow (fetch,
  *  status card, form, submit) as the classic, in the rounded look. */
@@ -51,10 +51,7 @@ export default function AuroraCoachApply() {
     s === "approved" ? C.lime : s === "denied" ? C.red : C.ash;
 
   return (
-    <AuroraScreen>
-      <ABack />
-
-      <AHeading style={{ fontSize: fs.display, marginTop: 12 }}>{t("w.account.settings.become-coach")}</AHeading>
+    <AuroraScreen hero={{ rank: "title", title: t("w.account.settings.become-coach") }}>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
         {t("w.account.settings.coach-apply-intro")}
       </Text>

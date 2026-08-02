@@ -6,6 +6,7 @@ import {
   fitLoadVelocityProfile, lvPointsFromSessions, liftsWithVelocity, bestPointPerLoad, velocityAtLoad,
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES, type LoggedSession,
 } from "@hybrid/core";
+import { HeroScreen } from "./hero";
 import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, tip, mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
@@ -39,19 +40,20 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
 
   if (noData) {
     return (
+      <HeroScreen hero={{ rank: "title", title: t("w.analyze.vel.title") }}>
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-        <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.vel.title")}</h1>
         <div style={{ ...card, textAlign: "center", padding: 60 }}>
           <div style={{ fontWeight: 800, fontSize: fs.heading }}>{t("w.analyze.vel.emptyTitle")}</div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, maxWidth: 480, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>{t("w.analyze.vel.emptyBody")}</p>
         </div>
       </div>
+      </HeroScreen>
     );
   }
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.analyze.vel.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.vel.title")}</h1>
       <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginBottom: 16, alignItems: "center" }}>
         {lifts.map((l) => <button className="pressable" key={l} onClick={() => setLift(l)} style={{ fontFamily: "var(--font-display)", fontSize: fs.body, fontWeight: 700, padding: "6px 16px", borderRadius: 999, cursor: "pointer", border: `1px solid ${active === l ? C("lime") : C("line")}`, background: active === l ? C("lime") : "transparent", color: active === l ? C("ink") : C("ash") }}>{l}</button>)}
       </div>
@@ -115,6 +117,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
         </div>
       </div>
     </div>
+    </HeroScreen>
   );
 }
 

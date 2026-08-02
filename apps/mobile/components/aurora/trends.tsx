@@ -12,7 +12,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
 
@@ -61,11 +61,11 @@ export default function AuroraTrends({ top, unified = false }: {
 
   const body = (
     <>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        {!top && !unified && <ABack />}
-        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>
-      </View>
-      <ASub style={{ marginTop: 10 }}>{t("w.analyze.trends.subtitle")}</ASub>
+      {/* Standing alone the title is the HERO's (below); embedded — a hub tab,
+          or inside the unified Performance page — the host owns the head, so
+          only the sub-line renders here. */}
+      {(top || unified) && <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>}
+      <ASub style={{ marginTop: top || unified ? 10 : 0 }}>{t("w.analyze.trends.subtitle")}</ASub>
 
       {!trained ? (
         <ACard solid style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
@@ -132,7 +132,7 @@ export default function AuroraTrends({ top, unified = false }: {
   // area and the pull-to-refresh — wrapping again would nest two ScrollViews.
   if (unified) return body;
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load} top={top}>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} top={top} hero={top ? undefined : { rank: "title", title: t("w.analyze.trends.title") }}>
       {body}
     </AuroraScreen>
   );

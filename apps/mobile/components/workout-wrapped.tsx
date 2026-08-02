@@ -4,6 +4,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  HERO,
+  HERO_FIGURE,
+  heroGeometry,
+  heroTitleType,
   SHARED_ELEMENTS,
   sessionWrapped,
   fitScale,
@@ -53,6 +57,7 @@ import { useRevalidate } from "../lib/queries";
 import { DeviceMatchSheet } from "./device-match";
 import { DeviceMark } from "./aurora/device-mark";
 import { AuroraIcon } from "./aurora/icons";
+import { HeroEyebrow, HeroNav } from "./aurora/hero";
 import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
 import { usePersona } from "../lib/persona";
@@ -276,7 +281,10 @@ export function WorkoutWrapped({
 
   // SHARED ELEMENT (destination) — see the HERO title below. Only claimed for a
   // non-celebration session; `cel` sessions own their panel's motion.
-  const titleStyle = { fontFamily: F.black, fontSize: 40, color: C.chalk, letterSpacing: -1, lineHeight: 42 } as const;
+  // The flying clone must land on EXACTLY the destination's type, so it reads
+  // the same hero ramp the panel's title does — not a hand-copied size.
+  const titleType = heroTitleType(session.title, "cover");
+  const titleStyle = { fontFamily: F.black, fontSize: titleType.size, color: C.chalk, letterSpacing: titleType.tracking * titleType.size, lineHeight: titleType.lineHeight } as const;
   const { ref: titleRef, hidden: titleHidden } = useSharedElementTarget(
     cel ? "" : SHARED_ELEMENTS.sessionHero,
     session.title,
@@ -350,16 +358,21 @@ export function WorkoutWrapped({
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => setPanel(Math.round(e.nativeEvent.contentOffset.y / panelH));
   const showDock = panel < detailsIndex;
 
-  const eyebrow = (label: string) => (
-    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, color: GOLD, textTransform: "uppercase" }}>✦ {label}</Text>
-  );
+  // The takeover keeps the HERO SYSTEM's metadata voice — same mono/uppercase/
+  // tracked line the cover's chip and every rail accessory use, tinted gold and
+  // carrying the ✦ premium signifier. It is an EYEBROW, not a third invention.
+  const eyebrow = (label: string) => <HeroEyebrow label={label} tone="tint" accent={GOLD} mark="✦" />;
   const scrollHint = (
     <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textAlign: "center", marginTop: 16 }}>{t("session.wrapped.scroll")} ↑</Text>
   );
-  const padTop = insets.top + 44;
+  // The takeover is rank `cover`, mode `takeover`: no collapse track, but the
+  // rail sits at the system's y and the panels clear the same bar height every
+  // other screen clears.
+  const geom = heroGeometry("cover", insets.top, "takeover");
+  const padTop = geom.barHeight;
 
   const Panel = ({ children, center, glows }: { children: ReactNode; center?: boolean; glows?: ReactNode }) => (
-    <View style={{ height: panelH, paddingHorizontal: 24, paddingTop: padTop, paddingBottom: 150, justifyContent: center ? "center" : "flex-start", overflow: "hidden" }}>
+    <View style={{ height: panelH, paddingHorizontal: HERO.gutter.hero, paddingTop: padTop, paddingBottom: 150, justifyContent: center ? "center" : "flex-start", overflow: "hidden" }}>
       {glows}
       {children}
     </View>
@@ -384,7 +397,7 @@ export function WorkoutWrapped({
               ))}
               <Animated.View style={{ transform: [{ scale }] }}><AuroraIcon name="trophy" size={84} color={GOLD} /></Animated.View>
               <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 3, color: GOLD, textTransform: "uppercase", marginTop: 24 }}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Text>
-              <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: 96, color: C.chalk, letterSpacing: -2.5, marginTop: 12 }} />
+              <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size, marginTop: 12 }} />
               <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 6, textAlign: "center" }}>{heroSub}</Text>
             </View>
           </Panel>
@@ -399,14 +412,11 @@ export function WorkoutWrapped({
               reveal on this panel, and a clone landing on a surface that is
               itself scaling from zero is two motions fighting — the arm simply
               expires and the ordinary push carries the change. */}
-          <Text
-            ref={titleRef}
-            style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, letterSpacing: -1, lineHeight: 42, marginTop: 12, opacity: titleHidden ? 0 : 1 }}
-          >
+          <Text ref={titleRef} numberOfLines={titleType.maxLines} style={{ ...titleStyle, marginTop: 12, opacity: titleHidden ? 0 : 1 }}>
             {session.title}
           </Text>
           <View style={{ flex: 1 }} />
-          <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: 96, color: C.chalk, letterSpacing: -2.5 }} />
+          <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size }} />
           <Text style={{ fontFamily: F.bold, fontSize: 17, color: cel ? txt(C, C.lime) : C.chalk, marginTop: 10 }}>{heroSub}</Text>
           <View style={{ flexDirection: "row", marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
             {wrapped.basics.map((b, i) => (
@@ -583,10 +593,13 @@ export function WorkoutWrapped({
         </View>
       </ScrollView>
 
-      {/* Back — always available, top-left */}
-      <Pressable onPress={onBack} style={{ position: "absolute", top: insets.top + 6, left: 16, width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: C.chalk, fontSize: 18 }}>←</Text>
-      </Pressable>
+      {/* THE RAIL — the same 40pt circular control, at the same y, as every
+          other screen. A takeover has no stack under it, so it DISMISSES
+          (chevron-down) rather than pops; the geometry is untouched, which is
+          why the thumb never has to re-find it. */}
+      <View style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, flexDirection: "row", alignItems: "center", zIndex: 5 }}>
+        <HeroNav onPress={onBack} mode="takeover" material="glass" onDark />
+      </View>
 
       {/* Sticky share dock — over the wrapped panels only */}
       {showDock && (

@@ -36,7 +36,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 // Goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
@@ -107,11 +107,7 @@ export default function AuroraCoach() {
   );
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={() => load(true)}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("nav.coach")}</AHeading>
-      </View>
+    <AuroraScreen refreshing={refreshing} onRefresh={() => load(true)} hero={{ rank: "title", title: t("nav.coach") }}>
 
       {loading ? (
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 16 }}>…</Text>

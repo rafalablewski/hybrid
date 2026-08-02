@@ -6,7 +6,7 @@ import { fetchSignals, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -51,12 +51,7 @@ export default function AuroraLongevity() {
   );
 
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.longevity.title")}</AHeading>
-        <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.lime)} /></View>
-      </View>
+    <AuroraScreen hero={{ rank: "title", title: t("w.recovery.longevity.title") }}>
       <ASub style={{ marginTop: 10 }}>{t("w.recovery.longevity.intro")}</ASub>
 
       <ACard style={{ marginTop: 16 }}>

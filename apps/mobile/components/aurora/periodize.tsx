@@ -6,7 +6,7 @@ import { fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 
 /** AURORA Periodize — the enrolled macrocycle: phase timeline + load/recovery
@@ -35,11 +35,7 @@ export default function AuroraPeriodize() {
 
   if (!macro) {
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
-          <ABack />
-          <AHeading style={{ fontSize: fs.display }}>{t("w.train.periodize.noActivePlan")}</AHeading>
-        </View>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} hero={{ rank: "title", title: t("w.train.periodize.noActivePlan") }}>
         <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
             {loaded ? t("w.train.periodize.emptyBodyMobile") : t("w.train.periodize.loadingSeason")}
@@ -54,12 +50,6 @@ export default function AuroraPeriodize() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{macro.goalOrSport}{macro.model ? ` – ${macro.model}` : ` – ${t("w.train.periodize.enrolledLabel")}`}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display, marginTop: 6 }}>{macro.totalWeeks}{t("w.train.periodize.weekSeason")}</AHeading>
-      </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 6 }}>{t("w.train.periodize.nowIn")} {current.label} – week {week}/{macro.totalWeeks}</Text>
 
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", gap: 3, height: 12, borderRadius: 6, overflow: "hidden" }}>

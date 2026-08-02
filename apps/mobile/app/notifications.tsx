@@ -6,7 +6,8 @@ import { fetchSessions, fetchAssignments, type Assignment } from "../lib/api";
 import { sapi, respondFollow, respondEnrollment } from "../lib/social-api";
 import { useTheme, txt } from "../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../lib/ui";
-import { ABack, AuroraScreen, ACard, RADIUS } from "../components/aurora/kit";
+import { AuroraScreen, ACard, RADIUS } from "../components/aurora/kit";
+import { HeroAccessory } from "../components/aurora/hero";
 import { AuroraIcon } from "../components/aurora/icons";
 
 /**
@@ -44,16 +45,12 @@ export default function Notifications() {
   const accentColor = (a: ActivityAccent) => (a === "lime" ? C.lime : a === "blue" ? C.blue : a === "violet" ? C.violet : C.amber);
 
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk }}>Notifications</Text>
-        {feed.length + social.length > 0 && (
-          <View style={{ marginLeft: "auto", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.onAccent }}>{feed.length + social.length}</Text>
-          </View>
-        )}
-      </View>
+    <AuroraScreen
+      hero={{ rank: "title", title: "Notifications" }}
+      // The unread count is a LABEL, so it rides the rail's trailing slot in
+      // the metadata voice — not a lime badge welded to the title row.
+      accessory={feed.length + social.length > 0 ? <HeroAccessory label={String(feed.length + social.length)} active onDark={false} /> : undefined}
+    >
 
       {/* SOCIAL — followers, follow/enrol requests, kudos, comments. */}
       {social.length > 0 && (

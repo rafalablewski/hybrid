@@ -6,6 +6,7 @@ import { fs, space } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { HeroScreen } from "./hero";
 
 const BUCKET = "progress";
 type Photo = { name: string; path: string; url: string; date: string };
@@ -71,8 +72,8 @@ export default function AuroraProgress() {
   if (status === "no-bucket") return notice(C("red"), <>{t("w.recovery.progress.noBucketPre")} <strong>progress</strong> {t("w.recovery.progress.noBucketMid")} <strong>reference/sql-progress-photos.sql</strong> {t("w.recovery.progress.noBucketPost")}</>);
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.recovery.progress.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.progress.title")}</h1>
 
       <div style={{ ...card, marginTop: 16 }}>
         <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 16px" }}>{t("w.recovery.progress.intro")}</p>
@@ -100,5 +101,6 @@ export default function AuroraProgress() {
         </div>
       )}
     </div>
+    </HeroScreen>
   );
 }

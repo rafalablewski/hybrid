@@ -23,7 +23,8 @@ import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, serifIf, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
+import { HeroAccessory } from "./hero";
 import { haptic } from "../../lib/haptics";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
@@ -257,19 +258,25 @@ export default function AuroraVolume({ top, unified = false }: {
 
   const body = (
     <>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        {!top && !unified && <ABack />}
-        <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
-        <Pressable
-          onPress={toggleEditing}
-          accessibilityRole="button"
-          style={{ marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing ? C.lime : C.line, backgroundColor: editing ? withAlpha(C.lime, 0.12) : "transparent" }}
-        >
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing ? txt(C, C.lime) : C.ash }}>
-            {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
-          </Text>
-        </Pressable>
-      </View>
+      {/* Standing alone the title and the edit control are the HERO's — the
+          title below the rail, the control in the rail's TRAILING slot (one
+          control, in the metadata voice). Embedded — a hub tab, or inside the
+          unified Performance page — the host owns the head, so the row renders
+          here instead. */}
+      {(top || unified) && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+          <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
+          <Pressable
+            onPress={toggleEditing}
+            accessibilityRole="button"
+            style={{ marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing ? C.lime : C.line, backgroundColor: editing ? withAlpha(C.lime, 0.12) : "transparent" }}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing ? txt(C, C.lime) : C.ash }}>
+              {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* ── HERO — the whole week as one number and one shape ─────────────── */}
       <ACard solid style={{ marginTop: 16, paddingBottom: 16 }}>
@@ -399,7 +406,13 @@ export default function AuroraVolume({ top, unified = false }: {
   // area and the pull-to-refresh — wrapping again would nest two ScrollViews.
   if (unified) return body;
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={refetch} top={top}>
+    <AuroraScreen
+      refreshing={refreshing}
+      onRefresh={refetch}
+      top={top}
+      hero={top ? undefined : { rank: "title", title: t("w.analyze.vol.title") }}
+      accessory={top ? undefined : <HeroAccessory label={editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")} active={editing} onPress={toggleEditing} onDark={false} />}
+    >
       {body}
     </AuroraScreen>
   );

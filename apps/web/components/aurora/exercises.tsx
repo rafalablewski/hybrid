@@ -8,6 +8,7 @@ import {
   type ExerciseBrowseEntry,
   type LoggedSession,
 } from "@hybrid/core";
+import { HeroScreen } from "./hero";
 import { fs, space } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
@@ -65,8 +66,8 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
   );
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.analyze.ex.title") }}>
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.ex.title")}</h1>
       <p style={{ fontSize: fs.body, color: C("ash"), margin: "4px 0 0" }}>{t("w.analyze.ex.sub")}</p>
       {entries.length === 0 ? (
         <div style={{ ...card, textAlign: "center", padding: 40, borderRadius: 28, marginTop: 16 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.analyze.ex.empty")}</span></div>
@@ -133,5 +134,6 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
         </div>
       )}
     </div>
+    </HeroScreen>
   );
 }

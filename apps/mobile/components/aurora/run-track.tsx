@@ -6,7 +6,7 @@ import { createSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 /** AURORA Run tracking — live-run surface with a PLACEHOLDER route map (live
@@ -65,11 +65,7 @@ export default function AuroraRunTrack() {
   };
 
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.train.runTrack.title")}</AHeading>
-      </View>
+    <AuroraScreen hero={{ rank: "title", title: t("w.train.runTrack.title") }}>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: 20 }}>{t("w.train.runTrack.intro")}</Text>
 
       {/* Map placeholder */}

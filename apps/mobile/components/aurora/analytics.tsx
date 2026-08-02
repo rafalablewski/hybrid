@@ -16,7 +16,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
+import { AuroraScreen, ACard, ASub, ASegment } from "./kit";
 
 /**
  * AURORA Analytics — the 3-scope dashboard (Athlete / Coach / Operator), now
@@ -345,11 +345,7 @@ export default function AuroraAnalytics() {
   const active = resolveAnalyticsScope(authRole, scope);
 
   return (
-    <AuroraScreen refreshing={isFetching} onRefresh={refetch}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("nav.analytics")}</AHeading>
-      </View>
+    <AuroraScreen refreshing={isFetching} onRefresh={refetch} hero={{ rank: "title", title: t("nav.analytics") }}>
       <ASub style={{ marginTop: 10 }}>{t("analytics.subtitle")}</ASub>
 
       {options.length > 1 && (

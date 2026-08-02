@@ -6,7 +6,7 @@ import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const BUCKET = "progress";
@@ -82,11 +82,7 @@ export default function AuroraProgress() {
     ]);
 
   return (
-    <AuroraScreen refreshing={status === "loading"} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.progress.title")}</AHeading>
-      </View>
+    <AuroraScreen refreshing={status === "loading"} onRefresh={load} hero={{ rank: "title", title: t("w.recovery.progress.title") }}>
 
       {status === "no-auth" && (
         <ACard style={{ marginTop: 16 }}>

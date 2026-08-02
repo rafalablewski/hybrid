@@ -9,7 +9,7 @@ import { fetchEvents, fetchAssignments, updateAssignment, type EventRow, type As
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
+import { AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -64,12 +64,7 @@ export default function AuroraCalendar() {
   );
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-        <ABack />
-        <AHeading style={{ fontSize: fs.display }}>{t("nav.calendar")}</AHeading>
-        <View style={{ marginLeft: "auto" }}><AuroraIcon name="calendar" size={24} color={txt(C, C.lime)} /></View>
-      </View>
+    <AuroraScreen refreshing={refreshing} onRefresh={load} hero={{ rank: "title", title: t("nav.calendar") }}>
 
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>

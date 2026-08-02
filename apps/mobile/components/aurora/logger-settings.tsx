@@ -5,7 +5,7 @@ import { useLang } from "../../lib/i18n";
 import { fs, space, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { GlassToggle } from "../glass-toggle";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
+import { AuroraScreen, ACard, ASub, ASegment } from "./kit";
 
 /** Every pref that is a plain on/off — derived from the type rather than listed
  *  by exclusion, so adding a non-boolean pref can never break this screen. */
@@ -53,11 +53,7 @@ export default function AuroraLoggerSettings() {
   );
 
   return (
-    <AuroraScreen>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: 8 }}>
-        <ABack />
-        <AHeading style={{ fontSize: 28 }}>{t("loggerPrefs.title")}</AHeading>
-      </View>
+    <AuroraScreen hero={{ rank: "title", title: t("loggerPrefs.title") }}>
       <ASub style={{ marginTop: 8 }}>{t("loggerPrefs.intro")}</ASub>
 
       {/* Behaviour toggles */}

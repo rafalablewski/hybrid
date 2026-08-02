@@ -11,7 +11,7 @@ import {
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { fs, space, F, PressScale as Pressable } from "../lib/ui";
-import { ABack, AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
+import { AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
 /**
@@ -88,18 +88,12 @@ export default function IntervalTimer() {
   const progress = total > 0 ? elapsed / total : 0;
 
   return (
-    <AuroraScreen scroll={false}>
-      {/* header */}
-      <View style={{ flexDirection: "row", gap: space.ms, alignItems: "center" }}>
-        <ABack />
-        <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          <AuroraIcon name="play" size={18} color={C.ash} />
-          <View>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{rounds} rounds – {workSec}s / {restSec}s</Text>
-          </View>
-        </View>
-      </View>
+    <AuroraScreen
+      scroll={false}
+      // The bordered lockup that named the running interval was a hero in
+      // disguise: the name is the title, the prescription is the meta line.
+      hero={{ rank: "title", title, meta: [`${rounds} rounds`, `${workSec}s / ${restSec}s`] }}
+    >
 
       <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, textAlign: "center", marginTop: 16 }}>
         {pos.done ? "Done!" : "Go!"}

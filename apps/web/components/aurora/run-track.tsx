@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { fs, space, pacePerKm, mmss } from "@hybrid/core";
+import { HeroScreen } from "./hero";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -68,8 +69,8 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
   };
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.train.runTrack.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 6px" }}>{t("w.train.runTrack.title")}</h1>
       <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>{t("w.train.runTrack.intro")}</p>
 
       {/* Map placeholder */}
@@ -124,6 +125,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
         {saving ? t("w.train.runTrack.saving") : t("w.train.runTrack.saveRun")}
       </button>
     </div>
+    </HeroScreen>
   );
 }
 

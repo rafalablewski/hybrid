@@ -8,7 +8,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, AuroraMark, APill, AField, AHeading, ABack } from "./kit";
+import { AuroraScreen, AuroraMark, APill, AField, AHeading } from "./kit";
 import { LegalLinks } from "../legal-links";
 
 /** AURORA login/register — the rounded auth form from the Figma kit, on the
@@ -127,9 +127,7 @@ export default function AuroraLogin() {
   const isSignup = mode === "signup";
 
   return (
-    <AuroraScreen>
-      <ABack />
-
+    <AuroraScreen hero={{ rank: "bar", title: "" }}>
       <AuroraMark size={56} />
       {mfaStep ? (
         <View style={{ marginTop: 24 }}>

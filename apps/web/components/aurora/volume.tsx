@@ -20,6 +20,7 @@ import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "@/lib/use-
 import { useCheckins } from "@/lib/use-checkins";
 import { readIntake } from "@/lib/intake";
 import { useLang } from "@/lib/i18n";
+import { HeroScreen, HeroAccessory } from "./hero";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
@@ -227,28 +228,39 @@ export default function AuroraVolume({ sessions, unified = false }: {
     return `${parts.join(t("w.analyze.vol.verdictJoin"))}.`;
   })();
 
-  return (
+  const editToggle = (
+    <HeroAccessory label={editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")} active={editing} onClick={() => { setEditing((v) => !v); setOpen(null); }} onDark={false} />
+  );
+  // Standing alone the head is the system's — title below the rail, the edit
+  // control in the rail's TRAILING slot. Embedded in the unified Performance
+  // page the host owns the head, so the section keeps its own h2 row.
+  const shell = (children: React.ReactNode) =>
+    unified ? <>{children}</> : (
+      <HeroScreen hero={{ rank: "title", title: t("w.analyze.vol.title"), meta: [t("w.analyze.vol.subtitle")] }} accessory={editToggle}>
+        {children}
+      </HeroScreen>
+    );
+
+  return shell(
     <div style={{ display: "flex", flexDirection: "column", gap: space.md, maxWidth: "100%", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: space.md }}>
-        <div>
-          {/* IDENTICAL styling either way — only the heading LEVEL changes, so
-              the unified Performance page doesn't carry three <h1>s. Nothing
-              here may restyle: this section must look exactly as it did when it
-              was its own screen. */}
-          {createElement(
-            unified ? "h2" : "h1",
-            { style: { fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-.02em" } },
-            t("w.analyze.vol.title"),
-          )}
-          <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 6, marginBottom: 0 }}>{t("w.analyze.vol.subtitle")}</p>
+      {unified && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: space.md }}>
+          <div>
+            {createElement(
+              "h2",
+              { style: { fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-.02em" } },
+              t("w.analyze.vol.title"),
+            )}
+            <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 6, marginBottom: 0 }}>{t("w.analyze.vol.subtitle")}</p>
+          </div>
+          <button className="pressable"
+            onClick={() => { setEditing((v) => !v); setOpen(null); }}
+            style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, cursor: "pointer", color: editing ? C("lime") : C("ash"), background: editing ? mix("lime", 12) : "transparent", border: `1px solid ${editing ? C("lime") : C("line")}` }}
+          >
+            {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
+          </button>
         </div>
-        <button className="pressable"
-          onClick={() => { setEditing((v) => !v); setOpen(null); }}
-          style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, cursor: "pointer", color: editing ? C("lime") : C("ash"), background: editing ? mix("lime", 12) : "transparent", border: `1px solid ${editing ? C("lime") : C("line")}` }}
-        >
-          {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
-        </button>
-      </div>
+      )}
 
       {/* ── HERO — the whole week as one number and one shape ─────────────── */}
       <section style={{ ...card, paddingBottom: 16 }}>
