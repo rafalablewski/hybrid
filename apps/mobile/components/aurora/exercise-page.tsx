@@ -242,9 +242,9 @@ function DeltasChart({ C, runs }: { C: Palette; runs: { date: string; deltaSec: 
 function MeterRows({ C, rows, color }: { C: Palette; rows: { label: string; pct: number; value: string }[]; color: string }) {
   const hi = Math.max(...rows.map((r) => r.pct), 1);
   return (
-    <View style={{ paddingTop: 22, paddingBottom: 8 }}>
+    <View style={{ paddingTop: 24, paddingBottom: 8 }}>
       {rows.map((r) => (
-        <View key={r.label} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 }}>
+        <View key={r.label} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16 }}>
           <Text style={{ width: 64, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{r.label}</Text>
           <View style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: C.line, overflow: "hidden" }}>
             <View style={{ height: "100%", borderRadius: 2, width: `${(r.pct / hi) * 100}%`, backgroundColor: color, opacity: 0.45 + (r.pct / hi) * 0.55 }} />
@@ -424,7 +424,7 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
         {compare.weeklyCur.map((v, i) => <Circle key={i} cx={X(i)} cy={Y(v)} r={3} fill={C.violet} stroke={C.ink} strokeWidth={1} />)}
       </Svg>
       <CornerLabels C={C} l={t("w.analyze.ex.comparePrev")} r={t("w.analyze.ex.compareCur")} />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 16 }}>
         {tiles.map((tile) => (
           <View key={tile.l} style={{ width: "50%", paddingVertical: 8, paddingRight: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
@@ -614,7 +614,7 @@ export default function AuroraExercisePage() {
           lifts only; cardio/custom names render nothing). */}
       <AuroraExerciseAnatomy name={name} />
 
-      <View style={{ flexDirection: "row", gap: 18, marginTop: 18, paddingHorizontal: 2 }}>
+      <View style={{ flexDirection: "row", gap: 16, marginTop: 16, paddingHorizontal: 2 }}>
         {PERIODS.map((p) => {
           const on = period === p.id;
           return (
@@ -626,7 +626,7 @@ export default function AuroraExercisePage() {
       </View>
 
       {/* HERO — one number, paired with the visible chart */}
-      <Animated.View style={{ marginTop: 18, marginHorizontal: 2, minHeight: 84, opacity: heroOpacity }}>
+      <Animated.View style={{ marginTop: 16, marginHorizontal: 2, minHeight: 84, opacity: heroOpacity }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
           <Text ref={heroShared.ref} style={[heroStyle, heroShared.hidden ? { opacity: 0 } : null]}>{hero.v}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.subtitle, color: C.ash }}>{hero.u}</Text>
@@ -662,9 +662,9 @@ export default function AuroraExercisePage() {
       ) : (
         <View style={{ marginTop: 10 }}>
           {slides.map((slide, i) => (
-            <View key={slide.kind} style={{ borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line, paddingTop: i === 0 ? 6 : 22, paddingBottom: 26 }}>
+            <View key={slide.kind} style={{ borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line, paddingTop: i === 0 ? 6 : 22, paddingBottom: 24 }}>
               {i > 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 14 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 16 }}>
                   {slideHero(slide, units, t).label}
                 </Text>
               ) : null}
@@ -677,7 +677,7 @@ export default function AuroraExercisePage() {
       <Pressable
         onPress={() => { setShowAll(!showAll); setPage(0); pagerRef.current?.scrollTo({ x: 0, animated: false }); }}
         accessibilityRole="button"
-        style={{ alignSelf: "center", paddingVertical: 8, paddingHorizontal: 14, marginTop: 18 }}
+        style={{ alignSelf: "center", paddingVertical: 8, paddingHorizontal: 12, marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
           {showAll ? t("w.analyze.exp.less") : t("w.analyze.exp.allStats")}
@@ -685,7 +685,7 @@ export default function AuroraExercisePage() {
       </Pressable>
 
       {/* quiet substats — typography over one hairline */}
-      <View style={{ flexDirection: "row", marginTop: 20, marginHorizontal: 2, paddingTop: 18, borderTopWidth: 1, borderTopColor: C.line }}>
+      <View style={{ flexDirection: "row", marginTop: 20, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
         {substats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
@@ -697,7 +697,7 @@ export default function AuroraExercisePage() {
       {/* BEST SET + velocity — quiet typography over one hairline (the rest of
           the retired dashboard lives IN the slide pager above). */}
       {s.kind === "strength" && s.bestSet && (
-        <View style={{ marginTop: 18, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ marginTop: 16, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</Text></Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</Text>

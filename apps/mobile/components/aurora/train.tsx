@@ -101,7 +101,7 @@ export default function AuroraTrain() {
       )}
 
       {/* MINIMAL LIST — the other ways to start. Thin accents, hairline rows. */}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginTop: 22, marginBottom: 4, marginHorizontal: 4 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginTop: 24, marginBottom: 4, marginHorizontal: 4 }}>
         {prescribedDone ? t("train.trainAgain") : t("train.moreWays")}
       </Text>
       <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line }}>
@@ -169,7 +169,7 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
       </Text>
       <Text style={{ fontFamily: F.black, fontSize: 25, lineHeight: 28, color: C.onAccent, marginTop: 10, letterSpacing: -0.5 }}>{title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: 17 }} numberOfLines={2}>{blurb}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink, borderRadius: 16, paddingVertical: 14, marginTop: 16 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink, borderRadius: 16, paddingVertical: 16, marginTop: 16 }}>
         <AuroraIcon name="play" size={15} color={C.lime} />
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
       </View>
@@ -200,7 +200,7 @@ function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSes
   return (
     <PressScale
       onPress={onPress}
-      style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderLeftWidth: 3, borderLeftColor: C.lime, borderRadius: RADIUS.card, padding: 16, marginTop: 16 }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderLeftWidth: 3, borderLeftColor: C.lime, borderRadius: RADIUS.card, padding: 16, marginTop: 16 }}
     >
       <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
         <AuroraIcon name="check" size={24} color={C.onAccent} />
@@ -235,7 +235,7 @@ function ListRow({
   return (
     <PressScale
       onPress={onPress}
-      style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 18, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 16, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
     >
       <View style={{ width: 26, alignItems: "center" }}>
         <AuroraIcon name={icon} size={19} color={iconColor} />

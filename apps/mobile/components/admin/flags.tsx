@@ -85,7 +85,7 @@ export default function AdminFlags() {
 
       {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
-      <Mono color={palette.ash} style={{ marginBottom: 14, lineHeight: 18 }}>
+      <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
         {flags ? `${flags.length} flags` : "…"} – toggles take effect on the next client load — no deploy.
       </Mono>
 

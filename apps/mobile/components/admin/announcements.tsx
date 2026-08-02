@@ -197,7 +197,7 @@ export default function AdminAnnouncements() {
       </Intro>
 
       {editing === null && (
-        <View style={{ marginBottom: 14 }}>
+        <View style={{ marginBottom: 16 }}>
           <PillBtn label="+ New announcement" onPress={openNew} />
         </View>
       )}
@@ -223,7 +223,7 @@ export default function AdminAnnouncements() {
             Datetime entry is simplified on mobile — type an ISO timestamp or leave blank.
           </Mono>
 
-          <View style={{ marginBottom: 14 }}>
+          <View style={{ marginBottom: 16 }}>
             <PillBtn
               label={draft.pinned ? "📌 Pinned banner — on" : "Pin as a banner — off"}
               outline={!draft.pinned}

@@ -131,7 +131,7 @@ export default function AdminTranslations() {
         value={filter}
         onChange={setFilter}
       />
-      <Mono color={palette.ash} style={{ marginBottom: 14, lineHeight: 18 }}>
+      <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
         {`${keys.length} keys – ${overrideCount} override${overrideCount === 1 ? "" : "s"}`} – edits layer over the
         shipped strings live — empty a field to revert to baseline.
       </Mono>

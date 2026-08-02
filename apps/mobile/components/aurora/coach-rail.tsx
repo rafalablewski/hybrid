@@ -6,6 +6,7 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { F, serifIf } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
+import { ArrowGlyph, CtaLabel } from "./cta-label";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
 // the web rail: live marketplace (/api/coaches) with the shared placeholder
@@ -79,7 +80,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>{t("w.explore.coaches")}</Text>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>{t("w.explore.coachSwipe")}</Text>
           </View>
-          <Pressable onPress={onOpen}><Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</Text></Pressable>
+          <Pressable onPress={onOpen}><CtaLabel label={`${t("w.explore.browseAll")} →`} color={C.ash} fontSize={11} font={F.mono} style={{ letterSpacing: 0.9, textTransform: "uppercase" }} /></Pressable>
         </View>
       )}
 
@@ -95,7 +96,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             ...(c.years ? [{ value: `${c.years}y`, label: t("w.explore.coachCoaching") }] : []),
           ];
           return (
-            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${t("w.explore.coachOpen")} ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14, overflow: "hidden", ...cardShadow }}>
+            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${t("w.explore.coachOpen")} ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, overflow: "hidden", ...cardShadow }}>
               {/* accent wash — the coach's colour bleeding in from the top corner
                   (a diagonal fade stands in for the web's radial gradient). */}
               <LinearGradient colors={[`${accent}24`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
@@ -146,7 +147,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 28, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
           >
             <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>
+              <ArrowGlyph size={15} color={C.ash} />
             </View>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
           </Pressable>

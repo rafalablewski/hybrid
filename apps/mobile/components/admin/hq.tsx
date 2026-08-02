@@ -584,7 +584,7 @@ function DigestTab() {
         <Kicker color={palette.amber}>Daily digest – last 24h</Kicker>
         <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
-      <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
+      <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
         <Mono color={error ? palette.amber : palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{error ?? (d ? d.text : "Loading…")}</Mono>
       </View>
       <Mono color={sent ? palette.lime : palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
@@ -743,7 +743,7 @@ function Reports() {
                       <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{s.output}</Mono>
                     </View>
                   ))}
-                  <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 14 }}>
+                  <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
                     <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{r.output || "(no output)"}</Mono>
                   </View>
                   <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>

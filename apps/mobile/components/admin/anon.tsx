@@ -68,7 +68,7 @@ export default function AdminAnon() {
   return (
     <View>
       <Intro>Guest workouts logged on a device before any account existed.</Intro>
-      <Mono color={palette.ash} style={{ marginBottom: 14 }}>
+      <Mono color={palette.ash} style={{ marginBottom: 16 }}>
         {sessions.length.toLocaleString()} session{sessions.length === 1 ? "" : "s"}
       </Mono>
 

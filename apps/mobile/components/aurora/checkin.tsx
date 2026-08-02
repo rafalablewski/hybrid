@@ -271,7 +271,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
 
   const backBtn = (
     <Pressable onPress={() => setStep((s) => s - 1)} accessibilityRole="button" accessibilityLabel={t("w.recovery.checkins.prev")}
-      style={{ paddingHorizontal: 22, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+      style={{ paddingHorizontal: 20, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.ash }}>{t("w.recovery.checkins.prev")}</Text>
     </Pressable>
   );
@@ -301,7 +301,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           the flow is live again so the muted tiles coming back to full colour is
           explained rather than merely observed. */}
       {locked || (editing && !done) ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 16, backgroundColor: locked ? `${C.lime}14` : "transparent", borderWidth: 1, borderColor: locked ? `${C.lime}3d` : C.line }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 16, backgroundColor: locked ? `${C.lime}14` : "transparent", borderWidth: 1, borderColor: locked ? `${C.lime}3d` : C.line }}>
           <AuroraIcon name={locked ? "check-circle" : "edit"} size={20} color={locked ? txt(C, C.lime) : C.ash} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t(locked ? "w.recovery.checkins.savedTitle" : "w.recovery.checkins.edit")}</Text>
@@ -322,7 +322,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           {/* "Updated" rather than "logged" when the day already had a
               check-in — an edit is not a second check-in, and calling it one
               would suggest the first is still sitting there somewhere. */}
-          <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 14 }}>{t(updated ? "w.recovery.checkins.updatedTitle" : "w.recovery.checkins.loggedTitle")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 16 }}>{t(updated ? "w.recovery.checkins.updatedTitle" : "w.recovery.checkins.loggedTitle")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 18, maxWidth: 280 }}>
             {t(!allAnswered ? "w.recovery.checkins.loggedPartialSub" : updated ? "w.recovery.checkins.updatedSub" : "w.recovery.checkins.loggedSub")}
           </Text>
@@ -339,22 +339,22 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               <APill
                 label={t("w.recovery.checkins.answerRest")}
                 onPress={() => { setDone(false); setStep(Math.max(minStep, steps.findIndex((st) => st.kind !== "details" && !isAnswered(st)))); }}
-                style={{ paddingHorizontal: 22, paddingVertical: 14 }}
+                style={{ paddingHorizontal: 20, paddingVertical: 16 }}
               />
             ) : null}
             {/* Embedded, the host is a sheet the athlete now dismisses
                 themselves — it no longer vanishes out from under the
                 confirmation. */}
             {embedded && onClose ? (
-              <APill label={t("w.recovery.checkins.doneClose")} onPress={onClose} style={{ paddingHorizontal: 28, paddingVertical: 14 }} />
+              <APill label={t("w.recovery.checkins.doneClose")} onPress={onClose} style={{ paddingHorizontal: 28, paddingVertical: 16 }} />
             ) : (
-              <APill label={t("w.recovery.checkins.newCheckin")} onPress={restart} style={{ paddingHorizontal: 28, paddingVertical: 14 }} />
+              <APill label={t("w.recovery.checkins.newCheckin")} onPress={restart} style={{ paddingHorizontal: 28, paddingVertical: 16 }} />
             )}
           </View>
         </View>
       ) : isDetails ? (
         <>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16 }}>
             {t("w.recovery.checkins.step")} {steps.length} / {steps.length} — {t("w.recovery.checkins.detailsStep")}
           </Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("w.recovery.checkins.reviewTitle")}</Text>
@@ -403,7 +403,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
             accessibilityRole="checkbox"
             accessibilityLabel={t("w.recovery.checkins.shareCoach")}
             accessibilityState={{ checked: !!(sharedWithCoach && paid), disabled: !paid || locked }}
-            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 14, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? `${C.lime}1a` : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
+            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 16, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? `${C.lime}1a` : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
           >
             {sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.lime)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
             <View style={{ flex: 1 }}>
@@ -452,16 +452,16 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           const def = FEELS.find((f) => f.value === val);
           return (
             <View style={{ alignItems: "center" }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18 }}>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16 }}>
                 {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t("w.recovery.checkins.effort")}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 14, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
               <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, maxWidth: 260 }}>{sess.title}</Text>
               <Text style={{ fontFamily: F.bold, fontSize: fs.title, marginTop: 20, color: def && touched ? txt(C, C[def.tone as "lime"] ?? C.chalk) : C.ash }}>
                 {touched && def ? t(def.labelKey) : t("w.recovery.checkins.notAnswered")}
               </Text>
 
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 18, alignSelf: "stretch" }}>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 16, alignSelf: "stretch" }}>
                 {FEELS.map((f) => {
                   const sel = touched && val === f.value;
                   return (
@@ -501,18 +501,18 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           const touched = answered.has(m.key);
           return (
             <View style={{ alignItems: "center" }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18 }}>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16 }}>
                 {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t(m.labelKey)}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 14, maxWidth: 280 }}>{t(m.questionKey)}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t(m.questionKey)}</Text>
               {/* Untouched, the face is a placeholder, not a reading — dimmed,
                   and captioned "Not answered" rather than "Okay". */}
-              <View style={{ marginTop: 22, marginBottom: 4, opacity: touched ? 1 : 0.3 }}><ReadinessFace feeling={feeling} scale={2.5} /></View>
+              <View style={{ marginTop: 24, marginBottom: 4, opacity: touched ? 1 : 0.3 }}><ReadinessFace feeling={feeling} scale={2.5} /></View>
               <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: touched ? feelingColor(C, feeling) : C.ash }}>
                 {touched ? t(checkinMetricWordKey(m.key, val)) : t("w.recovery.checkins.notAnswered")}
               </Text>
 
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 22, alignSelf: "stretch" }}>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 24, alignSelf: "stretch" }}>
                 {CHECKIN_SCALE.map((n) => {
                   const sel = touched && val === n;
                   return (
@@ -545,7 +545,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
 
   // Embedded, the wizard already sits inside a host card — render it bare so it
   // reads as one surface, not a card boxed in a card.
-  const wizard = embedded ? <View>{wizardBody}</View> : <ACard style={{ marginTop: 18 }}>{wizardBody}</ACard>;
+  const wizard = embedded ? <View>{wizardBody}</View> : <ACard style={{ marginTop: 16 }}>{wizardBody}</ACard>;
 
   const body = (
     <>

@@ -87,7 +87,7 @@ export default function AuroraBuilder() {
         <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.train.builder.title")}</AHeading>
       </View>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: 20 }}>
         {t("w.train.builder.intro")}
       </Text>
 
@@ -96,7 +96,7 @@ export default function AuroraBuilder() {
         onChangeText={b.setName}
         placeholder={t("w.train.logger.routineNamePh")}
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 }}
+        style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12 }}
       />
 
       <SessionPulse items={b.items} units={prefs.units} C={C} bodyweightKg={bodyweightKg} />
@@ -148,7 +148,7 @@ export default function AuroraBuilder() {
         title={t("w.train.builder.pickExercise")}
       />
 
-      {b.msg && <Text accessibilityLiveRegion={b.msg.ok ? "polite" : "assertive"} accessibilityRole={b.msg.ok ? undefined : "alert"} style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.red), marginTop: 14 }}>{b.msg.text}</Text>}
+      {b.msg && <Text accessibilityLiveRegion={b.msg.ok ? "polite" : "assertive"} accessibilityRole={b.msg.ok ? undefined : "alert"} style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.red), marginTop: 16 }}>{b.msg.text}</Text>}
 
       {allowedSave ? (
         <>
@@ -167,7 +167,7 @@ export default function AuroraBuilder() {
       ) : (
         // Free user at the template limit — more saved routines is Full.
         // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
-        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${pa.fill}55`, backgroundColor: `${pa.fill}14`, borderRadius: RADIUS.card, padding: 14 }}>
+        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${pa.fill}55`, backgroundColor: `${pa.fill}14`, borderRadius: RADIUS.card, padding: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("w.train.logger.routineFullBlurb")}</Text>
           <Pressable
@@ -235,7 +235,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
       <View style={{ flexDirection: "row", height: 4, borderRadius: RADIUS.pill, overflow: "hidden", backgroundColor: C.ink2, marginTop: 12 }}>
         {segs.map((s, i) => s.pct > 0 && <View key={i} style={{ width: `${s.pct}%`, backgroundColor: s.color }} />)}
       </View>
-      <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
+      <View style={{ flexDirection: "row", gap: 12, marginTop: 6 }}>
         {segs.filter((s) => s.pct > 0).map((s, i) => (
           <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, s.color) }}>{s.pct}% {s.label}</Text>
         ))}
@@ -247,7 +247,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
 /** A metric cell in a block's signal row. */
 function Metric({ label, value, c, C }: { label: string; value: string; c?: string; C: Palette }) {
   return (
-    <View style={{ marginRight: 18 }}>
+    <View style={{ marginRight: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
     </View>
@@ -465,7 +465,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
         <Pressable onPress={() => builder.addSet(b.uid)} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
           <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.addSet")}</Text>
         </Pressable>
-        <Pressable onPress={() => setSpecial((v) => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
+        <Pressable onPress={() => setSpecial((v) => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.special")} {special ? "▴" : "▾"}</Text>
         </Pressable>
       </View>
@@ -480,7 +480,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
             <Pressable
               key={it.badge}
               onPress={() => { it.run(b.uid); setSpecial(false); }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
             >
               <View style={{ width: 30, height: 30, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, it.c) }}>{it.badge}</Text>

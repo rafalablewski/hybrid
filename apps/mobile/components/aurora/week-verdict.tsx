@@ -93,7 +93,7 @@ export function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: st
       style={{
         flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10,
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-        paddingHorizontal: 14, paddingVertical: 12,
+        paddingHorizontal: 16, paddingVertical: 12,
       }}
     >
       <View style={{
@@ -291,7 +291,7 @@ export default function AuroraWeekVerdict({
 
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, paddingHorizontal: 16, paddingVertical: 16, ...cardShadow(scheme) }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
-        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
           <View style={{ flex: 1 }}>
             <Lead
               template={t(verdictLeadKey(v))}
@@ -309,7 +309,7 @@ export default function AuroraWeekVerdict({
             a button onto its own breakdown. */}
         <View
           onLayout={(e) => setRowW(e.nativeEvent.layout.width)}
-          style={{ flexDirection: "row", marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}
+          style={{ flexDirection: "row", marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}
         >
           {ordered.map((f, i) => {
             const isNamed = f.metric === v.metric;
@@ -365,7 +365,7 @@ export default function AuroraWeekVerdict({
             {detail && (
               <View style={{
                 backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-                paddingHorizontal: 14, paddingVertical: 12,
+                paddingHorizontal: 16, paddingVertical: 12,
               }}>
                 <MetricDetail
                   detail={detail}
@@ -583,7 +583,7 @@ function MetricDetail({
 function PickerSection({ label, children }: { label: string; children: ReactNode }) {
   const { palette: C } = useTheme();
   return (
-    <View style={{ marginTop: 14 }}>
+    <View style={{ marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginHorizontal: 4, marginBottom: 6 }}>
         {label}
       </Text>
@@ -603,7 +603,7 @@ function PickerRow({ label, active, onPress }: { label: string; active: boolean;
       accessibilityState={{ selected: active }}
       style={{
         flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10,
-        paddingHorizontal: 14, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.line,
+        paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.line,
       }}
     >
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: active ? C.chalk : C.ash }}>{label}</Text>

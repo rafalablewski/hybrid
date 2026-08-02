@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fs, space, routineSummary, type SessionBlock } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import Sheet from "./sheet";
+import { CtaLabel } from "./cta-label";
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -233,7 +234,7 @@ function FavouriteCard({ r, t, onLaunch, onToggleFav }: { r: QuickRoutine; t: (k
       <span aria-hidden style={{ fontSize: 16, lineHeight: 1, color: text }}>{glyph}</span>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, letterSpacing: "-.01em", marginTop: 10, paddingRight: 18, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 5 }}>{metaLine(r.blocks, t)}</div>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, marginTop: 12, display: "block" }}>{t("w.home.quickStart.start")} →</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, marginTop: 12, display: "block" }}><CtaLabel size={12}>{`${t("w.home.quickStart.start")} →`}</CtaLabel></span>
     </button>
   );
 }

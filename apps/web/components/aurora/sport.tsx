@@ -5,6 +5,7 @@ import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, cardioDiscip
 import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
+import { CtaLabel } from "./cta-label";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
@@ -151,7 +152,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
               cursor: "pointer",
             }}
           >
-            + {t("w.train.sport.logSession").replace("{sport}", sport)} →
+            <CtaLabel size={14}>{`+ ${t("w.train.sport.logSession").replace("{sport}", sport)} →`}</CtaLabel>
           </button>
         )}
       </div>

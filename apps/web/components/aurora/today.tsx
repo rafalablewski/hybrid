@@ -85,7 +85,7 @@ import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 import GroupMark from "./group-mark";
 import { AuroraIcon } from "./icons";
-import { CtaLabel } from "./cta-label";
+import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
@@ -672,7 +672,7 @@ export default function AuroraToday({
             onClick={backToToday}
             style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--blue-text)" }}
           >
-            {t("w.home.today.backToToday")} →
+            <CtaLabel size={12}>{`${t("w.home.today.backToToday")} →`}</CtaLabel>
           </button>
         )}
       </div>
@@ -823,7 +823,7 @@ export default function AuroraToday({
                         </div>
                       </div>
                       <button ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ marginTop: 6, display: "block", marginLeft: "auto", marginRight: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 16px", fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600 }}>
-                        {t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →
+                        <CtaLabel size={12}>{`${t("w.home.today.showAllLifts")} ${rows.length} ${t("w.home.today.liftsWord")} →`}</CtaLabel>
                       </button>
                     </>
                   );
@@ -1116,7 +1116,7 @@ function ChooserCard({ glyph, accent, title, sub, cta, onClick }: { glyph: strin
       <span aria-hidden style={{ fontSize: 19, lineHeight: 1, color: text }}>{glyph}</span>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", marginTop: 12 }}>{title}</span>
       <span style={{ fontSize: fs.note, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>{sub}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 14 }}>{cta} →</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 16 }}><CtaLabel size={12}>{`${cta} →`}</CtaLabel></span>
     </button>
   );
 }
@@ -1140,7 +1140,7 @@ function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: str
       <span aria-hidden style={{ fontSize: 15, lineHeight: 1, color: text }}>{glyph}</span>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.02em", marginTop: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{title}</span>
       <span style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{sub}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 12 }}>{cta} →</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, paddingTop: 12 }}><CtaLabel size={12}>{`${cta} →`}</CtaLabel></span>
     </button>
   );
 }
@@ -1211,7 +1211,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
           <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{doneLabel}</span>
           {copy.subKey && <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.5, color: quiet, marginTop: 6 }}>{t(copy.subKey)}</span>}
         </span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: quiet, flexShrink: 0 }}>→</span>
+        <span style={{ color: quiet, flexShrink: 0, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
       </button>
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
       <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1547,7 +1547,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
               {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
             </span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{dayReads.length}</span>
-            <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: fs.note, color: C("ash"), transform: readsOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }}>→</span>
+            <span style={{ marginLeft: "auto", display: "grid", placeItems: "center", color: C("ash"), transform: readsOpen ? "rotate(90deg)" : "none", transition: "transform .15s" }}><ArrowGlyph size={13} /></span>
           </button>
           {readsOpen && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
@@ -1607,7 +1607,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
                 />
               ))}
             </span>
-            <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: done.complete || asking ? C("ash") : "var(--lime-text)" }}>→</span>
+            <span style={{ flexShrink: 0, display: "grid", placeItems: "center", color: done.complete || asking ? C("ash") : "var(--lime-text)" }}><ArrowGlyph size={15} /></span>
           </button>
 
           <Sheet

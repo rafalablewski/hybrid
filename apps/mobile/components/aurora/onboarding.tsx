@@ -58,11 +58,11 @@ export default function AuroraOnboarding() {
             <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= idx ? palette.lime : palette.line }} />
           ))}
         </View>
-        <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "flex-end", marginTop: 14 }}>
+        <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "flex-end", marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>{t("w.account.onboarding.skip")}</Text>
         </Pressable>
 
-        <ScrollView style={{ marginTop: 14 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <ScrollView style={{ marginTop: 16 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
           {loading && questions.length === 0 ? (
             <ASub>{t("common.loading")}</ASub>
           ) : q ? (

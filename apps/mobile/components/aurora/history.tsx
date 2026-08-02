@@ -162,7 +162,7 @@ export default function AuroraHistory() {
           {chip(C.ash, `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}`)}
           {prCount > 0 && chip(C.lime, `${prCount} PR`, "arrow-up")}
         </View>
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 16 }}>
           {s.blocks.map((b, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{b.name}</Text>
@@ -186,13 +186,13 @@ export default function AuroraHistory() {
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
         <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("nav.history")}</AHeading>
-        <Pressable onPress={() => setShowArchived((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.lime : C.line, backgroundColor: showArchived ? `${C.lime}1a` : "transparent" }}>
+        <Pressable onPress={() => setShowArchived((v) => !v)} style={{ marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: showArchived ? C.lime : C.line, backgroundColor: showArchived ? `${C.lime}1a` : "transparent" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: showArchived ? txt(C, C.lime) : C.ash }}>{t("history.archived")}</Text>
         </Pressable>
       </View>
       {!showArchived && view !== null && <ViewSwitcher view={view} onChange={pickView} />}
       {/* Swipe hint, once at the top of the archived list. */}
-      {showArchived && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 14, marginBottom: 8 }}>{t("w.analyze.hist.swipeHint")}</Text>}
+      {showArchived && sessions.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 16, marginBottom: 8 }}>{t("w.analyze.hist.swipeHint")}</Text>}
       {/* The merged History × Calendar layouts render inside the list header, so
           the FlatList stays the screen's sole scroller (nav-scroll + refresh).
           Trade-off (known): unlike the archived-list rows, these aggregate
@@ -296,7 +296,7 @@ function SwipeCard({ C, busy, actions, children }: {
         </View>
         {/* The card itself — opaque so the actions don't bleed through. */}
         <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
-          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: 18 }}>
+          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: 16 }}>
             {children}
           </Pressable>
         </Animated.View>

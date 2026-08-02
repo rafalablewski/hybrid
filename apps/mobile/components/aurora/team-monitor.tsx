@@ -183,7 +183,7 @@ const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTra
 
 function SummaryCard({ C, label, value, color }: { C: Palette; label: string; value: number; color: string }) {
   return (
-    <ACard style={{ flex: 1, minWidth: 140, padding: 18 }}>
+    <ACard style={{ flex: 1, minWidth: 140, padding: 16 }}>
       <Text style={{ fontFamily: F.black, fontSize: 28, lineHeight: 32, color }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 4 }}>{label}</Text>
     </ACard>
@@ -194,7 +194,7 @@ function Pill({ C, active, label, onPress }: { C: Palette; active: boolean; labe
   const accent = txt(C, C.lime);
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}>
+      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.caption, textTransform: "uppercase", color: active ? accent : C.ash }}>{label}</Text>
     </Pressable>
   );

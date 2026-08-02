@@ -73,7 +73,7 @@ export default function AuroraExercises() {
   );
 
   const Card = ({ list }: { list: ExerciseBrowseEntry[] }) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 4 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4 }}>
       {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} />)}
     </View>
   );
@@ -92,13 +92,13 @@ export default function AuroraExercises() {
         </ACard>
       ) : (
         <>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16 }}>
             <AuroraIcon name="search" size={20} color={C.ash} />
-            <TextInput value={query} onChangeText={setQuery} placeholder={t("w.analyze.ex.search")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 14 }} />
+            <TextInput value={query} onChangeText={setQuery} placeholder={t("w.analyze.ex.search")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 16 }} />
           </View>
 
           {/* SORT PILLS — Smart (decay order) / Groups (fixed buckets) / A–Z */}
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
             {([
               { id: "smart" as const, label: t("w.analyze.ex.sortSmart") },
               { id: "groups" as const, label: t("w.analyze.ex.sortGroups") },
@@ -111,7 +111,7 @@ export default function AuroraExercises() {
                   onPress={() => setMode(p.id)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}
+                  style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}
                 >
                   <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                 </PressScale>
@@ -124,7 +124,7 @@ export default function AuroraExercises() {
             <View style={{ marginTop: 16, borderRadius: RADIUS.card, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               <LinearGradient colors={[`${C.violet}52`, `${C.lime}29`, C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
               <View pointerEvents="none" style={{ position: "absolute", top: -40, right: -28, width: 150, height: 150, borderRadius: 75, backgroundColor: C.lime, opacity: 0.16 }} />
-              <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
+              <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.ex.block")}</Text>
                 <View style={{ flexDirection: "row", gap: 24, marginTop: 8 }}>
                   {[
@@ -145,7 +145,7 @@ export default function AuroraExercises() {
             sections.map((sec) => (
               <View key={sec.bucket}>
                 {/* Explore's SectionHead — 18px black title, mono count at the baseline. */}
-                <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 22, marginBottom: 12, marginHorizontal: 2 }}>
+                <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
                   <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{t(sec.labelKey)}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{sec.entries.length}</Text>
                 </View>
@@ -158,7 +158,7 @@ export default function AuroraExercises() {
             </View>
           )}
           {filtered.length === 0 && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14 }}>{t("w.analyze.ex.noMatch")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16 }}>{t("w.analyze.ex.noMatch")}</Text>
           )}
         </>
       )}

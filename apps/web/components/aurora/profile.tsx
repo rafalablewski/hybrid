@@ -28,6 +28,7 @@ import { usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { ArrowGlyph } from "./cta-label";
 import PrivateTab from "./private-tab";
 
 /**
@@ -255,7 +256,7 @@ export default function AuroraProfile({
             <span style={{ display: "block", fontWeight: 800, fontSize: 16 }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</span>
             <span style={{ display: "block", color: C("ash"), fontSize: 13, marginTop: 2, lineHeight: 1.4 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</span>
           </span>
-          <span style={{ color: C("lime"), fontWeight: 800, fontSize: 18 }}>→</span>
+          <span style={{ color: C("lime"), display: "grid", placeItems: "center" }}><ArrowGlyph size={16} /></span>
         </button>
       )}
 

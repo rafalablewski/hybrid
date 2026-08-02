@@ -60,7 +60,7 @@ import { FeelPrompt } from "./feel-prompt";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import { DeviceMark } from "./device-mark";
-import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, disp, mono, Mono, txt } from "@/lib/ui";
+import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, RED, disp, mono, Mono, txt } from "@/lib/ui";
 
 const GOLD = "#e6c34e";
 const PANEL_BG = "#0a0b09";
@@ -488,15 +488,15 @@ export function WorkoutWrapped({
           {eyebrow(t("session.wrapped.device.title"))}
           <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(26px, 8vw, 34px)", letterSpacing: "-.02em", lineHeight: 1.05, marginTop: 12, position: "relative" }}>{t("session.wrapped.device.lead")}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, marginTop: 22, background: LINE, border: `1px solid ${LINE}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
-            {[
-              ["♥", "session.wrapped.device.hr"],
-              ["🔥", "session.wrapped.device.energy"],
-              ["⏱", "session.wrapped.device.time"],
-              ["🌙", "session.wrapped.device.recovery"],
-            ].map(([glyph, key]) => (
-              <div key={key} style={{ background: "#0e0f0d", padding: "14px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-                <span aria-hidden style={{ fontSize: 16 }}>{glyph}</span>
-                <span style={{ ...disp, fontWeight: 700, fontSize: fs.caption }}>{t(key!)}</span>
+            {([
+              ["heart", RED, "session.wrapped.device.hr"],
+              ["flame", RED, "session.wrapped.device.energy"],
+              ["stopwatch", CHALK, "session.wrapped.device.time"],
+              ["moon", GOLD, "session.wrapped.device.recovery"],
+            ] as const).map(([icon, tint, key]) => (
+              <div key={key} style={{ background: "#0e0f0d", padding: "16px 12px", display: "flex", alignItems: "center", gap: 12 }}>
+                <AuroraIcon name={icon} size={16} color={tint} style={{ flex: "0 0 auto" }} />
+                <span style={{ ...disp, fontWeight: 700, fontSize: fs.caption }}>{t(key)}</span>
               </div>
             ))}
           </div>

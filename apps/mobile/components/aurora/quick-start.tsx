@@ -7,6 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { fs, F, serifIf } from "../../lib/ui";
 import { withAlpha } from "./kit";
 import Sheet from "./sheet";
+import { CtaLabel } from "./cta-label";
 
 /** A saved routine (WorkoutTemplate) as the sheet needs it. */
 export type QuickRoutine = {
@@ -60,7 +61,7 @@ export default function QuickStartSheet({
 
   return (
     <Sheet visible={visible} onClose={onClose} title={t("w.home.quickStart.title")} sub={t("w.home.quickStart.sub")}>
-      <View style={{ marginTop: 14 }}>
+      <View style={{ marginTop: 16 }}>
         {routines.length === 0 ? (
           <View style={{ paddingVertical: 10 }}>
             <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.home.quickStart.empty")}</Text>
@@ -169,16 +170,16 @@ function Star({ C, on, label, onPress }: { C: P; on: boolean; label: string; onP
 function FavouriteCard({ C, scheme, width, r, t, onLaunch, onToggleFav }: { C: P; scheme: "dark" | "light"; width: number; r: QuickRoutine; t: (k: string) => string; onLaunch: () => void; onToggleFav: () => void }) {
   const { glyph, accent } = decor(r.id, C);
   return (
-    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 14, overflow: "hidden" }}>
+    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, overflow: "hidden" }}>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, 0.05) }]} />
       <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.18), withAlpha(accent, 0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <View style={{ position: "absolute", top: 10, right: 10 }}>
         <Star C={C} on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onPress={onToggleFav} />
       </View>
       <Text style={{ fontSize: 16, lineHeight: 18, color: txt(C, accent) }}>{glyph}</Text>
-      <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 15, letterSpacing: -0.3, color: C.chalk, marginTop: 10, paddingRight: 18 }}>{r.name}</Text>
+      <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 15, letterSpacing: -0.3, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
       <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, accent), marginTop: 12 }}>{t("w.home.quickStart.start")} →</Text>
+      <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
     </Pressable>
   );
 }

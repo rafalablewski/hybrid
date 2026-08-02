@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { feedCardView } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { MetaLine } from "./meta";
+import { ArrowGlyph } from "./cta-label";
 
 // The CONNECT feed — full-width post cards (avatar header, prose body, stat
 // pills, kudos/comments/share), the latest few of your circle's activity.
@@ -132,7 +133,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           aria-label={t("w.explore.seeMore")}
           style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
         >
-          <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
+          <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
         </button>
       )}

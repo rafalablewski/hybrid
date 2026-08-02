@@ -23,6 +23,7 @@ import { fs, space, LINE_HEX, LIME_HEX, ASH, tip } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
+import { CtaLabel } from "./cta-label";
 import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
@@ -150,7 +151,7 @@ function RailHead({ title, action }: { title: string; action: { label: string; o
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "28px 2px 10px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
       <button onClick={action.onClick} style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: action.premium ? "var(--premium-accent-text)" : C("ash") }}>
-        {action.label}
+        <CtaLabel size={12}>{action.label}</CtaLabel>
       </button>
     </div>
   );
@@ -2102,7 +2103,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               picker attributed to that meal; the kcal already logged is shown. */}
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "24px 2px 4px" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.todaysMeals")}</div>
-            <button onClick={() => setView("diary")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.menuDiary")} →</button>
+            <button onClick={() => setView("diary")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}><CtaLabel size={12}>{`${t("w.recovery.nutrition.menuDiary")} →`}</CtaLabel></button>
           </div>
           {partList.map((p) => { const kcal = mealTotals[p.key] ?? 0; return (
             <button key={p.key} onClick={() => openAdd(p.key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "14px 16px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
@@ -2482,7 +2483,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <button onClick={() => shiftDiaryDay(-1)} aria-label={t("w.recovery.nutrition.prevDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={C("chalk")} style={{ transform: "rotate(180deg)" }} /></button>
           <div style={{ textAlign: "center", minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{isToday ? t("w.recovery.nutrition.todaysMeals") : diaryDayLabel}</div>
-            {!isToday && <button onClick={() => setDiaryDay(localTodayKey())} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--lime-text)", marginTop: 2 }}>{t("w.recovery.nutrition.backToToday")} →</button>}
+            {!isToday && <button onClick={() => setDiaryDay(localTodayKey())} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--lime-text)", marginTop: 2 }}><CtaLabel size={12}>{`${t("w.recovery.nutrition.backToToday")} →`}</CtaLabel></button>}
           </div>
           <button onClick={() => shiftDiaryDay(1)} disabled={isToday} aria-label={t("w.recovery.nutrition.nextDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: isToday ? C("line") : C("chalk"), cursor: isToday ? "default" : "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={isToday ? C("line") : C("chalk")} /></button>
         </div>

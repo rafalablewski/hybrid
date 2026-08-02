@@ -12,6 +12,7 @@ import { refreshBodyweight } from "@/lib/use-bodyweight";
 import { useLang } from "@/lib/i18n";
 import { track } from "@/lib/track";
 import { AuroraIcon } from "./icons";
+import { CtaLabel } from "./cta-label";
 import Sheet from "./sheet";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -89,7 +90,7 @@ function CommandCenterCard({ locked, onClick }: { locked: boolean; onClick: () =
         </span>
       </span>
       <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", marginTop: 18 }}>
-        {locked ? `${t("w.home.today.cardUnlock")} →` : `${t("w.home.today.cardOpen")} →`}
+        <CtaLabel size={12}>{locked ? `${t("w.home.today.cardUnlock")} →` : `${t("w.home.today.cardOpen")} →`}</CtaLabel>
       </span>
     </button>
   );
@@ -186,7 +187,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
         )}
 
         <button onClick={onPhotos} style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
-          <AuroraIcon name="eye" size={14} color={LIME} /> {t("w.account.profile.priv-photos")} →
+          <AuroraIcon name="eye" size={14} color={LIME} /> <CtaLabel size={12}>{`${t("w.account.profile.priv-photos")} →`}</CtaLabel>
         </button>
       </Sheet>
     </>

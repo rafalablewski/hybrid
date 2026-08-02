@@ -13,6 +13,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, APill, RADIUS } from "./kit";
+import { CtaLabel } from "./cta-label";
 
 const hpiColor = (C: Palette, b: string) =>
   b === "peak" || b === "primed" || b === "low" ? txt(C, C.lime)
@@ -192,7 +193,7 @@ export default function AuroraOrg() {
                       accessibilityRole={openable ? "button" : undefined}
                       accessibilityLabel={openable ? `${m.name} – ${t("w.teams.org.athleteTwin")}` : undefined}
                     >
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: openable ? txt(C, C.lime) : C.chalk }}>{m.name}{openable ? " →" : ""}</Text>
+                      <CtaLabel label={openable ? `${m.name} →` : m.name} color={openable ? txt(C, C.lime) : C.chalk} fontSize={fs.bodyLg} font={F.mono} />
                       {m.email ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{m.email}</Text> : null}
                       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{teamName(m.teamId)}</Text>
                     </Pressable>
@@ -244,7 +245,7 @@ export default function AuroraOrg() {
             ) : null}
 
             {canManage && detail.invites.length > 0 ? (
-              <View style={{ marginTop: 14 }}>
+              <View style={{ marginTop: 16 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.teams.org.pendingInvites")}</Text>
                 {detail.invites.map((iv) => (
                   <View key={iv.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
@@ -316,7 +317,7 @@ function Chip({ C, active, label, onPress }: { C: Palette; active: boolean; labe
   const accent = txt(C, C.lime);
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}>
+      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: active ? accent : C.ash }}>{label}</Text>
     </Pressable>
   );

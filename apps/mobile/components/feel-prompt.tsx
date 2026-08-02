@@ -147,7 +147,7 @@ export function FeelPrompt({
       {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
 
       {feel != null && (
-        <View style={{ marginTop: 18 }}>
+        <View style={{ marginTop: 16 }}>
           <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
           {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
           {/* WHAT THIS ANSWER IS WORTH. "Wrecked" ten minutes after a hard
@@ -172,7 +172,7 @@ export function FeelPrompt({
       )}
 
       {load != null && (
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
           <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
           <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
           <View style={{ alignItems: "flex-end" }}>

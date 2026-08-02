@@ -39,7 +39,7 @@ function MuscleBar({ C, m, t }: { C: Palette; m: MuscleActivation; t: (k: string
 function Group({ C, label, rows, t }: { C: Palette; label: string; rows: MuscleActivation[]; t: (k: string) => string }) {
   if (rows.length === 0) return null;
   return (
-    <View style={{ marginTop: 18 }}>
+    <View style={{ marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       {rows.map((m) => <MuscleBar key={m.muscle} C={C} m={m} t={t} />)}
     </View>
@@ -80,7 +80,7 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
       </View>
 
       {/* how it's done */}
-      <View style={{ marginTop: 22 }}>
+      <View style={{ marginTop: 24 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.exp.anatomy.howto")}</Text>
         <View style={{ marginTop: 12, gap: 10 }}>
           {a.cues.map((cue, i) => (
@@ -141,7 +141,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
             onPress={() => {}}
             style={{ maxHeight: "88%", backgroundColor: C.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: C.line, paddingTop: 10, paddingHorizontal: 20 }}
           >
-            <View style={{ width: 38, height: 4, borderRadius: 3, backgroundColor: C.line, alignSelf: "center", marginTop: 2, marginBottom: 14 }} />
+            <View style={{ width: 38, height: 4, borderRadius: 3, backgroundColor: C.line, alignSelf: "center", marginTop: 2, marginBottom: 16 }} />
             <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, flexShrink: 1 }}>
                 <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>{t("w.analyze.exp.anatomy.title")}</Text>
@@ -151,7 +151,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>
               </Pressable>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 14, paddingBottom: 30 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 16, paddingBottom: 30 }}>
               <AnatomyBody C={C} a={a} name={name} active={open} t={t} />
             </ScrollView>
           </Pressable>

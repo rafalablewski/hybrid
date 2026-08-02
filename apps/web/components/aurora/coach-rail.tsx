@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
+import { ArrowGlyph, CtaLabel } from "./cta-label";
 
 // "Follow a coach" — a horizontally swipeable rail on Today (its only home now
 // that the Explore tab is gone). Pulls the live
@@ -134,7 +135,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>{t("w.explore.coaches")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{t("w.explore.coachSwipe")}</div>
           </div>
-          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}>{t("w.explore.browseAll")} →</button>
+          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}><CtaLabel size={12}>{`${t("w.explore.browseAll")} →`}</CtaLabel></button>
         </div>
       )}
 
@@ -154,7 +155,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             aria-label={t("w.explore.seeMore")}
             style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
           >
-            <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
+            <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
           </button>
         )}

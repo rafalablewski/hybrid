@@ -19,7 +19,7 @@ export function ToggleRow({
   noBorder?: boolean;
 }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12, borderTopWidth: noBorder ? 0 : 1, borderTopColor: C.line }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderTopWidth: noBorder ? 0 : 1, borderTopColor: C.line }}>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{desc}</Text>

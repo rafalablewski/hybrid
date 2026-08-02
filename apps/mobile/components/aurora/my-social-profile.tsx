@@ -85,7 +85,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
       <Card>
         {/* Boxed ABack — the same back affordance the rest of the app uses, so the
             focused editor no longer shows a lone ‹ chevron. */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 }}>
           <ABack onPress={back} />
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{titles[editing]}</Text>
         </View>
@@ -151,7 +151,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   // A tappable field row → opens the focused editor. A plain render function
   // (not a <Component/>) so the rows aren't remounted on every parent render.
   const fieldRow = ({ rk, label, value, muted, first }: { rk: FieldKey; label: string; value: string; muted: boolean; first?: boolean }): ReactNode => (
-    <Pressable key={rk} onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
+    <Pressable key={rk} onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 16, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
       <Text style={{ width: 96, color: C.ash, fontSize: 13 }}>{label}</Text>
       <Text numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: 14 }}>{value}</Text>
       <Text style={{ color: C.ash, fontSize: 18 }}>›</Text>
@@ -163,7 +163,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
       {/* ── PHOTO ── avatar + one-tap branded gradient presets (upload soon). */}
       <SectionLabel first>{t("w.profile.secPhoto")}</SectionLabel>
       <Card>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
           <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
             <View style={{ width: 53, height: 53, borderRadius: 27, borderWidth: 2.5, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
               {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: 22, color: lime }}>{initials}</Text>}
@@ -183,7 +183,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
             </View>
           </View>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 }}>
           {form.avatarUrl ? <SButton label={t("w.profile.savePhoto")} small onPress={() => saveSocial()} /> : null}
           <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.profile.uploadSoon")}</Text>
@@ -218,7 +218,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
       </Card>
 
       {onDone && (
-        <View style={{ marginTop: 18 }}>
+        <View style={{ marginTop: 16 }}>
           <SButton label={t("common.done")} onPress={onDone} />
         </View>
       )}

@@ -13,6 +13,7 @@ import { fs, space,
 } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
+import { CtaLabel } from "./cta-label";
 
 type Org = { id: string; name: string; role: OrgRole };
 type Member = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
@@ -226,7 +227,7 @@ export default function AuroraOrg() {
                     <div style={{ minWidth: 0 }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, display: "block", color: m.role === "ATHLETE" && canSeeAthletes ? "var(--lime-text)" : C("chalk") }}>
                         {m.role === "ATHLETE" && canSeeAthletes ? (
-                          <span role="button" tabIndex={0} style={{ cursor: "pointer" }} onClick={() => viewAthlete(m)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); viewAthlete(m); } }}>{m.name} →</span>
+                          <span role="button" tabIndex={0} style={{ cursor: "pointer" }} onClick={() => viewAthlete(m)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); viewAthlete(m); } }}><CtaLabel size={12}>{`${m.name} →`}</CtaLabel></span>
                         ) : (
                           m.name
                         )}

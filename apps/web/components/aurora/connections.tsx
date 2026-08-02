@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fs } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import AuroraConnectionPage from "./connection-page";
+import { CtaLabel } from "./cta-label";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
 type Provider = { id: string; label: string; auth: string; provides: string[]; configured: boolean };
@@ -51,7 +52,7 @@ export default function AuroraConnections() {
                 {c ? chip(c.status === "active" ? C("lime") : C("amber"), t(`w.account.connections.status-${c.status}`)) : p.configured ? chip(C("ash"), t("w.account.connections.not-connected")) : chip(C("amber"), t("w.account.connections.setup-pending"))}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6 }}>{p.provides.join(" – ")}</div>
-              <div style={{ fontWeight: 700, fontSize: fs.caption, marginTop: 14 }}>{t("w.account.connections.open")} →</div>
+              <div style={{ fontWeight: 700, fontSize: fs.caption, marginTop: 16 }}><CtaLabel size={14}>{`${t("w.account.connections.open")} →`}</CtaLabel></div>
             </button>
           );
         })}

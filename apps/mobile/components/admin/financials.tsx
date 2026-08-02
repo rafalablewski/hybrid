@@ -224,7 +224,7 @@ function PlanMatrix() {
         return (
           <View key={`${row.group}-${i}`}>
             {groupHeader && (
-              <Mono color={palette.amber} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 14, marginBottom: 4 }}>
+              <Mono color={palette.amber} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 16, marginBottom: 4 }}>
                 {row.group}
               </Mono>
             )}
@@ -553,7 +553,7 @@ function ForecastTab({
 function SectionLabel({ kicker, title }: { kicker: string; title: string }) {
   const { palette } = useTheme();
   return (
-    <View style={{ marginTop: 18, marginBottom: 10 }}>
+    <View style={{ marginTop: 16, marginBottom: 10 }}>
       <Kicker color={palette.amber}>{kicker}</Kicker>
       <Text style={{ fontFamily: F.black, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>{title}</Text>
     </View>

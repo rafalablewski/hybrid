@@ -17,6 +17,7 @@ import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { CtaLabel } from "./cta-label";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20, marginBottom: 12 } as const;
@@ -178,7 +179,7 @@ export default function AuroraCoach() {
                 <div style={{ fontWeight: 700, fontSize: fs.note }}>{personName(l.client, t)}</div>
                 <Mono s={{ fontSize: fs.caption }}>{l.client?.email}</Mono>
               </div>
-              <Mono s={{ fontSize: fs.caption }} c={C("lime")}>{t("w.teams.coach.open")} →</Mono>
+              <Mono s={{ fontSize: fs.caption }} c={C("lime")}><CtaLabel size={12}>{`${t("w.teams.coach.open")} →`}</CtaLabel></Mono>
             </div>
           </div>
         ))}

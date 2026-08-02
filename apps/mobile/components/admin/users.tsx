@@ -258,7 +258,7 @@ function UserDetail({
         </Pressable>
       </View>
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12, marginBottom: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12, marginBottom: 16 }}>
         <Chip color={roleColor[d.role] ?? palette.chalk}>{d.role}</Chip>
         <Chip color={d.linkedAuth ? palette.lime : palette.ash}>{d.linkedAuth ? "auth linked" : "no auth"}</Chip>
         <Chip color={palette.blue}>joined {fmt(d.createdAt)}</Chip>
@@ -273,7 +273,7 @@ function UserDetail({
       </View>
 
       {d.orgs.length > 0 && (
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
             Organizations
           </Text>
@@ -284,7 +284,7 @@ function UserDetail({
       )}
 
       {/* role / language editor */}
-      <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 14 }}>
+      <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
           Manage access
         </Text>
@@ -328,7 +328,7 @@ function UserDetail({
       </View>
 
       {/* danger zone */}
-      <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: `${palette.red}44`, paddingTop: 14 }}>
+      <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: `${palette.red}44`, paddingTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
           Danger zone
         </Text>

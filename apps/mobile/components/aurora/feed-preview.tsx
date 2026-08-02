@@ -7,6 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
 import { MetaLine } from "./meta";
+import { ArrowGlyph } from "./cta-label";
 
 // The CONNECT feed — post cards (avatar header, prose body, stat pills ·
 // kudos/comments/share), the latest few of your circle's activity. `horizontal`
@@ -68,7 +69,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
                 <Animated.View style={{ width: "55%", height: 9, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 8 }} />
               </View>
             </View>
-            <Animated.View style={{ width: "90%", height: 12, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 14 }} />
+            <Animated.View style={{ width: "90%", height: 12, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 16 }} />
           </View>
         ))}
       </Wrap>
@@ -118,7 +119,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
               )}
 
               {/* action row — monochrome glyphs, full width */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 300, marginTop: 14 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", maxWidth: 300, marginTop: 16 }}>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>↩  {it.comments ?? 0}</Text>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>⇄  {it.reposts ?? 0}</Text>
                 <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>♡  {it.kudos ?? 0}</Text>
@@ -138,7 +139,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 28, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
         >
           <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>
+            <ArrowGlyph size={15} color={C.ash} />
           </View>
           <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
         </Pressable>

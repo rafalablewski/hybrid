@@ -68,7 +68,7 @@ export default function AuroraForcePlate() {
       </ACard>
 
       {jumps.length > 0 && (
-        <ACard style={{ marginTop: 14 }}>
+        <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.fp.jumpTitle-mobile")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.analyze.fp.jumpSubtitle")}</Text>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: space.xxs, height: 90, marginTop: 12 }}>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fs } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
+import { CtaLabel } from "./cta-label";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
 type Provider = { id: string; label: string; auth: string; provides: string[]; configured: boolean };
@@ -79,7 +80,7 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
               {busy ? t("w.account.connections.syncing") : t("w.account.connections.sync-now")}
             </button>
           ) : p ? (
-            <a href={`/api/connect/${p.id}`} style={pill(C("lime"), true)}>{t("w.account.connections.connect")} →</a>
+            <a href={`/api/connect/${p.id}`} style={pill(C("lime"), true)}><CtaLabel size={14}>{`${t("w.account.connections.connect")} →`}</CtaLabel></a>
           ) : null}
         </div>
       </div>

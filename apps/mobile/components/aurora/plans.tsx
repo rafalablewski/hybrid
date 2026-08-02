@@ -90,7 +90,7 @@ export default function AuroraPlans() {
       scrollApi={scrollApi}
       rail={shelves.length > 0 ? <CategoryRail categories={shelves.map((s) => s.category)} onJump={jumpTo} /> : undefined}
     >
-      <View style={{ marginTop: 14 }}>
+      <View style={{ marginTop: 16 }}>
         <AField value={query} onChange={setQuery} placeholder={t("w.train.plans.searchGoals")} icon="search" />
       </View>
       <EnrolledCard enrolled={enrolled} />
@@ -155,7 +155,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
   const overflows = rail.content > rail.view + 1;
 
   return (
-    <View onLayout={onLayout} style={{ marginTop: 18 }}>
+    <View onLayout={onLayout} style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
         <Text accessibilityRole="header" style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{group.category}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
@@ -300,7 +300,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
                   {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
                 </View>
                 <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
-                <View style={{ flexDirection: "row", gap: 14, marginTop: 12, marginBottom: 10 }}>
+                <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
                   {hero.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.14), paddingTop: 8 }}>
                       <Text style={{ fontFamily: F.black, fontSize: 20, lineHeight: 21, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>

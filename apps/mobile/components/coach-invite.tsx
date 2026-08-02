@@ -83,7 +83,7 @@ export default function CoachInvite() {
       {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono></View>}
 
       {created && (
-        <View style={{ marginTop: 14, alignItems: "center" }}>
+        <View style={{ marginTop: 16, alignItems: "center" }}>
           <QrMatrix url={created} />
           <Mono style={{ marginTop: 8, textAlign: "center" }}>{created}</Mono>
           <View style={{ marginTop: 8, width: "100%" }}><Button label="Share invite link" color={C.lime} onPress={() => share(created)} /></View>
@@ -97,7 +97,7 @@ export default function CoachInvite() {
           {invites.map((i) => (
             <View key={i.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
               <Mono color={C.chalk} style={{ flex: 1 }}>{i.email || i.phone || "link / QR invite"}</Mono>
-              <Pressable onPress={() => share(i.url)} style={{ marginRight: 14 }}><Mono color={C.lime}>Share</Mono></Pressable>
+              <Pressable onPress={() => share(i.url)} style={{ marginRight: 16 }}><Mono color={C.lime}>Share</Mono></Pressable>
               <Pressable onPress={() => revoke(i.token)}><Mono color={C.ash}>Revoke</Mono></Pressable>
             </View>
           ))}

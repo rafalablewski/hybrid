@@ -70,7 +70,7 @@ export default function AuroraRunTrack() {
         <ABack />
         <AHeading style={{ fontSize: fs.display }}>{t("w.train.runTrack.title")}</AHeading>
       </View>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 14, lineHeight: 20 }}>{t("w.train.runTrack.intro")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: 20 }}>{t("w.train.runTrack.intro")}</Text>
 
       {/* Map placeholder */}
       <ACard style={{ marginBottom: 12, padding: 0, overflow: "hidden" }}>
@@ -93,10 +93,10 @@ export default function AuroraRunTrack() {
           <Stat label={t("w.train.runTrack.pacePerKm")} value={pace ?? "—"} color={txt(C, C.lime)} C={C} />
         </View>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
-          <Pressable onPress={toggle} style={{ flex: 1, backgroundColor: running ? C.amber : C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center" }}>
+          <Pressable onPress={toggle} style={{ flex: 1, backgroundColor: running ? C.amber : C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: running ? "#12170f" : C.onAccent }}>{running ? t("w.train.runTrack.pause") : elapsed > 0 ? t("w.train.runTrack.resume") : t("w.train.runTrack.startRun")}</Text>
           </Pressable>
-          <Pressable onPress={reset} disabled={elapsed === 0} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 14, paddingHorizontal: 20, alignItems: "center", opacity: elapsed === 0 ? 0.5 : 1 }}>
+          <Pressable onPress={reset} disabled={elapsed === 0} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 16, paddingHorizontal: 20, alignItems: "center", opacity: elapsed === 0 ? 0.5 : 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.runTrack.reset")}</Text>
           </Pressable>
         </View>
@@ -110,7 +110,7 @@ export default function AuroraRunTrack() {
           keyboardType="numeric"
           placeholder={t("w.train.runTrack.distancePh")}
           placeholderTextColor={C.ash}
-          style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12 }}
+          style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
         />
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.train.runTrack.gpsNote")}</Text>
       </ACard>

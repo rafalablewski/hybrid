@@ -34,6 +34,7 @@ import { AuroraScreen, RADIUS } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
 import PrivateTab from "./private-tab";
 import { AuroraIcon } from "./icons";
+import { ArrowGlyph } from "./cta-label";
 
 type P = ReturnType<typeof useTheme>["palette"];
 type TabId = "overview" | "prs" | "activity" | "private";
@@ -202,7 +203,7 @@ export default function AuroraProfile() {
       {/* SET UP YOUR PROFILE — owner-only nudge at the very top; hides once the
           profile has a photo + bio. (This screen is always your own.) */}
       {socialP && !sComplete && (
-        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.card, padding: 16, marginBottom: 18 }}>
+        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.card, padding: 16, marginBottom: 16 }}>
           <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
           </View>
@@ -210,7 +211,7 @@ export default function AuroraProfile() {
             <Text style={{ fontFamily: F.bold, fontWeight: "800", fontSize: 16, color: C.chalk }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</Text>
             <Text style={{ color: C.ash, fontSize: 13, marginTop: 2, lineHeight: 18 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</Text>
           </View>
-          <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: 18 }}>→</Text>
+          <ArrowGlyph size={16} color={txt(C, C.lime)} />
         </Pressable>
       )}
 
@@ -275,7 +276,7 @@ export default function AuroraProfile() {
       </View>
 
       {/* SOCIAL COUNTS — followers / following / (derived) friends rank. */}
-      <View style={{ flexDirection: "row", gap: 22, marginTop: 14, paddingHorizontal: 0 }}>
+      <View style={{ flexDirection: "row", gap: 24, marginTop: 16, paddingHorizontal: 0 }}>
         {socialCounts.map((c) => (
           <View key={c.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
             <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{c.n}</Text>
@@ -313,9 +314,9 @@ export default function AuroraProfile() {
         <View style={{ marginTop: 16 }}>
           {/* THIS WEEK — a current-focus snapshot above the lifetime tiles. */}
           {thisWeek.count > 0 && (
-            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8 }}>
+            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.ov-tw")}</Text>
-              <View style={{ flexDirection: "row", gap: 26, marginTop: 8 }}>
+              <View style={{ flexDirection: "row", gap: 24, marginTop: 8 }}>
                 {[{ v: `${thisWeek.count}`, k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, prefs.units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
                   <View key={s.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
                     <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, letterSpacing: -0.5 }}>{s.v}</Text>
@@ -410,7 +411,7 @@ export default function AuroraProfile() {
             {achievements.map((a) => {
               const pct = Math.round(a.progress * 100);
               return (
-                <View key={a.id} style={{ width: "23%", alignItems: "center", marginBottom: 14 }}>
+                <View key={a.id} style={{ width: "23%", alignItems: "center", marginBottom: 16 }}>
                   <View
                     style={{
                       width: 60,
@@ -698,7 +699,7 @@ function HighlightGrid({
 
       {/* HIDDEN — restore tray. */}
       {hiddenKeys.length > 0 && (
-        <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: C.line, borderStyle: "dashed", paddingTop: 12 }}>
+        <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, borderStyle: "dashed", paddingTop: 12 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <AuroraIcon name="eye" size={12} color={C.ash} />
             <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.ov-restore")}</Text>

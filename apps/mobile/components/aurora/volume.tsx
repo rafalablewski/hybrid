@@ -263,7 +263,7 @@ export default function AuroraVolume({ top, unified = false }: {
         <Pressable
           onPress={toggleEditing}
           accessibilityRole="button"
-          style={{ marginLeft: "auto", paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing ? C.lime : C.line, backgroundColor: editing ? withAlpha(C.lime, 0.12) : "transparent" }}
+          style={{ marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing ? C.lime : C.line, backgroundColor: editing ? withAlpha(C.lime, 0.12) : "transparent" }}
         >
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing ? txt(C, C.lime) : C.ash }}>
             {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
@@ -272,7 +272,7 @@ export default function AuroraVolume({ top, unified = false }: {
       </View>
 
       {/* ── HERO — the whole week as one number and one shape ─────────────── */}
-      <ACard solid style={{ marginTop: 16, paddingBottom: 18 }}>
+      <ACard solid style={{ marginTop: 16, paddingBottom: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
           {customized && (
@@ -281,7 +281,7 @@ export default function AuroraVolume({ top, unified = false }: {
         </View>
 
         {summary.empty ? (
-          <Text style={{ marginTop: 14, fontFamily: F.reg, fontSize: fs.note, lineHeight: 23, color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
+          <Text style={{ marginTop: 16, fontFamily: F.reg, fontSize: fs.note, lineHeight: 23, color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 10 }}>
@@ -292,7 +292,7 @@ export default function AuroraVolume({ top, unified = false }: {
 
             {/* The week-shape: one column per muscle, same normalised geometry
                 as the rails below, so shape and list agree row for row. */}
-            <View style={{ flexDirection: "row", gap: 6, marginTop: 22 }}>
+            <View style={{ flexDirection: "row", gap: 6, marginTop: 24 }}>
               {rows.map((r) => {
                 const on = picked === r.muscle;
                 const label = ml(r.muscle);
@@ -344,7 +344,7 @@ export default function AuroraVolume({ top, unified = false }: {
 
       {/* ── BY MUSCLE — one legend, then the stack of comparable rails ────── */}
       {!summary.empty && (
-        <ACard solid style={{ marginTop: 14 }}>
+        <ACard solid style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
             <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
@@ -370,13 +370,13 @@ export default function AuroraVolume({ top, unified = false }: {
       <SourceCard resolved={resolved} tested={replay} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
 
       {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
-      <ACard solid style={{ marginTop: 14 }}>
+      <ACard solid style={{ marginTop: 16 }}>
         <Pressable onPress={() => setGloss((v) => !v)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whatBands")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{gloss ? "–" : "+"}</Text>
         </Pressable>
         {gloss && (
-          <View style={{ marginTop: 14, gap: 12 }}>
+          <View style={{ marginTop: 16, gap: 12 }}>
             {([["MV", "w.analyze.vol.glossMv"], ["MEV", "w.analyze.vol.glossMev"], ["MAV", "w.analyze.vol.glossMav"], ["MRV", "w.analyze.vol.glossMrv"]] as const).map(([k, key]) => (
               <View key={k} style={{ flexDirection: "row", gap: space.md }}>
                 <Text style={{ width: 42, fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime) }}>{k}</Text>
@@ -388,7 +388,7 @@ export default function AuroraVolume({ top, unified = false }: {
       </ACard>
 
       {editing && customized && (
-        <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 16, paddingVertical: 10, paddingHorizontal: 18 }}>
+        <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 16, paddingVertical: 10, paddingHorizontal: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.resetDefaults")}</Text>
         </Pressable>
       )}
@@ -432,20 +432,20 @@ function Prescription({ title, why, items, color, ml, unit }: {
   const { palette: C, scheme } = useTheme();
   if (!items.length) return null;
   return (
-    <ACard solid style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{unit}</Text>
       </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
         {items.map((s) => (
-          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 8, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, 0.35), backgroundColor: withAlpha(color, 0.1) }}>
+          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 8, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, 0.35), backgroundColor: withAlpha(color, 0.1) }}>
             <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{ml(s.muscle)}</Text>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: txt(C, color) }}>{deltaLabel(s)}</Text>
           </View>
         ))}
       </View>
-      <Text style={{ marginTop: 14, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{why}</Text>
+      <Text style={{ marginTop: 16, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{why}</Text>
     </ACard>
   );
 }
@@ -501,7 +501,7 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
   const { t } = useLang();
   const current = ramp.find((c) => c.current) ?? ramp[0];
   return (
-    <ACard solid style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.thisBlock")}</Text>
         <Toggle on={on} label={t("w.analyze.vol.periodize")} onPress={() => setLoggerPref("periodizeVolume", !on)} />
@@ -530,7 +530,7 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
           <Text style={{ marginTop: 12, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t("w.analyze.vol.rampCaption")}</Text>
 
           {editing && (
-            <View style={{ gap: 10, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+            <View style={{ gap: 10, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
               <Stepper label={t("w.analyze.vol.currentWeek")} value={block.week} min={1} max={block.weeks} onChange={(v) => setBlock({ week: v })} />
               <Stepper label={t("w.analyze.vol.blockLength")} value={block.weeks} suffix={t("w.analyze.vol.weeksShort")} min={1} max={16} onChange={(v) => setBlock({ weeks: v })} />
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
@@ -593,7 +593,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
   const field = { textAlign: "center" as const, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 8 };
 
   return (
-    <ACard solid style={{ marginTop: 14 }}>
+    <ACard solid style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: resolved.source === "population" ? C.ash : txt(C, C.lime) }}>{t(sourceLabelKey(resolved.source))}</Text>
@@ -603,7 +603,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       {/* HOW COMPLETE THE PROFILE IS, weighted by influence rather than by
           counting boxes — and what the single most valuable missing answer
           would buy. "Estimated for you" should be able to say how well. */}
-      <View style={{ marginTop: 14 }}>
+      <View style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{Math.round(done.score * 100)}% {t("w.analyze.vol.knownAbout")}</Text>
           {done.next ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.analyze.vol.nextUp")}: {t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</Text> : null}
@@ -617,7 +617,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       </View>
 
       {/* YOUR LEVEL, FROM YOUR LIFTS. */}
-      <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+      <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
           <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.levelTitle")}</Text>
           {level.basis !== "none" ? (
@@ -660,7 +660,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       </View>
 
       {resolved.factors.length > 0 && (
-        <View style={{ gap: 8, marginTop: 14 }}>
+        <View style={{ gap: 8, marginTop: 16 }}>
           {resolved.factors.map((f) => (
             <View key={f.key} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
               <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>
@@ -682,7 +682,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       )}
 
       {/* The log's correction — what your own training proved. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
         <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.adaptive")}</Text>
         <Toggle on={adaptive} label={adaptive ? t("w.analyze.vol.done") : t("w.analyze.vol.adaptive")} onPress={() => setLoggerPref("adaptiveLandmarks", !adaptive)} />
       </View>
@@ -705,7 +705,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           stopped moving is worth training against; one that is still jumping
           says so. See core/engines/landmark-replay.ts. */}
       {adaptive ? (
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.replayTitle")}</Text>
           {tested.length === 0 ? (
             <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t("w.analyze.vol.replayNone")}</Text>
@@ -732,7 +732,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       ) : null}
 
       {editing && (
-        <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.aboutYou")}</Text>
           {measuredKeys.size > 0 && (
             <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t("w.analyze.vol.measuredWhy")}</Text>
@@ -776,7 +776,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           </View>
 
           {Object.keys(stored).length > 0 && (
-            <Pressable onPress={() => setLoggerPref("volumeProfile", {})} style={{ marginTop: 14, paddingVertical: 8 }}>
+            <Pressable onPress={() => setLoggerPref("volumeProfile", {})} style={{ marginTop: 16, paddingVertical: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.clearProfile")}</Text>
             </Pressable>
           )}
@@ -933,7 +933,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
   // element must not restyle it.
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 14 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 16 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
           <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: 3, backgroundColor: i === sets.length - 1 ? C.blue : `${C.blue}66` }} />

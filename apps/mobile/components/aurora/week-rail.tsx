@@ -212,14 +212,14 @@ export default function AuroraWeekRail({
       </View>
 
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
-      <View onLayout={(e) => onWeekRowLayout?.(e.nativeEvent.layout.y + e.nativeEvent.layout.height)} style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
+      <View onLayout={(e) => onWeekRowLayout?.(e.nativeEvent.layout.y + e.nativeEvent.layout.height)} style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
         {windowDays.map((d) => (
           <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
       </View>
 
       {/* full-bleed hairline — the only separator between week and session */}
-      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 18, marginBottom: 16 }} />
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 16, marginBottom: 16 }} />
 
       {/* state-aware session, flowing directly on the card (no nested surface) */}
       <DayDetail
@@ -310,7 +310,7 @@ function LiftRow({ C, r, showSession, first }: { C: Pal; r: { name: string; sess
       </Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
         {steps ? steps.map((s, i) => (
-          <View key={i} style={{ flexDirection: "row", alignItems: "baseline", marginRight: 18, marginBottom: 4 }}>
+          <View key={i} style={{ flexDirection: "row", alignItems: "baseline", marginRight: 16, marginBottom: 4 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{s.load}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginLeft: 6 }}>{s.scheme}</Text>
           </View>
@@ -417,7 +417,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
           {stripWeekdayPrefix(day.title)}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
         </Text>
         {stats.length > 0 && (
-          <View style={{ flexDirection: "row", gap: 26, marginTop: 16, marginLeft: 31 }}>
+          <View style={{ flexDirection: "row", gap: 24, marginTop: 16, marginLeft: 31 }}>
             {stats.map((s) => (
               <View key={s.labelKey}>
                 <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: -0.3, color: C.chalk, fontVariant: ["tabular-nums"] }}>{s.value}</Text>
@@ -429,9 +429,9 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
         <Pressable
           onPress={onHistory}
           accessibilityRole="button"
-          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 18, paddingTop: 14, paddingLeft: 31 }}
+          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 16, paddingTop: 16, paddingLeft: 31 }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.rail.viewHistory")} →</Text>
+          <CtaLabel label={`${t("w.home.rail.viewHistory")} →`} color={C.ash} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase" }} />
         </Pressable>
         {catchUp}
       </View>
@@ -457,7 +457,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
       {/* session toggle — an underlined text switch (no boxed segment), only when
           the day holds more than one training. Label = time-of-day or "Training N". */}
       {multi && (
-        <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20, marginTop: 14, marginBottom: 2 }}>
+        <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20, marginTop: 16, marginBottom: 2 }}>
           {sessions.map((s, i) => {
             const on = i === activeIdx;
             return (

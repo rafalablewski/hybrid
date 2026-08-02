@@ -44,7 +44,7 @@ export default function AuroraBodyMap({ name, t }: { name: string; t: (k: string
 function Shell({ C, map, selectedGlow, t, children }: { C: Palette; map: ExerciseBodyMap; selectedGlow: MuscleGlow | null; t: (k: string) => string; children: React.ReactNode }) {
   const shown = selectedGlow || map.glow[0];
   return (
-    <View style={{ marginTop: 12, borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12 }}>
+    <View style={{ marginTop: 12, borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
       {children}
       {/* caption — the selected muscle, or the top mover by default */}
       <View style={{ alignItems: "center", marginTop: 6, minHeight: 20 }}>
@@ -56,7 +56,7 @@ function Shell({ C, map, selectedGlow, t, children }: { C: Palette; map: Exercis
         ) : null}
       </View>
       {/* legend */}
-      <View style={{ flexDirection: "row", justifyContent: "center", flexWrap: "wrap", gap: 14, marginTop: 8 }}>
+      <View style={{ flexDirection: "row", justifyContent: "center", flexWrap: "wrap", gap: 12, marginTop: 8 }}>
         <Swatch C={C} label={t("w.analyze.exp.anatomy.map.primary")} opacity={fillOpacity(1)} />
         <Swatch C={C} label={t("w.analyze.exp.anatomy.map.secondary")} opacity={fillOpacity(0.4)} />
         <Swatch C={C} label={t("w.analyze.exp.anatomy.map.off")} opacity={fillOpacity(0)} />

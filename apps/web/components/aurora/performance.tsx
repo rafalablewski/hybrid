@@ -26,6 +26,7 @@ import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 
 // State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
@@ -556,7 +557,7 @@ export default function AuroraPerformance({
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, marginBottom: 10, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>
             ) : <div style={{ margin: "2px 0 10px" }}><Bar w="90%" h={12} /></div>}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px" }}>
-              {macro && <button onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{t("w.home.cockpit.periodize")} →</button>}
+              {macro && <button onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}><CtaLabel size={12}>{`${t("w.home.cockpit.periodize")} →`}</CtaLabel></button>}
               <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
             </div>
           </div>
@@ -637,7 +638,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
                 <Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
                 <Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
               </div>
-              <button onClick={() => setScreen("endurance")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 14 }}>{t("w.home.cockpit.tab.endurance")} →</button>
+              <button onClick={() => setScreen("endurance")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 16 }}><CtaLabel size={12}>{`${t("w.home.cockpit.tab.endurance")} →`}</CtaLabel></button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.enduranceEmpty")}</div>
         )}
@@ -645,7 +646,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
           sport ? (
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{sport.sport} – {LEVELS[sport.levelIdx] ?? LEVELS[0]}</div>
-              <button onClick={() => setScreen("sport")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}>{t("w.home.cockpit.sport")} →</button>
+              <button onClick={() => setScreen("sport")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}><CtaLabel size={12}>{`${t("w.home.cockpit.sport")} →`}</CtaLabel></button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>
         )}
@@ -657,7 +658,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
                 <Stat label="R²" value={bestProfile[1].r2.toFixed(2)} />
                 <Stat label={t("w.home.cockpit.points")} value={`${bestProfile[1].n}`} />
               </div>
-              <button onClick={() => setScreen("velocity")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 14 }}>{t("w.home.cockpit.velocity")} →</button>
+              <button onClick={() => setScreen("velocity")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 16 }}><CtaLabel size={12}>{`${t("w.home.cockpit.velocity")} →`}</CtaLabel></button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.velocityBlurb")}</div>
         )}
@@ -747,7 +748,7 @@ function Mod({ label, value, onClick, mono: monoVal, last }: { label: string; va
   return (
     <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: "pointer", color: C("chalk"), textAlign: "left" }}>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
-      <span style={{ marginLeft: "auto", fontWeight: monoVal ? 500 : 700, fontSize: monoVal ? fs.caption : fs.body, fontFamily: monoVal ? "var(--font-mono)" : "var(--font-display)", color: monoVal ? C("ash") : C("chalk") }}>{value} →</span>
+      <span style={{ marginLeft: "auto", fontWeight: monoVal ? 500 : 700, fontSize: monoVal ? fs.caption : fs.body, fontFamily: monoVal ? "var(--font-mono)" : "var(--font-display)", color: monoVal ? C("ash") : C("chalk") }}><CtaLabel size={12}>{`${value} →`}</CtaLabel></span>
     </button>
   );
 }

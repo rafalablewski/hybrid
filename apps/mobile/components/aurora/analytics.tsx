@@ -58,7 +58,7 @@ function AStat({ label, value, sub, accent }: { label: string; value: string | n
 function AFrame({ title, kicker, children }: { title: string; kicker?: string; children: React.ReactNode }) {
   const C = useTheme().palette;
   return (
-    <ACard style={{ marginTop: 14 }}>
+    <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
         {!!kicker && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{kicker}</Text>}
@@ -75,7 +75,7 @@ function PrivacyNote({ scope, accent }: { scope: AnalyticsScope; accent: string 
   const C = useTheme().palette;
   const { t } = useLang();
   return (
-    <View style={{ marginTop: 14, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
+    <View style={{ marginTop: 16, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
     </View>
   );
@@ -317,7 +317,7 @@ function OperatorAnalytics() {
       )}
 
       {stats.totalUsers === 0 && (
-        <ACard style={{ marginTop: 14, alignItems: "center" }}>
+        <ACard style={{ marginTop: 16, alignItems: "center" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.analytics.noUsers")}</Text>
         </ACard>
       )}

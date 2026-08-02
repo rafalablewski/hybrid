@@ -52,7 +52,7 @@ function Capabilities() {
 
   return (
     <View>
-      <Mono color={palette.ash} style={{ fontSize: fs.body, marginBottom: 14 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.body, marginBottom: 16 }}>
         Living registry of every capability — kept current as features ship, block, or get planned.
       </Mono>
 
@@ -79,7 +79,7 @@ function Capabilities() {
         );
       })}
 
-      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 14 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 16 }}>
         Source: packages/core/src/capabilities.ts – {CAPABILITIES.length} capabilities tracked.
       </Mono>
     </View>

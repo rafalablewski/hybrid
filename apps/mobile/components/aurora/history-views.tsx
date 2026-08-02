@@ -134,7 +134,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
       {HISTORY_VIEWS.map((v) => {
         const on = v.id === view;
         return (
-          <Pressable key={v.id} onPress={() => onChange(v.id)} style={{ borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : C.ink2 }}>
+          <Pressable key={v.id} onPress={() => onChange(v.id)} style={{ borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : C.ink2 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? C.onAccent : C.ash, fontWeight: on ? "700" : "400" }}>{t(v.labelKey)}</Text>
           </Pressable>
         );
@@ -301,7 +301,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
             </Text>
           </View>
         ) : (
-          <View key={item.dateKey} style={{ marginBottom: 18 }}>
+          <View key={item.dateKey} style={{ marginBottom: 16 }}>
             <View style={{ position: "absolute", left: -56, top: 0, width: 48, alignItems: "center" }}>
               <View style={{ width: item.level >= 3 ? 13 : 10, height: item.level >= 3 ? 13 : 10, borderRadius: 7, backgroundColor: item.shape === "cardio" ? C.blue : C.lime, borderWidth: 3, borderColor: C.ink, marginBottom: 5 }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", textTransform: "uppercase" }}>{fmtWeekday(item.dateKey)}</Text>
@@ -341,7 +341,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
   const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16 } as const;
   const Mini = ({ label, value }: { label: string; value: string }) => (
-    <View style={{ ...cardStyle, flex: 1, padding: 14 }}>
+    <View style={{ ...cardStyle, flex: 1, padding: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.5, marginTop: 4, color: C.chalk }}>{value}</Text>
     </View>
@@ -375,7 +375,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
             {buckets.total} {t("w.analyze.stats.inRange")} {t(TREND_RANGES.find((r) => r.id === range)!.key).toLowerCase()}
           </Text>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 14, gap: 6 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 16, gap: 6 }}>
           {buckets.buckets.map((b, i) => (
             <View key={i} style={{ flex: 1, alignItems: "center", gap: 6 }}>
               <View style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, backgroundColor: i === buckets.peakIndex ? C.lime : C.line }} />

@@ -216,7 +216,7 @@ export default function AdminAccess() {
             Admin), so lowering a feature exposes it to more users. Changes take effect on the next
             client load — no deploy.{busy ? " – saving…" : ""}
           </Intro>
-          <Mono color={palette.ash} style={{ marginBottom: 14, fontSize: fs.micro }}>
+          <Mono color={palette.ash} style={{ marginBottom: 16, fontSize: fs.micro }}>
             {overrideCount} override{overrideCount === 1 ? "" : "s"} active.
           </Mono>
           <ErrorNote error={err} onDismiss={() => setErr(null)} />

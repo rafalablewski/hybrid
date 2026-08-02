@@ -77,12 +77,12 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
               <TextInput
                 value={confirmText} onChangeText={setConfirmText} placeholder="DELETE" placeholderTextColor={C.ash}
                 autoCapitalize="characters" autoCorrect={false}
-                style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12, marginTop: 8 }}
+                style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
               />
             </View>
           )}
           {error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{t("w.train.plans.leaveError")}</Text>}
-          <Pressable onPress={leave} disabled={!armed || busy} accessibilityRole="button" style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 14 }}>
+          <Pressable onPress={leave} disabled={!armed || busy} accessibilityRole="button" style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 16 }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}</Text>}
           </Pressable>
           <Pressable onPress={() => { setOpen(false); setWipe(false); setConfirmText(""); setError(false); }} accessibilityRole="button" style={{ alignItems: "center", paddingVertical: 12 }}>

@@ -116,7 +116,7 @@ export default function AuroraEnduranceLanes({
           accessibilityState={{ expanded }}
           style={{
             flexDirection: "row", alignItems: "center", gap: 12,
-            marginHorizontal: 2, marginTop: 12, paddingHorizontal: 14, paddingVertical: 12,
+            marginHorizontal: 2, marginTop: 12, paddingHorizontal: 16, paddingVertical: 12,
             backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
           }}
         >

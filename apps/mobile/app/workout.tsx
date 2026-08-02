@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -101,6 +101,7 @@ function todayFeelingOf(list: { weekOf: string; energy: number | null; sleep: nu
 }
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
+import { ArrowGlyph } from "../components/aurora/cta-label";
 import Sheet from "../components/aurora/sheet";
 import { FeelPrompt } from "../components/feel-prompt";
 import SwipeRow from "../components/swipe-row";
@@ -951,7 +952,7 @@ export default function Workout() {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         {/* No session-title input — the workout auto-titles itself; a name is
             only entered on the summary (Save as routine / optional rename). */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 14 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 16 }}>
           <Mono style={{ flex: 1 }}>
             {exercises.length
               ? `${exercises.length} ${t("workout.exercises")} – ${t("workout.tapAsYouGo")}`
@@ -980,7 +981,7 @@ export default function Workout() {
 
         {/* Live in-session scoreboard — appears once the first set is logged. */}
         {live.sets > 0 && (
-          <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 14 }}>
+          <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 16 }}>
             <LiveStat C={C} label={t("w.train.logger.liveExercises")} value={String(live.exercises)} />
             <LiveStat C={C} label={t("live.sets")} value={String(live.sets)} />
             <LiveStat C={C} label={t("w.train.logger.liveVolume")} value={fmtTonnage(live.volume, prefs.units)} />
@@ -1002,7 +1003,7 @@ export default function Workout() {
         {needsBw && <BodyweightNudge C={C} R={R} t={t} units={prefs.units} />}
 
         {showTip && (
-          <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
+          <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, padding: 16, marginBottom: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("workout.tipTitle")}</Text>
               <Pressable onPress={dismissTip} hitSlop={8}>
@@ -1027,7 +1028,7 @@ export default function Workout() {
                 ? `+${mmss(restNow - restTarget)}`
                 : `${mmss(remaining!)} ${t("workout.restLeft")}`;
           return (
-            <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 14 }}>
+            <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
                   {done ? t("workout.restDone") : t("workout.resting")} – {clock}
@@ -1220,7 +1221,7 @@ export default function Workout() {
                                   keyboardType="numeric"
                                   placeholder="0"
                                   placeholderTextColor={C.ash}
-                                  style={{ fontFamily: F.black, fontSize: 46, letterSpacing: -1.5, color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                  style={{ fontFamily: F.black, fontSize: 46, letterSpacing: -1.6, color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                 />
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{bw ? measureLabel : unitLabel}</Text>
                               </Pressable>
@@ -1235,7 +1236,7 @@ export default function Workout() {
                                       keyboardType="numeric"
                                       placeholder="0"
                                       placeholderTextColor={C.ash}
-                                      style={{ fontFamily: F.black, fontSize: 46, letterSpacing: -1.5, color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                      style={{ fontFamily: F.black, fontSize: 46, letterSpacing: -1.6, color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                     />
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{measureLabel}</Text>
                                   </Pressable>
@@ -1272,7 +1273,7 @@ export default function Workout() {
                             {/* Primary action — a proper, sized Log button (the old
                                 floating ＋ is retired). Banks the set + starts rest.
                                 The screen's one lime fill in the logging loop. */}
-                            <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 14, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
+                            <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 16, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                               <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>
                               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.logSet")}</Text>
                             </Pressable>
@@ -1312,13 +1313,13 @@ export default function Workout() {
                       // "Next move" emphasis is a brighter hairline + bold text —
                       // not another lime fill (de-greened; the Log CTA keeps lime).
                       <View style={{ flexGrow: 1, flexDirection: "row", alignItems: "stretch", borderRadius: R.cta, overflow: "hidden", backgroundColor: C.ink2, borderWidth: 1, borderColor: ghost ? withAlpha(C.chalk, 0.35) : C.line }}>
-                        <Pressable onPress={() => addSet(x.uid)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 14 }}>
+                        <Pressable onPress={() => addSet(x.uid)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 16 }}>
                           <View style={{ width: 20, height: 20, borderRadius: 999, borderWidth: 1.5, borderColor: ghost ? C.chalk : C.ash, alignItems: "center", justifyContent: "center" }}>
                             <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 16, color: ghost ? C.chalk : C.ash }}>＋</Text>
                           </View>
                           <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("workout.addSet").replace(/^\+\s*/, "")}</Text>
                         </Pressable>
-                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("w.train.blocks.presetsTitle")} style={{ paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.chalk, 0.25) : C.line }}>
+                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("w.train.blocks.presetsTitle")} style={{ paddingHorizontal: 16, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.chalk, 0.25) : C.line }}>
                           <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
                         </Pressable>
                       </View>
@@ -1379,7 +1380,7 @@ export default function Workout() {
                       <Pressable
                         key={it.badge}
                         onPress={() => { it.run(x.uid); setSpecialUid(null); }}
-                        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
+                        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
                       >
                         <View style={{ width: 30, height: 30, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
                           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, it.c) }}>{it.badge}</Text>
@@ -1577,15 +1578,15 @@ export default function Workout() {
           );
         })()}
 
-        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={C.red} style={{ marginTop: 14, textAlign: "center" }}>{error}</Mono></View>}
+        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={C.red} style={{ marginTop: 16, textAlign: "center" }}>{error}</Mono></View>}
 
         {exercises.length > 0 && (
-          <View style={{ flexDirection: "row", gap: space.ms, marginTop: 18 }}>
+          <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
             {/* Pause/hold sits next to Finish — freeze the clock for a phone call,
                 a long queue for the rack, or a between-blocks breather. */}
             <Pressable
               onPress={togglePause}
-              style={{ paddingHorizontal: 18, borderRadius: R.cta, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: paused ? C.amber : C.line, backgroundColor: paused ? `${C.amber}1f` : "transparent" }}
+              style={{ paddingHorizontal: 16, borderRadius: R.cta, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: paused ? C.amber : C.line, backgroundColor: paused ? `${C.amber}1f` : "transparent" }}
             >
               <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: paused ? txt(C, C.amber) : C.ash }}>
                 {paused ? `▶ ${t("workout.resume")}` : `❚❚ ${t("workout.pause")}`}
@@ -1670,7 +1671,7 @@ function ExerciseSheet({
         const loadPart = s.load.trim() ? `${displayLoad(s.load, units)} ${units}` : "";
         const setLine = [loadPart, s.reps.trim()].filter(Boolean).join(" × ") || "–";
         return (
-          <View style={{ marginTop: 18 }}>
+          <View style={{ marginTop: 16 }}>
             {/* Flat totals — big number over a small mono label, no boxes. */}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
               <View>
@@ -1915,7 +1916,7 @@ function Summary({
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       {aurora && <AuroraField />}
       <FinishField />
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 28, flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 28, flexGrow: 1 }}>
         {/* The one exit — where dismissal muscle memory expects it. Guests leave
             to the welcome screen (there's no Today tab behind them). */}
         <SummaryOrb
@@ -1986,7 +1987,7 @@ function Summary({
         {!summary.guest && <SummaryNote sessionId={summary.sessionId} t={t} />}
 
         {summary.pending && (
-          <View style={{ backgroundColor: `${C.amber}14`, borderWidth: 1, borderColor: `${C.amber}55`, borderRadius: 16, padding: 14, marginTop: 16 }}>
+          <View style={{ backgroundColor: `${C.amber}14`, borderWidth: 1, borderColor: `${C.amber}55`, borderRadius: 16, padding: 16, marginTop: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>⟲ {t("summary.pendingSync")}</Text>
           </View>
         )}
@@ -2009,7 +2010,7 @@ function Summary({
             >
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
             </Pressable>
-            <View style={{ backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 16, padding: 14, marginTop: 16 }}>
+            <View style={{ backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: 16, padding: 16, marginTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✓ {t("summary.guestSaved")}</Text>
             </View>
             <Pressable
@@ -2050,7 +2051,7 @@ function Summary({
                 <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
               </Pressable>
               <SummaryOrb
-                glyph="→"
+                glyph={<ArrowGlyph size={19} color={C.chalk} />}
                 label={t("summary.orbAnalysis")}
                 a11y={t("summary.seeAnalysis")}
                 onPress={() => router.replace("/history")}
@@ -2076,7 +2077,9 @@ function SummaryOrb({
   label,
   on,
 }: {
-  glyph: string;
+  /** A string renders in the orb's own Text; a node (e.g. ArrowGlyph, whose
+   *  SVG can't nest in Text) renders as-is, centred by the orb. */
+  glyph: ReactNode;
   a11y: string;
   onPress: () => void;
   size?: number;
@@ -2107,7 +2110,7 @@ function SummaryOrb({
         }}
       >
         {glass && <GlassSurface radius={size / 2} />}
-        <Text style={{ fontFamily: F.bold, fontSize: Math.round(size * 0.36), color: C.chalk }}>{glyph}</Text>
+        {typeof glyph === "string" ? <Text style={{ fontFamily: F.bold, fontSize: Math.round(size * 0.36), color: C.chalk }}>{glyph}</Text> : glyph}
       </View>
       {label != null && (
         <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, marginTop: 6 }}>
@@ -2217,13 +2220,13 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
   const allowed = canSaveRoutine(persona, savedCount);
 
   if (state === "saved")
-    return <Mono color={C.lime} style={{ textAlign: "center", marginTop: 18 }}>{t("w.train.logger.savedRoutine")}</Mono>;
+    return <Mono color={C.lime} style={{ textAlign: "center", marginTop: 16 }}>{t("w.train.logger.savedRoutine")}</Mono>;
 
   // Free user at the routine limit → upsell card (a stale count that lets a
   // save through still lands here when it fails); logging/building stays free.
   if (!allowed || state === "upsell")
     return (
-      <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 14, marginTop: 18 }}>
+      <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 16, marginTop: 16 }}>
         <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 0.9 }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Mono>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("w.train.logger.routineFullBlurb")}</Text>
         <Pressable
@@ -2239,7 +2242,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
     return (
       <Pressable
         onPress={() => setOpen(true)}
-        style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 18 }}
+        style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
       </Pressable>
@@ -2255,7 +2258,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
   };
 
   return (
-    <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 14, marginTop: 18 }}>
+    <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 16, marginTop: 16 }}>
       <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 0.9 }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
       <TextInput
         value={name}
@@ -2286,7 +2289,7 @@ function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string |
 
   if (!open)
     return (
-      <Pressable onPress={() => setOpen(true)} style={{ alignSelf: "center", marginTop: 14, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 16 }}>
+      <Pressable onPress={() => setOpen(true)} style={{ alignSelf: "center", marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>✎ {t("summary.nameOptional")}</Text>
       </Pressable>
     );
@@ -2301,7 +2304,7 @@ function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string |
   };
 
   return (
-    <View style={{ flexDirection: "row", gap: 8, marginTop: 14, alignItems: "center" }}>
+    <View style={{ flexDirection: "row", gap: 8, marginTop: 16, alignItems: "center" }}>
       <TextInput
         value={name}
         onChangeText={setName}
@@ -2355,7 +2358,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
   };
 
   return (
-    <View style={{ width: "100%", marginTop: 12, borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2, padding: 14 }}>
+    <View style={{ width: "100%", marginTop: 12, borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2, padding: 16 }}>
       <TextInput
         value={note}
         onChangeText={setNote}
@@ -2473,7 +2476,7 @@ function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof 
     refreshBodyweight();
   };
   return (
-    <View style={{ backgroundColor: `${a}12`, borderWidth: 1, borderColor: `${a}44`, borderRadius: R.banner, padding: 14, marginBottom: 14 }}>
+    <View style={{ backgroundColor: `${a}12`, borderWidth: 1, borderColor: `${a}44`, borderRadius: R.banner, padding: 16, marginBottom: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, a), flex: 1 }}>⚖️ {t("w.train.logger.bwNudgeTitle")}</Text>
         <Pressable onPress={() => setDismissed(true)} hitSlop={8} accessibilityLabel={t("w.train.logger.bwNudgeDismiss")}>

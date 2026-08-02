@@ -76,7 +76,7 @@ import { fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale,
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring, withAlpha } from "./kit";
 import ExerciseWidgetRail from "./exercise-widget";
-import { CtaLabel } from "./cta-label";
+import { ArrowGlyph, CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScroll, useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
@@ -756,7 +756,7 @@ export default function AuroraHome() {
           </Animated.View>
           {!dayIsToday && (
             <Pressable onPress={backToToday} accessibilityRole="button" hitSlop={8} style={{ alignSelf: "flex-start", marginTop: 4 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.blue) }}>{t("w.home.today.backToToday")} →</Text>
+              <CtaLabel label={`${t("w.home.today.backToToday")} →`} color={txt(C, C.blue)} fontSize={11} font={F.mono} style={{ letterSpacing: 0.9, textTransform: "uppercase" }} />
             </Pressable>
           )}
         </View>
@@ -780,11 +780,11 @@ export default function AuroraHome() {
              enrolled athlete from a first-run one, so the chooser here would be
              a lie ("looks like a new user" when really the network dropped).
              Show the honest retry card instead of the empty-state chooser. */
-          <View style={{ marginTop: 14 }}>
+          <View style={{ marginTop: 16 }}>
             <FetchError onRetry={load} />
           </View>
         ) : useRail ? (
-          <View style={{ marginTop: 14 }} onLayout={(e) => measureRail({ blockY: e.nativeEvent.layout.y })}>
+          <View style={{ marginTop: 16 }} onLayout={(e) => measureRail({ blockY: e.nativeEvent.layout.y })}>
             <View onLayout={(e) => measureRail({ cardY: e.nativeEvent.layout.y, cardH: e.nativeEvent.layout.height })}>
               <AuroraWeekRail
                 planId={planId!}
@@ -805,7 +805,7 @@ export default function AuroraHome() {
              training, so a plan-less regular gets the calendar from their
              first session instead of the chooser forever. The chooser demotes
              to slim rows under an Explore-standard "Add structure" head. */
-          <View style={{ marginTop: 14 }} onLayout={(e) => measureRail({ blockY: e.nativeEvent.layout.y })}>
+          <View style={{ marginTop: 16 }} onLayout={(e) => measureRail({ blockY: e.nativeEvent.layout.y })}>
             <View onLayout={(e) => measureRail({ cardY: e.nativeEvent.layout.y, cardH: e.nativeEvent.layout.height })}>
               <AuroraLogbookRail
                 sessions={sessions}
@@ -863,7 +863,7 @@ export default function AuroraHome() {
             </View>
           </View>
         ) : (
-        <ACard style={{ marginTop: 14 }}>
+        <ACard style={{ marginTop: 16 }}>
             {/* On a plan, Start is the full-width action anchored BELOW the lifts;
                 the only thing riding the top row is the readiness dial, and only
                 once there's logged history — a bare onboarding macrocycle must
@@ -911,8 +911,8 @@ export default function AuroraHome() {
                             <LiftRow key={i} r={r} i={i + 1} />
                           ))}
                           <LinearGradient colors={["transparent", "transparent", C.ink2]} locations={[0, 0.16, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
-                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 }}>
-                            <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: "600", color: txt(C, C.lime) }}>{t("w.home.today.showAllLifts")} {rows.length} {t("w.home.today.liftsWord")} →</Text>
+                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+                            <CtaLabel label={`${t("w.home.today.showAllLifts")} ${rows.length} ${t("w.home.today.liftsWord")} →`} color={txt(C, C.lime)} fontSize={12} font={F.mono} style={{ fontWeight: "600" }} />
                           </Pressable>
                         </View>
                       )}
@@ -934,7 +934,7 @@ export default function AuroraHome() {
                   </Pressable>
                 )}
                 {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
-                <Pressable onPress={startPrescribed} style={({ pressed }) => ({ marginTop: 14, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", ...startGlow(C.lime, pressed) })}>
+                <Pressable onPress={startPrescribed} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", ...startGlow(C.lime, pressed) })}>
                   <CtaLabel label={t("w.home.today.start")} color={C.onAccent} fontSize={fs.bodyLg} />
                 </Pressable>
                 {/* Quiet secondary — reach the Quick-start sheet without leaving the
@@ -1098,7 +1098,7 @@ export default function AuroraHome() {
           onPress={() => (isAthlete ? router.push("/performance") : goUpgrade("today-cockpit"))}
           accessibilityRole="button"
           accessibilityLabel={`${t("w.home.today.goFull")} – ${t("w.home.today.goFullRowSub")}`}
-          style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 }}
+          style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}
         >
           <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ fontSize: 13, color: pa.text }}>✦</Text>
@@ -1155,7 +1155,7 @@ export default function AuroraHome() {
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet visible={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 16 }}>
           <QuickSportLog sessions={sessions} onSaved={() => { load(); setQuickOpen(false); }} solid />
         </View>
       </Sheet>
@@ -1207,7 +1207,7 @@ export default function AuroraHome() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
             </Pressable>
           ))}
-          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 14, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" }}>
+          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="calendar" size={15} color={C.ash} />
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.home.today.doneCalendar")}</Text>
           </Pressable>
@@ -1239,7 +1239,7 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
       <Text style={{ fontSize: 18, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: 18 }}>{sub}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, accent), marginTop: 14 }}>{cta} →</Text>
+      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 16 }} />
     </PressScale>
   );
 }
@@ -1253,14 +1253,14 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
 function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { C: P; width: number; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
   const { scheme } = useTheme();
   return (
-    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 18, overflow: "hidden" }}>
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, overflow: "hidden" }}>
       {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <Text style={{ fontSize: 15, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
       <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, accent), marginTop: 12 }}>{cta} →</Text>
+      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
     </PressScale>
   );
 }
@@ -1303,7 +1303,7 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
   const logLabel = t(copy.logKey);
   const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
   return (
-    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 18, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
+    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
       <Pressable onPress={onDone} accessibilityRole="button" accessibilityLabel={`${doneCount} ${doneLabel}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 6, paddingBottom: 4 }}>
         {/* a status count, not a hero — fs.display keeps it below the masthead
@@ -1313,10 +1313,10 @@ function AlsoTodayCard({ C, rows, planIds, doneCount, isToday, dayLabel, units, 
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{doneLabel}</Text>
           {copy.subKey ? <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 16, color: quiet, marginTop: 6 }}>{t(copy.subKey)}</Text> : null}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: 16, color: quiet }}>→</Text>
+        <ArrowGlyph size={15} color={quiet} />
       </Pressable>
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
-      <View style={{ marginTop: 14, gap: 4 }}>
+      <View style={{ marginTop: 16, gap: 4 }}>
         {rows.map((s) => {
           const onPlanRow = planIds.has(s.id);
           return (
@@ -1534,7 +1534,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     }
   };
   return (
-    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 18, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
+    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same
@@ -1628,7 +1628,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           was given at, and how long after training that was. The one training
           is prescribed off is marked; none of them is ever overwritten. */}
       {dayReads.length > 0 ? (
-        <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
           {/* THE DOOR. Shut by default — the hero is what the card is for, and a
               list under it is the thing that made the card grow in the first
               place. The count sits on the door so the day's shape is legible
@@ -1684,7 +1684,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             onPress={() => setFollowUpOpen(true)}
             accessibilityRole="button"
             accessibilityLabel={done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: done.complete || asking ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete || asking ? C.line : `${txt(C, C.lime)}42` }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, backgroundColor: done.complete || asking ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete || asking ? C.line : `${txt(C, C.lime)}42` }}
           >
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>
@@ -1705,7 +1705,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
                 />
               ))}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: done.complete || asking ? C.ash : txt(C, C.lime) }}>→</Text>
+            <ArrowGlyph size={15} color={done.complete || asking ? C.ash : txt(C, C.lime)} />
           </Pressable>
           {followUpOpen ? (
             <Sheet

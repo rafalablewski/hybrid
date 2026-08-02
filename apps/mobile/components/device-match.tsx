@@ -15,6 +15,7 @@ import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
 import { F, fs } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { CtaLabel } from "./aurora/cta-label";
 
 /**
  * DEVICE MATCH — the sheet behind the summary's "Match the workout from your
@@ -113,7 +114,7 @@ export function DeviceMatchSheet({
           style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 24, maxHeight: "80%" }}
           onPress={() => {}}
         >
-          <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 14 }} />
+          <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             {/* The lockup, never the accent — a manufacturer's mark reproduces
                 solid only (core/device-marks.ts). Only Apple's store can be read
@@ -131,16 +132,16 @@ export function DeviceMatchSheet({
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.ash, marginTop: 8 }}>{t("session.device.pickLead")}</Text>
 
           {phase === "unavailable" && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 26 }}>{t("session.device.unavailable")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
           )}
           {phase === "loading" && <ActivityIndicator color={C.lime} style={{ marginVertical: 30 }} />}
           {phase === "error" && (
-            <Pressable onPress={() => void load()} style={{ marginVertical: 22 }}>
+            <Pressable onPress={() => void load()} style={{ marginVertical: 24 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber }}>{t("session.device.error")}</Text>
             </Pressable>
           )}
           {phase === "list" && ranked.length === 0 && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 26 }}>{t("session.device.none")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.none")}</Text>
           )}
 
           {phase === "list" && ranked.length > 0 && (
@@ -193,7 +194,7 @@ export function DeviceMatchSheet({
                     )}
                     {best && busyUuid == null && (
                       <View style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 11, alignItems: "center" }}>
-                        <Text style={{ fontFamily: F.black, fontSize: 13, color: C.onAccent }}>{t("session.device.matchCta")} →</Text>
+                        <CtaLabel label={`${t("session.device.matchCta")} →`} color={C.onAccent} fontSize={13} font={F.black} />
                       </View>
                     )}
                     {busyUuid === r.workout.uuid && <ActivityIndicator color={C.lime} size="small" style={{ marginTop: 10 }} />}

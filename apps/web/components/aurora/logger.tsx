@@ -53,6 +53,7 @@ import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/wor
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
 import { AuroraIcon } from "./icons";
+import { ArrowGlyph } from "./cta-label";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
@@ -858,7 +859,7 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
           >
             {sharing ? "…" : `↗︎ ${shareLabel}`}
           </button>
-          <FinishOrb glyph="→" label={t("summary.orbAnalysis")} a11y={t("summary.seeAnalysis")} onClick={onDone} />
+          <FinishOrb glyph={<ArrowGlyph size={18} />} label={t("summary.orbAnalysis")} a11y={t("summary.seeAnalysis")} onClick={onDone} />
         </div>
         {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 8 }}>{shareMsg}</div>}
 
@@ -883,7 +884,7 @@ function FinishOrb({
   label,
   on,
 }: {
-  glyph: string;
+  glyph: React.ReactNode;
   a11y: string;
   onClick: () => void;
   size?: number;

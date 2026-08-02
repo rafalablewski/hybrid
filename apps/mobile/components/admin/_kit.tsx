@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, type ViewStyle } from "react-native";
 import { fs, space, F, Card, Mono } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { CtaLabel } from "../aurora/cta-label";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
 // share one look (matching the web console's lib/ui primitives). Section bodies
@@ -10,7 +11,7 @@ import { useTheme, txt } from "../../lib/theme";
 /** A short intro line under a section header (mirrors the web `Mono` blurbs). */
 export function Intro({ children }: { children: ReactNode }) {
   const { palette } = useTheme();
-  return <Mono color={palette.ash} style={{ marginBottom: 14, lineHeight: 18 }}>{children}</Mono>;
+  return <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>{children}</Mono>;
 }
 
 /** The amber "table not migrated yet" / "couldn't load" banner used across the
@@ -19,7 +20,7 @@ export function Banner({ tone = "amber", title, children }: { tone?: "amber" | "
   const { palette } = useTheme();
   const accent = tone === "red" ? palette.red : palette.amber;
   return (
-    <Card accent={accent} style={{ marginBottom: 14 }}>
+    <Card accent={accent} style={{ marginBottom: 16 }}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, marginBottom: children ? 6 : 0 }}>{title}</Text>
       {children ? <Mono color={palette.chalk} style={{ lineHeight: 18 }}>{children}</Mono> : null}
     </Card>
@@ -133,13 +134,13 @@ export function PillBtn({
         borderColor: c,
         borderRadius: 999,
         paddingVertical: 7,
-        paddingHorizontal: 14,
+        paddingHorizontal: 16,
         opacity: disabled ? 0.5 : 1,
         alignSelf: "flex-start",
       }}
     >
       {busy ? <ActivityIndicator size="small" color={fg} /> : null}
-      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: fg }}>{label}</Text>
+      <CtaLabel label={label} color={fg} fontSize={fs.caption} />
     </Pressable>
   );
 }

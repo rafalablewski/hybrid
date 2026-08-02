@@ -345,7 +345,7 @@ export function CoverScreen({
                 the first content to slide under the pinned cover. */}
             <View style={{ paddingHorizontal: 16 }}>
               {cover.stats.length > 0 && (
-                <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 18, marginBottom: 14 }}>
+                <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 16, marginBottom: 16 }}>
                   {cover.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
                       <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>

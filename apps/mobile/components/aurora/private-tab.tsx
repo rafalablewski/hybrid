@@ -19,6 +19,7 @@ import { track } from "../../lib/track";
 import { fs, F, serifIf } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
+import { CtaLabel } from "./cta-label";
 
 // The interactive Profile → Private tab. Owner-only self-tracking, now on the
 // same Jony-Ive material vocabulary as Today: the Command center leads as a
@@ -82,7 +83,7 @@ function CommandCenterCard({ C, scheme, pa, locked, onPress }: { C: Palette; sch
       {/* premium-accent glow (admin-set) blooming from the top-right corner */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${pa.fill}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${pa.fill}2b`, `${pa.fill}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: `${pa.fill}24`, borderWidth: 1, borderColor: `${pa.fill}59`, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="navigation" size={22} color={pa.text} />
         </View>
@@ -91,9 +92,11 @@ function CommandCenterCard({ C, scheme, pa, locked, onPress }: { C: Palette; sch
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.account.profile.priv-cockpit-s")}</Text>
         </View>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text, marginTop: 18 }}>
-        {locked ? `${t("w.home.today.cardUnlock")} →` : `${t("w.home.today.cardOpen")} →`}
-      </Text>
+      <CtaLabel
+        label={locked ? `${t("w.home.today.cardUnlock")} →` : `${t("w.home.today.cardOpen")} →`}
+        color={pa.text} fontSize={11} font={F.mono}
+        style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 16 }}
+      />
     </Pressable>
   );
 }
@@ -156,7 +159,7 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
   return (
     <>
       {/* Collapsed card — whole surface tappable, opens the log sheet. */}
-      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-body-t")} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, backgroundColor: C.ink2 }}>
+      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-body-t")} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, backgroundColor: C.ink2 }}>
         <IconTile C={C} icon="user-square" />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.profile.priv-body-t")}</Text>
@@ -177,7 +180,7 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
         {metrics !== undefined && has && (
           <>
             <ReportHero C={C} report={report!} units={units} />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 18, marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 16, marginBottom: 10 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
             </View>
@@ -187,9 +190,9 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
           </>
         )}
 
-        <Pressable onPress={onPhotos} hitSlop={6} style={{ marginTop: 18, flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Pressable onPress={onPhotos} hitSlop={6} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", gap: 6 }}>
           <AuroraIcon name="eye" size={14} color={lime} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: lime }}>{t("w.account.profile.priv-photos")} →</Text>
+          <CtaLabel label={`${t("w.account.profile.priv-photos")} →`} color={lime} fontSize={fs.caption} font={F.mono} />
         </Pressable>
       </Sheet>
     </>
@@ -209,7 +212,7 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
   return (
     <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
       <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 14 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 16 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
       {wv && (
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 40, fontWeight: "600", letterSpacing: -1, color: C.chalk }}>{wv.value}<Text style={{ fontSize: 15, color: C.ash }}> {wv.unit}</Text></Text>
@@ -300,7 +303,7 @@ function IconTile({ C, icon }: { C: Palette; icon: AuroraIconName }) {
 
 function Row({ C, icon, title, sub, onPress }: { C: Palette; icon: AuroraIconName; title: string; sub: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, backgroundColor: C.ink2 }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, backgroundColor: C.ink2 }}>
       <IconTile C={C} icon={icon} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>

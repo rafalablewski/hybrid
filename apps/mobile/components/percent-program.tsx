@@ -179,11 +179,11 @@ export default function PercentProgram({
         />
       }
     >
-      <View style={{ marginTop: 14 }}>
+      <View style={{ marginTop: 16 }}>
         <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} scheme={scheme} />
       </View>
 
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 18, marginBottom: 12 }}>
+      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, marginBottom: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{view.progression}</Text>
       </View>
@@ -204,7 +204,7 @@ export default function PercentProgram({
  *  right. Shared by the ledger and schedule heads on this screen. */
 function SecHead({ C, scheme, title, meta }: { C: Palette; scheme: "light" | "dark"; title: string; meta?: string | null }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 22, marginBottom: 10 }}>
+    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 24, marginBottom: 10 }}>
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!meta && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, textAlign: "right", flexShrink: 1 }}>{meta}</Text>}
     </View>
@@ -295,7 +295,7 @@ function ProgramDays({ days, week, peakNote, C, scheme }: { days: ProgramDayView
         {days.map((day, di) => {
           const lifts = day.sessions.flatMap((s) => s.lifts);
           return (
-            <View key={di} style={{ flexDirection: "row", paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: di > 0 ? 1 : 0, borderTopColor: hair(C) }}>
+            <View key={di} style={{ flexDirection: "row", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: di > 0 ? 1 : 0, borderTopColor: hair(C) }}>
               <Text style={{ width: 42, fontFamily: F.mono, fontSize: fs.caption, color: "#5a5e56", textTransform: "uppercase" }}>{day.title}</Text>
               <View style={{ flex: 1 }}>
                 {lifts.length === 0 ? (
@@ -324,7 +324,7 @@ function ProgramDays({ days, week, peakNote, C, scheme }: { days: ProgramDayView
 // The all-prose week card's header (endurance weeks keep the one-card layout).
 function WeekHeader({ title, right, C, scheme }: { title: string; right: string | null; C: Palette; scheme: "light" | "dark" }) {
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 18, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
       <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
@@ -399,7 +399,7 @@ function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayVi
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={`${day.title}${day.kindLabel ? ` — ${day.kindLabel}` : ""}${words ? `, ${words}` : ""}${right ? `, ${right}` : ""}`}
-        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingVertical: 12 }}
+        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: C.chalk }} numberOfLines={1}>
@@ -436,7 +436,7 @@ function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayVi
 // session volume on the right. No background wash.
 function SessionRule({ marker, color, volume, top, C }: { marker: string; color: string; volume: string | null; top: boolean; C: Palette }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 18, paddingTop: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
+    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, color) }}>{marker}</Text>
       {!!volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{volume}</Text>}
     </View>
@@ -483,7 +483,7 @@ function SessionBlock({ s, si, count, day, C, onLift }: { s: ProgramSessionView;
 // A lone group label line (runs inside a mixed day).
 function GroupRule({ label, C }: { label: string; C: Palette }) {
   return (
-    <View style={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
+    <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
     </View>
   );
@@ -521,7 +521,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
       <View style={{ flexDirection: "row", borderTopWidth: before.length ? 1 : 0, borderTopColor: hair(C) }}>
         {/* pinned exercise column — names never divorce their reps */}
         <View style={{ width: MX_NAME }}>
-          <View style={{ height: HDR_H, justifyContent: "center", paddingLeft: 18, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
+          <View style={{ height: HDR_H, justifyContent: "center", paddingLeft: 16, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
             {!!label && (
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
                 {label}
@@ -529,7 +529,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
             )}
           </View>
           {rows.map((l, i) => (
-            <Pressable key={i} onPress={() => onPress(l)} accessibilityRole="button" accessibilityLabel={`${l.name} — details`} style={{ height: rowH(l), justifyContent: "center", paddingLeft: 18, paddingRight: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: hair(C) }}>
+            <Pressable key={i} onPress={() => onPress(l)} accessibilityRole="button" accessibilityLabel={`${l.name} — details`} style={{ height: rowH(l), justifyContent: "center", paddingLeft: 16, paddingRight: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: hair(C) }}>
               <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>
                 {l.name}
               </Text>
@@ -593,7 +593,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
 // empty lane: name left, the whole prescription in words right.
 function OutlierRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boolean; C: Palette; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{lift.name}</Text>
         {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>{lift.note}</Text>}
@@ -610,7 +610,7 @@ function AccessoryRows({ lifts, label, C, onPress }: { lifts: ProgramLiftView[];
   return (
     <View>
       {(label || hasRpe) && (
-        <View style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 18, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
           <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
             {label ?? ""}
           </Text>
@@ -634,12 +634,12 @@ function ProseRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boole
   const rest = /rest/i.test(lift.name);
   const detail = lift.prescription && lift.note ? `${lift.prescription} (${lift.note})` : lift.prescription || lift.note || null;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 8, backgroundColor: loadHex(C, liftColor(lift)) }} />
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{lift.name}</Text>
       </View>
-      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 14 }}>{detail}</Text>}
+      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 16 }}>{detail}</Text>}
     </Pressable>
   );
 }
@@ -657,7 +657,7 @@ function WeekRow({ lift, restName, first, C }: { lift?: ProgramLiftView; restNam
         <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 8, backgroundColor: loadHex(C, lift ? liftColor(lift) : "ash") }} />
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
       </View>
-      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 14 }}>{detail}</Text>}
+      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 16 }}>{detail}</Text>}
     </View>
   );
 }
@@ -674,7 +674,7 @@ function NameCell({ lift, C }: { lift: ProgramLiftView; C: Palette }) {
 // bodybuilding — Sets×Reps + RPE heat (RPE keeps its semantic heat colour).
 function HeatRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boolean; C: Palette; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <NameCell lift={lift} C={C} />
       <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, textAlign: "right", marginRight: 10, fontVariant: ["tabular-nums"] }}>{lift.setsReps ?? "—"}</Text>
       <Text style={{ width: 54, textAlign: "right", fontFamily: F.mono, fontSize: fs.body, color: txt(C, loadHex(C, rpeColor(lift.rpe!))) }}>@{lift.rpe}</Text>
@@ -687,7 +687,7 @@ function HeatRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boolea
 // it stays chalk.
 function FallbackRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boolean; C: Palette; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <NameCell lift={lift} C={C} />
       <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
     </Pressable>

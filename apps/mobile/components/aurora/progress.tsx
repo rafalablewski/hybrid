@@ -89,26 +89,26 @@ export default function AuroraProgress() {
       </View>
 
       {status === "no-auth" && (
-        <ACard style={{ marginTop: 18 }}>
+        <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>{t("w.recovery.progress.noAuth")}</Text>
         </ACard>
       )}
       {status === "no-bucket" && (
-        <ACard style={{ marginTop: 18 }}>
+        <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: txt(C, C.red), lineHeight: 20 }}>{`${t("w.recovery.progress.noBucketPre")} progress ${t("w.recovery.progress.noBucketMid")} reference/sql-progress-photos.sql ${t("w.recovery.progress.noBucketPost")}`}</Text>
         </ACard>
       )}
 
       {status === "ready" && (
         <>
-          <ACard style={{ marginTop: 18 }}>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20, marginBottom: 14 }}>{t("w.recovery.progress.intro")}</Text>
+          <ACard style={{ marginTop: 16 }}>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20, marginBottom: 16 }}>{t("w.recovery.progress.intro")}</Text>
             <View style={{ flexDirection: "row", gap: space.ms }}>
-              <Pressable onPress={takePhoto} disabled={busy} style={{ flex: 1, flexDirection: "row", gap: 8, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", justifyContent: "center", opacity: busy ? 0.5 : 1 }}>
+              <Pressable onPress={takePhoto} disabled={busy} style={{ flex: 1, flexDirection: "row", gap: 8, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", justifyContent: "center", opacity: busy ? 0.5 : 1 }}>
                 <AuroraIcon name="add" size={18} color={C.onAccent} />
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.takePhoto")}</Text>
               </Pressable>
-              <Pressable onPress={pickFromLibrary} disabled={busy} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
+              <Pressable onPress={pickFromLibrary} disabled={busy} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", opacity: busy ? 0.5 : 1 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.progress.fromLibrary")}</Text>
               </Pressable>
             </View>

@@ -46,7 +46,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.home.aicoach.reading")}</Text>
         </View>
       ) : note?.text ? (
-        <View style={{ marginTop: embedded ? 4 : 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ marginTop: embedded ? 4 : 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
           <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 10, flexWrap: "wrap" }}>
             {note.source ? chip(note.source === "ai" ? "Claude" : t("w.home.aicoach.engine"), note.source === "ai" ? C.lime : C.ash) : null}
             {note.readiness != null ? chip(`readiness ${note.readiness}/100`, C.ash) : null}
@@ -74,7 +74,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
         <AHeading style={{ fontSize: fs.display }}>{t("w.home.today.aiCoach")}</AHeading>
       </View>
 
-      <ACard style={{ marginTop: 14 }}>
+      <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{t("w.home.aicoach.todaysNote")}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
           {t("w.home.aicoach.intro")}

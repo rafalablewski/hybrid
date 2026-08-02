@@ -99,7 +99,7 @@ export default function MfaSettings() {
   const accent = verified.length ? C.lime : C.amber;
 
   return (
-    <View style={{ marginBottom: 14 }}>
+    <View style={{ marginBottom: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
         Two-factor authentication
       </Text>
@@ -136,13 +136,13 @@ export default function MfaSettings() {
 
             {/* enrolment flow */}
             {!enroll && (
-              <Pressable onPress={start} disabled={busy} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: 14, opacity: busy ? 0.5 : 1 }}>
+              <Pressable onPress={start} disabled={busy} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.5 : 1 }}>
                 {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{verified.length ? "Add another factor" : "Set up 2FA"}</Text>}
               </Pressable>
             )}
 
             {enroll && (
-              <View style={{ marginTop: 14 }}>
+              <View style={{ marginTop: 16 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 10 }}>
                   Scan this with your authenticator, then enter the 6-digit code to confirm.
                 </Text>
@@ -161,7 +161,7 @@ export default function MfaSettings() {
                     placeholder="000000"
                     placeholderTextColor={C.ash}
                     accessibilityLabel="Authenticator code"
-                    style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, letterSpacing: 3, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12 }}
+                    style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, letterSpacing: 3, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
                   />
                   <Pressable onPress={confirm} disabled={busy || !isValidTotpCode(code)} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 12, alignItems: "center", opacity: busy || !isValidTotpCode(code) ? 0.5 : 1 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>Confirm</Text>

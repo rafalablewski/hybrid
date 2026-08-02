@@ -35,7 +35,7 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
 
   if (!inbox?.length) return null;
   return (
-    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.lime, borderRadius: 20, padding: 16, marginTop: 14 }}>
+    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.lime, borderRadius: 20, padding: 16, marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Co-sign requests</Text>
       {inbox.map((i) => (
         <View key={i.id} style={{ marginTop: 10 }}>
@@ -102,7 +102,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
   };
 
   return (
-    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 14 }}>
+    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>Verified record</Text>
       {lifts.map(({ lift, topLoad }) => {
         const forLift = (atts ?? []).filter((a) => a.lift === lift);
@@ -140,7 +140,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
                   accessibilityLabel="Witness handle"
                   style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 }}
                 />
-                <Pressable onPress={() => ask(lift)} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 }}>
+                <Pressable onPress={() => ask(lift)} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: "#0c0d0c" }}>{busy ? "Sending" : "Send"}</Text>
                 </Pressable>
               </View>
