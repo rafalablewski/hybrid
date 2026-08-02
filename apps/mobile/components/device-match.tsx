@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  deviceDistanceLabel,
   deviceMarkFor,
   deviceSourceLabel,
   rankDeviceWorkouts,
@@ -100,7 +101,9 @@ export function DeviceMatchSheet({
   const metaFull = (w: DeviceWorkout) =>
     [
       ...(w.avgHr != null ? [`♥ ${w.avgHr}${w.maxHr != null ? `–${w.maxHr}` : ""} bpm`] : []),
-      ...(w.distanceKm != null ? [w.distanceKm < 1 ? `${Math.round(w.distanceKm * 1000)} m` : `${w.distanceKm} km`] : []),
+      // Through core, never raw: the stored figure is the device's exact
+      // measurement, so `${w.distanceKm} km` would print "10.234567 km".
+      ...(w.distanceKm != null ? [deviceDistanceLabel(w.distanceKm, w.activityLabel)] : []),
       ...(w.steps != null ? [`${w.steps.toLocaleString()} steps`] : []),
       ...(w.elevationM != null ? [`↗ ${w.elevationM} m`] : []),
       ...(w.avgMets != null ? [`${w.avgMets} METs`] : []),

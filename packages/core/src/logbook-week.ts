@@ -144,7 +144,9 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     tonnageKg,
     sets,
     strengthSets,
-    distanceKm: Math.round(distanceKm * 1000) / 1000,
+    // Summed, not rounded — the parts are the devices' exact figures (see
+    // doneReceipt). The rail rounds when it renders.
+    distanceKm,
     elevationM: Math.round(elevationM),
     measured,
   };
