@@ -74,7 +74,7 @@ export default function AuroraBuilder() {
   const allowedSave = canSaveRoutine(persona, b.routines.length);
   const [picker, setPicker] = useState(false);
   // Hold-and-drag reorder of the block cards (grip in each card header).
-  const blockDrag = useDragReorder((_g, from, to) => b.moveBlockTo(from, to), prefs.haptics);
+  const blockDrag = useDragReorder((_g, from, to) => b.moveBlockTo(from, to));
 
   const add = (name: string, kind?: BlockKind) => {
     b.addExercise(name, kind);
@@ -379,7 +379,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
   // common path stays one "+ Add set" tap (same layout as the live logger).
   const [special, setSpecial] = useState(false);
   // Hold-and-drag reorder of the set rows (grip on each row).
-  const setDrag = useDragReorder((_g, from, to) => builder.moveSet(b.uid, from, to), haptics);
+  const setDrag = useDragReorder((_g, from, to) => builder.moveSet(b.uid, from, to));
   // The exercise DB drives how THIS lift's sets read: a plank counts seconds,
   // a carry counts metres, a pull-up's load is BW + added weight.
   const sp = exerciseProfile(b.name).strength;

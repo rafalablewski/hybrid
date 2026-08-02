@@ -308,7 +308,7 @@ export function PressScale({
   const pressed = useRef(new Animated.Value(0)).current;
   const to = useCallback(
     (v: number) => {
-      Animated.spring(pressed, { toValue: v, ...springToRN(springs.nav), useNativeDriver: true }).start();
+      Animated.spring(pressed, { toValue: v, ...springToRN(springs.press), useNativeDriver: true }).start();
     },
     [pressed],
   );

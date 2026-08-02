@@ -57,6 +57,7 @@ import { ArrowGlyph } from "./cta-label";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
+import { haptic } from "@/lib/haptics";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
 // state only and is stripped before save (the saved set keeps `rest`, a real
@@ -194,9 +195,7 @@ export default function AuroraLogger({
       setRestNow(rn);
       if (restTarget && rn >= restTarget && !restFired.current) {
         restFired.current = true;
-        if (prefs.haptics && typeof navigator !== "undefined" && "vibrate" in navigator) {
-          try { navigator.vibrate?.([12, 40, 18]); } catch { /* unsupported */ }
-        }
+        haptic.success();
       }
     }, 1000);
     return () => clearInterval(id);
@@ -265,9 +264,7 @@ export default function AuroraLogger({
       ),
     );
     if (!val) return;
-    if (prefs.haptics && typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try { navigator.vibrate?.(8); } catch { /* unsupported */ }
-    }
+    haptic.selection();
     const blk = blocks.find((b) => b.uid === blockUid);
     if (!blk || blk.kind !== "strength") return;
     // Auto-advance: banking the last set appends a fresh one so you keep going.
@@ -689,9 +686,8 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
   const shareLabel = firstEver ? t("summary.shareFirst") : hasWin ? t("summary.sharePr") : t("summary.share");
   const pagerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try { navigator.vibrate?.([12, 40, 18]); } catch { /* unsupported */ }
-    }
+    // Was the ONE web vibrate that skipped prefs.haptics — the gate owns it now.
+    if (milestone) haptic.success();
   }, [milestone]);
 
   // Shared with mobile so the three-way branch can't drift; summary.firstTime

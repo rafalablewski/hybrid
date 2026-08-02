@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Animated, PanResponder, Platform, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
-import * as Haptics from "expo-haptics";
+import { springs, springToRN } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { withAlpha } from "./kit";
+import { haptic } from "../../lib/haptics";
 
 /**
  * LIQUID SEGMENTED CONTROL — the iOS 26 two-state selection, shared by the
@@ -111,7 +112,10 @@ export function LiquidSeg({
   const trackRef = useRef<View>(null);
 
   const springX = (to: number, thenSettleLens: boolean) => {
-    Animated.spring(x, { toValue: to, useNativeDriver: true, stiffness: 130, damping: 17, mass: 1 }).start(
+    // springs.lens from @hybrid/core. Was `stiffness: 130, damping: 17` —
+    // SwiftUI's DEFAULT spring (response .55), which settles in 629ms, 40%
+    // past this system's own ceiling, on the most-tapped control in the app.
+    Animated.spring(x, { toValue: to, useNativeDriver: true, ...springToRN(springs.lens) }).start(
       ({ finished }) => {
         // The in-flight glass condenses back into the pill as it lands.
         if (finished && thenSettleLens && !dragging.current) {
@@ -151,7 +155,7 @@ export function LiquidSeg({
     const it = itemsRef.current[i];
     if (!it) return;
     if (i !== geo.current.index) {
-      if (Platform.OS !== "web") Haptics.selectionAsync().catch(() => {});
+      haptic.selection();
     }
     if (it.intercept) {
       // The pill never lands here — spring home while the intercept opens.

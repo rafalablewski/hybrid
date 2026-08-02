@@ -43,3 +43,9 @@ export function useLoggerPrefs(): LoggerPrefs {
     () => prefs,
   );
 }
+
+/** The current preferences, outside React. For imperative call sites (a haptic
+ *  fired from an event handler) that must not re-render anything to read a flag. */
+export function getLoggerPrefs(): LoggerPrefs {
+  return prefs;
+}

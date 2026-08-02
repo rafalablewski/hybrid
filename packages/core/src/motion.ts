@@ -35,11 +35,17 @@ export interface Spring {
 }
 
 /**
- * The four springs. Anything that MOVES uses one of these.
+ * Every spring in the system. Anything that MOVES uses one of these, and
+ * motion.test.ts holds all of them to the 450ms ceiling — so a spring that
+ * isn't here is a spring nothing is checking.
  *
- * `nav` is the value already shipping in global-nav.tsx — it is reproduced here
- * so both clients can read it from one place, and it must not be retuned
- * without re-auditing that screen.
+ * `press` was called `nav` and was documented as "THE SHIPPED NAV LENS —
+ * global-nav.tsx already animates on this". That file no longer exists: the
+ * hand-built floating capsule was deleted when the bottom bar became the real
+ * system tab bar (expo-router NativeTabs), which renders its own selection
+ * motion. The token survived the component it was named for and is, in
+ * practice, what press feedback runs on — so it is named for that now. The
+ * numbers are unchanged; only the name and the reason are honest again.
  */
 export const springs = {
   /** Sibling travel between bottom-nav destinations. Critically damped: a
@@ -53,8 +59,22 @@ export const springs = {
   /** Sheets, modals and the parent recede behind them — a touch of arrival
    *  energy (peaks ~0.5% past target), matching how an iOS sheet settles. */
   sheet: { response: 0.38, dampingFraction: 0.86 },
-  /** THE SHIPPED NAV LENS. global-nav.tsx already animates on this. */
-  nav: { response: 0.32, dampingFraction: 0.74 },
+  /** Press feedback — the scale-down under a finger. Short and a little lively;
+   *  a press is the one place a small overshoot reads as responsiveness rather
+   *  than wobble. */
+  press: { response: 0.32, dampingFraction: 0.74 },
+  /** THE SELECTION LENS — the pill that flies between segments (liquid-seg on
+   *  both clients).
+   *
+   *  Both clients previously hard-coded SwiftUI's DEFAULT spring here
+   *  (response .551 / dampingFraction .745, reached on mobile as
+   *  `stiffness: 130, damping: 17`), which settles in 629ms — 40% past this
+   *  system's own ceiling, on the control users touch most often. It went
+   *  unnoticed because the guard only ever iterated the tokens, and this was
+   *  not one. The lens should feel PLAYFUL, and playful is fast with overshoot,
+   *  not slow with overshoot: this is quicker AND bouncier (damping .68 vs
+   *  .745). */
+  lens: { response: 0.35, dampingFraction: 0.68 },
 } as const satisfies Record<string, Spring>;
 
 export type SpringToken = keyof typeof springs;
@@ -97,6 +117,54 @@ export const motion = {
   /** Sibling entrance offset, as a fraction of screen width. */
   slideOffset: 1,
 } as const;
+
+/**
+ * SWIPE ACTIONS — the geometry and the release rule for a row you swipe to
+ * reveal a destructive action on.
+ *
+ * Here rather than in each client because the two implementations had drifted
+ * on every single number (open 76 vs 84, commit 40 vs 44, clamp 110 vs 120)
+ * while calling each other twins in their own header comments.
+ */
+export const swipe = {
+  /** Width of the revealed action, in px/dp. */
+  action: 80,
+  /** How far past the action width the row can be dragged before it stops. */
+  max: 120,
+  /** Fraction of `action` the drag must PROJECT past to commit the reveal. */
+  openAt: 0.5,
+  /** Fraction of the row's width that commits the delete outright, no tap. */
+  fullAt: 0.6,
+  /** Seconds of velocity to project the release position by. iOS decides a
+   *  flick from where the finger is GOING, not from where it let go — a fast
+   *  flick that travelled 35px should open, and displacement alone says no. */
+  project: 0.15,
+  /** Speed (px/s) that commits on its own, however short the travel. */
+  flick: 800,
+  /** Rubber-band constant past the clamp: resistance grows with distance so the
+   *  row never runs off, and the finger feels the end instead of hitting a wall. */
+  resist: 90,
+} as const;
+
+/**
+ * Rubber-banded travel: 1:1 up to `limit`, then asymptotically approaching
+ * `limit + resist`. The standard iOS overscroll feel, as a pure function so
+ * both clients rubber-band identically.
+ */
+export function rubberBand(offset: number, limit: number, resist: number = swipe.resist): number {
+  const over = Math.abs(offset) - limit;
+  if (over <= 0) return offset;
+  const damped = limit + resist * (1 - Math.exp(-over / resist));
+  return offset < 0 ? -damped : damped;
+}
+
+/**
+ * Where a released swipe is HEADING, given where it is and how fast it is
+ * moving. Positive `velocity` travels right.
+ */
+export function projectSwipe(offset: number, velocity: number): number {
+  return offset + velocity * swipe.project;
+}
 
 /* ────────────────────────────────────────────────────────────────────────
    Spring integration

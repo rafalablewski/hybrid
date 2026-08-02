@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Haptics from "expo-haptics";
 import {
   volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
@@ -25,6 +24,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, serifIf, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
+import { haptic } from "../../lib/haptics";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
@@ -213,7 +213,7 @@ export default function AuroraVolume({ top, unified = false }: {
   // was tapped (that row carries the definition, next to the finger).
   const [zone, setZone] = useState<{ key: VolumeBandKey; muscle: MuscleGroup } | null>(null);
   const pickZone = (key: VolumeBandKey, muscle: MuscleGroup) => {
-    Haptics.selectionAsync().catch(() => {});
+    haptic.selection();
     setZone((z) => (z && z.key === key && z.muscle === muscle ? null : { key, muscle }));
   };
   const customized = Object.keys(prefs.landmarkOverrides).length > 0;
@@ -227,7 +227,7 @@ export default function AuroraVolume({ top, unified = false }: {
   };
 
   const setBlock = (patch: Partial<VolumeBlock>) => {
-    Haptics.selectionAsync().catch(() => {});
+    haptic.selection();
     setLoggerPref("volumeBlock", resolveBlock({ ...block, ...patch }));
   };
   const setProfile = (patch: Partial<AthleteVolumeProfile>) => {
@@ -455,7 +455,7 @@ function Toggle({ on, label, onPress }: { on: boolean; label: string; onPress: (
   const { palette: C } = useTheme();
   return (
     <Pressable
-      onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
+      onPress={() => { haptic.light(); onPress(); }}
       accessibilityRole="switch"
       accessibilityState={{ checked: on }}
       style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, 0.12) : "transparent" }}

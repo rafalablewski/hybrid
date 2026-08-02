@@ -14,7 +14,6 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Haptics from "expo-haptics";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
@@ -26,6 +25,7 @@ import { fs, F, serifIf, useEntrance } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { AuroraField, withAlpha } from "./aurora/kit";
 import { MetaLine } from "./aurora/meta";
+import { haptic } from "../lib/haptics";
 
 /** The Explore PlanCover's fixed-dark base — the cover is dark in BOTH themes,
  *  exactly like the Explore cards it grows out of. */
@@ -236,7 +236,6 @@ export function CoverScreen({
   const railH = useRef(0);
   const ns = useNavScroll();
   const reduced = useReducedMotion();
-  const haptics = useLoggerPrefs().haptics;
   const entrance = useEntrance();
 
   useEffect(() => {
@@ -266,7 +265,7 @@ export function CoverScreen({
   const snap = (y: number) => {
     if (y <= 6 || y >= delta) return;
     scrollRef.current?.scrollTo({ y: y > delta / 2 ? delta : 0, animated: !reduced });
-    if (haptics) Haptics.selectionAsync().catch(() => {});
+    haptic.selection();
   };
 
   // Every hero layer reads from the ONE scroll track (0 → delta), 1:1 with the

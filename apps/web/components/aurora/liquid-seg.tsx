@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { springs, springToRN } from "@hybrid/core";
 
 /**
  * LIQUID SEGMENTED CONTROL (web) — the iOS 26 two-state selection, twin of
@@ -16,9 +17,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
  *    so the simulation IS the web treatment) with a hairline rim. Dragging
  *    scrubs it across segments; release commits the one under the lens.
  *  - A TAP on another segment sends the lens over glassy IN FLIGHT — it lands
- *    as the solid pill, on SwiftUI's default spring (response 0.55 /
- *    dampingFraction 0.75 → stiffness ≈ 130, damping ≈ 17), with a gel
- *    stretch proportional to velocity.
+ *    as the solid pill, on the shared lens spring (@hybrid/core springs.lens),
+ *    with a gel stretch proportional to velocity.
  *
  * Segments are equal-width. An item may `intercept` selection (the date
  * filter's Month segment opens its picker instead of taking the pill).
@@ -38,9 +38,17 @@ export type LiquidSegItem = {
 // How far the lens grows past the track under touch (px), per the reference.
 const GROW_Y = 7;
 const GROW_X = 16;
-// SwiftUI default spring: response 0.55 s, dampingFraction 0.75.
-const K = 130;
-const DAMP = 17;
+// THE LENS SPRING — springs.lens from @hybrid/core, converted to the
+// stiffness/damping this integrator wants. It used to be SwiftUI's DEFAULT
+// spring hard-coded here (response .55 / damping .75 = K 130, DAMP 17), which
+// settles in 629ms: 40% past the system's own 450ms ceiling, on the control
+// users touch most often. Reading the token means the guard in motion.test.ts
+// now covers this curve too.
+const { stiffness: K, damping: DAMP } = springToRN(springs.lens);
+// Dragging damps harder so the lens tracks the finger instead of swinging past
+// it — twice the resting damping, kept as a RATIO so retuning the token can't
+// silently leave the drag feel behind.
+const DRAG_DAMP = DAMP * 2;
 
 export function LiquidSeg({
   items,
@@ -104,7 +112,7 @@ export function LiquidSeg({
     if (S.reduced) {
       S.x = tx; S.vx = 0; S.lift = 0; S.vlift = 0; S.travelling = false;
     } else {
-      const c = S.dragging ? 34 : DAMP;
+      const c = S.dragging ? DRAG_DAMP : DAMP;
       S.vx += (K * (tx - S.x) - c * S.vx) * dt;
       S.x += S.vx * dt;
       // the in-flight glass condenses back into the pill as it lands

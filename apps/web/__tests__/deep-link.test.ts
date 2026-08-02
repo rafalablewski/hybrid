@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { parseDeepLink, applyDeepLink, verifiedFoodUrl, verifiedSourceUrl } from "../lib/deep-link";
 
 /**
@@ -82,5 +83,48 @@ describe("shareable urls", () => {
     const url = verifiedFoodUrl("mpb-cheeseburger", "https://hybrid.app");
     expect(parseDeepLink(url.slice(url.indexOf("?"))))
       .toEqual({ s: "nutrition", food: "mpb-cheeseburger" });
+  });
+});
+
+/**
+ * THE BACK BUTTON CONTRACT.
+ *
+ * These are static assertions over the source rather than DOM tests (this suite
+ * runs in the node environment), and they guard the two ways the fix for "Back
+ * exits the app" can silently rot:
+ *
+ *  1. the shell stops PUSHING on navigation, at which point there is once again
+ *     nothing for Back to return to and it leaves the app from any depth;
+ *  2. the direction counter grows a second home. The first cut of this had a
+ *     `last` index living in a closure inside onDeepLinkChange, updated only on
+ *     popstate — so after three forward pushes it still held the index from
+ *     subscribe time and the first Back was reported as a Forward, playing the
+ *     wrong transition. One counter, owned by the shell.
+ */
+describe("browser history contract", () => {
+  const read = (p: string) =>
+    readFileSync(new URL(p, import.meta.url), "utf8");
+
+  it("pushes a history entry on forward navigation", () => {
+    const shell = read("../components/app-shell.tsx");
+    expect(shell).toMatch(/writeDeepLink\(\s*\{ s: to === "today" \? undefined : to \}[\s\S]{0,80}push: true/);
+  });
+
+  it("does not re-push while applying a Back or Forward", () => {
+    // popTo exists precisely so the pop path cannot call onNavigate; if it did,
+    // every Back would append an entry and take two presses.
+    const hook = read("../lib/use-screen-transition.ts");
+    const popTo = hook.slice(hook.indexOf("const popTo"), hook.indexOf("return { setScreen"));
+    expect(popTo).not.toMatch(/navRef\.current\?\.\(/);
+  });
+
+  it("keeps exactly one direction counter, owned by the shell", () => {
+    // onDeepLinkChange must REPORT the landed index, never decide direction
+    // from a stale local copy of it.
+    const dl = read("../lib/deep-link.ts");
+    const fn = dl.slice(dl.indexOf("export function onDeepLinkChange"));
+    expect(fn).not.toMatch(/\blet last\b/);
+    expect(fn).toMatch(/fn\(readDeepLink\(\), typeof s\?\.hybridIdx/);
+    expect(read("../components/app-shell.tsx")).toMatch(/const back = idx < navIdx\.current/);
   });
 });

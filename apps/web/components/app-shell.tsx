@@ -33,7 +33,7 @@ import { fs, space,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useScreenTransition } from "@/lib/use-screen-transition";
-import { readDeepLink, writeDeepLink, onDeepLinkChange } from "@/lib/deep-link";
+import { readDeepLink, writeDeepLink, onDeepLinkChange, currentDeepLinkIndex } from "@/lib/deep-link";
 import { useScrollCollapse } from "@/lib/use-scroll-collapse";
 import { useIsMobile } from "@/lib/use-media-query";
 const AuroraHistory = dynamic(() => import("./aurora/history"), { ssr: false });
@@ -169,7 +169,13 @@ export default function AppShell() {
   // transition rather than a hard cut. Direction comes from the shared
   // hierarchy in @hybrid/core, so mobile can't drift. See use-screen-transition.
   const [screen, setScreenRaw] = useState("today");
-  const setScreen = useScreenTransition(screen, setScreenRaw);
+  // Monotonic position in OUR navigation, stamped onto each pushed entry so a
+  // popstate can tell a Back from a Forward (see lib/deep-link.ts).
+  const navIdx = useRef(0);
+  const { setScreen, popTo } = useScreenTransition(screen, setScreenRaw, (to) => {
+    navIdx.current += 1;
+    writeDeepLink({ s: to === "today" ? undefined : to }, { push: true, state: { hybridIdx: navIdx.current } });
+  });
   // DEEP LINKS. The screen is mirrored into `?s=`, so a screen finally has an
   // address: it can be bookmarked, sent to someone, or landed on from an email,
   // and a refresh no longer dumps you back on Today. The URL MIRRORS the state
@@ -181,9 +187,20 @@ export default function AppShell() {
     // setScreenRaw, not setScreen: landing on a link should not play a
     // directional transition from a screen the user was never on.
     if (p.s) setScreenRaw(p.s);
-    return onDeepLinkChange((next) => setScreenRaw(next.s || "today"));
+    // Seed the landing entry with our index so the FIRST Back is measurable
+    // against it (a fresh entry carries no state, which would read as 0 and be
+    // indistinguishable from the root).
+    navIdx.current = currentDeepLinkIndex();
+    writeDeepLink({ s: p.s || undefined }, { state: { hybridIdx: navIdx.current } });
+    // Back/Forward: apply the screen WITH a transition, in the direction the
+    // browser travelled. `popTo` deliberately does not re-push.
+    return onDeepLinkChange((next, idx) => {
+      const back = idx < navIdx.current;
+      navIdx.current = idx;
+      popTo(next.s || "today", back);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useEffect(() => { writeDeepLink({ s: screen === "today" ? undefined : screen }); }, [screen]);
   // ONE scroll signal for the whole shell, published as a CSS custom property.
   // The web twin of the mobile NavScrollProvider; see lib/use-scroll-collapse.
   useScrollCollapse();

@@ -514,7 +514,7 @@ html {
    :active scales down on the nav spring so a click physically lands. Kept
    subtle so it can sit on ANY surface (solid ink2, glass, lime fill). */
 .pressable {
-  transition: transform 0.16s var(--e-nav, cubic-bezier(0.2, 0.8, 0.2, 1)), filter 0.16s ease;
+  transition: transform 0.16s var(--e-press, cubic-bezier(0.2, 0.8, 0.2, 1)), filter 0.16s ease;
 }
 @media (hover: hover) {
   .pressable:hover:not(:disabled) { filter: brightness(1.08); }
@@ -561,6 +561,7 @@ html {
    spring as a linear() easing. An engine without linear() keeps the first
    declaration and still gets a sensible curve.
    ════════════════════════════════════════════════════════════════════ */
+/* ─ GENERATED: motion tokens — node apps/web/scripts/gen-motion-css.mjs ─ */
 :root {
   /* spring.slide — response .34 / damping 1.00, settles in 403ms */
   --e-slide: cubic-bezier(.2,.7,.3,1);
@@ -574,10 +575,14 @@ html {
   --e-sheet: cubic-bezier(.2,.7,.3,1);
   --e-sheet: linear(0,0.01364,0.0494,0.10064,0.16202,0.22934,0.29932,0.36944,0.43785,0.50321,0.56461,0.62147,0.6735,0.72058,0.76277,0.80023,0.83322,0.86202,0.88698,0.90843,0.92672,0.9422,0.95518,0.96598,0.97487,0.98212,0.98796,0.99261,0.99625,0.99905,1.00115,1.00268,1.00374,1.00443,1.00483,1.005,1.005);
   --d-sheet: 378ms;
-  /* spring.nav — response .32 / damping .74, settles in 365ms (the SHIPPED lens) */
-  --e-nav: cubic-bezier(.2,.7,.3,1);
-  --e-nav: linear(0,0.01795,0.06491,0.13189,0.21147,0.29772,0.38599,0.47274,0.55539,0.63216,0.70193,0.76409,0.81845,0.86516,0.90456,0.93717,0.96361,0.98454,1.00066,1.01265,1.02114,1.02675,1.03,1.0314,1.03137,1.03028,1.02842,1.02607,1.02343,1.02066,1.01788,1.01521,1.0127,1.01039,1.00832,1.00649,1.0049);
-  --d-nav: 365ms;
+  /* spring.press — response .32 / damping .74, settles in 365ms */
+  --e-press: cubic-bezier(.2,.7,.3,1);
+  --e-press: linear(0,0.01795,0.06491,0.13189,0.21147,0.29772,0.38599,0.47274,0.55539,0.63216,0.70193,0.76409,0.81845,0.86516,0.90456,0.93717,0.96361,0.98454,1.00066,1.01265,1.02114,1.02675,1.03,1.0314,1.03137,1.03028,1.02842,1.02607,1.02343,1.02066,1.01788,1.01521,1.0127,1.01039,1.00832,1.00649,1.0049);
+  --d-press: 365ms;
+  /* spring.lens — response .35 / damping .68, settles in 384ms */
+  --e-lens: cubic-bezier(.2,.7,.3,1);
+  --e-lens: linear(0,0.01679,0.06137,0.12594,0.20384,0.2895,0.37839,0.4669,0.55227,0.63248,0.70613,0.77235,0.83072,0.88115,0.92384,0.9592,0.98776,1.01017,1.02711,1.0393,1.04742,1.05216,1.05414,1.05391,1.05201,1.04886,1.04487,1.04035,1.03556,1.03073,1.02602,1.02155,1.01741,1.01366,1.01033,1.00743,1.00496);
+  --d-lens: 384ms;
   /* opacity-only — nothing positional, so nothing to interrupt */
   --e-fade: cubic-bezier(.2,.7,.3,1);
   --e-exit: cubic-bezier(.4,0,.9,.4);
@@ -586,6 +591,7 @@ html {
   /* the Reduce Motion cross-dissolve SUBSTITUTION — never zero */
   --d-reduced: 150ms;
 }
+/* ─ END GENERATED ─ */
 
 /* motion.parallaxUnder = 0.33, motion.pushOffset = 0.16, recede = 0.92 / 30px / 0.72 */
 @keyframes motionSlideInRight  { from { transform: translateX(100%); }  to { transform: none; } }
