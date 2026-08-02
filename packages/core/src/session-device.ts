@@ -171,7 +171,9 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
 
   const durationSec = boundedNum(o.durationSec, 1, 86400);
   const kcal = boundedNum(o.kcal, 1, 20000);
-  const distanceKm = boundedNum(o.distanceKm, 0.01, 300);
+  // Floor is ONE METRE, not ten. The old 0.01 km floor threw away any recording
+  // shorter than 10 m outright — a warm-up length in a pool is a real distance.
+  const distanceKm = boundedNum(o.distanceKm, 0.001, 300);
   const avgHr = boundedNum(o.avgHr, 20, 260);
   const maxHr = boundedNum(o.maxHr, 20, 260);
   const minHr = boundedNum(o.minHr, 20, 260);
@@ -197,7 +199,14 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
     durationMin: Math.round(durationMin),
     ...(durationSec != null ? { durationSec: Math.round(durationSec) } : {}),
     ...(kcal != null ? { kcal: Math.round(kcal) } : {}),
-    ...(distanceKm != null ? { distanceKm: Math.round(distanceKm * 100) / 100 } : {}),
+    // Stored to the CENTIMETRE. Rounding to two decimals of a kilometre is a
+    // 10 m grid, which is invisible on a 10 km run and catastrophic on anything
+    // measured in metres: a 34 m pool swim (0.034 km) landed on 0.03 and the app
+    // showed "30 m" beside the watch's "34 m", then derived a pace from the
+    // wrong distance (12:33 /100m against the watch's 11:06). Distance is the
+    // one measured figure with three orders of magnitude of range, so it keeps
+    // its precision here and every surface rounds at the point it renders.
+    ...(distanceKm != null ? { distanceKm: Math.round(distanceKm * 1e5) / 1e5 } : {}),
     ...(avgHr != null ? { avgHr: Math.round(avgHr) } : {}),
     ...(maxHr != null ? { maxHr: Math.round(maxHr) } : {}),
     ...(minHr != null ? { minHr: Math.round(minHr) } : {}),

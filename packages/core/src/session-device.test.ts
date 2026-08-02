@@ -27,9 +27,32 @@ describe("sanitizeDeviceWorkout", () => {
     const out = sanitizeDeviceWorkout({ ...watchTennis, kcal: 540.6, distanceKm: 2.4567, avgHr: 132.4 });
     expect(out).not.toBeNull();
     expect(out!.kcal).toBe(541);
-    expect(out!.distanceKm).toBe(2.46);
+    expect(out!.distanceKm).toBe(2.4567);
     expect(out!.avgHr).toBe(132);
     expect(out!.provider).toBe("apple");
+  });
+
+  it("keeps a short measured distance to the metre", () => {
+    // The recording behind the bug report: a 34 m pool swim in 3:46. Stored on
+    // the old 10 m grid (two decimals of a km) it became 0.03 — the app showed
+    // "30 m" beside the watch's own "34 m" and paced it 12:33 /100m against the
+    // watch's 11:06.
+    const out = sanitizeDeviceWorkout({
+      ...watchTennis,
+      activityLabel: "Swimming",
+      distanceKm: 0.034,
+      durationMin: 4,
+      durationSec: 226,
+    })!;
+    expect(out.distanceKm).toBe(0.034);
+    const rows = deviceComparisonRows({ device: out, durationMin: 4, estimatedKcal: 32, distanceKm: 0.034 });
+    expect(rows.find((r) => r.labelKey === "session.device.distance")!.device).toBe("34 m");
+    expect(rows.find((r) => r.labelKey === "session.pace")!.device).toBe("11:05 /100m");
+  });
+
+  it("keeps a single length rather than dropping it under a 10 m floor", () => {
+    const out = sanitizeDeviceWorkout({ ...watchTennis, activityLabel: "Swimming", distanceKm: 0.005 })!;
+    expect(out.distanceKm).toBe(0.005);
   });
 
   it("rejects non-objects and rows missing the essentials", () => {

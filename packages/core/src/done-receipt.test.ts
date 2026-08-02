@@ -151,6 +151,17 @@ describe("doneReceiptStats", () => {
     ]);
   });
 
+  it("reads a sub-kilometre distance in metres — tenths of a km round it to nothing", () => {
+    const swim = doneReceipt(
+      session({
+        title: "Swimming",
+        completedAt: "2026-07-16T10:34:00.000Z",
+        blocks: [{ kind: "cardio", name: "Swimming", distance: 0.034, minutes: 4 }],
+      }),
+    );
+    expect(doneReceiptStats(swim, "kg").find((s) => s.labelKey === "w.home.today.distance")!.value).toBe("34 m");
+  });
+
   it("never reports sets for a tennis or squash match", () => {
     for (const name of ["Tennis", "Squash"]) {
       const match = doneReceipt(

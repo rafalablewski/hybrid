@@ -171,8 +171,15 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
   const out: DoneReceiptStat[] = [];
   if (r.durationMin != null) out.push({ value: `${r.durationMin} min`, labelKey: "w.home.rail.duration" });
   if (r.tonnageKg > 0) out.push({ value: fmtTonnage(r.tonnageKg, units), labelKey: "w.home.today.volume" });
-  // The receipt keeps metre precision; a rail stat reads in tenths of a km.
-  if (r.distanceKm > 0) out.push({ value: `${Math.round(r.distanceKm * 10) / 10} km`, labelKey: "w.home.today.distance" });
+  // The receipt keeps metre precision; a rail stat reads in tenths of a km —
+  // but only once there IS a kilometre. Under one, tenths round a 34 m pool
+  // swim to "0 km", so anything sub-kilometre reads in metres (the same rule
+  // the device panel and the match picker already use).
+  if (r.distanceKm > 0)
+    out.push({
+      value: r.distanceKm < 1 ? `${Math.round(r.distanceKm * 1000)} m` : `${Math.round(r.distanceKm * 10) / 10} km`,
+      labelKey: "w.home.today.distance",
+    });
   if (r.strengthSets > 0) out.push({ value: String(r.strengthSets), labelKey: "w.home.today.sets" });
   return out;
 }
