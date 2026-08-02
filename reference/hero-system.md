@@ -371,25 +371,74 @@ away, and there is never a second copy of it.
 
 ---
 
-## Part 11 — Migration plan
+## Part 11 — Migration
 
-Status of each screen. Migrated screens are done in this change; the rest are
-tracked under the `design-system-unification-sweep` capability.
+**The sweep is done.** Every screen head on both clients is the system's.
 
-| screen | rank / mode | change | status |
-|---|---|---|---|
-| History | `title` | title off the rail row; the archived pill → rail accessory; the view switcher → docked sub-rail; nav button stops scrolling away | **done, both clients** |
-| Plan / Goal / Library / Recipe cover | `cover` | geometry, detents, nav button, chip → eyebrow, meta line, title ramp all from core; web's 272 height → 252 (a real 20px web↔mobile drift, now impossible) | **done, both clients** |
-| Workout Wrapped | `cover` + `takeover` | one rail at the system y; the back square → the dismiss circle; title 40 → 34; the figure 96/112 → 76; gutter 24 → 18 | **done, both clients** |
-| Workout detail | `cover` | adopt `HeroScreen`; `lift` from the History row | planned |
-| Exercise detail | `cover` | adopt; `deepen` from Workout | planned |
-| Exercise analytics | `title` | adopt; `deepen` | planned |
-| Statistics / Performance | `title` | adopt | planned |
-| Profile | `title` | adopt | planned |
-| Plans root | `cover` (`library`) | already on the shared cover scaffold | inherits |
-| Settings sub-pages (≈40 screens on `ABack`) | `bar` | swap `ABack` → `HeroNav` inside a `bar` rail | planned |
+| screen | rank / mode | status |
+|---|---|---|
+| History | `title` | shipped |
+| Plan / Goal / Library / Recipe cover | `cover` | shipped |
+| Workout Wrapped | `cover` + `takeover` | shipped |
+| Statistics, Analytics, Trends, Volume, Velocity, Video, Force plate, Endurance, Longevity, Progress, Exercises, Exercise detail, Calendar, Check-in, Periodize, Builder, Run track, Sport, Coach, Connections, Competition, Talent, Tactical, Team monitor, Team compare, Org, AI coach, Logger settings, Profile edit, Coach apply, Notifications, Interval timer, Admin sections, Coaches, Discover, Leaderboard, Feed, Performance, Settings sub-pages | `title` | shipped |
+| Login | `bar` | shipped |
+| Nutrition | — | control only, see below |
 
-**Order to migrate in:** ranks first (`bar` sweep — it is mechanical and removes
-the last non-system back button), then the `cover` screens (they gain the most),
-then `title`. Do not migrate a screen and its transition in separate changes:
-`lift` needs both ends on the system to have a matched geometry to fly between.
+`ABack` — the 44x44 line-bordered square that 45 mobile files hand-rolled a
+header row around — is **deleted**. Web's bare `<h1 style={{fontSize:
+fs.display}}>` head is gone from every screen too.
+
+### How a screen adopts it
+
+One prop. `AuroraScreen` (mobile) and `HeroScreen` (web) take a `hero`:
+
+```tsx
+<AuroraScreen hero={{ rank: "title", title: t("nav.history") }}>
+  {body}
+</AuroraScreen>
+```
+
+`back` defaults to `router.back()`; pass `back={false}` on a root screen and the
+rail keeps an empty leading slot, so the title's y never shifts between a root
+and a pushed screen. `scroller` hands a screen the scroll props so it can keep
+its own `FlatList` — a screen never trades virtualization for a hero.
+
+### Judgement calls made during the sweep
+
+- **Exercise detail is `title`, not `cover`.** The test for a cover is *one
+  nameable thing with an accent and a mark*, and an exercise has neither in this
+  codebase. Promoting it would mean inventing a per-exercise accent system, or
+  giving every exercise page the same theme-primary wash — the "looks like a
+  product page" failure the rank rule exists to prevent. It becomes a `cover`
+  the day exercises get an accent, and not before.
+- **Login is `bar`.** The brand mark and the form *are* the screen; there is no
+  subject to name, so a display title would be chrome.
+- **Editors inside a Card take the control, not a hero.** The social-profile
+  field editor and Nutrition's sub-views are not screens — they have no screen
+  head to own — so they use `HeroNav` at the system's geometry without a rail.
+- **Decoration was dropped, not relocated.** Calendar's calendar glyph,
+  Longevity's heart, Check-in's heart and Endurance's GPS pin sat beside their
+  titles. The rail's trailing slot carries one label or one control, so they are
+  gone rather than moved.
+- **Heads that were heroes in disguise became heroes.** Periodize's lime kicker
+  is an eyebrow and its "now in <block>" line a meta line; Performance's "living
+  masthead" is an eyebrow plus a title; Interval Timer's bordered lockup is a
+  title plus a meta line; Notifications' unread count and Volume's
+  Edit-landmarks toggle are rail accessories.
+- **Data stayed data.** Statistics' weekly-volume readout is a figure, not
+  metadata, so it stayed in the body rather than riding the rail.
+
+### The one open conflict
+
+**Nutrition** keeps a sticky HUD bar pinned at exactly the rail's y. Its nav
+control is the system's everywhere, but its head and the hero want the same
+44pt, and resolving that is a decision about Nutrition's information
+architecture — is the HUD a sub-rail that docks under the hero's rail, or is it
+the screen's head? — not a mechanical migration. Tracked as its own capability.
+
+### One sequencing rule, still
+
+Never migrate a screen and its transition in separate changes. `lift` needs
+*both* ends on the system to have a matched geometry to fly between; ship one
+end alone and the move degrades to a cut on exactly the screens the system
+exists to connect.

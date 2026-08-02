@@ -307,7 +307,10 @@ export function HeroScreen({
   children,
 }: {
   hero: HeroSpec;
-  back?: () => void;
+  /** `false` renders no button — a root screen with nothing to pop. The rail
+   *  still keeps an empty leading slot, so the title's y never shifts between a
+   *  root and a pushed screen. Mobile parity: the same prop shape. */
+  back?: (() => void) | false;
   backLabel?: string;
   accessory?: ReactNode;
   rail?: ReactNode;

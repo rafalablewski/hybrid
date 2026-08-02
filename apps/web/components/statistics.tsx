@@ -6,6 +6,7 @@ import { fs, space, sessionBuckets, weeklyRecap, type StatRange } from "@hybrid/
 import { useSessions } from "@/lib/use-sessions";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { AuroraIcon } from "@/components/aurora/icons";
+import { HeroScreen } from "@/components/aurora/hero";
 import { useTemplate } from "@/lib/use-template";
 import { useLang } from "@/lib/i18n";
 
@@ -40,18 +41,14 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
   return (
     <div style={outer}>
       <div style={{ width: "100%", maxWidth: 460 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div style={{ display: "flex", gap: space.ms, alignItems: "center" }}>
-            {!embedded && (
-              <button className="pressable" onClick={() => router.push("/app")} aria-label={t("w.analyze.stats.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "var(--back-surface)", boxShadow: "var(--back-shadow)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
-                {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
-              </button>
-            )}
-            <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, lineHeight: 1.1 }}>
-              {t("w.analyze.stats.title").split("\n").flatMap((line, i) => (i === 0 ? [line] : [<br key={i} />, line]))}
-            </h1>
-          </div>
-          <div style={{ textAlign: "right", marginTop: 6 }}>
+      <HeroScreen
+        hero={{ rank: "title", title: t("w.analyze.stats.title").replace("\n", " ") }}
+        back={embedded ? false : () => router.push("/app")}
+      >
+        {/* The weekly-volume readout is DATA, not metadata, so it stays in the
+            body rather than riding the rail's trailing slot. */}
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "flex-start" }}>
+          <div style={{ textAlign: "right" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t("w.analyze.stats.weeklyVolume")}</div>
             <div style={{ display: "flex", alignItems: "center", gap: space.xs, justifyContent: "flex-end", marginTop: 2 }}>
               <AuroraIcon name="arrow-up" size={16} color={C("lime")} />
@@ -93,6 +90,7 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
         {!hasData && (
           <p style={{ fontSize: fs.body, color: C("ash"), textAlign: "center", marginTop: 18, lineHeight: 1.5 }}>{t("w.analyze.stats.empty")}</p>
         )}
+      </HeroScreen>
       </div>
     </div>
   );

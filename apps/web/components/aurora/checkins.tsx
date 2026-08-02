@@ -22,6 +22,7 @@ import { useSession } from "@/lib/session";
 import { useCheckins } from "@/lib/use-checkins";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { HeroScreen } from "./hero";
 import ReadinessFace from "./readiness-face";
 
 type Ratings = Record<CheckinMetricKey, number>;
@@ -296,10 +297,10 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
   } as const);
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.recovery.checkins.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {!embedded && (
         <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
-          <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.checkins.title")}</h1>
           <span style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={C("red")} /></span>
         </div>
       )}
@@ -562,5 +563,6 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
         )}
       </div>
     </div>
+    </HeroScreen>
   );
 }

@@ -6,6 +6,7 @@ import {
   weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, kgToUnit,
   type LoggedSession, type ExercisePeriod, type TrendDir, type ExerciseTableRow,
 } from "@hybrid/core";
+import { HeroScreen } from "./hero";
 import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, BLUE, tip, mono } from "@/lib/ui";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
@@ -24,8 +25,12 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
  *  doesn't carry three <h1>s. Nothing here may restyle: this section must look
  *  exactly as it did when it was its own screen. */
 function Head({ unified, t }: { unified: boolean; t: (k: string) => string }) {
+  // Standing alone the title is the HERO's (the screen wraps itself in one);
+  // embedded in the unified Performance page the host owns the head, so the
+  // section keeps its h2 at the identical size it always had.
+  if (!unified) return null;
   return createElement(
-    unified ? "h2" : "h1",
+    "h2",
     { style: { fontWeight: 900, fontSize: fs.display, margin: 0 } },
     t("w.analyze.trends.title"),
   );
@@ -55,16 +60,21 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
   const weekData = weeks.map((w) => ({ w: fmtWeek(w.weekStart), sets: w.sets, t: Number(((units === "kg" ? w.tonnage : kgToUnit(w.tonnage, "lb")) / 1000).toFixed(1)) }));
   const frameHead = (color: string, kicker: string) => <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color), marginBottom: 10 }}>{kicker}</div>;
 
+  // Standing alone the screen wears the system's hero; embedded in the unified
+  // Performance page the host owns the head, so it is just its sections.
+  const shell = (children: React.ReactNode) =>
+    unified ? <>{children}</> : <HeroScreen hero={{ rank: "title", title: t("w.analyze.trends.title") }}>{children}</HeroScreen>;
+
   if (!trained) {
-    return (
+    return shell(
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <Head unified={unified} t={t} />
         <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.analyze.trends.empty")}</span></div>
-      </div>
+      </div>,
     );
   }
 
-  return (
+  return shell(
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <Head unified={unified} t={t} />
 
@@ -103,6 +113,6 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
           </div>
         </div>
       </div>
-    </div>
+    </div>,
   );
 }

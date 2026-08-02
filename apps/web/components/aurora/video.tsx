@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fs, space } from "@hybrid/core";
+import { HeroScreen } from "./hero";
 import { useLang } from "@/lib/i18n";
 
 
@@ -19,8 +20,8 @@ export default function AuroraVideo() {
   useEffect(() => { (async () => { const res = await fetch("/api/video"); if (res.ok) setAnalyses(((await res.json()) as { analyses: Analysis[] }).analyses); })(); }, []);
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.analyze.vid.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk"), display: "grid", gap: space.lg }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.vid.title")}</h1>
       <div style={card}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.vid.intel")}</div>
         <p style={{ fontSize: fs.body, lineHeight: 1.5, marginTop: 6 }}>{t("w.analyze.vid.intelBody")}</p>
@@ -46,5 +47,6 @@ export default function AuroraVideo() {
         ))}
       </div>
     </div>
+    </HeroScreen>
   );
 }

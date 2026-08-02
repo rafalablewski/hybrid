@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { parseForcePlateCsv, type Signal } from "@hybrid/core";
+import { HeroScreen } from "./hero";
 import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, tip } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
@@ -48,8 +49,8 @@ export default function AuroraForcePlate() {
   };
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.analyze.fp.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 16px" }}>{t("w.analyze.fp.title")}</h1>
       <div style={card}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.fp.importTitle")}</div>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, margin: "8px 0 12px", color: C("ash") }}>{t("w.analyze.fp.importBody")}</p>
@@ -83,5 +84,6 @@ export default function AuroraForcePlate() {
         </div>
       )}
     </div>
+    </HeroScreen>
   );
 }

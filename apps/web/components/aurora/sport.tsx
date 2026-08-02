@@ -6,6 +6,7 @@ import { useSessions } from "@/lib/use-sessions";
 import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
 import { CtaLabel } from "./cta-label";
+import { HeroScreen } from "./hero";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
@@ -43,8 +44,8 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
   const rx = prescribeForSport(sport, levelIdx, { sessions });
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.train.sport.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 8px" }}>{t("w.train.sport.title")}</h1>
       <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>
         {t("w.train.sport.intro")}
       </p>
@@ -206,5 +207,6 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
         </div>
       </div>
     </div>
+    </HeroScreen>
   );
 }

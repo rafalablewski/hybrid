@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fs } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import AuroraConnectionPage from "./connection-page";
+import { HeroScreen } from "./hero";
 import { CtaLabel } from "./cta-label";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
@@ -38,8 +39,8 @@ export default function AuroraConnections() {
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{label}</span>;
 
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.account.connections.title") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.account.connections.title")}</h1>
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>{t("w.account.connections.intro")}</p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))", gap: 16, marginTop: 16 }}>
@@ -58,5 +59,6 @@ export default function AuroraConnections() {
         })}
       </div>
     </div>
+    </HeroScreen>
   );
 }

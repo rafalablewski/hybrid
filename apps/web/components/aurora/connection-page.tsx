@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { fs } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { CtaLabel } from "./cta-label";
+import { HeroScreen } from "./hero";
 
 type Conn = { id: string; provider: string; status: string; lastSyncAt: string | null };
 type Provider = { id: string; label: string; auth: string; provides: string[]; configured: boolean };
@@ -51,11 +52,11 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
   const pill = (border: string, fill: boolean): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: fill ? C("lime") : "transparent", color: fill ? C("ink") : C("chalk"), border: `1px solid ${border}`, borderRadius: 999, padding: "10px 16px", cursor: "pointer", display: "inline-block", textDecoration: "none" });
 
   return (
+    <HeroScreen hero={{ rank: "title", title: p?.label ?? id }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <button className="pressable" onClick={onBack} style={{ background: "transparent", border: "none", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, cursor: "pointer", padding: 0 }}>
         ← {t("w.account.connections.title")}
       </button>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "10px 0 0" }}>{p?.label ?? id}</h1>
 
       <div style={{ ...card, marginTop: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -99,5 +100,6 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
         )}
       </div>
     </div>
+    </HeroScreen>
   );
 }

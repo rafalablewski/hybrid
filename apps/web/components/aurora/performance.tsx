@@ -18,6 +18,7 @@ import { useCheckins } from "@/lib/use-checkins";
 import { useToday } from "@/lib/use-today";
 import { useIsMobile } from "@/lib/use-media-query";
 import AuroraOnboarding from "./onboarding";
+import { HeroScreen } from "./hero";
 import GroupMark from "./group-mark";
 import RtpPanel from "../rtp-panel";
 import AuroraVolume from "./volume";
@@ -780,8 +781,8 @@ const TEASE: { key: string }[] = [
 function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
   const { t } = useLang();
   return (
+    <HeroScreen hero={{ rank: "title", title: t("w.home.cockpit.teaseTitle") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 6px" }}>{t("w.home.cockpit.teaseTitle")}</h1>
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, color: C("ash") }}>{t("w.home.cockpit.teaseSub1")}<b style={{ color: C("lime") }}>{t("w.home.cockpit.teaseSub2")}</b>{t("w.home.cockpit.teaseSub3")}</p>
       <div style={{ display: "grid", gap: space.ms, marginTop: 16 }}>
         {TEASE.map((s) => (
@@ -799,5 +800,6 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
         {paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")}
       </button>
     </div>
+    </HeroScreen>
   );
 }
