@@ -307,7 +307,7 @@ function Field({ C, value, onChange, placeholder, keyboardType }: { C: Palette; 
       placeholderTextColor={C.ash}
       autoCapitalize={keyboardType === "email-address" ? "none" : "sentences"}
       keyboardType={keyboardType}
-      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 11 }}
+      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 12 }}
     />
   );
 }

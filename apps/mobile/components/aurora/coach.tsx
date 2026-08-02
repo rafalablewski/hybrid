@@ -329,7 +329,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: accent ? txt(C, C.lime) : C.ash, marginTop: 20, marginBottom: 10 }}>{text}</Text>
   );
   const selChip = (key: string, lbl: string, selected: boolean, onPress: () => void) => (
-    <Pressable key={key} onPress={onPress} style={{ borderWidth: 1, borderColor: selected ? C.lime : C.line, backgroundColor: selected ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
+    <Pressable key={key} onPress={onPress} style={{ borderWidth: 1, borderColor: selected ? C.lime : C.line, backgroundColor: selected ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: selected ? txt(C, C.lime) : C.ash }}>{lbl}</Text>
     </Pressable>
   );
@@ -490,13 +490,13 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                       style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, minHeight: 56 }}
                     />
                     <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
-                      <APill label={t("w.teams.coach.sendReply")} variant="primary" onPress={() => sendReply(c.id)} style={{ paddingHorizontal: 20, paddingVertical: 11 }} />
-                      <APill label={t("common.cancel")} variant="soft" onPress={() => { setReplyFor(null); setReplyText(""); }} style={{ paddingHorizontal: 20, paddingVertical: 11 }} />
+                      <APill label={t("w.teams.coach.sendReply")} variant="primary" onPress={() => sendReply(c.id)} style={{ paddingHorizontal: 20, paddingVertical: 12 }} />
+                      <APill label={t("common.cancel")} variant="soft" onPress={() => { setReplyFor(null); setReplyText(""); }} style={{ paddingHorizontal: 20, paddingVertical: 12 }} />
                     </View>
                   </View>
                 ) : (
                   <View style={{ marginTop: 10, alignSelf: "flex-start" }}>
-                    <APill label={t("w.teams.coach.reply")} variant="primary" onPress={() => { setReplyFor(c.id); setReplyText(""); }} style={{ paddingHorizontal: 22, paddingVertical: 11 }} />
+                    <APill label={t("w.teams.coach.reply")} variant="primary" onPress={() => { setReplyFor(c.id); setReplyText(""); }} style={{ paddingHorizontal: 22, paddingVertical: 12 }} />
                   </View>
                 )}
               </ACard>
@@ -527,10 +527,10 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{new Date(s.startedAt).toLocaleDateString()}</Text>
                 </View>
                 <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
-                  <View style={{ backgroundColor: C.ink, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4, borderWidth: 1, borderColor: C.line }}>
+                  <View style={{ backgroundColor: C.ink, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: C.line }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{sessionVolume(s.blocks).toLocaleString()} kg</Text>
                   </View>
-                  <View style={{ backgroundColor: C.ink, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4, borderWidth: 1, borderColor: C.line }}>
+                  <View style={{ backgroundColor: C.ink, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: C.line }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{s.blocks.length} blocks</Text>
                   </View>
                 </View>

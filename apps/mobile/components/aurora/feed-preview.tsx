@@ -48,7 +48,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
     return () => loop.stop();
   }, [pulse]);
 
-  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 26, padding: 16, ...(horizontal ? { width: cardW } : {}) } as const;
+  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, ...(horizontal ? { width: cardW } : {}) } as const;
   // Vertical stacks full-width; horizontal is a left/right scroll-snap slider.
   const Wrap = ({ children }: { children: ReactNode }) =>
     horizontal
@@ -65,7 +65,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
               <Animated.View style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: C.line, opacity: pulse }} />
               <View style={{ flex: 1 }}>
                 <Animated.View style={{ width: "40%", height: 11, borderRadius: 6, backgroundColor: C.line, opacity: pulse }} />
-                <Animated.View style={{ width: "55%", height: 9, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 7 }} />
+                <Animated.View style={{ width: "55%", height: 9, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 8 }} />
               </View>
             </View>
             <Animated.View style={{ width: "90%", height: 12, borderRadius: 6, backgroundColor: C.line, opacity: pulse, marginTop: 14 }} />
@@ -81,7 +81,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
   // X / Twitter-style post — avatar left, name ✓ @handle, time inline, prose,
   // an optional attached-content card, and a reply/repost/like/share row.
   const postStyle = horizontal
-    ? ({ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, width: cardW, ...cardShadow } as const)
+    ? ({ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, width: cardW, ...cardShadow } as const)
     : ({ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line } as const);
   return (
     <Wrap>
@@ -91,7 +91,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
         return (
           <Pressable key={it.id} onPress={onOpen} style={postStyle}>
             {/* header — avatar inline; everything below spans the full width */}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Avatar url={it.author?.avatarUrl} name={it.author?.displayName} handle={handle} size={36} />
               <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, flex: 1, minWidth: 0 }}>
                 <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 14 }}>{v.name}</Text>
@@ -135,7 +135,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           onPress={onOpen}
           accessibilityRole="button"
           accessibilityLabel={t("w.explore.seeMore")}
-          style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 20, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
+          style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 28, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
         >
           <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 16 }}>→</Text>

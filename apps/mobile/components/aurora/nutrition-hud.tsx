@@ -157,7 +157,7 @@ function Bar({ visible, reduced, C, topInset, children }: {
         gap: 6,
         paddingHorizontal: 16,
         paddingTop: topInset + 8,
-        paddingBottom: 9,
+        paddingBottom: 8,
         // No backdrop-filter in RN: an ink wash at the same weight as the web
         // blur keeps the two bars reading the same.
         backgroundColor: C.ink,
@@ -206,7 +206,7 @@ function Pill({ open, reduced, C, onPress, label, tint, children }: {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          paddingHorizontal: 11,
+          paddingHorizontal: 12,
           paddingVertical: 5,
           borderRadius: 999,
           borderWidth: 1,

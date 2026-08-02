@@ -194,7 +194,7 @@ export default function AuroraWeekRail({
         backgroundColor: C.ink2,
         borderWidth: 1,
         borderColor: C.line,
-        borderRadius: 24,
+        borderRadius: RADIUS.card,
         padding: 20,
         shadowColor: "#000",
         shadowOpacity: 0.18,
@@ -366,7 +366,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
 
   if (day.isRest) {
     return (
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 13 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <Moon c={C.ash} s={26} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
@@ -379,7 +379,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
   // Sessions postponed ONTO this date — a light catch-up list (all states).
   const catchUp = day.postponedIn.length > 0 && (
     <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 9 }}>{t("w.home.rail.catchUp")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.home.rail.catchUp")}</Text>
       {day.postponedIn.map((it, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
           <View style={{ flex: 1 }}>
@@ -467,7 +467,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
                 accessibilityRole="tab"
                 accessibilityState={{ selected: on }}
                 accessibilityLabel={sessionLabel(s, t)}
-                style={{ paddingBottom: 7, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}
+                style={{ paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}
               >
                 <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: on ? "600" : "400", letterSpacing: 0.4, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
               </Pressable>
@@ -492,7 +492,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
       )}
 
       {/* actions by state — one accent (Start), the rest neutral glyph/ghosts */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 16 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
         {day.status === "today" && (
           <>
             <PrimaryBtn C={C} label={t("w.home.today.start")} onPress={() => onStart(startBlocks)} />
@@ -529,7 +529,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
 
 function PrimaryBtn({ C, label, onPress }: { C: Pal; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
+    <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", ...startGlow(C.lime, pressed) })}>
       <CtaLabel label={label} color={C.onAccent} fontSize={fs.bodyLg} />
     </Pressable>
   );

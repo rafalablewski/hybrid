@@ -126,7 +126,7 @@ function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c
       // section, they don't switch panels, and the chips are buttons already.
       accessibilityLabel={t("w.train.plans.jumpToCategory")}
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 9 }}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 8 }}
     >
       {categories.map((c) => (
         <Pressable
@@ -134,7 +134,7 @@ function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c
           onPress={() => onJump(c)}
           accessibilityRole="button"
           hitSlop={6}
-          style={({ pressed }) => ({ backgroundColor: pressed ? withAlpha(C.chalk, 0.1) : "transparent", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 13, paddingVertical: 7 })}
+          style={({ pressed }) => ({ backgroundColor: pressed ? withAlpha(C.chalk, 0.1) : "transparent", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 })}
         >
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c}</Text>
         </Pressable>
@@ -193,7 +193,7 @@ function ShelfTrack({ x, view, content }: { x: Animated.Value; view: number; con
   const thumb = Math.max(24, Math.min(1, view / content) * track);
   const maxScroll = Math.max(1, content - view);
   return (
-    <View onLayout={(e) => setTrack(e.nativeEvent.layout.width)} style={{ height: 2, borderRadius: 2, marginTop: 9, backgroundColor: withAlpha(C.chalk, 0.1), overflow: "hidden" }}>
+    <View onLayout={(e) => setTrack(e.nativeEvent.layout.width)} style={{ height: 2, borderRadius: 2, marginTop: 8, backgroundColor: withAlpha(C.chalk, 0.1), overflow: "hidden" }}>
       <Animated.View
         style={{
           height: 2,
@@ -223,12 +223,12 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
       style={({ pressed }) => ({
         width: TILE_W,
         height: TILE_H,
-        borderRadius: 20,
+        borderRadius: RADIUS.card,
         overflow: "hidden",
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.07)",
         backgroundColor: TILE_INK,
-        padding: 13,
+        padding: 12,
         justifyContent: "space-between",
         transform: [{ scale: pressed && !reduce ? 0.97 : 1 }],
       })}
@@ -297,7 +297,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
               <ACard style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{p.tag}</Text>
-                  {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
+                  {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
                 </View>
                 <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
                 <View style={{ flexDirection: "row", gap: 14, marginTop: 12, marginBottom: 10 }}>
@@ -361,7 +361,7 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.weeklySplit")}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
             {d.split.map((day, i) => (
-              <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 11, paddingVertical: 8 }}>
+              <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 8 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: day.toLowerCase() === "rest" ? C.ash : C.chalk }}>{day}</Text>
               </View>
             ))}

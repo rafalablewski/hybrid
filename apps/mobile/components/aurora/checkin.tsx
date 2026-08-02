@@ -301,7 +301,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           the flow is live again so the muted tiles coming back to full colour is
           explained rather than merely observed. */}
       {locked || (editing && !done) ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingHorizontal: 13, paddingVertical: 11, borderRadius: 16, backgroundColor: locked ? `${C.lime}14` : "transparent", borderWidth: 1, borderColor: locked ? `${C.lime}3d` : C.line }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 16, backgroundColor: locked ? `${C.lime}14` : "transparent", borderWidth: 1, borderColor: locked ? `${C.lime}3d` : C.line }}>
           <AuroraIcon name={locked ? "check-circle" : "edit"} size={20} color={locked ? txt(C, C.lime) : C.ash} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t(locked ? "w.recovery.checkins.savedTitle" : "w.recovery.checkins.edit")}</Text>
@@ -377,7 +377,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                   // colour and still tapping through to its question, it read as
                   // "edit any of this whenever" — which is exactly what the Edit
                   // button is for. Muted here, restored the moment Edit is pressed.
-                  style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderStyle: on ? "solid" : "dashed", borderColor: C.line, borderRadius: 14, paddingVertical: 12, opacity: locked ? 0.45 : on ? 1 : 0.6 }}
+                  style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderStyle: on ? "solid" : "dashed", borderColor: C.line, borderRadius: 16, paddingVertical: 12, opacity: locked ? 0.45 : on ? 1 : 0.6 }}
                 >
                   {on ? (
                     <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} scale={0.76} />
@@ -424,7 +424,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                 {/* EDIT LIVES HERE AND ONLY HERE — beside Done, where the
                     athlete already is when they decide the read is wrong. */}
                 <Pressable onPress={() => setEditing(true)} accessibilityRole="button" accessibilityLabel={t("w.recovery.checkins.edit")}
-                  style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 15, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line }}>
+                  style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line }}>
                   <AuroraIcon name="edit" size={16} color={C.ash} />
                   <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.checkins.edit")}</Text>
                 </Pressable>
@@ -461,7 +461,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                 {touched && def ? t(def.labelKey) : t("w.recovery.checkins.notAnswered")}
               </Text>
 
-              <View style={{ flexDirection: "row", gap: 9, marginTop: 18, alignSelf: "stretch" }}>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 18, alignSelf: "stretch" }}>
                 {FEELS.map((f) => {
                   const sel = touched && val === f.value;
                   return (
@@ -512,7 +512,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                 {touched ? t(checkinMetricWordKey(m.key, val)) : t("w.recovery.checkins.notAnswered")}
               </Text>
 
-              <View style={{ flexDirection: "row", gap: 9, marginTop: 22, alignSelf: "stretch" }}>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 22, alignSelf: "stretch" }}>
                 {CHECKIN_SCALE.map((n) => {
                   const sel = touched && val === n;
                   return (
@@ -579,7 +579,7 @@ function SkipBtn({ label, onPress }: { label: string; onPress: () => void }) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={{ flex: 1, paddingVertical: 15, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}
+      style={{ flex: 1, paddingVertical: 16, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}
     >
       <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.ash }}>{label}</Text>
     </Pressable>

@@ -514,13 +514,13 @@ export function WorkoutWrapped({
                 ["⏱", "session.wrapped.device.time"],
                 ["🌙", "session.wrapped.device.recovery"],
               ] as const).map(([glyph, key], i) => (
-                <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 14, backgroundColor: "#0e0f0d", borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                   <Text style={{ fontSize: 15 }}>{glyph}</Text>
                   <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{t(key)}</Text>
                 </View>
               ))}
             </View>
-            <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 22, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 13, paddingHorizontal: 24 }}>
+            <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 22, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, paddingHorizontal: 24 }}>
               <CtaLabel label={`${t("session.wrapped.device.cta")} →`} color={C.onAccent} fontSize={15} font={F.black} />
             </Pressable>
             <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 16 }}>
@@ -562,7 +562,7 @@ export function WorkoutWrapped({
       </ScrollView>
 
       {/* Back — always available, top-left */}
-      <Pressable onPress={onBack} style={{ position: "absolute", top: insets.top + 6, left: 16, width: 40, height: 40, borderRadius: 13, borderWidth: 1, borderColor: C.line, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" }}>
+      <Pressable onPress={onBack} style={{ position: "absolute", top: insets.top + 6, left: 16, width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" }}>
         <Text style={{ color: C.chalk, fontSize: 18 }}>←</Text>
       </Pressable>
 
@@ -609,12 +609,12 @@ export function WorkoutWrapped({
                 </View>
               ))}
             </ScrollView>
-            <View style={{ flexDirection: "row", justifyContent: "center", gap: 7, marginVertical: 14 }}>
+            <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginVertical: 14 }}>
               {slides.map((_, i) => (
                 <View key={i} style={{ width: i === activeIdx ? 20 : 7, height: 7, borderRadius: 4, backgroundColor: i === activeIdx ? C.lime : C.line }} />
               ))}
             </View>
-            <Pressable onPress={shareNow} style={{ backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center" }}>
+            <Pressable onPress={shareNow} style={{ backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: 16, color: C.onAccent }}>↗ {t("summary.shareStory")}</Text>
             </Pressable>
           </Pressable>

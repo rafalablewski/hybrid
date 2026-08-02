@@ -12,7 +12,7 @@ import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale } from "../../lib/ui";
+import { fs, F, serifIf, PressScale, cardShadow } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 
@@ -97,7 +97,7 @@ export function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: st
       }}
     >
       <View style={{
-        width: 32, height: 32, borderRadius: 10, backgroundColor: C.ink,
+        width: 32, height: 32, borderRadius: 12, backgroundColor: C.ink,
         borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center",
       }}>
         <Text style={{ fontSize: 13, color: C.ash }}>{glyph}</Text>
@@ -289,7 +289,7 @@ export default function AuroraWeekVerdict({
         trackStyle={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, marginBottom: 10 }}
       />
 
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, paddingHorizontal: 17, paddingVertical: 16 }}>
+      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, paddingHorizontal: 16, paddingVertical: 16, ...cardShadow(scheme) }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 14 }}>
           <View style={{ flex: 1 }}>
@@ -309,7 +309,7 @@ export default function AuroraWeekVerdict({
             a button onto its own breakdown. */}
         <View
           onLayout={(e) => setRowW(e.nativeEvent.layout.width)}
-          style={{ flexDirection: "row", marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: C.line }}
+          style={{ flexDirection: "row", marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}
         >
           {ordered.map((f, i) => {
             const isNamed = f.metric === v.metric;
@@ -365,7 +365,7 @@ export default function AuroraWeekVerdict({
             {detail && (
               <View style={{
                 backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-                paddingHorizontal: 14, paddingVertical: 13,
+                paddingHorizontal: 14, paddingVertical: 12,
               }}>
                 <MetricDetail
                   detail={detail}
@@ -493,7 +493,7 @@ function MetricDetail({
       {detail.groups.length > 0 && (
         <>
           {/* The share bar — every group's slice of the total, in one line. */}
-          <View style={{ flexDirection: "row", gap: 2, height: 6, marginTop: 11 }}>
+          <View style={{ flexDirection: "row", gap: 2, height: 6, marginTop: 12 }}>
             {detail.groups.map((g, i) => (
               <View key={g.id} style={{
                 flexGrow: Math.max(g.share, 0.02), flexBasis: 0, borderRadius: 999,
@@ -504,7 +504,7 @@ function MetricDetail({
           </View>
 
           {/* One row per activity — tap to narrow the list underneath it. */}
-          <View style={{ marginTop: 9 }}>
+          <View style={{ marginTop: 8 }}>
             {detail.groups.map((g: ActivityGroup) => {
               const active = group === g.id;
               return (
@@ -514,9 +514,9 @@ function MetricDetail({
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                   style={{
-                    flexDirection: "row", alignItems: "center", gap: 9,
+                    flexDirection: "row", alignItems: "center", gap: 8,
                     paddingHorizontal: 8, paddingVertical: 6, marginHorizontal: -8,
-                    backgroundColor: active ? C.ink2 : "transparent", borderRadius: 10,
+                    backgroundColor: active ? C.ink2 : "transparent", borderRadius: 12,
                   }}
                 >
                   <Text style={{ fontSize: 13, width: 18, textAlign: "center" }}>{g.icon}</Text>
@@ -547,7 +547,7 @@ function MetricDetail({
                   accessibilityRole="button"
                   style={{
                     flexDirection: "row", alignItems: "center", gap: 10,
-                    paddingHorizontal: 8, paddingVertical: 7, marginHorizontal: -8, borderRadius: 10,
+                    paddingHorizontal: 8, paddingVertical: 8, marginHorizontal: -8, borderRadius: 12,
                   }}
                 >
                   <Text style={{ fontFamily: F.mono, fontSize: 9.5, color: C.ash, width: 44 }}>

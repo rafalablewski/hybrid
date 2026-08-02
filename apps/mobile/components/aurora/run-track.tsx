@@ -110,7 +110,7 @@ export default function AuroraRunTrack() {
           keyboardType="numeric"
           placeholder={t("w.train.runTrack.distancePh")}
           placeholderTextColor={C.ash}
-          style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 11 }}
+          style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12 }}
         />
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.train.runTrack.gpsNote")}</Text>
       </ACard>

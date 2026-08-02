@@ -147,9 +147,9 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
   );
 
   const style = {
-    width: TILE_W, minHeight: TILE_H, gap: 7,
+    width: TILE_W, minHeight: TILE_H, gap: 8,
     backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-    paddingHorizontal: 12, paddingTop: 11, paddingBottom: 12,
+    paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
   } as const;
 
   return onOpen ? (

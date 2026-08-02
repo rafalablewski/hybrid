@@ -222,7 +222,7 @@ function WeekRail({ C, bars, weeks, week, setWeek, wkLabel }: { C: Palette; bars
   const max = Math.max(1, ...bars.map((b) => b.value));
   const hasBars = bars.length > 0;
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 9, gap: 2 }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, gap: 2 }}>
       {weeks.map((w) => {
         const on = w === week;
         const v = byWeek.get(w) ?? 0;
@@ -324,7 +324,7 @@ function ProgramDays({ days, week, peakNote, C, scheme }: { days: ProgramDayView
 // The all-prose week card's header (endurance weeks keep the one-card layout).
 function WeekHeader({ title, right, C, scheme }: { title: string; right: string | null; C: Palette; scheme: "light" | "dark" }) {
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 18, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 18, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
       <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.2, color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
@@ -399,7 +399,7 @@ function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayVi
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={`${day.title}${day.kindLabel ? ` — ${day.kindLabel}` : ""}${words ? `, ${words}` : ""}${right ? `, ${right}` : ""}`}
-        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingVertical: 13 }}
+        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingVertical: 12 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.2, color: C.chalk }} numberOfLines={1}>
@@ -436,7 +436,7 @@ function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayVi
 // session volume on the right. No background wash.
 function SessionRule({ marker, color, volume, top, C }: { marker: string; color: string; volume: string | null; top: boolean; C: Palette }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 18, paddingTop: 9, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
+    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 18, paddingTop: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: txt(C, color) }}>{marker}</Text>
       {!!volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{volume}</Text>}
     </View>
@@ -636,7 +636,7 @@ function ProseRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boole
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, liftColor(lift)) }} />
+        <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 8, backgroundColor: loadHex(C, liftColor(lift)) }} />
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{lift.name}</Text>
       </View>
       {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 14 }}>{detail}</Text>}
@@ -654,7 +654,7 @@ function WeekRow({ lift, restName, first, C }: { lift?: ProgramLiftView; restNam
   return (
     <View style={{ marginTop: first ? 0 : 9 }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 7, backgroundColor: loadHex(C, lift ? liftColor(lift) : "ash") }} />
+        <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 8, backgroundColor: loadHex(C, lift ? liftColor(lift) : "ash") }} />
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
       </View>
       {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 14 }}>{detail}</Text>}
@@ -710,7 +710,7 @@ function ExerciseSheet({ sel, onClose, C }: { sel: SheetSel | null; onClose: () 
   const where = marker ? `${day} — ${marker}` : day;
   const sub = lift.nl > 0 ? `${where} — ${lift.nl} lifts` : where;
   const steps = lift.steps ?? [];
-  const row = { flexDirection: "row" as const, alignItems: "baseline" as const, gap: 10, paddingVertical: 11, borderTopWidth: 1, borderTopColor: hair(C) };
+  const row = { flexDirection: "row" as const, alignItems: "baseline" as const, gap: 10, paddingVertical: 12, borderTopWidth: 1, borderTopColor: hair(C) };
   return (
     <Sheet visible={!!sel} onClose={onClose} title={lift.name} sub={sub}>
       <View style={{ marginTop: 6 }}>

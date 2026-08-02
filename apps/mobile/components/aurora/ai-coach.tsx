@@ -59,7 +59,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
       ) : null}
 
       <View style={{ marginTop: embedded ? 12 : 16 }}>
-        <APill label={busy ? t("w.home.aicoach.thinking") : t("w.home.aicoach.askAgain")} variant="soft" onPress={ask} disabled={busy} style={{ paddingVertical: 13 }} />
+        <APill label={busy ? t("w.home.aicoach.thinking") : t("w.home.aicoach.askAgain")} variant="soft" onPress={ask} disabled={busy} style={{ paddingVertical: 12 }} />
       </View>
     </>
   );

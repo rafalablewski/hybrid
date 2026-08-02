@@ -66,7 +66,7 @@ export default function AuroraLoggerSettings() {
         {ROWS.map((r, i) => (
           <View
             key={r.key}
-            style={{ flexDirection: "row", alignItems: "center", paddingVertical: 13, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
+            style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t(r.titleKey)}</Text>

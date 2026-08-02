@@ -121,10 +121,10 @@ export default function AuroraTalent() {
         ) : (
           <>
             <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, marginBottom: 12 }}>
-              <View style={{ backgroundColor: `${pctColor(report.overall, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <View style={{ backgroundColor: `${pctColor(report.overall, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, pctColor(report.overall, C)) }}>{t("w.teams.talent.overall")} {report.overall}{t("w.teams.talent.ordinal")}</Text>
               </View>
-              <View style={{ backgroundColor: `${pctColor(report.potential, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <View style={{ backgroundColor: `${pctColor(report.potential, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, pctColor(report.potential, C)) }}>{t("w.teams.talent.potential")} {report.potential}{t("w.teams.talent.ordinal")}</Text>
               </View>
             </View>
@@ -168,7 +168,7 @@ export default function AuroraTalent() {
             searched ? <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{t("w.teams.talent.noMatch")}</Text> : null
           ) : (
             results.map((r) => (
-              <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+              <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, flex: 1 }}>{r.name} – {r.sport} – {r.sex}{r.age}</Text>
                 <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
                   <View style={{ backgroundColor: `${pctColor(r.percentile, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
@@ -191,7 +191,7 @@ export default function AuroraTalent() {
   );
 }
 
-const pill = (C: Palette, on: boolean) => ({ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1f` : C.ink } as const);
+const pill = (C: Palette, on: boolean) => ({ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1f` : C.ink } as const);
 const pillTxt = (C: Palette, on: boolean) => ({ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash } as const);
 
 function Field({ C, label, value, onChange }: { C: Palette; label: string; value: string; onChange: (v: string) => void }) {

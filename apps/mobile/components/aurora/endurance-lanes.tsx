@@ -120,7 +120,7 @@ export default function AuroraEnduranceLanes({
             backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
           }}
         >
-          <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ fontSize: 13, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
           </View>
           <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
@@ -185,7 +185,7 @@ function Tile({ w, label, right, children }: { w: number; label: string; right?:
       style={{
         width: w, minHeight: TILE_H, gap: 6,
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-        paddingHorizontal: 12, paddingTop: 11, paddingBottom: 12,
+        paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>

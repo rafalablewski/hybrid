@@ -51,7 +51,7 @@ export default function AuroraVelocity() {
     </View>
   );
   const chip = (color: string, label: string) => (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
+    <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text>
     </View>
   );
@@ -71,7 +71,7 @@ export default function AuroraVelocity() {
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
       {header}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
         {lifts.map((l) => {
           const on = active === l;
           return (

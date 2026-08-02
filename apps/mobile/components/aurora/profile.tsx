@@ -202,8 +202,8 @@ export default function AuroraProfile() {
       {/* SET UP YOUR PROFILE — owner-only nudge at the very top; hides once the
           profile has a photo + bio. (This screen is always your own.) */}
       {socialP && !sComplete && (
-        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: 20, padding: 16, marginBottom: 18 }}>
-          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.card, padding: 16, marginBottom: 18 }}>
+          <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
           </View>
           <View style={{ flex: 1 }}>
@@ -218,7 +218,7 @@ export default function AuroraProfile() {
           edit-profile control lives as a frosted chip in the banner's top-right
           (the classic "edit cover" spot) — out of the content flow, away from
           the avatar and name. */}
-      <View style={{ height: 96, borderRadius: 20, overflow: "hidden" }}>
+      <View style={{ height: 96, borderRadius: RADIUS.card, overflow: "hidden" }}>
         <LinearGradient
           colors={[`${C.violet}66`, `${C.lime}33`, C.ink2]}
           start={{ x: 0, y: 0 }}
@@ -240,7 +240,7 @@ export default function AuroraProfile() {
 
       {/* HEAD — avatar overlapping the cover. The edit-profile control moved
           into the banner (above); no Edit / Share buttons in this row. */}
-      <View style={{ flexDirection: "row", alignItems: "flex-end", marginTop: -40, paddingHorizontal: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", marginTop: -40, paddingHorizontal: 0 }}>
         {/* Outer lime ring (2px) around the 3px ink border — RN box-shadow is
             unreliable, so the ring is a lime-filled wrapper View. Matches web's
             `box-shadow: 0 0 0 2px lime` on the avatar. */}
@@ -256,15 +256,15 @@ export default function AuroraProfile() {
       </View>
 
       {/* NAME + membership pill (pill UNCHANGED from the original design). */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 12, paddingHorizontal: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingHorizontal: 0 }}>
         <Text style={{ fontFamily: F.black, fontSize: 23, color: C.chalk, letterSpacing: -0.5 }}>{name}</Text>
-        <View style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 3 }}>
+        <View style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 9, color: lime, letterSpacing: 0.7 }}>{tier}</Text>
         </View>
       </View>
 
       {/* BIO + quiet HYBRID ID line. */}
-      <View style={{ marginTop: 7, paddingHorizontal: 4 }}>
+      <View style={{ marginTop: 8, paddingHorizontal: 0 }}>
         {!!bioText && (
           <Text style={{ fontFamily: F.reg, fontSize: 13.5, color: C.chalk, opacity: 0.9, lineHeight: 20 }}>{bioText}</Text>
         )}
@@ -275,7 +275,7 @@ export default function AuroraProfile() {
       </View>
 
       {/* SOCIAL COUNTS — followers / following / (derived) friends rank. */}
-      <View style={{ flexDirection: "row", gap: 22, marginTop: 14, paddingHorizontal: 4 }}>
+      <View style={{ flexDirection: "row", gap: 22, marginTop: 14, paddingHorizontal: 0 }}>
         {socialCounts.map((c) => (
           <View key={c.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
             <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{c.n}</Text>
@@ -313,7 +313,7 @@ export default function AuroraProfile() {
         <View style={{ marginTop: 16 }}>
           {/* THIS WEEK — a current-focus snapshot above the lifetime tiles. */}
           {thisWeek.count > 0 && (
-            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 9 }}>
+            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.ov-tw")}</Text>
               <View style={{ flexDirection: "row", gap: 26, marginTop: 8 }}>
                 {[{ v: `${thisWeek.count}`, k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, prefs.units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
@@ -337,7 +337,7 @@ export default function AuroraProfile() {
               t={t}
             />
           ) : (
-            <View style={{ width: "100%", padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
+            <View style={{ width: "100%", padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
             </View>
           )}
@@ -348,9 +348,9 @@ export default function AuroraProfile() {
         <View style={{ marginTop: 16 }}>
           {topPrs.length > 0 ? (
             topPrs.map(([lift, wt]) => (
-              <View key={lift} style={{ padding: 13, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginBottom: 9, backgroundColor: C.ink2 }}>
+              <View key={lift} style={{ padding: 12, borderWidth: 1, borderColor: C.line, borderRadius: 16, marginBottom: 8, backgroundColor: C.ink2 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 11, flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
                     <AuroraIcon name="trophy" size={fs.subtitle + 2} color={C.chalk} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{lift}</Text>
@@ -360,13 +360,13 @@ export default function AuroraProfile() {
                   <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(wt, prefs.units)}</Text>
                 </View>
                 {/* relative-strength bar — each PR against your heaviest lift. */}
-                <View style={{ height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 11, overflow: "hidden" }}>
+                <View style={{ height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 12, overflow: "hidden" }}>
                   <View style={{ width: `${Math.max(8, Math.round((wt / topPrs[0]![1]) * 100))}%`, height: "100%", borderRadius: 2, backgroundColor: lime }} />
                 </View>
               </View>
             ))
           ) : (
-            <View style={{ padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2 }}>
+            <View style={{ padding: 16, borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("w.account.profile.pr-empty-mobile")}</Text>
             </View>
           )}
@@ -376,7 +376,7 @@ export default function AuroraProfile() {
       {tab === "activity" && (
         <View style={{ marginTop: 16 }}>
           {/* 26-week training heatmap */}
-          <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 22, backgroundColor: C.ink2, padding: 16 }}>
+          <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, backgroundColor: C.ink2, padding: 16 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8, paddingHorizontal: 2 }}>
               {monthLabels(heat).map((m, i) => (
                 <Text key={i} style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.6 }}>{m}</Text>
@@ -391,7 +391,7 @@ export default function AuroraProfile() {
                 </View>
               ))}
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 11 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12 }}>
               <Text style={{ fontFamily: F.mono, fontSize: 8, color: lime }}>
                 {dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : weekStreakBest > 0 ? `${weekStreakBest}${t("w.account.profile.week-best-suffix")}` : t("w.account.profile.no-streak")}
               </Text>
@@ -415,7 +415,7 @@ export default function AuroraProfile() {
                     style={{
                       width: 60,
                       height: 60,
-                      borderRadius: 18,
+                      borderRadius: 16,
                       borderWidth: 1,
                       borderColor: a.earned ? `${C.lime}73` : C.line,
                       backgroundColor: a.earned ? `${C.lime}1f` : C.ink2,
@@ -665,7 +665,7 @@ function HighlightGrid({
             <Animated.View
               key={key}
               onLayout={(e) => { const { x, y, width, height } = e.nativeEvent.layout; layouts.current.set(key, { x, y, w: width, h: height }); }}
-              style={{ width: "31.5%", aspectRatio: 1, marginBottom: 9, zIndex: isDrag ? 50 : 0, elevation: isDrag ? 8 : 0, transform }}
+              style={{ width: "31.5%", aspectRatio: 1, marginBottom: 8, zIndex: isDrag ? 50 : 0, elevation: isDrag ? 8 : 0, transform }}
             >
               <Pressable
                 onLongPress={() => setEditMode(true)}
@@ -674,7 +674,7 @@ function HighlightGrid({
                 accessibilityLabel={tile.k}
                 style={{ width: "100%", height: "100%" }}
               >
-                <Animated.View style={{ width: "100%", height: "100%", borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, transform: editMode && !isDrag ? [{ rotate: rotations[idx % 3] }] : [] }}>
+                <Animated.View style={{ width: "100%", height: "100%", borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, transform: editMode && !isDrag ? [{ rotate: rotations[idx % 3] }] : [] }}>
                   <AuroraIcon name={tile.icon} size={22} color={C.lime} />
                   <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4, marginTop: 6 }}>{tile.v}</Text>
                   <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 4, maxWidth: "100%" }}>{tile.k}</Text>
@@ -699,15 +699,15 @@ function HighlightGrid({
       {/* HIDDEN — restore tray. */}
       {hiddenKeys.length > 0 && (
         <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: C.line, borderStyle: "dashed", paddingTop: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <AuroraIcon name="eye" size={12} color={C.ash} />
             <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.2, color: C.ash, textTransform: "uppercase" }}>{t("w.account.profile.ov-restore")}</Text>
           </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {hiddenKeys.map((key) => {
               const tile = tileMap.get(key)!;
               return (
-                <Pressable key={key} onPress={() => onToggleHidden(key, false)} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 7, paddingLeft: 8, paddingRight: 11, borderWidth: 1, borderColor: C.line, borderRadius: 12, backgroundColor: C.ink2 }}>
+                <Pressable key={key} onPress={() => onToggleHidden(key, false)} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, paddingLeft: 8, paddingRight: 12, borderWidth: 1, borderColor: C.line, borderRadius: 12, backgroundColor: C.ink2 }}>
                   <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ fontFamily: F.black, fontSize: 15, lineHeight: 17, color: C.ink }}>+</Text>
                   </View>
@@ -735,7 +735,7 @@ function SectionHeader({ C, title, action }: { C: P; title: string; action: stri
   // Display face per the SectionHead standard — Mincho under Kyoto Hour.
   const { scheme } = useTheme();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 13, marginHorizontal: 2 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
       <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: fs.note, color: C.chalk, letterSpacing: -0.2 }}>{title}</Text>
       {!!action && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{action}</Text>}
     </View>

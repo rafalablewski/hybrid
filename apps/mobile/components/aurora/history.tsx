@@ -57,7 +57,7 @@ function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: str
           {tags.map((slug) => {
             const k = tagLabelKey(slug);
             return (
-              <View key={slug} style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}45`, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+              <View key={slug} style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}45`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: 10, color: lime }}>#{k ? t(k) : slug}</Text>
               </View>
             );
@@ -127,7 +127,7 @@ export default function AuroraHistory() {
     [sessions, units, bw, schedule, prCounts, router],
   );
 
-  const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
+  const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
   // Only archived sessions still render as the classic swipe list (restore /
   // delete live behind the swipe); live history renders the merged layouts.
@@ -279,8 +279,8 @@ function SwipeCard({ C, busy, actions, children }: {
     }),
   ).current;
   return (
-    <View style={{ marginBottom: 12, borderRadius: 26, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 }}>
-      <View style={{ borderRadius: 26, overflow: "hidden" }}>
+    <View style={{ marginBottom: 12, borderRadius: RADIUS.card, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 }}>
+      <View style={{ borderRadius: RADIUS.card, overflow: "hidden" }}>
         {/* Revealed actions, pinned to the right behind the card. */}
         <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, flexDirection: "row" }}>
           {actions.map((a) => (
@@ -295,7 +295,7 @@ function SwipeCard({ C, busy, actions, children }: {
           ))}
         </View>
         {/* The card itself — opaque so the actions don't bleed through. */}
-        <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 26 }}>
+        <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
           <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: 18 }}>
             {children}
           </Pressable>

@@ -53,12 +53,12 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
     <>
       {/* the movement demo (swappable: procedural skeleton today, professional
           sketch later — see exercise-animation.tsx). Loops only while open. */}
-      <View style={{ borderRadius: 20, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingVertical: 10, alignItems: "center" }}>
+      <View style={{ borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingVertical: 10, alignItems: "center" }}>
         <View style={{ width: "58%", maxWidth: 220, aspectRatio: 1 }}>
           <AuroraExerciseAnimation name={name} active={active} />
         </View>
       </View>
-      <Text style={{ marginTop: 13, marginHorizontal: 2, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{a.emphasis}</Text>
+      <Text style={{ marginTop: 12, marginHorizontal: 2, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{a.emphasis}</Text>
 
       {/* muscles worked */}
       <View style={{ marginTop: 20 }}>
@@ -72,9 +72,9 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
       {/* stabilizers */}
       <View style={{ marginTop: 20 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.exp.anatomy.stabilizers")}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
           {a.stabilizers.map((sName) => (
-            <Text key={sName} style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.6, color: C.ash, paddingVertical: 5, paddingHorizontal: 11, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>{sName}</Text>
+            <Text key={sName} style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.6, color: C.ash, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>{sName}</Text>
           ))}
         </View>
       </View>
@@ -126,9 +126,9 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
         onPress={openSheet}
         accessibilityRole="button"
         style={{
-          marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 9,
+          marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8,
           borderWidth: 1, borderColor: `${C.lime}66`, backgroundColor: `${C.lime}14`,
-          borderRadius: 999, paddingVertical: 9, paddingHorizontal: 15,
+          borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16,
         }}
       >
         <Svg viewBox="0 0 16 16" width={13} height={13}><Path d="M5 3.5v9l7-4.5-7-4.5Z" fill={txt(C, C.lime)} /></Svg>

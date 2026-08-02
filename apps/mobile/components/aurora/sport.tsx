@@ -76,7 +76,7 @@ export default function AuroraSport() {
                 alignItems: "center",
                 gap: space.xs,
                 paddingHorizontal: 14,
-                paddingVertical: 11,
+                paddingVertical: 12,
                 borderRadius: RADIUS.pill,
                 borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
@@ -100,7 +100,7 @@ export default function AuroraSport() {
               style={{
                 flex: 1,
                 alignItems: "center",
-                paddingVertical: 11,
+                paddingVertical: 12,
                 borderRadius: RADIUS.pill,
                 borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
@@ -144,7 +144,7 @@ export default function AuroraSport() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{b.demand}</Text>
             </View>
             <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
-              <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{b.scheme}</Text>
               </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}</Text>

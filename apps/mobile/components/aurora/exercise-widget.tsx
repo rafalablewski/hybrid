@@ -131,9 +131,9 @@ export default function ExerciseWidgetRail({
               accessibilityRole="button"
               accessibilityLabel={`${card.name} — ${h.v} ${h.u}`}
               style={{
-                width: 200, minHeight: 132, gap: 7,
+                width: 200, minHeight: 132, gap: 8,
                 backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-                paddingHorizontal: 12, paddingTop: 11, paddingBottom: 12,
+                paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>

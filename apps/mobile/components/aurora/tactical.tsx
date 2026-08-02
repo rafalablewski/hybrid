@@ -67,7 +67,7 @@ export default function AuroraTactical() {
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6 }}>
               <Text style={{ fontFamily: F.black, fontSize: 48, color: txt(C, statusColor(dr.status, C)) }}>{dr.dri}</Text>
-              <View style={{ backgroundColor: `${statusColor(dr.status, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <View style={{ backgroundColor: `${statusColor(dr.status, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, statusColor(dr.status, C)) }}>{dr.status}</Text>
               </View>
             </View>
@@ -90,17 +90,17 @@ export default function AuroraTactical() {
         <ACard style={{ marginTop: 14 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, unit.go ? C.lime : C.red) }}>{t("w.teams.tactical.unitReadiness")}</Text>
-            <View style={{ backgroundColor: `${unit.go ? C.lime : C.red}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+            <View style={{ backgroundColor: `${unit.go ? C.lime : C.red}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, unit.go ? C.lime : C.red) }}>{unit.go ? t("w.teams.tactical.missionGo") : t("w.teams.tactical.noGo")} – {unit.pctReady}%</Text>
             </View>
           </View>
           <View style={{ marginTop: 10 }}>
             {unit.members.map((m) => (
-              <View key={m.name} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+              <View key={m.name} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{m.name}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, width: 44, textAlign: "right" }}>{m.dri}</Text>
                 <View style={{ width: 120, alignItems: "flex-end" }}>
-                  <View style={{ backgroundColor: `${statusColor(m.status, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                  <View style={{ backgroundColor: `${statusColor(m.status, C)}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, statusColor(m.status, C)) }}>{m.status}</Text>
                   </View>
                 </View>

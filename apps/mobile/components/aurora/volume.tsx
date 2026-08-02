@@ -439,7 +439,7 @@ function Prescription({ title, why, items, color, ml, unit }: {
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
         {items.map((s) => (
-          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 9, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, 0.35), backgroundColor: withAlpha(color, 0.1) }}>
+          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 8, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, 0.35), backgroundColor: withAlpha(color, 0.1) }}>
             <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{ml(s.muscle)}</Text>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: txt(C, color) }}>{deltaLabel(s)}</Text>
           </View>
@@ -458,7 +458,7 @@ function Toggle({ on, label, onPress }: { on: boolean; label: string; onPress: (
       onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
       accessibilityRole="switch"
       accessibilityState={{ checked: on }}
-      style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, 0.12) : "transparent" }}
+      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, 0.12) : "transparent" }}
     >
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{label}</Text>
     </Pressable>
@@ -470,7 +470,7 @@ function Stepper({ label, value, suffix, min, max, onChange }: {
   label: string; value: number; suffix?: string; min: number; max: number; onChange: (v: number) => void;
 }) {
   const { palette: C } = useTheme();
-  const btn = { width: 34, height: 34, borderRadius: 10, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line };
+  const btn = { width: 34, height: 34, borderRadius: 12, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line };
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
       <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{label}</Text>
@@ -590,7 +590,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
   const { t } = useLang();
   const confidence = Math.round(Math.max(resolved.profileConfidence, resolved.observedConfidence) * 100);
   const done = volumeProfileCompleteness(profile, measuredKeys);
-  const field = { textAlign: "center" as const, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 7 };
+  const field = { textAlign: "center" as const, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 8 };
 
   return (
     <ACard solid style={{ marginTop: 14 }}>
@@ -608,11 +608,11 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{Math.round(done.score * 100)}% {t("w.analyze.vol.knownAbout")}</Text>
           {done.next ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.analyze.vol.nextUp")}: {t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</Text> : null}
         </View>
-        <View style={{ height: 5, borderRadius: 999, backgroundColor: C.ink, marginTop: 7, overflow: "hidden" }}>
+        <View style={{ height: 5, borderRadius: 999, backgroundColor: C.ink, marginTop: 8, overflow: "hidden" }}>
           <View style={{ width: pct(done.score), height: "100%", backgroundColor: C.lime }} />
         </View>
         {done.next ? (
-          <Text style={{ marginTop: 9, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t(done.next.unlocksKey)}</Text>
+          <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t(done.next.unlocksKey)}</Text>
         ) : null}
       </View>
 
@@ -625,10 +625,10 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           ) : null}
         </View>
         {level.basis === "none" ? (
-          <Text style={{ marginTop: 9, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t("w.analyze.vol.levelNoData")}</Text>
+          <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t("w.analyze.vol.levelNoData")}</Text>
         ) : (
           <>
-            <View style={{ gap: 6, marginTop: 11 }}>
+            <View style={{ gap: 6, marginTop: 12 }}>
               {/* Two kinds of evidence, two units. A lift is kg and a multiple
                   of body mass; a run is a distance and a pace. They share a row
                   shape but never a number — see core/engines/fitness-level.ts. */}
@@ -660,7 +660,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       </View>
 
       {resolved.factors.length > 0 && (
-        <View style={{ gap: 7, marginTop: 14 }}>
+        <View style={{ gap: 8, marginTop: 14 }}>
           {resolved.factors.map((f) => (
             <View key={f.key} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
               <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>
@@ -711,7 +711,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
             <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{t("w.analyze.vol.replayNone")}</Text>
           ) : (
             <>
-              <View style={{ gap: 7, marginTop: 10 }}>
+              <View style={{ gap: 8, marginTop: 10 }}>
                 {tested.slice(0, 4).map((r) => (
                   <View key={r.muscle} style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
                     <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{ml(r.muscle)}</Text>
@@ -817,7 +817,7 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
         accessibilityRole="button"
         accessibilityLabel={`${label} – ${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[s.zone])}`}
       >
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 9 }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 8 }}>
           <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{label}</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, color) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{target ? `${t("w.analyze.vol.target")} ${target.target}` : t(ZONE_KEY[s.zone])}</Text>
@@ -855,7 +855,7 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
           edge, so the values line up down the whole list instead of floating at
           three different indents. Each cell is a control: tap it to spotlight
           that band and read what it means. */}
-      <View style={{ flexDirection: "row", marginTop: 7 }}>
+      <View style={{ flexDirection: "row", marginTop: 8 }}>
         {BAND_KEYS.map((k) => {
           const on = zone === k;
           return (
@@ -887,13 +887,13 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
         <View style={{ marginTop: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>MV {s.landmark.mv}</Text>
           {target && verdict && (
-            <Text style={{ marginTop: 7, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: verdict === "on" ? txt(C, C.lime) : C.ash }}>
+            <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: verdict === "on" ? txt(C, C.lime) : C.ash }}>
               {t("w.analyze.vol.weekTarget")} {target.target} {t("w.analyze.vol.sets")}
               <Text style={{ color: C.ash }}>{" — "}</Text>
               {t(TARGET_VERDICT_KEY[verdict])}
             </Text>
           )}
-          <Text style={{ marginTop: 7, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{rowAdvice(s, t)}</Text>
+          <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{rowAdvice(s, t)}</Text>
           <MuscleHistory sets={history} />
         </View>
       )}
@@ -909,7 +909,7 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
                 onEndEditing={(e) => onEdit(s.muscle, k, e.nativeEvent.text)}
                 keyboardType="number-pad"
                 accessibilityLabel={`${label} ${k}`}
-                style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 7 }}
+                style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 8 }}
               />
             </View>
           ))}

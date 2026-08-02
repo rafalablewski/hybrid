@@ -120,7 +120,7 @@ export default function AuroraEndurance() {
           {paceMoves.length > 1 && (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
               {paceMoves.map((m) => { const on = activeMove === m; return (
-                <Pressable key={m} onPress={() => setMove(m)} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}1a` : "transparent" }}>
+                <Pressable key={m} onPress={() => setMove(m)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}1a` : "transparent" }}>
                   <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(C, C.blue) : C.ash }}>{m}</Text>
                 </Pressable>
               ); })}

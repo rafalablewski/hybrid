@@ -115,7 +115,7 @@ export default function AuroraTrends({ top, unified = false }: {
               <Text onPress={() => sortBy("volume")} style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: sort.k === "volume" ? txt(C, C.lime) : C.ash }}>↗</Text>
             </View>
             {sortedTable.map((r) => { const tr = TREND[r.trend]; return (
-              <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercise", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercise", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                 <Text style={{ flex: 2, fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{r.name}</Text>
                 <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{r.sessions}×</Text>
                 <Text style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: r.kind === "strength" ? C.chalk : C.ash }}>{r.kind === "strength" ? fmtWeight(r.topWeight, units) : `${r.volume}km`}</Text>

@@ -474,12 +474,12 @@ export function CoverScreen({
 
             {/* the cover proper — chip, title, meta; slides up with the frame */}
             <Animated.View pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: 18, opacity: bigFade }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: chipTint(accent), paddingHorizontal: 11, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: chipTint(accent), paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -0.7, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
               {blurbOnFace ? (
                 <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: "rgba(255,255,255,0.85)", maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
               ) : (
-                <View style={{ marginTop: 9 }}>
+                <View style={{ marginTop: 8 }}>
                   <MetaLine parts={cover.metaParts} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.3 }} />
                 </View>
               )}

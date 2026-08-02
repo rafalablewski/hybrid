@@ -37,7 +37,7 @@ export default function SwipeRow({ children, onDelete, label, background }: {
     <View style={{ position: "relative", marginBottom: 6, overflow: "hidden" }}>
       <Pressable
         onPress={onDelete}
-        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 76, alignItems: "center", justifyContent: "center", backgroundColor: C.red, borderRadius: 10 }}
+        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 76, alignItems: "center", justifyContent: "center", backgroundColor: C.red, borderRadius: 12 }}
       >
         <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
       </Pressable>

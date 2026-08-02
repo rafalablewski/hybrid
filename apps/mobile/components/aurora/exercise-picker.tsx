@@ -134,7 +134,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
     const c = kindColor(e.kind, C);
     const hint = shapeHint(e);
     return (
-      <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
+      <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           {e.icon
             ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
@@ -146,7 +146,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
     );
   };
   const slab = (entries: Entry[]) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 3 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 3 }}>
       {entries.map((e, i) => row(e, i === entries.length - 1))}
     </View>
   );
@@ -157,7 +157,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
     </View>
   );
   const customAdd = q.length > 0 && !exact && (
-    <Pressable onPress={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 13, alignItems: "center" }}>
+    <Pressable onPress={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}>
       <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>+ “{query.trim()}”</Text>
     </Pressable>
   );
@@ -197,7 +197,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 const on = view === p.id;
                 return (
                   <Pressable key={p.id} onPress={() => { setView(p.id); setRoom(null); }} accessibilityRole="button" accessibilityState={{ selected: on }}
-                    style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
+                    style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
                     <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.8, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                   </Pressable>
                 );
@@ -244,7 +244,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                       const c = kindColor(r.entries[0]!.kind, C);
                       return (
                         <Pressable key={r.key} onPress={() => setRoom(r.key)} accessibilityRole="button" accessibilityLabel={r.label}
-                          style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14 }}>
+                          style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 14 }}>
                           <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
                             {r.icon
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>

@@ -41,7 +41,7 @@ function Eyes({ color, mouth }: { color: string; mouth: ReadinessMouth }) {
   if (mouth === "frown") {
     // wrecked — eyes droop outward: left "/" and right "\"
     return (
-      <View style={{ flexDirection: "row", gap: 7, alignItems: "center" }}>
+      <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
         <Bar color={color} width={7} rotate="-20deg" />
         <Bar color={color} width={7} rotate="20deg" />
       </View>
@@ -49,7 +49,7 @@ function Eyes({ color, mouth }: { color: string; mouth: ReadinessMouth }) {
   }
   // smile / flat — calm level strokes
   return (
-    <View style={{ flexDirection: "row", gap: 7, alignItems: "center" }}>
+    <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
       <Bar color={color} width={5.5} />
       <Bar color={color} width={5.5} />
     </View>

@@ -78,12 +78,12 @@ export default function PrivateTab({
 function CommandCenterCard({ C, scheme, pa, locked, onPress }: { C: Palette; scheme: "dark" | "light"; pa: ReturnType<typeof usePremiumAccent>; locked: boolean; onPress: () => void }) {
   const { t } = useLang();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-cockpit-t")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, backgroundColor: C.ink2, overflow: "hidden" }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-cockpit-t")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 20, backgroundColor: C.ink2, overflow: "hidden" }}>
       {/* premium-accent glow (admin-set) blooming from the top-right corner */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${pa.fill}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${pa.fill}2b`, `${pa.fill}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-        <View style={{ width: 48, height: 48, borderRadius: 15, backgroundColor: `${pa.fill}24`, borderWidth: 1, borderColor: `${pa.fill}59`, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: `${pa.fill}24`, borderWidth: 1, borderColor: `${pa.fill}59`, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="navigation" size={22} color={pa.text} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -156,7 +156,7 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
   return (
     <>
       {/* Collapsed card — whole surface tappable, opens the log sheet. */}
-      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-body-t")} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, backgroundColor: C.ink2 }}>
+      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-body-t")} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, backgroundColor: C.ink2 }}>
         <IconTile C={C} icon="user-square" />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.profile.priv-body-t")}</Text>
@@ -181,7 +181,7 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
               <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1.6, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
             </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {trends.map((tr) => <MetricTile key={tr.def.key} C={C} tr={tr} units={units} />)}
             </View>
           </>
@@ -209,17 +209,17 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
   return (
     <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
       <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, lineHeight: 25, color: C.chalk, marginTop: 9, marginBottom: 14 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.4, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 14 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
       {wv && (
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 40, fontWeight: "600", letterSpacing: -1, color: C.chalk }}>{wv.value}<Text style={{ fontSize: 15, color: C.ash }}> {wv.unit}</Text></Text>
           {dstr && dir !== "flat" && (
-            <Text style={{ fontFamily: F.mono, fontSize: 13, fontWeight: "600", overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 13, fontWeight: "600", overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
           )}
         </View>
       )}
       <View style={{ marginTop: 16 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 7 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-cadence")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</Text>
         </View>
@@ -239,7 +239,7 @@ function MetricTile({ C, tr, units }: { C: Palette; tr: MetricTrend; units: "kg"
   const dstr = tr.delta != null ? fmtMetricDelta(tr.def, tr.delta, units) : null;
   // Two columns with a 9px gutter inside a 16px-padded card.
   return (
-    <View style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 15, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 9, gap: 6 }}>
+    <View style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 6 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t(tr.def.labelKey)}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: 10.5, fontWeight: "600", color: dirColorM(C, tr.direction) }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</Text>
@@ -292,7 +292,7 @@ function LogForm({ C, units, form, setField, onSave, busy }: { C: Palette; units
 // system.
 function IconTile({ C, icon }: { C: Palette; icon: AuroraIconName }) {
   return (
-    <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+    <View style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
       <AuroraIcon name={icon} size={20} color={C.ash} />
     </View>
   );
@@ -300,7 +300,7 @@ function IconTile({ C, icon }: { C: Palette; icon: AuroraIconName }) {
 
 function Row({ C, icon, title, sub, onPress }: { C: Palette; icon: AuroraIconName; title: string; sub: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, backgroundColor: C.ink2 }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, backgroundColor: C.ink2 }}>
       <IconTile C={C} icon={icon} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
@@ -352,7 +352,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
   };
 
   return (
-    <View style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 13, paddingTop: 12, paddingBottom: 13, marginBottom: 10 }}>
+    <View style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, marginBottom: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-height-t")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: heightCm != null ? lime : C.ash }}>
@@ -378,7 +378,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
             disabled={busy || parsed == null}
             accessibilityRole="button"
             accessibilityLabel={t("common.save")}
-            style={{ borderRadius: 999, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? 0.6 : 1 }}
+            style={{ borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? 0.6 : 1 }}
           >
             {busy ? <ActivityIndicator color={parsed == null ? C.ash : C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: parsed == null ? C.ash : C.onAccent }}>{t("common.save")}</Text>}
           </Pressable>
@@ -393,8 +393,8 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
 
 function MetricInput({ C, label, unit, value, onChange }: { C: Palette; label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
-    <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 13, paddingTop: 11, paddingBottom: 12 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+    <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: C.lime }} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       </View>

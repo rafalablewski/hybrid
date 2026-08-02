@@ -90,7 +90,7 @@ export default function AuroraLogbookRail({
         backgroundColor: C.ink2,
         borderWidth: 1,
         borderColor: C.line,
-        borderRadius: 24,
+        borderRadius: RADIUS.card,
         padding: 20,
         shadowColor: "#000",
         shadowOpacity: 0.18,
@@ -243,7 +243,7 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
           {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>{t("w.home.logbook.emptyTodaySub")}</Text>
-        <Pressable onPress={onLog} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", ...startGlow(C.lime, pressed) })}>
+        <Pressable onPress={onLog} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", ...startGlow(C.lime, pressed) })}>
           <CtaLabel label={t("w.home.today.alsoTodayLogFirst")} color={C.onAccent} fontSize={fs.bodyLg} />
         </Pressable>
       </View>

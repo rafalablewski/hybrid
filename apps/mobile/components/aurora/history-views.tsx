@@ -86,7 +86,7 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
   return (
     <Pressable
       onPress={() => ctx.onOpen(s.id)}
-      style={{ borderRadius: 22, padding: 15, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
+      style={{ borderRadius: RADIUS.card, padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
     >
       <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: -0.5, color: C.chalk }}>
         {h.value}
@@ -130,7 +130,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
   const { t } = useLang();
   return (
     // Full-bleed chip rail — clips at the screen edge, rests on the column.
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -16 }} contentContainerStyle={{ gap: 7, paddingBottom: 4, paddingHorizontal: 16 }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingBottom: 4, paddingHorizontal: 16 }}>
       {HISTORY_VIEWS.map((v) => {
         const on = v.id === view;
         return (
@@ -172,7 +172,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
     <View style={{ gap: 12, marginTop: 12 }}>
       <View style={{ flexDirection: "row", gap: 6 }}>
         {week.map((d, i) => (
-          <View key={d.key} style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 8, paddingBottom: 9, borderRadius: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: d.isToday ? C.lime : C.line }}>
+          <View key={d.key} style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 8, paddingBottom: 8, borderRadius: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: d.isToday ? C.lime : C.line }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(WEEKDAY_LABEL_KEYS[i]!).slice(0, 1)}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: d.isToday ? lime : d.future ? C.ash : C.chalk }}>{d.dayNum}</Text>
             <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: d.dot === 2 ? C.lime : d.dot === 1 ? withAlpha(C.lime, 0.45) : "transparent" }} />
@@ -188,7 +188,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <DayLabel C={C} text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
             <Chip C={C} color={u.isToday ? C.lime : C.ash} label={t("histview.planned")} />
           </View>
-          <View style={{ borderRadius: 22, padding: 15, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
+          <View style={{ borderRadius: RADIUS.card, padding: 16, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
             <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
             {u.blockNames.length > 0 && (
               <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
@@ -236,7 +236,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
   return (
     <View style={{ gap: 12, marginTop: 12 }}>
       {weeks.map((w) => (
-        <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: 22, padding: 16, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, 0.3) : C.line }}>
+        <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: RADIUS.card, padding: 16, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, 0.3) : C.line }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
             {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: 1.4, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
@@ -259,7 +259,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             const key = localDayKey(s.startedAt);
             const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
             return (
-              <Pressable key={s.id} onPress={() => ctx.onOpen(s.id)} style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Pressable key={s.id} onPress={() => ctx.onOpen(s.id)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.line }}>
                 <View style={{ width: 32, alignItems: "center" }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase" }}>{fmtWeekday(key)}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, fontWeight: "700" }}>{Number(key.slice(8, 10))}</Text>
@@ -339,7 +339,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const hasData = ctx.sessions.length > 0;
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
-  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 22, padding: 16 } as const;
+  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16 } as const;
   const Mini = ({ label, value }: { label: string; value: string }) => (
     <View style={{ ...cardStyle, flex: 1, padding: 14 }}>
       <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
@@ -358,7 +358,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
               onPress={() => setRange(rg.id)}
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
-              style={{ flex: 1, paddingVertical: 7, borderRadius: 999, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
+              style={{ flex: 1, paddingVertical: 8, borderRadius: 999, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
             >
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.8, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
                 {t(rg.key)}

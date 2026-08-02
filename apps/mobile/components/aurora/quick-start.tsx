@@ -110,7 +110,7 @@ export default function QuickStartSheet({
         <Pressable
           onPress={() => { onClose(); onBuildNew(); }}
           accessibilityRole="button"
-          style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 16, paddingVertical: 13, alignItems: "center" }}
+          style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 16, paddingVertical: 12, alignItems: "center" }}
         >
           <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.4, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
         </Pressable>
@@ -131,7 +131,7 @@ function SubHead({ C, label, action }: { C: P; label: string; action?: { label: 
         <Pressable
           onPress={action.onPress}
           accessibilityRole="button"
-          style={{ backgroundColor: withAlpha(C.violet, 0.12), borderWidth: 1, borderColor: withAlpha(C.violet, 0.32), borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5 }}
+          style={{ backgroundColor: withAlpha(C.violet, 0.12), borderWidth: 1, borderColor: withAlpha(C.violet, 0.32), borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}
         >
           <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 0.5, color: txt(C, C.violet) }}>{action.label}</Text>
         </Pressable>
@@ -169,7 +169,7 @@ function Star({ C, on, label, onPress }: { C: P; on: boolean; label: string; onP
 function FavouriteCard({ C, scheme, width, r, t, onLaunch, onToggleFav }: { C: P; scheme: "dark" | "light"; width: number; r: QuickRoutine; t: (k: string) => string; onLaunch: () => void; onToggleFav: () => void }) {
   const { glyph, accent } = decor(r.id, C);
   return (
-    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 14, overflow: "hidden" }}>
+    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 14, overflow: "hidden" }}>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, 0.05) }]} />
       <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.18), withAlpha(accent, 0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <View style={{ position: "absolute", top: 10, right: 10 }}>
@@ -186,7 +186,7 @@ function FavouriteCard({ C, scheme, width, r, t, onLaunch, onToggleFav }: { C: P
 function RoutineRow({ C, first, r, t, onLaunch, onToggleFav }: { C: P; first: boolean; r: QuickRoutine; t: (k: string) => string; onLaunch: () => void; onToggleFav: () => void }) {
   const { glyph, accent } = decor(r.id, C);
   return (
-    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, paddingHorizontal: 2, borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderTopColor: C.line }}>
+    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 2, borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderTopColor: C.line }}>
       <View style={{ width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(accent, 0.13), borderWidth: 1, borderColor: withAlpha(accent, 0.26) }}>
         <Text style={{ fontSize: 15, color: txt(C, accent) }}>{glyph}</Text>
       </View>

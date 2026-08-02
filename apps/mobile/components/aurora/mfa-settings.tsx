@@ -106,7 +106,7 @@ export default function MfaSettings() {
       <ACard style={{ borderLeftWidth: 3, borderLeftColor: accent }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Authenticator app (TOTP)</Text>
-          <View style={{ backgroundColor: `${verified.length ? C.lime : C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
+          <View style={{ backgroundColor: `${verified.length ? C.lime : C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
             <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: 0.5 }}>
               {verified.length ? "on" : "off"}
             </Text>
@@ -128,7 +128,7 @@ export default function MfaSettings() {
             {verified.map((f) => (
               <View key={f.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{f.friendly_name || "Authenticator"}</Text>
-                <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? 0.5 : 1 }}>
+                <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? 0.5 : 1 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>Remove</Text>
                 </Pressable>
               </View>
@@ -146,7 +146,7 @@ export default function MfaSettings() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 10 }}>
                   Scan this with your authenticator, then enter the 6-digit code to confirm.
                 </Text>
-                <View style={{ alignItems: "flex-start", backgroundColor: "#fff", borderRadius: 10, padding: 6, alignSelf: "flex-start" }}>
+                <View style={{ alignItems: "flex-start", backgroundColor: "#fff", borderRadius: 12, padding: 6, alignSelf: "flex-start" }}>
                   <QrMatrix url={enroll.uri} size={168} />
                 </View>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8, marginBottom: 12 }}>
@@ -163,11 +163,11 @@ export default function MfaSettings() {
                     accessibilityLabel="Authenticator code"
                     style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, letterSpacing: 3, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 14, paddingVertical: 12 }}
                   />
-                  <Pressable onPress={confirm} disabled={busy || !isValidTotpCode(code)} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 13, alignItems: "center", opacity: busy || !isValidTotpCode(code) ? 0.5 : 1 }}>
+                  <Pressable onPress={confirm} disabled={busy || !isValidTotpCode(code)} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 12, alignItems: "center", opacity: busy || !isValidTotpCode(code) ? 0.5 : 1 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>Confirm</Text>
                   </Pressable>
                 </View>
-                <Pressable onPress={() => { setEnroll(null); setCode(""); }} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginTop: 10, alignSelf: "flex-start" }}>
+                <Pressable onPress={() => { setEnroll(null); setCode(""); }} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, marginTop: 10, alignSelf: "flex-start" }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>Cancel</Text>
                 </Pressable>
               </View>

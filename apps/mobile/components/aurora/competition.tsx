@@ -57,7 +57,7 @@ export default function AuroraCompetition() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
           <View style={{ flexDirection: "row", gap: space.xs }}>
             {SPORTS.map((s) => (
-              <Pressable key={s} onPress={() => setSport(s)} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: sport === s ? C.lime : C.line, backgroundColor: sport === s ? `${C.lime}1f` : C.ink }}>
+              <Pressable key={s} onPress={() => setSport(s)} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: sport === s ? C.lime : C.line, backgroundColor: sport === s ? `${C.lime}1f` : C.ink }}>
                 <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: sport === s ? txt(C, C.lime) : C.ash }}>{s}</Text>
               </Pressable>
             ))}
@@ -90,7 +90,7 @@ export default function AuroraCompetition() {
           <ACard style={{ marginTop: 14 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{event.name} – {event.sport}</Text>
-              <View style={{ backgroundColor: `${plan.landsPeak ? C.lime : C.amber}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+              <View style={{ backgroundColor: `${plan.landsPeak ? C.lime : C.amber}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, plan.landsPeak ? C.lime : C.amber) }}>{plan.landsPeak ? t("w.train.comp.peakLands") : `${t("w.train.comp.peakAtWeek")} ${plan.peakWeek}`}</Text>
               </View>
             </View>

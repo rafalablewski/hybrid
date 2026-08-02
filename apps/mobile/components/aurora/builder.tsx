@@ -135,7 +135,7 @@ export default function AuroraBuilder() {
 
       {/* Ghost/dashed add affordance (the one-accent rule: lime stays reserved
           for Save) — same vocabulary as the Also-Today ghost ＋ tile. */}
-      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.ms, marginTop: 4, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: 16, paddingHorizontal: 13, paddingVertical: 13 }}>
+      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.ms, marginTop: 4, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 12 }}>
         <AuroraIcon name="add" size={18} color={C.ash} />
         <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.ash }}>{t("w.train.builder.addExercise")}</Text>
       </Pressable>
@@ -172,7 +172,7 @@ export default function AuroraBuilder() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("w.train.logger.routineFullBlurb")}</Text>
           <Pressable
             onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
-            style={{ backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", marginTop: 12 }}
+            style={{ backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 12 }}
           >
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: pa.ink }}>{t("w.train.logger.routineUnlock")}</Text>
           </Pressable>
@@ -232,7 +232,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
           textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}
         />
       </View>
-      <View style={{ flexDirection: "row", height: 4, borderRadius: 99, overflow: "hidden", backgroundColor: C.ink2, marginTop: 12 }}>
+      <View style={{ flexDirection: "row", height: 4, borderRadius: RADIUS.pill, overflow: "hidden", backgroundColor: C.ink2, marginTop: 12 }}>
         {segs.map((s, i) => s.pct > 0 && <View key={i} style={{ width: `${s.pct}%`, backgroundColor: s.color }} />)}
       </View>
       <View style={{ flexDirection: "row", gap: 14, marginTop: 6 }}>
@@ -278,7 +278,7 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
   const c = kindColor(b.kind, C);
   const minutes = Math.round(estimateBlockMinutes(b));
 
-  const field = { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 10, paddingVertical: 9, textAlign: "center" as const };
+  const field = { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 10, paddingVertical: 8, textAlign: "center" as const };
   const label = (s: string) => (
     <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{s}</Text>
   );
@@ -432,7 +432,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 onPress={() => builder.cycleType(b.uid, i)}
                 accessibilityRole="button"
                 accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
-                style={{ width: 34, height: 38, borderRadius: 8, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
+                style={{ width: 34, height: 38, borderRadius: 12, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
               >
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
               </Pressable>
@@ -470,7 +470,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
         </Pressable>
       </View>
       {special && (
-        <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink, overflow: "hidden" }}>
+        <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink, overflow: "hidden" }}>
           {[
             { run: builder.addWarmupSet, c: C.amber, badge: "W", label: t("workout.warmupSetTitle"), desc: t("workout.warmupSetDesc") },
             { run: builder.addWarmupRamp, c: C.amber, badge: "↗", label: t("workout.warmupRampTitle"), desc: t("workout.warmupRampDesc") },
@@ -480,9 +480,9 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
             <Pressable
               key={it.badge}
               onPress={() => { it.run(b.uid); setSpecial(false); }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
             >
-              <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
+              <View style={{ width: 30, height: 30, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, it.c) }}>{it.badge}</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -496,11 +496,11 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
       {/* planned rest between working sets — prescription, 15 s steps */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>
-        <Pressable onPress={() => builder.bumpRest(b.uid, -15)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Pressable onPress={() => builder.bumpRest(b.uid, -15)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: C.ash, fontSize: fs.note }}>−</Text>
         </Pressable>
         <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk, minWidth: 48, textAlign: "center" }}>{b.restSec ?? DEFAULT_REST_SEC} s</Text>
-        <Pressable onPress={() => builder.bumpRest(b.uid, 15)} accessibilityRole="button" accessibilityLabel={t("common.increase")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Pressable onPress={() => builder.bumpRest(b.uid, 15)} accessibilityRole="button" accessibilityLabel={t("common.increase")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: txt(C, C.lime), fontSize: fs.note }}>+</Text>
         </Pressable>
       </View>

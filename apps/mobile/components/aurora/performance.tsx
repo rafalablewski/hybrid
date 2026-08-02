@@ -322,7 +322,7 @@ function Full({ top }: { top?: ReactNode }) {
               <View style={{ marginTop: 12, gap: space.sm }}>
                 {risk.flagged.map((ti) => (
                   <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-                    <View style={{ borderWidth: 1, borderColor: `${riskColor(ti.band, C)}8c`, borderRadius: RADIUS.pill, paddingHorizontal: 9, paddingVertical: 2 }}>
+                    <View style={{ borderWidth: 1, borderColor: `${riskColor(ti.band, C)}8c`, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 }}>
                       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "700", color: txt(C, riskColor(ti.band, C)) }}>{ti.risk}</Text>
                     </View>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize" }}>{ti.tissue}</Text>
@@ -374,7 +374,7 @@ function Full({ top }: { top?: ReactNode }) {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.6, color: C.ash, width: 46, textAlign: "right" }}>{t("w.analyze.perf.colRisk")}</Text>
                 </View>
                 {risk.tissues.map((ti) => (
-                  <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.line }}>
+                  <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                     <View style={{ flex: 1, paddingRight: 6 }}>
                       <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{cap(ti.tissue)}</Text>
                       <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : "—"}</Text>
@@ -436,7 +436,7 @@ function Full({ top }: { top?: ReactNode }) {
             <SHead
               C={C} scheme={scheme}
               title={t("w.home.today.yourWeek")}
-              metaNode={recap.prs.length > 0 ? <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}><AuroraIcon name="trophy" size={13} color={C.onAccent} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>{recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View> : undefined}
+              metaNode={recap.prs.length > 0 ? <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><AuroraIcon name="trophy" size={13} color={C.onAccent} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>{recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View> : undefined}
             />
             <View style={{ flexDirection: "row" }}>
               <View style={{ flex: 1 }}><Stat C={C} label={t("w.home.today.sessions")} value={`${recap.sessions}`} /></View>
@@ -509,7 +509,7 @@ function Full({ top }: { top?: ReactNode }) {
               to set up a season they already have. */}
           <SHead C={C} scheme={scheme} title={!macroRead.settled ? " " : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} small />
           {macro ? (
-            <View style={{ height: 6, borderRadius: 99, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 2, marginBottom: 10 }}>
+            <View style={{ height: 6, borderRadius: RADIUS.pill, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 2, marginBottom: 10 }}>
               <View style={{ width: `${seasonPct}%`, height: 6, backgroundColor: C.violet }} />
             </View>
           ) : macroRead.settled ? (
@@ -570,7 +570,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
         {TABS.map((x) => {
           const on = x.id === tab;
           return (
-            <Pressable key={x.id} onPress={() => setTab(x.id)} style={{ flex: 1, paddingVertical: 9, alignItems: "center", borderRadius: RADIUS.pill, backgroundColor: on ? C.chalk : "transparent" }}>
+            <Pressable key={x.id} onPress={() => setTab(x.id)} style={{ flex: 1, paddingVertical: 8, alignItems: "center", borderRadius: RADIUS.pill, backgroundColor: on ? C.chalk : "transparent" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.onAccent : C.ash }}>{x.label}</Text>
             </Pressable>
           );
@@ -647,9 +647,9 @@ function StateSkeleton({ C }: { C: Palette }) {
         </View>
       </View>
       <View style={{ flexDirection: "row", gap: 12, marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
-        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
-        <View style={{ flex: 1, gap: 7 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
       </View>
     </View>
   );
@@ -702,7 +702,7 @@ function Comp({ C, scheme, label, value }: { C: Palette; scheme: Scheme; label: 
 
 function Watch({ C, label, value, color }: { C: Palette; label: string; value: string; color?: string }) {
   return (
-    <View style={{ flex: 1, backgroundColor: C.ink2, paddingVertical: 11, paddingHorizontal: 4, alignItems: "center" }}>
+    <View style={{ flex: 1, backgroundColor: C.ink2, paddingVertical: 12, paddingHorizontal: 4, alignItems: "center" }}>
       <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: color ?? C.chalk }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 8, textTransform: "uppercase", letterSpacing: 0.4, color: C.ash, marginTop: 4 }}>{label}</Text>
     </View>
@@ -711,7 +711,7 @@ function Watch({ C, label, value, color }: { C: Palette; label: string; value: s
 
 function Mod({ C, label, value, onPress, mono, last }: { C: Palette; label: string; value: string; onPress: () => void; mono?: boolean; last?: boolean }) {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 11, borderBottomWidth: last ? 0 : 1, borderBottomColor: `${C.line}99` }}>
+    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: `${C.line}99` }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>{label}</Text>
       <Text style={{ marginLeft: "auto", fontFamily: mono ? F.mono : F.bold, fontSize: mono ? fs.caption : fs.body, color: mono ? C.ash : C.chalk }}>{value} →</Text>
     </Pressable>
@@ -770,7 +770,7 @@ function RtpPanel() {
           );
         })}
       </View>
-      <Pressable onPress={create} accessibilityRole="button" style={{ alignSelf: "flex-start", marginTop: 10, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 9 }}>
+      <Pressable onPress={create} accessibilityRole="button" style={{ alignSelf: "flex-start", marginTop: 10, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Open protocol</Text>
       </Pressable>
 
@@ -786,7 +786,7 @@ function RtpPanel() {
             <View key={p.id} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, textTransform: "capitalize" }}>{p.tissue}</Text>
-                <View style={{ backgroundColor: `${accent}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 3 }}>
+                <View style={{ backgroundColor: `${accent}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, accent) }}>{STAGE_LABEL[p.stage]}</Text>
                 </View>
               </View>
@@ -824,9 +824,9 @@ function RtpPanel() {
                         placeholder="Reason (logged to audit)"
                         placeholderTextColor={C.ash}
                         accessibilityLabel="Override reason"
-                        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 9 }}
+                        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 8 }}
                       />
-                      <Pressable onPress={() => doOverride(p.id)} accessibilityRole="button" style={{ backgroundColor: C.red, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 9 }}>
+                      <Pressable onPress={() => doOverride(p.id)} accessibilityRole="button" style={{ backgroundColor: C.red, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 8 }}>
                         <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>Force advance</Text>
                       </Pressable>
                     </View>

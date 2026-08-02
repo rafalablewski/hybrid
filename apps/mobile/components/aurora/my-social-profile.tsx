@@ -17,7 +17,7 @@ import { ABack } from "./kit";
 
 type FieldKey = "name" | "handle" | "displayName" | "bio" | "email" | "visibility";
 
-const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 15 } as const);
+const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 15 } as const);
 
 export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const C = useTheme().palette;
@@ -185,7 +185,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 }}>
           {form.avatarUrl ? <SButton label={t("w.profile.savePhoto")} small onPress={() => saveSocial()} /> : null}
-          <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 }}>
+          <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.profile.uploadSoon")}</Text>
           </Pressable>
         </View>

@@ -159,7 +159,7 @@ function Pill({ C, label, active, accent, onPress }: { C: Palette; label: string
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}
+      style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}
     >
       <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: active ? accent : C.ash }}>{label}</Text>
     </Pressable>

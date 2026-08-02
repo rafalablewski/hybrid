@@ -126,7 +126,7 @@ export default function AuroraUpgrade() {
 
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* badge */}
-          <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 6 }}>
+          <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
             <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.4, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
           </View>
 
@@ -160,7 +160,7 @@ export default function AuroraUpgrade() {
         </ScrollView>
 
         {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}
-        <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 17, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
+        <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
           {busy ? <ActivityIndicator color={pa.ink} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.account.upgrade.start-trial")}</Text>}
         </Pressable>
         {/* Restore Purchases — required by Apple for auto-renewable subscriptions */}

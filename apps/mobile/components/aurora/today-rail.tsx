@@ -99,7 +99,7 @@ export default function AuroraTodayRail({
           </Text>
           <Contract open={!state.tight} reduced={reduced}>
             <Text style={{ fontFamily: F.mono, fontSize: 10.5, letterSpacing: 1, color: C.chalk }}>{todayOf(days)?.monthShort}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 7 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 8 }}>
               {days.map((d) => (
                 <View
                   key={d.dateKey}
@@ -176,10 +176,10 @@ function Bar({ visible, reduced, C, topInset, children }: { visible: boolean; re
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: 7,
+        gap: 8,
         paddingHorizontal: 16,
         paddingTop: topInset + 8,
-        paddingBottom: 9,
+        paddingBottom: 8,
         // No backdrop-filter in RN: an ink wash at the same weight as the web
         // blur keeps the two bars reading the same.
         backgroundColor: C.ink,
@@ -268,7 +268,7 @@ function Contract({ open, reduced, children }: { open: boolean; reduced: boolean
       style={{
         flexDirection: "row",
         alignItems: "center",
-        marginLeft: 7,
+        marginLeft: 8,
         overflow: "hidden",
         opacity: v,
         maxWidth: v.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(1, width.current || 140)] }),
