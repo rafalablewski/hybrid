@@ -335,8 +335,8 @@ export function WorkoutWrapped({
 
   const container: CSSProperties = { position: "fixed", inset: 0, zIndex: 60, background: PANEL_BG, overflowY: "auto", scrollSnapType: "y proximity", color: txt(CHALK), fontFamily: "var(--font-display)" };
   const panelStyle: CSSProperties = { minHeight: "100dvh", scrollSnapAlign: "start", position: "relative", padding: "72px 26px 150px", display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box", maxWidth: 560, margin: "0 auto" };
-  const eyebrow = (label: string) => <Mono s={{ fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase" }} c={GOLD}>✦ {label}</Mono>;
-  const scrollHint = <Mono s={{ fontSize: fs.micro, letterSpacing: ".1em", textAlign: "center", marginTop: 16, opacity: 0.8 }}>{t("session.wrapped.scroll")} ↑</Mono>;
+  const eyebrow = (label: string) => <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={GOLD}>✦ {label}</Mono>;
+  const scrollHint = <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textAlign: "center", marginTop: 16, opacity: 0.8 }}>{t("session.wrapped.scroll")} ↑</Mono>;
 
   return (
     <div ref={scrollRef} onScroll={onScroll} style={container}>
@@ -353,8 +353,8 @@ export function WorkoutWrapped({
             ))}
           </div>
           <div className="pr-trophy" style={{ lineHeight: 1 }}><AuroraIcon name="trophy" size={88} color={GOLD} /></div>
-          <Mono s={{ fontSize: fs.body, letterSpacing: ".2em", textTransform: "uppercase", marginTop: 20 }} c={GOLD}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Mono>
-          <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 20vw, 104px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.05em", lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
+          <Mono s={{ fontSize: fs.body, letterSpacing: ".12em", textTransform: "uppercase", marginTop: 20 }} c={GOLD}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Mono>
+          <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 20vw, 104px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.03em", lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 8 }}>{heroSub}</div>
           {scrollHint}
         </section>
@@ -366,7 +366,7 @@ export function WorkoutWrapped({
         {eyebrow(t("session.wrapped.title"))}
         <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative" }}>{session.title}</div>
         <div style={{ flex: 1 }} />
-        <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.06em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
+        <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.03em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 12, color: txt(cel ? LIME : CHALK), position: "relative" }}>{heroSub}</div>
         {signature.length >= SIGNATURE_MIN_BARS && (
           <div aria-hidden style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 44, marginTop: 18, position: "relative" }}>
@@ -391,11 +391,11 @@ export function WorkoutWrapped({
                 device's name. Chip and mark are both chalk: the artwork can't
                 be tinted, and a white logo next to lime text would read as two
                 claims at once. See core/device-marks.ts. */}
-            <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={CHALK}>{t("session.device.measuredOn")}</Mono>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".08em" }} c={CHALK}>{t("session.device.measuredOn")}</Mono>
             {deviceMark ? (
               <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
             ) : (
-              <Mono s={{ fontSize: fs.micro, letterSpacing: ".06em" }} c={CHALK}>{deviceName ?? t("session.device.matchedChip")}</Mono>
+              <Mono s={{ fontSize: fs.micro, letterSpacing: ".08em" }} c={CHALK}>{deviceName ?? t("session.device.matchedChip")}</Mono>
             )}
           </div>
         )}
@@ -427,7 +427,7 @@ export function WorkoutWrapped({
           <div style={{ filter: full ? "none" : "blur(7px)", pointerEvents: full ? "auto" : "none", userSelect: full ? "auto" : "none" }} aria-hidden={!full}>
             {wrapped.facts.map((f) => (
               <div key={f.labelKey + f.value} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "16px 0", borderBottom: `1px solid ${LINE}` }}>
-                <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }}>{t(f.labelKey)}</Mono>
+                <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }}>{t(f.labelKey)}</Mono>
                 <span style={{ ...disp, fontWeight: 900, fontSize: 26, color: f.tone === "up" || f.labelKey === "session.wrapped.est1rm" ? txt(LIME) : txt(VIOLET), fontVariantNumeric: "tabular-nums" }}>{f.value}</span>
               </div>
             ))}
@@ -465,7 +465,7 @@ export function WorkoutWrapped({
             </div>
             {comparison.map((r) => (
               <div key={r.labelKey} style={{ display: "flex", alignItems: "baseline", padding: "12px 14px", background: "#0e0f0d", borderTop: `1px solid ${LINE}` }}>
-                <Mono s={{ flex: 1.1, fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase" }}>{t(r.labelKey)}</Mono>
+                <Mono s={{ flex: 1.1, fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase" }}>{t(r.labelKey)}</Mono>
                 {/* A modelled figure wears a "~" — never presented as a measurement. */}
                 {!imported && (
                   <span style={{ ...disp, flex: 1, fontWeight: 700, fontSize: fs.caption, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</span>
@@ -528,7 +528,7 @@ export function WorkoutWrapped({
             <div aria-hidden style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 3, height: 72 }}>
               {signature.map((v, i) => (<div key={i} style={{ width: 6, height: `${Math.round(v * 100)}%`, borderRadius: 3, background: `linear-gradient(180deg, ${LIME_HEX}, color-mix(in srgb, ${LIME} 12%, transparent))`, opacity: 0.45 + v * 0.55 }} />))}
             </div>
-            <Mono s={{ fontSize: fs.micro, letterSpacing: ".1em", marginTop: 12, display: "block" }}>{t("session.wrapped.signatureCap")}</Mono>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", marginTop: 12, display: "block" }}>{t("session.wrapped.signatureCap")}</Mono>
           </div>
         )}
       </section>

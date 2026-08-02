@@ -148,7 +148,7 @@ export default function AuroraCoach() {
       {/* coaching: invite + roster */}
       <Section title={t("w.teams.coach.coaching")} color={C("ash")}>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("w.teams.coach.inviteAnAthlete")}</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }}>{t("w.teams.coach.inviteAnAthlete")}</Mono>
           <div style={{ display: "flex", gap: space.sm, marginTop: 10 }}>
             <input
               value={email}
@@ -349,7 +349,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   return (
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
       <button onClick={back} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>
-        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={C("ash")}>← {t("w.teams.coach.roster")}</Mono>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }} c={C("ash")}>← {t("w.teams.coach.roster")}</Mono>
       </button>
       <h2 style={{ fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{personName(link.client, t)}</h2>
       <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
@@ -406,7 +406,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
       <Section title={t("w.teams.coach.programming")} color={C("ash")}>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }}>{t("w.teams.coach.assignWorkout")}</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }}>{t("w.teams.coach.assignWorkout")}</Mono>
           {templates.length === 0 ? (
             <Mono s={{ fontSize: fs.body, display: "block", marginTop: 8 }}>
               {t("w.teams.coach.noTemplates")}
@@ -425,7 +425,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           )}
         </div>
         <div style={card}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("ash")}>{t("w.teams.coach.generatePeriodizedWeek")}</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={C("ash")}>{t("w.teams.coach.generatePeriodizedWeek")}</Mono>
           <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
             {sessions.length === 0
               ? t("w.teams.coach.genEmptyHint")
@@ -476,7 +476,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
               {c.note && <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 6 }} c={C("chalk")}>{c.note}</Mono>}
               {c.coachReply ? (
                 <div style={{ marginTop: 10, paddingLeft: 10 }}>
-                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={C("ash")}>{t("w.teams.coach.yourReply")}</Mono>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={C("ash")}>{t("w.teams.coach.yourReply")}</Mono>
                   <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 4 }} c={C("chalk")}>{c.coachReply}</Mono>
                 </div>
               ) : replyFor === c.id ? (
@@ -586,7 +586,7 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
 function Section({ title, color, children }: { title: string; color: string; children: ReactNode }) {
   return (
     <div style={{ marginBottom: 8 }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "12px 0 8px" }} c={color}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", margin: "12px 0 8px" }} c={color}>
         {title}
       </Mono>
       {children}
@@ -658,7 +658,7 @@ function Btn({ label, color, onClick }: { label: string; color: string; onClick:
         fontSize: fs.body,
         fontWeight: 700,
         textTransform: "uppercase",
-        letterSpacing: ".04em",
+        letterSpacing: ".08em",
         color: ghost ? C("ash") : C("ink"),
         background: ghost ? "transparent" : color,
         border: `1px solid ${ghost ? C("line") : color}`,

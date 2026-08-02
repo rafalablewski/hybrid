@@ -346,7 +346,7 @@ export default function AdminAnnouncements() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <Mono s={{ fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", display: "block", marginBottom: 6 }} c={ASH}>
+      <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", display: "block", marginBottom: 6 }} c={ASH}>
         {label}
       </Mono>
       {children}
@@ -372,7 +372,7 @@ const baseBtn: React.CSSProperties = {
   fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",
-  letterSpacing: ".05em",
+  letterSpacing: ".08em",
   padding: "9px 16px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
@@ -386,7 +386,7 @@ const miniBtn: React.CSSProperties = {
   fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",
-  letterSpacing: ".04em",
+  letterSpacing: ".08em",
   padding: "8px 12px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",

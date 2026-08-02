@@ -149,8 +149,8 @@ export default function AuroraTodayRail({
       background: C("ink2"),
       color: C("chalk"),
       fontFamily: "var(--font-mono)",
-      fontSize: 10.5,
-      letterSpacing: ".09em",
+      fontSize: 11,
+      letterSpacing: ".08em",
       cursor: "pointer",
       transformOrigin: "50% 50%",
       transition: [

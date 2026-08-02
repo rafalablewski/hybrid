@@ -122,7 +122,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
       </div>
 
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{tr("w.train.builder.templateLibrary")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{tr("w.train.builder.templateLibrary")}</div>
         {templates.length === 0 ? (
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 10, color: C("ash") }}>{tr("w.train.builder.noTemplates")}</div>
         ) : (
@@ -162,7 +162,7 @@ function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]
   ];
   return (
     <div style={{ margin: "10px 2px 20px" }}>
-      <div aria-label={`${sig.minutes} ${tr("w.train.signal.estTime")}`} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 56, letterSpacing: "-.04em", lineHeight: 1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
+      <div aria-label={`${sig.minutes} ${tr("w.train.signal.estTime")}`} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 56, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
         {sig.minutes}<span style={{ fontSize: 22, fontWeight: 500, color: C("ash"), letterSpacing: 0 }}> min</span>
       </div>
       <MetaLine
@@ -183,5 +183,5 @@ function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]
 
 function smallBtn(token: string): React.CSSProperties {
   const c = C(token);
-  return { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" };
+  return { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" };
 }

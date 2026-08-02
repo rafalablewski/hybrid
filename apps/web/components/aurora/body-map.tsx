@@ -68,7 +68,7 @@ function Swatch({ label, opacity }: { label: string; opacity: number }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span style={{ width: 11, height: 11, borderRadius: 3, background: C("lime"), opacity, border: `1px solid ${C("line")}` }} />
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: 0.6, color: C("ash") }}>{label}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: 0.6, color: C("ash") }}>{label}</span>
     </span>
   );
 }

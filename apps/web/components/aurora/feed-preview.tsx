@@ -92,12 +92,12 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
               <span style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", fontSize: 14, minWidth: 0 }}>
                 <span style={{ fontWeight: 800 }}>{v.name}</span>
                 {a.coachVerified && <span style={{ color: "var(--blue-text)", fontSize: 12 }}>✓</span>}
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12.5, color: C("ash"), minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.handle ? `@${a.handle}  ` : ""}{v.when}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.handle ? `@${a.handle}  ` : ""}{v.when}</span>
               </span>
             </span>
 
             {/* body prose — full width */}
-            {v.body && <span style={{ display: "block", fontSize: 14.5, lineHeight: 1.5, marginTop: 12 }}>{v.body}</span>}
+            {v.body && <span style={{ display: "block", fontSize: 15, lineHeight: 1.5, marginTop: 12 }}>{v.body}</span>}
 
               {/* attached content — the session/PR summary: a lead line + stat
                   pills (each chip its own element, never a ·-joined string) */}
@@ -108,8 +108,8 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
                       Hour — prose stays sans, mono is reserved for the fact
                       line + counts. All-mono flattened every card into the
                       same texture. */}
-                  {v.lead && <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16.5, letterSpacing: "-.01em", lineHeight: 1.25, color: C("chalk") }}>{v.lead}</span>}
-                  {v.chips.length > 0 && <MetaLine parts={v.chips} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: 12.5, color: C("ash"), marginTop: v.lead ? 6 : 0 }} />}
+                  {v.lead && <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, letterSpacing: "-.01em", lineHeight: 1.25, color: C("chalk") }}>{v.lead}</span>}
+                  {v.chips.length > 0 && <MetaLine parts={v.chips} style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: 13, color: C("ash"), marginTop: v.lead ? 6 : 0 }} />}
                 </span>
               )}
 
@@ -133,7 +133,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
         >
           <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 16 }}>→</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
         </button>
       )}
     </div>

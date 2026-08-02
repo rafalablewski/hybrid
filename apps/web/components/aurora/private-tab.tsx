@@ -88,7 +88,7 @@ function CommandCenterCard({ locked, onClick }: { locked: boolean; onClick: () =
           <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), marginTop: 3 }}>{t("w.account.profile.priv-cockpit-s")}</span>
         </span>
       </span>
-      <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", marginTop: 18 }}>
+      <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", marginTop: 18 }}>
         {locked ? `${t("w.home.today.cardUnlock")} →` : `${t("w.home.today.cardOpen")} →`}
       </span>
     </button>
@@ -176,7 +176,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
           <>
             <ReportHero report={report!} units={units} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 0 10px" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".18em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-trends")}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-trends")}</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{t("w.account.profile.priv-trends-sub")}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -204,7 +204,7 @@ function ReportHero({ report, units }: { report: WeeklyReport; units: "kg" | "lb
   const dstr = d != null ? fmtMetricDelta(BODY_METRIC_DEFS[0], d, units) : null;
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".2em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-report-kicker")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-report-kicker")}</div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), margin: "8px 0 14px", textWrap: "balance" }}>{t(BODY_VERDICT_KEY[report.verdict])}</div>
       {wv && (
         <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
@@ -215,7 +215,7 @@ function ReportHero({ report, units }: { report: WeeklyReport; units: "kg" | "lb
         </div>
       )}
       <div style={{ marginTop: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>
           <span>{t("w.account.profile.priv-cadence")}</span>
           <span>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</span>
         </div>
@@ -236,8 +236,8 @@ function MetricTile({ tr, units }: { tr: MetricTrend; units: "kg" | "lb" }) {
   return (
     <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px 8px", display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t(tr.def.labelKey)}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 600, color: dirColor(tr.direction), whiteSpace: "nowrap" }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t(tr.def.labelKey)}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: dirColor(tr.direction), whiteSpace: "nowrap" }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</span>
       </div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 600, letterSpacing: "-.02em", color: C("chalk"), lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{value}<span style={{ fontSize: 11, color: C("ash"), fontWeight: 400, marginLeft: 2 }}>{unit}</span></div>
       <Bars heights={sparkHeights(tr.series)} />
@@ -349,7 +349,7 @@ function HeightRow({ units, heightCm, onSaved }: { units: "kg" | "lb"; heightCm:
   return (
     <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px 12px", marginBottom: 10 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-height-t")}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-height-t")}</span>
         <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 11, color: heightCm != null ? LIME : C("ash") }}>
           {heightCm != null ? fmtHeight(heightCm, units) : t("w.account.profile.priv-height-none")}
         </span>
@@ -363,7 +363,7 @@ function HeightRow({ units, heightCm, onSaved }: { units: "kg" | "lb"; heightCm:
           aria-label={`${t("w.account.profile.priv-height-t")} (${unit})`}
           style={{ flex: 1, minWidth: 0, boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", padding: 0 }}
         />
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash"), flex: "none" }}>{unit}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), flex: "none" }}>{unit}</span>
         {/* The save appears only when there is a CHANGE to save — a stored
             height shouldn't sit under a button implying unfinished business. */}
         {dirty && (
@@ -386,7 +386,7 @@ function HeightRow({ units, heightCm, onSaved }: { units: "kg" | "lb"; heightCm:
 function MetricInput({ label, unit, value, onChange }: { label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
     <div style={{ background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px 12px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
         <span style={{ width: 9, height: 9, borderRadius: 3, background: C("lime") }} />{label}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 4 }}>
@@ -398,7 +398,7 @@ function MetricInput({ label, unit, value, onChange }: { label: string; unit: st
           aria-label={`${label} (${unit})`}
           style={{ flex: 1, minWidth: 0, boxSizing: "border-box", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", padding: 0 }}
         />
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash"), flex: "none" }}>{unit}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash"), flex: "none" }}>{unit}</span>
       </div>
     </div>
   );

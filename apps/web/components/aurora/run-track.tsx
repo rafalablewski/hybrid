@@ -130,7 +130,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div>
       <div style={{ fontWeight: 800, fontSize: fs.display, color, marginTop: 4 }}>{value}</div>
     </div>
   );

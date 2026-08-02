@@ -483,7 +483,7 @@ export default function AccountSettings() {
             <Section label={t("w.account.settings.sec-login-recovery")}>
               <MfaSettings />
               <div style={{ marginTop: 16 }}>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.change-password")}</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block" }} c={ASH}>{t("w.account.settings.change-password")}</Mono>
                 {!emailProvider ? (
                   <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
                     {t("w.account.settings.signin-with")} {session!.provider} {t("w.account.settings.manage-password-there")}
@@ -511,14 +511,14 @@ export default function AccountSettings() {
                 {passwordMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={passwordMsg.startsWith("✓") ? LIME : ASH}>{passwordMsg}</Mono>}
               </div>
               <div style={{ marginTop: 16 }}>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.connected-account")}</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block" }} c={ASH}>{t("w.account.settings.connected-account")}</Mono>
                 <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 8 }} c={CHALK}>
                   {!emailProvider ? session!.provider : (session?.email || t("w.account.settings.new-password-ph"))}
                 </Mono>
               </div>
             </Section>
             <Section label={t("w.account.settings.sec-checks")}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }} c={ASH}>{t("w.account.settings.where-logged-in")}</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block" }} c={ASH}>{t("w.account.settings.where-logged-in")}</Mono>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: LIME, flex: "none" }} />
                 <Mono s={{ fontSize: fs.body }} c={CHALK}>{t("w.account.settings.this-device")}</Mono>
@@ -554,7 +554,7 @@ export default function AccountSettings() {
             {!paid ? (
               <>
                 <div style={{ marginTop: 16 }}>
-                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.full")}</Mono>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.full")}</Mono>
                   {FULL_BENEFITS.map((b, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 0" }}>
                       <span style={{ color: txt(LIME_HEX), fontWeight: 800, marginTop: 1 }}>✓</span>
@@ -595,7 +595,7 @@ export default function AccountSettings() {
           <Section label={t("w.account.settings.export")}>
             <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>{t("w.account.settings.export-data-desc")}</Mono>
             <div style={{ marginTop: 14 }}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.data-included")}</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.data-included")}</Mono>
               {[1, 2, 3].map((n) => (
                 <div key={n} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
                   <span style={{ color: txt(LIME_HEX), fontWeight: 800 }}>✓</span>
@@ -812,7 +812,7 @@ function Row({ icon, accent, title, subtitle, danger, first, onOpen }: {
 function Section({ label, tone, children }: { label: string; tone?: string; children: ReactNode }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ ...mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".14em", color: tone ?? txt(ASH), marginBottom: 10, marginLeft: 2 }}>{label}</div>
+      <div style={{ ...mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", color: tone ?? txt(ASH), marginBottom: 10, marginLeft: 2 }}>{label}</div>
       <Card>{children}</Card>
     </div>
   );

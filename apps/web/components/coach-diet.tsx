@@ -47,7 +47,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
 
   const field = (label: string, key: keyof Diet, unit: string) => (
     <div style={{ flex: "1 1 90px" }}>
-      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em", display: "block", marginBottom: 4 }} c={ASH}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 4 }} c={ASH}>{label}</Mono>
       <input
         value={d[key]}
         onChange={(e) => setD((p) => ({ ...p, [key]: e.target.value.replace(/[^0-9]/g, "") }))}
@@ -60,7 +60,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
 
   return (
     <Card style={{ borderLeft: `3px solid ${LIME}` }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>Assign diet – daily macros</Mono>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={LIME}>Assign diet – daily macros</Mono>
       <div style={{ display: "flex", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
         {field("kcal", "kcal", "kcal")}
         {field("protein", "protein", "g")}

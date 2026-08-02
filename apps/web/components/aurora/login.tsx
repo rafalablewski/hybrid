@@ -168,7 +168,7 @@ export default function AuroraLogin() {
 
             {!live && (
               <>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }}>{t("w.account.login.demo-label")}</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }}>{t("w.account.login.demo-label")}</Mono>
                 <div style={{ display: "flex", gap: space.sm, marginBottom: 18 }}>
                   {ROLE_INFO.map((r) => {
                     const on = role === r.id;
@@ -213,7 +213,7 @@ export default function AuroraLogin() {
               </button>
             )}
 
-            <button onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>← {t("w.account.login.back")}</Mono></button>
+            <button onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>← {t("w.account.login.back")}</Mono></button>
           </>
         )}
         <div style={{ marginTop: 22, textAlign: "center" }}>

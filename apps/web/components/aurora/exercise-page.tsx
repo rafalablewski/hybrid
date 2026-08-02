@@ -264,7 +264,7 @@ function ScatterChart({ slide, stroke, units, t }: { slide: SlideOf<"loadReps">;
       {Array.from({ length: 12 }, (_, i) => i + 1).map((r) => (
         <text key={r} x={X(r)} y={H - 12} textAnchor="middle" fill={ASH} style={{ ...mono, fontSize: 9 }}>{r}</text>
       ))}
-      <text x={(L + W - R) / 2} y={H - 1} textAnchor="middle" fill={ASH} style={{ ...mono, fontSize: 8, letterSpacing: ".1em" }}>{t("w.analyze.ex.mapReps").toUpperCase()}</text>
+      <text x={(L + W - R) / 2} y={H - 1} textAnchor="middle" fill={ASH} style={{ ...mono, fontSize: 8, letterSpacing: ".12em" }}>{t("w.analyze.ex.mapReps").toUpperCase()}</text>
       {map.isolines.map((iso) => {
         let d = "";
         for (let r = 0.6; r <= 12.4; r += 0.2) {
@@ -389,7 +389,7 @@ function CompareChart({ slide, units, t }: { slide: SlideOf<"compare">; units: W
               <span style={{ fontSize: fs.subtitle, fontWeight: 700 }}>{tile.cur}</span>
               {!tile.same && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, color: tile.good ? "var(--blue-text)" : "var(--red-text)" }}>{tile.good ? "▲" : "▼"}</span>}
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</div>
           </div>
         ))}
       </div>
@@ -426,7 +426,7 @@ function ConsistencyHeat({ slide, foot, t }: { slide: SlideOf<"consistency">; fo
         {stats.map((st) => (
           <div key={st.l} style={{ flex: 1 }}>
             <div style={{ fontSize: fs.subtitle, fontWeight: 700 }}>{st.v}</div>
-            <div style={{ marginTop: 3, fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{st.l}</div>
+            <div style={{ marginTop: 3, fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{st.l}</div>
           </div>
         ))}
       </div>
@@ -647,7 +647,7 @@ export default function AuroraExercisePage({
       <div style={{ display: "grid", justifyContent: "center", marginTop: 18 }}>
         <button
           onClick={() => { setShowAll(!showAll); setPage(0); pagerRef.current?.scrollTo({ left: 0 }); }}
-          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), padding: "8px 14px" }}
+          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), padding: "8px 14px" }}
         >
           {showAll ? t("w.analyze.exp.less") : t("w.analyze.exp.allStats")}
         </button>

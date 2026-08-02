@@ -416,7 +416,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
           <button
             disabled={busy || !agentId || !task.trim()}
             onClick={run}
-            style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".04em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
+            style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
           >
             {busy ? "Running…" : "Run"}
           </button>
@@ -499,7 +499,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
       {/* success rate vs a 90% target */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Success rate (7d)</Mono>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>Success rate (7d)</Mono>
           <Mono s={{ fontSize: fs.caption, fontWeight: 700 }} c={srColor}>{sr == null ? "no runs" : `${sr}%`}</Mono>
         </div>
         <div style={{ position: "relative", height: 7, borderRadius: 99, background: INK2, overflow: "hidden" }}>
@@ -515,7 +515,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
         <Mini label="Last run" value={s.lastRunAt ? ago(s.lastRunAt) : "—"} />
       </div>
 
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 6 }} c={AMBER}>KPIs — target vs actual</Mono>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 6 }} c={AMBER}>KPIs — target vs actual</Mono>
       {s.kpis.length === 0 ? (
         <Mono s={{ fontSize: fs.caption, display: "block" }} c={ASH}>No KPIs set.</Mono>
       ) : (
@@ -813,7 +813,7 @@ function MonthlyCostCard() {
           {[d.current, d.previous].map((m, i) => (
             <div key={m.month} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={i === 0 ? AMBER : ASH}>{m.month}{i === 0 ? " – MTD" : ""}</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={i === 0 ? AMBER : ASH}>{m.month}{i === 0 ? " – MTD" : ""}</Mono>
                 <a href={csv(m.month)} style={link}>⬇ CSV</a>
               </div>
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, color: CHALK, margin: "4px 0" }}>{fmtUsd(m.total)}</div>

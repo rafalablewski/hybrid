@@ -126,7 +126,7 @@ export default function QuickStartSheet({
           cursor: "pointer",
           fontFamily: "var(--font-mono)",
           fontSize: 12,
-          letterSpacing: ".04em",
+          letterSpacing: ".08em",
         }}
       >
         ＋ {t("w.home.quickStart.buildNew")}
@@ -140,14 +140,14 @@ export default function QuickStartSheet({
 function SubHead({ label, action }: { label: string; action?: { label: string; onClick: () => void } }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "6px 2px 10px" }}>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</span>
       {action && (
         <button
           onClick={action.onClick}
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 10.5,
-            letterSpacing: ".04em",
+            fontSize: 11,
+            letterSpacing: ".08em",
             color: "var(--violet-text)",
             background: "color-mix(in srgb, var(--color-violet) 12%, transparent)",
             border: "1px solid color-mix(in srgb, var(--color-violet) 32%, transparent)",
@@ -232,8 +232,8 @@ function FavouriteCard({ r, t, onLaunch, onToggleFav }: { r: QuickRoutine; t: (k
       </div>
       <span aria-hidden style={{ fontSize: 16, lineHeight: 1, color: text }}>{glyph}</span>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, letterSpacing: "-.01em", marginTop: 10, paddingRight: 18, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: C("ash"), marginTop: 5 }}>{metaLine(r.blocks, t)}</div>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: text, marginTop: 12, display: "block" }}>{t("w.home.quickStart.start")} →</span>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 5 }}>{metaLine(r.blocks, t)}</div>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, marginTop: 12, display: "block" }}>{t("w.home.quickStart.start")} →</span>
     </button>
   );
 }
@@ -276,7 +276,7 @@ function RoutineRow({ r, i, t, onLaunch, onToggleFav }: { r: QuickRoutine; i: nu
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: fs.body, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: C("ash"), marginTop: 2 }}>{metaLine(r.blocks, t)}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 2 }}>{metaLine(r.blocks, t)}</div>
       </div>
       <Star on={!!r.favourite} label={r.favourite ? t("w.home.quickStart.removeFav") : t("w.home.quickStart.addFav")} onClick={onToggleFav} />
       <span aria-hidden style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: C("ash") }}>›</span>

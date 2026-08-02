@@ -290,14 +290,14 @@ export default function AuroraProfile({
 
       {/* NAME + membership pill (pill UNCHANGED from the original design). */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "0 4px" }}>
-        <span style={{ fontWeight: 900, fontSize: 23, letterSpacing: "-.025em" }}>{name}</span>
+        <span style={{ fontWeight: 900, fontSize: 23, letterSpacing: "-.02em" }}>{name}</span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: "var(--lime-text)", borderRadius: 999, padding: "3px 8px", letterSpacing: ".08em" }}>{tier}</span>
       </div>
 
       {/* BIO + quiet HYBRID ID line. */}
       <div style={{ marginTop: 8, padding: "0 4px" }}>
-        {!!bioText && <div style={{ fontSize: 13.5, color: C("chalk"), opacity: 0.9, lineHeight: 1.5 }}>{bioText}</div>}
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: bioText ? 6 : 0, letterSpacing: ".02em", lineHeight: 1.6 }}>
+        {!!bioText && <div style={{ fontSize: 14, color: C("chalk"), opacity: 0.9, lineHeight: 1.5 }}>{bioText}</div>}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: bioText ? 6 : 0, letterSpacing: ".08em", lineHeight: 1.6 }}>
           <div><span style={{ opacity: 0.75 }}>HYBRID ID</span>&nbsp;&nbsp;{athleteId}</div>
           <div style={{ opacity: 0.75 }}>{t("w.account.profile.member-since")} {memberSince}</div>
         </div>
@@ -308,7 +308,7 @@ export default function AuroraProfile({
         {socialCounts.map((c) => (
           <div key={c.k} style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
             <span style={{ fontWeight: 900, fontSize: 17 }}>{c.n}</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", color: C("ash"), textTransform: "uppercase" }}>{c.k}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase" }}>{c.k}</span>
           </div>
         ))}
       </div>
@@ -351,7 +351,7 @@ export default function AuroraProfile({
           {/* THIS WEEK — a current-focus snapshot above the lifetime tiles. */}
           {thisWeek.count > 0 && (
             <div style={{ border: `1px solid ${C("line")}`, borderRadius: 16, background: C("ink2"), padding: "12px 14px", marginBottom: space.sm }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".14em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.ov-tw")}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.ov-tw")}</div>
               <div style={{ display: "flex", gap: 26, marginTop: 8 }}>
                 {[{ v: String(thisWeek.count), k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
                   <div key={s.k} style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
@@ -701,7 +701,7 @@ function HighlightGrid({
               <div className="hl-wig" style={{ width: "100%", height: "100%", border: `1px solid ${C("line")}`, borderRadius: 16, background: C("ink2"), display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: 8, textAlign: "center", boxShadow: editMode ? "0 6px 18px -12px rgba(0,0,0,.6)" : "none" }}>
                 <AuroraIcon name={tile.icon} size={22} color={C("lime")} />
                 <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", marginTop: 6 }}>{tile.v}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".06em", color: C("ash"), textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.k}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".08em", color: C("ash"), textTransform: "uppercase", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{tile.k}</div>
               </div>
             </div>
           );
@@ -711,7 +711,7 @@ function HighlightGrid({
       {/* HIDDEN — restore tray. Shown whenever anything is hidden. */}
       {hiddenKeys.length > 0 && (
         <div data-hl-keep style={{ marginTop: 16, borderTop: `1px dashed ${C("line")}`, paddingTop: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", color: C("ash"), textTransform: "uppercase", marginBottom: 10 }}>
             <AuroraIcon name="eye" size={12} color={C("ash")} />{t("w.account.profile.ov-restore")}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -721,7 +721,7 @@ function HighlightGrid({
                 <button
                   key={key}
                   onClick={() => onToggleHidden(key, false)}
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px 8px 8px", border: `1px solid ${C("line")}`, borderRadius: 12, background: C("ink2"), color: C("ash"), cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".04em", textTransform: "uppercase" }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px 8px 8px", border: `1px solid ${C("line")}`, borderRadius: 12, background: C("ink2"), color: C("ash"), cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase" }}
                 >
                   <span style={{ width: 20, height: 20, borderRadius: "50%", background: C("lime"), color: C("ink"), display: "grid", placeItems: "center", fontWeight: 900, fontSize: 15, lineHeight: 1 }}>+</span>
                   {tile.k}
@@ -732,14 +732,14 @@ function HighlightGrid({
         </div>
       )}
 
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: C("ash"), marginTop: 10, letterSpacing: ".02em" }}>{editMode ? t("w.account.profile.ov-edit-hint") : t("w.account.profile.ov-hint")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: C("ash"), marginTop: 10, letterSpacing: ".08em" }}>{editMode ? t("w.account.profile.ov-edit-hint") : t("w.account.profile.ov-hint")}</div>
 
       {/* DONE — fixed bar while editing. */}
       {editMode && (
         <div data-hl-keep style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: 16, zIndex: 60, pointerEvents: "none" }}>
           <button
             onClick={() => setEditMode(false)}
-            style={{ pointerEvents: "auto", background: C("chalk"), color: C("ink"), border: "none", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, letterSpacing: ".16em", textTransform: "uppercase", padding: "14px 40px", borderRadius: 16, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.5)" }}
+            style={{ pointerEvents: "auto", background: C("chalk"), color: C("ink"), border: "none", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", padding: "14px 40px", borderRadius: 16, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.5)" }}
           >
             {t("w.account.profile.ov-done")}
           </button>

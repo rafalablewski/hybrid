@@ -38,7 +38,7 @@ import HistoryStrip from "./history-strip";
 const C = (v: string) => `var(--color-${v})`;
 
 const kicker: CSSProperties = {
-  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em",
+  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
   textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap",
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
@@ -151,7 +151,7 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
         <HistoryStrip bars={bars} color={C("violet")} />
       </span>
 
-      <span style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 9.5, color: C("ash") }}>
+      <span style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 10, color: C("ash") }}>
         <span>{hours} h</span>
         <span>{ago(lane.lastAt)}</span>
       </span>

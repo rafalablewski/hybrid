@@ -52,7 +52,7 @@ function RoleModel() {
         ))}
       </div>
       <Card>
-        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={ASH}>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={ASH}>
           Permission matrix
         </Mono>
         <div style={{ overflowX: "auto", maxWidth: "100%" }}>
@@ -180,7 +180,7 @@ export default function AdminAccess() {
       <div style={{ display: "grid", gap: space.lg }}>
         {groups.map(({ group, items }) => (
           <Card key={group}>
-            <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={VIOLET}>
+            <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={VIOLET}>
               {GROUP_LABEL[group]}
             </Mono>
             <div style={{ display: "grid", gap: space.sm }}>

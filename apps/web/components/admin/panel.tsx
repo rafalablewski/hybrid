@@ -162,11 +162,11 @@ export default function AdminPanel() {
         }
       >
         <div style={{ padding: railCollapsed ? "0 0 4px" : "0 8px 4px", textAlign: railCollapsed ? "center" : "left" }}>
-          <div style={{ ...disp, fontWeight: 900, fontSize: 21, letterSpacing: "-.04em" }}>
+          <div style={{ ...disp, fontWeight: 900, fontSize: 21, letterSpacing: "-.03em" }}>
             {railCollapsed ? "H" : "HYBRID"}<span style={{ color: txt(AMBER) }}>.</span>
           </div>
           {!railCollapsed && (
-            <Mono s={{ fontSize: fs.nano, letterSpacing: ".18em", textTransform: "uppercase" }} c={AMBER}>
+            <Mono s={{ fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>
               Admin console
             </Mono>
           )}
@@ -177,7 +177,7 @@ export default function AdminPanel() {
             <div key={g} style={{ marginBottom: 16 }}>
               {!railCollapsed && (
                 <Mono
-                  s={{ fontSize: 9, letterSpacing: ".16em", textTransform: "uppercase", padding: "0 10px", display: "block", marginBottom: 6 }}
+                  s={{ fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", padding: "0 10px", display: "block", marginBottom: 6 }}
                   c={ASH}
                 >
                   {g}
@@ -286,7 +286,7 @@ export default function AdminPanel() {
 
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 24, flexWrap: "wrap" }}>
           <div>
-            <Mono s={{ fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase" }} c={AMBER}>
+            <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>
               admin.hybrid.app
             </Mono>
             <h1 style={{ ...disp, fontWeight: 900, fontSize: isMobile ? 24 : 30, letterSpacing: "-.03em", marginTop: 2 }}>
@@ -343,7 +343,7 @@ export default function AdminPanel() {
       fontSize: fs.caption,
       fontWeight: 700,
       textTransform: "uppercase" as const,
-      letterSpacing: ".05em",
+      letterSpacing: ".08em",
       color: txt(danger ? ASH : CHALK),
       background: danger ? "transparent" : INK2,
       border: `1px solid ${LINE}`,

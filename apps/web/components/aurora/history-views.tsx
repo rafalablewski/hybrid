@@ -86,7 +86,7 @@ function SessionCard({ s, ctx }: { s: LoggedSession; ctx: ViewCtx }) {
   const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
   return (
     <div onClick={() => ctx.onOpen(s.id)} style={{ ...card, padding: 16, cursor: "pointer" }}>
-      <div style={{ fontFamily: MONO, fontSize: fs.display, letterSpacing: "-0.02em", lineHeight: 1.1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
+      <div style={{ fontFamily: MONO, fontSize: fs.display, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
         {h.value}
         <span style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C("ash") }}> {unitOf(h, t)}</span>
       </div>
@@ -105,7 +105,7 @@ function SessionCard({ s, ctx }: { s: LoggedSession; ctx: ViewCtx }) {
 
 /** Uppercase mono day label ("MON, JUL 13" — chartreuse for today). */
 const DayLabel = ({ text, today }: { text: string; today?: boolean }) => (
-  <span style={{ fontFamily: MONO, fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: today ? "var(--lime-text)" : C("ash") }}>{text}</span>
+  <span style={{ fontFamily: MONO, fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: today ? "var(--lime-text)" : C("ash") }}>{text}</span>
 );
 
 /** Hairline rest-gap row ("3 REST DAYS ————"). */
@@ -237,7 +237,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
         <div key={w.startKey} style={{ ...card, border: `1px solid ${w.isCurrent ? `color-mix(in srgb, ${C("lime")} 30%, ${C("line")})` : C("line")}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontWeight: 900, fontSize: fs.note }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</span>
-            {w.isCurrent && <span style={{ fontFamily: MONO, fontSize: fs.nano, color: "var(--lime-text)", letterSpacing: ".14em", textTransform: "uppercase" }}>{t("histview.thisWeek")}</span>}
+            {w.isCurrent && <span style={{ fontFamily: MONO, fontSize: fs.nano, color: "var(--lime-text)", letterSpacing: ".12em", textTransform: "uppercase" }}>{t("histview.thisWeek")}</span>}
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 34, margin: "12px 0 4px" }}>
             {w.days.map((d) => {
@@ -338,7 +338,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
   const mini = (label: string, value: string) => (
     <div style={{ ...card, flex: 1, padding: 14 }}>
-      <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
+      <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
       <div style={{ fontFamily: MONO, fontVariantNumeric: "tabular-nums", fontSize: fs.heading, letterSpacing: "-.02em", marginTop: 4 }}>{value}</div>
     </div>
   );

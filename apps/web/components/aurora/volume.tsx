@@ -33,7 +33,7 @@ const ZONE_TOKEN: Record<VolumeZone, string> = { overreaching: "red", under: "am
 
 const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 };
 const mono = (size: number): CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: size });
-const eyebrow: CSSProperties = { ...mono(fs.nano), textTransform: "uppercase", letterSpacing: ".14em", color: C("ash") };
+const eyebrow: CSSProperties = { ...mono(fs.nano), textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") };
 const sectionTitle: CSSProperties = { fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk"), margin: 0 };
 
 /**
@@ -237,7 +237,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
               was its own screen. */}
           {createElement(
             unified ? "h2" : "h1",
-            { style: { fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-0.02em" } },
+            { style: { fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-.02em" } },
             t("w.analyze.vol.title"),
           )}
           <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 6, marginBottom: 0 }}>{t("w.analyze.vol.subtitle")}</p>
@@ -262,7 +262,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 10 }}>
-              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 68, lineHeight: 1.06, letterSpacing: "-0.04em" }}>{summary.inRange}</span>
+              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 68, lineHeight: 1.06, letterSpacing: "-.03em" }}>{summary.inRange}</span>
               <span style={{ ...mono(fs.heading), color: C("ash"), marginLeft: 4 }}>/{summary.total}</span>
             </div>
             <p style={{ fontSize: fs.note, lineHeight: 1.4, color: C("ash"), margin: 0, maxWidth: 260 }}>{t("w.analyze.vol.heroCaption")}</p>
@@ -279,7 +279,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
                     style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center" }}
                   >
                     <ShapeColumn s={r} token={ZONE_TOKEN[r.zone]} dim={picked !== null && !on} />
-                    <span style={{ marginTop: 8, ...mono(9), letterSpacing: ".06em", color: on ? C("chalk") : C("ash") }}>{label.slice(0, 3).toUpperCase()}</span>
+                    <span style={{ marginTop: 8, ...mono(9), letterSpacing: ".08em", color: on ? C("chalk") : C("ash") }}>{label.slice(0, 3).toUpperCase()}</span>
                   </button>
                 );
               })}
@@ -472,7 +472,7 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
                     style={{ width: "100%", height: pct(c.height), background: c.kind === "deload" ? C("blue") : C("lime"), opacity: c.current ? 0.95 : 0.32, borderRadius: "7px 7px 0 0", transition: "height .3s cubic-bezier(.2,.7,.2,1)" }}
                   />
                 </div>
-                <span style={{ ...mono(9), letterSpacing: ".06em", color: c.current ? C("chalk") : C("ash") }}>{c.week}</span>
+                <span style={{ ...mono(9), letterSpacing: ".08em", color: c.current ? C("chalk") : C("ash") }}>{c.week}</span>
               </div>
             ))}
           </div>
@@ -539,7 +539,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
   const confidence = Math.round(Math.max(resolved.profileConfidence, resolved.observedConfidence) * 100);
   const done = volumeProfileCompleteness(profile, measuredKeys);
   const field: CSSProperties = { ...mono(fs.body), width: "100%", textAlign: "center", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 4px", boxSizing: "border-box" };
-  const fieldLabel: CSSProperties = { ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 };
+  const fieldLabel: CSSProperties = { ...mono(9), letterSpacing: ".08em", color: C("ash"), textAlign: "center", marginBottom: 5 };
 
   return (
     <section style={card}>
@@ -665,7 +665,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
                   <div key={r.muscle} style={{ display: "flex", alignItems: "baseline", gap: space.sm }}>
                     <span style={{ flex: 1, minWidth: 80, fontSize: fs.body, color: C("chalk") }}>{ml(r.muscle)}</span>
                     {/* The trajectory itself, not a summary of it. */}
-                    <span style={{ ...mono(fs.caption), color: C("ash"), letterSpacing: ".02em" }}>
+                    <span style={{ ...mono(fs.caption), color: C("ash"), letterSpacing: ".08em" }}>
                       {r.points.filter((p) => p.tested).slice(-5).map((p) => p.mrv).join(" → ")}
                     </span>
                     <span style={{ ...mono(fs.caption), minWidth: 78, textAlign: "right", color: r.verdict === "settled" ? "var(--lime-text)" : r.verdict === "unsettled" ? "var(--amber-text)" : C("ash") }}>
@@ -811,7 +811,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
             <button
               key={k} onClick={() => onZone(k)} aria-pressed={on}
               aria-label={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
-              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", ...mono(9), letterSpacing: ".05em", color: on ? C("lime") : C("ash"), opacity: zone && !on ? 0.4 : 1, transition: "opacity .2s ease, color .2s ease" }}
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", ...mono(9), letterSpacing: ".08em", color: on ? C("lime") : C("ash"), opacity: zone && !on ? 0.4 : 1, transition: "opacity .2s ease, color .2s ease" }}
             >
               {BAND_LABEL[k]} <span style={{ fontSize: 11, color: C("chalk") }}>{sc[k]}</span>
             </button>
@@ -844,7 +844,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 6, marginTop: 12 }}>
           {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
             <div key={k}>
-              <div style={{ ...mono(9), letterSpacing: ".06em", color: C("ash"), textAlign: "center", marginBottom: 5 }}>{["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}</div>
+              <div style={{ ...mono(9), letterSpacing: ".08em", color: C("ash"), textAlign: "center", marginBottom: 5 }}>{["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}</div>
               <input
                 type="number" min={0} defaultValue={s.landmark[k]} aria-label={`${label} ${k}`}
                 onBlur={(e) => onEdit(s.muscle, k, e.target.value)}
@@ -873,7 +873,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
   // not become a restyled one.
   return (
     <div>
-      <div style={{ ...mono(9), letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), marginTop: 14, marginBottom: 8 }}>{t("w.analyze.trends.weeklySets8w")}</div>
+      <div style={{ ...mono(9), letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 14, marginBottom: 8 }}>{t("w.analyze.trends.weeklySets8w")}</div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 56, maxWidth: 420 }}>
         {sets.map((n, i) => (
           <div key={i} style={{ flex: 1, height: 56, display: "flex", alignItems: "flex-end", background: C("ink"), borderRadius: 7, overflow: "hidden" }}>

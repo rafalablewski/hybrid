@@ -27,7 +27,7 @@ export default function AdminContent() {
               fontSize: fs.bodyLg,
               fontWeight: 700,
               textTransform: "uppercase",
-              letterSpacing: ".05em",
+              letterSpacing: ".08em",
               padding: "10px 16px",
               borderRadius: "var(--r-field)",
               cursor: "pointer",

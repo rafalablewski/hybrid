@@ -127,7 +127,7 @@ function QuestionBody({
       <>
         {ONBOARDING_GOAL_GROUPS.map((g) => (
           <div key={g.category}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
             {g.goals.map((gl) => (
               <button key={gl.id} onClick={() => setAnswer(q.key, gl.id)} style={{ ...choice(selected === gl.id), marginBottom: 8 }}>
                 {selected === gl.id && <AuroraIcon name="check" size={20} color={C("lime")} />}

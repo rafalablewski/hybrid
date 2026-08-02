@@ -50,7 +50,7 @@ const ORDER_KEY: Record<LaneOrder, string> = {
 };
 
 const kicker: CSSProperties = {
-  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em",
+  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
   textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap",
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
@@ -134,7 +134,7 @@ function TrendTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string 
       w={176}
       label={t("session.paceTrend")}
       right={delta ? (
-        <span style={{ ...num, fontSize: 9.5, whiteSpace: "nowrap", color: delta.faster ? "var(--lime-text)" : "var(--red-text)" }}>
+        <span style={{ ...num, fontSize: 10, whiteSpace: "nowrap", color: delta.faster ? "var(--lime-text)" : "var(--red-text)" }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </span>
       ) : undefined}
@@ -227,7 +227,7 @@ function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscip
           {t(lane.labelKey)}
         </span>
         <span style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-          <span style={{ ...kicker, fontSize: 9.5 }}>{lane.efforts} {t("endurance.efforts")}</span>
+          <span style={{ ...kicker, fontSize: 10 }}>{lane.efforts} {t("endurance.efforts")}</span>
           {onOpen && (
             <button
               onClick={() => onOpen(lane.discipline)}
@@ -289,7 +289,7 @@ export default function AuroraEnduranceLanes({
           right-slot item, and the fact is the one that names the block. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("endurance.title")}</span>
-        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".06em", color: C("ash") }}>
+        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".08em", color: C("ash") }}>
           {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
         </span>
       </div>

@@ -121,7 +121,7 @@ function CategoryRail({ categories }: { categories: string[] }) {
         <button
           key={c}
           onClick={() => jump(c)}
-          style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".02em", padding: "8px 12px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: "transparent", color: C("ash"), border: `1px solid ${C("line")}` }}
+          style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", padding: "8px 12px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: "transparent", color: C("ash"), border: `1px solid ${C("line")}` }}
         >
           {c}
         </button>
@@ -168,7 +168,7 @@ function GoalShelf({ group, pick }: { group: GoalGroup; pick: (id: string) => vo
     <section id={shelfId(group.category)} style={{ marginTop: 24, scrollMarginTop: COVER_BAR + RAIL_H }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "0 0 10px" }}>
         <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em", margin: 0 }}>{group.category}</h2>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
         </span>
       </div>
@@ -211,7 +211,7 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
       <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${COVER_INK} 0%, color-mix(in srgb, ${COVER_INK} 55%, transparent) 6%, transparent 58%)` }} />
       <span aria-hidden style={{ position: "absolute", top: -12, right: -10, fontSize: 96, lineHeight: 1, color: `rgba(255,255,255,${cover.ready ? ".09" : ".05"})`, pointerEvents: "none" }}>{cover.glyph}</span>
       <span style={{ position: "relative", alignSelf: "flex-end", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, letterSpacing: ".08em", color: `rgba(255,255,255,${cover.ready ? ".85" : ".5"})` }}>{cover.count}</span>
-      <span style={{ position: "relative", fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 16, lineHeight: 1.1, letterSpacing: "-.025em", color: cover.ready ? "#fff" : "rgba(255,255,255,.62)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{goal.name}</span>
+      <span style={{ position: "relative", fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 16, lineHeight: 1.1, letterSpacing: "-.02em", color: cover.ready ? "#fff" : "rgba(255,255,255,.62)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{goal.name}</span>
     </button>
   );
 }
@@ -271,7 +271,7 @@ function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void
                     <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
                       {s.value}{s.unit && <span style={{ fontSize: 12, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
                     </div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), marginTop: 4 }}>{s.label}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 4 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -391,7 +391,7 @@ function PlanSecHead({ title, meta }: { title: string; meta?: string | null }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "22px 0 10px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em" }}>{title}</span>
-      {meta && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"), textAlign: "right" }}>{meta}</span>}
+      {meta && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), textAlign: "right" }}>{meta}</span>}
     </div>
   );
 }
@@ -419,7 +419,7 @@ function PlanWeekRail({ bars, weeks, week, setWeek, wkLabel }: { bars: PlanWeekB
               ) : (
                 <span style={{ width: 22, height: 2, borderRadius: 2, background: on ? C("lime") : `color-mix(in srgb, ${C("chalk")} 16%, transparent)`, marginTop: 16 }} />
               )}
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, letterSpacing: ".06em", textTransform: "uppercase", color: on ? C("lime") : C("ash") }}>{wkLabel} {w}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".08em", textTransform: "uppercase", color: on ? C("lime") : C("ash") }}>{wkLabel} {w}</span>
             </button>
           );
         })}

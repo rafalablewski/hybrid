@@ -787,7 +787,7 @@ function reportsOf(agents: AgentDefinition[] | null, role: string): AgentDefinit
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "block" }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 5 }} c={ASH}>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 5 }} c={ASH}>
         {label}
         {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> – {hint}</span> : null}
       </Mono>
@@ -799,7 +799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
-      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={AMBER}>
+      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={AMBER}>
         {title}
         {hint ? <span style={{ textTransform: "none", letterSpacing: 0, color: txt(ASH) }}> – {hint}</span> : null}
       </Mono>
@@ -898,7 +898,7 @@ const primaryBtn: React.CSSProperties = {
   fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",
-  letterSpacing: ".04em",
+  letterSpacing: ".08em",
   padding: "10px 14px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",
@@ -911,7 +911,7 @@ const dangerBtn: React.CSSProperties = {
   fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",
-  letterSpacing: ".04em",
+  letterSpacing: ".08em",
   padding: "10px 14px",
   borderRadius: "var(--r-field)",
   cursor: "pointer",

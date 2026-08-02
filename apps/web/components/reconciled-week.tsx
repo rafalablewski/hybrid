@@ -165,7 +165,7 @@ export default function ReconciledWeek({
           live in this row, which squashed into a circle on narrow widths; it now
           sits as a full-width pill below (matching the mobile layout). */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.sm }}>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
           {reconciled.phase.label} {t("w.home.recweek.week")} {reconciled.phase.week}
         </Mono>
         <Chip c={reconciled.phase.kind === "recovery" ? AMBER : "var(--color-lime)"}>
@@ -198,7 +198,7 @@ export default function ReconciledWeek({
           >
             <div>
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{b.name}</div>
-              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".06em" }} c={b.source === "sport" ? AMBER : ASH}>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }} c={b.source === "sport" ? AMBER : ASH}>
                 {b.source === "sport" ? `${t("w.home.recweek.sport")} ${b.demand ?? ""}` : b.kind === "conditioning" ? t("w.home.recweek.conditioning") : t("w.home.recweek.primaryLift")}
               </Mono>
             </div>
@@ -237,7 +237,7 @@ function cta(disabled: boolean, aurora = false) {
     fontSize: fs.body,
     fontWeight: 800,
     textTransform: "uppercase" as const,
-    letterSpacing: ".04em",
+    letterSpacing: ".08em",
     color: ON_ACCENT,
     background: "var(--color-lime)",
     border: "none",

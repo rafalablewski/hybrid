@@ -193,7 +193,7 @@ function QuestionEditor({ draft, busy, onSave, onCancel }: { draft: Draft; busy:
 
   return (
     <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={AMBER}>{d.system ? "Edit built-in question" : d.id ? "Edit question" : "New question"}</Mono>
+      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={AMBER}>{d.system ? "Edit built-in question" : d.id ? "Edit question" : "New question"}</Mono>
 
       <Field label="Question">
         <input value={d.title} onChange={(e) => set({ title: e.target.value })} placeholder="What's your main goal?" style={inp} />
@@ -261,7 +261,7 @@ function QuestionEditor({ draft, busy, onSave, onCancel }: { draft: Draft; busy:
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 8 }}>
-      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 4 }} c={ASH}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 4 }} c={ASH}>{label}</Mono>
       {children}
     </div>
   );
@@ -271,7 +271,7 @@ const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-"
 
 const inp: React.CSSProperties = { ...mono, fontSize: fs.body, width: "100%", padding: "9px 11px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, marginBottom: 4, outline: "none" };
 const primaryBtn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: fs.caption, background: LIME, color: INK, border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" };
-const smallBtn: React.CSSProperties = { ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", padding: "8px 10px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: INK, color: txt(ASH) };
+const smallBtn: React.CSSProperties = { ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", padding: "8px 10px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: INK, color: txt(ASH) };
 const iconBtn: React.CSSProperties = { ...disp, fontSize: fs.body, width: 28, height: 22, borderRadius: 7, border: `1px solid ${LINE}`, background: INK2, color: txt(ASH), cursor: "pointer", lineHeight: 1, padding: 0 };
 
 function toggle(on: boolean): React.CSSProperties {

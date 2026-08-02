@@ -94,7 +94,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
           return <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} rx={5} fill={fill} stroke={stroke} strokeWidth={1}><title>{r.tissue}: {t ? `${t.risk}/100 (${t.band})` : "—"}</title></rect>;
         })}
       </svg>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div>
     </div>
   );
 }
@@ -220,7 +220,7 @@ export default function AuroraPerformance({
           Today so the two screens read as siblings: Today answers "what do I
           do?", this page answers "how am I doing?". */}
       <div style={{ margin: "0 2px" }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
           {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : " "}
         </div>
         <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), margin: "2px 0 0" }}>{t("w.home.cockpit.commandCenter")}</h1>
@@ -277,7 +277,7 @@ export default function AuroraPerformance({
                     wide cards) and is split into its sentences so the engine's
                     multi-clause "why" reads as scannable lines, not a wall. */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6, maxWidth: "62ch" }}>
                     {whyLines.map((line, i) => (
                       <div key={i} style={{ fontSize: fs.body, lineHeight: 1.6, color: i === 0 ? C("chalk") : C("ash") }}>{line}</div>
@@ -294,7 +294,7 @@ export default function AuroraPerformance({
                     return (
                       <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 8, padding: "5px 12px", borderRadius: 999, background: `color-mix(in srgb, ${tint} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${tint} 34%, transparent)` }}>
                         <ReadinessFace feeling={adj.feeling} size={15} />
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: ".01em", color: `var(--${READINESS_FACE[adj.feeling].accent}-text)` }}>{label}</span>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", color: `var(--${READINESS_FACE[adj.feeling].accent}-text)` }}>{label}</span>
                       </div>
                     );
                   })()}
@@ -438,7 +438,7 @@ export default function AuroraPerformance({
                       mobile can never disagree about it. */}
                   {risk.awaitingBaseline.length > 0 && (
                     <div style={{ marginTop: 14, padding: 12, borderRadius: 12, border: `1px solid ${C("line")}`, background: `color-mix(in srgb, ${C("ash")} 8%, transparent)` }}>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash"), marginBottom: 4 }}>{t("w.injury.acwrPending")}</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginBottom: 4 }}>{t("w.injury.acwrPending")}</div>
                       <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("chalk") }}>{t("w.injury.acwrPendingBody")}</div>
                     </div>
                   )}
@@ -448,7 +448,7 @@ export default function AuroraPerformance({
                     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
                       {driverKinds.map((k) => (
                         <div key={k}>
-                          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C(riskVar(risk.band)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</div>
+                          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C(riskVar(risk.band)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</div>
                           <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("chalk") }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</div>
                         </div>
                       ))}
@@ -613,7 +613,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
         {TABS.map((x) => {
           const on = x.id === tab;
           return (
-            <button key={x.id} onClick={() => setTab(x.id)} style={{ position: "relative", zIndex: 1, padding: "8px 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, letterSpacing: ".02em", color: on ? C("ink") : C("ash"), transition: "color .2s" }}>{x.label}</button>
+            <button key={x.id} onClick={() => setTab(x.id)} style={{ position: "relative", zIndex: 1, padding: "8px 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, letterSpacing: ".08em", color: on ? C("ink") : C("ash"), transition: "color .2s" }}>{x.label}</button>
           );
         })}
       </div>
@@ -675,7 +675,7 @@ function SHead({ title, meta, titleColor }: { title: string; meta?: React.ReactN
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 12px", marginBottom: 12 }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em", color: titleColor ?? C("chalk") }}>{title}</span>
       {meta != null && (typeof meta === "string"
-        ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{meta}</span>
+        ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{meta}</span>
         : meta)}
     </div>
   );
@@ -704,7 +704,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div>
     </div>
   );
 }
@@ -738,7 +738,7 @@ function Watch({ label, value, color }: { label: string; value: string; color?: 
   return (
     <div style={{ background: C("ink2"), padding: "12px 6px", textAlign: "center" }}>
       <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, color: color ?? C("chalk") }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: ".06em", color: C("ash"), marginTop: 4 }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash"), marginTop: 4 }}>{label}</div>
     </div>
   );
 }
@@ -746,7 +746,7 @@ function Watch({ label, value, color }: { label: string; value: string; color?: 
 function Mod({ label, value, onClick, mono: monoVal, last }: { label: string; value: string; onClick: () => void; mono?: boolean; last?: boolean }) {
   return (
     <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: "pointer", color: C("chalk"), textAlign: "left" }}>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{label}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
       <span style={{ marginLeft: "auto", fontWeight: monoVal ? 500 : 700, fontSize: monoVal ? fs.caption : fs.body, fontFamily: monoVal ? "var(--font-mono)" : "var(--font-display)", color: monoVal ? C("ash") : C("chalk") }}>{value} →</span>
     </button>
   );

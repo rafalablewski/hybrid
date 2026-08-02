@@ -69,7 +69,7 @@ export default function AuroraTrainWeb({
 
   return (
     <div style={{ maxWidth: 620, margin: "0 auto", fontFamily: "var(--font-display)" }}>
-      <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 30, letterSpacing: "-.035em", color: C("chalk") }}>{t("train.title")}</h1>
+      <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 30, letterSpacing: "-.03em", color: C("chalk") }}>{t("train.title")}</h1>
       <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 8, lineHeight: 1.45 }}>{t("train.intro")}</p>
 
       {/* THE ADAPTIVE SLOT — done marker · prescribed hero · or Premium pitch. */}
@@ -82,7 +82,7 @@ export default function AuroraTrainWeb({
       )}
 
       {/* MINIMAL LIST — the other ways to start. Thin accents, hairline rows. */}
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), margin: "24px 4px 4px" }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), margin: "24px 4px 4px" }}>
         {prescribedDone ? t("train.trainAgain") : t("train.moreWays")}
       </div>
       <div style={{ borderTop: `1px solid ${C("line")}`, borderBottom: `1px solid ${C("line")}` }}>
@@ -151,7 +151,7 @@ function PrescribedHero({ rx, hasHistory, onStart, t }: { rx: ReturnType<typeof 
       className="pressable"
       style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", border: "none", background: C("lime"), borderRadius: 28, padding: 22, marginTop: 18, color: "var(--on-accent)" }}
     >
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.62, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", opacity: 0.62, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {t("home.readiness")} {rx.readiness}/100
       </div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 25, letterSpacing: "-.03em", marginTop: 10 }}>{title}</div>
@@ -172,7 +172,7 @@ function PremiumHero({ onUpsell, t }: { onUpsell: () => void; t: T }) {
       style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 28, padding: 18, marginTop: 18 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em", color: "var(--premium-accent-text)" }}>{t("train.aiCoach")}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--premium-accent-text)" }}>{t("train.aiCoach")}</span>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, color: "var(--premium-accent-text)" }}>{t("w.home.today.unlockFullBtn")}</span>
       </div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>{t("train.aiLockedTitle")}</div>
@@ -194,7 +194,7 @@ function DoneMarker({ session, onOpen, t }: { session: LoggedSession; onOpen: ()
         <AuroraIcon name="check" size={24} strokeWidth={2.8} color={C("ink")} />
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("train.done")}</span>
+        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("train.done")}</span>
         <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note, color: C("chalk"), marginTop: 5 }}>{session.title}</span>
         <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{names || t("train.tapSummary")}</span>
       </span>
@@ -233,7 +233,7 @@ function ListRow({
       </span>
       <span style={{ display: "flex", alignItems: "center", gap: 10, flex: "none" }}>
         {premium && (
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, transparent)`, borderRadius: 6, padding: "4px 6px" }}>{t("train.premium")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, transparent)`, borderRadius: 6, padding: "4px 6px" }}>{t("train.premium")}</span>
         )}
         {right}
       </span>

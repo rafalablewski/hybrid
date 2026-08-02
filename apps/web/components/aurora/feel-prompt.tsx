@@ -141,7 +141,7 @@ export function FeelPrompt({
           : { position: "relative" }
       }
     >
-      {eyebrow ? eyebrow(t("session.feel.q")) : <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".15em" }}>{t("session.feel.q")}</Mono>}
+      {eyebrow ? eyebrow(t("session.feel.q")) : <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>{t("session.feel.q")}</Mono>}
       <div style={{ ...disp, fontWeight: 900, fontSize: compact ? "clamp(18px, 4vw, 22px)" : "clamp(21px, 6vw, 28px)", letterSpacing: "-.02em", lineHeight: 1.15, marginTop: 10 }}>{t("session.feel.lead")}</div>
       {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
 
@@ -155,7 +155,7 @@ export function FeelPrompt({
               so it says which one this is rather than scoring in silence. */}
           {reading && (
             <div style={{ marginTop: 12, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={reading.read === "nextDay" || reading.read === "sameDay" ? LIME_HEX : undefined}>
+              <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={reading.read === "nextDay" || reading.read === "sameDay" ? LIME_HEX : undefined}>
                 {t(FEEL_READ_KEY[reading.read])}
               </Mono>
               <Mono s={{ flex: 1, minWidth: 180, fontSize: fs.caption, lineHeight: 1.5 }}>{t(readNoteKey(reading.read, reading.fatigue))}</Mono>

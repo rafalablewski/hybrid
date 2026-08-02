@@ -172,7 +172,7 @@ export default function AuroraWeekRail({
       {/* header: plan name + progress on one baseline row */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 21, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{schedule.planName}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{dayLine}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{dayLine}</div>
       </div>
 
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
@@ -350,7 +350,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
   // Sessions postponed ONTO this date — a light catch-up list (all states).
   const catchUp = day.postponedIn.length > 0 && (
     <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.home.rail.catchUp")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.home.rail.catchUp")}</div>
       {day.postponedIn.map((it, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
           <span style={{ minWidth: 0 }}>
@@ -391,7 +391,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
             {stats.map((s) => (
               <span key={s.labelKey}>
                 <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
               </span>
             ))}
           </div>
@@ -430,7 +430,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
             const on = i === activeIdx;
             return (
               <button key={i} role="tab" aria-selected={on} onClick={() => setActive(i)}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0 8px", position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: ".05em", fontWeight: on ? 600 : 400, color: on ? "var(--lime-text)" : C("ash") }}>
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0 8px", position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: ".08em", fontWeight: on ? 600 : 400, color: on ? "var(--lime-text)" : C("ash") }}>
                 {sessionLabel(s, t)}
                 {on && <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 2, background: C("lime"), borderRadius: 2 }} />}
               </button>
@@ -444,7 +444,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
           <LiftRow key={i} r={r} showSession={!multi} first={i === 0} />
         ))}
         {hasMore && (
-          <button onClick={() => setOpen((v) => !v)} style={{ position: "relative", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0 2px", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".04em", color: C("ash"), display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <button onClick={() => setOpen((v) => !v)} style={{ position: "relative", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0 2px", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em", color: C("ash"), display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             {!open && <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: "100%", height: 40, pointerEvents: "none", background: `linear-gradient(to top, ${C("ink2")} 14%, transparent)` }} />}
             {open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}
             <Caret open={open} />

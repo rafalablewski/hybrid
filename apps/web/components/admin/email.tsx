@@ -120,11 +120,11 @@ function OverviewPane({ ov }: { ov: Overview | null }) {
         {tiles.map((t) => (
           <Card key={t.label} glass={false}>
             <div style={{ ...disp, fontWeight: 800, fontSize: fs.title, color: txt(t.c) }}>{t.value}</div>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>{t.label}</Mono>
+            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>{t.label}</Mono>
           </Card>
         ))}
       </div>
-      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 10 }} c={ASH}>Audience sizes</Mono>
+      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={ASH}>Audience sizes</Mono>
       <Card glass={false} style={{ padding: 0 }}>
         {ov.audiences.map((a, i) => (
           <div key={a.id} style={{ display: "flex", justifyContent: "space-between", padding: "12px 16px", borderTop: i ? `1px solid ${LINE}` : "none" }}>
@@ -385,7 +385,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
           {EMAIL_TRIGGERS.find((t) => t.id === editing.trigger)?.help}
         </Mono>
 
-        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "14px 0 8px" }} c={CHALK}>Steps</Mono>
+        <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", margin: "14px 0 8px" }} c={CHALK}>Steps</Mono>
         {editing.steps.map((s, i) => (
           <div key={s._key ?? i} style={{ border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: 12, marginBottom: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>

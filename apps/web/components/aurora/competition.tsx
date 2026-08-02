@@ -59,7 +59,7 @@ export default function AuroraCompetition() {
   return (
     <div style={{ display: "grid", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
-        <div style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
+        <div style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
           {t("w.train.comp.peakingOptimizer")}
         </div>
         <div style={{ ...mono, fontSize: fs.body, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
@@ -106,7 +106,7 @@ export default function AuroraCompetition() {
           </div>
 
           <div style={card}>
-            <div style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{t("w.train.comp.projection")}</div>
+            <div style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.train.comp.projection")}</div>
             <div style={{ ...mono, fontSize: fs.micro, marginTop: 2, color: C("ash") }}>{t("w.train.comp.formNote")}</div>
             <div style={{ height: 260, marginTop: 12 }}>
               <ResponsiveContainer width="100%" height="100%">

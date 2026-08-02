@@ -422,7 +422,7 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
         fontSize: fs.body,
         fontWeight: 700,
         textTransform: "uppercase",
-        letterSpacing: ".05em",
+        letterSpacing: ".08em",
         color: disabled ? ASH : CHALK,
         background: CARD,
         border: `1px solid ${LINE}`,
@@ -536,14 +536,14 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
               {Object.entries(d.counts).map(([k, v]) => (
                 <div key={k} style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
                   <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>{v}</div>
-                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".06em" }} c={ASH}>{k.replace(/([A-Z])/g, " $1")}</Mono>
+                  <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>{k.replace(/([A-Z])/g, " $1")}</Mono>
                 </div>
               ))}
             </div>
 
             {d.orgs.length > 0 && (
               <div style={{ marginBottom: 20 }}>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={ASH}>Organizations</Mono>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={ASH}>Organizations</Mono>
                 {d.orgs.map((o) => (
                   <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
                     <Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.name}</Mono>
@@ -555,7 +555,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
 
             {/* role / language editor */}
             <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18 }}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 12 }} c={AMBER}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={AMBER}>
                 Manage access
               </Mono>
               <div style={{ display: "flex", gap: space.ms, marginBottom: 12 }}>
@@ -632,7 +632,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
 
             {/* danger zone — irreversible account deletion (cascades all data) */}
             <div style={{ borderTop: `1px solid ${RED}44`, marginTop: 22, paddingTop: 18 }}>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }} c={RED}>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={RED}>
                 Danger zone
               </Mono>
               <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginBottom: 12 }} c={ASH}>

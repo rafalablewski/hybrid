@@ -100,7 +100,7 @@ export default function ExerciseWidgetRail({
           trailing ghost tile, per the one-exit rule. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.exw.title")}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>
           {t("w.home.group.metaWeek").replace("{v}", fmtTonnage(parentage.tonnageKg, units))}
         </span>
       </div>
@@ -149,7 +149,7 @@ export default function ExerciseWidgetRail({
               <span style={{ display: "block", width: "100%", marginTop: "auto" }}>
                 <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
               </span>
-              <span style={{ display: "flex", justifyContent: "space-between", gap: 6, width: "100%", fontFamily: "var(--font-mono)", fontSize: 9.5, color: C("ash") }}>
+              <span style={{ display: "flex", justifyContent: "space-between", gap: 6, width: "100%", fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>
                 <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.label}</span>
                 <span style={{ whiteSpace: "nowrap" }}>{t(KIND_KEY[card.kind])}</span>
               </span>

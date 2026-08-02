@@ -44,7 +44,7 @@ export default function AdminGuidance() {
             ))}
           </div>
         )}
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 10 }} c={AMBER}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={AMBER}>
           {guide.title}
         </Mono>
         <nav>
@@ -128,18 +128,18 @@ function Block({ b }: { b: GuideBlock }) {
           padding: "10px 14px",
         }}
       >
-        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".14em", display: "block", marginBottom: 4 }} c={AMBER}>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 4 }} c={AMBER}>
           Note
         </Mono>
-        <span style={{ ...disp, fontSize: 13.5, lineHeight: 1.6, color: CHALK }}>{b.text}</span>
+        <span style={{ ...disp, fontSize: 14, lineHeight: 1.6, color: CHALK }}>{b.text}</span>
       </div>
     );
   }
   if (b.t === "term") {
     return (
       <div style={{ paddingLeft: 14, borderLeft: `2px solid ${LINE}` }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 14.5, color: txt(LIME), marginBottom: 3 }}>{b.term}</div>
-        <span style={{ ...disp, fontSize: 13.5, lineHeight: 1.62, color: CHALK }}>{b.text}</span>
+        <div style={{ ...disp, fontWeight: 800, fontSize: 15, color: txt(LIME), marginBottom: 3 }}>{b.term}</div>
+        <span style={{ ...disp, fontSize: 14, lineHeight: 1.62, color: CHALK }}>{b.text}</span>
       </div>
     );
   }
@@ -161,7 +161,7 @@ function Block({ b }: { b: GuideBlock }) {
               borderBottom: i < b.rows.length - 1 ? `1px solid ${LINE}` : "none",
             }}
           >
-            <span style={{ ...disp, fontSize: 13.5, color: CHALK }}>{r.goal}</span>
+            <span style={{ ...disp, fontSize: 14, color: CHALK }}>{r.goal}</span>
             <Mono s={{ fontSize: fs.body, textAlign: "right", flexShrink: 0 }} c={LIME}>
               {r.path}
             </Mono>
@@ -194,7 +194,7 @@ function Block({ b }: { b: GuideBlock }) {
           >
             {i + 1}
           </span>
-          <span style={{ fontSize: 13.5, lineHeight: 1.6, color: CHALK }}>{it}</span>
+          <span style={{ fontSize: 14, lineHeight: 1.6, color: CHALK }}>{it}</span>
         </li>
       ))}
     </ol>
@@ -225,7 +225,7 @@ function Cmd({ lines }: { lines: string }) {
       <pre
         style={{
           ...mono,
-          fontSize: 13.5,
+          fontSize: 14,
           lineHeight: 1.7,
           color: CHALK,
           background: INK,

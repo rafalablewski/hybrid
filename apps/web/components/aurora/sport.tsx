@@ -89,7 +89,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
                 fontSize: fs.body,
                 fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: ".04em",
+                letterSpacing: ".08em",
                 padding: "8px 18px",
                 borderRadius: 999,
                 cursor: "pointer",
@@ -113,7 +113,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
           </div>
         </div>
         <div style={{ marginTop: 14 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>{meta.marker.label}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{meta.marker.label}</div>
           <input
             value={markers[sport] ?? ""}
             onChange={(e) => setMarkers((m) => ({ ...m, [sport]: e.target.value }))}
@@ -157,7 +157,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("lime") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>
           {t("w.train.sport.todaysSC")}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 3, color: C("ash") }}>
@@ -187,7 +187,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
       </div>
 
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
           {t("w.train.sport.exercisePool")}
         </div>
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.md }}>

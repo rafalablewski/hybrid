@@ -45,7 +45,7 @@ export default function AuroraAskCoach() {
           fontSize: fs.body,
           fontWeight: 700,
           textTransform: "uppercase",
-          letterSpacing: ".04em",
+          letterSpacing: ".08em",
           color: "var(--lime-text)",
           background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`,
           border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`,
@@ -76,7 +76,7 @@ export default function AuroraAskCoach() {
           )}
           {/* Coaching PROSE in the display sans (reads like a coach talking),
               not mono (which reads like a terminal log); chips stay mono. */}
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 14.5, lineHeight: 1.55, marginTop: 8, color: C("chalk") }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 15, lineHeight: 1.55, marginTop: 8, color: C("chalk") }}>
             {text}
           </div>
         </div>

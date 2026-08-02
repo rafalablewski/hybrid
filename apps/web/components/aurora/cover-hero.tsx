@@ -193,24 +193,24 @@ export function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpe
           ) : (
             <span />
           )}
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 600, letterSpacing: ".06em", color: "rgba(255,255,255,.88)" }}>{cover.duration}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", color: "rgba(255,255,255,.88)" }}>{cover.duration}</span>
         </div>
 
         {/* compact bar title — fades in a beat after the big one leaves */}
         <div aria-hidden style={{ position: "absolute", top: 8, left: back ? 64 : 20, right: 64, height: 42, display: "grid", placeItems: "center", justifyItems: back ? "center" : "start", zIndex: 2, pointerEvents: "none", opacity: `clamp(0, calc((${p} - .62) * 2.7), 1)`, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
-          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15.5, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{cover.title}</span>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{cover.title}</span>
         </div>
 
         {/* the cover proper — chip, title, meta; slides up with the frame */}
         <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, opacity: `clamp(0, calc(1 - ${p} * 2), 1)` }}>
-          <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0d0e0d", background: `color-mix(in srgb, #fff 82%, ${accent})`, padding: "5px 12px", borderRadius: 999 }}>{cover.chip}</span>
+          <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#0d0e0d", background: `color-mix(in srgb, #fff 82%, ${accent})`, padding: "5px 12px", borderRadius: 999 }}>{cover.chip}</span>
           {/* the library cover IS the page's h1 — the root has no other heading
               above it; the goal, plan and recipe covers stay h2 under their own screen */}
           <CoverTitle as={library ? "h1" : "h2"} style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.04, letterSpacing: "-.03em", margin: "12px 0 0", maxWidth: "16ch", textWrap: "balance", textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cover.title}</CoverTitle>
           {blurbOnFace ? (
-            <p style={{ margin: "8px 0 0", fontSize: 13.5, lineHeight: 1.4, color: "rgba(255,255,255,.85)", maxWidth: "44ch", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{cover.blurb}</p>
+            <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.4, color: "rgba(255,255,255,.85)", maxWidth: "44ch", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{cover.blurb}</p>
           ) : (
-            <MetaLine parts={cover.metaParts} style={{ display: "flex", marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.82)", letterSpacing: ".03em" }} />
+            <MetaLine parts={cover.metaParts} style={{ display: "flex", marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.82)", letterSpacing: ".08em" }} />
           )}
         </div>
 

@@ -50,7 +50,7 @@ export default function CoachInviteBanner() {
         <Card key={inv.id} style={{ borderLeft: `3px solid ${LIME}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
             <div>
-              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>Coach invite</Mono>
+              <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>Coach invite</Mono>
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, marginTop: 4 }}>
                 {coachName(inv.coach)}
                 {inv.coach?.coachVerified && <span title="Verified coach" style={{ color: txt(LIME), marginLeft: 5 }}>✓</span>}

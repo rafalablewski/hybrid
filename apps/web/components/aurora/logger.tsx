@@ -473,7 +473,7 @@ export default function AuroraLogger({
       >
         <div style={{ display: "flex", alignItems: "baseline", gap: space.sm }}>
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, letterSpacing: 1, color: paused ? C("amber") : C("chalk") }}>{mmss(elapsed)}</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".18em", color: paused ? C("amber") : C("ash") }}>{paused ? t("workout.paused") : t("workout.elapsed")}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: paused ? C("amber") : C("ash") }}>{paused ? t("workout.paused") : t("workout.elapsed")}</span>
         </div>
         <button
           onClick={handlePause}
@@ -524,7 +524,7 @@ export default function AuroraLogger({
           {live.prs + live.cardioPrs > 0 && (
             <div style={{ flex: 1, textAlign: "center", borderRadius: 16, padding: "10px 8px", background: `color-mix(in srgb, ${C("lime")} 16%, transparent)`, border: `1px solid ${C("lime")}` }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("lime") }}><AuroraIcon name="trophy" size={20} /> {live.prs + live.cardioPrs}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("lime") }}>{live.prs + live.cardioPrs === 1 ? t("w.train.logger.livePr") : t("w.train.logger.livePrs")}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: C("lime") }}>{live.prs + live.cardioPrs === 1 ? t("w.train.logger.livePr") : t("w.train.logger.livePrs")}</div>
             </div>
           )}
         </div>
@@ -641,7 +641,7 @@ export default function AuroraLogger({
           elapsed clock starts from zero (the timer "goes off"). */}
       {countdown != null && (
         <div style={{ position: "fixed", inset: 0, zIndex: 60, background: C("ink"), display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, letterSpacing: ".2em", color: C("ash"), marginBottom: 12 }}>{t("workout.getReady").toUpperCase()}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, letterSpacing: ".12em", color: C("ash"), marginBottom: 12 }}>{t("workout.getReady").toUpperCase()}</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: countdown > 0 ? 132 : 96, color: C("lime"), lineHeight: 1 }}>
             {countdown > 0 ? countdown : t("workout.go")}
           </div>
@@ -814,7 +814,7 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
         </div>
 
         {/* One whisper of a hint — the current look + how to change it. */}
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".15em", color: C("ash"), textAlign: "center", marginTop: 10, textTransform: "uppercase" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: C("ash"), textAlign: "center", marginTop: 10, textTransform: "uppercase" }}>
           {t(st.nameKey)} — {t("summary.cardHint")}
         </div>
 
@@ -918,7 +918,7 @@ function FinishOrb({
         {glyph}
       </button>
       {label != null && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", color: C("ash"), marginTop: 6, textTransform: "uppercase", whiteSpace: "nowrap" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: C("ash"), marginTop: 6, textTransform: "uppercase", whiteSpace: "nowrap" }}>
           {label}
         </div>
       )}
@@ -1000,7 +1000,7 @@ function LiveStat({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ flex: 1, textAlign: "center", borderRadius: 16, padding: "10px 8px", background: C("ink2"), border: `1px solid ${C("line")}` }}>
       <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk") }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".14em", color: C("ash") }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: C("ash") }}>{label}</div>
     </div>
   );
 }

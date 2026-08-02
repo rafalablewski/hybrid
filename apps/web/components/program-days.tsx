@@ -251,8 +251,8 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
 function SessionRule({ marker, color, volume, top }: { marker: string; color: LoadColor; volume: string | null; top: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, padding: "8px 18px 6px", borderBottom: `1px solid ${HAIR}`, borderTop: top ? `1px solid ${HAIR}` : undefined }}>
-      <span style={{ fontFamily: mono, fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: HEX_T[color] }}>{marker}</span>
-      {volume && <span style={{ fontFamily: mono, fontSize: 9.5, color: ASH }}>{volume}</span>}
+      <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: HEX_T[color] }}>{marker}</span>
+      {volume && <span style={{ fontFamily: mono, fontSize: 10, color: ASH }}>{volume}</span>}
     </div>
   );
 }
@@ -556,7 +556,7 @@ function WeekCard({ days, week, peakNote }: { days: ProgramDayView[]; week: numb
         const lifts = day.sessions.flatMap((s) => s.lifts);
         return (
           <div key={di} style={{ display: "grid", gridTemplateColumns: "42px 1fr", gap: 12, padding: "12px 16px", alignItems: "baseline", borderTop: di > 0 ? `1px solid ${HAIR}` : "none" }}>
-            <span style={{ fontFamily: mono, fontSize: 11, color: "#5a5e56", textTransform: "uppercase", letterSpacing: ".06em" }}>{day.title}</span>
+            <span style={{ fontFamily: mono, fontSize: 11, color: "#5a5e56", textTransform: "uppercase", letterSpacing: ".08em" }}>{day.title}</span>
             <div>
               {lifts.length === 0 ? (
                 <WeekRow restName={day.kindLabel ?? "—"} first />

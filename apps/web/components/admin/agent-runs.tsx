@@ -101,7 +101,7 @@ export default function AdminAgentRuns() {
                 </div>
               </summary>
               <div style={{ padding: "0 16px 14px", borderTop: `1px solid ${LINE}` }}>
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "12px 0 4px" }} c={ASH}>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", margin: "12px 0 4px" }} c={ASH}>
                   Task
                 </Mono>
                 <div style={{ ...mono, fontSize: fs.body, color: CHALK, whiteSpace: "pre-wrap", marginBottom: 10 }}>{r.task}</div>
@@ -111,7 +111,7 @@ export default function AdminAgentRuns() {
                     <div style={{ ...mono, fontSize: fs.caption, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
                   </div>
                 ))}
-                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", margin: "4px 0" }} c={ASH}>
+                <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", margin: "4px 0" }} c={ASH}>
                   Output
                 </Mono>
                 <div style={{ ...mono, fontSize: fs.bodyLg, lineHeight: 1.6, color: CHALK, background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 14, whiteSpace: "pre-wrap" }}>

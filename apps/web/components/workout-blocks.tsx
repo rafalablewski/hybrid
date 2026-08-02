@@ -47,7 +47,7 @@ export function blockBtn(color: string) {
     fontSize: fs.caption,
     fontWeight: 700,
     textTransform: "uppercase" as const,
-    letterSpacing: ".04em",
+    letterSpacing: ".08em",
     color: txt(color),
     background: `${color}1f`,
     border: `1px solid ${color}55`,
@@ -515,7 +515,7 @@ export default function WorkoutBlocks({
                   // "kg" and "reps" sit level (each unit is a <label> — tapping the
                   // text focuses its field). Width tracks the value so the units
                   // hug the number instead of floating on a fixed-width input.
-                  const numInput = { ...disp, fontSize: 46, fontWeight: 800, letterSpacing: "-.035em", color: CHALK, background: "transparent", border: "none", outline: "none", padding: 0, width: "2.2ch", textAlign: "center" } as const;
+                  const numInput = { ...disp, fontSize: 46, fontWeight: 800, letterSpacing: "-.03em", color: CHALK, background: "transparent", border: "none", outline: "none", padding: 0, width: "2.2ch", textAlign: "center" } as const;
                   const numField = { display: "inline-flex", alignItems: "baseline", gap: 4, cursor: "text", padding: "2px 4px", borderRadius: 12 } as const;
                   const unitLbl = { ...mono, fontSize: fs.body, color: ASH, cursor: "text", userSelect: "none" } as const;
                   const grip = (i: number) => (
@@ -545,7 +545,7 @@ export default function WorkoutBlocks({
                               on the right (swipe left to delete). */}
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                             {grip(i)}
-                            <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH) }}>
+                            <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH) }}>
                               {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${b.sets.length}` : ""} — ${t("workout.upNow")}`}
                             </span>
                             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
@@ -718,7 +718,7 @@ export default function WorkoutBlocks({
                   }
                 >
                 {active && (
-                  <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".14em", textTransform: "uppercase", color: txt(LIME), padding: "0 0 8px 2px" }}>
+                  <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(LIME), padding: "0 0 8px 2px" }}>
                     {t("w.train.blocks.upNow")}
                   </div>
                 )}
@@ -888,7 +888,7 @@ export default function WorkoutBlocks({
                   <>
                     <div onClick={() => setPlanUid(null)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
                     <div style={{ position: "absolute", top: 52, left: 0, zIndex: 31, width: 300, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 16, padding: 14, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
-                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".16em", textTransform: "uppercase", color: txt(ASH), marginBottom: 12 }}>{t("w.train.blocks.presetsTitle")}</div>
+                      <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH), marginBottom: 12 }}>{t("w.train.blocks.presetsTitle")}</div>
                       <div style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -14px", padding: "0 14px 2px", scrollbarWidth: "none" }}>
                         {([
                           { sets: 3, reps: 3, k: "schemeHeavy" },
@@ -902,8 +902,8 @@ export default function WorkoutBlocks({
                             onClick={() => { applyPreset(b.uid, p.sets, p.reps); setPlanUid(null); }}
                             style={{ flex: "0 0 auto", width: 118, textAlign: "left", background: INK2, border: `1px solid ${pi === 0 ? `${CHALK}4d` : LINE}`, borderRadius: 16, padding: "16px 16px", cursor: "pointer" }}
                           >
-                            <div style={{ ...disp, fontSize: 28, fontWeight: 900, letterSpacing: "-.035em", color: CHALK, lineHeight: 1 }}>{p.sets}<span style={{ color: ASH, fontWeight: 400, fontSize: 19 }}>×</span>{p.reps}</div>
-                            <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 8 }}>{t(`w.train.blocks.${p.k}`)}</div>
+                            <div style={{ ...disp, fontSize: 28, fontWeight: 900, letterSpacing: "-.03em", color: CHALK, lineHeight: 1 }}>{p.sets}<span style={{ color: ASH, fontWeight: 400, fontSize: 19 }}>×</span>{p.reps}</div>
+                            <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH), marginTop: 8 }}>{t(`w.train.blocks.${p.k}`)}</div>
                             <div style={{ ...mono, fontSize: fs.nano, color: txt(ASH), marginTop: 10 }}>{p.sets * p.reps} {t("w.train.blocks.presetReps")}</div>
                           </button>
                         ))}
@@ -1183,7 +1183,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
     <span style={{ width: 38, height: 38, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "var(--color-ink)", border: `1px solid ${LINE}` }}>
       {e.icon
         ? <span style={{ fontSize: 16 }}>{e.icon}</span>
-        : <span style={{ ...mono, fontWeight: 700, fontSize: 11.5, letterSpacing: "-.02em", color: txt(kindColor(e.kind)) }}>{initials(label ?? e.name)}</span>}
+        : <span style={{ ...mono, fontWeight: 700, fontSize: 12, letterSpacing: "-.02em", color: txt(kindColor(e.kind)) }}>{initials(label ?? e.name)}</span>}
     </span>
   );
   const row = (e: Entry, last: boolean) => {
@@ -1192,7 +1192,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
       <button key={e.name} type="button" onClick={() => onPick(e.name, e.kind)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "8px 0", cursor: "pointer", textAlign: "left", border: 0, borderBottom: last ? "none" : `1px solid ${LINE}`, background: "transparent", color: CHALK }}>
         {tile(e)}
         <span style={{ ...disp, flex: 1, minWidth: 0, fontWeight: 600, fontSize: fs.body, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.name}</span>
-        {!!hint && <span style={{ ...mono, fontSize: 9, letterSpacing: ".07em", textTransform: "uppercase", color: ASH, flex: "none" }}>{hint}</span>}
+        {!!hint && <span style={{ ...mono, fontSize: 9, letterSpacing: ".08em", textTransform: "uppercase", color: ASH, flex: "none" }}>{hint}</span>}
       </button>
     );
   };
@@ -1205,7 +1205,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
   const head = (label: string, count: number) => (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "16px 2px 8px" }}>
       <span style={{ ...disp, fontWeight: 800, fontSize: 16, color: CHALK }}>{label}</span>
-      <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".1em", color: ASH }}>{count}</span>
+      <span style={{ ...mono, fontSize: 11, letterSpacing: ".12em", color: ASH }}>{count}</span>
     </div>
   );
   const customAdd = q.length > 0 && !exact && (
@@ -1241,7 +1241,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
               const on = view === p.id;
               return (
                 <button key={p.id} type="button" onClick={() => { setView(p.id); setRoom(null); }} aria-pressed={on}
-                  style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: on ? 700 : 400, color: on ? "var(--on-accent)" : ASH, background: on ? LIME : "transparent", border: `1px solid ${on ? LIME : LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>
+                  style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: on ? 700 : 400, color: on ? "var(--on-accent)" : ASH, background: on ? LIME : "transparent", border: `1px solid ${on ? LIME : LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>
                   {p.label}
                 </button>
               );
@@ -1317,7 +1317,7 @@ function SignalMetrics({ b, units, bodyweightKg }: { b: EditableBlock; units: We
   const minutes = Math.round(estimateBlockMinutes(b));
   const cell = (label: string, value: string, c?: string) => (
     <div key={label}>
-      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", display: "block" }}>{label}</Mono>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", display: "block" }}>{label}</Mono>
       <Mono s={{ fontSize: fs.note, fontWeight: 700 }} c={c ?? CHALK}>{value}</Mono>
     </div>
   );
@@ -1413,18 +1413,18 @@ function ExerciseDetailSheet({
             {/* Flat totals — big number over a small mono label, no boxes. */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "14px 36px" }}>
               <div>
-                <div style={{ ...disp, fontSize: 26, fontWeight: 900, letterSpacing: "-.025em", color: CHALK }}>{fmtTonnage(ls.volumeKg, units)}</div>
-                <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{t("workout.totalVolume")}</div>
+                <div style={{ ...disp, fontSize: 26, fontWeight: 900, letterSpacing: "-.02em", color: CHALK }}>{fmtTonnage(ls.volumeKg, units)}</div>
+                <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{t("workout.totalVolume")}</div>
               </div>
               <div>
-                <div style={{ ...disp, fontSize: 26, fontWeight: 900, letterSpacing: "-.025em", color: CHALK }}>{setLine}</div>
-                <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</div>
+                <div style={{ ...disp, fontSize: 26, fontWeight: 900, letterSpacing: "-.02em", color: CHALK }}>{setLine}</div>
+                <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</div>
               </div>
             </div>
 
             {/* ONE velocity module — the unit is named once, with the mean. */}
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "24px 0 12px" }}>
-              <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: txt(ASH) }}>{`${t("workout.barSpeed")} (m/s)`}</span>
+              <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH) }}>{`${t("workout.barSpeed")} (m/s)`}</span>
               {ls.meanVel != null && (
                 <span style={{ ...mono, fontSize: 11, color: CHALK }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</span>
               )}
@@ -1484,7 +1484,7 @@ function RpeHelp({ onClose }: { onClose: () => void }) {
   return (
     <Card style={{ borderLeft: `3px solid ${LIME}`, marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={LIME}>
           {t("w.train.blocks.rpeHelpTitle")}
         </Mono>
         <button aria-label={t("common.close")} onClick={onClose} className="pressable" style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>

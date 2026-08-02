@@ -93,7 +93,7 @@ export default function AuroraLogbookRail({
       {/* header: the log's name + the window on one baseline row */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 21, letterSpacing: "-.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{t("w.home.logbook.title")}</div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11.5, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{t("w.home.logbook.window")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), textTransform: "uppercase", flexShrink: 0 }}>{t("w.home.logbook.window")}</div>
       </div>
 
       {/* the seven-day week — the plan rail's chip anatomy, logbook vocabulary */}
@@ -194,7 +194,7 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
             {stats.map((s) => (
               <span key={s.labelKey}>
                 <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".16em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
               </span>
             ))}
           </div>

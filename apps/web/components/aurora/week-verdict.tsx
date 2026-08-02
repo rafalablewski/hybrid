@@ -63,7 +63,7 @@ const SHORT_KEY: Record<string, string> = {
 };
 
 const kicker: CSSProperties = {
-  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em",
+  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
   textTransform: "uppercase", whiteSpace: "nowrap",
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
@@ -105,7 +105,7 @@ export function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: st
       }} aria-hidden>{glyph}</span>
       <span style={{ flex: 1 }}>
         <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg }}>{title}</span>
-        <span style={{ display: "block", ...kicker, fontSize: 9.5, color: C("ash"), marginTop: 2 }}>{sub}</span>
+        <span style={{ display: "block", ...kicker, fontSize: 10, color: C("ash"), marginTop: 2 }}>{sub}</span>
       </span>
       <span style={{ fontSize: fs.note, color: C("ash") }} aria-hidden>›</span>
     </button>
@@ -239,7 +239,7 @@ export default function AuroraWeekVerdict({
           head names the window so no figure below it needs a qualifier. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{title}</span>
-        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".06em", color: C("ash") }}>{span}</span>
+        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".08em", color: C("ash") }}>{span}</span>
       </div>
 
       {/* ── THE DATE FILTER — the shared LiquidSeg: neutral pill at rest,
@@ -254,7 +254,7 @@ export default function AuroraWeekVerdict({
           render: (on: boolean) => (
             <span
               style={{
-                fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".04em",
+                fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em",
                 color: on ? C("chalk") : C("ash"),
                 fontWeight: on ? 600 : 400,
                 transition: "color .2s ease",
@@ -509,7 +509,7 @@ function MetricDetail({
                   <span style={{ flex: 1, minWidth: 0, fontSize: fs.caption, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {groupName(g)}
                   </span>
-                  <span style={{ ...num, fontSize: 9.5, color: C("ash"), letterSpacing: ".06em" }}>{Math.round(g.share * 100)}%</span>
+                  <span style={{ ...num, fontSize: 10, color: C("ash"), letterSpacing: ".08em" }}>{Math.round(g.share * 100)}%</span>
                   <span style={{ ...num, fontSize: fs.caption, color: C("chalk"), minWidth: 62, textAlign: "right" }}>
                     {fmtValue(detail.metric, g.value, g)}
                   </span>
@@ -536,7 +536,7 @@ function MetricDetail({
                     cursor: onSession ? "pointer" : "default", textAlign: "left", color: "inherit",
                   }}
                 >
-                  <span style={{ ...num, fontSize: 9.5, color: C("ash"), width: 44, flex: "0 0 44px", letterSpacing: ".02em" }}>
+                  <span style={{ ...num, fontSize: 10, color: C("ash"), width: 44, flex: "0 0 44px", letterSpacing: ".08em" }}>
                     {dateFmt(new Date(it.startedAt).getTime(), { day: "numeric", month: "short" })}
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
@@ -558,7 +558,7 @@ function MetricDetail({
               onClick={onAll}
               style={{
                 marginTop: 6, background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-                ...kicker, fontSize: 9.5, color: C("ash"),
+                ...kicker, fontSize: 10, color: C("ash"),
               }}
             >
               {all ? t("w.home.act.showFewer") : t("w.home.act.showAll").replace("{n}", String(shownCount))}
