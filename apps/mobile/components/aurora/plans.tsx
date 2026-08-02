@@ -236,7 +236,9 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
       {({ pressed }) => (
         <>
           <View style={[StyleSheet.absoluteFill, { opacity: cover.ready ? 1 : 0.45 }]} pointerEvents="none">
-            <LinearGradient colors={[`${cover.accent}c8`, `${cover.accent}4d`, `${cover.accent}0d`]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
+            {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
+                15% @ 46% → 0x26, then ink) — web parity: plans.tsx tile */}
+            <LinearGradient colors={[`${cover.accent}85`, `${cover.accent}26`, `${cover.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
           </View>
           <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
           <Text

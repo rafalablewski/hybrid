@@ -899,6 +899,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [summaryWindow, setSummaryWindow] = useState<7 | 30>(30);
   const summary = useMemo(() => nutritionSummary(signals, { targets, windowDays: summaryWindow }), [signals, targets, summaryWindow]);
   const nudge = useMemo(() => nutritionNudge(today, targets), [today, targets]);
+  // Mount count-up for the hero's kcal number (0 → target, rAF ease-out).
+  // core's statCountUp is the wrapped-slides string formatter, not a hook —
+  // the hub number is a plain int, so a 0→1 factor is all we need here.
+  const kcalCountF = useCountUpFactor();
   // ── The sticky HUD ────────────────────────────────────────────────────────
   // The one number you came for is what's LEFT, and it used to exist only at
   // the top of the hub: scroll into the picker or the libraries to choose food
@@ -2049,43 +2053,47 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
       )}
 
-          {/* CALORIE RING — the hero. The one number you came for is calories
-              LEFT; the ring fills as the day is consumed. */}
-          <div ref={ringRef} style={{ ...card, marginTop: 16, padding: "28px 22px 24px", textAlign: "center" }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.caloriesLeft")}</div>
-            <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
-              <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} color={kcalOver ? C("red") : C("lime")} size={200} ticks={52} center={
-                <span style={{ display: "block", textAlign: "center" }}>
-                  <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}>{Math.round(targets.kcal - today.kcal)}</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{Math.round(today.kcal)} / {targets.kcal}</span>
-                </span>
-              } />
-            </div>
-            {maint.kcal != null && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 18 }}>
-                {t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
+          {/* CALORIE RING + MACROS — the hero, ONE card: the ring on top, the
+              three macro hairlines beneath. The whole card presses into the
+              Diary (same destination as the "Diary →" link). The HUD still
+              anchors on the two inner sections — getBoundingClientRect is
+              viewport-space, so the nesting changes nothing for it. */}
+          <button onClick={() => setView("diary")} aria-label={t("w.recovery.nutrition.menuDiary")} className="pressable" style={{ ...card, display: "block", width: "100%", marginTop: 16, padding: "28px 22px 24px", textAlign: "center", cursor: "pointer", color: C("chalk") }}>
+            <div ref={ringRef}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.caloriesLeft")}</div>
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
+                <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} color={kcalOver ? C("red") : C("lime")} size={200} center={
+                  <span style={{ display: "block", textAlign: "center" }}>
+                    <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}>{Math.round((targets.kcal - today.kcal) * kcalCountF)}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{Math.round(today.kcal)} / {targets.kcal}</span>
+                  </span>
+                } />
               </div>
-            )}
-            {trainingKcal > 0 && (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 12, background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-lime) 28%, transparent)`, borderRadius: 999, padding: "6px 13px" }}>
-                <Glyph name="spark" size={13} color="var(--lime-text)" strokeWidth={4} />
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime-text)" }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Macros — their own card, hairline lines beneath the hero. */}
-          <div ref={macroRef} style={{ ...card, marginTop: 12, padding: "20px 22px" }}>
-            {([["w.recovery.nutrition.protein", today.protein, targets.protein, C("blue"), "var(--blue-text)"], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C("amber"), "var(--amber-text)"], ["w.recovery.nutrition.fat", today.fat, targets.fat, C("violet"), "var(--violet-text)"]] as const).map(([label, cur, tgt, col, colT], i) => (
-              <div key={label} style={{ marginTop: i ? 18 : 0 }}>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: colT }}>{t(label)}</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>{Math.round(cur)} / {tgt} g</span>
+              {maint.kcal != null && (
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 18 }}>
+                  {t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
                 </div>
-                <div style={{ height: 4, borderRadius: 99, background: C("ink"), overflow: "hidden", marginTop: 8 }}><div style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: "100%", borderRadius: 99, background: col }} /></div>
-              </div>
-            ))}
-          </div>
+              )}
+              {trainingKcal > 0 && (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 12, background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-lime) 28%, transparent)`, borderRadius: 999, padding: "6px 13px" }}>
+                  <Glyph name="spark" size={13} color="var(--lime-text)" strokeWidth={4} />
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime-text)" }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</span>
+                </div>
+              )}
+            </div>
+            {/* Macros — hairline lines beneath the hero, same card. */}
+            <div ref={macroRef} style={{ marginTop: 22, textAlign: "left" }}>
+              {([["w.recovery.nutrition.protein", today.protein, targets.protein, C("blue"), "var(--blue-text)"], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C("amber"), "var(--amber-text)"], ["w.recovery.nutrition.fat", today.fat, targets.fat, C("violet"), "var(--violet-text)"]] as const).map(([label, cur, tgt, col, colT], i) => (
+                <div key={label} style={{ marginTop: i ? 18 : 0 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", color: colT }}>{t(label)}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>{Math.round(cur)} / {tgt} g</span>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 99, background: C("ink"), overflow: "hidden", marginTop: 8 }}><div style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: "100%", borderRadius: 99, background: col }} /></div>
+                </div>
+              ))}
+            </div>
+          </button>
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudge nudge={nudge} />
@@ -2752,24 +2760,45 @@ function NutritionNudge({ nudge }: { nudge: NutritionNudge }) {
   );
 }
 
-// The app's tick-RING (mirrors the mobile kit Ring + web Today ring) — a lit-tick
-// dial with a number in the middle, so the calorie budget reads at a glance.
-function Ring({ value, color, size = 44, ticks = 32, center }: { value: number; color: string; size?: number; ticks?: number; center?: React.ReactNode }) {
+// The calorie RING — one SVG: a background track circle + a single round-capped
+// progress arc (2 nodes where the old 52-tick-pair span dial burned 104).
+function Ring({ value, color, size = 44, center }: { value: number; color: string; size?: number; center?: React.ReactNode }) {
   const C = (v: string) => `var(--color-${v})`;
   const pct = Math.max(0, Math.min(100, value));
-  const lit = Math.round((pct / 100) * ticks);
-  const tickLen = Math.max(4, Math.round(size * 0.15));
-  const tickW = Math.max(2, Math.round(size * 0.028));
+  const sw = 10;
+  const r = (size - sw) / 2;
+  const circ = 2 * Math.PI * r;
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0, display: "grid", placeItems: "center" }}>
-      {Array.from({ length: ticks }).map((_, i) => (
-        <span key={i} style={{ position: "absolute", top: 0, left: "50%", width: tickW, height: size / 2, transformOrigin: "bottom center", transform: `translateX(-50%) rotate(${(i / ticks) * 360}deg)` }}>
-          <span style={{ display: "block", width: tickW, height: tickLen, borderRadius: tickW, background: i < lit ? color : C("line") }} />
-        </span>
-      ))}
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={C("line")} strokeWidth={sw} />
+        {pct > 0 && <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeDasharray={`${(pct / 100) * circ} ${circ}`} />}
+      </svg>
       <span style={{ position: "relative" }}>{center}</span>
     </div>
   );
+}
+
+// 0 → 1 once on mount, rAF-driven with a cubic ease-out. Under
+// prefers-reduced-motion the factor stays at 1 (no animation, no flash) — and
+// staying at 1 is also what SSR/hydration render, so the markup never counts
+// again on later data refreshes.
+function useCountUpFactor(ms = 700): number {
+  const [f, setF] = useState(1);
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / ms);
+      setF(1 - Math.pow(1 - p, 3));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    setF(0);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [ms]);
+  return f;
 }
 
 // The SUMMARY dashboard — goal progress, week/month stat tiles, macro balance

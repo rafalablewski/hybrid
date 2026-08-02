@@ -45,7 +45,9 @@ export default function Sheet({
   open: boolean;
   onClose: () => void;
   title?: string;
-  sub?: string;
+  /** A node, not just a string, so callers can inline an AuroraIcon (e.g. the
+   *  Done sheet's flame beside the streak count). */
+  sub?: ReactNode;
   children: ReactNode;
   maxWidth?: number;
   label?: string;
