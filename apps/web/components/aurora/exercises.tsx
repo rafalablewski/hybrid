@@ -48,6 +48,7 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
   const Row = ({ e, last }: { e: ExerciseBrowseEntry; last: boolean }) => (
     <button
       onClick={() => onOpen(e.name)}
+      className="pressable"
       style={{ display: "flex", alignItems: "center", gap: 13, width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: last ? "none" : `1px solid ${C("line")}`, padding: "11px 0", cursor: "pointer", color: C("chalk") }}
     >
       <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 900, fontSize: 13, letterSpacing: -0.3, color: e.staple ? "var(--lime-text)" : C("ash") }}>{e.initials}</span>
@@ -85,6 +86,7 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
                 <button
                   key={p.id}
                   onClick={() => setMode(p.id)}
+                  className="pressable"
                   aria-pressed={on}
                   style={{ ...mono(10.5, on ? "var(--on-accent)" : C("ash")), letterSpacing: 0.8, fontWeight: on ? 700 : 400, padding: "7px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent" }}
                 >

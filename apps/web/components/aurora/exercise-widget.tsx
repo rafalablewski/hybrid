@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useRef } from "react";
 import {
   SHARED_ELEMENTS,
+  THEMES,
   exerciseStripBars,
   exerciseWidgetCards,
   fmtWeight,
@@ -24,19 +25,17 @@ import { armSharedElement } from "@/lib/shared-element";
 
 const C = (v: string) => `var(--color-${v})`;
 
-/* Chart strokes are SVG presentation attrs (can't resolve CSS vars) — raw
- * hexes mirror globals.css per THEME: Aurora keeps the dark accents
+/* Chart strokes are SVG presentation attrs (can't resolve CSS vars) — so they
+ * resolve from the core THEMES palette per theme: Aurora keeps the dark accents
  * (chartreuse / lifted teal / sand), Kyoto Hour uses pine / sage-text /
  * amber-text so the chart material matches the washi palette instead of
  * dragging dark-theme teal onto light paper. Parity: the mobile
  * kindStroke(C, kind), which resolves the same channels via the palette. */
 export const kindStroke = (theme: Theme, kind: ExerciseWidgetCard["kind"]): string =>
-  theme === "light"
-    ? kind === "strength" ? "#44584c" : kind === "cardio" ? "#4f5c3a" : "#875427"
-    : kind === "strength" ? "#c6f84f" : kind === "cardio" ? "#6cb6bd" : "#d0cd94";
+  kind === "strength" ? THEMES[theme].accent : kind === "cardio" ? THEMES[theme].accentText.blue : THEMES[theme].accentText.amber;
 /** improvement / regression bar fills (exercise-page deltas chart). */
-export const upHex = (theme: Theme): string => (theme === "light" ? "#44584c" : "#c6f84f");
-export const downHex = (theme: Theme): string => (theme === "light" ? "#a3442f" : "#e58a5c");
+export const upHex = (theme: Theme): string => THEMES[theme].accent;
+export const downHex = (theme: Theme): string => THEMES[theme].accentText.red;
 
 /** "213 kg" → { v: "213", u: "kg" } so the number can lead and the unit recede. */
 const splitVal = (s: string): { v: string; u: string } => {

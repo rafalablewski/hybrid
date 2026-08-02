@@ -568,9 +568,10 @@ export default function AuroraExercisePage({
           lifts only; cardio/custom names render nothing). */}
       <AuroraExerciseAnatomy name={name} />
 
-      <div style={{ display: "flex", gap: 18, margin: "18px 2px 6px" }}>
+      {/* padding grew for a ≥44px hit target; the top margin shrank to match. */}
+      <div style={{ display: "flex", gap: 18, margin: "10px 2px 6px" }}>
         {PERIODS.map((p) => (
-          <button key={p.id} onClick={() => setPeriod(p.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: period === p.id ? C("chalk") : C("ash"), borderBottom: `2px solid ${period === p.id ? C("lime") : "transparent"}` }}>
+          <button key={p.id} onClick={() => setPeriod(p.id)} className="pressable" style={{ background: "none", border: "none", cursor: "pointer", padding: "12px 4px", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: period === p.id ? C("chalk") : C("ash"), borderBottom: `2px solid ${period === p.id ? C("lime") : "transparent"}` }}>
             {t(p.key)}
           </button>
         ))}

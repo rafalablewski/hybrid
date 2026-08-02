@@ -883,6 +883,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   }, [diaryDay]);
   const targets = useMemo(() => adaptiveTargets(signals, { goal, trainingKcal }), [signals, goal, trainingKcal]);
+  // Over-budget grace: the ring AND the centre number flip red past the SAME
+  // 5% threshold, so the two can never disagree.
+  const KCAL_OVER_FACTOR = 1.05;
+  const kcalOver = today.kcal > targets.kcal * KCAL_OVER_FACTOR;
   const maint = useMemo(() => estimateMaintenance(signals, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
   const weight = useMemo(() => weightTrend(signals), [signals]);
@@ -1993,7 +1997,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
-      <button onClick={() => setGoalPicker(true)} aria-label={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "13px 16px", marginTop: 18, cursor: "pointer", color: C("chalk") }}>
+      <button onClick={() => setGoalPicker(true)} aria-label={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "13px 16px", marginTop: 18, cursor: "pointer", color: C("chalk") }}>
         <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
           <Glyph name="target" size={20} color={C("ash")} />
           <div>
@@ -2050,9 +2054,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <div ref={ringRef} style={{ ...card, marginTop: 16, padding: "28px 22px 24px", textAlign: "center" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.caloriesLeft")}</div>
             <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
-              <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} color={today.kcal > targets.kcal * 1.05 ? C("red") : C("lime")} size={200} ticks={52} center={
+              <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} color={kcalOver ? C("red") : C("lime")} size={200} ticks={52} center={
                 <span style={{ display: "block", textAlign: "center" }}>
-                  <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: today.kcal > targets.kcal ? "var(--red-text)" : C("chalk") }}>{Math.round(targets.kcal - today.kcal)}</span>
+                  <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}>{Math.round(targets.kcal - today.kcal)}</span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>{Math.round(today.kcal)} / {targets.kcal}</span>
                 </span>
               } />
@@ -2093,7 +2097,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <button onClick={() => setView("diary")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".06em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.menuDiary")} →</button>
           </div>
           {partList.map((p) => { const kcal = mealTotals[p.key] ?? 0; return (
-            <button key={p.key} onClick={() => openAdd(p.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 15px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
+            <button key={p.key} onClick={() => openAdd(p.key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 13, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, padding: "14px 15px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
               <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><Glyph name={mealGlyph(p.key)} size={19} color={C("ash")} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{p.label}</div>
@@ -2121,7 +2125,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             ["meals", <Glyph key="m" name="bowl" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourMeals"), t("w.recovery.nutrition.menuMealsSub"), full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`],
             ["foods", <AuroraIcon key="f" name="store" size={20} color={C("ash")} />, t("w.recovery.nutrition.yourProducts"), t("w.recovery.nutrition.menuFoodsSub"), full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`],
           ] as [NutView, ReactNode, string, string, string | undefined][]).map(([key, icon, title, sub, badge], i) => (
-            <button key={key} onClick={() => setView(key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "15px 16px", marginTop: i ? 10 : 24, cursor: "pointer", color: C("chalk") }}>
+            <button key={key} onClick={() => setView(key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 18, boxShadow: "var(--shadow-card)", padding: "15px 16px", marginTop: i ? 10 : 24, cursor: "pointer", color: C("chalk") }}>
               {icon}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.body }}>{title}</div>
@@ -2143,7 +2147,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <RailHead title={t("w.recovery.nutrition.recipes")} action={{ label: `${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`, onClick: () => (recipesUnlocked ? setView("recipes") : onNavigate?.("upgrade")), premium: !recipesUnlocked }} />
           <div style={railScroller}>
             {RECIPES.map((r) => (
-              <button key={r.id} onClick={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} style={{ flex: "0 0 min(52%, 196px)", scrollSnapAlign: "center", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
+              <button key={r.id} onClick={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} className="pressable" style={{ flex: "0 0 min(52%, 196px)", scrollSnapAlign: "center", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
                 <div style={{ height: 96, display: "grid", placeItems: "center", fontSize: 40, ...recipeHeroBg(r.tint) }}>{r.emoji}</div>
                 <div style={{ padding: "11px 12px 13px" }}>
                   <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
@@ -2163,7 +2167,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
               return (
-                <button key={src.id} onClick={() => openSourcePage(src.id, "home")} style={{ flex: "0 0 min(72%, 268px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "stretch", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 14 }}>
+                <button key={src.id} onClick={() => openSourcePage(src.id, "home")} className="pressable" style={{ flex: "0 0 min(72%, 268px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "stretch", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 20, background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 14 }}>
                   {/* The business's own logo leads the card — this rail IS the
                       businesses, so recognising one at a glance is its whole job. */}
                   <MarkPlate C={C} src={src} height={34} full />

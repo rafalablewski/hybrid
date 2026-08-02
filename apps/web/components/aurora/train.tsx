@@ -126,6 +126,7 @@ export default function AuroraTrainWeb({
       {/* Build a reusable routine. */}
       <button
         onClick={() => onNavigate("builder")}
+        className="pressable"
         style={{ width: "100%", marginTop: 16, padding: "14px 0", border: `1px solid ${C("line")}`, borderRadius: 999, background: "transparent", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note }}
       >
         ＋ {t("train.buildRoutine")}
@@ -147,6 +148,7 @@ function PrescribedHero({ rx, hasHistory, onStart, t }: { rx: ReturnType<typeof 
   return (
     <button
       onClick={onStart}
+      className="pressable"
       style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", border: "none", background: C("lime"), borderRadius: 24, padding: 22, marginTop: 18, color: "var(--on-accent)" }}
     >
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.62, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -166,6 +168,7 @@ function PremiumHero({ onUpsell, t }: { onUpsell: () => void; t: T }) {
   return (
     <button
       onClick={onUpsell}
+      className="pressable"
       style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 22, padding: 18, marginTop: 18 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
@@ -184,6 +187,7 @@ function DoneMarker({ session, onOpen, t }: { session: LoggedSession; onOpen: ()
   return (
     <button
       onClick={onOpen}
+      className="pressable"
       style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid ${C("line")}`, borderLeft: `3px solid ${C("lime")}`, borderRadius: 24, padding: 17, marginTop: 18 }}
     >
       <span style={{ width: 44, height: 44, borderRadius: 22, background: C("lime"), display: "grid", placeItems: "center", flex: "none" }}>
@@ -217,6 +221,7 @@ function ListRow({
   return (
     <button
       onClick={onClick}
+      className="pressable"
       style={{ display: "flex", alignItems: "center", gap: 15, width: "100%", textAlign: "left", cursor: "pointer", background: "transparent", border: "none", borderTop: first ? "none" : `1px solid ${C("line")}`, padding: "18px 2px" }}
     >
       <span style={{ width: 24, display: "grid", placeItems: "center", flex: "none" }}>

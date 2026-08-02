@@ -91,6 +91,7 @@ export function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: st
     <button
       onClick={onClick}
       aria-label={`${title} – ${sub}`}
+      className="pressable"
       style={{
         display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 10,
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,

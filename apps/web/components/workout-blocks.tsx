@@ -377,7 +377,7 @@ export default function WorkoutBlocks({
   // [, rpe, m/s], move, remove) gain a ✓-to-bank column at the end in live mode.
   const strengthCols = (name: string) => {
     const inputs = 1 + (detailed ? 1 : 0) + (velocity ? 1 : 0) + (bwLift(name) ? 0 : 1);
-    return `26px${" 1fr".repeat(inputs)} 22px 28px${live ? " 40px" : ""}`;
+    return `26px${" 1fr".repeat(inputs)} 22px 30px${live ? " 40px" : ""}`;
   };
 
   return (
@@ -442,13 +442,14 @@ export default function WorkoutBlocks({
               <Mono s={{ fontSize: fs.micro, whiteSpace: "nowrap" }}>{blockSignalSummary(b)}</Mono>
             )}
             {reorder && !isCollapsed(b.uid) && (
-              <button aria-label={t("common.duplicate")} onClick={() => duplicate(b.uid)} style={iconBtn(BLUE)}>
+              <button aria-label={t("common.duplicate")} onClick={() => duplicate(b.uid)} className="pressable" style={iconBtn(BLUE)}>
                 ⧉
               </button>
             )}
             {!isCollapsed(b.uid) && b.kind === "strength" && idx > 0 && blocks[idx - 1]?.kind === "strength" && (
               <button
                 onClick={() => supersetWithPrev(b.uid)}
+                className="pressable"
                 title={t("w.train.blocks.supersetTitle")}
                 style={
                   isSupersettedWithPrev(blocks, idx)
@@ -464,12 +465,13 @@ export default function WorkoutBlocks({
                 aria-label={isCollapsed(b.uid) ? t("w.train.blocks.expand") : t("w.train.blocks.collapse")}
                 aria-expanded={!isCollapsed(b.uid)}
                 onClick={() => toggleCollapsed(b.uid)}
+                className="pressable"
                 style={{ ...iconBtn(ASH), transition: "transform .15s", transform: isCollapsed(b.uid) ? "none" : "rotate(180deg)" }}
               >
                 ▾
               </button>
             )}
-            <button aria-label={t("common.delete")} onClick={() => removeBlock(b.uid)} style={iconBtn(RED)}>
+            <button aria-label={t("common.delete")} onClick={() => removeBlock(b.uid)} className="pressable" style={iconBtn(RED)}>
               ✕
             </button>
           </div>
@@ -746,10 +748,11 @@ export default function WorkoutBlocks({
                     return (
                       <button
                         onClick={() => cycleType(b.uid, i)}
+                        className="pressable"
                         title={`${t(SET_TYPE_TITLE_KEY[st]!)} ${t("w.train.blocks.setTypeTitle")}`}
                         style={{
                           ...mono,
-                          fontSize: accent ? 12 : 13,
+                          fontSize: 12,
                           fontWeight: 700,
                           color: txt(accent ?? ASH),
                           background: accent ? `${accent}1f` : "transparent",
@@ -795,7 +798,7 @@ export default function WorkoutBlocks({
                   >
                     ⠿
                   </span>
-                  <button onClick={() => removeSet(b.uid, i)} style={{ ...iconBtn(ASH), padding: 0 }}>
+                  <button onClick={() => removeSet(b.uid, i)} className="pressable" style={{ ...iconBtn(ASH), padding: 0 }}>
                     −
                   </button>
                   {/* LIVE: ✓ to bank the set — starts the rest timer (parent). */}
@@ -941,11 +944,11 @@ export default function WorkoutBlocks({
               {signal && (
                 <div style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 12 }}>
                   <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>{t("w.train.blocks.restBetween")}</Mono>
-                  <button aria-label={t("common.decrease")} onClick={() => bumpRest(b.uid, -15)} style={iconBtn(ASH)}>−</button>
+                  <button aria-label={t("common.decrease")} onClick={() => bumpRest(b.uid, -15)} className="pressable" style={iconBtn(ASH)}>−</button>
                   <Mono s={{ fontSize: fs.body, fontWeight: 700, minWidth: 44, textAlign: "center" }} c={CHALK}>
                     {b.restSec ?? DEFAULT_REST_SEC} s
                   </Mono>
-                  <button aria-label={t("common.increase")} onClick={() => bumpRest(b.uid, 15)} style={iconBtn(LIME)}>+</button>
+                  <button aria-label={t("common.increase")} onClick={() => bumpRest(b.uid, 15)} className="pressable" style={iconBtn(LIME)}>+</button>
                 </div>
               )}
               {plateCalc && (() => {
@@ -1095,19 +1098,19 @@ export default function WorkoutBlocks({
       )}
 
       <div style={{ display: "flex", gap: space.sm, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
-        <button onClick={addStrength} style={blockBtn(LIME)}>
+        <button onClick={addStrength} className="pressable" style={blockBtn(LIME)}>
           {t("w.train.blocks.addStrength")}
         </button>
-        <button onClick={addCardio} style={blockBtn(BLUE)}>
+        <button onClick={addCardio} className="pressable" style={blockBtn(BLUE)}>
           {t("w.train.blocks.addCardio")}
         </button>
-        <button onClick={() => setSportPicker((v) => !v)} style={blockBtn(BLUE)}>
+        <button onClick={() => setSportPicker((v) => !v)} className="pressable" style={blockBtn(BLUE)}>
           {t("w.train.blocks.addExercise")}
         </button>
-        <button onClick={addConditioning} style={blockBtn(VIOLET)}>
+        <button onClick={addConditioning} className="pressable" style={blockBtn(VIOLET)}>
           {t("w.train.blocks.addConditioning")}
         </button>
-        <button onClick={() => setRpeHelp((v) => !v)} style={blockBtn(ASH)}>
+        <button onClick={() => setRpeHelp((v) => !v)} className="pressable" style={blockBtn(ASH)}>
           {t("w.train.blocks.whatsRpe")}
         </button>
       </div>
@@ -1226,7 +1229,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
             <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
           </svg>
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.train.blocks.searchExercise")} style={{ ...disp, flex: 1, minWidth: 0, background: "none", border: 0, outline: "none", color: CHALK, fontSize: fs.body }} />
-          <button aria-label={t("common.close")} onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+          <button aria-label={t("common.close")} onClick={onClose} className="pressable" style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
         </div>
 
         {/* VIEW TOGGLE — Groups (rooms drill-down) ⇄ A–Z (the typeset index).
@@ -1483,7 +1486,7 @@ function RpeHelp({ onClose }: { onClose: () => void }) {
         <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em" }} c={LIME}>
           {t("w.train.blocks.rpeHelpTitle")}
         </Mono>
-        <button aria-label={t("common.close")} onClick={onClose} style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
+        <button aria-label={t("common.close")} onClick={onClose} className="pressable" style={{ ...iconBtn(ASH), width: 26, height: 26 }}>✕</button>
       </div>
       <Mono s={{ fontSize: fs.body, lineHeight: 1.5, display: "block", marginBottom: 12 }}>{RPE_INTRO}</Mono>
       <div style={{ display: "grid", gridTemplateColumns: "44px 64px 1fr", gap: "4px 10px", alignItems: "baseline" }}>

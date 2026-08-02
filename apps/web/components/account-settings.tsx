@@ -337,7 +337,7 @@ export default function AccountSettings() {
             <Section label={t("w.account.settings.appearance")}>
               <div style={{ display: "flex", gap: space.sm }}>
                 {THEME_SWATCHES.map((s) => (
-                  <button key={s.id} onClick={() => setTheme(s.id)} title={s.id === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ flex: 1, textAlign: "left", padding: 12, borderRadius: rCard, cursor: "pointer", background: theme === s.id ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", border: `1px solid ${theme === s.id ? LIME : LINE}` }}>
+                  <button key={s.id} onClick={() => setTheme(s.id)} className="pressable" title={s.id === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ flex: 1, textAlign: "left", padding: 12, borderRadius: rCard, cursor: "pointer", background: theme === s.id ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", border: `1px solid ${theme === s.id ? LIME : LINE}` }}>
                     <div style={{ display: "flex", gap: 5, marginBottom: 8 }}>
                       {s.colors.map((c, i) => <span key={i} style={{ width: 18, height: 18, borderRadius: 6, background: c, border: `1px solid ${LINE}` }} />)}
                     </div>
@@ -349,7 +349,7 @@ export default function AccountSettings() {
             <Section label={t("w.account.settings.language")}>
               <div style={{ display: "flex", gap: space.sm }}>
                 {LANGS.map((l) => (
-                  <button key={l.id} onClick={() => setLang(l.id)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}>
+                  <button key={l.id} onClick={() => setLang(l.id)} className="pressable" style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: lang === l.id ? txt(LIME) : txt(ASH), background: lang === l.id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${lang === l.id ? LIME : LINE}` }}>
                     {l.label}
                   </button>
                 ))}
@@ -618,7 +618,7 @@ export default function AccountSettings() {
             <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="RESET" autoCapitalize="characters" style={{ ...mono, fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${armed ? RED : LINE}`, outline: "none" }} />
             {msg && <div role="alert"><Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{msg}</Mono></div>}
             <div style={{ display: "flex", gap: space.ms, marginTop: 16, alignItems: "center" }}>
-              <button onClick={reset} disabled={!armed || busy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armed && !busy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "11px 18px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
+              <button onClick={reset} disabled={!armed || busy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armed && !busy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "11px 18px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
                 {busy ? t("w.account.settings.erasing") : t("w.account.settings.erase-everything")}
               </button>
               <button onClick={() => void logout()} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>
@@ -637,7 +637,7 @@ export default function AccountSettings() {
               <input value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} placeholder="DELETE" autoCapitalize="characters" style={{ ...mono, fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${armedDelete ? RED : LINE}`, outline: "none" }} />
               {delMsg && <div role="alert"><Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{delMsg}</Mono></div>}
               <div style={{ marginTop: 16 }}>
-                <button onClick={del} disabled={!armedDelete || delBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armedDelete && !delBusy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "11px 18px", cursor: armedDelete && !delBusy ? "pointer" : "not-allowed" }}>
+                <button onClick={del} disabled={!armedDelete || delBusy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armedDelete && !delBusy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "11px 18px", cursor: armedDelete && !delBusy ? "pointer" : "not-allowed" }}>
                   {delBusy ? t("settings.deleting") : t("settings.deleteAccount")}
                 </button>
               </div>
@@ -684,7 +684,7 @@ export default function AccountSettings() {
         /* ── SUB-PAGE ── a focused category with a back button. */
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-            <button onClick={() => setCat(null)} aria-label={t("w.account.settings.back")} style={{ width: 40, height: 40, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: INK2, border: `1px solid ${LINE}`, cursor: "pointer", color: CHALK }}>
+            <button onClick={() => setCat(null)} aria-label={t("w.account.settings.back")} className="pressable" style={{ width: 40, height: 40, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: INK2, border: `1px solid ${LINE}`, cursor: "pointer", color: CHALK }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
             <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.title, margin: 0, color: active.danger ? txt(RED) : CHALK }}>{active.title}</h2>
@@ -777,6 +777,7 @@ function Row({ icon, accent, title, subtitle, danger, first, onOpen }: {
   return (
     <button
       onClick={onOpen}
+      className="pressable"
       style={{
         display: "flex",
         alignItems: "center",
