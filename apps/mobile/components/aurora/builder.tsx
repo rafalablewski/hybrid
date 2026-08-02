@@ -41,6 +41,8 @@ import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import ExercisePickerSheet from "./exercise-picker";
 import SwipeRow from "../swipe-row";
+import { animateListChange } from "../../lib/list-motion";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import DragHandle from "../drag-handle";
 import { useDragReorder } from "../../lib/use-drag-reorder";
 import { setLoggerPref } from "../../lib/logger-prefs";
@@ -374,6 +376,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
   field: FieldStyle;
   label: LabelFn;
 }) {
+  const reducedMotion = useReducedMotion();
   const { t } = useLang();
   // Warm-up / ramp / cool-down / drop tucked into a "Special ▾" menu — the
   // common path stays one "+ Add set" tap (same layout as the live logger).
@@ -426,7 +429,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
             onLayout={setDrag.onRowLayout("", i)}
             style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
           >
-          <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => builder.removeSet(b.uid, i)} background={C.ink2}>
+          <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => { animateListChange(reducedMotion); builder.removeSet(b.uid, i); }} background={C.ink2}>
             <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
               <Pressable
                 onPress={() => builder.cycleType(b.uid, i)}

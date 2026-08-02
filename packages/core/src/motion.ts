@@ -93,6 +93,10 @@ export const durations = {
   fast: 160,
   /** Content crossfade under a travelling shared element. */
   dissolve: 200,
+  /** A list row collapsing to nothing (or opening from it). Long enough to read
+   *  as the row LEAVING rather than blinking out, short enough that deleting
+   *  five sets in a row doesn't become a queue. */
+  collapse: 180,
   /** The Reduce Motion cross-dissolve SUBSTITUTION. Never zero. */
   reduced: 150,
 } as const;

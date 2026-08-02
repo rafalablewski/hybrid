@@ -4,6 +4,7 @@ import { useRef, useState, type ReactNode, type PointerEvent as ReactPointerEven
 import { swipe, rubberBand, projectSwipe } from "@hybrid/core";
 import { RED, fs, disp, txt } from "@/lib/ui";
 import { haptic } from "@/lib/haptics";
+import { collapseAndRemove } from "@/lib/list-motion";
 
 // Swipe a set row left to reveal a Delete action — the web twin of the mobile
 // SwipeRow (components/swipe-row.tsx on the app side). Built on Pointer Events so
@@ -49,8 +50,10 @@ export default function SwipeRow({
   const commitDelete = () => {
     haptic.warning();
     setOpen(false);
-    setTx(0);
-    onDelete();
+    // The row leaves in the direction the finger was already going, and the
+    // rows below close the gap as its height animates to zero — one animation,
+    // not a disappearance followed by a jump.
+    collapseAndRemove(hostRef.current, onDelete, true);
   };
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {

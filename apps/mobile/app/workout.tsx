@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import { haptic } from "../lib/haptics";
+import { animateListChange } from "../lib/list-motion";
 import {
   needsBodyweight,
   prescribeSession,
@@ -234,6 +235,7 @@ const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; 
 });
 
 export default function Workout() {
+  const reducedMotion = useReducedMotion();
   const C = useTheme().palette;
   const pa = usePremiumAccent();
   const aurora = useTemplate().template === "aurora";
@@ -665,8 +667,13 @@ export default function Workout() {
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
-  const removeSet = (u: string, i: number) =>
+  // The row leaves AND the rows below close the gap. Without the first call the
+  // deleted row simply vanished and everything under it jumped up by its
+  // height — a teleport, in response to the user's own action.
+  const removeSet = (u: string, i: number) => {
+    animateListChange(reducedMotion);
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
+  };
   const toggleDone = (u: string, i: number, val: boolean) => {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.
