@@ -56,7 +56,9 @@ export type AuroraIconName =
   | "fork-knife"
   | "trophy"
   | "flame"
-  | "bolt";
+  | "bolt"
+  | "stopwatch"
+  | "moon";
 
 /** Stroke weight (in 72-viewBox units) for a rendered icon size, so optical
  *  weight stays constant: small glyphs draw heavier, large draw lighter.
@@ -168,6 +170,10 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
   ],
   // Semantic marks drawn in the kit's house style (72×72, stroke-only, round
   // caps). Vector-only on both clients — no PNG twin needed.
+  // stopwatch + moon complete the wrapped device-ad pictograph set (heart-rate,
+  // flame, stopwatch, sleep) so that grid can drop its last emoji.
+  stopwatch: ["M36 24V40L45 46", "M36 18C25 18 16 27 16 38C16 49 25 58 36 58C47 58 56 49 56 38C56 27 47 18 36 18Z", "M30 12H42"],
+  moon: ["M46.5 15C41 17.5 37 23 37 29.5C37 38.5 44.5 46 53.5 46C55.8 46 58 45.5 60 44.6C57.4 53.7 49 60 39.5 60C27.6 60 18 50.4 18 38.5C18 27 26.8 17.6 38 16.1C40.7 15.7 43.6 15.2 46.5 15Z"],
   trophy: [
     "M24 12H48V27C48 35.2843 42.6274 42 36 42C29.3726 42 24 35.2843 24 27V12Z",
     "M24 16.5H13.5V21C13.5 27.6274 18.3726 33 24 33M48 16.5H58.5V21C58.5 27.6274 53.6274 33 48 33",
