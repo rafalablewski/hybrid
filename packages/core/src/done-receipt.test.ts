@@ -101,11 +101,12 @@ describe("doneReceipt", () => {
     });
     const withDistance = doneReceipt({
       ...logged,
-      device: { ...logged.device!, distanceKm: 10.42, elevationM: 137 },
+      device: { ...logged.device!, distanceKm: 10.4237, elevationM: 137 },
     });
-    // The measured distance survives to the metre — rounding it to 0.1 km here
-    // is what turned a 510 m pool swim into 500 m on the summary.
-    expect(withDistance.distanceKm).toBe(10.42);
+    // The measured distance survives EXACTLY — rounding it to 0.1 km here is
+    // what turned a 510 m pool swim into 500 m on the summary, and any finer
+    // grid does the same thing one sport further down.
+    expect(withDistance.distanceKm).toBe(10.4237);
     expect(withDistance.elevationM).toBe(137);
     // A tennis recording carries no distance — the logged figures stand.
     const noDistance = doneReceipt(logged);
@@ -149,6 +150,31 @@ describe("doneReceiptStats", () => {
       "w.home.rail.duration",
       "w.home.today.distance",
     ]);
+  });
+
+  it("carries the device's exact distance and rounds it only to render", () => {
+    const swim = doneReceipt(
+      session({
+        title: "Swimming",
+        completedAt: "2026-07-16T10:34:00.000Z",
+        blocks: [{ kind: "cardio", name: "Swimming", distance: 10.234567, minutes: 40 }],
+      }),
+    );
+    // The model keeps the measurement…
+    expect(swim.distanceKm).toBe(10.234567);
+    // …the rail stat is the one that rounds.
+    expect(doneReceiptStats(swim, "kg").find((s) => s.labelKey === "w.home.today.distance")!.value).toBe("10.2 km");
+  });
+
+  it("reads a sub-kilometre distance in metres — tenths of a km round it to nothing", () => {
+    const swim = doneReceipt(
+      session({
+        title: "Swimming",
+        completedAt: "2026-07-16T10:34:00.000Z",
+        blocks: [{ kind: "cardio", name: "Swimming", distance: 0.034, minutes: 4 }],
+      }),
+    );
+    expect(doneReceiptStats(swim, "kg").find((s) => s.labelKey === "w.home.today.distance")!.value).toBe("34 m");
   });
 
   it("never reports sets for a tennis or squash match", () => {

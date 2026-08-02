@@ -171,7 +171,9 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
 
   const durationSec = boundedNum(o.durationSec, 1, 86400);
   const kcal = boundedNum(o.kcal, 1, 20000);
-  const distanceKm = boundedNum(o.distanceKm, 0.01, 300);
+  // Floor is ONE METRE, not ten. The old 0.01 km floor threw away any recording
+  // shorter than 10 m outright — a warm-up length in a pool is a real distance.
+  const distanceKm = boundedNum(o.distanceKm, 0.001, 300);
   const avgHr = boundedNum(o.avgHr, 20, 260);
   const maxHr = boundedNum(o.maxHr, 20, 260);
   const minHr = boundedNum(o.minHr, 20, 260);
@@ -197,7 +199,18 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
     durationMin: Math.round(durationMin),
     ...(durationSec != null ? { durationSec: Math.round(durationSec) } : {}),
     ...(kcal != null ? { kcal: Math.round(kcal) } : {}),
-    ...(distanceKm != null ? { distanceKm: Math.round(distanceKm * 100) / 100 } : {}),
+    // NOT ROUNDED — the exact figure the device measured. Every other number
+    // here is rounded to the precision its own instrument has (whole bpm, whole
+    // steps, whole kcal), but distance is the one measured figure spanning three
+    // orders of magnitude, so there is no single grid that fits it: rounding to
+    // two decimals of a kilometre is invisible on a 10 km run and is the whole
+    // error on a 34 m pool swim (0.034 km stored as 0.03 — the app showed "30 m"
+    // beside the watch's own "34 m", and paced it 12:33 /100m against the
+    // watch's 11:06). So the measurement is stored verbatim and each surface
+    // rounds where it RENDERS — `deviceDistanceLabel` below, `displaySportDistance`
+    // for the session's own figures. Nothing derived from it (pace, mileage) may
+    // divide by a rounded distance.
+    ...(distanceKm != null ? { distanceKm } : {}),
     ...(avgHr != null ? { avgHr: Math.round(avgHr) } : {}),
     ...(maxHr != null ? { maxHr: Math.round(maxHr) } : {}),
     ...(minHr != null ? { minHr: Math.round(minHr) } : {}),
@@ -211,6 +224,23 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
     ...(source ? { source } : {}),
     ...(matchedAt ? { matchedAt } : {}),
   };
+}
+
+/**
+ * A measured distance → the string to SHOW for it, in the activity's own unit.
+ *
+ * The stored figure is the device's exact one (see `sanitizeDeviceWorkout`), so
+ * every surface that prints it has to round here rather than assume it arrives
+ * pretty: a run measured at 10.234567 km reads "10.23 km", a pool swim at
+ * 0.034 km reads "34 m" — the same words the watch's own summary uses. Metre
+ * sports read to the metre; everything else gets metres below a kilometre and
+ * two decimals above it.
+ *
+ * Shared by the comparison panel and the match picker so the two can't drift.
+ */
+export function deviceDistanceLabel(km: number, activityLabel: string): string {
+  if (sportDistanceUnit(activityLabel) === "m") return `${displaySportDistance(km, activityLabel)} m`;
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${Math.round(km * 100) / 100} km`;
 }
 
 /** How far around the session's start the device store is searched for
@@ -324,9 +354,7 @@ export function deviceComparisonRows(opts: {
     return `${h > 0 ? `${h}:` : ""}${mm}:${String(s).padStart(2, "0")}`;
   };
   const sport = d.activityLabel;
-  const metreSport = sportDistanceUnit(sport) === "m";
-  const km = (v: number) =>
-    metreSport ? `${displaySportDistance(v, sport)} m` : v < 1 ? `${Math.round(v * 1000)} m` : `${Math.round(v * 100) / 100} km`;
+  const km = (v: number) => deviceDistanceLabel(v, sport);
   // Each column derives pace from ITS OWN distance + time — never mixed.
   const per = sportPacePerMeters(sport);
   const pace = (distKm?: number | null, seconds?: number | null): string | null => {

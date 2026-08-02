@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   deviceComparisonRows,
+  deviceDistanceLabel,
   deviceMatchScore,
   deviceSourceLabel,
   isDeviceName,
@@ -23,13 +24,52 @@ const watchTennis: DeviceWorkout = {
 };
 
 describe("sanitizeDeviceWorkout", () => {
-  it("accepts a clean workout and rounds its numbers", () => {
-    const out = sanitizeDeviceWorkout({ ...watchTennis, kcal: 540.6, distanceKm: 2.4567, avgHr: 132.4 });
+  it("accepts a clean workout and rounds each figure to its instrument", () => {
+    const out = sanitizeDeviceWorkout({ ...watchTennis, kcal: 540.6, avgHr: 132.4 });
     expect(out).not.toBeNull();
     expect(out!.kcal).toBe(541);
-    expect(out!.distanceKm).toBe(2.46);
     expect(out!.avgHr).toBe(132);
     expect(out!.provider).toBe("apple");
+  });
+
+  it("stores the measured distance VERBATIM — no grid to round it onto", () => {
+    // Distance is the one measured figure spanning three orders of magnitude,
+    // so it is kept exactly as the device reported it and rounded where it
+    // renders. Any grid erases a real measurement one sport down.
+    for (const km of [10.234567, 0.51, 0.034, 0.005]) {
+      expect(sanitizeDeviceWorkout({ ...watchTennis, distanceKm: km })!.distanceKm).toBe(km);
+    }
+  });
+
+  it("keeps a short measured distance to the metre", () => {
+    // The recording behind the bug report: a 34 m pool swim in 3:46. Stored on
+    // the old 10 m grid (two decimals of a km) it became 0.03 — the app showed
+    // "30 m" beside the watch's own "34 m" and paced it 12:33 /100m against the
+    // watch's 11:06.
+    const out = sanitizeDeviceWorkout({
+      ...watchTennis,
+      activityLabel: "Swimming",
+      distanceKm: 0.034,
+      durationMin: 4,
+      durationSec: 226,
+    })!;
+    expect(out.distanceKm).toBe(0.034);
+    const rows = deviceComparisonRows({ device: out, durationMin: 4, estimatedKcal: 32, distanceKm: 0.034 });
+    expect(rows.find((r) => r.labelKey === "session.device.distance")!.device).toBe("34 m");
+    expect(rows.find((r) => r.labelKey === "session.pace")!.device).toBe("11:05 /100m");
+  });
+
+  it("rounds a measured distance where it RENDERS, in the activity's own unit", () => {
+    // The exact stored figure must never reach a screen raw.
+    expect(deviceDistanceLabel(10.234567, "Running")).toBe("10.23 km");
+    expect(deviceDistanceLabel(0.9, "Running")).toBe("900 m");
+    expect(deviceDistanceLabel(0.034, "Swimming")).toBe("34 m");
+    expect(deviceDistanceLabel(0.5104, "Swimming")).toBe("510 m");
+  });
+
+  it("keeps a single length rather than dropping it under a 10 m floor", () => {
+    const out = sanitizeDeviceWorkout({ ...watchTennis, activityLabel: "Swimming", distanceKm: 0.005 })!;
+    expect(out.distanceKm).toBe(0.005);
   });
 
   it("rejects non-objects and rows missing the essentials", () => {

@@ -137,12 +137,14 @@ export function doneReceipt(
     tonnageKg: stats.volume,
     sets: stats.sets,
     strengthSets: strengthSetCount(session),
-    // Rounded to the METRE, not to 0.1 km. A 510 m pool swim is 0.51 km, and
-    // rounding it to 0.5 here erased the ten metres the watch measured — the
-    // summary then printed "500 m" beside the device panel's "510 m" and derived
-    // a pace from the wrong distance. Callers that want a coarse "12.3 km"
-    // headline round at the point they render it (see doneReceiptStats).
-    distanceKm: Math.round(distanceKm * 1000) / 1000,
+    // NOT ROUNDED — carried at whatever precision it arrived with, because the
+    // measured branch above is the device's exact figure and the pace the
+    // summary shows is `durationSec / distanceKm`. Every grid we tried erased a
+    // real measurement one sport down: 0.1 km lost the ten metres of a 510 m
+    // swim, and a metre would lose the tail of anything shorter. Callers round
+    // where they RENDER — doneReceiptStats for the rail's "12.3 km",
+    // formatSportDistance for the sport's own unit.
+    distanceKm,
     elevationM: Math.round(elevationM),
     measured,
   };
@@ -171,8 +173,15 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
   const out: DoneReceiptStat[] = [];
   if (r.durationMin != null) out.push({ value: `${r.durationMin} min`, labelKey: "w.home.rail.duration" });
   if (r.tonnageKg > 0) out.push({ value: fmtTonnage(r.tonnageKg, units), labelKey: "w.home.today.volume" });
-  // The receipt keeps metre precision; a rail stat reads in tenths of a km.
-  if (r.distanceKm > 0) out.push({ value: `${Math.round(r.distanceKm * 10) / 10} km`, labelKey: "w.home.today.distance" });
+  // The receipt keeps metre precision; a rail stat reads in tenths of a km —
+  // but only once there IS a kilometre. Under one, tenths round a 34 m pool
+  // swim to "0 km", so anything sub-kilometre reads in metres (the same rule
+  // the device panel and the match picker already use).
+  if (r.distanceKm > 0)
+    out.push({
+      value: r.distanceKm < 1 ? `${Math.round(r.distanceKm * 1000)} m` : `${Math.round(r.distanceKm * 10) / 10} km`,
+      labelKey: "w.home.today.distance",
+    });
   if (r.strengthSets > 0) out.push({ value: String(r.strengthSets), labelKey: "w.home.today.sets" });
   return out;
 }
