@@ -145,7 +145,7 @@ function BottomSheet({ open, onClose, title, meta, children }: { open: boolean; 
             <h2 style={{ fontWeight: 900, fontSize: 20, letterSpacing: -0.3, margin: 0, color: C("chalk") }}>{title}</h2>
             <span style={{ ...monoRow(9.5, C("ash")), letterSpacing: 1, textTransform: "uppercase" }}>{meta}</span>
           </div>
-          <button ref={closeRef} onClick={onClose} style={{ ...monoRow(11, C("ash")), background: "none", border: "none", cursor: "pointer", padding: "2px 2px 2px 12px", flexShrink: 0 }}>✕</button>
+          <button className="pressable" ref={closeRef} onClick={onClose} style={{ ...monoRow(11, C("ash")), background: "none", border: "none", cursor: "pointer", padding: "2px 2px 2px 12px", flexShrink: 0 }}>✕</button>
         </div>
         <div style={{ marginTop: 16 }}>{children}</div>
       </div>
@@ -172,7 +172,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
 
   return (
     <>
-      <button
+      <button className="pressable"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         style={{

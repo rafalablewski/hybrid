@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, type ViewStyle } from "react-native";
-import { fs, space, F, Card, Mono } from "../../lib/ui";
+import { View, Text, TextInput, ActivityIndicator, type ViewStyle } from "react-native";
+import { fs, space, F, Card, Mono, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "../aurora/cta-label";
 

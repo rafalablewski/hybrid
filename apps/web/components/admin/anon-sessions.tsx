@@ -102,7 +102,7 @@ export default function AdminAnonSessions() {
                   {fmt(s.startedAt)}
                 </td>
                 <td data-label="" style={{ padding: "12px 16px", textAlign: "right", borderBottom: `1px solid ${LINE}` }}>
-                  <button
+                  <button className="pressable"
                     onClick={() => remove(s.id, s.title)}
                     disabled={busy === s.id}
                     style={{ ...mono, fontSize: fs.body, color: txt(RED), background: `${RED}14`, border: `1px solid ${RED}55`, borderRadius: "var(--r-field)", padding: "8px 12px", cursor: busy === s.id ? "default" : "pointer", opacity: busy === s.id ? 0.5 : 1 }}

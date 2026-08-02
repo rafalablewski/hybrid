@@ -110,7 +110,7 @@ export default function QuickStartSheet({
         </>
       )}
 
-      <button
+      <button className="pressable"
         onClick={() => { onClose(); onBuildNew(); }}
         style={{
           marginTop: 16,
@@ -143,7 +143,7 @@ function SubHead({ label, action }: { label: string; action?: { label: string; o
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "6px 2px 10px" }}>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</span>
       {action && (
-        <button
+        <button className="pressable"
           onClick={action.onClick}
           style={{
             fontFamily: "var(--font-mono)",
@@ -185,7 +185,7 @@ function decor(id: string): { glyph: string; accent: string } {
 
 function Star({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
   return (
-    <button
+    <button className="pressable"
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       aria-label={label}
       aria-pressed={on}
@@ -210,7 +210,7 @@ function FavouriteCard({ r, t, onLaunch, onToggleFav }: { r: QuickRoutine; t: (k
   const fill = C(accent);
   const text = `var(--${accent}-text)`;
   return (
-    <button
+    <button className="pressable"
       onClick={onLaunch}
       aria-label={r.name}
       style={{

@@ -366,7 +366,7 @@ export default function AdminAgents() {
       {err && (
         <Card style={{ borderLeft: `3px solid ${AMBER}`, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md }}>
           <div role="alert"><Mono s={{ fontSize: fs.body }} c={AMBER}>{err}</Mono></div>
-          <button onClick={() => setErr(null)} style={{ ...mono, fontSize: fs.caption, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 6, padding: "6px 8px", color: txt(ASH), cursor: "pointer" }}>
+          <button className="pressable" onClick={() => setErr(null)} style={{ ...mono, fontSize: fs.caption, background: "transparent", border: `1px solid ${LINE}`, borderRadius: 6, padding: "6px 8px", color: txt(ASH), cursor: "pointer" }}>
             Dismiss
           </button>
         </Card>
@@ -380,11 +380,11 @@ export default function AdminAgents() {
       {/* ---- create row ---- */}
       <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 16 }}>
         {presets.map((p) => (
-          <button key={p.key} disabled={busy} onClick={() => createFrom(p.key)} style={presetBtn}>
+          <button className="pressable" key={p.key} disabled={busy} onClick={() => createFrom(p.key)} style={presetBtn}>
             + {p.role}
           </button>
         ))}
-        <button disabled={busy} onClick={() => createFrom()} style={{ ...presetBtn, borderStyle: "dashed", color: txt(ASH) }}>
+        <button className="pressable" disabled={busy} onClick={() => createFrom()} style={{ ...presetBtn, borderStyle: "dashed", color: txt(ASH) }}>
           + Custom
         </button>
       </div>
@@ -415,7 +415,7 @@ export default function AdminAgents() {
                     {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
                   </Mono>
                 </div>
-                <button
+                <button className="pressable"
                   disabled={busy}
                   title={a.status === "active" ? "Pause" : "Activate"}
                   onClick={(e) => {
@@ -444,10 +444,10 @@ export default function AdminAgents() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: space.sm }}>
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.title }}>Edit agent</div>
               <div style={{ display: "flex", gap: space.sm }}>
-                <button disabled={busy || !dirty} onClick={save} style={{ ...primaryBtn, opacity: dirty ? 1 : 0.5 }}>
+                <button className="pressable" disabled={busy || !dirty} onClick={save} style={{ ...primaryBtn, opacity: dirty ? 1 : 0.5 }}>
                   {dirty ? "Save changes" : "Saved"}
                 </button>
-                <button disabled={busy} onClick={() => remove(draft.id)} style={dangerBtn}>
+                <button className="pressable" disabled={busy} onClick={() => remove(draft.id)} style={dangerBtn}>
                   Delete
                 </button>
               </div>
@@ -528,7 +528,7 @@ export default function AdminAgents() {
                 {TOOL_OPTIONS.map((t) => {
                   const on = draft.tools.includes(t.value);
                   return (
-                    <button
+                    <button className="pressable"
                       key={t.value}
                       onClick={() => set("tools", on ? draft.tools.filter((x) => x !== t.value) : [...draft.tools, t.value])}
                       style={{ ...chipBtn, background: on ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : INK2, color: txt(on ? LIME : ASH), borderColor: on ? LIME : LINE }}
@@ -588,7 +588,7 @@ export default function AdminAgents() {
                     onChange={(e) => setTask(e.target.value)}
                   />
                   <div style={{ display: "flex", alignItems: "center", gap: space.ms, marginTop: 8 }}>
-                    <button
+                    <button className="pressable"
                       disabled={runBusy || dirty || !task.trim()}
                       onClick={runTask}
                       style={{ ...primaryBtn, opacity: runBusy || dirty || !task.trim() ? 0.5 : 1 }}
@@ -653,7 +653,7 @@ export default function AdminAgents() {
               <div style={{ display: "flex", flexDirection: "column", gap: space.sm }}>
                 {schedules.map((s) => (
                   <div key={s.id} style={{ display: "flex", gap: space.sm, alignItems: "flex-start", background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
-                    <button onClick={() => toggleSchedule(s)} style={toggle(s.enabled)} title={s.enabled ? "Disable" : "Enable"}>
+                    <button className="pressable" onClick={() => toggleSchedule(s)} style={toggle(s.enabled)} title={s.enabled ? "Disable" : "Enable"}>
                       <span style={knob(s.enabled)} />
                     </button>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -667,7 +667,7 @@ export default function AdminAgents() {
                         {s.enabled && s.nextRunAt ? ` – next ${new Date(s.nextRunAt).toLocaleString()}` : ""}
                       </Mono>
                     </div>
-                    <button aria-label="Delete" style={removeBtn} title="Delete" onClick={() => deleteSchedule(s.id)}>×</button>
+                    <button className="pressable" aria-label="Delete" style={removeBtn} title="Delete" onClick={() => deleteSchedule(s.id)}>×</button>
                   </div>
                 ))}
 
@@ -681,7 +681,7 @@ export default function AdminAgents() {
                   <Select value={newCadence} onChange={(e) => setNewCadence(e.target.value)} style={{ flexShrink: 0 }}>
                     {CADENCES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </Select>
-                  <button style={{ ...primaryBtn, flexShrink: 0, opacity: newTask.trim() ? 1 : 0.5 }} disabled={!newTask.trim()} onClick={addSchedule}>
+                  <button className="pressable" style={{ ...primaryBtn, flexShrink: 0, opacity: newTask.trim() ? 1 : 0.5 }} disabled={!newTask.trim()} onClick={addSchedule}>
                     Add
                   </button>
                 </div>
@@ -818,12 +818,12 @@ function StringList({ items, onChange, placeholder }: { items: string[]; onChang
             value={it}
             onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
           />
-          <button style={removeBtn} title="Remove" onClick={() => onChange(items.filter((_, j) => j !== i))}>
+          <button className="pressable" style={removeBtn} title="Remove" onClick={() => onChange(items.filter((_, j) => j !== i))}>
             ×
           </button>
         </div>
       ))}
-      <button style={addBtn} onClick={() => onChange([...items, ""])}>
+      <button className="pressable" style={addBtn} onClick={() => onChange([...items, ""])}>
         {placeholder}
       </button>
     </div>
@@ -857,12 +857,12 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
               onChange(items.map((x, j) => (j === i ? { ...x, targetValue: e.target.value === "" ? null : Number(e.target.value) } : x)))
             }
           />
-          <button style={removeBtn} title="Remove" onClick={() => onChange(items.filter((_, j) => j !== i))}>
+          <button className="pressable" style={removeBtn} title="Remove" onClick={() => onChange(items.filter((_, j) => j !== i))}>
             ×
           </button>
         </div>
       ))}
-      <button style={addBtn} onClick={() => onChange([...items, { metric: "", target: "" }])}>
+      <button className="pressable" style={addBtn} onClick={() => onChange([...items, { metric: "", target: "" }])}>
         + Add KPI
       </button>
     </div>

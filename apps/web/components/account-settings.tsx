@@ -381,7 +381,7 @@ export default function AccountSettings() {
               <Section label={t("loggerPrefs.restDefault")}>
                 <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
                   {REST_SECONDS_CHOICES.map((sec) => (
-                    <button key={sec} onClick={() => setLoggerPref("restSeconds", sec)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.restSeconds === sec ? txt(LIME) : txt(ASH), background: prefs.restSeconds === sec ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.restSeconds === sec ? LIME : LINE}` }}>
+                    <button className="pressable" key={sec} onClick={() => setLoggerPref("restSeconds", sec)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.restSeconds === sec ? txt(LIME) : txt(ASH), background: prefs.restSeconds === sec ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.restSeconds === sec ? LIME : LINE}` }}>
                       {sec}s
                     </button>
                   ))}
@@ -391,7 +391,7 @@ export default function AccountSettings() {
             <Section label={t("w.account.settings.units")}>
               <div style={{ display: "flex", gap: space.sm }}>
                 {(["kg", "lb"] as const).map((u) => (
-                  <button key={u} onClick={() => setLoggerPref("units", u)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}>
+                  <button className="pressable" key={u} onClick={() => setLoggerPref("units", u)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", textTransform: "uppercase", color: prefs.units === u ? txt(LIME) : txt(ASH), background: prefs.units === u ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.units === u ? LIME : LINE}` }}>
                     {u}
                   </button>
                 ))}
@@ -400,7 +400,7 @@ export default function AccountSettings() {
             <Section label={t("loggerPrefs.quickIncrement")}>
               <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
                 {(prefs.units === "lb" ? [0, 5, 10] : [0, 2.5, 5]).map((inc) => (
-                  <button key={inc} onClick={() => setLoggerPref("quickIncrement", inc)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.quickIncrement === inc ? txt(LIME) : txt(ASH), background: prefs.quickIncrement === inc ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.quickIncrement === inc ? LIME : LINE}` }}>
+                  <button className="pressable" key={inc} onClick={() => setLoggerPref("quickIncrement", inc)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.quickIncrement === inc ? txt(LIME) : txt(ASH), background: prefs.quickIncrement === inc ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.quickIncrement === inc ? LIME : LINE}` }}>
                     {inc === 0 ? t("common.off") : `±${inc}`}
                   </button>
                 ))}
@@ -409,7 +409,7 @@ export default function AccountSettings() {
             <Section label={t("loggerPrefs.defaultStart")}>
               <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
                 {([{ id: "empty", label: "Empty" }, { id: "ai", label: "AI" }, { id: "last", label: "Repeat last" }] as const).map((o) => (
-                  <button key={o.id} onClick={() => setLoggerPref("defaultStart", o.id)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.defaultStart === o.id ? txt(LIME) : txt(ASH), background: prefs.defaultStart === o.id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.defaultStart === o.id ? LIME : LINE}` }}>
+                  <button className="pressable" key={o.id} onClick={() => setLoggerPref("defaultStart", o.id)} style={{ ...mono, fontSize: fs.body, padding: "8px 16px", borderRadius: r, cursor: "pointer", color: prefs.defaultStart === o.id ? txt(LIME) : txt(ASH), background: prefs.defaultStart === o.id ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", border: `1px solid ${prefs.defaultStart === o.id ? LIME : LINE}` }}>
                     {o.label}
                   </button>
                 ))}
@@ -467,7 +467,7 @@ export default function AccountSettings() {
                 </div>
                 <textarea value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder={t("w.account.settings.coach-credentials-ph")} rows={3} style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 12, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }} />
                 {coachMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>}
-                <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 16px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
+                <button className="pressable" onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 16px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
                   {coachBusy ? t("w.account.settings.applying") : t("w.account.settings.apply")}
                 </button>
               </>
@@ -492,7 +492,7 @@ export default function AccountSettings() {
                   <>
                     <div style={{ display: "flex", gap: space.sm, marginTop: 12 }}>
                       <input value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder={t("w.account.settings.new-password-ph")} type="password" style={{ ...editInput, flex: 1 }} />
-                      <button onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>{t("w.account.settings.update")}</button>
+                      <button className="pressable" onClick={changePassword} disabled={profileBusy || newPw.length < 8} style={editBtn(LIME)}>{t("w.account.settings.update")}</button>
                     </div>
                     {newPw.length > 0 && (
                       <div style={{ marginTop: 10 }} aria-live="polite">
@@ -524,7 +524,7 @@ export default function AccountSettings() {
                 <Mono s={{ fontSize: fs.body }} c={CHALK}>{t("w.account.settings.this-device")}</Mono>
               </div>
               <Mono s={{ fontSize: fs.micro, lineHeight: 1.6, display: "block", marginTop: 10 }} c={ASH}>{t("w.account.settings.active-sessions-desc")}</Mono>
-              <button onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>{t("w.account.settings.sign-out-everywhere")}</button>
+              <button className="pressable" onClick={signOutEverywhere} style={{ ...editBtn(ASH), marginTop: 12 }}>{t("w.account.settings.sign-out-everywhere")}</button>
             </Section>
           </>
         );
@@ -534,11 +534,11 @@ export default function AccountSettings() {
           <Section label={t("w.account.settings.mode")}>
             <Mono s={{ fontSize: fs.body, display: "block" }} c={CHALK}>{t("w.account.settings.mode-desc")}</Mono>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: space.sm, marginTop: 12 }}>
-              <button onClick={() => setClientPersona("casual")} style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent" }}>
+              <button className="pressable" onClick={() => setClientPersona("casual")} style={{ textAlign: "left", cursor: "pointer", borderRadius: rCard, padding: 12, border: `1px solid ${personaChoice === "casual" ? LIME : LINE}`, background: personaChoice === "casual" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent" }}>
                 <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: txt(personaChoice === "casual" ? LIME : CHALK) }}>{t("w.account.settings.simple")}</div>
                 <Mono s={{ fontSize: fs.micro }}>{t("w.account.settings.simple-tags")}</Mono>
               </button>
-              <button onClick={() => (paid ? setClientPersona("athlete") : undefined)} aria-disabled={!paid} style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", opacity: paid ? 1 : 0.7 }}>
+              <button className="pressable" onClick={() => (paid ? setClientPersona("athlete") : undefined)} aria-disabled={!paid} style={{ textAlign: "left", cursor: paid ? "pointer" : "default", borderRadius: rCard, padding: 12, border: `1px solid ${paid && personaChoice === "athlete" ? LIME : LINE}`, background: paid && personaChoice === "athlete" ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", opacity: paid ? 1 : 0.7 }}>
                 <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, display: "flex", alignItems: "center", gap: space.xs, color: txt(paid && personaChoice === "athlete" ? LIME : CHALK) }}>
                   {t("w.account.settings.full")}
                   {!paid && (
@@ -565,7 +565,7 @@ export default function AccountSettings() {
                     </div>
                   ))}
                 </div>
-                <button onClick={upgrade} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 16px", marginTop: 16, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
+                <button className="pressable" onClick={upgrade} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 16px", marginTop: 16, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
                   {billingBusy ? t("w.account.settings.starting") : t("w.account.settings.upgrade-full")}
                 </button>
                 <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
@@ -575,7 +575,7 @@ export default function AccountSettings() {
               </>
             ) : (
               <>
-                <button onClick={manageSubscription} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: r, padding: "10px 16px", marginTop: 16, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
+                <button className="pressable" onClick={manageSubscription} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: r, padding: "10px 16px", marginTop: 16, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
                   {billingBusy ? t("w.account.settings.opening") : t("w.account.settings.manage-subscription")}
                 </button>
                 {billingUnconfigured && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>{t("w.account.settings.billing-unconfigured")}</Mono>}
@@ -603,7 +603,7 @@ export default function AccountSettings() {
                 </div>
               ))}
             </div>
-            <button onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>{t("w.account.settings.download-data")}</button>
+            <button className="pressable" onClick={exportData} style={{ ...editBtn(LIME), marginTop: 12 }}>{t("w.account.settings.download-data")}</button>
           </Section>
         );
       case "danger":
@@ -621,7 +621,7 @@ export default function AccountSettings() {
               <button onClick={reset} disabled={!armed || busy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armed && !busy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "12px 16px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
                 {busy ? t("w.account.settings.erasing") : t("w.account.settings.erase-everything")}
               </button>
-              <button onClick={() => void logout()} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>
+              <button className="pressable" onClick={() => void logout()} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>
                 {t("w.account.settings.sign-out-instead")}
               </button>
             </div>
@@ -702,7 +702,7 @@ export default function AccountSettings() {
           <div style={{ marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 28 }}>
             {/* Tappable identity row → opens Edit profile. The avatar is wrapped
                 in a completeness ring; the nudge says what's left to fill. */}
-            <button onClick={() => setCat("account")} aria-label={t("w.account.settings.edit-profile")} style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: CHALK }}>
+            <button className="pressable" onClick={() => setCat("account")} aria-label={t("w.account.settings.edit-profile")} style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: CHALK }}>
               <span style={{ position: "relative", width: 60, height: 60, flex: "none", display: "grid", placeItems: "center" }}>
                 <svg width="60" height="60" viewBox="0 0 60 60" style={{ position: "absolute", inset: 0 }} aria-hidden="true">
                   <circle cx="30" cy="30" r="27" fill="none" stroke={LINE} strokeWidth="3" />
@@ -723,8 +723,8 @@ export default function AccountSettings() {
             </button>
             {/* Quick actions */}
             <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
-              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--color-lime) 40%, transparent)", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
-              {socialProfile?.handle && <button onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
+              <button className="pressable" onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--color-lime) 40%, transparent)", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
+              {socialProfile?.handle && <button className="pressable" onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
               {shareMsg && <Mono s={{ fontSize: fs.micro }} c={LIME}>{shareMsg}</Mono>}
             </div>
           </div>
@@ -838,7 +838,7 @@ function PrefRow({ title, desc, on, onToggle, disabled, first }: { title: string
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{title}</div>
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>{desc}</Mono>
       </div>
-      <button
+      <button className="pressable"
         onClick={onToggle}
         disabled={disabled}
         aria-pressed={on}

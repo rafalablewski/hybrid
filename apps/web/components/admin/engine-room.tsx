@@ -321,7 +321,7 @@ export default function EngineRoom() {
                 }}
               >
                 {results.map((u) => (
-                  <button
+                  <button className="pressable"
                     key={u.id}
                     onClick={() => pick(u)}
                     style={{
@@ -355,7 +355,7 @@ export default function EngineRoom() {
           <div style={{ marginLeft: "auto", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>HPI weights</Mono>
             {PROFILES.map((p) => (
-              <button
+              <button className="pressable"
                 key={p.id}
                 onClick={() => setProfileId(p.id)}
                 style={{
@@ -485,7 +485,7 @@ export default function EngineRoom() {
           <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "center" }}>
             <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>Scenarios</Mono>
             {SCENARIO_PRESETS.map((p) => (
-              <button
+              <button className="pressable"
                 key={p.name}
                 onClick={() => addPreset(p)}
                 disabled={scenarios.some((s) => s.name === p.name)}
@@ -546,7 +546,7 @@ export default function EngineRoom() {
                       <td style={cellPlain(ASH)}>{describeWhatIf(s.whatIf, bio)}</td>
                       <ScenarioCells trace={s.trace} baseline={base} />
                       <td style={{ padding: "8px 10px", borderBottom: `1px solid ${LINE}` }}>
-                        <button
+                        <button className="pressable"
                           onClick={() => setScenarios((prev) => prev.filter((x) => x.id !== s.id))}
                           aria-label={`Remove scenario ${s.name}`}
                           style={{ ...mono, fontSize: fs.micro, color: txt(ASH), background: "transparent", border: "none", cursor: "pointer" }}
@@ -869,7 +869,7 @@ export default function EngineRoom() {
           <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", alignItems: "center" }}>
             <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>Show the math for</Mono>
             {ALL_MUSCLES.map((m) => (
-              <button
+              <button className="pressable"
                 key={m}
                 onClick={() => setTissue(m)}
                 style={{
@@ -1219,7 +1219,7 @@ function CompareCard({
           {results.length > 0 && (
             <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 20, background: INK2, border: `1px solid ${LINE}`, borderRadius: 9, overflow: "hidden" }}>
               {results.map((u) => (
-                <button key={u.id} onClick={() => pick(u)} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${LINE}`, cursor: "pointer" }}>
+                <button className="pressable" key={u.id} onClick={() => pick(u)} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", background: "transparent", border: "none", borderBottom: `1px solid ${LINE}`, cursor: "pointer" }}>
                   <span style={{ ...disp, fontSize: fs.body, fontWeight: 600, color: CHALK }}>{u.name ?? u.email}</span>
                   <Mono s={{ fontSize: fs.micro, display: "block" }}>{u.email}</Mono>
                 </button>

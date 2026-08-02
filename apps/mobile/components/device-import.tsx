@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Modal, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   DEVICE_IMPORT_DAYS,
@@ -17,7 +17,7 @@ import { setLoggerPref, useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
 import { ToggleRow } from "./toggle-row";
-import { F, fs } from "../lib/ui";
+import { F, fs, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
 /**

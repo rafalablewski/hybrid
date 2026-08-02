@@ -75,7 +75,7 @@ export default function PrivateTab({
 function CommandCenterCard({ locked, onClick }: { locked: boolean; onClick: () => void }) {
   const { t } = useLang();
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       aria-label={t("w.account.profile.priv-cockpit-t")}
       style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, var(--premium-accent) 14%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--premium-accent) 5%, ${C("ink2")}), ${C("ink2")})`, boxShadow: "var(--shadow-card)" }}
@@ -151,7 +151,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
   return (
     <>
       {/* Collapsed card — whole surface tappable, opens the log sheet. */}
-      <button
+      <button className="pressable"
         onClick={() => setOpen(true)}
         aria-label={t("w.account.profile.priv-body-t")}
         style={{ display: "flex", alignItems: "center", gap: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}
@@ -186,7 +186,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
           </>
         )}
 
-        <button onClick={onPhotos} style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
+        <button className="pressable" onClick={onPhotos} style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
           <AuroraIcon name="eye" size={14} color={LIME} /> <CtaLabel size={12}>{`${t("w.account.profile.priv-photos")} →`}</CtaLabel>
         </button>
       </Sheet>
@@ -275,7 +275,7 @@ function LogForm({ units, form, setField, onSave, busy }: { units: "kg" | "lb"; 
           <MetricInput key={def.key} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </div>
-      <button onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "16px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)", opacity: busy ? 0.6 : 1, marginTop: 2 }}>{t("common.save")}</button>
+      <button className="pressable" onClick={onSave} disabled={busy} style={{ background: C("lime"), border: "none", borderRadius: 999, padding: "16px 0", cursor: "pointer", fontWeight: 700, fontSize: 16, color: "var(--on-accent)", opacity: busy ? 0.6 : 1, marginTop: 2 }}>{t("common.save")}</button>
     </div>
   );
 }
@@ -294,7 +294,7 @@ function IconTile({ icon }: { icon: AuroraIconName }) {
 
 function Row({ icon, title, sub, onClick }: { icon: AuroraIconName; title: string; sub: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} aria-label={title} style={{ display: "flex", alignItems: "center", gap: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}>
+    <button className="pressable" onClick={onClick} aria-label={title} style={{ display: "flex", alignItems: "center", gap: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}>
       <IconTile icon={icon} />
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: "block", fontWeight: 700, fontSize: 16, color: C("chalk") }}>{title}</span>
@@ -368,7 +368,7 @@ function HeightRow({ units, heightCm, onSaved }: { units: "kg" | "lb"; heightCm:
         {/* The save appears only when there is a CHANGE to save — a stored
             height shouldn't sit under a button implying unfinished business. */}
         {dirty && (
-          <button
+          <button className="pressable"
             onClick={save}
             disabled={busy || parsed == null}
             style={{ flex: "none", background: parsed == null ? "transparent" : C("lime"), border: parsed == null ? `1px solid ${C("line")}` : "none", borderRadius: 999, padding: "8px 16px", cursor: parsed == null ? "default" : "pointer", fontWeight: 700, fontSize: 13, color: parsed == null ? C("ash") : "var(--on-accent)", opacity: busy ? 0.6 : 1 }}

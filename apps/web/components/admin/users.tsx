@@ -86,7 +86,7 @@ export default function AdminUsers() {
 
 function SubTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       style={{
         ...disp,
@@ -169,7 +169,7 @@ function AccountsTab() {
           <option value="COACH">Coach</option>
           <option value="ADMIN">Admin</option>
         </Select>
-        <button
+        <button className="pressable"
           onClick={() => setAdding(true)}
           style={{
             ...disp,
@@ -354,7 +354,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
             <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>New account</Mono>
             <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginTop: 2 }}>Add a user</div>
           </div>
-          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button className="pressable" aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
 
         <label style={{ display: "block", marginBottom: 12 }}>
@@ -401,7 +401,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
         {msg && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={msg.ok ? LIME : RED}>{msg.text}</Mono></div>}
 
-        <button onClick={create} disabled={busy || !email.trim()} style={{ width: "100%", ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: ON_ACCENT, background: busy || !email.trim() ? LINE : AMBER, border: "none", borderRadius: "var(--r-card)", padding: "11px 0", cursor: busy || !email.trim() ? "default" : "pointer" }}>
+        <button className="pressable" onClick={create} disabled={busy || !email.trim()} style={{ width: "100%", ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: ON_ACCENT, background: busy || !email.trim() ? LINE : AMBER, border: "none", borderRadius: "var(--r-card)", padding: "11px 0", cursor: busy || !email.trim() ? "default" : "pointer" }}>
           {busy ? "Creating…" : "Create account"}
         </button>
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
@@ -414,7 +414,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
 function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; disabled?: boolean; onClick: () => void }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       disabled={disabled}
       style={{
@@ -515,7 +515,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
             <div style={{ ...disp, fontWeight: 800, fontSize: 22, marginTop: 2 }}>{d?.name || "—"}</div>
             <Mono s={{ fontSize: fs.body }} c={ASH}>{d?.email ?? "…"}</Mono>
           </div>
-          <button aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button className="pressable" aria-label="Close" onClick={onClose} style={{ background: "none", border: "none", color: ASH, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
 
         {!d ? (
@@ -610,7 +610,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 </div>
               )}
 
-              <button
+              <button className="pressable"
                 onClick={save}
                 disabled={!dirty || saving}
                 style={{
@@ -639,7 +639,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 Permanently delete this account and everything attached to it — sessions, check-ins,
                 memberships. This cannot be undone.
               </Mono>
-              <button
+              <button className="pressable"
                 onClick={() => setConfirming(true)}
                 style={{
                   width: "100%",
@@ -813,7 +813,7 @@ function DeleteAccountDialog({
         )}
 
         <div style={{ display: "flex", gap: space.sm }}>
-          <button
+          <button className="pressable"
             onClick={onClose}
             disabled={deleting}
             style={{
@@ -832,7 +832,7 @@ function DeleteAccountDialog({
           >
             Cancel
           </button>
-          <button
+          <button className="pressable"
             onClick={confirm}
             disabled={!matches || deleting}
             style={{

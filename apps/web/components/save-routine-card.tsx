@@ -84,7 +84,7 @@ export default function SaveRoutineCard({
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6, lineHeight: 1.55 }}>
           {t("w.train.logger.routineFullBlurb")}
         </div>
-        <button
+        <button className="pressable"
           onClick={goUpgrade}
           style={{ marginTop: 12, width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "13px", cursor: "pointer" }}
         >
@@ -95,7 +95,7 @@ export default function SaveRoutineCard({
 
   if (!open)
     return (
-      <button
+      <button className="pressable"
         onClick={() => setOpen(true)}
         style={{ width: "100%", marginTop: 18, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 45%, transparent)`, borderRadius: 999, padding: "14px", cursor: "pointer" }}
       >
@@ -141,7 +141,7 @@ export default function SaveRoutineCard({
         style={{ marginTop: 11, width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 11, padding: "11px 13px", outline: "none", boxSizing: "border-box" }}
       />
       {err && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8 }}>{err}</div>}
-      <button
+      <button className="pressable"
         onClick={save}
         disabled={state === "saving"}
         style={{ marginTop: 11, width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "13px", cursor: state === "saving" ? "default" : "pointer", opacity: state === "saving" ? 0.6 : 1 }}
@@ -174,7 +174,7 @@ export function SessionRename({
 
   if (!open)
     return (
-      <button
+      <button className="pressable"
         onClick={() => setOpen(true)}
         style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 10, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px dashed ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
       >
@@ -211,7 +211,7 @@ export function SessionRename({
         placeholder={t("w.train.logger.sessionTitlePh")}
         style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "8px 12px", outline: "none", textAlign: "center" }}
       />
-      <button
+      <button className="pressable"
         aria-label="Save"
         onClick={commit}
         disabled={saving}
@@ -244,7 +244,7 @@ export function SessionNote({ sessionId }: { sessionId: string | null }) {
 
   if (!open)
     return (
-      <button
+      <button className="pressable"
         onClick={() => setOpen(true)}
         style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 10, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px dashed ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
       >
@@ -287,7 +287,7 @@ export function SessionNote({ sessionId }: { sessionId: string | null }) {
         {MOODS.map((m) => {
           const on = mood === m.value;
           return (
-            <button key={m.value} onClick={() => setMood(on ? null : m.value)} aria-label={t(m.labelKey)} aria-pressed={on}
+            <button className="pressable" key={m.value} onClick={() => setMood(on ? null : m.value)} aria-label={t(m.labelKey)} aria-pressed={on}
               style={{ width: 30, height: 30, borderRadius: 9, cursor: "pointer", fontSize: 15, lineHeight: 1, background: on ? "color-mix(in srgb, var(--color-lime) 10%, transparent)" : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}` }}>{m.emoji}</button>
           );
         })}
@@ -296,12 +296,12 @@ export function SessionNote({ sessionId }: { sessionId: string | null }) {
         {SUGGESTED_TAGS.map((tg) => {
           const on = tags.includes(tg.slug);
           return (
-            <button key={tg.slug} onClick={() => toggleTag(tg.slug)} aria-pressed={on}
+            <button className="pressable" key={tg.slug} onClick={() => toggleTag(tg.slug)} aria-pressed={on}
               style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, borderRadius: 999, padding: "5px 10px", cursor: "pointer", color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, fontWeight: on ? 600 : 400 }}>#{tagLabel(t, tg.slug)}</button>
           );
         })}
       </div>
-      <button onClick={commit} disabled={saving} style={{ marginTop: 12, width: "100%", background: C("lime"), border: "none", borderRadius: 10, padding: "10px 0", cursor: "pointer", fontWeight: 800, fontSize: fs.caption, color: "var(--on-accent)", opacity: saving ? 0.6 : 1 }}>{t("common.save")}</button>
+      <button className="pressable" onClick={commit} disabled={saving} style={{ marginTop: 12, width: "100%", background: C("lime"), border: "none", borderRadius: 10, padding: "10px 0", cursor: "pointer", fontWeight: 800, fontSize: fs.caption, color: "var(--on-accent)", opacity: saving ? 0.6 : 1 }}>{t("common.save")}</button>
     </div>
   );
 }

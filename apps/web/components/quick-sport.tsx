@@ -60,7 +60,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
     <>
       {/* IMPORT FROM THE WATCH — first, above the typing. If the training was
           already recorded on the wrist there is nothing to type at all. */}
-      <button
+      <button className="pressable"
         onClick={() => setImportOpen(true)}
         style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, background: INK2, border: `1px solid ${LIME}`, borderRadius: 18, padding: "13px 16px", marginBottom: 10, cursor: "pointer", color: CHALK, textAlign: "left" }}
       >
@@ -81,7 +81,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
         ))}
       </div>
       {/* Other — a full-width tile that opens the searchable picker for any sport */}
-      <button onClick={() => setPickerOpen(true)} style={{ marginTop: 10, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: INK2, border: `1px solid ${LINE}`, borderRadius: 18, padding: 15, cursor: "pointer", color: CHALK }}>
+      <button className="pressable" onClick={() => setPickerOpen(true)} style={{ marginTop: 10, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: INK2, border: `1px solid ${LINE}`, borderRadius: 18, padding: 15, cursor: "pointer", color: CHALK }}>
         <span style={{ ...disp, fontWeight: 900, fontSize: fs.bodyLg, color: "var(--lime-text)" }}>＋</span>
         <span style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{t("w.home.quickSport.other")}</span>
       </button>
@@ -102,7 +102,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
 // One grid card — emoji, sport name, an uppercase "tap to log" hint.
 function SportCard({ icon, label, hint, onClick }: { icon: string; label: string; hint: string; onClick: () => void }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       style={{ display: "flex", flexDirection: "column", gap: 4, background: INK2, border: `1px solid ${LINE}`, borderRadius: 18, padding: 16, cursor: "pointer", textAlign: "left", color: CHALK }}
     >
@@ -163,7 +163,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string; onClose: () => v
             <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", display: "block", marginBottom: 6 }} c={ASH}>{t("w.home.quickSport.minutes")}</Mono>
             <input value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="45" inputMode="decimal" autoFocus={!tracksDist} style={{ ...field, width: "100%" }} />
           </div>
-          <button onClick={save} disabled={saving} style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1, whiteSpace: "nowrap" }}>
+          <button className="pressable" onClick={save} disabled={saving} style={{ ...disp, fontWeight: 800, fontSize: fs.note, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "13px 20px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.5 : 1, whiteSpace: "nowrap" }}>
             {saving ? t("w.home.quickSport.saving") : t("w.home.quickSport.log")}
           </button>
         </div>
@@ -213,7 +213,7 @@ function SportPicker({ onPick, onClose }: { onPick: (name: string) => void; onCl
               {sports.map((s) => {
                 const hint = s.metrics.includes("distance") ? sportDistanceUnit(s.name) : category;
                 return (
-                  <button key={s.name} type="button" onClick={() => onPick(s.name)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "10px 15px", cursor: "pointer", textAlign: "left", border: 0, background: "transparent", color: CHALK }}>
+                  <button className="pressable" key={s.name} type="button" onClick={() => onPick(s.name)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "10px 15px", cursor: "pointer", textAlign: "left", border: 0, background: "transparent", color: CHALK }}>
                     <span style={{ width: 20, textAlign: "center", fontSize: fs.bodyLg }}>{s.icon}</span>
                     <span style={{ ...disp, flex: 1, fontWeight: 500, fontSize: fs.body }}>{s.name}</span>
                     <span style={{ ...mono, fontSize: fs.micro, color: ASH }}>{hint}</span>

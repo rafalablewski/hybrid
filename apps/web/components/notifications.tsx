@@ -72,7 +72,7 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
       <div style={{ width: "100%", maxWidth: 460 }}>
         <div style={{ display: "flex", alignItems: "center", gap: space.ms }}>
           {!embedded && (
-            <button onClick={() => router.push("/app")} aria-label={t("w.account.notifications.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "var(--back-surface)", boxShadow: "var(--back-shadow)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+            <button className="pressable" onClick={() => router.push("/app")} aria-label={t("w.account.notifications.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "var(--back-surface)", boxShadow: "var(--back-shadow)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
               {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
             </button>
           )}
@@ -95,8 +95,8 @@ export default function NotificationsScreen({ embedded = false }: { embedded?: b
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2 }}>{n.when}</div>
                   {n.actionable && (
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button onClick={() => respond(n, true)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("lime")}`, background: C("lime"), color: "var(--on-accent)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Accept" : "Approve"}</button>
-                      <button onClick={() => respond(n, false)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Decline" : "Deny"}</button>
+                      <button className="pressable" onClick={() => respond(n, true)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("lime")}`, background: C("lime"), color: "var(--on-accent)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Accept" : "Approve"}</button>
+                      <button className="pressable" onClick={() => respond(n, false)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{n.kind === "enroll_request" ? "Decline" : "Deny"}</button>
                     </div>
                   )}
                 </div>

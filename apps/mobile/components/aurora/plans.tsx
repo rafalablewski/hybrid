@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Animated, View, Text, Pressable, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { Animated, View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan } from "@hybrid/core";
@@ -7,7 +7,7 @@ import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, serifIf } from "../../lib/ui";
+import { fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { ACard, AField, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";

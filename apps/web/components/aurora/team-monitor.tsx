@@ -111,7 +111,7 @@ export default function AuroraTeamMonitor() {
       <div style={{ display: "flex", gap: space.xs, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
         <span style={kicker("ash")}>{t("w.teams.monitor.segment")}</span>
         {SEGS.map((s) => (
-          <button key={s} onClick={() => setSeg(s)} style={pill(seg === s)}>
+          <button className="pressable" key={s} onClick={() => setSeg(s)} style={pill(seg === s)}>
             {s === "all" ? `${t("w.teams.monitor.all")} ${squad.length}` : `${SEGMENT_LABELS[s]} ${counts[s] ?? 0}`}
           </button>
         ))}
@@ -120,9 +120,9 @@ export default function AuroraTeamMonitor() {
       {allTags.length > 0 && (
         <div style={{ display: "flex", gap: space.xs, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
           <span style={kicker("ash")}>{t("w.teams.monitor.tag")}</span>
-          <button onClick={() => setTag("")} style={pill(tag === "")}>{t("w.teams.monitor.all")}</button>
+          <button className="pressable" onClick={() => setTag("")} style={pill(tag === "")}>{t("w.teams.monitor.all")}</button>
           {allTags.map((tg) => (
-            <button key={tg} onClick={() => setTag(tg)} style={pill(tag === tg)}>{tg}</button>
+            <button className="pressable" key={tg} onClick={() => setTag(tg)} style={pill(tag === tg)}>{tg}</button>
           ))}
         </div>
       )}
@@ -130,7 +130,7 @@ export default function AuroraTeamMonitor() {
       <div style={{ display: "flex", gap: space.sm, marginBottom: 12, alignItems: "center" }}>
         <span style={kicker("ash")}>{t("w.teams.monitor.sortBy")}</span>
         {(["readiness", "acwr", "risk"] as const).map((k) => (
-          <button key={k} onClick={() => setSort(k)} style={pill(sort === k)}>{t(`w.teams.monitor.sort.${k}`)}</button>
+          <button className="pressable" key={k} onClick={() => setSort(k)} style={pill(sort === k)}>{t(`w.teams.monitor.sort.${k}`)}</button>
         ))}
       </div>
 

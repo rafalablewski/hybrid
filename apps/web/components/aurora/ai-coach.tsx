@@ -37,7 +37,7 @@ export default function AuroraAskCoach() {
 
   return (
     <div style={{ marginTop: 12 }}>
-      <button
+      <button className="pressable"
         onClick={ask}
         disabled={busy}
         style={{

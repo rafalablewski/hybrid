@@ -206,7 +206,7 @@ export default function AuroraTodayRail({
       >
         {/* DATE — the week strip's residue. At the ceiling it sheds its month
             and dot track (see .tight in core) and contracts to "Sun 26". */}
-        <button type="button" onClick={onOpenMonth} aria-label={t("w.home.pill.dateAria")} style={pillStyle(has("date"))}>
+        <button className="pressable" type="button" onClick={onOpenMonth} aria-label={t("w.home.pill.dateAria")} style={pillStyle(has("date"))}>
           {today ? `${today.weekdayShort} ${today.dayOfMonth}` : ""}
           <span
             style={{
@@ -240,7 +240,7 @@ export default function AuroraTodayRail({
 
         {/* DONE — today's verdict. Only a finished day earns the accent, so the
             rail reports rather than nags. */}
-        <button
+        <button className="pressable"
           type="button"
           onClick={onOpenDone}
           aria-label={doneAria}
@@ -256,7 +256,7 @@ export default function AuroraTodayRail({
 
         {/* READY — the check-in's residue. Not checked in yet is the state that
             matters most in the evening: the pill becomes the prompt. */}
-        <button
+        <button className="pressable"
           type="button"
           onClick={onOpenCheckin}
           aria-label={t("w.home.pill.readyAria")}

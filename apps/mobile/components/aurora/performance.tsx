@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
+import { View, Text, ScrollView, TextInput } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -18,7 +18,7 @@ import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { fs, space, F, serifIf } from "../../lib/ui";
+import { fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, ABack, RADIUS, Ring, Spark, withAlpha } from "./kit";
 import AuroraVolume from "./volume";
 import AuroraTrends from "./trends";

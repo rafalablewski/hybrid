@@ -81,7 +81,7 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
       {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 16, textAlign: "center", lineHeight: 1.5 }}>{msg}</div>}
 
       {/* CTA */}
-      <button
+      <button className="pressable"
         onClick={act}
         disabled={busy}
         // sand (#d0cd94) is a theme-fixed LIGHT fill, so the ink on it is a fixed near-black (not --color-ink, which flips light in the light theme)
@@ -89,7 +89,7 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
       >
         {busy ? t("w.account.upgrade.starting") : paid ? `${t("w.account.upgrade.switch-full")}` : t("w.account.upgrade.start-trial")}
       </button>
-      <button onClick={onClose} style={{ width: "100%", background: "none", border: "none", padding: "16px", marginTop: 4, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>{t("w.account.upgrade.maybe-later")}</button>
+      <button className="pressable" onClick={onClose} style={{ width: "100%", background: "none", border: "none", padding: "16px", marginTop: 4, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>{t("w.account.upgrade.maybe-later")}</button>
     </Sheet>
   );
 }

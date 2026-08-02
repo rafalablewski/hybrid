@@ -103,7 +103,7 @@ export default function SocialFeed() {
         feed.map((item) => (
           <div key={item.id} style={card(aurora, { marginBottom: 14 })}>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <button onClick={() => setDrawer(item.author.handle)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              <button className="pressable" onClick={() => setDrawer(item.author.handle)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
                 <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={42} />
               </button>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -114,7 +114,7 @@ export default function SocialFeed() {
                 <div style={{ color: C("ash"), fontSize: 12, fontFamily: "var(--font-mono)" }}>{item.when}</div>
               </div>
               {item.subjectType === "post" && item.mine && (
-                <button onClick={() => del(item)} aria-label={t("w.social.deletePostAria")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
+                <button className="pressable" onClick={() => del(item)} aria-label={t("w.social.deletePostAria")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
               )}
             </div>
             {item.body && <p style={{ color: C("chalk"), fontSize: 14, margin: "10px 0 0", lineHeight: 1.5 }}>{item.body}</p>}
@@ -129,10 +129,10 @@ export default function SocialFeed() {
               </div>
             )}
             <div style={{ display: "flex", gap: 16, marginTop: 12, alignItems: "center" }}>
-              <button onClick={() => cheer(item)} style={{ background: "none", border: "none", cursor: "pointer", color: item.kudosedByMe ? C("lime") : C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}>
+              <button className="pressable" onClick={() => cheer(item)} style={{ background: "none", border: "none", cursor: "pointer", color: item.kudosedByMe ? C("lime") : C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}>
                 {item.kudosedByMe ? "👏" : "👏"} {item.kudos > 0 ? item.kudos : ""} {t("w.social.cheer")}
               </button>
-              <button onClick={() => setOpen(open === item.id ? null : item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13 }}>
+              <button className="pressable" onClick={() => setOpen(open === item.id ? null : item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13 }}>
                 💬 {item.comments > 0 ? item.comments : ""} {t("w.social.comment")}
               </button>
             </div>

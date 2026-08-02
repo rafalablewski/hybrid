@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, type DimensionValue } from "react-native";
+import { View, Text, TextInput, type DimensionValue } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   volumeStatus, weeklyMuscleSets, athleteLandmarks,
@@ -22,7 +22,7 @@ import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "../../lib/
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, serifIf, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, space, F, serifIf, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
 import { haptic } from "../../lib/haptics";
 

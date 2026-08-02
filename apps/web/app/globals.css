@@ -514,17 +514,34 @@ html {
 
 /* Pressed/hover feedback — the ONE utility every interactive element shares
    (buttons, rows, chips, tiles). Hover lifts the surface a touch brighter;
-   :active scales down on the nav spring so a click physically lands. Kept
-   subtle so it can sit on ANY surface (solid ink2, glass, lime fill). */
+   :active scales down so a click physically lands. Kept subtle so it can sit on
+   ANY surface (solid ink2, glass, lime fill).
+
+   DOWN 120ms / UP 200ms, matching the mobile PressScale twin: releasing is a
+   recovery, not an input, so it is gentler than the press. A symmetric timing
+   made taps feel snatched.
+
+   The scale rides the `scale` PROPERTY rather than `transform`, so it composes
+   with a component's own inline transform instead of being overridden by it —
+   this codebase styles inline almost everywhere, and an inline transform beats
+   a class rule every time. */
 .pressable {
-  transition: transform 0.16s var(--e-press, cubic-bezier(0.2, 0.8, 0.2, 1)), filter 0.16s ease;
+  scale: 1;
+  transition: scale 200ms var(--e-press, cubic-bezier(0.2, 0.8, 0.2, 1)), filter 200ms ease;
 }
 @media (hover: hover) {
   .pressable:hover:not(:disabled) { filter: brightness(1.08); }
 }
-.pressable:active:not(:disabled) { transform: scale(0.97); filter: brightness(0.96); }
+.pressable:active:not(:disabled) {
+  scale: 0.97;
+  filter: brightness(0.96);
+  transition: scale 120ms var(--e-press, cubic-bezier(0.2, 0.8, 0.2, 1)), filter 120ms ease;
+}
 @media (prefers-reduced-motion: reduce) {
-  .pressable, .pressable:active:not(:disabled) { transform: none; }
+  /* SUBSTITUTE, don't delete: the scale goes, an opacity dip stays, so a press
+     is still acknowledged. */
+  .pressable, .pressable:active:not(:disabled) { scale: 1; }
+  .pressable:active:not(:disabled) { opacity: 0.72; }
 }
 
 /* Win pop-in — a PR/achievement should LAND, not just appear (Today recap badges).

@@ -20,7 +20,7 @@ export default function AdminGuidance() {
         {GUIDES.length > 1 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs, marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${LINE}` }}>
             {GUIDES.map((g) => (
-              <button
+              <button className="pressable"
                 key={g.id}
                 onClick={() => {
                   setGuideId(g.id);
@@ -49,7 +49,7 @@ export default function AdminGuidance() {
         </Mono>
         <nav>
           {guide.sections.map((s) => (
-            <button
+            <button className="pressable"
               key={s.id}
               onClick={() => {
                 setActive(s.id);
@@ -239,7 +239,7 @@ function Cmd({ lines }: { lines: string }) {
       >
         {lines}
       </pre>
-      <button
+      <button className="pressable"
         onClick={copy}
         style={{
           position: "absolute",

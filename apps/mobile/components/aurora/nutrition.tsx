@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Alert, ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Path, Rect, Circle, SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -59,7 +59,7 @@ import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { fs, space, F, PressScale } from "../../lib/ui";
+import { fs, space, F, PressScale, PressScale as Pressable } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS, Ring, withAlpha } from "./kit";
 import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";

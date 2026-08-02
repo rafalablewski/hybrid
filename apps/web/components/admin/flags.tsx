@@ -125,7 +125,7 @@ export default function AdminFlags() {
                 >
                   {AUDIENCES.map((a) => <option key={a} value={a}>{a}</option>)}
                 </Select>
-                <button
+                <button className="pressable"
                   disabled={busy === f.key}
                   onClick={() => upsert(f.key, { enabled: !f.enabled, audience: f.audience })}
                   style={toggle(f.enabled)}
@@ -134,7 +134,7 @@ export default function AdminFlags() {
                   <span style={knob(f.enabled)} />
                 </button>
                 {f.overridden && (
-                  <button disabled={busy === f.key} onClick={() => reset(f.key)} style={resetBtn} title="Reset to default">
+                  <button className="pressable" disabled={busy === f.key} onClick={() => reset(f.key)} style={resetBtn} title="Reset to default">
                     ↺ reset
                   </button>
                 )}
@@ -210,7 +210,7 @@ function PremiumAccentPicker({ value, onPick, busy }: { value: unknown; onPick: 
           const swatch = resolvePremiumAccent(k, "dark").fill;
           const on = current === k;
           return (
-            <button key={k} disabled={busy} onClick={() => onPick(k)} title={k}
+            <button className="pressable" key={k} disabled={busy} onClick={() => onPick(k)} title={k}
               style={{ width: 30, height: 30, borderRadius: 8, background: swatch, cursor: busy ? "default" : "pointer", border: on ? `2px solid ${CHALK}` : `1px solid ${LINE}` }} />
           );
         })}
@@ -221,7 +221,7 @@ function PremiumAccentPicker({ value, onPick, busy }: { value: unknown; onPick: 
           aria-label="Custom premium accent hex"
           style={{ ...mono, fontSize: fs.caption, width: 104, padding: "7px 9px", borderRadius: "var(--r-field)", border: `1px solid ${hex.length > 1 && !hexValid ? RED : LINE}`, background: INK, color: CHALK }}
         />
-        <button disabled={busy || !hexValid || hex.toLowerCase() === current} onClick={() => onPick(hex.toLowerCase())} style={{ ...resetBtn, opacity: hexValid && hex.toLowerCase() !== current ? 1 : 0.45 }}>apply</button>
+        <button className="pressable" disabled={busy || !hexValid || hex.toLowerCase() === current} onClick={() => onPick(hex.toLowerCase())} style={{ ...resetBtn, opacity: hexValid && hex.toLowerCase() !== current ? 1 : 0.45 }}>apply</button>
       </div>
       <div style={{ display: "flex", gap: 18, marginTop: 12, flexWrap: "wrap" }}>
         <ContrastReadout label="Accent text on card" fg={r.text} bg={CARD_DARK} ratio={textR.ratio} normal={textR.normal} />

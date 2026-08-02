@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
+import { View, Text, TextInput, ScrollView } from "react-native";
 import { optimizeForEvent, localDayKey } from "@hybrid/core";
 import { fetchEvents, createEvent, type EventRow } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 

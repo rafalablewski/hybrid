@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { View, Text, Pressable, Modal, ScrollView } from "react-native";
+import { View, Text, Modal, ScrollView } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraBodyMap from "./body-map";
 

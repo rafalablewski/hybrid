@@ -89,7 +89,7 @@ export default function AuroraOtherSports({
             row — the cluster's one "see more" rule. The old full-width "+N"
             outline button below the rail is retired; its count lives here. */}
         {rest > 0 && (
-          <button
+          <button className="pressable"
             onClick={() => setExpanded(!expanded)}
             aria-expanded={expanded}
             style={{
@@ -119,7 +119,7 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
   const interactive = !!onOpen;
 
   return (
-    <button
+    <button className="pressable"
       onClick={onOpen ? () => onOpen(lane.sport) : undefined}
       aria-label={lane.sport}
       disabled={!interactive}

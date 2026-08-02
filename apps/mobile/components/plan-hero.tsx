@@ -1,16 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import {
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from "react-native";
+import { Animated, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,7 +10,7 @@ import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
 import { useTheme, txt } from "../lib/theme";
-import { fs, F, serifIf, useEntrance } from "../lib/ui";
+import { fs, F, serifIf, useEntrance, PressScale as Pressable } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { AuroraField, withAlpha } from "./aurora/kit";
 import { MetaLine } from "./aurora/meta";

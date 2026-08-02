@@ -81,18 +81,18 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.ms }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.analyze.trends.exerciseAnalytics")}</span>
           <div style={{ display: "flex", gap: space.xxs }}>
-            {PERIODS.map((p) => <button key={p.id} onClick={() => setPeriod(p.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "4px 12px", borderRadius: 999, cursor: "pointer", color: period === p.id ? C("ink") : C("ash"), background: period === p.id ? C("lime") : "transparent", border: `1px solid ${period === p.id ? C("lime") : C("line")}` }}>{t(p.key)}</button>)}
+            {PERIODS.map((p) => <button className="pressable" key={p.id} onClick={() => setPeriod(p.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "4px 12px", borderRadius: 999, cursor: "pointer", color: period === p.id ? C("ink") : C("ash"), background: period === p.id ? C("lime") : "transparent", border: `1px solid ${period === p.id ? C("lime") : C("line")}` }}>{t(p.key)}</button>)}
           </div>
         </div>
         <div style={{ marginTop: 12, overflowX: "auto", maxWidth: "100%" }}>
           <div style={{ minWidth: 420 }}>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
               {([["w.analyze.trends.colExercise", "name"], ["w.analyze.trends.colFreq", "sessions"], ["w.analyze.trends.colHeaviest", "topWeight"], ["w.analyze.trends.colVolume", "volume"], ["w.analyze.trends.colTrend", null]] as const).map(([h, k]) => (
-                <button key={h} disabled={!k} onClick={() => k && sortBy(k)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? C("lime") : C("ash") }}>{t(h)}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</button>
+                <button className="pressable" key={h} disabled={!k} onClick={() => k && sortBy(k)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? C("lime") : C("ash") }}>{t(h)}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</button>
               ))}
             </div>
             {sortedTable.map((r) => { const tr = TREND_GLYPH[r.trend]; return (
-              <button key={r.name} onClick={() => onOpenExercise?.(r.name)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, padding: "8px 0", border: "none", borderTop: `1px solid ${C("line")}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
+              <button className="pressable" key={r.name} onClick={() => onOpenExercise?.(r.name)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, padding: "8px 0", border: "none", borderTop: `1px solid ${C("line")}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
                 <span style={{ color: onOpenExercise ? C("lime") : C("chalk") }}>{r.name}</span>
                 <span>{r.sessions}×</span>
                 <span style={{ color: r.kind === "strength" ? C("chalk") : C("ash") }}>{r.kind === "strength" ? fmtWeight(r.topWeight, units) : "–"}</span>

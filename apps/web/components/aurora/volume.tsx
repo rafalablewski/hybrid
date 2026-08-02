@@ -242,7 +242,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
           )}
           <p style={{ fontSize: fs.bodyLg, color: C("ash"), marginTop: 6, marginBottom: 0 }}>{t("w.analyze.vol.subtitle")}</p>
         </div>
-        <button
+        <button className="pressable"
           onClick={() => { setEditing((v) => !v); setOpen(null); }}
           style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, cursor: "pointer", color: editing ? C("lime") : C("ash"), background: editing ? mix("lime", 12) : "transparent", border: `1px solid ${editing ? C("lime") : C("line")}` }}
         >
@@ -272,7 +272,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
                 const on = picked === r.muscle;
                 const label = ml(r.muscle);
                 return (
-                  <button
+                  <button className="pressable"
                     key={r.muscle}
                     onClick={() => setPicked(on ? null : r.muscle)}
                     aria-label={`${label} – ${setsLabel(r.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[r.zone])}`}
@@ -337,7 +337,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
 
       {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
       <section style={card}>
-        <button
+        <button className="pressable"
           onClick={() => setGloss((v) => !v)} aria-expanded={gloss}
           style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
         >
@@ -357,7 +357,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
       </section>
 
       {editing && customized && (
-        <button onClick={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 4, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}>
+        <button className="pressable" onClick={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 4, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}>
           {t("w.analyze.vol.resetDefaults")}
         </button>
       )}
@@ -408,7 +408,7 @@ function Prescription({ title, why, items, token, ml, unit }: {
 /** A pill switch — the same control the block and adaptive toggles both use. */
 function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick} role="switch" aria-checked={on}
       style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 12px", borderRadius: 999, cursor: "pointer", color: on ? C("lime") : C("ash"), background: on ? mix("lime", 12) : "transparent", border: `1px solid ${on ? C("lime") : C("line")}` }}
     >
@@ -426,9 +426,9 @@ function Stepper({ label, value, suffix, min, max, onChange }: {
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
       <span style={{ fontSize: fs.body, color: C("ash") }}>{label}</span>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button style={btn} aria-label={`${label} −`} onClick={() => onChange(Math.max(min, value - 1))}>−</button>
+        <button className="pressable" style={btn} aria-label={`${label} −`} onClick={() => onChange(Math.max(min, value - 1))}>−</button>
         <span style={{ ...mono(fs.body), minWidth: 46, textAlign: "center" }}>{value}{suffix ? ` ${suffix}` : ""}</span>
-        <button style={btn} aria-label={`${label} +`} onClick={() => onChange(Math.min(max, value + 1))}>+</button>
+        <button className="pressable" style={btn} aria-label={`${label} +`} onClick={() => onChange(Math.min(max, value + 1))}>+</button>
       </div>
     </div>
   );
@@ -724,7 +724,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           </div>
 
           {Object.keys(stored).length > 0 && (
-            <button
+            <button className="pressable"
               onClick={() => setLoggerPref("volumeProfile", {})}
               style={{ marginTop: 16, padding: "8px 0", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}
             >
@@ -762,7 +762,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
   const verdict = target ? targetVerdict(s.sets, target.target) : null;
   return (
     <div style={{ padding: "12px 0" }}>
-      <button
+      <button className="pressable"
         onClick={onToggle} aria-expanded={expanded}
         aria-label={`${label} – ${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[s.zone])}`}
         style={{ width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit", textAlign: "left" }}
@@ -808,7 +808,7 @@ function MuscleRow({ s, label, token, target, history, expanded, editing, zone, 
         {BAND_KEYS.map((k) => {
           const on = zone === k;
           return (
-            <button
+            <button className="pressable"
               key={k} onClick={() => onZone(k)} aria-pressed={on}
               aria-label={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
               style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", ...mono(9), letterSpacing: ".08em", color: on ? C("lime") : C("ash"), opacity: zone && !on ? 0.4 : 1, transition: "opacity .2s ease, color .2s ease" }}

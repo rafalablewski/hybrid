@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import {
   otherSportLanes, sportWeekBars, OTHER_SPORT_CAP, ago,
   parentageHours, progressParentage,
@@ -7,7 +7,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf } from "../../lib/ui";
+import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
 

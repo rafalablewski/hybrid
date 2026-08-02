@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit } from "@hybrid/core";
 import { fetchAttestations, requestAttestation } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
-import { fs, space, F } from "../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../lib/ui";
 
 // Verified Strength Record — the attestation panel on a session's PR list.
 // Mirrors apps/web/components/pr-attestation.tsx: tier badge per PR

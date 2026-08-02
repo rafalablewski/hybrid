@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, Image, Alert } from "react-native";
+import { View, Text, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 

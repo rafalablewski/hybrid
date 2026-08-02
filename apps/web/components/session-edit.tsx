@@ -156,7 +156,7 @@ export function SessionEditSheet({
                   ))}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
                     <span style={{ ...mono, fontSize: fs.caption, color: ASH }}>{t("session.edit.emptySet")}</span>
-                    <button
+                    <button className="pressable"
                       onClick={() => addSet(i)}
                       style={{ ...mono, fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
                     >
@@ -186,7 +186,7 @@ export function SessionEditSheet({
 
       <div style={{ display: "flex", gap: space.sm, marginTop: space.md }}>
         <Button label={t("common.cancel")} variant="outline" onClick={onClose} />
-        <button
+        <button className="pressable"
           onClick={() => void save()}
           disabled={saving || !dirty}
           style={{

@@ -45,7 +45,7 @@ export default function Error({
         {error.digest ? ` (ref: ${error.digest})` : ""}
       </p>
       <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
-        <button
+        <button className="pressable"
           onClick={reset}
           style={{
             padding: "11px 20px",

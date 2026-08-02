@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, ScrollView, Animated, Easing, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, Animated, Easing, useWindowDimensions } from "react-native";
 import { feedCardView } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
-import { F, serifIf } from "../../lib/ui";
+import { F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";

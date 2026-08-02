@@ -100,7 +100,7 @@ export function Pill({
   tone?: string;
 }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       style={{
         padding: "7px 14px",
@@ -136,7 +136,7 @@ export function Btn({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       disabled={disabled}
       style={{

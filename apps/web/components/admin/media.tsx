@@ -182,7 +182,7 @@ export default function AdminMedia() {
               if (fileRef.current) fileRef.current.value = "";
             }}
           />
-          <button disabled={busy || !supabase} onClick={() => fileRef.current?.click()} style={{ ...primaryBtn, opacity: busy || !supabase ? 0.6 : 1 }}>
+          <button className="pressable" disabled={busy || !supabase} onClick={() => fileRef.current?.click()} style={{ ...primaryBtn, opacity: busy || !supabase ? 0.6 : 1 }}>
             {busy ? "Uploading…" : "↑ Upload media"}
           </button>
         </div>
@@ -228,8 +228,8 @@ export default function AdminMedia() {
                   <input value={editForm.alt} onChange={(e) => setEditForm({ ...editForm, alt: e.target.value })} placeholder="Alt / caption" style={{ ...input, marginTop: 6 }} />
                   <input value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} placeholder="tags, comma-separated" style={{ ...input, marginTop: 6 }} />
                   <div style={{ display: "flex", gap: space.xs, marginTop: 8 }}>
-                    <button disabled={busy} onClick={() => patch(a.id, { title: editForm.title, alt: editForm.alt || null, tags: editForm.tags.split(",").map((t) => t.trim()).filter(Boolean) })} style={miniBtn}>Save</button>
-                    <button disabled={busy} onClick={() => setEdit(null)} style={miniBtn}>Cancel</button>
+                    <button className="pressable" disabled={busy} onClick={() => patch(a.id, { title: editForm.title, alt: editForm.alt || null, tags: editForm.tags.split(",").map((t) => t.trim()).filter(Boolean) })} style={miniBtn}>Save</button>
+                    <button className="pressable" disabled={busy} onClick={() => setEdit(null)} style={miniBtn}>Cancel</button>
                   </div>
                 </div>
               ) : (
@@ -237,15 +237,15 @@ export default function AdminMedia() {
                   <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</div>
                   {a.tags.length > 0 && <div style={{ marginTop: 6 }}>{a.tags.map((t) => <Chip key={t} c={ASH}>{t}</Chip>)}</div>}
                   <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 10 }}>
-                    <button onClick={() => copy(a.url, a.id)} style={miniBtn}>{copied === a.id ? "Copied ✓" : "Copy URL"}</button>
-                    <button disabled={busy} onClick={() => openEdit(a)} style={miniBtn}>Edit</button>
+                    <button className="pressable" onClick={() => copy(a.url, a.id)} style={miniBtn}>{copied === a.id ? "Copied ✓" : "Copy URL"}</button>
+                    <button className="pressable" disabled={busy} onClick={() => openEdit(a)} style={miniBtn}>Edit</button>
                     {a.status !== "published" ? (
-                      <button disabled={busy} onClick={() => patch(a.id, { status: "published" })} style={miniBtn}>Publish</button>
+                      <button className="pressable" disabled={busy} onClick={() => patch(a.id, { status: "published" })} style={miniBtn}>Publish</button>
                     ) : (
-                      <button disabled={busy} onClick={() => patch(a.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
+                      <button className="pressable" disabled={busy} onClick={() => patch(a.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
                     )}
-                    {a.status !== "archived" && <button disabled={busy} onClick={() => patch(a.id, { status: "archived" })} style={miniBtn}>Archive</button>}
-                    <button disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
+                    {a.status !== "archived" && <button className="pressable" disabled={busy} onClick={() => patch(a.id, { status: "archived" })} style={miniBtn}>Archive</button>}
+                    <button className="pressable" disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
                   </div>
                 </>
               )}

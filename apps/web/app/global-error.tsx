@@ -41,7 +41,7 @@ export default function GlobalError({
           The app failed to start. Please retry.
           {error.digest ? ` (ref: ${error.digest})` : ""}
         </p>
-        <button
+        <button className="pressable"
           onClick={reset}
           style={{
             padding: "11px 20px",

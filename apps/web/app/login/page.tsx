@@ -227,7 +227,7 @@ function ClassicLoginPage() {
                 </Mono>
               )}
             </div>
-            <button
+            <button className="pressable"
               disabled={busy || !isValidTotpCode(mfaCode)}
               onClick={verifyMfa}
               style={{ ...disp, fontWeight: 800, fontSize: fs.note, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1, border: "none", background: LIME, color: ON_ACCENT }}
@@ -235,7 +235,7 @@ function ClassicLoginPage() {
               {busy ? "…" : "Verify →"}
             </button>
             <div style={{ textAlign: "center", marginTop: 16 }}>
-              <button onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
+              <button className="pressable" onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={{ background: "none", border: "none", cursor: "pointer" }}>
                 <Mono s={{ fontSize: fs.caption }} c={ASH}>← cancel</Mono>
               </button>
             </div>
@@ -252,7 +252,7 @@ function ClassicLoginPage() {
               {ROLE_INFO.map((r) => {
                 const on = role === r.id;
                 return (
-                  <button
+                  <button className="pressable"
                     key={r.id}
                     onClick={() => setRole(r.id)}
                     style={{
@@ -282,7 +282,7 @@ function ClassicLoginPage() {
         )}
 
         {provs.map((p) => (
-          <button
+          <button className="pressable"
             key={p.key}
             disabled={busy}
             onClick={() => (live ? oauth(p.key) : demoEnter(p.key))}
@@ -358,7 +358,7 @@ function ClassicLoginPage() {
           )}
         </div>
 
-        <button
+        <button className="pressable"
           disabled={busy}
           onClick={() => (live ? emailSubmit() : demoEnter("email"))}
           style={{
@@ -380,7 +380,7 @@ function ClassicLoginPage() {
 
         {live && (
           <div style={{ textAlign: "center", marginTop: 14 }}>
-            <button
+            <button className="pressable"
               onClick={() => {
                 setMode((m) => (m === "signin" ? "signup" : "signin"));
                 setError("");
@@ -399,7 +399,7 @@ function ClassicLoginPage() {
         )}
 
         <div style={{ textAlign: "center", marginTop: 22 }}>
-          <button onClick={() => router.push("/")} style={{ background: "none", border: "none", cursor: "pointer" }}>
+          <button className="pressable" onClick={() => router.push("/")} style={{ background: "none", border: "none", cursor: "pointer" }}>
             <Mono s={{ fontSize: fs.caption, letterSpacing: ".06em", textTransform: "uppercase" }} c={ASH}>
               ← back
             </Mono>

@@ -76,7 +76,7 @@ export default function AdminEmail() {
 
       <div style={{ display: "flex", gap: space.xs, marginBottom: 18, flexWrap: "wrap" }}>
         {(["overview", "campaigns", "sequences"] as const).map((t) => (
-          <button
+          <button className="pressable"
             key={t}
             onClick={() => setTab(t)}
             style={{
@@ -247,8 +247,8 @@ function CampaignsPane({ onChange }: { onChange: () => void }) {
         </label>
         {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={RED}>{err}</Mono></div>}
         <div style={{ display: "flex", gap: space.sm }}>
-          <button onClick={save} disabled={busy} style={primaryBtn(!busy)}>{busy ? "Saving…" : "Save"}</button>
-          <button onClick={() => setEditing(null)} style={ghostBtn()}>Cancel</button>
+          <button className="pressable" onClick={save} disabled={busy} style={primaryBtn(!busy)}>{busy ? "Saving…" : "Save"}</button>
+          <button className="pressable" onClick={() => setEditing(null)} style={ghostBtn()}>Cancel</button>
         </div>
       </Card>
     );
@@ -258,7 +258,7 @@ function CampaignsPane({ onChange }: { onChange: () => void }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <Mono s={{ fontSize: fs.body }} c={ASH}>One-off broadcasts to an audience segment.</Mono>
-        <button onClick={openNew} style={primaryBtn(true)}>+ New campaign</button>
+        <button className="pressable" onClick={openNew} style={primaryBtn(true)}>+ New campaign</button>
       </div>
       {unavailable && <Card glass={false} style={{ marginBottom: 12, borderLeft: `3px solid ${AMBER}` }}><Mono c={AMBER}>Run reference/sql-email.sql to create the email tables.</Mono></Card>}
       {list?.length === 0 && !unavailable && <Mono c={ASH}>No campaigns yet.</Mono>}
@@ -277,9 +277,9 @@ function CampaignsPane({ onChange }: { onChange: () => void }) {
             <div style={{ display: "flex", gap: space.xs, flexShrink: 0 }}>
               {c.status !== "sent" && c.status !== "sending" && (
                 <>
-                  <button onClick={() => send(c)} disabled={busy} style={smallBtn(LIME)}>Send</button>
-                  <button onClick={() => openEdit(c)} style={smallBtn(CHALK)}>Edit</button>
-                  <button onClick={() => remove(c)} style={smallBtn(RED)}>Delete</button>
+                  <button className="pressable" onClick={() => send(c)} disabled={busy} style={smallBtn(LIME)}>Send</button>
+                  <button className="pressable" onClick={() => openEdit(c)} style={smallBtn(CHALK)}>Edit</button>
+                  <button className="pressable" onClick={() => remove(c)} style={smallBtn(RED)}>Delete</button>
                 </>
               )}
             </div>
@@ -391,7 +391,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <Mono s={{ fontSize: fs.caption }} c={AMBER}>Step {i + 1}</Mono>
               {editing.steps.length > 1 && (
-                <button onClick={() => setEditing({ ...editing, steps: editing.steps.filter((_, j) => j !== i) })} style={smallBtn(RED)}>Remove</button>
+                <button className="pressable" onClick={() => setEditing({ ...editing, steps: editing.steps.filter((_, j) => j !== i) })} style={smallBtn(RED)}>Remove</button>
               )}
             </div>
             <label style={{ display: "block", marginBottom: 8 }}>
@@ -408,7 +408,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
             </label>
           </div>
         ))}
-        <button onClick={() => setEditing({ ...editing, steps: [...editing.steps, { delayHours: 24, subject: "", body: "", _key: newKey() }] })} style={ghostBtn()}>+ Add step</button>
+        <button className="pressable" onClick={() => setEditing({ ...editing, steps: [...editing.steps, { delayHours: 24, subject: "", body: "", _key: newKey() }] })} style={ghostBtn()}>+ Add step</button>
 
         <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "16px 0", cursor: "pointer" }}>
           <input type="checkbox" checked={editing.active} onChange={(e) => setEditing({ ...editing, active: e.target.checked })} />
@@ -417,8 +417,8 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
 
         {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }} c={RED}>{err}</Mono></div>}
         <div style={{ display: "flex", gap: space.sm }}>
-          <button onClick={save} disabled={busy} style={primaryBtn(!busy)}>{busy ? "Saving…" : "Save sequence"}</button>
-          <button onClick={() => setEditing(null)} style={ghostBtn()}>Cancel</button>
+          <button className="pressable" onClick={save} disabled={busy} style={primaryBtn(!busy)}>{busy ? "Saving…" : "Save sequence"}</button>
+          <button className="pressable" onClick={() => setEditing(null)} style={ghostBtn()}>Cancel</button>
         </div>
       </Card>
     );
@@ -428,7 +428,7 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <Mono s={{ fontSize: fs.body }} c={ASH}>Automated lifecycle drips — welcome, win-back, upgrade nudges.</Mono>
-        <button onClick={() => { setErr(null); setEditing({ ...EMPTY_SEQUENCE, steps: keyed([{ delayHours: 0, subject: "", body: "" }]) }); }} style={primaryBtn(true)}>+ New sequence</button>
+        <button className="pressable" onClick={() => { setErr(null); setEditing({ ...EMPTY_SEQUENCE, steps: keyed([{ delayHours: 0, subject: "", body: "" }]) }); }} style={primaryBtn(true)}>+ New sequence</button>
       </div>
       {unavailable && <Card glass={false} style={{ marginBottom: 12, borderLeft: `3px solid ${AMBER}` }}><Mono c={AMBER}>Run reference/sql-email.sql to create the email tables.</Mono></Card>}
       {list?.length === 0 && !unavailable && <Mono c={ASH}>No sequences yet.</Mono>}
@@ -445,9 +445,9 @@ function SequencesPane({ onChange }: { onChange: () => void }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: space.xs, flexShrink: 0 }}>
-              <button onClick={() => toggleActive(s)} style={smallBtn(s.active ? AMBER : LIME)}>{s.active ? "Pause" : "Activate"}</button>
-              <button onClick={() => { setErr(null); setEditing({ ...s, steps: keyed(s.steps) }); }} style={smallBtn(CHALK)}>Edit</button>
-              <button onClick={() => remove(s)} style={smallBtn(RED)}>Delete</button>
+              <button className="pressable" onClick={() => toggleActive(s)} style={smallBtn(s.active ? AMBER : LIME)}>{s.active ? "Pause" : "Activate"}</button>
+              <button className="pressable" onClick={() => { setErr(null); setEditing({ ...s, steps: keyed(s.steps) }); }} style={smallBtn(CHALK)}>Edit</button>
+              <button className="pressable" onClick={() => remove(s)} style={smallBtn(RED)}>Delete</button>
             </div>
           </div>
         </Card>

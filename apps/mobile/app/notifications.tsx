@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { buildActivityFeed, relativeTime, type ActivityAccent, type LoggedSession, type SocialNotifItem } from "@hybrid/core";
 import { fetchSessions, fetchAssignments, type Assignment } from "../lib/api";
 import { sapi, respondFollow, respondEnrollment } from "../lib/social-api";
 import { useTheme, txt } from "../lib/theme";
-import { fs, space, F } from "../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../lib/ui";
 import { ABack, AuroraScreen, ACard, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { pacePerKm, mmss } from "@hybrid/core";
 import { createSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";

@@ -157,7 +157,7 @@ export default function ExerciseWidgetRail({
           );
         })}
         {/* The rail's exit — the trailing ghost tile, at tile scale. */}
-        <button
+        <button className="pressable"
           onClick={onAll}
           style={{
             flex: "0 0 132px", scrollSnapAlign: "start", cursor: "pointer",

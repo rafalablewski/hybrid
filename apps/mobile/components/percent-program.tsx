@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, TextInput, ScrollView, Animated, Easing } from "react-native";
+import { View, Text, TextInput, ScrollView, Animated, Easing } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   planProgramView,
@@ -41,7 +41,7 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { fs, F, serifIf } from "../lib/ui";
+import { fs, F, serifIf, PressScale as Pressable } from "../lib/ui";
 import { withAlpha } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill } from "./plan-hero";

@@ -71,13 +71,13 @@ export default function AuroraCompetition() {
             {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={input} />
-          <button onClick={create} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 20px", cursor: "pointer" }}>{t("w.train.comp.addEvent")}</button>
+          <button className="pressable" onClick={create} style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 20px", cursor: "pointer" }}>{t("w.train.comp.addEvent")}</button>
         </div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
           {events.map((e) => {
             const active = e.id === selected;
             return (
-              <button key={e.id} onClick={() => setSelected(e.id)} style={{ ...mono, fontSize: fs.caption, padding: "8px 16px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink"), color: active ? "var(--lime-text)" : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` }}>
+              <button className="pressable" key={e.id} onClick={() => setSelected(e.id)} style={{ ...mono, fontSize: fs.caption, padding: "8px 16px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink"), color: active ? "var(--lime-text)" : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` }}>
                 {e.name} – {new Date(e.date).toLocaleDateString()}
               </button>
             );

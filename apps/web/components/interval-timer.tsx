@@ -65,7 +65,7 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ display: "flex", gap: space.ms, alignItems: "center" }}>
           {!embedded && (
-            <button onClick={() => router.push("/app")} aria-label={t("w.train.timer.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "var(--back-surface)", boxShadow: "var(--back-shadow)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+            <button className="pressable" onClick={() => router.push("/app")} aria-label={t("w.train.timer.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "var(--back-surface)", boxShadow: "var(--back-shadow)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
               {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
             </button>
           )}
@@ -117,8 +117,8 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
         </div>
 
         <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center", marginTop: 22 }}>
-          <button aria-label={t("common.reset")} onClick={reset} style={{ width: 56, height: 56, borderRadius: 28, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", fontSize: fs.title }}>↺</button>
-          <button aria-label={running ? t("common.pause") : pos.done ? t("common.reset") : t("common.play")} onClick={() => (pos.done ? reset() : setRunning((r) => !r))} style={{ width: 78, height: 78, borderRadius: 39, background: C("lime"), color: "var(--on-accent)", border: "none", cursor: "pointer", fontWeight: 900, fontSize: 24 }}>
+          <button className="pressable" aria-label={t("common.reset")} onClick={reset} style={{ width: 56, height: 56, borderRadius: 28, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", fontSize: fs.title }}>↺</button>
+          <button className="pressable" aria-label={running ? t("common.pause") : pos.done ? t("common.reset") : t("common.play")} onClick={() => (pos.done ? reset() : setRunning((r) => !r))} style={{ width: 78, height: 78, borderRadius: 39, background: C("lime"), color: "var(--on-accent)", border: "none", cursor: "pointer", fontWeight: 900, fontSize: 24 }}>
             {running ? "❚❚" : pos.done ? "↺" : "▶"}
           </button>
           <div style={{ width: 56 }} />
@@ -140,7 +140,7 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
 function Stepper({ label, value, onMinus, onPlus }: { label: string; value: string; onMinus: () => void; onPlus: () => void }) {
   const C = (v: string) => `var(--color-${v})`;
   const btn = (t: string, fn: () => void) => (
-    <button onClick={fn} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("lime"), cursor: "pointer", fontWeight: 900, fontSize: fs.heading }}>{t}</button>
+    <button className="pressable" onClick={fn} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("lime"), cursor: "pointer", fontWeight: 900, fontSize: fs.heading }}>{t}</button>
   );
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

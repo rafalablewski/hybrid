@@ -43,7 +43,7 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div style={{ display: "flex", gap: space.ms, alignItems: "center" }}>
             {!embedded && (
-              <button onClick={() => router.push("/app")} aria-label={t("w.analyze.stats.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "var(--back-surface)", boxShadow: "var(--back-shadow)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <button className="pressable" onClick={() => router.push("/app")} aria-label={t("w.analyze.stats.back")} style={{ width: 44, height: 44, borderRadius: r.field, border: `1px solid ${C("line")}`, background: "var(--back-surface)", boxShadow: "var(--back-shadow)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}>
                 {aurora ? <AuroraIcon name="back" size={20} /> : <span style={{ fontSize: fs.heading }}>←</span>}
               </button>
             )}
@@ -64,7 +64,7 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
           {RANGES.map((rg) => {
             const on = range === rg.id;
             return (
-              <button key={rg.id} onClick={() => setRange(rg.id)} style={{ flex: 1, padding: "9px 0", borderRadius: r.pill, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{t(rg.key)}</button>
+              <button className="pressable" key={rg.id} onClick={() => setRange(rg.id)} style={{ flex: 1, padding: "9px 0", borderRadius: r.pill, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{t(rg.key)}</button>
             );
           })}
         </div>

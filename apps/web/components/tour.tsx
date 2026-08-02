@@ -133,7 +133,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
         <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>{step.body}</Mono>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18, gap: space.md }}>
-          <button
+          <button className="pressable"
             onClick={onDone}
             style={{ ...disp, background: "transparent", border: "none", color: txt(ASH), fontSize: fs.note, cursor: "pointer" }}
           >
@@ -141,14 +141,14 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
           </button>
           <div style={{ display: "flex", gap: space.xs }}>
             {i > 0 && (
-              <button
+              <button className="pressable"
                 onClick={() => setI((n) => n - 1)}
                 style={{ ...disp, background: INK, border: `1px solid ${LINE}`, color: txt(CHALK), fontSize: fs.note, fontWeight: 700, borderRadius: 999, padding: "10px 18px", cursor: "pointer" }}
               >
                 Back
               </button>
             )}
-            <button
+            <button className="pressable"
               onClick={() => (last ? onDone() : setI((n) => n + 1))}
               style={{ ...disp, background: LIME, border: "none", color: ON_ACCENT, fontSize: fs.note, fontWeight: 800, borderRadius: 999, padding: "10px 22px", cursor: "pointer" }}
             >

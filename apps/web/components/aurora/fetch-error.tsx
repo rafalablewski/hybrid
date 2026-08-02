@@ -30,7 +30,7 @@ export default function FetchError({ onRetry, style }: { onRetry: () => void; st
     >
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, color: C("chalk") }}>{t("common.loadError")}</div>
       <div style={{ fontSize: 15, lineHeight: 1.5, color: C("ash"), marginTop: 8, maxWidth: 320 }}>{t("common.loadErrorHint")}</div>
-      <button
+      <button className="pressable"
         onClick={onRetry}
         style={{ marginTop: 16, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "10px 28px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: C("chalk"), cursor: "pointer" }}
       >

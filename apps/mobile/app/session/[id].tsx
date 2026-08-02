@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Animated, Easing, type TextStyle } from "react-native";
+import { View, Text, Animated, Easing, type TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -41,7 +41,7 @@ import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSessionsQuery } from "../../lib/queries";
 import { useSessionActions } from "../../lib/session-actions";
-import { fs, space, Screen, Card, Kicker, Mono, Loading, Button, F } from "../../lib/ui";
+import { fs, space, Screen, Card, Kicker, Mono, Loading, Button, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
 import { AuroraScreen, ABack } from "../../components/aurora/kit";

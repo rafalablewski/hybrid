@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Animated, View, Text, TextInput, Pressable } from "react-native";
+import { Animated, View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import {
   sportDistanceUnit,
@@ -33,7 +33,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";

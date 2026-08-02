@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import { PressScale as Pressable } from "../lib/ui";
 
 // A top-level error boundary. In a production RN build, an uncaught render
 // exception in ANY screen unmounts the whole React tree → a blank white screen

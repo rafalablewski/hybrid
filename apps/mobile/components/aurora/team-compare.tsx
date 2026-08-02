@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { fetchTeamCompare, type TeamCompareResponse, type TeamCompareAthlete } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 /** The five comparable metrics — the SAME set and order the web screen offers

@@ -133,7 +133,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
       {HISTORY_VIEWS.map((v) => {
         const on = v.id === view;
         return (
-          <button
+          <button className="pressable"
             key={v.id}
             onClick={() => onChange(v.id)}
             style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 16px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
@@ -349,7 +349,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
         {TREND_RANGES.map((rg) => {
           const on = range === rg.id;
           return (
-            <button
+            <button className="pressable"
               key={rg.id}
               onClick={() => setRange(rg.id)}
               aria-pressed={on}

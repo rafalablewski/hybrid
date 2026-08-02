@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Image, Pressable, AccessibilityInfo } from "react-native";
+import { View, Text, TextInput, Image, AccessibilityInfo } from "react-native";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
-import { Card, Loading, F, fs } from "../../lib/ui";
+import { Card, Loading, F, fs, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";

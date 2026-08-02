@@ -171,7 +171,7 @@ export default function AuroraOrg() {
         <div style={kicker("lime")}>{t("w.teams.org.headerKicker")}</div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
           {orgs.map((o) => (
-            <button key={o.id} onClick={() => setSelected(o.id)} style={orgChip(o.id === selected)}>
+            <button className="pressable" key={o.id} onClick={() => setSelected(o.id)} style={orgChip(o.id === selected)}>
               {o.name} – {o.role.toLowerCase()}
             </button>
           ))}
@@ -179,7 +179,7 @@ export default function AuroraOrg() {
         </div>
         <div style={{ display: "flex", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
           <input value={newOrg} onChange={(e) => setNewOrg(e.target.value)} placeholder={t("w.teams.org.newOrgPlaceholder")} style={{ ...input, flex: "1 1 200px", minWidth: 0 }} />
-          <button onClick={createOrg} style={btn("lime")}>{t("w.teams.org.createOrg")}</button>
+          <button className="pressable" onClick={createOrg} style={btn("lime")}>{t("w.teams.org.createOrg")}</button>
         </div>
       </div>
 
@@ -214,7 +214,7 @@ export default function AuroraOrg() {
                       <option key={node.id} value={node.id}>{"— ".repeat(node.depth)}{node.name}</option>
                     ))}
                   </select>
-                  <button onClick={addTeam} style={btn("lime")}>{t("w.teams.org.addTeam")}</button>
+                  <button className="pressable" onClick={addTeam} style={btn("lime")}>{t("w.teams.org.addTeam")}</button>
                 </div>
               )}
             </div>
@@ -258,7 +258,7 @@ export default function AuroraOrg() {
                     <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as OrgRole)} style={selectStyle}>
                       {ORG_ROLES.map((r) => <option key={r} value={r}>{r.toLowerCase()}</option>)}
                     </select>
-                    <button onClick={invite} style={btn("lime")}>{t("w.teams.org.addMember")}</button>
+                    <button className="pressable" onClick={invite} style={btn("lime")}>{t("w.teams.org.addMember")}</button>
                   </div>
                   {inviteErr && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("red") }}>{inviteErr}</div>}
                 </div>

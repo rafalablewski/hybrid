@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
+import { View, Text, TextInput, Alert } from "react-native";
 import {
   CHECKIN_METRICS,
   CHECKIN_SCALE,
@@ -18,7 +18,7 @@ import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } fr
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";

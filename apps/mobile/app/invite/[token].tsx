@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { claimCoachInvite } from "../../lib/api";
 
 // Claim landing for a coach invite (QR / link / deep-link). Claims immediately

@@ -1,25 +1,11 @@
 import { type ReactNode, useState } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  TextInput,
-  StyleSheet,
-  RefreshControl,
-  KeyboardAvoidingView,
-  Platform,
-  Animated,
-  type StyleProp,
-  type ViewStyle,
-  type TextStyle,
-} from "react-native";
+import { View, Text, ScrollView, TextInput, StyleSheet, RefreshControl, KeyboardAvoidingView, Platform, Animated, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, serifIf, useEntrance, HubDissolve, cardShadow, PressScale } from "../../lib/ui";
+import { fs, space, F, serifIf, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";

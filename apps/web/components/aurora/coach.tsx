@@ -349,7 +349,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
   return (
     <div style={{ maxWidth: 820, fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <button onClick={back} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>
+      <button className="pressable" onClick={back} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>
         <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }} c={C("ash")}>← {t("w.teams.coach.roster")}</Mono>
       </button>
       <h2 style={{ fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{personName(link.client, t)}</h2>
@@ -359,7 +359,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         {tags.map((tg) => (
           <span key={tg} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: `color-mix(in srgb, ${C("ash")} 12%, transparent)`, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
             {tg}
-            <button aria-label={`${t("w.teams.coach.removeTag")} ${tg}`} onClick={() => saveTags(tags.filter((x) => x !== tg))} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 0, fontSize: fs.body, lineHeight: 1 }}>×</button>
+            <button className="pressable" aria-label={`${t("w.teams.coach.removeTag")} ${tg}`} onClick={() => saveTags(tags.filter((x) => x !== tg))} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 0, fontSize: fs.body, lineHeight: 1 }}>×</button>
           </span>
         ))}
         <input
@@ -649,7 +649,7 @@ function Select({
 function Btn({ label, color, onClick }: { label: string; color: string; onClick: () => void }) {
   const ghost = color === C("ash");
   return (
-    <button
+    <button className="pressable"
       onClick={(e) => {
         e.stopPropagation();
         onClick();

@@ -541,7 +541,7 @@ export default function AuroraToday({
     <div className="motion-hub-chrome">
       {/* HEADER — profile, HYBRID wordmark, bell */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <button
+        <button className="pressable"
           onClick={() => (onNavigate ? onNavigate("profile") : router.push("/profile"))}
           aria-label={t("w.home.today.profileAria")}
           style={{ position: "relative", width: 44, height: 44, borderRadius: 12, background: `${C("lime")}22`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.bodyLg, color: "var(--lime-text)" }}
@@ -558,11 +558,11 @@ export default function AuroraToday({
           {acc.streak.current > 0 && (
             // SPECTRUM: the streak wears the warm terracotta accent (Connect),
             // pairing with the flame and keeping chartreuse for the primary action.
-            <button onClick={() => setDoneOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 44, background: `color-mix(in srgb, ${C("red")} 14%, transparent)`, color: "var(--red-text)", border: `1px solid color-mix(in srgb, ${C("red")} 40%, transparent)`, borderRadius: 999, padding: "0 12px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>
+            <button className="pressable" onClick={() => setDoneOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 44, background: `color-mix(in srgb, ${C("red")} 14%, transparent)`, color: "var(--red-text)", border: `1px solid color-mix(in srgb, ${C("red")} 40%, transparent)`, borderRadius: 999, padding: "0 12px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>
               <AuroraIcon name="flame" size={13} color="var(--red-text)" /> {acc.streak.current}{t("w.home.today.dayStreak")}
             </button>
           )}
-          <button onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
+          <button className="pressable" onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
             <AuroraIcon name="bell" size={20} color={C("ash")} />
             {notifCount > 0 && (
               <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 999, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
@@ -668,7 +668,7 @@ export default function AuroraToday({
           {dayIsToday && <span className="hanko-seal" aria-hidden>力</span>}
         </div>
         {!dayIsToday && (
-          <button
+          <button className="pressable"
             onClick={backToToday}
             style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--blue-text)" }}
           >
@@ -822,7 +822,7 @@ export default function AuroraToday({
                           ))}
                         </div>
                       </div>
-                      <button ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ marginTop: 6, display: "block", marginLeft: "auto", marginRight: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 16px", fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600 }}>
+                      <button className="pressable" ref={showLiftsRef} onClick={() => toggleLifts(true)} aria-expanded={false} style={{ marginTop: 6, display: "block", marginLeft: "auto", marginRight: "auto", cursor: "pointer", background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "6px 16px", fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600 }}>
                         <CtaLabel size={12}>{`${t("w.home.today.showAllLifts")} ${rows.length} ${t("w.home.today.liftsWord")} →`}</CtaLabel>
                       </button>
                     </>
@@ -834,7 +834,7 @@ export default function AuroraToday({
                       {shown.map((r, i) => (<div key={i} style={rowStyle(i)}>{cells(r)}</div>))}
                     </div>
                     {many && liftsOpen && (
-                      <button ref={hideLiftsRef} onClick={() => toggleLifts(false)} aria-expanded style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>
+                      <button className="pressable" ref={hideLiftsRef} onClick={() => toggleLifts(false)} aria-expanded style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>
                         {t("w.home.today.hideLifts")}
                       </button>
                     )}
@@ -842,7 +842,7 @@ export default function AuroraToday({
                 );
               })()}
               {!isAthlete && (
-                <button
+                <button className="pressable"
                   onClick={() => (onNavigate ? onNavigate("upgrade") : router.push("/upgrade"))}
                   style={{ marginTop: 12, width: "100%", display: "block", padding: "12px 12px", cursor: "pointer", textAlign: "left", border: `1px dashed color-mix(in srgb, var(--premium-accent) 40%, transparent)`, background: "transparent" }}
                 >
@@ -854,7 +854,7 @@ export default function AuroraToday({
                   as the plan's own (parity with the mobile plan prefill). */}
               <button
                 onClick={() => onStart(plan.blocks, `${plan.planName} – ${plan.day}`)}
-                className="start-glow"
+                className="start-glow pressable"
                 style={{ marginTop: 16, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
               >
                 <CtaLabel>{t("w.home.today.start")}</CtaLabel>
@@ -862,7 +862,7 @@ export default function AuroraToday({
               {/* Quiet secondary — reach the Quick-start sheet without leaving the
                   plan: on a plan the four "Train your way" cards aren't shown, so
                   this is the on-plan door to a saved routine (a session off-plan). */}
-              <button
+              <button className="pressable"
                 onClick={() => setQuickStartOpen(true)}
                 style={{ marginTop: 10, display: "block", width: "100%", textAlign: "center", background: "none", border: "none", cursor: "pointer", padding: "2px 0", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--violet-text)" }}
               >
@@ -1076,7 +1076,7 @@ export default function AuroraToday({
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {doneOnDay.map((s) => (
-              <button key={s.id} onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("history"); else router.push("/history"); }} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
+              <button className="pressable" key={s.id} onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("history"); else router.push("/history"); }} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
                 <span style={{ width: 30, height: 30, borderRadius: 999, flexShrink: 0, background: `color-mix(in srgb, ${C("lime")} 18%, transparent)`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", color: "var(--lime-text)", fontWeight: 800 }}>✓</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
@@ -1087,7 +1087,7 @@ export default function AuroraToday({
             ))}
           </div>
         )}
-        <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}><AuroraIcon name="calendar" size={15} color={C("ash")} /> {t("w.home.today.doneCalendar")}</button>
+        <button className="pressable" onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}><AuroraIcon name="calendar" size={15} color={C("ash")} /> {t("w.home.today.doneCalendar")}</button>
       </Sheet>
     </div>
   );
@@ -1203,7 +1203,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
   return (
     <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
-      <button type="button" onClick={onDone} aria-label={`${doneCount} ${doneLabel}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, background: "none", border: "none", padding: "6px 0 4px", cursor: "pointer", textAlign: "left", color: C("chalk") }}>
+      <button className="pressable" type="button" onClick={onDone} aria-label={`${doneCount} ${doneLabel}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, background: "none", border: "none", padding: "6px 0 4px", cursor: "pointer", textAlign: "left", color: C("chalk") }}>
         {/* a status count, not a hero — fs.display keeps it below the masthead
             (34) and the Start action (hierarchy sweep; was 44) */}
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.display, letterSpacing: "-.03em", lineHeight: 0.9, fontVariantNumeric: "tabular-nums", flexShrink: 0, color: doneCount > 0 ? C("chalk") : quiet }}>{doneCount}</span>
@@ -1218,7 +1218,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
         {rows.map((s) => {
           const onPlanRow = planIds.has(s.id);
           return (
-            <button type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
+            <button className="pressable" type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
               <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C(onPlanRow ? "lime" : "blue")} 16%, transparent)` }}>
                 {sessionIcon(s)}
               </span>
@@ -1243,7 +1243,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
           );
         })}
         {isToday && (
-          <button type="button" onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
+          <button className="pressable" type="button" onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
             <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: "transparent", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, color: C("ash") }}>＋</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--lime-text)" }}>{t(copy.logKey)}</span>
           </button>
@@ -1490,7 +1490,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
         </span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{heroStamp}</span>
         {shownFeeling && ctxNote && isToday && (
-          <button
+          <button className="pressable"
             onClick={() => setWhyOpen((v) => !v)}
             aria-expanded={whyOpen}
             aria-label={t("w.home.today.readWhy")}
@@ -1538,7 +1538,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
               list under it is the thing that made the card grow in the first
               place. The count sits on the door so the day's shape is legible
               without opening it. */}
-          <button
+          <button className="pressable"
             onClick={() => setReadsOpen((v) => !v)}
             aria-expanded={readsOpen}
             style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
@@ -1584,7 +1584,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
           genuinely unknown rather than merely unconfirmed. */}
       {isToday && shownFeeling && (
         <>
-          <button
+          <button className="pressable"
             onClick={() => setFollowUpOpen(true)}
             style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 16, padding: "12px 16px", borderRadius: 16, background: done.complete || asking ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete || asking ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
           >

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { View, Text, Pressable, Modal } from "react-native";
-import { fs, F, space } from "../lib/ui";
+import { View, Text, Modal } from "react-native";
+import { fs, F, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 

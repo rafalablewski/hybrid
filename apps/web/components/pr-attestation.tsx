@@ -50,8 +50,8 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
             <b>{i.ownerName || (i.ownerHandle ? `@${i.ownerHandle}` : "Someone")}</b> asks you to confirm you watched their{" "}
             <b>{i.lift}</b>{i.topLoad ? <> at <b>{fmtWeight(i.topLoad, units)}</b></> : null}.
           </span>
-          <button onClick={() => respond(i.id, "cosign")} disabled={busyId === i.id} style={{ ...mono, background: C("lime"), color: "#0c0d0c", border: "none", borderRadius: 999, padding: "7px 13px", cursor: "pointer", fontWeight: 700 }}>I watched it</button>
-          <button onClick={() => respond(i.id, "decline")} disabled={busyId === i.id} style={{ ...mono, background: "none", color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "7px 13px", cursor: "pointer" }}>Decline</button>
+          <button className="pressable" onClick={() => respond(i.id, "cosign")} disabled={busyId === i.id} style={{ ...mono, background: C("lime"), color: "#0c0d0c", border: "none", borderRadius: 999, padding: "7px 13px", cursor: "pointer", fontWeight: 700 }}>I watched it</button>
+          <button className="pressable" onClick={() => respond(i.id, "decline")} disabled={busyId === i.id} style={{ ...mono, background: "none", color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "7px 13px", cursor: "pointer" }}>Decline</button>
         </div>
       ))}
       <p style={{ ...mono, color: C("ash"), margin: "10px 0 0", lineHeight: 1.5 }}>
@@ -150,7 +150,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, canReq
                   {tier === 2 && signer?.witnessHandle ? ` by @${signer.witnessHandle}` : ""}
                 </span>
                 {canRequest && tier < 2 && !pending && !unavailable && (
-                  <button
+                  <button className="pressable"
                     onClick={() => { setAsking(asking === lift ? null : lift); setHandle(""); setErrorMsg(null); }}
                     style={{ ...mono, background: "none", border: "none", cursor: "pointer", color: C("lime"), padding: 0 }}
                   >
@@ -167,7 +167,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, canReq
                     aria-label="Witness handle"
                     style={{ ...mono, flex: 1, minWidth: 160, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 10, padding: "8px 10px" }}
                   />
-                  <button
+                  <button className="pressable"
                     onClick={() => ask(lift)}
                     disabled={state === "busy"}
                     style={{ ...mono, background: C("lime"), color: "#0c0d0c", border: "none", borderRadius: 999, padding: "8px 14px", cursor: "pointer", fontWeight: 700 }}

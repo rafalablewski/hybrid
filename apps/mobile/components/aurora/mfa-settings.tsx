@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, ActivityIndicator } from "react-native";
 import { isValidTotpCode } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ACard, RADIUS } from "./kit";
 import { QrMatrix } from "../coach-invite";
 

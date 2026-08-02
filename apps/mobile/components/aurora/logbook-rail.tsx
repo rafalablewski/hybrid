@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import {
   logbookWeek,
   mergeDoneReceipts,
@@ -14,7 +14,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, serifIf, startGlow } from "../../lib/ui";
+import { fs, F, serifIf, startGlow, PressScale as Pressable } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 import { useLoggerPrefs } from "../../lib/logger-prefs";

@@ -225,7 +225,7 @@ function DayChip({ day, selected, onSelect, t }: { day: ScheduledDay; selected: 
     opacity: day.isRest ? 0.45 : 1,
   };
   return (
-    <button onClick={onSelect} aria-label={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`} aria-pressed={selected} style={base}>
+    <button className="pressable" onClick={onSelect} aria-label={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`} aria-pressed={selected} style={base}>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), opacity: 0.8 }}>{day.weekdayShort}</span>
       <span style={{ height: 28, display: "grid", placeItems: "center", fontFamily: "var(--font-display)" }}>
         <span style={numInner}>{day.dayOfMonth}</span>
@@ -357,7 +357,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
             <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
             <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
           </span>
-          <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 16px" }}>{t("w.home.rail.doItNow")}</button>
+          <button className="pressable" onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 16px" }}>{t("w.home.rail.doItNow")}</button>
         </div>
       ))}
     </div>
@@ -396,7 +396,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
             ))}
           </div>
         )}
-        <button onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: "16px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+        <button className="pressable" onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: "16px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
           <CtaLabel size={12}>{`${t("w.home.rail.viewHistory")} →`}</CtaLabel>
         </button>
         {catchUp}
@@ -429,7 +429,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
           {sessions.map((s, i) => {
             const on = i === activeIdx;
             return (
-              <button key={i} role="tab" aria-selected={on} onClick={() => setActive(i)}
+              <button className="pressable" key={i} role="tab" aria-selected={on} onClick={() => setActive(i)}
                 style={{ background: "none", border: "none", cursor: "pointer", padding: "0 0 8px", position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: ".08em", fontWeight: on ? 600 : 400, color: on ? "var(--lime-text)" : C("ash") }}>
                 {sessionLabel(s, t)}
                 {on && <span style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 2, background: C("lime"), borderRadius: 2 }} />}
@@ -444,7 +444,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
           <LiftRow key={i} r={r} showSession={!multi} first={i === 0} />
         ))}
         {hasMore && (
-          <button onClick={() => setOpen((v) => !v)} style={{ position: "relative", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0 2px", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em", color: C("ash"), display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <button className="pressable" onClick={() => setOpen((v) => !v)} style={{ position: "relative", width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 0 2px", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em", color: C("ash"), display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             {!open && <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: "100%", height: 40, pointerEvents: "none", background: `linear-gradient(to top, ${C("ink2")} 14%, transparent)` }} />}
             {open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}
             <Caret open={open} />
@@ -455,20 +455,20 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
       {/* actions by state — one accent (Start), the rest neutral glyph/ghosts */}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", gap: 8, marginTop: 16 }}>
         {(day.status === "today" || day.status === "missed") && (<>
-          <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}><CtaLabel>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</CtaLabel></button>
-          <button onClick={onSkip} aria-label={t("w.home.rail.skip")} title={t("w.home.rail.skip")} style={iconBtn}><SkipGlyph /></button>
-          {canPostpone && <button onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
+          <button onClick={() => onStart(startBlocks)} className="start-glow pressable" style={primaryBtn}><CtaLabel>{t(day.status === "today" ? "w.home.today.start" : "w.home.rail.doItNow")}</CtaLabel></button>
+          <button className="pressable" onClick={onSkip} aria-label={t("w.home.rail.skip")} title={t("w.home.rail.skip")} style={iconBtn}><SkipGlyph /></button>
+          {canPostpone && <button className="pressable" onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
         </>)}
         {day.status === "upcoming" && (<>
-          <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}><CtaLabel>{t("w.home.rail.startEarly")}</CtaLabel></button>
-          {canPostpone && <button onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
+          <button onClick={() => onStart(startBlocks)} className="start-glow pressable" style={primaryBtn}><CtaLabel>{t("w.home.rail.startEarly")}</CtaLabel></button>
+          {canPostpone && <button className="pressable" onClick={onPostpone} aria-label={t("w.home.rail.postpone")} title={t("w.home.rail.postpone")} style={iconBtn}><PostponeGlyph /></button>}
         </>)}
         {day.status === "skipped" && (
-          <button onClick={onUnskip} style={{ ...neutralGhostBtn, flex: 1 }}>{t("w.home.rail.undoSkip")}</button>
+          <button className="pressable" onClick={onUnskip} style={{ ...neutralGhostBtn, flex: 1 }}>{t("w.home.rail.undoSkip")}</button>
         )}
         {day.status === "postponed" && (<>
-          <button onClick={() => onStart(startBlocks)} className="start-glow" style={primaryBtn}><CtaLabel>{t("w.home.rail.doItNow")}</CtaLabel></button>
-          <button onClick={onUnskip} style={neutralGhostBtn}>{t("w.home.rail.unpostpone")}</button>
+          <button onClick={() => onStart(startBlocks)} className="start-glow pressable" style={primaryBtn}><CtaLabel>{t("w.home.rail.doItNow")}</CtaLabel></button>
+          <button className="pressable" onClick={onUnskip} style={neutralGhostBtn}>{t("w.home.rail.unpostpone")}</button>
         </>)}
       </div>
 

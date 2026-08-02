@@ -77,7 +77,7 @@ export default function AuroraProgress() {
       <div style={{ ...card, marginTop: 16 }}>
         <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 16px" }}>{t("w.recovery.progress.intro")}</p>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-        <button onClick={() => fileRef.current?.click()} disabled={busy}
+        <button className="pressable" onClick={() => fileRef.current?.click()} disabled={busy}
           style={{ display: "flex", alignItems: "center", gap: space.sm, fontWeight: 700, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>
           <AuroraIcon name="add" size={18} color={C("ink")} />{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.addPhoto")}
         </button>
@@ -93,7 +93,7 @@ export default function AuroraProgress() {
               <img src={p.url} alt={p.date} style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px" }}>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}>{p.date}</span>
-                <button onClick={() => remove(p.path)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("red"), background: "none", border: "none", cursor: "pointer" }}>{t("w.recovery.progress.delete")}</button>
+                <button className="pressable" onClick={() => remove(p.path)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("red"), background: "none", border: "none", cursor: "pointer" }}>{t("w.recovery.progress.delete")}</button>
               </div>
             </div>
           ))}

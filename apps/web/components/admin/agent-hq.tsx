@@ -117,7 +117,7 @@ export default function AgentHQ() {
         {TABS.map((t) => {
           const badge = t.id === "inbox" ? data?.stats.attention ?? 0 : t.id === "approvals" ? data?.stats.pendingApprovals ?? 0 : 0;
           return (
-            <button
+            <button className="pressable"
               key={t.id}
               onClick={() => setTab(t.id)}
               style={{
@@ -142,7 +142,7 @@ export default function AgentHQ() {
             </button>
           );
         })}
-        <button onClick={load} style={{ ...mono, marginLeft: "auto", fontSize: fs.body, color: txt(ASH), background: "transparent", border: "none", cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}>
+        <button className="pressable" onClick={load} style={{ ...mono, marginLeft: "auto", fontSize: fs.body, color: txt(ASH), background: "transparent", border: "none", cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}>
           ↻ refresh
         </button>
       </div>
@@ -413,7 +413,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
             onChange={(e) => setTask(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && run()}
           />
-          <button
+          <button className="pressable"
             disabled={busy || !agentId || !task.trim()}
             onClick={run}
             style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
@@ -580,7 +580,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
         <span style={{ ...disp, color: CHALK, fontWeight: 700, fontSize: fs.bodyLg }}>{k.metric}</span>
         <span style={{ display: "flex", gap: space.sm, alignItems: "baseline", flexShrink: 0 }}>
           <Mono s={{ fontSize: fs.caption }} c={ASH}>target {targetLabel}</Mono>
-          <button onClick={toggleChart} title="Trend over time" style={{ background: "transparent", border: "none", cursor: "pointer", color: txt(open ? LIME : ASH), fontSize: fs.body, padding: 0 }}>📈</button>
+          <button className="pressable" onClick={toggleChart} title="Trend over time" style={{ background: "transparent", border: "none", cursor: "pointer", color: txt(open ? LIME : ASH), fontSize: fs.body, padding: 0 }}>📈</button>
         </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: space.sm, alignItems: "baseline", marginTop: 2 }}>
@@ -603,7 +603,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
           placeholder="log actual…"
           style={{ ...mono, fontSize: fs.body, flex: 1, padding: "7px 8px", borderRadius: "var(--r-field)", background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
         />
-        <button
+        <button className="pressable"
           disabled={busy || val === ""}
           onClick={log}
           style={{ ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "7px 10px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(val === "" ? ASH : LIME), opacity: busy ? 0.5 : 1 }}
@@ -715,10 +715,10 @@ function Approvals({ onChange }: { onChange: () => void }) {
               <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
             </div>
             <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
-              <button disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
+              <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
                 Approve &amp; run
               </button>
-              <button disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
+              <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
                 Deny
               </button>
             </div>
@@ -756,7 +756,7 @@ function DigestCard() {
     <Card span={2}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <SectionHead title="Daily digest" kicker="last 24h – auto-posts to Slack via cron" />
-        <button disabled={busy} onClick={send} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
+        <button className="pressable" disabled={busy} onClick={send} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
           {busy ? "Sending…" : "Send to Slack now"}
         </button>
       </div>
@@ -802,7 +802,7 @@ function MonthlyCostCard() {
     <Card span={2}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <SectionHead title="Monthly cost" kicker="real agent spend – auto-reports on the 1st" />
-        <button disabled={busy} onClick={send} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
+        <button className="pressable" disabled={busy} onClick={send} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
           {busy ? "Sending…" : "Send to Slack"}
         </button>
       </div>
@@ -880,7 +880,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <SectionHead title="Notifications" kicker={`${unread} unread – ${list.length} recent`} />
             {unread > 0 && (
-              <button disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "8px 12px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(ASH) }}>
+              <button className="pressable" disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "8px 12px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(ASH) }}>
                 Mark all read
               </button>
             )}
@@ -894,7 +894,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
               </div>
               <Mono s={{ fontSize: fs.micro, flexShrink: 0 }} c={ASH}>{ago(n.createdAt)}</Mono>
               {!n.read && (
-                <button disabled={busy} onClick={() => markRead(n.id)} title="Dismiss" style={{ ...mono, fontSize: fs.bodyLg, lineHeight: 1, background: "transparent", border: "none", color: txt(ASH), cursor: "pointer", flexShrink: 0 }}>
+                <button className="pressable" disabled={busy} onClick={() => markRead(n.id)} title="Dismiss" style={{ ...mono, fontSize: fs.bodyLg, lineHeight: 1, background: "transparent", border: "none", color: txt(ASH), cursor: "pointer", flexShrink: 0 }}>
                   ✕
                 </button>
               )}

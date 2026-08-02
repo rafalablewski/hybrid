@@ -136,7 +136,7 @@ export default function AuroraTalent() {
               {t("w.teams.talent.rejected")}
             </div>
           )}
-          <button onClick={save} style={{ ...btn, marginTop: 12 }}>{t("w.teams.talent.saveProfile")}</button>
+          <button className="pressable" onClick={save} style={{ ...btn, marginTop: 12 }}>{t("w.teams.talent.saveProfile")}</button>
         </div>
 
         <div style={card}>
@@ -181,7 +181,7 @@ export default function AuroraTalent() {
             <input type="checkbox" checked={q.byPotential} onChange={(e) => setQ({ ...q, byPotential: e.target.checked })} />
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.teams.talent.byPotential")}</span>
           </label>
-          <button onClick={search} style={btn}>{t("w.teams.talent.search")}</button>
+          <button className="pressable" onClick={search} style={btn}>{t("w.teams.talent.search")}</button>
         </div>
         <div style={{ marginTop: 16 }}>
           {results.length === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.talent.noMatch")}</div>}
@@ -191,7 +191,7 @@ export default function AuroraTalent() {
               <div style={{ display: "flex", gap: space.xs, alignItems: "center" }}>
                 {chip(pctColor(r.percentile), `${r.percentile}${t("w.teams.talent.ordinal")}`)}
                 {r.potential > r.percentile && chip("violet", `${r.potential}${t("w.teams.talent.ordinal")} ${t("w.teams.talent.potAbbr")}`)}
-                <button
+                <button className="pressable"
                   onClick={() => flagProfile(r.id)}
                   title={t("w.teams.talent.reportTitle")}
                   style={{ background: "transparent", border: "none", color: C("ash"), cursor: "pointer", fontSize: fs.bodyLg, padding: "2px 4px" }}

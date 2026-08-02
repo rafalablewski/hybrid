@@ -178,7 +178,7 @@ export default function ReconciledWeek({
         </div>
       ) : (
         <>
-          <button onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
+          <button className="pressable" onClick={scheduleThisWeek} disabled={scheduling} style={cta(scheduling, aurora)}>
             {scheduling ? t("w.home.recweek.scheduling") : `${t("w.home.recweek.scheduleResync")} ${daysPerWeek}d →`}
           </button>
           {scheduled && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 8 }} c={"var(--lime-text)"}>{scheduled}</Mono>}

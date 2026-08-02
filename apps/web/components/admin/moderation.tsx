@@ -104,7 +104,7 @@ export default function AdminModeration() {
     <div>
       <div style={{ display: "flex", gap: space.sm, marginBottom: 18 }}>
         {([["profiles", `Pending profiles${pCount ? ` – ${pCount}` : ""}`], ["reports", `Reports${rCount ? ` – ${rCount}` : ""}`]] as const).map(([id, label]) => (
-          <button
+          <button className="pressable"
             key={id}
             onClick={() => setTab(id)}
             style={{
@@ -152,8 +152,8 @@ export default function AdminModeration() {
                 {Object.entries(p.metrics ?? {}).map(([k, v]) => `${k}: ${v}`).join("  –  ") || "no metrics"}
               </Mono>
               <div style={{ display: "flex", gap: space.sm, marginTop: 14 }}>
-                <button disabled={busy === p.id} onClick={() => moderateProfile(p.id, "approve")} style={primaryBtn}>Approve</button>
-                <button disabled={busy === p.id} onClick={() => moderateProfile(p.id, "reject")} style={{ ...ghostBtn, color: txt(RED), borderColor: `${RED}55` }}>Reject</button>
+                <button className="pressable" disabled={busy === p.id} onClick={() => moderateProfile(p.id, "approve")} style={primaryBtn}>Approve</button>
+                <button className="pressable" disabled={busy === p.id} onClick={() => moderateProfile(p.id, "reject")} style={{ ...ghostBtn, color: txt(RED), borderColor: `${RED}55` }}>Reject</button>
               </div>
             </Card>
           ))}
@@ -181,9 +181,9 @@ export default function AdminModeration() {
                 reported by {r.reporterEmail} – {new Date(r.createdAt).toLocaleDateString()}
               </Mono>
               <div style={{ display: "flex", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
-                <button disabled={busy === r.id} onClick={() => resolveReport(r.id, "takedown")} style={{ ...primaryBtn, background: RED, border: `1px solid ${RED}` }}>Take down</button>
-                <button disabled={busy === r.id} onClick={() => resolveReport(r.id, "dismiss")} style={ghostBtn}>Dismiss</button>
-                <button disabled={busy === r.id} onClick={() => resolveReport(r.id, "resolve")} style={ghostBtn}>Mark resolved</button>
+                <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "takedown")} style={{ ...primaryBtn, background: RED, border: `1px solid ${RED}` }}>Take down</button>
+                <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "dismiss")} style={ghostBtn}>Dismiss</button>
+                <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "resolve")} style={ghostBtn}>Mark resolved</button>
               </div>
             </Card>
           ))}

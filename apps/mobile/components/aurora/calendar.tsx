@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, type LoggedSession } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -8,7 +8,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { fetchEvents, fetchAssignments, updateAssignment, type EventRow, type Assignment } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 

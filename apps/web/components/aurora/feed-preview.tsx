@@ -81,7 +81,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
         const v = feedCardView(it);
         const a = it.author as { displayName: string | null; handle: string; avatarUrl: string | null; coachVerified?: boolean };
         return (
-          <button key={it.id} onClick={onOpen} style={postStyle}>
+          <button className="pressable" key={it.id} onClick={onOpen} style={postStyle}>
             {/* header — avatar inline; everything below spans the full width */}
             <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span style={{ width: 36, height: 36, borderRadius: 999, flexShrink: 0, background: C("ink"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 12, color: C("ash"), overflow: "hidden" }}>
@@ -128,7 +128,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           this nudges people into the full feed instead of scrolling an endless
           rail (unified with the coach rail's end-of-rail affordance). */}
       {horizontal && (
-        <button
+        <button className="pressable"
           onClick={onOpen}
           aria-label={t("w.explore.seeMore")}
           style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}

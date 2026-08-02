@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, RefreshControl, Animated, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, RefreshControl, Animated, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -72,7 +72,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale, cardShadow } from "../../lib/ui";
+import { fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, RADIUS, Ring, withAlpha } from "./kit";
 import ExerciseWidgetRail from "./exercise-widget";

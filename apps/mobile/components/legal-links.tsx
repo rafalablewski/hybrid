@@ -1,8 +1,8 @@
-import { View, Text, Pressable, Linking } from "react-native";
+import { View, Text, Linking } from "react-native";
 import { API_BASE } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { useTheme, txt } from "../lib/theme";
-import { fs, F } from "../lib/ui";
+import { fs, F, PressScale as Pressable } from "../lib/ui";
 
 /** Open the public Privacy Policy / Terms pages (hosted on the web app). Shown
  *  on the login screen, the paywall (App Store requires Terms + Privacy links on

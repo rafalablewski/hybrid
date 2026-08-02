@@ -155,7 +155,7 @@ export default function AdminFinancials() {
         the <strong style={{ color: CHALK }}>scorecard</strong> grades growth efficiency, and the{" "}
         <strong style={{ color: CHALK }}>forecast</strong> projects 12 months of cash. This is a planning
         tool; live charging is the blocked <strong style={{ color: txt(AMBER) }}>billing</strong> capability.{" "}
-        <button onClick={() => setShowGlossary((v) => !v)} style={linkBtn}>
+        <button className="pressable" onClick={() => setShowGlossary((v) => !v)} style={linkBtn}>
           {showGlossary ? "Hide" : "What do these terms mean?"}
         </button>
       </Mono>
@@ -905,7 +905,7 @@ function Range({
 
 function Btn({ label, active, onClick, disabled }: { label: string; active: boolean; onClick: () => void; disabled?: boolean }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       disabled={disabled}
       style={{

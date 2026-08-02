@@ -422,7 +422,7 @@ export default function AppShell() {
                 setDrawerOpen(false);
               };
               return (
-                <button
+                <button className="pressable"
                   key={id}
                   data-tour={`nav-${id}`}
                   onClick={onClick}
@@ -476,7 +476,7 @@ export default function AppShell() {
                       blurb → Go Full pill), matching the mobile More tab + pill-nav
                       sheet. Casual only; the plain sidebar entry is desktop-only. */}
                   {showUpgradeEntry && isEnabled("nav.upgrade") && (
-                    <button
+                    <button className="pressable"
                       onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "more" }); openUpgrade(); setDrawerOpen(false); }}
                       style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 22, background: INK, border: `1px solid color-mix(in srgb, var(--color-lime) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--color-lime) 32%, transparent)" }}
                     >
@@ -499,7 +499,7 @@ export default function AppShell() {
                       style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: CHALK, ...disp, fontSize: fs.body }}
                     />
                     {moreSearch && (
-                      <button onClick={() => setMoreSearch("")} aria-label="Clear search" style={{ background: "none", border: "none", cursor: "pointer", color: ASH, ...mono, fontSize: fs.body }}>✕</button>
+                      <button className="pressable" onClick={() => setMoreSearch("")} aria-label="Clear search" style={{ background: "none", border: "none", cursor: "pointer", color: ASH, ...mono, fontSize: fs.body }}>✕</button>
                     )}
                   </div>
 
@@ -515,7 +515,7 @@ export default function AppShell() {
                             const ic = aurora ? AURORA_NAV_ICONS[item.id] : undefined;
                             const iconColor = locked ? ASH : "var(--color-chalk)";
                             return (
-                              <button
+                              <button className="pressable"
                                 key={item.id}
                                 data-tour={`nav-${item.id}`}
                                 onClick={() => goItem(item.id, locked)}
@@ -566,7 +566,7 @@ export default function AppShell() {
               Desktop rail only — the mobile drawer shows the accent membership
               CARD version inside its springboard branch above. */}
           {!isMobile && showUpgradeEntry && isEnabled("nav.upgrade") && (
-            <button
+            <button className="pressable"
               onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); openUpgrade(); setDrawerOpen(false); }}
               title={railCollapsed ? "Unlock Full" : undefined}
               style={{
@@ -638,7 +638,7 @@ export default function AppShell() {
             )}
           </div>
           {session.role === "admin" && (
-            <button
+            <button className="pressable"
               onClick={() => { setDrawerOpen(false); router.push("/admin"); }}
               title={railCollapsed ? "Admin console" : undefined}
               style={{
@@ -661,7 +661,7 @@ export default function AppShell() {
             </button>
           )}
           {!isMobile && (
-            <button
+            <button className="pressable"
               onClick={toggleCollapsed}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -684,7 +684,7 @@ export default function AppShell() {
               {collapsed ? "»" : "« Collapse"}
             </button>
           )}
-          <button
+          <button className="pressable"
             onClick={() => {
               logout();
               router.replace("/login");
@@ -734,7 +734,7 @@ export default function AppShell() {
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 24, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: space.md, minWidth: 0 }} />
           <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-            <button
+            <button className="pressable"
               onClick={toggle}
               title="Toggle theme"
               aria-label="Toggle light/dark theme"
@@ -787,7 +787,7 @@ export default function AppShell() {
                   const on = activeScope === id;
                   const c = id === "operator" ? AMBER : id === "coach" ? VIOLET : LIME;
                   return (
-                    <button
+                    <button className="pressable"
                       key={id}
                       onClick={() => setScope(id)}
                       aria-pressed={on}

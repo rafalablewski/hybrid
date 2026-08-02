@@ -52,7 +52,7 @@ export default function AdminAgentRuns() {
 
       <div style={{ display: "flex", gap: space.sm, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
         {FILTERS.map((f) => (
-          <button
+          <button className="pressable"
             key={f}
             onClick={() => setFilter(f)}
             style={{
@@ -75,10 +75,10 @@ export default function AdminAgentRuns() {
         >
           ⬇ CSV
         </a>
-        <button onClick={() => window.print()} style={{ ...mono, fontSize: fs.body, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
+        <button className="pressable" onClick={() => window.print()} style={{ ...mono, fontSize: fs.body, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
           🖨 PDF
         </button>
-        <button onClick={load} style={{ ...mono, fontSize: fs.body, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
+        <button className="pressable" onClick={load} style={{ ...mono, fontSize: fs.body, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
           ↻ refresh
         </button>
       </div>

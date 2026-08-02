@@ -60,7 +60,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
       <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "min(460px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button aria-label={t("common.close")} onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
+          <button className="pressable" aria-label={t("common.close")} onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
         {!data || !p ? (
           <EmptyState title={t("common.loading")} />
@@ -105,8 +105,8 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
 
             {relation !== "self" && (
               <div style={{ display: "flex", gap: 16, marginTop: 18, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
-                <button onClick={doReport} disabled={busy.is("r")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 12, fontFamily: "var(--font-display)" }}>⚐ {t("w.social.report")}</button>
-                <button onClick={doBlock} disabled={busy.is("b")} style={{ background: "none", border: "none", cursor: "pointer", color: C("red"), fontSize: 12, fontFamily: "var(--font-display)" }}>⊘ {t("w.social.block")}</button>
+                <button className="pressable" onClick={doReport} disabled={busy.is("r")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 12, fontFamily: "var(--font-display)" }}>⚐ {t("w.social.report")}</button>
+                <button className="pressable" onClick={doBlock} disabled={busy.is("b")} style={{ background: "none", border: "none", cursor: "pointer", color: C("red"), fontSize: 12, fontFamily: "var(--font-display)" }}>⊘ {t("w.social.block")}</button>
               </div>
             )}
 
@@ -204,7 +204,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
     const titles: Record<FieldKey, string> = { name: t("w.profile.titleName"), handle: t("w.profile.username"), displayName: t("w.profile.displayName"), bio: t("w.profile.bioLabel"), email: t("w.profile.email"), visibility: t("w.profile.whoCanSee") };
     return (
       <div>
-        <button onClick={back} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, marginBottom: 16, cursor: "pointer", color: C("chalk") }}>
+        <button className="pressable" onClick={back} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, marginBottom: 16, cursor: "pointer", color: C("chalk") }}>
           <span style={{ fontSize: 20 }}>‹</span>
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20 }}>{titles[editing]}</span>
         </button>
@@ -278,7 +278,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   const rowList = (items: { key: FieldKey; label: string; value: string; muted: boolean }[]) => (
     <div style={{ border: `1px solid ${C("line")}`, borderRadius: aurora ? 16 : 10, overflow: "hidden" }}>
       {items.map((row, i) => (
-        <button key={row.key} onClick={() => setEditing(row.key)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "13px 14px", background: "none", border: "none", borderTop: i > 0 ? `1px solid ${C("line")}` : "none", cursor: "pointer" }}>
+        <button className="pressable" key={row.key} onClick={() => setEditing(row.key)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "13px 14px", background: "none", border: "none", borderTop: i > 0 ? `1px solid ${C("line")}` : "none", cursor: "pointer" }}>
           <span style={{ width: 96, flex: "none", fontSize: 12, color: C("ash") }}>{row.label}</span>
           <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: row.muted ? C("ash") : C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.value}</span>
           <span style={{ color: C("ash"), fontSize: 16 }}>›</span>
@@ -297,7 +297,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14, color: C("chalk") }}>{t("w.profile.presetAvatar")}</div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 10 }}>
             {AVATAR_PRESETS.map((p) => (
-              <button key={p.id} onClick={() => setForm({ ...form, avatarUrl: p.uri })} aria-label={t("w.profile.presetAria").replace("{n}", String(p.id))} aria-pressed={form.avatarUrl === p.uri}
+              <button className="pressable" key={p.id} onClick={() => setForm({ ...form, avatarUrl: p.uri })} aria-label={t("w.profile.presetAria").replace("{n}", String(p.id))} aria-pressed={form.avatarUrl === p.uri}
                 style={{ width: 30, height: 30, borderRadius: "50%", padding: 0, cursor: "pointer", overflow: "hidden", background: "none", border: `2px solid ${form.avatarUrl === p.uri ? C("lime") : "transparent"}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.uri} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -308,7 +308,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
         {form.avatarUrl && <Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : t("w.profile.savePhoto")}</Btn>}
-        <button disabled title={t("w.profile.uploadSoonTitle")} style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "8px 12px", borderRadius: aurora ? 12 : 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), cursor: "not-allowed", whiteSpace: "nowrap" }}>{t("w.profile.uploadSoon")}</button>
+        <button className="pressable" disabled title={t("w.profile.uploadSoonTitle")} style={{ fontFamily: "var(--font-mono)", fontSize: 12, padding: "8px 12px", borderRadius: aurora ? 12 : 8, border: `1px solid ${C("line")}`, background: "transparent", color: C("ash"), cursor: "not-allowed", whiteSpace: "nowrap" }}>{t("w.profile.uploadSoon")}</button>
       </div>
 
       {/* ── IDENTITY ── name, handle, display name, bio. */}

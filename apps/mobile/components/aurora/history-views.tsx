@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import {
   fmtTonnage,
   sessionHeadline,
@@ -25,7 +25,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────

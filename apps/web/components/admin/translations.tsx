@@ -181,7 +181,7 @@ export default function AdminTranslations() {
                           }}
                         />
                         {overridden && (
-                          <button
+                          <button className="pressable"
                             title="Revert to baseline"
                             onClick={() => save(lang, key, "")}
                             style={{ background: "transparent", border: "none", color: txt(ASH), cursor: "pointer", fontSize: fs.bodyLg, padding: "6px 2px", flexShrink: 0 }}

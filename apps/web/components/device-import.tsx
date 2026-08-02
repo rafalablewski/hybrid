@@ -116,7 +116,7 @@ export default function DeviceImportPanel({
             <span style={{ ...disp, fontWeight: 700, fontSize: fs.note, display: "block", color: CHALK }}>{t("device.import.autoTitle")}</span>
             <Mono s={{ fontSize: fs.micro, lineHeight: 1.45, display: "block", marginTop: 2 }} c={ASH}>{t("device.import.autoDesc")}</Mono>
           </div>
-          <button
+          <button className="pressable"
             role="switch"
             aria-checked={prefs.deviceAutoImport}
             aria-label={t("device.import.autoTitle")}

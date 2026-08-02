@@ -82,7 +82,7 @@ function tierStyle(tier: InkTier): React.CSSProperties {
 }
 
 // A row-press reset — table/list rows open the exercise sheet, so they are real
-// <button>s (keyboard + AT reachable), styled back to plain rows.
+// <button className="pressable">s (keyboard + AT reachable), styled back to plain rows.
 const rowBtn: React.CSSProperties = {
   display: "block",
   width: "100%",
@@ -212,7 +212,7 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
   const right = dayContentSummary(day);
   return (
     <Card>
-      <button
+      <button className="pressable"
         type="button"
         disabled={!expandable}
         onClick={onToggle}
@@ -376,7 +376,7 @@ function QuietMatrix({ lifts, dayMax, label, onPress }: { lifts: ProgramLiftView
                 return (
                   <tr key={i} onClick={() => onPress(l)} style={{ borderTop: i > 0 ? `1px solid ${HAIR}` : undefined, cursor: "pointer" }}>
                     <th scope="row" style={{ ...sticky, textAlign: "left", padding: "12px 8px 12px 16px", fontWeight: 400 }}>
-                      <button type="button" onClick={(e) => { e.stopPropagation(); onPress(l); }} style={rowBtn} aria-label={`${l.name} — details`}>
+                      <button className="pressable" type="button" onClick={(e) => { e.stopPropagation(); onPress(l); }} style={rowBtn} aria-label={`${l.name} — details`}>
                         <NameCell lift={l} />
                       </button>
                     </th>
@@ -409,7 +409,7 @@ function QuietMatrix({ lifts, dayMax, label, onPress }: { lifts: ProgramLiftView
 // empty lane: name left, the whole prescription in words right.
 function OutlierRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTop: string; onPress: () => void }) {
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop }}>
+    <button className="pressable" type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <NameCell lift={lift} />
       </span>
@@ -446,7 +446,7 @@ function AccessoryRows({ lifts, label, onPress }: { lifts: ProgramLiftView[]; la
 // bodybuilding row — Sets×Reps + RPE heat (RPE keeps its semantic heat colour).
 function HeatRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTop: string; onPress: () => void }) {
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", padding: "12px 16px", borderTop }}>
+    <button className="pressable" type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", padding: "12px 16px", borderTop }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <NameCell lift={lift} />
       </span>
@@ -461,7 +461,7 @@ function HeatRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTo
 // way the % matrix colours its loads; otherwise it stays chalk.
 function FallbackRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTop: string; onPress: () => void }) {
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", gap: 16, padding: "12px 16px", alignItems: "baseline", borderTop }}>
+    <button className="pressable" type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", gap: 16, padding: "12px 16px", alignItems: "baseline", borderTop }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <NameCell lift={lift} />
       </span>
@@ -475,7 +475,7 @@ function ProseRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderT
   const rest = /rest/i.test(lift.name);
   const detail = lift.prescription && lift.note ? `${lift.prescription} (${lift.note})` : lift.prescription || lift.note || null;
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, padding: "12px 16px", borderTop }}>
+    <button className="pressable" type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, padding: "12px 16px", borderTop }}>
       <span style={{ display: "block", fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
         <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 8, verticalAlign: "middle", background: HEX[liftColor(lift)] }} />
         {lift.name}

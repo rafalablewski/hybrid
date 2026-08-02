@@ -1,6 +1,6 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { Screen, Kicker, Mono, H1, F } from "../../lib/ui";
+import { Screen, Kicker, Mono, H1, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useSession } from "../../lib/session";
 import { AuroraIcon } from "../../components/aurora/icons";

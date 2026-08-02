@@ -118,7 +118,7 @@ function CategoryRail({ categories }: { categories: string[] }) {
       style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "8px var(--page-pad-x, 16px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
     >
       {categories.map((c) => (
-        <button
+        <button className="pressable"
           key={c}
           onClick={() => jump(c)}
           style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", padding: "8px 12px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: "transparent", color: C("ash"), border: `1px solid ${C("line")}` }}
@@ -199,7 +199,7 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
   const [pressed, setPressed] = useState(false);
   const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
-    <button
+    <button className="pressable"
       onClick={onOpen}
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}
@@ -411,7 +411,7 @@ function PlanWeekRail({ bars, weeks, week, setWeek, wkLabel }: { bars: PlanWeekB
           const on = w === week;
           const v = byWeek.get(w) ?? 0;
           return (
-            <button key={w} onClick={() => setWeek(w)} aria-pressed={on} style={{ flex: "0 0 auto", width: 46, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "3px 0", background: "none", border: "none", cursor: "pointer" }}>
+            <button className="pressable" key={w} onClick={() => setWeek(w)} aria-pressed={on} style={{ flex: "0 0 auto", width: 46, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "3px 0", background: "none", border: "none", cursor: "pointer" }}>
               {hasBars ? (
                 <span style={{ width: 16, height: 34, display: "flex", alignItems: "flex-end" }}>
                   <span style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: 3, background: on ? C("lime") : `color-mix(in srgb, ${C("chalk")} 16%, transparent)` }} />
@@ -434,7 +434,7 @@ function PlanDock({ docked, state, idleLabel, busyLabel, doneLabel, onClick }: {
   const done = state === "done";
   return (
     <div aria-hidden={!docked} style={{ position: "fixed", left: 0, right: 0, bottom: 96, zIndex: 40, display: "flex", justifyContent: "center", padding: "0 16px", pointerEvents: "none", opacity: docked ? 1 : 0, transform: docked ? "none" : "translateY(10px)", transition: "opacity .22s ease, transform .22s ease" }}>
-      <button
+      <button className="pressable"
         onClick={onClick}
         disabled={state === "busy" || done}
         tabIndex={docked ? 0 : -1}
