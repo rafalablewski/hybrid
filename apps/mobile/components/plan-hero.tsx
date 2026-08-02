@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { HERO, HERO_INK, HERO_INLINE_TITLE, heroGeometry, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
@@ -13,12 +13,14 @@ import { useTheme, txt } from "../lib/theme";
 import { fs, F, serifIf, useEntrance, PressScale as Pressable } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { AuroraField, withAlpha } from "./aurora/kit";
-import { MetaLine } from "./aurora/meta";
+import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./aurora/hero";
 import { haptic } from "../lib/haptics";
 
 /** The Explore PlanCover's fixed-dark base — the cover is dark in BOTH themes,
- *  exactly like the Explore cards it grows out of. */
-const COVER_INK = "#0c0d0c";
+ *  exactly like the Explore cards it grows out of. Now the HERO SYSTEM's ink
+ *  (packages/core/src/hero.ts), so the cover, the Wrapped takeover and every
+ *  future art hero start from one colour. */
+const COVER_INK = HERO_INK;
 
 /** The docked enroll pill both detail renderers hand to PlanCoverScreen's dock
  *  slot — lime while actionable, a quiet bordered status pill once enrolled. */
@@ -51,19 +53,12 @@ export function PlanDockPill({ state, idleLabel, busyLabel, doneLabel, onPress }
     </Pressable>
   );
 }
-/** color-mix(in srgb, #fff 82%, accent) — the chip's accent-tinted white, the
- *  exact mix web's cover chip runs (cover-hero.tsx). Computed here because RN
- *  has no color-mix(). */
-function chipTint(accent: string): string {
-  const n = parseInt(accent.slice(1, 7), 16);
-  const ch = (shift: number) => Math.round(0.82 * 255 + 0.18 * ((n >> shift) & 0xff));
-  return `#${((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1)}`;
-}
 
-/** Bar content height below the status-bar inset when fully collapsed. */
-const BAR_CONTENT = 56;
-/** Cover content height below the status-bar inset when fully expanded. */
-const COVER_CONTENT = 252;
+/** Geometry comes from the HERO SYSTEM — this screen is rank `cover`, and it
+ *  collapses to the same bar every other rank collapses to, at the same rail y.
+ *  See reference/hero-system.md. */
+const BAR_CONTENT = HERO.height.bar;
+const COVER_CONTENT = HERO.height.cover;
 
 /** ── the seam ──────────────────────────────────────────────────────────────
  *  The cover's bottom edge used to butt straight up against the page and read
@@ -210,9 +205,10 @@ export function CoverScreen({
   const blurbOnFace = cover.variant === "goal";
   // Four hem columns (a recipe's four macros) need tighter type than three.
   const wide = cover.stats.length > 3;
-  const heroH = insets.top + COVER_CONTENT;
-  const barH = insets.top + BAR_CONTENT;
-  const delta = heroH - barH;
+  const geom = heroGeometry("cover", insets.top);
+  const heroH = geom.height;
+  const barH = geom.barHeight;
+  const delta = geom.delta;
 
   const scrollRef = useRef<ScrollView>(null);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -252,8 +248,9 @@ export function CoverScreen({
   // Released mid-collapse → settle to the nearer pole. A genuine detent, so it
   // may buzz (user-gated); under Reduce Motion the settle is an instant jump.
   const snap = (y: number) => {
-    if (y <= 6 || y >= delta) return;
-    scrollRef.current?.scrollTo({ y: y > delta / 2 ? delta : 0, animated: !reduced });
+    const target = heroSnapTarget(y, geom);
+    if (target == null) return;
+    scrollRef.current?.scrollTo({ y: target, animated: !reduced });
     haptic.selection();
   };
 
@@ -263,16 +260,20 @@ export function CoverScreen({
     scrollY.interpolate({ inputRange: input, outputRange: output, extrapolate: "clamp" });
   const heroShift = clamp([0, delta], [0, -delta]);
   const counter = clamp([0, delta], [0, delta]);
-  const glyphCounter = clamp([0, delta], [0, delta * (emblem ? 0.66 : 0.55)]);
+  // Every detent below is the HERO SYSTEM's, published once in core — the
+  // reason this cover and the web twin can no longer drift on WHEN the title
+  // leaves or the bar arrives.
+  const D = HERO.detent;
+  const glyphCounter = clamp([0, delta], [0, delta * (emblem ? HERO.parallax.emblem : HERO.parallax.art)]);
   // A monochrome ghost can survive into the pinned bar as texture; the recipe
   // plate is a full-colour emoji, so it has to be gone by the time the bar is.
-  const glyphFade = plate ? clamp([0, delta * 0.77], [1, 0]) : clamp([0, delta], [1, 0.4]);
+  const glyphFade = plate ? clamp([0, delta * HERO.colourArtOut], [1, HERO.artFloor.colour]) : clamp([0, delta], [1, HERO.artFloor.ghost]);
   const scrimFade = clamp([0, delta], [1, 0]);
-  const bigFade = clamp([0, delta * 0.5], [1, 0]);
-  const compactFade = clamp([delta * 0.62, delta], [0, 1]);
-  const hairFade = clamp([delta * 0.5, delta], [0, 1]);
-  const dockFade = clamp([delta * 0.45, delta], [0, 1]);
-  const dockRise = clamp([delta * 0.45, delta], [10, 0]);
+  const bigFade = clamp([0, delta * D.titleOut], [1, 0]);
+  const compactFade = clamp([delta * D.inlineIn, delta], [0, 1]);
+  const hairFade = clamp([delta * D.hairlineIn, delta], [0, 1]);
+  const dockFade = clamp([delta * D.dock, delta], [0, 1]);
+  const dockRise = clamp([delta * D.dock, delta], [HERO.motion.rise, 0]);
   // The rail docks beneath the collapsed bar: once its natural position would
   // scroll past `barH`, it translates down to hold there (second sticky layer).
   const railShift =
@@ -331,7 +332,7 @@ export function CoverScreen({
           >
             {/* the hem — editorial rule-topped stat columns directly on the ink,
                 the first content to slide under the pinned cover. */}
-            <View style={{ paddingHorizontal: 16 }}>
+            <View style={{ paddingHorizontal: HERO.gutter.edge }}>
               {cover.stats.length > 0 && (
                 <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 16, marginBottom: 16 }}>
                   {cover.stats.map((s) => (
@@ -417,8 +418,8 @@ export function CoverScreen({
             <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: scrimFade }]}>
               <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc", COVER_INK]} locations={[0, 0.95, 1]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
             </Animated.View>
-            {/* ghost glyph — the cover art; parallax drift against the frame.
-                On the goal emblem it IS the subject: bigger, brighter, deeper. */}
+            {/* the art — parallax drift against the frame. On the goal emblem it
+                IS the subject: bigger, brighter, deeper. */}
             <Animated.Text
               pointerEvents="none"
               style={{
@@ -436,18 +437,13 @@ export function CoverScreen({
               {cover.glyph}
             </Animated.Text>
 
-            {/* bar chrome — counter-translates so it never moves on screen */}
-            <Animated.View style={{ position: "absolute", top: insets.top + 4, left: 16, right: 18, height: 44, flexDirection: "row", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: [{ translateY: counter }] }}>
-              <Pressable
-                onPress={back}
-                accessibilityRole="button"
-                accessibilityLabel={`← ${backLabel}`}
-                hitSlop={8}
-                style={{ width: 38, height: 38, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center" }}
-              >
-                <Text style={{ fontFamily: F.semi, fontSize: 16, color: "#fff" }}>←</Text>
-              </Pressable>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "600", letterSpacing: 0.9, color: "rgba(255,255,255,0.88)" }}>{cover.duration}</Text>
+            {/* THE RAIL — the system's spatial constant: same y, same 40pt
+                circular nav button, same trailing metadata slot as every other
+                screen in the app. It counter-translates the frame, so the
+                button never moves on screen. */}
+            <Animated.View style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, flexDirection: "row", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: [{ translateY: counter }] }}>
+              <HeroNav onPress={back} fromLabel={backLabel} material="glass" onDark />
+              <HeroAccessory label={cover.duration} />
             </Animated.View>
 
             {/* compact bar title — fades in a beat after the big one leaves */}
@@ -455,33 +451,38 @@ export function CoverScreen({
               pointerEvents="none"
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
-              style={{ position: "absolute", top: insets.top + 4, left: 62, right: 62, height: 44, alignItems: "center", justifyContent: "center", zIndex: 2, opacity: compactFade, transform: [{ translateY: counter }] }}
+              style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge + HERO.nav.hit + 8, right: HERO.gutter.edge + HERO.nav.hit + 8, height: HERO.rail.height, alignItems: "center", justifyContent: "center", zIndex: 2, opacity: compactFade, transform: [{ translateY: counter }] }}
             >
-              <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: "#fff" }}>{cover.title}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: "#fff" }}>{cover.title}</Text>
             </Animated.View>
 
             {/* the cover proper — chip, title, meta; slides up with the frame */}
-            <Animated.View pointerEvents="none" style={{ position: "absolute", left: 18, right: 18, bottom: 18, opacity: bigFade }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", color: "#0d0e0d", backgroundColor: chipTint(accent), paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, overflow: "hidden" }}>{cover.chip}</Text>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 31, lineHeight: 33, letterSpacing: -1, color: "#fff", maxWidth: "86%", marginTop: 12 }}>{cover.title}</Text>
+            {/* the display block — eyebrow, title, meta. BOTTOM-ANCHORED, so a
+                two-line title grows upward into the art and the hem below never
+                moves because a plan's name got longer. */}
+            <Animated.View pointerEvents="none" style={{ position: "absolute", left: HERO.gutter.hero, right: HERO.gutter.hero, bottom: HERO.rail.bottom + 10, opacity: bigFade }}>
+              <View style={{ marginBottom: 10 }}>
+                <HeroEyebrow label={cover.chip} tone="solid" accent={accent} />
+              </View>
+              <HeroTitle title={cover.title} rank="cover" style={{ maxWidth: "88%" } as never} />
               {blurbOnFace ? (
-                <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: "rgba(255,255,255,0.85)", maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
+                <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: `rgba(255,255,255,${HERO.alpha.dim})`, maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
               ) : (
                 <View style={{ marginTop: 8 }}>
-                  <MetaLine parts={cover.metaParts} textStyle={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.82)", letterSpacing: 0.9 }} />
+                  <HeroMetadata parts={cover.metaParts} />
                 </View>
               )}
             </Animated.View>
 
             {/* hairline — the collapsed bar's bottom edge */}
-            <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: StyleSheet.hairlineWidth, backgroundColor: "rgba(255,255,255,0.16)", opacity: hairFade }} />
+            <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: StyleSheet.hairlineWidth, backgroundColor: `rgba(255,255,255,${HERO.alpha.hairline})`, opacity: hairFade }} />
           </Animated.View>
 
           {/* ── the dock: CTA pill above the tab bar, arrives with the collapse ── */}
           {dock && (
             <Animated.View
               pointerEvents={docked ? "box-none" : "none"}
-              style={{ position: "absolute", left: 16, right: 16, bottom: insets.bottom + AURORA_NAV_BAR_HEIGHT + 14, zIndex: 30, opacity: dockFade, transform: [{ translateY: dockRise }] }}
+              style={{ position: "absolute", left: HERO.gutter.edge, right: HERO.gutter.edge, bottom: insets.bottom + AURORA_NAV_BAR_HEIGHT + 14, zIndex: 30, opacity: dockFade, transform: [{ translateY: dockRise }] }}
             >
               {dock}
             </Animated.View>

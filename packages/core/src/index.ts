@@ -109,6 +109,7 @@ export * from "./avatar-presets";
 export * from "./profile-completeness";
 export * from "./full-benefits";
 export * from "./scale";
+export * from "./hero";
 export * from "./email";
 export * from "./format";
 export * from "./social-dto";

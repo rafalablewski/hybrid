@@ -10,6 +10,10 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import { useRouter } from "next/navigation";
 import { sharedElementStyle } from "@/lib/shared-element";
 import {
+  HERO,
+  HERO_FIGURE,
+  heroGeometry,
+  heroTitleType,
   SHARED_ELEMENTS,
   sessionWrapped,
   fitScale,
@@ -60,6 +64,7 @@ import { shareWorkoutSlide, shareText, type StorySlide, type ShareBest } from "@
 import { StoryCard } from "./story-card";
 import { FeelPrompt } from "./feel-prompt";
 import { AuroraIcon } from "./icons";
+import { HeroEyebrow, HeroNav } from "./hero";
 import { CtaLabel } from "./cta-label";
 import { DeviceMark } from "./device-mark";
 import { fs, space, LIME, LIME_HEX, VIOLET, CHALK, ASH, INK2, LINE, ON_ACCENT, RED, disp, mono, Mono, txt } from "@/lib/ui";
@@ -336,14 +341,26 @@ export function WorkoutWrapped({
   const showDock = panel < keys.length;
 
   const container: CSSProperties = { position: "fixed", inset: 0, zIndex: 60, background: PANEL_BG, overflowY: "auto", scrollSnapType: "y proximity", color: txt(CHALK), fontFamily: "var(--font-display)" };
-  const panelStyle: CSSProperties = { minHeight: "100dvh", scrollSnapAlign: "start", position: "relative", padding: "72px 24px 150px", display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box", maxWidth: 560, margin: "0 auto" };
-  const eyebrow = (label: string) => <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={GOLD}>✦ {label}</Mono>;
+  // The takeover is rank `cover`, mode `takeover`: no collapse track, but the
+  // rail sits at the system's y and the panels clear the same bar height every
+  // other screen clears.
+  const geom = heroGeometry("cover", 0, "takeover");
+  const heroTitle = heroTitleType(session.title, "cover");
+  const panelStyle: CSSProperties = { minHeight: "100dvh", scrollSnapAlign: "start", position: "relative", padding: `${geom.barHeight + 16}px ${HERO.gutter.hero}px 150px`, display: "flex", flexDirection: "column", overflow: "hidden", boxSizing: "border-box", maxWidth: 560, margin: "0 auto" };
+  // The takeover keeps the HERO SYSTEM's metadata voice — the same eyebrow the
+  // cover uses, tinted gold and carrying the ✦ premium signifier.
+  const eyebrow = (label: string) => <HeroEyebrow label={label} tone="tint" accent={GOLD} mark="✦" />;
   const scrollHint = <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textAlign: "center", marginTop: 16, opacity: 0.8 }}>{t("session.wrapped.scroll")} ↑</Mono>;
 
   return (
     <div ref={scrollRef} onScroll={onScroll} style={container}>
-      {/* Back — fixed top-left */}
-      <button className="pressable" onClick={onBack} aria-label={t("summary.doneToday")} style={{ position: "fixed", top: 14, left: 14, zIndex: 70, width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "rgba(0,0,0,.4)", color: txt(CHALK), fontSize: 18, cursor: "pointer" }}>←</button>
+      {/* THE RAIL — the same 40px circular control, at the same y, as every
+          other screen. A takeover has no stack under it, so it DISMISSES
+          (chevron-down) rather than pops; the geometry is untouched, which is
+          why the pointer never has to re-find it. */}
+      <div style={{ position: "fixed", top: geom.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, display: "flex", alignItems: "center", zIndex: 70 }}>
+        <HeroNav onClick={onBack} mode="takeover" material="glass" onDark />
+      </div>
 
       {/* ── REVEAL ── */}
       {cel && (
@@ -356,7 +373,7 @@ export function WorkoutWrapped({
           </div>
           <div className="pr-trophy" style={{ lineHeight: 1 }}><AuroraIcon name="trophy" size={88} color={GOLD} /></div>
           <Mono s={{ fontSize: fs.body, letterSpacing: ".12em", textTransform: "uppercase", marginTop: 20 }} c={GOLD}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Mono>
-          <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 20vw, 104px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.03em", lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
+          <div style={{ ...disp, fontWeight: 900, fontSize: `calc(${HERO_FIGURE.size}px * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: `${HERO_FIGURE.tracking}em`, lineHeight: .9, marginTop: 10, whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, marginTop: 8 }}>{heroSub}</div>
           {scrollHint}
         </section>
@@ -372,9 +389,9 @@ export function WorkoutWrapped({
             reveal over this panel, and two things moving at once is the
             "don't stack effects" rule — the armed source then simply expires
             and the ordinary push carries the change. */}
-        <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative", ...(cel ? {} : sharedElementStyle(SHARED_ELEMENTS.sessionHero)) }}>{session.title}</div>
+        <div style={{ ...disp, fontWeight: 900, fontSize: heroTitle.size, letterSpacing: `${heroTitle.tracking}em`, lineHeight: `${heroTitle.lineHeight}px`, marginTop: 12, position: "relative", ...(cel ? {} : sharedElementStyle(SHARED_ELEMENTS.sessionHero)) }}>{session.title}</div>
         <div style={{ flex: 1 }} />
-        <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.03em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
+        <div style={{ ...disp, fontWeight: 900, fontSize: `calc(${HERO_FIGURE.size}px * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: `${HERO_FIGURE.tracking}em`, lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 12, color: txt(cel ? LIME : CHALK), position: "relative" }}>{heroSub}</div>
         {signature.length >= SIGNATURE_MIN_BARS && (
           <div aria-hidden style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 44, marginTop: 16, position: "relative" }}>

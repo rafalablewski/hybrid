@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs } from "@hybrid/core";
-import { MetaLine } from "./meta";
+import { HERO, HERO_INK, HERO_INLINE_TITLE, fs, heroGeometry } from "@hybrid/core";
+import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./hero";
 
 /**
  * The COVER — the Explore PlanCover recipe at screen scale, full-bleed at the
@@ -21,10 +21,15 @@ import { MetaLine } from "./meta";
 
 const C = (v: string) => `var(--color-${v})`;
 
-export const COVER_INK = "#0c0d0c"; // fixed-dark cover base, both themes (Explore parity)
-export const COVER_H = 272;
-export const COVER_BAR = 56;
-export const COVER_DELTA = COVER_H - COVER_BAR;
+/** Geometry comes from the HERO SYSTEM — this screen is rank `cover`, and it
+ *  collapses to the same bar every other rank collapses to, at the same rail y.
+ *  Web has no safe-area inset to reserve, so the geometry is taken at safeTop 0;
+ *  every other number is the one mobile uses. See reference/hero-system.md. */
+const GEOM = heroGeometry("cover", 0);
+export const COVER_INK = HERO_INK; // fixed-dark cover base, both themes
+export const COVER_H = GEOM.height;
+export const COVER_BAR = GEOM.barHeight;
+export const COVER_DELTA = GEOM.delta;
 
 /** ── the seam ──────────────────────────────────────────────────────────────
  *  The cover's bottom edge used to butt straight up against the page and read
@@ -71,12 +76,12 @@ export function useHeroCollapse(
       if (rounded === last) return;
       last = rounded;
       root.style.setProperty("--hero-collapse", String(rounded));
-      setDocked(rounded > 0.45); // React bails out when the boolean is unchanged
+      setDocked(rounded > HERO.detent.dock); // React bails out when unchanged
     };
     const snap = () => {
       const risen = -hero.getBoundingClientRect().top;
       if (risen <= 6 || risen >= COVER_DELTA) return;
-      window.scrollTo({ top: window.scrollY + ((risen > COVER_DELTA / 2 ? COVER_DELTA : 0) - risen), behavior: reduced ? "auto" : "smooth" });
+      window.scrollTo({ top: window.scrollY + ((risen > COVER_DELTA * HERO.detent.snap ? COVER_DELTA : 0) - risen), behavior: reduced ? "auto" : "smooth" });
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(publish);
@@ -128,11 +133,6 @@ export interface CoverSpec {
   variant?: "plan" | "goal" | "library" | "recipe";
 }
 
-/** The cover's display title at whichever heading level its screen needs. */
-function CoverTitle({ as: Tag, style, children }: { as: "h1" | "h2"; style: React.CSSProperties; children: React.ReactNode }) {
-  return <Tag style={style}>{children}</Tag>;
-}
-
 /** The full-bleed collapsing cover + the stats HEM (rule-topped editorial
  *  columns directly on the ink) + the one-line blurb.
  *  `back` is optional: the Plans root is a top-level screen with nowhere to go
@@ -179,43 +179,46 @@ export function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpe
             color: plate ? undefined : `rgba(255,255,255,${emblem ? ".09" : ".07"})`,
             filter: plate ? "drop-shadow(0 18px 40px rgba(0,0,0,.5))" : undefined,
             pointerEvents: "none",
-            opacity: plate ? `max(0, calc(1 - ${p} * 1.3))` : `calc(1 - ${p} * .6)`,
-            transform: `translateY(calc(${p} * ${Math.round(COVER_DELTA * (emblem ? 0.66 : 0.55))}px))`,
+            opacity: plate ? `max(0, calc(1 - ${p} / ${HERO.colourArtOut}))` : `calc(1 - ${p} * ${(1 - HERO.artFloor.ghost).toFixed(2)})`,
+            transform: `translateY(calc(${p} * ${Math.round(COVER_DELTA * (emblem ? HERO.parallax.emblem : HERO.parallax.art))}px))`,
           }}
         >
           {cover.glyph}
         </span>
 
-        {/* bar chrome — counter-translates so it never moves on screen */}
-        <div style={{ position: "absolute", top: 8, left: 16, right: 20, height: 42, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
-          {back ? (
-            <button className="pressable" onClick={back} aria-label={`← ${backLabel}`} style={{ width: 40, height: 40, borderRadius: 999, background: "rgba(255,255,255,.12)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "none", color: "#fff", cursor: "pointer", fontSize: 17 }}>←</button>
-          ) : (
-            <span />
-          )}
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", color: "rgba(255,255,255,.88)" }}>{cover.duration}</span>
+        {/* THE RAIL — the system's spatial constant: same y, same 40px circular
+            nav button, same trailing metadata slot as every other screen. It
+            counter-translates the frame, so the button never moves on screen. */}
+        <div style={{ position: "absolute", top: GEOM.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
+          {back ? <HeroNav onClick={back} fromLabel={backLabel} material="glass" onDark /> : <span style={{ width: HERO.nav.hit }} />}
+          <HeroAccessory label={cover.duration} />
         </div>
 
         {/* compact bar title — fades in a beat after the big one leaves */}
-        <div aria-hidden style={{ position: "absolute", top: 8, left: back ? 64 : 20, right: 64, height: 42, display: "grid", placeItems: "center", justifyItems: back ? "center" : "start", zIndex: 2, pointerEvents: "none", opacity: `clamp(0, calc((${p} - .62) * 2.7), 1)`, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
-          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{cover.title}</span>
+        <div aria-hidden style={{ position: "absolute", top: GEOM.railTop, left: HERO.gutter.edge + (back ? HERO.nav.hit + 8 : 4), right: HERO.gutter.edge + HERO.nav.hit + 8, height: HERO.rail.height, display: "grid", placeItems: "center", justifyItems: back ? "center" : "start", zIndex: 2, pointerEvents: "none", opacity: `clamp(0, calc((${p} - ${HERO.detent.inlineIn}) * ${(1 / (1 - HERO.detent.inlineIn)).toFixed(2)}), 1)`, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: HERO_INLINE_TITLE.size, letterSpacing: `${HERO_INLINE_TITLE.tracking}em`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{cover.title}</span>
         </div>
 
         {/* the cover proper — chip, title, meta; slides up with the frame */}
-        <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, opacity: `clamp(0, calc(1 - ${p} * 2), 1)` }}>
-          <span style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#0d0e0d", background: `color-mix(in srgb, #fff 82%, ${accent})`, padding: "5px 12px", borderRadius: 999 }}>{cover.chip}</span>
+        {/* the display block — eyebrow, title, meta. BOTTOM-ANCHORED, so a
+            two-line title grows upward into the art and the hem below never
+            moves because a plan's name got longer. */}
+        <div style={{ position: "absolute", left: HERO.gutter.hero, right: HERO.gutter.hero, bottom: HERO.rail.bottom + 10, opacity: `clamp(0, calc(1 - ${p} * ${(1 / HERO.detent.titleOut).toFixed(0)}), 1)` }}>
+          <div style={{ marginBottom: 10 }}>
+            <HeroEyebrow label={cover.chip} tone="solid" accent={accent} />
+          </div>
           {/* the library cover IS the page's h1 — the root has no other heading
               above it; the goal, plan and recipe covers stay h2 under their own screen */}
-          <CoverTitle as={library ? "h1" : "h2"} style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: "clamp(28px, 6vw, 36px)", lineHeight: 1.04, letterSpacing: "-.03em", margin: "12px 0 0", maxWidth: "16ch", textWrap: "balance", textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cover.title}</CoverTitle>
+          <HeroTitle title={cover.title} rank="cover" as={library ? "h1" : "h2"} style={{ textShadow: "0 2px 18px rgba(0,0,0,.35)" }} />
           {blurbOnFace ? (
-            <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.4, color: "rgba(255,255,255,.85)", maxWidth: "44ch", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{cover.blurb}</p>
+            <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.4, color: `rgba(255,255,255,${HERO.alpha.dim})`, maxWidth: "44ch", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{cover.blurb}</p>
           ) : (
-            <MetaLine parts={cover.metaParts} style={{ display: "flex", marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.82)", letterSpacing: ".08em" }} />
+            <div style={{ marginTop: 8 }}><HeroMetadata parts={cover.metaParts} /></div>
           )}
         </div>
 
         {/* hairline — the collapsed bar's bottom edge */}
-        <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 1, background: "rgba(255,255,255,.16)", opacity: p }} />
+        <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 1, background: `rgba(255,255,255,${HERO.alpha.hairline})`, opacity: p }} />
       </div>
 
       {/* the cover ink bleeding into the page — in normal flow (so it scrolls

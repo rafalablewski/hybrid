@@ -8,6 +8,7 @@ import { usePlanOverrides } from "@/lib/plan-overrides";
 import { SessionDetail } from "../session-detail";
 import { useLang } from "@/lib/i18n";
 import { ViewSwitcher, AgendaView, WeeksView, TimelineView, TrendView, type ViewCtx } from "./history-views";
+import { HeroScreen, HeroAccessory } from "./hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import type { ComponentType } from "react";
@@ -141,20 +142,23 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
     );
   }
 
-  const archivedToggle = (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.hist.title")}</h1>
-      <button className="pressable" onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? "var(--lime-text)" : C("ash"), background: "none", border: `1px solid ${showArchived ? C("lime") : C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
-    </div>
-  );
-
   const list = showArchived ? archived : sessions;
+  // THE HERO — rank `title`. History is an INFORMATION page: its subject is a
+  // collection, and a collection has no portrait, so there is no art and the
+  // ground is the ambient field. Identical geometry, type ramp, metadata voice
+  // and collapse detents as the mobile twin — both read packages/core/src/hero.ts.
   // Live history renders the chosen merged layout (agenda/journal/weeks/
   // timeline/blocks); archived management keeps the classic swipe list.
   return (
+    <HeroScreen
+      hero={{ rank: "title", title: t("w.analyze.hist.title"), meta: [list.length ? `${list.length} ${t(showArchived ? "w.analyze.hist.archivedToggle" : "w.analyze.hist.title")}` : null] }}
+      // The rail's trailing slot — ONE control, in the metadata voice.
+      accessory={<HeroAccessory label={t(showArchived ? "w.analyze.hist.backToHistory" : "w.analyze.hist.archivedToggle")} active={showArchived} onClick={toggleArchived} onDark={false} />}
+      // The view switcher is a SUB-rail: it docks beneath the collapsed bar
+      // rather than scrolling away, so the layout you are in stays addressable.
+      rail={!showArchived ? <div style={{ padding: "10px 0" }}><ViewSwitcher view={view} onChange={pickView} /></div> : undefined}
+    >
     <div style={{ display: "flex", flexDirection: "column", gap: space.md, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {archivedToggle}
-      {!showArchived && <ViewSwitcher view={view} onChange={pickView} />}
       {!showArchived && fetchError && sessions.length === 0 ? (
         /* A real fetch failure — distinct from a genuine empty history, so an
            offline / 500 load never masquerades as "no workouts yet" (parity
@@ -212,6 +216,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
         </>
       )}
     </div>
+    </HeroScreen>
   );
 }
 
