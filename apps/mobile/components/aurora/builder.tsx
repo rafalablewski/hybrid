@@ -223,8 +223,8 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
   ];
   return (
     <View style={{ marginTop: 4, marginBottom: 16, marginHorizontal: 2 }} accessible accessibilityLabel={`${sig.minutes} min`}>
-      <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 52, letterSpacing: -2, lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}>
-        {sig.minutes}<Text style={{ fontSize: 20, fontWeight: "500", color: C.ash, letterSpacing: 0 }}> min</Text>
+      <Text style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: -2, lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+        {sig.minutes}<Text style={{ fontFamily: F.mono, fontSize: 20, color: C.ash, letterSpacing: 0 }}> min</Text>
       </Text>
       <View style={{ marginTop: 6 }}>
         <MetaLine
@@ -249,7 +249,7 @@ function Metric({ label, value, c, C }: { label: string; value: string; c?: stri
   return (
     <View style={{ marginRight: 18 }}>
       <Text style={{ fontFamily: F.mono, fontSize: 8.5, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
     </View>
   );
 }
@@ -434,7 +434,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
                 style={{ width: 34, height: 38, borderRadius: 8, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+                <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
               </Pressable>
               {showLoad && (
                 <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
@@ -483,7 +483,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13, paddingHorizontal: 14, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
             >
               <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, it.c) }}>{it.badge}</Text>
+                <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, it.c) }}>{it.badge}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{it.label}</Text>
@@ -499,7 +499,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
         <Pressable onPress={() => builder.bumpRest(b.uid, -15)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: C.ash, fontSize: fs.note }}>−</Text>
         </Pressable>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: C.chalk, minWidth: 48, textAlign: "center" }}>{b.restSec ?? DEFAULT_REST_SEC} s</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk, minWidth: 48, textAlign: "center" }}>{b.restSec ?? DEFAULT_REST_SEC} s</Text>
         <Pressable onPress={() => builder.bumpRest(b.uid, 15)} accessibilityRole="button" accessibilityLabel={t("common.increase")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 8, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: txt(C, C.lime), fontSize: fs.note }}>+</Text>
         </Pressable>

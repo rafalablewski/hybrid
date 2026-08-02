@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import {
   prescribeSession,
@@ -79,9 +79,9 @@ export default function AuroraTrain() {
         <ACard style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("train.resume")}</Text>
-            <Pressable onPress={discard} hitSlop={8}>
+            <PressScale onPress={discard} hitSlop={8}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("train.discard")}</Text>
-            </Pressable>
+            </PressScale>
           </View>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{draft.title || "Workout"}</Text>
           <View style={{ marginTop: 2 }}><MetaLine parts={[`${draft.exercises.length} ${t("workout.exercises")}`, t("train.inProgress")]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
@@ -181,7 +181,7 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
 function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T }) {
   const pa = usePremiumAccent();
   return (
-    <Pressable onPress={onPress} style={{ marginTop: 16 }}>
+    <PressScale onPress={onPress} style={{ marginTop: 16 }}>
       <ACard style={{ borderColor: withAlpha(pa.fill, 0.27) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: pa.text }}>{t("train.aiCoach")}</Text>
@@ -190,7 +190,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
         <Text style={{ fontFamily: F.black, fontSize: 22, lineHeight: 25, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }} numberOfLines={3}>{t("train.aiLockedBlurb")}</Text>
       </ACard>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -198,7 +198,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
 function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSession; onPress: () => void; t: T }) {
   const names = session.blocks.map((b) => b.name).slice(0, 3).join(", ");
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderLeftWidth: 3, borderLeftColor: C.lime, borderRadius: RADIUS.card, padding: 17, marginTop: 16 }}
     >
@@ -211,7 +211,7 @@ function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSes
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names || t("train.tapSummary")}</Text>
       </View>
       <Chevron C={C} />
-    </Pressable>
+    </PressScale>
   );
 }
 

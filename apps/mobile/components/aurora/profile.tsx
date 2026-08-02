@@ -28,7 +28,8 @@ import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf } from "../../lib/ui";
+import { fs, F, serifIf, PressScale } from "../../lib/ui";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
 import PrivateTab from "./private-tab";
@@ -294,10 +295,10 @@ export default function AuroraProfile() {
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
-            <Pressable key={tb.id} onPress={() => setTab(tb.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
+            <PressScale key={tb.id} onPress={() => setTab(tb.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
               <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
               {on && <View style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, backgroundColor: C.lime }} />}
-            </Pressable>
+            </PressScale>
           );
         })}
       </View>
@@ -620,18 +621,25 @@ function HighlightGrid({
     if (changed) { setLocalOrder(newFull); persistRef.current(newFull); }
   };
 
-  // Wiggle loop while editing.
-  const wig = useRef(new Animated.Value(0)).current;
+  // Wiggle loop while editing — per-tile stagger (leg duration varies by tile
+  // index % 3, mirroring web's hlWiggle 340/300/380ms nth-child ladder) and
+  // skipped entirely under Reduce Motion (web parity: prefers-reduced-motion
+  // disables the animation).
+  const reducedMotion = useReducedMotion();
+  const wigs = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
   useEffect(() => {
-    if (!editMode) { wig.stopAnimation(); wig.setValue(0); return; }
-    const loop = Animated.loop(Animated.sequence([
-      Animated.timing(wig, { toValue: 1, duration: 170, useNativeDriver: true }),
-      Animated.timing(wig, { toValue: -1, duration: 170, useNativeDriver: true }),
-    ]));
-    loop.start();
-    return () => loop.stop();
-  }, [editMode, wig]);
-  const rotate = wig.interpolate({ inputRange: [-1, 1], outputRange: ["-0.9deg", "0.9deg"] });
+    if (!editMode || reducedMotion) { wigs.forEach((w) => { w.stopAnimation(); w.setValue(0); }); return; }
+    // Small start offsets stand in for web's negative animation-delays, so
+    // neighbouring tiles never wiggle in unison.
+    const variants = [{ dur: 340, delay: 0 }, { dur: 300, delay: 120 }, { dur: 380, delay: 200 }];
+    const loops = variants.map(({ dur }, i) => Animated.loop(Animated.sequence([
+      Animated.timing(wigs[i], { toValue: 1, duration: dur, useNativeDriver: true }),
+      Animated.timing(wigs[i], { toValue: -1, duration: dur, useNativeDriver: true }),
+    ])));
+    const timers = variants.map(({ delay }, i) => setTimeout(() => loops[i].start(), delay));
+    return () => { timers.forEach((tm) => clearTimeout(tm)); loops.forEach((l) => l.stop()); wigs.forEach((w) => w.setValue(0)); };
+  }, [editMode, reducedMotion, wigs]);
+  const rotations = wigs.map((w) => w.interpolate({ inputRange: [-1, 1], outputRange: ["-0.9deg", "0.9deg"] }));
 
   return (
     <>
@@ -642,7 +650,7 @@ function HighlightGrid({
         {...pan.panHandlers}
         style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}
       >
-        {visibleKeys.map((key) => {
+        {visibleKeys.map((key, idx) => {
           const tile = tileMap.get(key)!;
           const isDrag = dragKey === key;
           const tr = getTr(key);
@@ -661,7 +669,7 @@ function HighlightGrid({
                 accessibilityLabel={tile.k}
                 style={{ width: "100%", height: "100%" }}
               >
-                <Animated.View style={{ width: "100%", height: "100%", borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, transform: editMode && !isDrag ? [{ rotate }] : [] }}>
+                <Animated.View style={{ width: "100%", height: "100%", borderWidth: 1, borderColor: C.line, borderRadius: 14, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, transform: editMode && !isDrag ? [{ rotate: rotations[idx % 3] }] : [] }}>
                   <AuroraIcon name={tile.icon} size={22} color={C.lime} />
                   <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk, letterSpacing: -0.4, marginTop: 6 }}>{tile.v}</Text>
                   <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.6, color: C.ash, textTransform: "uppercase", marginTop: 4, maxWidth: "100%" }}>{tile.k}</Text>

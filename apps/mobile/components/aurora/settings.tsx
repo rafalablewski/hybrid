@@ -1,5 +1,5 @@
 import { useState, useCallback, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
+import { View, Text, TextInput, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId } from "@hybrid/core";
 import { resetAccount, deleteAccount } from "../../lib/api";
@@ -233,7 +233,7 @@ export default function AuroraSettings() {
           );
         }
         const ModeCard = ({ on, title, tags, locked, onPress }: { on: boolean; title: string; tags: string; locked?: boolean; onPress: () => void }) => (
-          <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ selected: on }} style={{ flex: 1, padding: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
+          <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ selected: on }} style={{ flex: 1, padding: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{title}</Text>
               {locked && (
@@ -246,7 +246,7 @@ export default function AuroraSettings() {
               )}
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{tags}</Text>
-          </Pressable>
+          </PressScale>
         );
         return (
       <>
@@ -411,7 +411,7 @@ export default function AuroraSettings() {
           inline SVG here), the % + "add a photo & bio" nudge, the FREE/FULL pill,
           and quick-action chips. Shared completeness math with web. */}
       <View style={{ padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20 }}>
-        <Pressable onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={t("w.account.settings.edit-profile")} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+        <PressScale onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={t("w.account.settings.edit-profile")} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2.5, borderColor: txt(C, C.lime), alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {profile?.avatarUrl ? (
               <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
@@ -429,7 +429,7 @@ export default function AuroraSettings() {
             </View>
           </View>
           <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
-        </Pressable>
+        </PressScale>
         {/* Quick actions */}
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
           <PressScale onPress={openEditProfile} style={{ borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, backgroundColor: `${C.lime}14`, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>

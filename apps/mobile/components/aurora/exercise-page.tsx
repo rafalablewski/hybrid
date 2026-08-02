@@ -265,9 +265,9 @@ function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, paddingTop: 16, paddingBottom: 6 }}>
       {slide.cells.map((cell, i) => (
         <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: 14, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 8, color: C.ash, letterSpacing: 0.6 }}>{i + 1}RM</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, letterSpacing: 0.6 }}>{i + 1}RM</Text>
           <Text style={{ fontFamily: F.black, fontSize: 16, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 7, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
         </View>
       ))}
     </View>
@@ -400,7 +400,7 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{tile.cur}</Text>
               {!tile.same && <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: txt(C, tile.good ? C.blue : C.red) }}>{tile.good ? "▲" : "▼"}</Text>}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano - 1, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
           </View>
         ))}
       </View>
@@ -439,7 +439,7 @@ function ConsistencyHeat({ C, slide, foot, t }: { C: Palette; slide: SlideOf<"co
         {stats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
-            <Text style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano - 1, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
+            <Text style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
           </View>
         ))}
       </View>
@@ -658,7 +658,7 @@ export default function AuroraExercisePage() {
         {substats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
-            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.nano - 1, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{st.l}</Text>
+            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>{st.l}</Text>
           </View>
         ))}
       </View>

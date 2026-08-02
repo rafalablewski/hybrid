@@ -107,7 +107,7 @@ export function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: st
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{sub}</Text>
       </View>
       <Text style={{ fontSize: fs.note, color: C.ash }}>›</Text>
-    </Pressable>
+    </PressScale>
   );
 }
 
