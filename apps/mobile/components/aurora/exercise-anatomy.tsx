@@ -139,7 +139,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
         <Pressable onPress={() => setOpen(false)} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
           <Pressable
             onPress={() => {}}
-            style={{ maxHeight: "88%", backgroundColor: C.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderColor: C.line, paddingTop: 10, paddingHorizontal: 20 }}
+            style={{ maxHeight: "88%", backgroundColor: C.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderColor: C.line, paddingTop: 10, paddingHorizontal: 20 }}
           >
             <View style={{ width: 38, height: 4, borderRadius: 3, backgroundColor: C.line, alignSelf: "center", marginTop: 2, marginBottom: 16 }} />
             <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
