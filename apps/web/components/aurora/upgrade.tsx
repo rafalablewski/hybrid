@@ -36,7 +36,7 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
   const act = async () => {
     track(FUNNEL.upgradeCtaClick, { client: "web", paid });
     // Paid-but-Simple: no charge — just flip the mode to Full.
-    if (paid) { setClientPersona("athlete"); onUpgraded?.(); onClose(); return; }
+    if (paid) { setClientPersona("athlete", true); onUpgraded?.(); onClose(); return; }
     setBusy(true); setMsg(null);
     try {
       const res = await fetch("/api/billing/checkout", { method: "POST" });

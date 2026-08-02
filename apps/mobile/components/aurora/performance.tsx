@@ -50,7 +50,7 @@ export default function AuroraPerformance({ top }: { top?: ReactNode }) {
   const { entitlement } = useSession();
   const router = useRouter();
   if (persona === "casual") {
-    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : router.push("/upgrade"))} top={top} />;
+    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete", true) : router.push("/upgrade"))} top={top} />;
   }
   return <Full top={top} />;
 }

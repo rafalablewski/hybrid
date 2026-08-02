@@ -193,7 +193,7 @@ export default function AuroraPerformance({
   const byTissue = useMemo(() => Object.fromEntries(risk.tissues.map((ti) => [ti.tissue, ti])) as Record<string, TissueRisk>, [risk]);
 
   if (persona === "casual") {
-    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete") : setScreen("upgrade"))} />;
+    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete", true) : setScreen("upgrade"))} />;
   }
 
   // Only a legitimate reading once the sessions read is `ready`: before the
