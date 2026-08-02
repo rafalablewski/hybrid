@@ -9,7 +9,7 @@ import { fetchEvents, fetchAssignments, updateAssignment, type EventRow, type As
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
+import { AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];

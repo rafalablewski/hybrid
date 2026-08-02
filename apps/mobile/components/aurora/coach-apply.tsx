@@ -6,7 +6,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ABack, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 /** AURORA Become a coach — same verification-gated application flow (fetch,
  *  status card, form, submit) as the classic, in the rounded look. */

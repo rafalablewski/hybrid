@@ -10,7 +10,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -39,18 +39,9 @@ export default function AuroraEndurance() {
   const activeMove = paceMoves.includes(move) ? move : (paceMoves[0] ?? "");
   const pace = useMemo(() => (activeMove ? paceSeries(dSessions, activeMove).map((p) => p.secPerKm) : []), [dSessions, activeMove]);
 
-  const header = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display }}>{t("endurance.title")}</AHeading>
-      <View style={{ marginLeft: "auto" }}><AuroraIcon name="gps" size={24} color={txt(C, C.blue)} /></View>
-    </View>
-  );
-
   if (!discipline || !totals)
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        {header}
+      <AuroraScreen hero={{ rank: "title", title: t("endurance.title") }} refreshing={refreshing} onRefresh={load}>
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("endurance.emptyTitle")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 19 }}>{t("endurance.emptyBody")}</Text>
@@ -66,8 +57,7 @@ export default function AuroraEndurance() {
   const dName = (d: CardioDiscipline) => t(DISCIPLINE_META[d].labelKey);
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      {header}
+    <AuroraScreen hero={{ rank: "title", title: t("endurance.title") }} refreshing={refreshing} onRefresh={load}>
 
       {/* Discipline picker — one chip per logged endurance discipline */}
       {active.length > 1 && (

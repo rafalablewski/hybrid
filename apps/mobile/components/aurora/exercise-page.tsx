@@ -21,7 +21,7 @@ import { useLang } from "../../lib/i18n";
 import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ABack } from "./kit";
+import { AuroraScreen } from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
 
@@ -603,12 +603,7 @@ export default function AuroraExercisePage() {
         ];
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={refetch}>
-      {/* header — a bare back and the name; hairlines are the only structure */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <ABack label={t("w.analyze.exp.back")} />
-        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>{name}</Text>
-      </View>
+    <AuroraScreen refreshing={refreshing} onRefresh={refetch} hero={{ rank: "title", title: name }} backLabel={t("w.analyze.exp.back")}>
 
       {/* HOW IT'S DONE — looping animation + muscles worked + form cues (gym
           lifts only; cardio/custom names render nothing). */}

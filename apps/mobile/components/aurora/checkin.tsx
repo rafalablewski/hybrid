@@ -19,7 +19,7 @@ import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 
@@ -549,21 +549,13 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
 
   const body = (
     <>
-      {!embedded && (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          <ABack />
-          <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.checkins.title")}</AHeading>
-          <View style={{ marginLeft: "auto" }}><AuroraIcon name="heart" size={24} color={txt(C, C.red)} /></View>
-        </View>
-      )}
-
       {wizard}
     </>
   );
 
   if (embedded) return body;
   return (
-    <AuroraScreen>
+    <AuroraScreen hero={{ rank: "title", title: t("w.recovery.checkins.title") }}>
       {body}
     </AuroraScreen>
   );

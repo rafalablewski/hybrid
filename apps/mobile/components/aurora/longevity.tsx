@@ -6,7 +6,7 @@ import { fetchSignals, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type Palette = ReturnType<typeof useTheme>["palette"];

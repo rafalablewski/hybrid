@@ -11,7 +11,7 @@ import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import type { AuroraIconName } from "@hybrid/core";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
-import { HeroScreen, type HeroSpec } from "./hero";
+import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
 
 /**
  * AURORA template UI kit (mobile). Soft, rounded primitives adapted from the
@@ -31,6 +31,7 @@ export function AuroraScreen({
   backLabel,
   accessory,
   rail,
+  scroller,
   scroll = true,
   center = false,
   // 16dp side gutter — matches the web app-shell's mobile gutter (16px) so a
@@ -68,6 +69,8 @@ export function AuroraScreen({
   accessory?: ReactNode;
   /** A sub-rail that docks beneath the collapsed bar (a segmented control). */
   rail?: ReactNode;
+  /** Render your own scroller (a FlatList) under the hero — see HeroScreen. */
+  scroller?: HeroScrollerFn;
   scroll?: boolean;
   center?: boolean;
   padding?: number;
@@ -101,7 +104,7 @@ export function AuroraScreen({
   // two paths never need to compose.)
   if (hero) {
     return (
-      <HeroScreen hero={hero} back={back} backLabel={backLabel} accessory={accessory} rail={rail} refreshing={refreshing} onRefresh={onRefresh} center={center} scroll={scroll}>
+      <HeroScreen hero={hero} back={back} backLabel={backLabel} accessory={accessory} rail={rail} scroller={scroller} refreshing={refreshing} onRefresh={onRefresh} center={center} scroll={scroll}>
         {children}
       </HeroScreen>
     );
@@ -488,42 +491,6 @@ export function ASegment<T extends string>({
         );
       })}
     </View>
-  );
-}
-
-/**
- * The one canonical screen-header BACK button — a 44×44 line-bordered square with
- * the `back` glyph. This is the single source of truth so every pushed sub-screen
- * gets an identical, labelled return control instead of the ad-hoc `‹`/`←`
- * variants screens used to hand-roll.
- *
- * Theme-aware surface: AURORA (dark) keeps the transparent OUTLINED square (the
- * treatment the web app uses); KYOTO HOUR (light) fills it as a SOFT SURFACE — an
- * ink2 tile with a touch of depth — because a hollow outline reads as unfinished
- * on the warm washi ground, where every other control is a floating card.
- *
- * Defaults to `router.back()`; pass `onPress` for in-screen back navigation
- * (e.g. a settings sub-page that pops its own state rather than the stack).
- */
-export function ABack({ onPress, label, style }: { onPress?: () => void; label?: string; style?: StyleProp<ViewStyle> }) {
-  const { palette, scheme } = useTheme();
-  const { t } = useLang();
-  const router = useRouter();
-  const soft = scheme === "light";
-  return (
-    <PressScale
-      accessibilityRole="button"
-      accessibilityLabel={label ?? t("common.back")}
-      onPress={onPress ?? (() => router.back())}
-      hitSlop={8}
-      style={[
-        { width: 44, height: 44, borderRadius: 14, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" },
-        soft && { backgroundColor: palette.ink2, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
-        style,
-      ]}
-    >
-      <AuroraIcon name="back" size={20} color={palette.chalk} />
-    </PressScale>
   );
 }
 

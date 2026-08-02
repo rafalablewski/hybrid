@@ -44,7 +44,8 @@ import { useSessionActions } from "../../lib/session-actions";
 import { fs, space, Screen, Card, Kicker, Mono, Loading, Button, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
-import { AuroraScreen, ABack } from "../../components/aurora/kit";
+import { AuroraScreen } from "../../components/aurora/kit";
+import { HeroNav } from "../../components/aurora/hero";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
 import { SessionEditSheet } from "../../components/session-edit";
 import PrAttestationPanel from "../../components/pr-attestation";
@@ -100,7 +101,7 @@ export default function SessionDetail() {
     if (q.isFetching || !retriedRef.current) return wrap(<Loading />);
     return wrap(
       <>
-        <ABack />
+        <HeroNav onPress={() => router.back()} />
         <Card style={{ marginTop: 12, alignItems: "center", paddingVertical: 28 }}>
           <Mono>{t("session.notFound")}</Mono>
         </Card>

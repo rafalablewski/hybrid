@@ -12,7 +12,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, APill, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, APill, RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 
 const hpiColor = (C: Palette, b: string) =>

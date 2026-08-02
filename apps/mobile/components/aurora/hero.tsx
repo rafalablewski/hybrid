@@ -338,6 +338,10 @@ export interface HeroSpec {
   colourArt?: boolean;
 }
 
+/** Take the scroll props (and the docked sub-rail) and render your own
+ *  scroller. Exported so AuroraScreen can pass one straight through. */
+export type HeroScrollerFn = (props: HeroScrollProps, rail: ReactNode) => ReactNode;
+
 export interface HeroScrollProps {
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onScrollEndDrag: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
@@ -396,7 +400,7 @@ export function HeroScreen({
   /** Take the scroll props (and the docked sub-rail node) and render your own
    *  scroller — a FlatList, say. The container never requires a screen to give
    *  up virtualization to get a hero. */
-  scroller?: (props: HeroScrollProps, rail: ReactNode) => ReactNode;
+  scroller?: HeroScrollerFn;
   children?: ReactNode;
 }) {
   const { palette: C, scheme } = useTheme();

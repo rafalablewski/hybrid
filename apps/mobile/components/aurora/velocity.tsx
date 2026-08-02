@@ -11,7 +11,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const zoneColor = (id: string, C: Palette) =>
@@ -44,12 +44,6 @@ export default function AuroraVelocity() {
     .map((set) => ({ load: parseFloat(set.load), reps: parseInt(set.reps, 10) || 0, vel: parseFloat(set.vel ?? "") }))
     .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel)).slice(-6).reverse(), [sessions, active]);
 
-  const header = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-      <ABack />
-      <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vel.title")}</AHeading>
-    </View>
-  );
   const chip = (color: string, label: string) => (
     <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text>
@@ -58,8 +52,7 @@ export default function AuroraVelocity() {
 
   if (noData) {
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        {header}
+      <AuroraScreen hero={{ rank: "title", title: t("w.analyze.vel.title") }} refreshing={refreshing} onRefresh={load}>
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vel.emptyTitle")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.vel.emptyBody")}</Text>
@@ -69,8 +62,7 @@ export default function AuroraVelocity() {
   }
 
   return (
-    <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      {header}
+    <AuroraScreen hero={{ rank: "title", title: t("w.analyze.vel.title") }} refreshing={refreshing} onRefresh={load}>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
         {lifts.map((l) => {
           const on = active === l;

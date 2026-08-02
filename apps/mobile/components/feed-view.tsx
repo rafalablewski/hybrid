@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Alert, FlatList, RefreshControl, Animated } from "react-native";
 import { Screen, Card, Loading, F, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
-import { ABack } from "./aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type { FeedItemView, CommentView } from "@hybrid/core";
@@ -10,6 +9,8 @@ import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
 import { CosignInbox } from "./pr-attestation";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScrollProps } from "../lib/nav-scroll";
+import { AuroraScreen } from "./aurora/kit";
+import type { HeroScrollProps } from "./aurora/hero";
 
 function Comments({ item }: { item: FeedItemView }) {
   const C = useTheme().palette;
@@ -86,13 +87,14 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     <>
       {top}
       <Animated.View style={fade} onLayout={startHubFade}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16, marginTop: top ? 16 : 0 }}>
-        {!top && <ABack />}
-        <View>
+      {/* Standing alone the head is the HERO's; as a Today hub tab the head is
+          Today's, handed down through `top`. */}
+      {top && (
+        <View style={{ marginBottom: 16, marginTop: 16 }}>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>{t("w.social.feedTitle")}</Text>
           <Text style={{ color: C.ash, fontSize: 13 }}>{t("w.social.feedSub")}</Text>
         </View>
-      </View>
+      )}
 
       {/* Verified-record witness requests addressed to ME — answering one is a
           social act, so the inbox lives on the feed. See core/attestation.ts. */}
@@ -145,27 +147,41 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     </Animated.View>
   );
 
+  // The FlatList stays the sole scroller in BOTH shapes — a screen never trades
+  // virtualization for a hero.
+  const list = (extra: Record<string, unknown>) => (
+    <FlatList
+      data={feed ?? []}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      ListHeaderComponent={header}
+      ListEmptyComponent={<Animated.View style={fade}>{feed === null ? <Loading /> : <Empty title={t("w.social.feedQuietTitle")} sub={t("w.social.feedQuietSub")} />}</Animated.View>}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      initialNumToRender={6}
+      windowSize={11}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.lime} colors={[C.lime]} />}
+      {...extra}
+    />
+  );
+
+  // AS A HUB TAB Today owns the head, so the plain shell is still right:
+  // hubTab → inset padding instead of a fresh SafeAreaView, so the chrome
+  // doesn't jump under the status bar for the remount's first frame.
+  if (hub || top) {
+    return (
+      <Screen scroll={false} hubTab={hub}>
+        {list({ ...navScroll, contentContainerStyle: { padding: 16, paddingBottom: padBottom } })}
+        {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
+      </Screen>
+    );
+  }
   return (
-    // scroll={false} → the FlatList is the sole scroller (virtualized); Screen
-    // still provides the SafeArea + backdrop + keyboard avoidance chrome.
-    // hubTab → inset padding instead of a fresh SafeAreaView, so the chrome
-    // doesn't jump under the status bar for the remount's first frame.
-    <Screen scroll={false} hubTab={hub}>
-      <FlatList
-        data={feed ?? []}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ListHeaderComponent={header}
-        ListEmptyComponent={<Animated.View style={fade}>{feed === null ? <Loading /> : <Empty title={t("w.social.feedQuietTitle")} sub={t("w.social.feedQuietSub")} />}</Animated.View>}
-        {...navScroll}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={6}
-        windowSize={11}
-        contentContainerStyle={{ padding: top ? 16 : 18, paddingBottom: padBottom }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.lime} colors={[C.lime]} />}
-      />
+    <AuroraScreen
+      hero={{ rank: "title", title: t("w.social.feedTitle"), meta: [t("w.social.feedSub")] }}
+      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: 18 }] })}
+    >
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
-    </Screen>
+    </AuroraScreen>
   );
 }

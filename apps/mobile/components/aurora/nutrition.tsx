@@ -60,7 +60,8 @@ import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { fs, space, F, PressScale, PressScale as Pressable } from "../../lib/ui";
-import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS, Ring, withAlpha } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, RADIUS, Ring, withAlpha } from "./kit";
+import { HeroNav } from "./hero";
 import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
@@ -1008,11 +1009,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // the estimate and drops the user into the full screen below.
   if (!personalized && !onboarded && !hasNutritionData) {
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          {root ? null : <ABack />}
-          <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
-        </View>
+      <AuroraScreen
+        refreshing={refreshing}
+        onRefresh={load}
+        hero={{ rank: "title", title: t("w.recovery.nutrition.title") }}
+        back={root ? false : undefined}
+      >
         <OnboardingGoal goal={goal} setGoal={chooseGoal} onUpgrade={() => { finishOnboarding(); (onUpgrade ? onUpgrade() : router.push("/upgrade")); }} onWeighIn={(kg) => { logWeighIn(kg); finishOnboarding(); }} onContinueFree={finishOnboarding} currentWeightKg={bodyMassKg} />
       </AuroraScreen>
     );
@@ -1161,9 +1163,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // an X (or back) at the left, a centred title, an optional right slot.
   const screenHead = (title: ReactNode, onBack: () => void, opts?: { icon?: "x" | "back"; right?: ReactNode }) => (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-      <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
-        {opts?.icon === "back" ? <AuroraIcon name="back" size={20} color={C.chalk} /> : <IClose size={22} color={C.chalk} />}
-      </Pressable>
+      <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} material="clear" />
       <View style={{ flex: 1, alignItems: "center" }}>{typeof title === "string" ? <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{title}</Text> : title}</View>
       <View style={{ width: 44, alignItems: "center" }}>{opts?.right}</View>
     </View>
@@ -1867,7 +1867,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       {/* Hub masthead (home), or a sub-screen back-header. */}
       {view === "home" ? (
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          {root ? null : <ABack />}
+          {root ? null : <HeroNav onPress={() => router.back()} onDark={false} material="clear" />}
           <View>
             {greeting ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 2 }}>{greeting}</Text> : null}
             <AHeading style={{ fontSize: fs.display }}>{t("w.recovery.nutrition.title")}</AHeading>
@@ -1875,7 +1875,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </View>
       ) : (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Pressable onPress={() => setView("home")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 16, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={18} color={C.chalk} /></Pressable>
+          <HeroNav onPress={() => setView("home")} onDark={false} material="clear" />
           <AHeading style={{ fontSize: 26 }}>{view === "log" ? t("w.recovery.nutrition.logMealCta") : view === "insights" ? t("w.recovery.nutrition.menuInsights") : view === "diary" ? t("w.recovery.nutrition.menuDiary") : view === "body" ? t("w.recovery.nutrition.menuBody") : view === "meals" ? t("w.recovery.nutrition.yourMeals") : t("w.recovery.nutrition.yourProducts")}</AHeading>
         </View>
       )}
