@@ -245,7 +245,7 @@ export default function AuroraProfile({
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)" }}>
       {/* SET UP YOUR PROFILE — owner-only nudge; hides once photo + bio exist. */}
       {socialP && !sComplete && (
-        <button
+        <button className="pressable"
           onClick={go("settings", "/settings")}
           style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 16, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, color-mix(in srgb, var(--color-lime) 12%, transparent), transparent)", borderRadius: 28, padding: 16, display: "flex", alignItems: "center", gap: 16, color: C("chalk") }}
         >
@@ -267,7 +267,7 @@ export default function AuroraProfile({
           asset is a blocked follow-up). */}
       <div style={{ position: "relative", height: 96, borderRadius: 28, overflow: "hidden", background: "linear-gradient(120deg, color-mix(in srgb, var(--color-violet) 45%, transparent), color-mix(in srgb, var(--color-lime) 22%, transparent) 45%, var(--color-ink2))" }}>
         <span style={{ position: "absolute", top: -34, right: -24, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, color-mix(in srgb, var(--color-lime) 32%, transparent), transparent 70%)", pointerEvents: "none" }} />
-        <button
+        <button className="pressable"
           onClick={go("settings", "/settings")}
           aria-label={t("w.account.profile.edit")}
           style={{ position: "absolute", top: 12, right: 12, width: 38, height: 38, borderRadius: 12, background: "color-mix(in srgb, var(--color-ink) 55%, transparent)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255, 255, 255, 0.16)", color: C("chalk"), display: "grid", placeItems: "center", cursor: "pointer" }}
@@ -327,7 +327,7 @@ export default function AuroraProfile({
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
-            <button
+            <button className="pressable"
               key={tb.id}
               role="tab"
               aria-selected={on}
@@ -689,7 +689,7 @@ function HighlightGrid({
               style={{ position: "relative", aspectRatio: "1", touchAction: editMode ? "none" : "auto", cursor: editMode ? "grab" : "default", userSelect: "none" }}
             >
               {editMode && (
-                <button
+                <button className="pressable"
                   data-hl-del
                   aria-label={t("w.account.profile.priv-hide")}
                   onPointerDown={(e) => e.stopPropagation()}
@@ -719,7 +719,7 @@ function HighlightGrid({
             {hiddenKeys.map((key) => {
               const tile = tileMap.get(key)!;
               return (
-                <button
+                <button className="pressable"
                   key={key}
                   onClick={() => onToggleHidden(key, false)}
                   style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px 8px 8px", border: `1px solid ${C("line")}`, borderRadius: 12, background: C("ink2"), color: C("ash"), cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase" }}
@@ -738,7 +738,7 @@ function HighlightGrid({
       {/* DONE — fixed bar while editing. */}
       {editMode && (
         <div data-hl-keep style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: 16, zIndex: 60, pointerEvents: "none" }}>
-          <button
+          <button className="pressable"
             onClick={() => setEditMode(false)}
             style={{ pointerEvents: "auto", background: C("chalk"), color: C("ink"), border: "none", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", padding: "16px 40px", borderRadius: 16, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.5)" }}
           >

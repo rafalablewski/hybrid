@@ -184,7 +184,7 @@ export default function AdminPanel() {
                 </Mono>
               )}
               {SECTIONS.filter((s) => s.group === g).map((s) => (
-                <button
+                <button className="pressable"
                   key={s.id}
                   onClick={() => pick(s.id)}
                   title={railCollapsed ? s.label : undefined}
@@ -228,11 +228,11 @@ export default function AdminPanel() {
               </Mono>
             </div>
           )}
-          <button onClick={() => router.push("/app")} title={railCollapsed ? "Back to app" : undefined} style={navBtn(false)}>
+          <button className="pressable" onClick={() => router.push("/app")} title={railCollapsed ? "Back to app" : undefined} style={navBtn(false)}>
             {railCollapsed ? "←" : "← Back to app"}
           </button>
           {!isMobile && (
-            <button
+            <button className="pressable"
               onClick={toggleCollapsed}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -241,7 +241,7 @@ export default function AdminPanel() {
               {collapsed ? "»" : "« Collapse"}
             </button>
           )}
-          <button
+          <button className="pressable"
             onClick={() => {
               logout();
               router.replace("/login");
@@ -259,7 +259,7 @@ export default function AdminPanel() {
         {/* mobile top bar — hamburger opens the drawer */}
         {isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: space.md, marginBottom: 16 }}>
-            <button
+            <button className="pressable"
               onClick={() => setDrawerOpen(true)}
               aria-label="Open admin menu"
               style={{

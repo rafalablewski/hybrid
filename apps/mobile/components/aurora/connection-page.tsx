@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, Linking } from "react-native";
+import { View, Text, Linking } from "react-native";
 import { fetchConnections, fetchSignals, syncConnection, API_BASE, type Conn, type CoreSignal, type Provider } from "../../lib/api";
 import {
   connectHealthKit,
@@ -11,7 +11,7 @@ import {
 } from "../../lib/healthkit";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, ASub, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
 

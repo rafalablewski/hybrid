@@ -101,7 +101,7 @@ export default function InviteClaimPage() {
             </p>
 
             {signedIn ? (
-              <button
+              <button className="pressable"
                 onClick={() => void claim()}
                 disabled={state === "claiming"}
                 style={btn(state === "claiming")}

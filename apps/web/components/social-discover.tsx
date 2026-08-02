@@ -17,7 +17,7 @@ function Row({ p, onChanged, onOpen }: { p: Person; onChanged: () => void; onOpe
   const unfollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "DELETE", { followeeId: p.userId }); onChanged(); });
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: `1px solid ${C("line")}` }}>
-      <button onClick={() => onOpen(p.handle)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, textAlign: "left", padding: 0 }}>
+      <button className="pressable" onClick={() => onOpen(p.handle)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, textAlign: "left", padding: 0 }}>
         <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={42} />
         <div style={{ minWidth: 0 }}>
           <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>

@@ -53,7 +53,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
         {SPORT_NAMES.map((s) => {
           const on = s === sport;
           return (
-            <button
+            <button className="pressable"
               key={s}
               onClick={() => setSport(s)}
               style={{
@@ -82,7 +82,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
         {LEVELS.map((l, i) => {
           const on = i === levelIdx;
           return (
-            <button
+            <button className="pressable"
               key={l}
               onClick={() => setLevelIdx(i)}
               style={{
@@ -136,7 +136,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
         {/* Log the sport itself by hand — opens the logger pre-loaded with this
             sport as an activity (no wearable needed). */}
         {onLogSession && (
-          <button
+          <button className="pressable"
             onClick={() => onLogSession([{ kind: "cardio", name: sport, discipline: cardioDiscipline(sport) }])}
             style={{
               fontFamily: "var(--font-display)",

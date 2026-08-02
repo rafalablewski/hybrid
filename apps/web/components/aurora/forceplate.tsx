@@ -68,7 +68,7 @@ export default function AuroraForcePlate() {
               {parsed.ignored.map((r) => <span key={r}>{chip(C("ash"), `${t("w.analyze.fp.skipped")} ${r}`)}</span>)}
             </div>
             {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 6, color: msg.ok ? C("lime") : C("red") }}>{msg.text}</div>}
-            <button onClick={doImport} disabled={importing || parsed.imported === 0} style={{ fontWeight: 700, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px 24px", cursor: importing || !parsed.imported ? "default" : "pointer", opacity: importing || !parsed.imported ? 0.5 : 1 }}>{importing ? t("w.analyze.fp.importing") : `${t("w.analyze.fp.importPre")} ${parsed.imported} ${t("w.analyze.fp.importTail")}`}</button>
+            <button className="pressable" onClick={doImport} disabled={importing || parsed.imported === 0} style={{ fontWeight: 700, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px 24px", cursor: importing || !parsed.imported ? "default" : "pointer", opacity: importing || !parsed.imported ? 0.5 : 1 }}>{importing ? t("w.analyze.fp.importing") : `${t("w.analyze.fp.importPre")} ${parsed.imported} ${t("w.analyze.fp.importTail")}`}</button>
           </div>
         )}
       </div>

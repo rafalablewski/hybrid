@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Share } from "react-native";
+import { View, Text, TextInput, Share } from "react-native";
 import QRCode from "qrcode";
-import { fs, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, Card, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { getCoachInvites, createCoachInvite, revokeCoachInvite, type CoachInviteRow } from "../lib/api";
 

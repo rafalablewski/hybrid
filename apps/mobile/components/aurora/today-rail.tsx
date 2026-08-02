@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Animated, Easing, Platform, Pressable, Text, View } from "react-native";
+import { Animated, Easing, Platform, Text, View } from "react-native";
 import {
   TODAY_RAIL_BAR_H,
   railMotion,
@@ -12,7 +12,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { F } from "../../lib/ui";
+import { F, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import ReadinessFace from "./readiness-face";
 

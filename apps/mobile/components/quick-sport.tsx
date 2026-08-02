@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Modal, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, ScrollView, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import {
   olympicSport,
   olympicSportsByCategory,
@@ -15,7 +15,7 @@ import { createSession } from "../lib/api";
 import { saveGuestSession } from "../lib/guest";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
-import { fs, space, F } from "../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
 import { RADIUS } from "./aurora/kit";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Modal, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   deviceDistanceLabel,
@@ -14,7 +14,7 @@ import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } fr
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
-import { F, fs } from "../lib/ui";
+import { F, fs, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 

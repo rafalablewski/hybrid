@@ -52,7 +52,7 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <button onClick={onBack} style={{ background: "transparent", border: "none", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, cursor: "pointer", padding: 0 }}>
+      <button className="pressable" onClick={onBack} style={{ background: "transparent", border: "none", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, cursor: "pointer", padding: 0 }}>
         ← {t("w.account.connections.title")}
       </button>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "10px 0 0" }}>{p?.label ?? id}</h1>
@@ -76,7 +76,7 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
           ) : p && !p.configured ? (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("amber") }}>{t("w.account.connections.awaiting-creds")}</span>
           ) : p && conn ? (
-            <button onClick={sync} disabled={busy} style={pill(C("lime"), false)}>
+            <button className="pressable" onClick={sync} disabled={busy} style={pill(C("lime"), false)}>
               {busy ? t("w.account.connections.syncing") : t("w.account.connections.sync-now")}
             </button>
           ) : p ? (

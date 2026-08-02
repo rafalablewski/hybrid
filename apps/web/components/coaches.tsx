@@ -52,7 +52,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
       <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "min(520px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button aria-label={t("common.close")} onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
+          <button className="pressable" aria-label={t("common.close")} onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
         </div>
         {!data || !c ? <EmptyState title={t("common.loading")} /> : (
           <>
@@ -95,7 +95,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                 {p.summary && <p style={{ color: C("chalk"), fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>{p.summary}</p>}
                 {Array.isArray(p.preview) && p.preview.length > 0 && (
                   <>
-                    <button onClick={() => setPreview(preview === p.id ? null : p.id)} style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", color: C("lime"), fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 700, padding: 0 }}>
+                    <button className="pressable" onClick={() => setPreview(preview === p.id ? null : p.id)} style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", color: C("lime"), fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 700, padding: 0 }}>
                       {preview === p.id ? `${t("w.coaches.hidePreview")} ▲` : `${t("w.coaches.previewPlan")} ▼`}
                     </button>
                     {preview === p.id && (
@@ -126,7 +126,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
             {reviewOpen && (
               <div style={card(true, { marginTop: 10, padding: 14 })}>
                 <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-                  {[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => setRating(n)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: n <= rating ? C("gold") : C("line") }}>★</button>)}
+                  {[1, 2, 3, 4, 5].map((n) => <button className="pressable" key={n} onClick={() => setRating(n)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: n <= rating ? C("gold") : C("line") }}>★</button>)}
                 </div>
                 <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder={t("w.coaches.reviewPlaceholder")} style={{ width: "100%", minHeight: 60, padding: 10, borderRadius: 12, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
                 <div style={{ marginTop: 8 }}><Btn small onClick={submitReview} disabled={busy.is("rev")}>{t("w.coaches.submitReview")}</Btn></div>
@@ -272,7 +272,7 @@ export default function Coaches() {
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {coaches.map((c) => (
-                <button key={c.userId} onClick={() => setDetail(c.handle)} style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}>
+                <button className="pressable" key={c.userId} onClick={() => setDetail(c.handle)} style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                     <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
                     <div style={{ flex: 1, minWidth: 0 }}>

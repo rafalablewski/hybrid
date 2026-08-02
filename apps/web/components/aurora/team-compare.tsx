@@ -103,7 +103,7 @@ export default function AuroraTeamCompare() {
           <div style={{ ...kicker("ash"), fontSize: fs.nano, marginBottom: 6 }}>{t("w.teams.compare.exercise")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {lifts.map((l) => (
-              <button key={l} onClick={() => setLift(l)} style={pill(lift === l, "lime")}>
+              <button className="pressable" key={l} onClick={() => setLift(l)} style={pill(lift === l, "lime")}>
                 {l}
               </button>
             ))}
@@ -113,7 +113,7 @@ export default function AuroraTeamCompare() {
           <div style={{ ...kicker("ash"), fontSize: fs.nano, marginBottom: 6 }}>{t("w.teams.compare.metric")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: space.xs }}>
             {METRICS.map((m) => (
-              <button key={m.key} onClick={() => setMetric(m.key)} style={pill(metric === m.key, m.color)}>
+              <button className="pressable" key={m.key} onClick={() => setMetric(m.key)} style={pill(metric === m.key, m.color)}>
                 {t(m.label)}
               </button>
             ))}

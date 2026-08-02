@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, ScrollView, FlatList } from "react-native";
+import { View, Text, ScrollView, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { LEADERBOARD_METRICS, type LeaderboardMetric } from "@hybrid/core";
-import { Screen, Card, Loading, F, useScreenBottomPad } from "../lib/ui";
+import { Screen, Card, Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
 import { ABack } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";

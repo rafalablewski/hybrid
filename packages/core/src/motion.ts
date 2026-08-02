@@ -35,11 +35,17 @@ export interface Spring {
 }
 
 /**
- * The four springs. Anything that MOVES uses one of these.
+ * Every spring in the system. Anything that MOVES uses one of these, and
+ * motion.test.ts holds all of them to the 450ms ceiling — so a spring that
+ * isn't here is a spring nothing is checking.
  *
- * `nav` is the value already shipping in global-nav.tsx — it is reproduced here
- * so both clients can read it from one place, and it must not be retuned
- * without re-auditing that screen.
+ * `press` was called `nav` and was documented as "THE SHIPPED NAV LENS —
+ * global-nav.tsx already animates on this". That file no longer exists: the
+ * hand-built floating capsule was deleted when the bottom bar became the real
+ * system tab bar (expo-router NativeTabs), which renders its own selection
+ * motion. The token survived the component it was named for and is, in
+ * practice, what press feedback runs on — so it is named for that now. The
+ * numbers are unchanged; only the name and the reason are honest again.
  */
 export const springs = {
   /** Sibling travel between bottom-nav destinations. Critically damped: a
@@ -53,8 +59,22 @@ export const springs = {
   /** Sheets, modals and the parent recede behind them — a touch of arrival
    *  energy (peaks ~0.5% past target), matching how an iOS sheet settles. */
   sheet: { response: 0.38, dampingFraction: 0.86 },
-  /** THE SHIPPED NAV LENS. global-nav.tsx already animates on this. */
-  nav: { response: 0.32, dampingFraction: 0.74 },
+  /** Press feedback — the scale-down under a finger. Short and a little lively;
+   *  a press is the one place a small overshoot reads as responsiveness rather
+   *  than wobble. */
+  press: { response: 0.32, dampingFraction: 0.74 },
+  /** THE SELECTION LENS — the pill that flies between segments (liquid-seg on
+   *  both clients).
+   *
+   *  Both clients previously hard-coded SwiftUI's DEFAULT spring here
+   *  (response .551 / dampingFraction .745, reached on mobile as
+   *  `stiffness: 130, damping: 17`), which settles in 629ms — 40% past this
+   *  system's own ceiling, on the control users touch most often. It went
+   *  unnoticed because the guard only ever iterated the tokens, and this was
+   *  not one. The lens should feel PLAYFUL, and playful is fast with overshoot,
+   *  not slow with overshoot: this is quicker AND bouncier (damping .68 vs
+   *  .745). */
+  lens: { response: 0.35, dampingFraction: 0.68 },
 } as const satisfies Record<string, Spring>;
 
 export type SpringToken = keyof typeof springs;
@@ -73,6 +93,10 @@ export const durations = {
   fast: 160,
   /** Content crossfade under a travelling shared element. */
   dissolve: 200,
+  /** A list row collapsing to nothing (or opening from it). Long enough to read
+   *  as the row LEAVING rather than blinking out, short enough that deleting
+   *  five sets in a row doesn't become a queue. */
+  collapse: 180,
   /** The Reduce Motion cross-dissolve SUBSTITUTION. Never zero. */
   reduced: 150,
 } as const;
@@ -97,6 +121,128 @@ export const motion = {
   /** Sibling entrance offset, as a fraction of screen width. */
   slideOffset: 1,
 } as const;
+
+/**
+ * SWIPE ACTIONS — the geometry and the release rule for a row you swipe to
+ * reveal a destructive action on.
+ *
+ * Here rather than in each client because the two implementations had drifted
+ * on every single number (open 76 vs 84, commit 40 vs 44, clamp 110 vs 120)
+ * while calling each other twins in their own header comments.
+ */
+export const swipe = {
+  /** Width of the revealed action, in px/dp. */
+  action: 80,
+  /** How far past the action width the row can be dragged before it stops. */
+  max: 120,
+  /** Fraction of `action` the drag must PROJECT past to commit the reveal. */
+  openAt: 0.5,
+  /** Fraction of the row's width that commits the delete outright, no tap. */
+  fullAt: 0.6,
+  /** Seconds of velocity to project the release position by. iOS decides a
+   *  flick from where the finger is GOING, not from where it let go — a fast
+   *  flick that travelled 35px should open, and displacement alone says no. */
+  project: 0.15,
+  /** Speed (px/s) that commits on its own, however short the travel. */
+  flick: 800,
+  /** Rubber-band constant past the clamp: resistance grows with distance so the
+   *  row never runs off, and the finger feels the end instead of hitting a wall. */
+  resist: 90,
+} as const;
+
+/**
+ * SHEET GESTURE — dragging a presented sheet, and where it lands on release.
+ *
+ * Both clients drew iOS's 40×4 grab handle on every sheet and bound NOTHING to
+ * it: the app displayed the platform's universal "drag me" glyph and ignored
+ * the gesture users try first. This is the physics behind fixing that.
+ *
+ * A sheet is the one surface in the app that MUST be interruptible — you catch
+ * it halfway, change your mind, throw it back. That is the exact capability
+ * springs were chosen over beziers for at the top of this file, and until now
+ * nothing exercised it.
+ */
+export const sheetGesture = {
+  /** Fraction of the panel's height a release must PROJECT past to dismiss. */
+  dismissAt: 0.4,
+  /** Speed (px/s) that moves a detent (or dismisses) regardless of distance. */
+  flick: 800,
+  /** Seconds of velocity to project the release by. Shared with swipe actions
+   *  deliberately: one "where is this going" constant for the whole app. */
+  project: swipe.project,
+  /** Rubber-band constant when dragged ABOVE its resting position. */
+  resist: 90,
+  /** Detent heights, as a fraction of the screen. `large` is not 1.0 — a sheet
+   *  that reaches the top edge reads as a full-screen cover, and the strip of
+   *  parent left visible is what says "this is temporary, you'll be back". */
+  detents: { medium: 0.5, large: 0.92 },
+} as const;
+
+export type SheetDetent = keyof typeof sheetGesture.detents;
+
+/**
+ * Where a released sheet drag lands.
+ *
+ * The panel is laid out at its LARGEST detent and translated down, so one axis
+ * describes everything: `y` 0 is fully open, `y` = panelH is dismissed, and each
+ * smaller detent is a `y` in between. `snaps` are those detent offsets, ascending.
+ *
+ * A FLICK moves exactly one detent rather than jumping the whole way — the
+ * gesture's force says "further in this direction", not "all the way". From the
+ * smallest detent, further down is dismissal.
+ */
+export function resolveSheetRelease(
+  y: number,
+  velocity: number,
+  panelH: number,
+  snaps: readonly number[],
+): { target: number; dismiss: boolean } {
+  const stops = [...snaps].sort((a, b) => a - b);
+  const dismissY = panelH;
+
+  if (velocity > sheetGesture.flick) {
+    // Downward flick: the next stop below, or out.
+    const below = stops.find((s) => s > y + 1);
+    const target = below ?? dismissY;
+    return { target, dismiss: target === dismissY };
+  }
+  if (velocity < -sheetGesture.flick) {
+    // Upward flick: the next stop above; already at the top means stay.
+    const above = [...stops].reverse().find((s) => s < y - 1);
+    return { target: above ?? stops[0]!, dismiss: false };
+  }
+
+  // Otherwise: land on whatever the projected position is nearest to.
+  const projected = y + velocity * sheetGesture.project;
+  const candidates = [...stops, dismissY];
+  let target = candidates[0]!;
+  let best = Infinity;
+  for (const c of candidates) {
+    const d = Math.abs(projected - c);
+    if (d < best) { best = d; target = c; }
+  }
+  return { target, dismiss: target === dismissY };
+}
+
+/**
+ * Rubber-banded travel: 1:1 up to `limit`, then asymptotically approaching
+ * `limit + resist`. The standard iOS overscroll feel, as a pure function so
+ * both clients rubber-band identically.
+ */
+export function rubberBand(offset: number, limit: number, resist: number = swipe.resist): number {
+  const over = Math.abs(offset) - limit;
+  if (over <= 0) return offset;
+  const damped = limit + resist * (1 - Math.exp(-over / resist));
+  return offset < 0 ? -damped : damped;
+}
+
+/**
+ * Where a released swipe is HEADING, given where it is and how fast it is
+ * moving. Positive `velocity` travels right.
+ */
+export function projectSwipe(offset: number, velocity: number): number {
+  return offset + velocity * swipe.project;
+}
 
 /* ────────────────────────────────────────────────────────────────────────
    Spring integration
@@ -216,6 +362,15 @@ export const SHARED_ELEMENTS = {
    *  of a stats page — but the NUMBER is the same fact in both places, and
    *  numbers are what this app is about. */
   exerciseHero: "hybrid-exercise-hero",
+  /** A logged session's TITLE on its row/card ⇄ the same title heading its
+   *  breakdown. The highest-traffic card→screen move in the app.
+   *
+   *  The title rather than a figure, deliberately: it is literally the same
+   *  string at both ends (`session.title`), so the travelling element cannot
+   *  show one value and land on another. A figure would have to be derived
+   *  identically in two places to make that guarantee, and a shared element
+   *  that lies mid-flight is worse than a hard cut. */
+  sessionHero: "hybrid-session-hero",
 } as const;
 
 export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELEMENTS];

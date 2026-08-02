@@ -35,7 +35,7 @@ export default function SocialLeaderboard() {
       ) : (
         <div style={card(aurora)}>
           {board.map((r) => (
-            <button key={r.id} onClick={() => !r.isMe && r.handle && setDrawer(r.handle)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: `1px solid ${C("line")}`, background: r.isMe ? `${C("lime")}11` : "none", border: "none", borderRadius: 8, cursor: r.isMe ? "default" : "pointer", textAlign: "left" }}>
+            <button className="pressable" key={r.id} onClick={() => !r.isMe && r.handle && setDrawer(r.handle)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: `1px solid ${C("line")}`, background: r.isMe ? `${C("lime")}11` : "none", border: "none", borderRadius: 8, cursor: r.isMe ? "default" : "pointer", textAlign: "left" }}>
               <span style={{ width: 28, textAlign: "center", fontFamily: "var(--font-display)", fontWeight: 800, color: r.rank <= 3 ? C("amber") : C("ash"), fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</span>
               <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
               <div style={{ flex: 1, minWidth: 0 }}>

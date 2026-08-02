@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { View, Text, Pressable, TextInput, Alert, FlatList, RefreshControl, Animated } from "react-native";
-import { Screen, Card, Loading, F, useScreenBottomPad, useHubDissolve } from "../lib/ui";
+import { View, Text, TextInput, Alert, FlatList, RefreshControl, Animated } from "react-native";
+import { Screen, Card, Loading, F, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { ABack } from "./aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";

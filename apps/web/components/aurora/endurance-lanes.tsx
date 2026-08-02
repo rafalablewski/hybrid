@@ -229,7 +229,7 @@ function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscip
         <span style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
           <span style={{ ...kicker, fontSize: 10 }}>{lane.efforts} {t("endurance.efforts")}</span>
           {onOpen && (
-            <button
+            <button className="pressable"
               onClick={() => onOpen(lane.discipline)}
               style={{ background: "none", border: 0, padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)" }}
             >
@@ -296,7 +296,7 @@ export default function AuroraEnduranceLanes({
       {/* The lane-order toggle — only when there is an order to change. */}
       {stacked.length > 1 && (
         <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 2px" }}>
-          <button
+          <button className="pressable"
             onClick={() => setOrder(nextLaneOrder(order))}
             aria-label={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
             style={{
@@ -317,7 +317,7 @@ export default function AuroraEnduranceLanes({
           ghost tile — the cluster's one "see more" rule. The old bare "+N"
           outline button is retired. */}
       {rest > 0 && (
-        <button
+        <button className="pressable"
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
           style={{

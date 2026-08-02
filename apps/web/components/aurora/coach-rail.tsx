@@ -135,7 +135,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>{t("w.explore.coaches")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{t("w.explore.coachSwipe")}</div>
           </div>
-          <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}><CtaLabel size={12}>{`${t("w.explore.browseAll")} →`}</CtaLabel></button>
+          <button className="pressable" onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}><CtaLabel size={12}>{`${t("w.explore.browseAll")} →`}</CtaLabel></button>
         </div>
       )}
 
@@ -150,7 +150,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
         {/* Trailing "See more" button — the same treatment as the community
             rail, so the two rails share one end-of-rail affordance. */}
         {seeMore && (
-          <button
+          <button className="pressable"
             onClick={onOpen}
             aria-label={t("w.explore.seeMore")}
             style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}

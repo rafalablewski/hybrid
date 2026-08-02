@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Modal, View, Text, Pressable, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { Modal, View, Text, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  SHARED_ELEMENTS,
   sessionWrapped,
   fitScale,
   STAT_FIT_EM,
@@ -58,7 +59,8 @@ import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
 import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
-import { fs, F } from "../lib/ui";
+import { fs, F, PressScale as Pressable } from "../lib/ui";
+import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 
 const GOLD = "#e6c34e";
@@ -272,6 +274,15 @@ export function WorkoutWrapped({
   const shareText = workoutShareCaption({ title: session.title, minutes, sets, volume, headline: captionHeadline }, units, t);
   const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
 
+  // SHARED ELEMENT (destination) — see the HERO title below. Only claimed for a
+  // non-celebration session; `cel` sessions own their panel's motion.
+  const titleStyle = { fontFamily: F.black, fontSize: 40, color: C.chalk, letterSpacing: -1, lineHeight: 42 } as const;
+  const { ref: titleRef, hidden: titleHidden } = useSharedElementTarget(
+    cel ? "" : SHARED_ELEMENTS.sessionHero,
+    session.title,
+    titleStyle,
+  );
+
   // ── reveal animation ──
   const scale = useRef(new Animated.Value(cel ? 0 : 1)).current;
   const burst = useRef(new Animated.Value(0)).current;
@@ -382,7 +393,18 @@ export function WorkoutWrapped({
         {/* ── HERO ── */}
         <Panel glows={<><Glow size={panelH * 0.5} color={`${C.violet}22`} top={-40} right={-80} /><Glow size={panelH * 0.5} color={`${C.lime}14`} bottom={panelH * 0.2} left={-90} /></>}>
           {eyebrow(t("session.wrapped.title"))}
-          <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, letterSpacing: -1, lineHeight: 42, marginTop: 12 }}>{session.title}</Text>
+          {/* SHARED ELEMENT (destination). The title the tapped row was showing
+              flies here and scales up instead of the page re-rendering it.
+              DECLINED while `cel` is true: a celebration session runs its own
+              reveal on this panel, and a clone landing on a surface that is
+              itself scaling from zero is two motions fighting — the arm simply
+              expires and the ordinary push carries the change. */}
+          <Text
+            ref={titleRef}
+            style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, letterSpacing: -1, lineHeight: 42, marginTop: 12, opacity: titleHidden ? 0 : 1 }}
+          >
+            {session.title}
+          </Text>
           <View style={{ flex: 1 }} />
           <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: 96, color: C.chalk, letterSpacing: -2.5 }} />
           <Text style={{ fontFamily: F.bold, fontSize: 17, color: cel ? txt(C, C.lime) : C.chalk, marginTop: 10 }}>{heroSub}</Text>

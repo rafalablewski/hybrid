@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable, Modal, ScrollView } from "react-native";
+import { View, Text, TextInput, Modal, ScrollView } from "react-native";
 import {
   MOVEMENTS,
   exercisesByCategory,
@@ -11,7 +11,7 @@ import {
 import { useExercises } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 

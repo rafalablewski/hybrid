@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, AccessibilityInfo } from "react-native";
+import { View, Text, TextInput, ActivityIndicator, AccessibilityInfo } from "react-native";
 import { useRouter } from "expo-router";
 import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../../lib/api";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ABack, RADIUS } from "./kit";
 
 /** AURORA Become a coach — same verification-gated application flow (fetch,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Alert } from "react-native";
+import { View, Text, Alert } from "react-native";
 import {
   buildSystemPrompt,
   MODELS,
@@ -14,7 +14,7 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 

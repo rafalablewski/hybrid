@@ -85,10 +85,10 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
       </div>
 
       <div style={{ display: "flex", gap: space.md, alignItems: "center", marginTop: 24 }}>
-        <button aria-label={t("common.back")} onClick={back} disabled={idx === 0} style={{ width: 60, height: 52, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.4 : 1, display: "grid", placeItems: "center" }}>
+        <button className="pressable" aria-label={t("common.back")} onClick={back} disabled={idx === 0} style={{ width: 60, height: 52, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: idx === 0 ? "default" : "pointer", opacity: idx === 0 ? 0.4 : 1, display: "grid", placeItems: "center" }}>
           <AuroraIcon name="back" size={20} />
         </button>
-        <button onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: "var(--on-accent)", fontWeight: 700, fontSize: fs.subtitle, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
+        <button className="pressable" onClick={next} disabled={!canNext || enrolling} style={{ flex: 1, borderRadius: 999, padding: 16, border: "none", background: C("lime"), color: "var(--on-accent)", fontWeight: 700, fontSize: fs.subtitle, cursor: canNext ? "pointer" : "default", opacity: !canNext || enrolling ? 0.5 : 1 }}>
           {onPlanStep ? (enrolling ? t("w.account.onboarding.setting-up") : plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
         </button>
       </div>
@@ -112,7 +112,7 @@ function QuestionBody({
     return (
       <>
         {(q.choices ?? []).map((o) => (
-          <button key={o.value} onClick={() => { setAnswer(q.key, o.value); if (o.value === "casual" || o.value === "athlete") setClientPersona(o.value); }} style={choice(selected === o.value)}>
+          <button className="pressable" key={o.value} onClick={() => { setAnswer(q.key, o.value); if (o.value === "casual" || o.value === "athlete") setClientPersona(o.value); }} style={choice(selected === o.value)}>
             {selected === o.value && <AuroraIcon name="check" size={22} color={C("lime")} />}
             <span><b style={{ fontSize: fs.note, color: selected === o.value ? C("lime") : C("chalk") }}>{o.label}</b>{o.blurb && <><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{o.blurb}</span></>}</span>
           </button>
@@ -129,7 +129,7 @@ function QuestionBody({
           <div key={g.category}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), margin: "12px 0 6px" }}>{g.category}</div>
             {g.goals.map((gl) => (
-              <button key={gl.id} onClick={() => setAnswer(q.key, gl.id)} style={{ ...choice(selected === gl.id), marginBottom: 8 }}>
+              <button className="pressable" key={gl.id} onClick={() => setAnswer(q.key, gl.id)} style={{ ...choice(selected === gl.id), marginBottom: 8 }}>
                 {selected === gl.id && <AuroraIcon name="check" size={20} color={C("lime")} />}
                 <span><b style={{ fontSize: fs.bodyLg, color: selected === gl.id ? C("lime") : C("chalk") }}>{gl.label}</b><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{gl.blurb}</span></span>
               </button>
@@ -167,7 +167,7 @@ function QuestionBody({
           const on = selectedSet.has(o.value);
           const toggle = () => { const arr = new Set(selectedSet); if (arr.has(o.value)) arr.delete(o.value); else arr.add(o.value); setAnswer(q.key, [...arr]); };
           return (
-            <button key={o.value} onClick={toggle} style={choice(on)}>
+            <button className="pressable" key={o.value} onClick={toggle} style={choice(on)}>
               {on && <AuroraIcon name="check" size={20} color={C("lime")} />}
               <span><b style={{ fontSize: fs.note, color: on ? C("lime") : C("chalk") }}>{o.label}</b>{o.blurb && <><br /><span style={{ fontSize: fs.caption, color: C("ash") }}>{o.blurb}</span></>}</span>
             </button>
@@ -195,7 +195,7 @@ function Seg({ options, value, onPick, C }: { options: { id: string; label: stri
     <div style={{ display: "flex", flexWrap: "wrap", gap: space.xxs, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 4 }}>
       {options.map((o) => {
         const on = value === o.id;
-        return <button key={o.id} onClick={() => onPick(o.id)} style={{ flex: "1 0 auto", padding: "12px 16px", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{o.label}</button>;
+        return <button className="pressable" key={o.id} onClick={() => onPick(o.id)} style={{ flex: "1 0 auto", padding: "12px 16px", borderRadius: 999, border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.body, background: on ? C("lime") : "transparent", color: on ? C("ink") : C("ash") }}>{o.label}</button>;
       })}
     </div>
   );

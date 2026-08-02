@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import {
   SHARED_ELEMENTS,
   exerciseStripBars,
@@ -18,7 +18,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, serifIf } from "../../lib/ui";
+import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the

@@ -74,7 +74,7 @@ export default function CoachInvite() {
       <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginTop: 14 }}>
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client email (optional)" style={input} />
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="phone (optional)" style={input} />
-        <button onClick={create} disabled={busy} style={cta(busy)}>{busy ? "Generating…" : "Generate invite"}</button>
+        <button className="pressable" onClick={create} disabled={busy} style={cta(busy)}>{busy ? "Generating…" : "Generate invite"}</button>
       </div>
 
       {note && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={LIME}>{note}</Mono>}
@@ -87,7 +87,7 @@ export default function CoachInvite() {
             <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>Scan or share this link</Mono>
             <div style={{ display: "flex", gap: space.sm, marginTop: 6, flexWrap: "wrap" }}>
               <input readOnly value={created.url} style={{ ...input, flex: 1, minWidth: 200 }} onFocus={(e) => e.currentTarget.select()} />
-              <button onClick={() => copy(created.url)} style={cta(false)}>Copy</button>
+              <button className="pressable" onClick={() => copy(created.url)} style={cta(false)}>Copy</button>
             </div>
             <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>Expires in 30 days – single use.</Mono>
           </div>
@@ -104,8 +104,8 @@ export default function CoachInvite() {
                   {i.email || i.phone || "link / QR invite"}
                 </div>
                 <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
-                  <button onClick={() => copy(i.url)} style={ghost(LIME)}>Copy link</button>
-                  <button onClick={() => revoke(i.token)} style={ghost(ASH)}>Revoke</button>
+                  <button className="pressable" onClick={() => copy(i.url)} style={ghost(LIME)}>Copy link</button>
+                  <button className="pressable" onClick={() => revoke(i.token)} style={ghost(ASH)}>Revoke</button>
                 </div>
               </div>
             ))}

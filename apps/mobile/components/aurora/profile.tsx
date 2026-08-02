@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet, Animated, PanResponder } from "react-native";
+import { View, Text, Image, StyleSheet, Animated, PanResponder } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -28,7 +28,7 @@ import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale } from "../../lib/ui";
+import { fs, F, serifIf, PressScale, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";

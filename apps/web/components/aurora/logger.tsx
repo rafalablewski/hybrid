@@ -57,6 +57,7 @@ import { ArrowGlyph } from "./cta-label";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
+import { haptic } from "@/lib/haptics";
 
 // A strength set carrying the transient live-mode flag — `done` is banking
 // state only and is stripped before save (the saved set keeps `rest`, a real
@@ -194,9 +195,7 @@ export default function AuroraLogger({
       setRestNow(rn);
       if (restTarget && rn >= restTarget && !restFired.current) {
         restFired.current = true;
-        if (prefs.haptics && typeof navigator !== "undefined" && "vibrate" in navigator) {
-          try { navigator.vibrate?.([12, 40, 18]); } catch { /* unsupported */ }
-        }
+        haptic.success();
       }
     }, 1000);
     return () => clearInterval(id);
@@ -265,9 +264,7 @@ export default function AuroraLogger({
       ),
     );
     if (!val) return;
-    if (prefs.haptics && typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try { navigator.vibrate?.(8); } catch { /* unsupported */ }
-    }
+    haptic.selection();
     const blk = blocks.find((b) => b.uid === blockUid);
     if (!blk || blk.kind !== "strength") return;
     // Auto-advance: banking the last set appends a fresh one so you keep going.
@@ -476,7 +473,7 @@ export default function AuroraLogger({
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, letterSpacing: 1, color: paused ? C("amber") : C("chalk") }}>{mmss(elapsed)}</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: paused ? C("amber") : C("ash") }}>{paused ? t("workout.paused") : t("workout.elapsed")}</span>
         </div>
-        <button
+        <button className="pressable"
           onClick={handlePause}
           title={paused ? t("workout.go") : t("workout.paused")}
           style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: paused ? C("ink") : C("amber"), background: paused ? C("amber") : "transparent", border: `1px solid ${C("amber")}`, borderRadius: 999, padding: "5px 16px", cursor: "pointer" }}
@@ -498,7 +495,7 @@ export default function AuroraLogger({
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: accent }}>
                 {over ? t("workout.restDone") : t("workout.resting")} – {clock}
               </span>
-              <button onClick={() => setRestSince(null)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: accent, background: "transparent", border: `1px solid ${accent}`, borderRadius: 12, padding: "5px 12px", cursor: "pointer" }}>
+              <button className="pressable" onClick={() => setRestSince(null)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: accent, background: "transparent", border: `1px solid ${accent}`, borderRadius: 12, padding: "5px 12px", cursor: "pointer" }}>
                 ■ {t("workout.stopRest")}
               </button>
             </div>
@@ -506,7 +503,7 @@ export default function AuroraLogger({
               {REST_PRESETS.map((sec) => {
                 const on = restTarget === sec;
                 return (
-                  <button key={sec} onClick={() => pickRest(sec)} style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: on ? C("lime") : C("ash"), background: on ? `color-mix(in srgb, ${C("lime")} 18%, transparent)` : "transparent", border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 12, padding: "6px 0", cursor: "pointer" }}>
+                  <button className="pressable" key={sec} onClick={() => pickRest(sec)} style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: on ? C("lime") : C("ash"), background: on ? `color-mix(in srgb, ${C("lime")} 18%, transparent)` : "transparent", border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 12, padding: "6px 0", cursor: "pointer" }}>
                     {sec < 120 ? `${sec}s` : `${sec / 60}m`}
                   </button>
                 );
@@ -539,7 +536,7 @@ export default function AuroraLogger({
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: space.sm }}>
         {/* On-demand rest-timer switch — same persisted pref as Settings, so
             flipping it mid-workout sticks for next time too. */}
-        <button
+        <button className="pressable"
           onClick={() => {
             const next = !prefs.restTimer;
             setLoggerPref("restTimer", next);
@@ -550,7 +547,7 @@ export default function AuroraLogger({
         >
           ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
         </button>
-        <button
+        <button className="pressable"
           onClick={() => setLoggerPref("detailed", !prefs.detailed)}
           style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}
           title={t("w.train.logger.toggleRpeVel")}
@@ -558,7 +555,7 @@ export default function AuroraLogger({
           {prefs.detailed ? t("w.train.logger.detailed") : t("w.train.logger.simple")}
         </button>
         {prefs.detailed && (
-          <button
+          <button className="pressable"
             onClick={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
             style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}
             title={t("w.train.logger.logEffortAs")}
@@ -576,7 +573,7 @@ export default function AuroraLogger({
           Hidden once you've added/seeded blocks. */}
       {blocks.length === 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: 16 }}>
-          <button onClick={loadPrescribed} style={isAthlete ? pill("lime") : { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: "var(--premium-accent-text)", background: "color-mix(in srgb, var(--premium-accent) 14%, transparent)", border: "1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>
+          <button className="pressable" onClick={loadPrescribed} style={isAthlete ? pill("lime") : { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: "var(--premium-accent-text)", background: "color-mix(in srgb, var(--premium-accent) 14%, transparent)", border: "1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>
             {!isAthlete
               ? `✦ ${t("w.home.today.unlockFullBtn")}`
               : sessions.length > 0
@@ -584,7 +581,7 @@ export default function AuroraLogger({
                 : `✦ ${t("w.train.logger.startSession")}`}
           </button>
           {routines.map((r) => (
-            <button key={r.id} onClick={() => loadRoutine(r)} style={pill("chalk")} title={r.blocks.map((b) => b.name).join(" – ")}>
+            <button className="pressable" key={r.id} onClick={() => loadRoutine(r)} style={pill("chalk")} title={r.blocks.map((b) => b.name).join(" – ")}>
               {r.name}
             </button>
           ))}
@@ -617,7 +614,7 @@ export default function AuroraLogger({
 
       {/* One bottom action — finishing IS the save. "Save as routine" moved to
           the finish screen (it belongs after you're done, not while logging). */}
-      <button
+      <button className="pressable"
         onClick={save}
         disabled={saving || blocks.length === 0}
         style={{
@@ -689,9 +686,8 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
   const shareLabel = firstEver ? t("summary.shareFirst") : hasWin ? t("summary.sharePr") : t("summary.share");
   const pagerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (milestone && typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try { navigator.vibrate?.([12, 40, 18]); } catch { /* unsupported */ }
-    }
+    // Was the ONE web vibrate that skipped prefs.haptics — the gate owns it now.
+    if (milestone) haptic.success();
   }, [milestone]);
 
   // Shared with mobile so the three-way branch can't drift; summary.firstTime
@@ -803,7 +799,7 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
         {/* Dots */}
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
           {slides.map((_, i) => (
-            <button
+            <button className="pressable"
               key={i}
               type="button"
               onClick={() => goTo(i)}
@@ -841,7 +837,7 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
             on={routineOpen}
             onClick={() => setRoutineOpen((v) => !v)}
           />
-          <button
+          <button className="pressable"
             onClick={share}
             disabled={sharing}
             style={{
@@ -893,7 +889,7 @@ function FinishOrb({
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: label ? Math.max(size, 62) : size, flex: "0 0 auto" }}>
-      <button
+      <button className="pressable"
         type="button"
         onClick={onClick}
         aria-label={a11y}
@@ -967,7 +963,7 @@ function BodyweightNudge({ units }: { units: WeightUnit }) {
     <div style={{ background: `color-mix(in srgb, ${a} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${a} 40%, transparent)`, borderRadius: 16, padding: "12px 16px", marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: a }}>⚖️ {t("w.train.logger.bwNudgeTitle")}</span>
-        <button onClick={() => setDismissed(true)} aria-label={t("w.train.logger.bwNudgeDismiss")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "transparent", border: "none", cursor: "pointer", padding: 4 }}>✕</button>
+        <button className="pressable" onClick={() => setDismissed(true)} aria-label={t("w.train.logger.bwNudgeDismiss")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "transparent", border: "none", cursor: "pointer", padding: 4 }}>✕</button>
       </div>
       <p style={{ fontFamily: "var(--font-display)", fontSize: fs.caption, color: C("chalk"), margin: "6px 0 10px", lineHeight: 1.4 }}>{t("w.train.logger.bwNudgeBody")}</p>
       <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
@@ -983,7 +979,7 @@ function BodyweightNudge({ units }: { units: WeightUnit }) {
           />
           <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{units}</span>
         </div>
-        <button
+        <button className="pressable"
           onClick={save}
           disabled={state === "saving"}
           style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.caption, color: "var(--on-accent)", background: a, border: "none", borderRadius: 999, padding: "10px 16px", cursor: state === "saving" ? "default" : "pointer", opacity: state === "saving" ? 0.6 : 1, whiteSpace: "nowrap" }}

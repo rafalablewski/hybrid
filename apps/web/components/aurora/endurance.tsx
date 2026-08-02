@@ -45,7 +45,7 @@ const head = (color: string, k: string) => (
 /** A pill chip — the discipline picker and the pace-trend move picker. */
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       aria-pressed={on}
       style={{

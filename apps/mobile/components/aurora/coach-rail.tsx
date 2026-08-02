@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { F, serifIf } from "../../lib/ui";
+import { F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 import { ArrowGlyph, CtaLabel } from "./cta-label";

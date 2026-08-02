@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import {
   ONBOARDING_GOAL_GROUPS,
@@ -9,7 +9,7 @@ import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APill, ASegment, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";

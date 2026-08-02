@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   FEELS,
@@ -16,7 +16,7 @@ import {
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
-import { F } from "../lib/ui";
+import { F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
 /**

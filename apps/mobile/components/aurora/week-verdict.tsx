@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Animated, Easing } from "react-native";
+import { View, Text, Animated, Easing } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths,
@@ -12,7 +12,7 @@ import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale, cardShadow } from "../../lib/ui";
+import { fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 

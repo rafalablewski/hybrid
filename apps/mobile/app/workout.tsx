@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, Modal, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
+import { View, Text, TextInput, ScrollView, ActivityIndicator, Modal, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
+import { haptic } from "../lib/haptics";
+import { animateListChange } from "../lib/list-motion";
 import {
   needsBodyweight,
   prescribeSession,
@@ -116,7 +117,7 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { fs, space, F, Mono, Card } from "../lib/ui";
+import { fs, space, F, Mono, Card, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -234,6 +235,7 @@ const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; 
 });
 
 export default function Workout() {
+  const reducedMotion = useReducedMotion();
   const C = useTheme().palette;
   const pa = usePremiumAccent();
   const aurora = useTemplate().template === "aurora";
@@ -340,7 +342,7 @@ export default function Workout() {
         // Buzz once when the chosen rest target is reached — eyes-off cue.
         if (restTarget && rn >= restTarget && !restFired.current) {
           restFired.current = true;
-          if (prefs.haptics) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          haptic.success();
         }
       }
     }, 1000);
@@ -357,7 +359,7 @@ export default function Workout() {
       const id = setTimeout(() => setCountdown(null), 700);
       return () => clearTimeout(id);
     }
-    if (prefs.haptics) Haptics.selectionAsync().catch(() => {});
+    haptic.selection();
     const id = setTimeout(() => setCountdown((c) => (c == null ? null : c - 1)), 1000);
     return () => clearTimeout(id);
   }, [countdown, prefs.haptics]);
@@ -665,8 +667,13 @@ export default function Workout() {
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
-  const removeSet = (u: string, i: number) =>
+  // The row leaves AND the rows below close the gap. Without the first call the
+  // deleted row simply vanished and everything under it jumped up by its
+  // height — a teleport, in response to the user's own action.
+  const removeSet = (u: string, i: number) => {
+    animateListChange(reducedMotion);
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
+  };
   const toggleDone = (u: string, i: number, val: boolean) => {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.
@@ -685,7 +692,7 @@ export default function Workout() {
     );
     if (!val) return;
     if (showTip) dismissTip(); // first banked set — the guide has done its job
-    if (prefs.haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    haptic.light();
     // No rest when this set flows straight into a drop set, or into the next
     // exercise of a superset — you keep moving; the rest comes after the
     // sequence (banking the last drop / the last superset exercise).
@@ -715,7 +722,7 @@ export default function Workout() {
     dragTo.current = i;
     dragY.setValue(0);
     setDragUid(u);
-    if (prefs.haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    haptic.medium();
   };
   const moveDrag = (dy: number) => {
     dragY.setValue(dy);
@@ -743,7 +750,7 @@ export default function Workout() {
     const { current: to } = dragTo;
     if (from >= 0 && to >= 0 && from !== to) {
       moveExerciseTo(from, to);
-      if (prefs.haptics) Haptics.selectionAsync().catch(() => {});
+      haptic.selection();
     }
     dragUidRef.current = null;
     dragFrom.current = -1;
@@ -755,7 +762,6 @@ export default function Workout() {
   // never crosses into another exercise's ledger.
   const setDrag = useDragReorder(
     (group, from, to) => setExercises((xs) => xs.map((x) => (x.uid === group ? { ...x, sets: moveItemTo(x.sets, from, to) } : x))),
-    prefs.haptics,
   );
 
   const pickRest = (sec: number) => {
@@ -774,7 +780,7 @@ export default function Workout() {
       pausedAt.current = Date.now();
       setPaused(true);
     }
-    if (prefs.haptics) Haptics.selectionAsync().catch(() => {});
+    haptic.selection();
   };
 
   const buildBlocks = (): SessionBlock[] => {
@@ -1080,7 +1086,7 @@ export default function Workout() {
               interactive children (inputs, buttons, grips) own their touches. */}
           <Pressable
             onLongPress={x.kind === "strength" ? () => {
-              if (prefs.haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+              haptic.medium();
               setSheetUid(x.uid);
             } : undefined}
             delayLongPress={400}
@@ -1825,7 +1831,7 @@ function Summary({
       const i = STORY_STYLES.findIndex((s) => s.id === cur);
       return STORY_STYLES[(i + 1) % STORY_STYLES.length]!.id;
     });
-    if (haptics) Haptics.selectionAsync().catch(() => {});
+    haptic.selection();
   };
   // The ★ satellite expands the save-as-routine composer beneath the cluster.
   const [routineOpen, setRoutineOpen] = useState(false);
@@ -1845,9 +1851,9 @@ function Summary({
   useEffect(() => {
     let knock: ReturnType<typeof setTimeout> | undefined;
     if (haptics) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      haptic.success();
       if (milestone) {
-        knock = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}), 150);
+        knock = setTimeout(() => haptic.heavy(), 150);
       }
     }
     Animated.parallel([

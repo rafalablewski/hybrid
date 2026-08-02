@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { routineSummary, type SessionBlock } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, serifIf } from "../../lib/ui";
+import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { withAlpha } from "./kit";
 import Sheet from "./sheet";
 import { CtaLabel } from "./cta-label";

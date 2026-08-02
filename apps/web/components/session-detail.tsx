@@ -236,7 +236,7 @@ export function SessionDetail({
               <div style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle }}>
                 {prSet.has(b.name) ? "🏆 " : ""}
                 {onOpenExercise && b.kind !== "conditioning" ? (
-                  <button
+                  <button className="pressable"
                     onClick={() => onOpenExercise(b.name)}
                     style={{ ...disp, fontWeight: 700, fontSize: fs.subtitle, color: txt(LIME), background: "none", border: "none", padding: 0, cursor: "pointer" }}
                     title="Open this exercise's dashboard"

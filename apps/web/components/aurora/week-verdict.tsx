@@ -295,7 +295,7 @@ export default function AuroraWeekVerdict({
             const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
             return (
-              <button
+              <button className="pressable"
                 key={f.metric}
                 onClick={() => toggle(f.metric)}
                 aria-expanded={isOpen}
@@ -494,7 +494,7 @@ function MetricDetail({
             {detail.groups.map((g: ActivityGroup) => {
               const active = group === g.id;
               return (
-                <button
+                <button className="pressable"
                   key={g.id}
                   onClick={() => onGroup(active ? null : g.id)}
                   aria-pressed={active}
@@ -526,7 +526,7 @@ function MetricDetail({
             {rows.map((it, i) => {
               const line = meta(it);
               return (
-                <button
+                <button className="pressable"
                   key={`${it.sessionId}-${it.groupId}-${i}`}
                   onClick={() => onSession?.(it.sessionId)}
                   disabled={!onSession}
@@ -554,7 +554,7 @@ function MetricDetail({
           </div>
 
           {shownCount > ROWS_SHOWN && (
-            <button
+            <button className="pressable"
               onClick={onAll}
               style={{
                 marginTop: 6, background: "none", border: "none", cursor: "pointer", padding: "4px 0",
@@ -585,7 +585,7 @@ function PickerSection({ label, children }: { label: string; children: ReactNode
 
 function PickerRow({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button
+    <button className="pressable"
       onClick={onClick}
       aria-current={active}
       style={{

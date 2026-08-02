@@ -131,7 +131,7 @@ function DayChip({ day, selected, onSelect, t }: { day: LogbookDay; selected: bo
       : { fontWeight: 700, fontSize: 15, color: day.logged ? C("chalk") : C("ash") };
 
   return (
-    <button
+    <button className="pressable"
       onClick={onSelect}
       aria-label={`${day.weekdayShort} ${day.dayOfMonth} — ${t(day.logged ? "w.home.logbook.loggedDay" : "w.home.logbook.emptyPast")}`}
       aria-pressed={selected}
@@ -199,7 +199,7 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
             ))}
           </div>
         )}
-        <button onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: "16px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+        <button className="pressable" onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: "16px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
           <CtaLabel size={12}>{`${t("w.home.rail.viewHistory")} →`}</CtaLabel>
         </button>
       </div>
@@ -218,7 +218,7 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "5px 0 0", lineHeight: 1.5 }}>{t("w.home.logbook.emptyTodaySub")}</div>
         <button
           onClick={onLog}
-          className="start-glow"
+          className="start-glow pressable"
           style={{ marginTop: 16, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
         >
           <CtaLabel>{t("w.home.today.alsoTodayLogFirst")}</CtaLabel>

@@ -396,7 +396,7 @@ export default function AuroraPerformance({
                 probability table, and the plain-language driver explanations. */}
             <div style={{ marginTop: 16, borderTop: `1px dashed color-mix(in srgb, ${C("line")} 80%, ${C("red")})`, paddingTop: 16 }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <button onClick={() => setTissueOpen((v) => !v)} aria-expanded={tissueOpen} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em", color: calm ? "var(--lime-text)" : "var(--red-text)" }}>
+                <button className="pressable" onClick={() => setTissueOpen((v) => !v)} aria-expanded={tissueOpen} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em", color: calm ? "var(--lime-text)" : "var(--red-text)" }}>
                   {t("w.analyze.perf.tissueDetail")} <span aria-hidden style={{ fontSize: 8 }}>{tissueOpen ? "▲" : "▼"}</span>
                 </button>
                 {/* The model-version annotation the old analyze header carried —
@@ -475,7 +475,7 @@ export default function AuroraPerformance({
 
         {/* 6 · THIS WEEK — recap & PRs */}
         {hasData && (
-          <button onClick={() => setScreen("statistics")} style={{ ...CARD, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
+          <button className="pressable" onClick={() => setScreen("statistics")} style={{ ...CARD, width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), display: "block" }}>
             <SHead
               title={t("w.home.today.yourWeek")}
               meta={recap.prs.length > 0 ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, color: "var(--on-accent)", background: C("lime"), borderRadius: 999, padding: "3px 12px" }}><AuroraIcon name="trophy" size={13} /> {recap.prs.length} {t("w.home.cockpit.newPrs")}</span> : undefined}
@@ -557,8 +557,8 @@ export default function AuroraPerformance({
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, marginBottom: 10, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>
             ) : <div style={{ margin: "2px 0 10px" }}><Bar w="90%" h={12} /></div>}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px" }}>
-              {macro && <button onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}><CtaLabel size={12}>{`${t("w.home.cockpit.periodize")} →`}</CtaLabel></button>}
-              <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
+              {macro && <button className="pressable" onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}><CtaLabel size={12}>{`${t("w.home.cockpit.periodize")} →`}</CtaLabel></button>}
+              <button className="pressable" onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
             </div>
           </div>
         </div>
@@ -614,7 +614,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
         {TABS.map((x) => {
           const on = x.id === tab;
           return (
-            <button key={x.id} onClick={() => setTab(x.id)} style={{ position: "relative", zIndex: 1, padding: "8px 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, letterSpacing: ".08em", color: on ? C("ink") : C("ash"), transition: "color .2s" }}>{x.label}</button>
+            <button className="pressable" key={x.id} onClick={() => setTab(x.id)} style={{ position: "relative", zIndex: 1, padding: "8px 4px", border: "none", background: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, letterSpacing: ".08em", color: on ? C("ink") : C("ash"), transition: "color .2s" }}>{x.label}</button>
           );
         })}
       </div>
@@ -638,7 +638,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
                 <Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
                 <Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
               </div>
-              <button onClick={() => setScreen("endurance")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 16 }}><CtaLabel size={12}>{`${t("w.home.cockpit.tab.endurance")} →`}</CtaLabel></button>
+              <button className="pressable" onClick={() => setScreen("endurance")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 16 }}><CtaLabel size={12}>{`${t("w.home.cockpit.tab.endurance")} →`}</CtaLabel></button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.enduranceEmpty")}</div>
         )}
@@ -646,7 +646,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
           sport ? (
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{sport.sport} – {LEVELS[sport.levelIdx] ?? LEVELS[0]}</div>
-              <button onClick={() => setScreen("sport")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}><CtaLabel size={12}>{`${t("w.home.cockpit.sport")} →`}</CtaLabel></button>
+              <button className="pressable" onClick={() => setScreen("sport")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}><CtaLabel size={12}>{`${t("w.home.cockpit.sport")} →`}</CtaLabel></button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>
         )}
@@ -658,7 +658,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
                 <Stat label="R²" value={bestProfile[1].r2.toFixed(2)} />
                 <Stat label={t("w.home.cockpit.points")} value={`${bestProfile[1].n}`} />
               </div>
-              <button onClick={() => setScreen("velocity")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 16 }}><CtaLabel size={12}>{`${t("w.home.cockpit.velocity")} →`}</CtaLabel></button>
+              <button className="pressable" onClick={() => setScreen("velocity")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 16 }}><CtaLabel size={12}>{`${t("w.home.cockpit.velocity")} →`}</CtaLabel></button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.velocityBlurb")}</div>
         )}
@@ -746,7 +746,7 @@ function Watch({ label, value, color }: { label: string; value: string; color?: 
 
 function Mod({ label, value, onClick, mono: monoVal, last }: { label: string; value: string; onClick: () => void; mono?: boolean; last?: boolean }) {
   return (
-    <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: "pointer", color: C("chalk"), textAlign: "left" }}>
+    <button className="pressable" onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 0", width: "100%", background: "none", border: "none", borderBottom: last ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`, cursor: "pointer", color: C("chalk"), textAlign: "left" }}>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
       <span style={{ marginLeft: "auto", fontWeight: monoVal ? 500 : 700, fontSize: monoVal ? fs.caption : fs.body, fontFamily: monoVal ? "var(--font-mono)" : "var(--font-display)", color: monoVal ? C("ash") : C("chalk") }}><CtaLabel size={12}>{`${value} →`}</CtaLabel></span>
     </button>
@@ -795,7 +795,7 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
           </div>
         ))}
       </div>
-      <button onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "16px 28px", marginTop: 16, cursor: "pointer" }}>
+      <button className="pressable" onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "16px 28px", marginTop: 16, cursor: "pointer" }}>
         {paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")}
       </button>
     </div>

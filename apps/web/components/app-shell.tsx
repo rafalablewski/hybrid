@@ -33,7 +33,7 @@ import { fs, space,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useScreenTransition } from "@/lib/use-screen-transition";
-import { readDeepLink, writeDeepLink, onDeepLinkChange } from "@/lib/deep-link";
+import { readDeepLink, writeDeepLink, onDeepLinkChange, currentDeepLinkIndex } from "@/lib/deep-link";
 import { useScrollCollapse } from "@/lib/use-scroll-collapse";
 import { useIsMobile } from "@/lib/use-media-query";
 const AuroraHistory = dynamic(() => import("./aurora/history"), { ssr: false });
@@ -169,7 +169,13 @@ export default function AppShell() {
   // transition rather than a hard cut. Direction comes from the shared
   // hierarchy in @hybrid/core, so mobile can't drift. See use-screen-transition.
   const [screen, setScreenRaw] = useState("today");
-  const setScreen = useScreenTransition(screen, setScreenRaw);
+  // Monotonic position in OUR navigation, stamped onto each pushed entry so a
+  // popstate can tell a Back from a Forward (see lib/deep-link.ts).
+  const navIdx = useRef(0);
+  const { setScreen, popTo } = useScreenTransition(screen, setScreenRaw, (to) => {
+    navIdx.current += 1;
+    writeDeepLink({ s: to === "today" ? undefined : to }, { push: true, state: { hybridIdx: navIdx.current } });
+  });
   // DEEP LINKS. The screen is mirrored into `?s=`, so a screen finally has an
   // address: it can be bookmarked, sent to someone, or landed on from an email,
   // and a refresh no longer dumps you back on Today. The URL MIRRORS the state
@@ -181,9 +187,20 @@ export default function AppShell() {
     // setScreenRaw, not setScreen: landing on a link should not play a
     // directional transition from a screen the user was never on.
     if (p.s) setScreenRaw(p.s);
-    return onDeepLinkChange((next) => setScreenRaw(next.s || "today"));
+    // Seed the landing entry with our index so the FIRST Back is measurable
+    // against it (a fresh entry carries no state, which would read as 0 and be
+    // indistinguishable from the root).
+    navIdx.current = currentDeepLinkIndex();
+    writeDeepLink({ s: p.s || undefined }, { state: { hybridIdx: navIdx.current } });
+    // Back/Forward: apply the screen WITH a transition, in the direction the
+    // browser travelled. `popTo` deliberately does not re-push.
+    return onDeepLinkChange((next, idx) => {
+      const back = idx < navIdx.current;
+      navIdx.current = idx;
+      popTo(next.s || "today", back);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useEffect(() => { writeDeepLink({ s: screen === "today" ? undefined : screen }); }, [screen]);
   // ONE scroll signal for the whole shell, published as a CSS custom property.
   // The web twin of the mobile NavScrollProvider; see lib/use-scroll-collapse.
   useScrollCollapse();
@@ -405,7 +422,7 @@ export default function AppShell() {
                 setDrawerOpen(false);
               };
               return (
-                <button
+                <button className="pressable"
                   key={id}
                   data-tour={`nav-${id}`}
                   onClick={onClick}
@@ -459,7 +476,7 @@ export default function AppShell() {
                       blurb → Go Full pill), matching the mobile More tab + pill-nav
                       sheet. Casual only; the plain sidebar entry is desktop-only. */}
                   {showUpgradeEntry && isEnabled("nav.upgrade") && (
-                    <button
+                    <button className="pressable"
                       onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "more" }); openUpgrade(); setDrawerOpen(false); }}
                       style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 22, background: INK, border: `1px solid color-mix(in srgb, var(--color-lime) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--color-lime) 32%, transparent)" }}
                     >
@@ -482,7 +499,7 @@ export default function AppShell() {
                       style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: CHALK, ...disp, fontSize: fs.body }}
                     />
                     {moreSearch && (
-                      <button onClick={() => setMoreSearch("")} aria-label="Clear search" style={{ background: "none", border: "none", cursor: "pointer", color: ASH, ...mono, fontSize: fs.body }}>✕</button>
+                      <button className="pressable" onClick={() => setMoreSearch("")} aria-label="Clear search" style={{ background: "none", border: "none", cursor: "pointer", color: ASH, ...mono, fontSize: fs.body }}>✕</button>
                     )}
                   </div>
 
@@ -498,7 +515,7 @@ export default function AppShell() {
                             const ic = aurora ? AURORA_NAV_ICONS[item.id] : undefined;
                             const iconColor = locked ? ASH : "var(--color-chalk)";
                             return (
-                              <button
+                              <button className="pressable"
                                 key={item.id}
                                 data-tour={`nav-${item.id}`}
                                 onClick={() => goItem(item.id, locked)}
@@ -549,7 +566,7 @@ export default function AppShell() {
               Desktop rail only — the mobile drawer shows the accent membership
               CARD version inside its springboard branch above. */}
           {!isMobile && showUpgradeEntry && isEnabled("nav.upgrade") && (
-            <button
+            <button className="pressable"
               onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); openUpgrade(); setDrawerOpen(false); }}
               title={railCollapsed ? "Unlock Full" : undefined}
               style={{
@@ -621,7 +638,7 @@ export default function AppShell() {
             )}
           </div>
           {session.role === "admin" && (
-            <button
+            <button className="pressable"
               onClick={() => { setDrawerOpen(false); router.push("/admin"); }}
               title={railCollapsed ? "Admin console" : undefined}
               style={{
@@ -644,7 +661,7 @@ export default function AppShell() {
             </button>
           )}
           {!isMobile && (
-            <button
+            <button className="pressable"
               onClick={toggleCollapsed}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -667,7 +684,7 @@ export default function AppShell() {
               {collapsed ? "»" : "« Collapse"}
             </button>
           )}
-          <button
+          <button className="pressable"
             onClick={() => {
               logout();
               router.replace("/login");
@@ -717,7 +734,7 @@ export default function AppShell() {
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 24, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: space.md, minWidth: 0 }} />
           <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-            <button
+            <button className="pressable"
               onClick={toggle}
               title="Toggle theme"
               aria-label="Toggle light/dark theme"
@@ -770,7 +787,7 @@ export default function AppShell() {
                   const on = activeScope === id;
                   const c = id === "operator" ? AMBER : id === "coach" ? VIOLET : LIME;
                   return (
-                    <button
+                    <button className="pressable"
                       key={id}
                       onClick={() => setScope(id)}
                       aria-pressed={on}

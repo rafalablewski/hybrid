@@ -74,7 +74,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
         style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 8, padding: "9px 10px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
       />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, gap: space.ms, flexWrap: "wrap" }}>
-        <button onClick={save} style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: "#0c0d0c", background: LIME, border: "none", borderRadius: 10, padding: "9px 18px", cursor: "pointer" }}>
+        <button className="pressable" onClick={save} style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: "#0c0d0c", background: LIME, border: "none", borderRadius: 10, padding: "9px 18px", cursor: "pointer" }}>
           Save diet
         </button>
         {msg && <div role="alert"><Mono s={{ fontSize: fs.caption }} c={LIME}>{msg}</Mono></div>}

@@ -558,7 +558,7 @@ export default function AuroraExercisePage({
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {/* header — a bare ‹ and the name; hairlines are the only structure here */}
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        <button onClick={onBack} aria-label={t("w.analyze.exp.back")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 22, padding: "6px 10px 6px 0", lineHeight: 1 }}>
+        <button className="pressable" onClick={onBack} aria-label={t("w.analyze.exp.back")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 22, padding: "6px 10px 6px 0", lineHeight: 1 }}>
           ‹
         </button>
         <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-.01em", margin: 0 }}>{name}</h1>
@@ -612,12 +612,12 @@ export default function AuroraExercisePage({
               ))}
             </div>
             {active > 0 && (
-              <button onClick={() => scrollBy(-1)} aria-label={t("w.analyze.exp.prev")} style={{ position: "absolute", left: -6, top: 0, bottom: 0, width: 44, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontSize: 20, opacity: 0.35 }}>
+              <button className="pressable" onClick={() => scrollBy(-1)} aria-label={t("w.analyze.exp.prev")} style={{ position: "absolute", left: -6, top: 0, bottom: 0, width: 44, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontSize: 20, opacity: 0.35 }}>
                 ‹
               </button>
             )}
             {active < slides.length - 1 && (
-              <button onClick={() => scrollBy(1)} aria-label={t("w.analyze.exp.next")} style={{ position: "absolute", right: -6, top: 0, bottom: 0, width: 44, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontSize: 20, opacity: 0.35 }}>
+              <button className="pressable" onClick={() => scrollBy(1)} aria-label={t("w.analyze.exp.next")} style={{ position: "absolute", right: -6, top: 0, bottom: 0, width: 44, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontSize: 20, opacity: 0.35 }}>
                 ›
               </button>
             )}
@@ -645,7 +645,7 @@ export default function AuroraExercisePage({
       )}
 
       <div style={{ display: "grid", justifyContent: "center", marginTop: 16 }}>
-        <button
+        <button className="pressable"
           onClick={() => { setShowAll(!showAll); setPage(0); pagerRef.current?.scrollTo({ left: 0 }); }}
           style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), padding: "8px 16px" }}
         >

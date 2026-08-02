@@ -116,13 +116,13 @@ export default function MfaSettings() {
           {verified.map((f) => (
             <div key={f.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
               <Mono s={{ fontSize: fs.body }} c={CHALK}>{f.friendly_name || "Authenticator"}</Mono>
-              <button onClick={() => remove(f.id)} disabled={busy} style={removeBtn}>Remove</button>
+              <button className="pressable" onClick={() => remove(f.id)} disabled={busy} style={removeBtn}>Remove</button>
             </div>
           ))}
 
           {/* enrollment flow */}
           {!enroll && (
-            <button onClick={start} disabled={busy} style={primaryBtn}>
+            <button className="pressable" onClick={start} disabled={busy} style={primaryBtn}>
               {busy ? "…" : verified.length ? "Add another factor" : "Set up 2FA"}
             </button>
           )}
@@ -145,11 +145,11 @@ export default function MfaSettings() {
                   placeholder="000000"
                   style={{ ...mono, fontSize: fs.subtitle, letterSpacing: ".12em", flex: 1, padding: "11px 14px", borderRadius: 10, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none" }}
                 />
-                <button onClick={confirm} disabled={busy || !isValidTotpCode(code)} style={{ ...primaryBtn, marginTop: 0, width: "auto", padding: "0 18px" }}>
+                <button className="pressable" onClick={confirm} disabled={busy || !isValidTotpCode(code)} style={{ ...primaryBtn, marginTop: 0, width: "auto", padding: "0 18px" }}>
                   Confirm
                 </button>
               </div>
-              <button onClick={() => { setEnroll(null); setCode(""); }} style={{ ...removeBtn, marginTop: 10 }}>Cancel</button>
+              <button className="pressable" onClick={() => { setEnroll(null); setCode(""); }} style={{ ...removeBtn, marginTop: 10 }}>Cancel</button>
             </div>
           )}
 

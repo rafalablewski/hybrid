@@ -21,8 +21,15 @@
  *     `popstate`.
  *   - a param that isn't recognised is ignored rather than error. A link from
  *     an older build must never land the user on a broken screen.
- *   - `replaceState` by default: a user tapping through five tabs should press
- *     Back once to leave, not five times.
+ *   - a SCREEN change pushes; a screen's own sub-target replaces. This file
+ *     used to replace for everything, on the reasoning that tapping through
+ *     five tabs shouldn't cost five Back presses to leave. That reasoning was
+ *     wrong in the only way that matters: because the shell holds its location
+ *     in React state and nothing else pushed either, Back had no app entry to
+ *     return to and left the app ENTIRELY — from any depth, including the
+ *     Android system back. Walking back through your own navigation is what
+ *     every user expects the button to do; leaving the app on the first press
+ *     is not a shortcut, it is a trapdoor.
  */
 
 /** The params the shell owns. `s` = screen; the rest belong to a screen. */
@@ -90,23 +97,58 @@ export function readDeepLink(): DeepLinkParams {
   return parseDeepLink(window.location.search);
 }
 
-/** Mirror state into the URL. `push` only for real destinations — see the note
- *  at the top of this file about not costing five Back presses to leave. */
-export function writeDeepLink(patch: DeepLinkParams, opts?: { push?: boolean }): void {
+/** What we keep in `history.state`. The index is a monotonically increasing
+ *  position in OUR navigation, which is the only way to tell a Back from a
+ *  Forward on `popstate` — the event itself says which entry you landed on, not
+ *  which way you travelled. Without it, Forward would replay a backwards
+ *  transition, which is a motion bug hiding inside a navigation fix. */
+export type DeepLinkState = { hybridIdx?: number };
+
+/** Mirror state into the URL.
+ *
+ *  `push` for a real screen change, so the browser Back button walks back
+ *  through the app instead of leaving it (this shell holds its location in
+ *  React state, so without a pushed entry Back exits the app from any depth).
+ *  `replaceState` stays the default for a screen's OWN sub-target (which food
+ *  is open, say) — that is a detail of where you already are, not a new place. */
+export function writeDeepLink(patch: DeepLinkParams, opts?: { push?: boolean; state?: DeepLinkState }): void {
   if (typeof window === "undefined") return;
   const url = `${window.location.pathname}${applyDeepLink(window.location.search, patch)}${window.location.hash}`;
   try {
-    if (opts?.push) window.history.pushState(null, "", url);
-    else window.history.replaceState(null, "", url);
+    const state = opts?.state ?? window.history.state ?? null;
+    if (opts?.push) window.history.pushState(state, "", url);
+    else window.history.replaceState(state, "", url);
   } catch {
     /* a sandboxed iframe can refuse history writes — the app still works */
   }
 }
 
-/** Subscribe to Back/Forward. Returns an unsubscribe. */
-export function onDeepLinkChange(fn: (p: DeepLinkParams) => void): () => void {
+/** The index stored on the CURRENT history entry, or 0 if there isn't one
+ *  (a fresh load, or an engine that refused the write). */
+export function currentDeepLinkIndex(): number {
+  if (typeof window === "undefined") return 0;
+  const s = window.history.state as DeepLinkState | null;
+  return typeof s?.hybridIdx === "number" ? s.hybridIdx : 0;
+}
+
+/**
+ * Subscribe to Back/Forward. The callback receives the params and the INDEX of
+ * the entry landed on; comparing it against the last index the caller pushed is
+ * what says which way the user travelled.
+ *
+ * The comparison deliberately lives with the caller rather than in a closure
+ * here. A local `last` updated only on popstate goes stale the moment a forward
+ * navigation pushes — after three pushes it would still hold the index from
+ * subscribe time, and the first Back would be reported as a Forward. The shell
+ * already tracks its position for the push side, so there is exactly one
+ * counter and it cannot drift from itself.
+ */
+export function onDeepLinkChange(fn: (p: DeepLinkParams, idx: number) => void): () => void {
   if (typeof window === "undefined") return () => {};
-  const handler = () => fn(readDeepLink());
+  const handler = (e: PopStateEvent) => {
+    const s = e.state as DeepLinkState | null;
+    fn(readDeepLink(), typeof s?.hybridIdx === "number" ? s.hybridIdx : 0);
+  };
   window.addEventListener("popstate", handler);
   return () => window.removeEventListener("popstate", handler);
 }

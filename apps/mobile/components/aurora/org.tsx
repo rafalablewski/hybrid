@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
+import { View, Text, TextInput, ScrollView } from "react-native";
 import {
   buildTeamTree, flattenTree, canManageOrg, canRead, roleScope, ORG_ROLES,
   type OrgRole,
@@ -11,7 +11,7 @@ import {
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ABack, AuroraScreen, ACard, AHeading, APill, RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 

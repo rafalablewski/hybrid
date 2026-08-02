@@ -150,7 +150,7 @@ function RailHead({ title, action }: { title: string; action: { label: string; o
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "28px 2px 10px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
-      <button onClick={action.onClick} style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: action.premium ? "var(--premium-accent-text)" : C("ash") }}>
+      <button className="pressable" onClick={action.onClick} style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: action.premium ? "var(--premium-accent-text)" : C("ash") }}>
         <CtaLabel size={12}>{action.label}</CtaLabel>
       </button>
     </div>
@@ -293,7 +293,7 @@ function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onSt
   return (
     <div style={{ position: "relative", overflow: "hidden", borderRadius: 16 }}>
       {onDelete && (
-        <button onClick={onDelete} aria-label="Delete" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 74, background: "var(--color-red)", border: "none", borderRadius: 16, display: "grid", placeItems: "center", cursor: "pointer" }}>
+        <button className="pressable" onClick={onDelete} aria-label="Delete" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 74, background: "var(--color-red)", border: "none", borderRadius: 16, display: "grid", placeItems: "center", cursor: "pointer" }}>
           <ITrash size={22} color="#fff" />
         </button>
       )}
@@ -304,8 +304,8 @@ function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onSt
         onPointerLeave={onDelete ? () => { if (start.current != null) { setDx(revealed ? -84 : 0); start.current = null; } } : undefined}
         style={{ position: "relative", display: "flex", alignItems: "center", gap: 16, padding: "12px 6px", background: C("ink"), borderBottom: `1px solid ${C("line")}`, transform: `translateX(${dx}px)`, transition: start.current == null ? "transform .22s cubic-bezier(.4,0,.2,1)" : "none", touchAction: "pan-y" }}
       >
-        <button onClick={onAdd} aria-label={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, border: "1.6px solid var(--color-lime)", background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0, cursor: "pointer" }}><IPlus size={20} color="var(--lime-text)" strokeWidth={2.2} /></button>
-        <button onClick={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+        <button className="pressable" onClick={onAdd} aria-label={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, border: "1.6px solid var(--color-lime)", background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0, cursor: "pointer" }}><IPlus size={20} color="var(--lime-text)" strokeWidth={2.2} /></button>
+        <button className="pressable" onClick={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
             <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto", minWidth: 0 }}>{name}</span>
             {verified && <VerifiedMark />}
@@ -313,7 +313,7 @@ function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onSt
           </div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{meta}</div>
         </button>
-        {onStar && <button onClick={onStar} aria-label="Favorite" style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 4, color: starred ? "var(--color-gold)" : C("ash") }}><IStar size={19} color={starred ? "var(--color-gold)" : C("ash")} fill={starred} /></button>}
+        {onStar && <button className="pressable" onClick={onStar} aria-label="Favorite" style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 4, color: starred ? "var(--color-gold)" : C("ash") }}><IStar size={19} color={starred ? "var(--color-gold)" : C("ash")} fill={starred} /></button>}
         {chevron && <IChevRight size={18} color={C("ash")} />}
       </div>
     </div>
@@ -1056,7 +1056,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           {MEAL_TYPES.map((m) => {
             const on = mealType === m;
             return (
-              <button key={m} onClick={() => setMealType(m)} aria-label={t(`w.recovery.nutrition.meal.${m}`)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: on ? C("lime") : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, padding: "10px 4px", cursor: "pointer", color: on ? "var(--on-accent)" : C("chalk") }}>
+              <button className="pressable" key={m} onClick={() => setMealType(m)} aria-label={t(`w.recovery.nutrition.meal.${m}`)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: on ? C("lime") : C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, padding: "10px 4px", cursor: "pointer", color: on ? "var(--on-accent)" : C("chalk") }}>
                 <Glyph name={mealGlyph(m)} size={18} color={on ? "var(--on-accent)" : C("ash")} />
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: on ? 700 : 500 }}>{t(`w.recovery.nutrition.meal.${m}`)}</span>
               </button>
@@ -1070,7 +1070,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.recovery.nutrition.tab.recent")}</div>
             <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "0 var(--page-pad-x, 16px) 2px" }}>
               {recent.slice(0, 8).map((q) => (
-                <button key={q.key} onClick={() => relogRecent(q)} style={{ flex: "none", display: "flex", alignItems: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "8px 16px 8px 12px", cursor: "pointer", color: C("chalk") }}>
+                <button className="pressable" key={q.key} onClick={() => relogRecent(q)} style={{ flex: "none", display: "flex", alignItems: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "8px 16px 8px 12px", cursor: "pointer", color: C("chalk") }}>
                   <span style={{ width: 22, height: 22, borderRadius: 999, border: "1.4px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={12} color="var(--lime-text)" strokeWidth={2.4} /></span>
                   <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.caption, whiteSpace: "nowrap" }}>{q.name}</span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), whiteSpace: "nowrap" }}>{Math.round(q.kcal)}</span>
@@ -1108,8 +1108,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         })()}
         {/* Add meal + Scan label — side-by-side rounded pills (Scan is AI vision, Full only → upgrade) */}
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10, marginTop: 16 }}>
-          <button onClick={add} disabled={saving} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "16px 12px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}><AuroraIcon name="add" size={15} color="var(--on-accent)" />{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
-          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, ${C("line")})`, borderRadius: 999, padding: "16px 12px", cursor: scanning ? "default" : "pointer", color: C("chalk"), fontWeight: 700, fontSize: fs.caption, fontFamily: "var(--font-mono)", opacity: scanning ? 0.6 : 1 }}>
+          <button className="pressable" onClick={add} disabled={saving} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "16px 12px", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}><AuroraIcon name="add" size={15} color="var(--on-accent)" />{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
+          <button className="pressable" onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, ${C("line")})`, borderRadius: 999, padding: "16px 12px", cursor: scanning ? "default" : "pointer", color: C("chalk"), fontWeight: 700, fontSize: fs.caption, fontFamily: "var(--font-mono)", opacity: scanning ? 0.6 : 1 }}>
             <Glyph name="scan" size={16} color="var(--premium-accent-text)" />
             {scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}
             {!full && <span style={{ color: "var(--premium-accent-text)", fontSize: 11 }}>✦</span>}
@@ -1122,7 +1122,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <CDivider label={t("w.recovery.nutrition.premadeMealsFull")} tier={t("w.account.settings.full")} premium />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {MEAL_PRESETS.map((p) => (
-            <button key={p.id} onClick={() => logPreset(p)} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${full ? C("line") : `color-mix(in srgb, var(--premium-accent) 28%, ${C("line")})`}`, borderRadius: 16, padding: "12px 16px", cursor: "pointer", color: C("chalk") }}>
+            <button className="pressable" key={p.id} onClick={() => logPreset(p)} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${full ? C("line") : `color-mix(in srgb, var(--premium-accent) 28%, ${C("line")})`}`, borderRadius: 16, padding: "12px 16px", cursor: "pointer", color: C("chalk") }}>
               <Glyph name={presetGlyph(p.id)} size={20} color={full ? C("ash") : "var(--premium-accent-text)"} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: fs.body }}>{t(p.labelKey).split(/ [·–] /)[0]}</div>
@@ -1134,7 +1134,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
 
         {onNavigate && (
-          <button onClick={() => onNavigate("nutrition")} style={{ display: "flex", alignItems: "center", gap: 6, margin: "16px auto 0", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.fullTracker")} <Glyph name="chevron" size={13} color={C("ash")} /></button>
+          <button className="pressable" onClick={() => onNavigate("nutrition")} style={{ display: "flex", alignItems: "center", gap: 6, margin: "16px auto 0", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.fullTracker")} <Glyph name="chevron" size={13} color={C("ash")} /></button>
         )}
       </div>
     );
@@ -1147,7 +1147,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <div style={{ paddingBottom: 6 }}>
         <div style={{ display: "flex", gap: 8 }}>
           <input value={newPart} onChange={(e) => setNewPart(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addPart(); }} maxLength={32} placeholder={t("w.recovery.nutrition.partNamePh")} aria-label={t("w.recovery.nutrition.addPart")} style={{ ...numField, flex: 1, textAlign: "left" }} />
-          <button onClick={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? 0.5 : 1 }}>{t("w.recovery.nutrition.addPartCta")}</button>
+          <button className="pressable" onClick={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? 0.5 : 1 }}>{t("w.recovery.nutrition.addPartCta")}</button>
         </div>
         {customParts.length > 0 && (
           <div style={{ marginTop: 16 }}>
@@ -1155,7 +1155,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 2px", borderTop: `1px solid ${C("line")}` }}>
                 <Glyph name="bowl" size={18} color={C("ash")} />
                 <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body, color: C("chalk") }}>{p.label}</span>
-                <button onClick={() => removePart(p.key)} aria-label={t("w.recovery.nutrition.removePart")} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: C("ash") }}><ITrash size={18} color={C("ash")} /></button>
+                <button className="pressable" onClick={() => removePart(p.key)} aria-label={t("w.recovery.nutrition.removePart")} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: C("ash") }}><ITrash size={18} color={C("ash")} /></button>
               </div>
             ))}
           </div>
@@ -1184,7 +1184,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                       it can never pass as an approximation of their logo). It
                       sits under a "published by" label and above the trademark
                       line: this is attribution, not a partnership badge. */}
-                  <button
+                  <button className="pressable"
                     onClick={() => { const id = portion.verifiedId; setPortion(null); if (id) openFoodPage(id, view); else if (src) openSourcePage(src.id, view); }}
                     style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer" }}
                   >
@@ -1212,12 +1212,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             })()}
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", marginTop: 16 }}>
-              <button onClick={() => setQty((x) => Math.max(0.5, Math.round((x - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={stepBtn}>–</button>
+              <button className="pressable" onClick={() => setQty((x) => Math.max(0.5, Math.round((x - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={stepBtn}>–</button>
               <div style={{ textAlign: "center" }}>
                 <input value={String(qty)} onChange={(e) => { const n = parseFloat(e.target.value); setQty(Number.isFinite(n) && n >= 0 ? n : 0); }} inputMode="decimal" aria-label={t("w.recovery.nutrition.quantity")} style={{ width: 96, textAlign: "center", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 30, letterSpacing: "-.03em", fontVariantNumeric: "tabular-nums" }} />
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.servings")}</div>
               </div>
-              <button onClick={() => setQty((x) => Math.min(50, Math.round((x + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={stepBtn}>+</button>
+              <button className="pressable" onClick={() => setQty((x) => Math.min(50, Math.round((x + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={stepBtn}>+</button>
             </div>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 20 }}>
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 48, letterSpacing: "-.03em", fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{s(portion.kcal)}</span>
@@ -1243,8 +1243,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             />
             {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
             <div style={{ display: "grid", gridTemplateColumns: portion.offFood ? "1fr 1fr" : "1fr", gap: 10, marginTop: 16 }}>
-              {portion.offFood && <button onClick={() => { const ff = portion.offFood; setPortion(null); if (ff) saveFood(ff); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveToFoods")}</button>}
-              <button onClick={commitPortion} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.logToMeal").replace("{meal}", t(`w.recovery.nutrition.meal.${mealType}`))}</button>
+              {portion.offFood && <button className="pressable" onClick={() => { const ff = portion.offFood; setPortion(null); if (ff) saveFood(ff); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveToFoods")}</button>}
+              <button className="pressable" onClick={commitPortion} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.logToMeal").replace("{meal}", t(`w.recovery.nutrition.meal.${mealType}`))}</button>
             </div>
           </div>
         );
@@ -1275,8 +1275,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
         {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 10 }}>{error}</div>}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
-          <button onClick={async () => { if (await add()) setQuickLog(false); }} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body }}><IPlus size={16} color="var(--on-accent)" strokeWidth={2.4} />{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
-          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, ${C("line")})`, borderRadius: 999, padding: 16, cursor: "pointer", color: "var(--premium-accent-text)", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption }}>
+          <button className="pressable" onClick={async () => { if (await add()) setQuickLog(false); }} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body }}><IPlus size={16} color="var(--on-accent)" strokeWidth={2.4} />{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</button>
+          <button className="pressable" onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, ${C("line")})`, borderRadius: 999, padding: 16, cursor: "pointer", color: "var(--premium-accent-text)", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption }}>
             <Glyph name="scan" size={16} color="var(--premium-accent-text)" />{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}{!full && <span style={{ fontSize: 11 }}>✦</span>}
           </button>
         </div>
@@ -1288,7 +1288,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // — an X (or back) at the left, a centred title, an optional right slot.
   const screenHead = (title: ReactNode, onBack: () => void, opts?: { icon?: "x" | "back"; right?: ReactNode }) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-      <button onClick={onBack} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
+      <button className="pressable" onClick={onBack} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 12, border: "none", background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
         {opts?.icon === "back" ? <IChevRight size={22} color={C("chalk")} strokeWidth={2.2} style={{ transform: "scaleX(-1)" } as React.CSSProperties} /> : <IClose size={22} color={C("chalk")} />}
       </button>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19, letterSpacing: "-.01em", textAlign: "center", flex: 1 }}>{title}</div>
@@ -1308,7 +1308,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
         {hud("always")}
         {screenHead(
-          <button onClick={() => setMealPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19 }}>
+          <button className="pressable" onClick={() => setMealPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19 }}>
             {partLabel(mealType)}<IChevDown size={16} color={C("chalk")} />
           </button>,
           () => setView("home"),
@@ -1318,14 +1318,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <Sheet open={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
             {partList.map((p) => (
-              <button key={p.key} onClick={() => { setMealType(p.key); setMealPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink"), border: `1px solid ${mealType === p.key ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
+              <button className="pressable" key={p.key} onClick={() => { setMealType(p.key); setMealPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink"), border: `1px solid ${mealType === p.key ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
                 <Glyph name={mealGlyph(p.key)} size={20} color={mealType === p.key ? "var(--lime-text)" : C("ash")} />
                 <span style={{ flex: 1, fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: fs.bodyLg }}>{p.label}</span>
                 {mealType === p.key && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
               </button>
             ))}
             {full && (
-              <button onClick={() => { setMealPicker(false); setPartSheet(true); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("ash") }}>
+              <button className="pressable" onClick={() => { setMealPicker(false); setPartSheet(true); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("ash") }}>
                 <IPlus size={18} color={C("ash")} strokeWidth={2.2} />
                 <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>{t("w.recovery.nutrition.addPart")}</span>
               </button>
@@ -1337,15 +1337,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <div style={{ display: "flex", alignItems: "center", gap: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px" }}>
           <AuroraIcon name="search" size={18} color={C("ash")} />
           <input value={foodQuery} onChange={(e) => setFoodQuery(e.target.value)} placeholder={t("w.recovery.nutrition.searchPh")} aria-label={t("w.recovery.nutrition.searchPh")} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.subtitle }} />
-          {q ? <button onClick={() => setFoodQuery("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 0, display: "grid", placeItems: "center" }}><IClose size={18} color={C("ash")} /></button> : <IBarcode size={20} color={C("ash")} />}
+          {q ? <button className="pressable" onClick={() => setFoodQuery("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 0, display: "grid", placeItems: "center" }}><IClose size={18} color={C("ash")} /></button> : <IBarcode size={20} color={C("ash")} />}
         </div>
 
         {/* Quick Log + Create Food */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
-          <button onClick={() => setQuickLog(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "16px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
+          <button className="pressable" onClick={() => setQuickLog(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "16px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
             <IBolt size={18} color={C("chalk")} />{t("w.recovery.nutrition.quickLog")}
           </button>
-          <button onClick={() => openCreate("product")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "16px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
+          <button className="pressable" onClick={() => openCreate("product")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "16px 10px", color: C("chalk"), cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg }}>
             <IPlusBox size={18} color={C("chalk")} />{t("w.recovery.nutrition.createFood")}
           </button>
         </div>
@@ -1353,7 +1353,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {/* Tabs */}
         <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 4, gap: 4, marginTop: 16 }}>
           {(["recent", "favorites", "meals", "personal"] as const).map((tab) => (
-            <button key={tab} onClick={() => setFoodTab(tab)} style={{ flex: 1, border: "none", borderRadius: 12, padding: "10px 8px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: foodTab === tab ? 700 : 600, fontSize: fs.bodyLg, background: foodTab === tab ? C("lime") : "transparent", color: foodTab === tab ? "var(--on-accent)" : C("ash") }}>
+            <button className="pressable" key={tab} onClick={() => setFoodTab(tab)} style={{ flex: 1, border: "none", borderRadius: 12, padding: "10px 8px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: foodTab === tab ? 700 : 600, fontSize: fs.bodyLg, background: foodTab === tab ? C("lime") : "transparent", color: foodTab === tab ? "var(--on-accent)" : C("ash") }}>
               {t(`w.recovery.nutrition.tab.${tab}`)}
             </button>
           ))}
@@ -1450,7 +1450,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
         {screenHead(isMeal ? t("w.recovery.nutrition.createMeal") : t("w.recovery.nutrition.createFood"), () => setView("add"), {
           right: (
-            <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} aria-label={t("w.recovery.nutrition.scanLabel")} style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "transparent", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--premium-accent-text)" }}>
+            <button className="pressable" onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} aria-label={t("w.recovery.nutrition.scanLabel")} style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "transparent", display: "grid", placeItems: "center", cursor: "pointer", color: "var(--premium-accent-text)" }}>
               <Glyph name="scan" size={19} color="var(--premium-accent-text)" />
             </button>
           ),
@@ -1484,7 +1484,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {/* The label panel — optional, folded away. Anything left blank stays
             NOT STATED rather than becoming a zero the diary would believe. */}
-        <button
+        <button className="pressable"
           onClick={() => setShowPanelFields((x) => !x)}
           aria-expanded={showPanelFields}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginTop: 16, background: "transparent", border: "none", padding: "6px 2px", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.caption }}
@@ -1528,14 +1528,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{Math.round(c.kcal * c.qty)} kcal — {Math.round(c.protein * c.qty)}P {Math.round(c.carbs * c.qty)}C {Math.round(c.fat * c.qty)}F</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
-                  <button onClick={() => setCompQty(c.productId, c.qty - 1)} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 32, height: 32, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 18, cursor: "pointer", display: "grid", placeItems: "center" }}>–</button>
+                  <button className="pressable" onClick={() => setCompQty(c.productId, c.qty - 1)} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 32, height: 32, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 18, cursor: "pointer", display: "grid", placeItems: "center" }}>–</button>
                   <div style={{ minWidth: 26, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.body, fontVariantNumeric: "tabular-nums" }}>{c.qty}</div>
-                  <button onClick={() => setCompQty(c.productId, c.qty + 1)} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 32, height: 32, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 18, cursor: "pointer", display: "grid", placeItems: "center" }}>+</button>
+                  <button className="pressable" onClick={() => setCompQty(c.productId, c.qty + 1)} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 32, height: 32, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 18, cursor: "pointer", display: "grid", placeItems: "center" }}>+</button>
                 </div>
-                <button onClick={() => removeMealComp(c.productId)} aria-label={t("w.recovery.nutrition.remove")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 16, padding: 2 }}>×</button>
+                <button className="pressable" onClick={() => removeMealComp(c.productId)} aria-label={t("w.recovery.nutrition.remove")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 16, padding: 2 }}>×</button>
               </div>
             ))}
-            <button onClick={() => { setCompQuery(""); setCompPicker(true); }} style={{ width: "100%", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
+            <button className="pressable" onClick={() => { setCompQuery(""); setCompPicker(true); }} style={{ width: "100%", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
               <IPlus size={15} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.addProduct")}
             </button>
           </div>
@@ -1546,7 +1546,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 24, fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>
             <span>{t("w.recovery.nutrition.per")}</span>
             <input value={createForm.serving} onChange={(e) => setCF({ serving: e.target.value })} inputMode="numeric" placeholder="1" aria-label={t("w.recovery.nutrition.servingLabel2")} style={{ width: 44, textAlign: "right", border: "none", borderBottom: `1px solid ${C("line")}`, outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: 15, padding: "0 0 3px" }} />
-            <button onClick={() => setUnitPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>
+            <button className="pressable" onClick={() => setUnitPicker(true)} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>
               {t(`w.recovery.nutrition.unitOpt.${createForm.unit}`)}<IChevDown size={13} color={C("ash")} />
             </button>
           </div>
@@ -1554,14 +1554,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {libMsg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 16, textAlign: "center" }}>{libMsg}</div>}
 
-        <button onClick={submitCreateFood} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, marginTop: 28, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
+        <button className="pressable" onClick={submitCreateFood} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, marginTop: 28, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
           <IPlus size={18} color="var(--on-accent)" strokeWidth={2.4} />{isMeal ? t("w.recovery.nutrition.saveMeal") : t("w.recovery.nutrition.saveProduct")}
         </button>
 
         <Sheet open={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
             {UNIT_OPTIONS.map((u) => (
-              <button key={u} onClick={() => { setCF({ unit: u }); setUnitPicker(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C("ink"), border: `1px solid ${createForm.unit === u ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}>
+              <button className="pressable" key={u} onClick={() => { setCF({ unit: u }); setUnitPicker(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C("ink"), border: `1px solid ${createForm.unit === u ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}>
                 {t(`w.recovery.nutrition.unitOpt.${u}`)}{createForm.unit === u && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
               </button>
             ))}
@@ -1583,7 +1583,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               return list.map((p) => {
                 const added = mealComps.find((c) => c.productId === p.id);
                 return (
-                  <button key={p.id} onClick={() => addMealComp(p)} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
+                  <button className="pressable" key={p.id} onClick={() => addMealComp(p)} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer", color: C("chalk") }}>
                     <span style={{ width: 36, height: 36, borderRadius: 999, border: "1.6px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} /></span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><span style={{ fontWeight: 600, fontSize: fs.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>{p.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{p.subname}</span> : null}</div>
@@ -1595,7 +1595,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               });
             })()}
           </div>
-          <button onClick={() => setCompPicker(false)} style={{ width: "100%", marginTop: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.done")}</button>
+          <button className="pressable" onClick={() => setCompPicker(false)} style={{ width: "100%", marginTop: 10, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.done")}</button>
         </Sheet>
       </div>
     );
@@ -1627,7 +1627,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), {
           icon: "back",
           right: (
-            <button
+            <button className="pressable"
               onClick={async () => {
                 const url = verifiedFoodUrl(f.id);
                 // navigator.share where the browser has it (mobile web), the
@@ -1650,7 +1650,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {/* WHOSE FOOD THIS IS — the mark leads, under its "published by" label.
             Tapping it opens the business's own page. */}
         {src && (
-          <button
+          <button className="pressable"
             onClick={() => openSourcePage(src.id, "food")}
             style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", marginTop: 6, cursor: "pointer" }}
           >
@@ -1752,10 +1752,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <div style={{ marginTop: 24 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", paddingBottom: 8 }}>
               <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.moreFrom").replace("{source}", src?.name ?? "")}</span>
-              {src && <button onClick={() => openSourcePage(src.id, "food")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{t("w.explore.seeAll")}</button>}
+              {src && <button className="pressable" onClick={() => openSourcePage(src.id, "food")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{t("w.explore.seeAll")}</button>}
             </div>
             {related.map((r) => (
-              <button key={r.id} onClick={() => openFoodPage(r.id, "food")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer" }}>
+              <button className="pressable" key={r.id} onClick={() => openFoodPage(r.id, "food")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                     <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk") }}>{r.name}</span>
@@ -1772,10 +1772,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {mealMsg && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 16 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{mealMsg}</div>}
 
         <div style={{ position: "sticky", bottom: 0, background: C("ink"), padding: "16px 0 20px", marginTop: 10, display: "grid", gridTemplateColumns: "auto 1fr", gap: 12 }}>
-          <button onClick={() => saveFood(hit)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "16px 20px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
+          <button className="pressable" onClick={() => saveFood(hit)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "16px 20px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
             <IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.saveToFoods")}
           </button>
-          <button onClick={() => logFood(hit)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
+          <button className="pressable" onClick={() => logFood(hit)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>
             {t("w.recovery.nutrition.logThis")}
           </button>
         </div>
@@ -1798,7 +1798,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           {VERIFIED_SOURCES.map((src) => {
             const n = vfBySource(src.id).length;
             return (
-              <button key={src.id} onClick={() => openSourcePage(src.id, "sources")} style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "16px 16px", marginBottom: 10, cursor: "pointer" }}>
+              <button className="pressable" key={src.id} onClick={() => openSourcePage(src.id, "sources")} style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "16px 16px", marginBottom: 10, cursor: "pointer" }}>
                 <MarkPlate C={C} src={src} height={28} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -1850,7 +1850,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{items.length}</span>
         </div>
         {items.map((f) => (
-          <button key={f.id} onClick={() => openFoodPage(f.id, "source")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "16px 2px", cursor: "pointer" }}>
+          <button className="pressable" key={f.id} onClick={() => openFoodPage(f.id, "source")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "16px 2px", cursor: "pointer" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                 <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{f.name}</span>
@@ -1886,14 +1886,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 calc(-1 * var(--page-pad-x, 16px))", paddingLeft: "var(--page-pad-x, 16px)", paddingRight: "var(--page-pad-x, 16px)" }}>
           {RECIPE_FILTERS.map((rf) => (
-            <button key={rf} onClick={() => setRecipeFilter(rf)} style={{ flex: "none", fontFamily: "var(--font-display)", fontWeight: recipeFilter === rf ? 700 : 600, fontSize: fs.body, border: `1px solid ${recipeFilter === rf ? C("lime") : C("line")}`, borderRadius: 999, padding: "8px 16px", color: recipeFilter === rf ? "var(--on-accent)" : C("ash"), background: recipeFilter === rf ? C("lime") : C("ink2"), whiteSpace: "nowrap", cursor: "pointer" }}>
+            <button className="pressable" key={rf} onClick={() => setRecipeFilter(rf)} style={{ flex: "none", fontFamily: "var(--font-display)", fontWeight: recipeFilter === rf ? 700 : 600, fontSize: fs.body, border: `1px solid ${recipeFilter === rf ? C("lime") : C("line")}`, borderRadius: 999, padding: "8px 16px", color: recipeFilter === rf ? "var(--on-accent)" : C("ash"), background: recipeFilter === rf ? C("lime") : C("ink2"), whiteSpace: "nowrap", cursor: "pointer" }}>
               {t(`w.recovery.nutrition.recipeFilter.${rf}`)}
             </button>
           ))}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
           {list.map((r) => (
-            <button key={r.id} onClick={() => openRecipe(r)} style={{ textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
+            <button className="pressable" key={r.id} onClick={() => openRecipe(r)} style={{ textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
               <div style={{ height: 96, display: "grid", placeItems: "center", fontSize: 40, ...recipeHeroBg(r.tint) }}>{r.emoji}</div>
               <div style={{ padding: "12px 12px 12px" }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.01em" }}>{r.name}</div>
@@ -1944,8 +1944,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         )}
         <div style={{ flex: 1 }} />
         <div style={{ display: "grid", gridTemplateColumns: cookStep > 0 ? "auto 1fr" : "1fr", gap: 12, marginTop: 24, paddingBottom: 12 }}>
-          {cookStep > 0 && <button onClick={() => setCookStep((s) => s - 1)} style={{ background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "16px 24px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.stepBack")}</button>}
-          <button onClick={() => last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</button>
+          {cookStep > 0 && <button className="pressable" onClick={() => setCookStep((s) => s - 1)} style={{ background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "16px 24px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.stepBack")}</button>}
+          <button className="pressable" onClick={() => last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</button>
         </div>
       </div>
     );
@@ -1987,7 +1987,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => setView("home")} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 16, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><AuroraIcon name="back" size={18} color={C("chalk")} /></button>
+          <button className="pressable" onClick={() => setView("home")} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 16, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><AuroraIcon name="back" size={18} color={C("chalk")} /></button>
           <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", margin: 0 }}>{view === "log" ? t("w.recovery.nutrition.logMealCta") : view === "insights" ? t("w.recovery.nutrition.menuInsights") : view === "diary" ? t("w.recovery.nutrition.menuDiary") : view === "body" ? t("w.recovery.nutrition.menuBody") : view === "meals" ? t("w.recovery.nutrition.yourMeals") : t("w.recovery.nutrition.yourProducts")}</h1>
         </div>
       )}
@@ -2018,7 +2018,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           {GOALS.map((g) => {
             const on = goal === g.id;
             return (
-              <button key={g.id} onClick={() => { chooseGoal(g.id); setGoalPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
+              <button className="pressable" key={g.id} onClick={() => { chooseGoal(g.id); setGoalPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.bodyLg }}>{t(g.label)}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{goalSub(g.id)}</div>
@@ -2103,7 +2103,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               picker attributed to that meal; the kcal already logged is shown. */}
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "24px 2px 4px" }}>
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.todaysMeals")}</div>
-            <button onClick={() => setView("diary")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}><CtaLabel size={12}>{`${t("w.recovery.nutrition.menuDiary")} →`}</CtaLabel></button>
+            <button className="pressable" onClick={() => setView("diary")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}><CtaLabel size={12}>{`${t("w.recovery.nutrition.menuDiary")} →`}</CtaLabel></button>
           </div>
           {partList.map((p) => { const kcal = mealTotals[p.key] ?? 0; return (
             <button key={p.key} onClick={() => openAdd(p.key)} className="pressable" style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "16px 16px", marginTop: 10, cursor: "pointer", color: C("chalk") }}>
@@ -2117,7 +2117,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           ); })}
           {/* Full users can add their own parts of the day (e.g. Pre-workout). */}
           {full && (
-            <button onClick={() => setPartSheet(true)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 16, padding: "16px 16px", marginTop: 10, cursor: "pointer", color: C("ash") }}>
+            <button className="pressable" onClick={() => setPartSheet(true)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: `1px dashed ${C("line")}`, borderRadius: 16, padding: "16px 16px", marginTop: 10, cursor: "pointer", color: C("ash") }}>
               <span style={{ width: 40, height: 40, borderRadius: 12, border: `1px dashed ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={18} color={C("ash")} strokeWidth={2.2} /></span>
               <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.addPart")}</span>
             </button>
@@ -2210,7 +2210,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8 }}>{t("w.recovery.nutrition.weightProfileSub")}</div>
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <input value={weighIn} onChange={(e) => setWeighIn(e.target.value)} inputMode="decimal" placeholder="kg" aria-label={t("w.recovery.nutrition.updateWeight")} style={{ ...numField, flex: 1 }} />
-            <button onClick={() => { const kg = parseFloat(weighIn); if (Number.isFinite(kg) && kg > 0) { logWeighIn(kg); setWeighIn(""); } }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.updateWeight")}</button>
+            <button className="pressable" onClick={() => { const kg = parseFloat(weighIn); if (Number.isFinite(kg) && kg > 0) { logWeighIn(kg); setWeighIn(""); } }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.updateWeight")}</button>
           </div>
         </div>
       )}
@@ -2244,7 +2244,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <AuroraIcon name="add" size={20} color={C("lime")} />
             <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.addToToday")}</b>
           </div>
-          <button onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none", cursor: scanning ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--premium-accent-text)", opacity: scanning ? 0.6 : 1 }}>
+          <button className="pressable" onClick={() => (full ? fileRef.current?.click() : onNavigate?.("upgrade"))} disabled={scanning} style={{ display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none", cursor: scanning ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--premium-accent-text)", opacity: scanning ? 0.6 : 1 }}>
             <Glyph name="scan" size={16} color="var(--premium-accent-text)" />{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}{!full && <span style={{ fontSize: 11 }}>✦</span>}
           </button>
         </div>
@@ -2256,7 +2256,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           <input value={f.fat} onChange={(e) => setF((s) => ({ ...s, fat: e.target.value }))} inputMode="numeric" placeholder={t("w.recovery.nutrition.fatPh")} style={numField} />
         </div>
         {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{error}</div>}
-        <button onClick={add} disabled={saving} style={{ width: "100%", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, marginTop: 16, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
+        <button className="pressable" onClick={add} disabled={saving} style={{ width: "100%", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, marginTop: 16, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")}
         </button>
         {/* QUICK MEALS — one-tap premade meals as time-of-day rows. Full users log
@@ -2268,7 +2268,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
           <div style={{ marginTop: 12 }}>
             {MEAL_PRESETS.map((p, i) => (
-              <button
+              <button className="pressable"
                 key={p.id}
                 onClick={() => logPreset(p)}
                 aria-label={t(p.labelKey)}
@@ -2311,8 +2311,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{m.name}</span>{m.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{m.subname}</span> : null}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{m.kcal} kcal — {m.protein}P {m.carbs}C {m.fat}F</div>
                 </div>
-                <button onClick={() => logMeal(m)} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
-                <button onClick={() => deleteMeal(m.id)} aria-label={t("w.recovery.nutrition.deleteMeal")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 2 }}>×</button>
+                <button className="pressable" onClick={() => logMeal(m)} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
+                <button className="pressable" onClick={() => deleteMeal(m.id)} aria-label={t("w.recovery.nutrition.deleteMeal")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 16, lineHeight: 1, padding: 2 }}>×</button>
               </div>
             ))}
           </div>
@@ -2330,14 +2330,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             {(() => { const mk = macroKcalOf(mealForm.protein, mealForm.carbs, mealForm.fat); return mk > 0 && !mealForm.kcal.trim() ? <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 10, textAlign: "center" }}>{t("w.recovery.nutrition.macrosApprox")} {mk} kcal</div> : null; })()}
             {libMsg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{libMsg}</div>}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
-              <button onClick={() => { setShowMealBuilder(false); setLibMsg(""); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.cancel")}</button>
-              <button onClick={saveMeal} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveMeal")}</button>
+              <button className="pressable" onClick={() => { setShowMealBuilder(false); setLibMsg(""); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.cancel")}</button>
+              <button className="pressable" onClick={saveMeal} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveMeal")}</button>
             </div>
           </div>
         ) : canSaveAnotherMeal ? (
-          <button onClick={() => openCreate("meal")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}><AuroraIcon name="add" size={15} color="var(--lime-text)" />{t("w.recovery.nutrition.createMeal")}</button>
+          <button className="pressable" onClick={() => openCreate("meal")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}><AuroraIcon name="add" size={15} color="var(--lime-text)" />{t("w.recovery.nutrition.createMeal")}</button>
         ) : (
-          <button onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: `color-mix(in srgb, var(--premium-accent) 12%, transparent)`, color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
+          <button className="pressable" onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: `color-mix(in srgb, var(--premium-accent) 12%, transparent)`, color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
             <span aria-hidden>✦</span>{t("w.recovery.nutrition.unlockMoreMeals")}
           </button>
         )}
@@ -2355,7 +2355,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <div style={{ display: "flex", alignItems: "center", gap: 10, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px" }}>
           <AuroraIcon name="search" size={18} color={C("ash")} />
           <input value={foodQuery} onChange={(e) => setFoodQuery(e.target.value)} placeholder={t("w.recovery.nutrition.foodSearchPh")} aria-label={t("w.recovery.nutrition.foodSearchPh")} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body }} />
-          {foodQuery ? <button onClick={() => setFoodQuery("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 17, lineHeight: 1 }}>×</button> : <Glyph name="scan" size={17} color={C("ash")} strokeWidth={4} />}
+          {foodQuery ? <button className="pressable" onClick={() => setFoodQuery("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 17, lineHeight: 1 }}>×</button> : <Glyph name="scan" size={17} color={C("ash")} strokeWidth={4} />}
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8, letterSpacing: ".08em" }}>{t("w.recovery.nutrition.foodSearchHint")}</div>
         {foodMsg && <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{foodMsg}</div>}
@@ -2372,7 +2372,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 {/* A verified row opens its page from the name, exactly as in the
                     picker — the same food must not be a dead end on one screen
                     and a doorway on another. */}
-                <button
+                <button className="pressable"
                   onClick={food.verified && food.id ? () => openFoodPage(food.id!, "foods") : () => logFood(food)}
                   style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
                 >
@@ -2382,8 +2382,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                   </div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{food.brand ? `${food.brand} — ` : ""}{food.serving} — {food.kcal} kcal — {food.protein}P {food.carbs}C {food.fat}F</div>
                 </button>
-                <button onClick={() => saveFood(food)} aria-label={t("w.recovery.nutrition.saveToFoods")} title={t("w.recovery.nutrition.saveToFoods")} style={{ flex: "none", width: 34, height: 34, borderRadius: "50%", border: `1px solid ${C("line")}`, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="bookmark" size={15} color={C("ash")} /></button>
-                <button onClick={() => logFood(food)} style={{ flex: "none", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
+                <button className="pressable" onClick={() => saveFood(food)} aria-label={t("w.recovery.nutrition.saveToFoods")} title={t("w.recovery.nutrition.saveToFoods")} style={{ flex: "none", width: 34, height: 34, borderRadius: "50%", border: `1px solid ${C("line")}`, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="bookmark" size={15} color={C("ash")} /></button>
+                <button className="pressable" onClick={() => logFood(food)} style={{ flex: "none", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
               </div>
             ))}
           </div>
@@ -2405,8 +2405,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{p.name}</span>{p.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{p.subname}</span> : null}</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{p.servingLabel} — {p.kcal} kcal — {p.protein}P {p.carbs}C {p.fat}F</div>
                 </div>
-                <button onClick={() => addProductToMeal(p)} aria-label={t("w.recovery.nutrition.addToMeal")} style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="add" size={14} color="var(--lime-text)" /></button>
-                <button onClick={() => deleteProduct(p.id)} aria-label={t("w.recovery.nutrition.deleteProduct")} style={{ flex: "none", background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 16 }}>×</button>
+                <button className="pressable" onClick={() => addProductToMeal(p)} aria-label={t("w.recovery.nutrition.addToMeal")} style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="add" size={14} color="var(--lime-text)" /></button>
+                <button className="pressable" onClick={() => deleteProduct(p.id)} aria-label={t("w.recovery.nutrition.deleteProduct")} style={{ flex: "none", background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 16 }}>×</button>
               </div>
             ))}
           </div>
@@ -2424,17 +2424,17 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </div>
             {(() => { const mk = macroKcalOf(prodForm.protein, prodForm.carbs, prodForm.fat); return mk > 0 && !prodForm.kcal.trim() ? <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 10, textAlign: "center" }}>{t("w.recovery.nutrition.macrosApprox")} {mk} kcal</div> : null; })()}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
-              <button onClick={() => setShowProdBuilder(false)} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.cancel")}</button>
-              <button onClick={saveProduct} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveProduct")}</button>
+              <button className="pressable" onClick={() => setShowProdBuilder(false)} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.cancel")}</button>
+              <button className="pressable" onClick={saveProduct} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveProduct")}</button>
             </div>
           </div>
         )}
         {showProdBuilder ? null : canSaveAnotherProduct ? (
-          <button onClick={() => openCreate("product")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
+          <button className="pressable" onClick={() => openCreate("product")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
             <AuroraIcon name="add" size={15} color="var(--lime-text)" />{t("w.recovery.nutrition.addManually")}
           </button>
         ) : (
-          <button onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: `color-mix(in srgb, var(--premium-accent) 12%, transparent)`, color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
+          <button className="pressable" onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: `color-mix(in srgb, var(--premium-accent) 12%, transparent)`, color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
             <span aria-hidden>✦</span>{t("w.recovery.nutrition.unlockMoreProducts")}
           </button>
         )}
@@ -2462,11 +2462,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
           {/* Quantity stepper — rescales the entry (and its mirror). */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button onClick={() => stepEntry(l, Math.max(0.5, Math.round((shown - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 26, height: 26, borderRadius: 12, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>−</button>
+            <button className="pressable" onClick={() => stepEntry(l, Math.max(0.5, Math.round((shown - 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 26, height: 26, borderRadius: 12, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>−</button>
             <span style={{ minWidth: 26, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{l.derived ? `×${shown}` : shown}</span>
-            <button onClick={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 12, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
+            <button className="pressable" onClick={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 12, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
           </div>
-          <button onClick={() => deleteLog(l.id)} aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
+          <button className="pressable" onClick={() => deleteLog(l.id)} aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
         </div>
         );
       };
@@ -2480,12 +2480,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           target. Read from Signals so it works for every day, migrated or not. */}
       <div style={{ ...card, marginTop: 16, padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <button onClick={() => shiftDiaryDay(-1)} aria-label={t("w.recovery.nutrition.prevDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={C("chalk")} style={{ transform: "rotate(180deg)" }} /></button>
+          <button className="pressable" onClick={() => shiftDiaryDay(-1)} aria-label={t("w.recovery.nutrition.prevDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={C("chalk")} style={{ transform: "rotate(180deg)" }} /></button>
           <div style={{ textAlign: "center", minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{isToday ? t("w.recovery.nutrition.todaysMeals") : diaryDayLabel}</div>
-            {!isToday && <button onClick={() => setDiaryDay(localTodayKey())} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--lime-text)", marginTop: 2 }}><CtaLabel size={12}>{`${t("w.recovery.nutrition.backToToday")} →`}</CtaLabel></button>}
+            {!isToday && <button className="pressable" onClick={() => setDiaryDay(localTodayKey())} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--lime-text)", marginTop: 2 }}><CtaLabel size={12}>{`${t("w.recovery.nutrition.backToToday")} →`}</CtaLabel></button>}
           </div>
-          <button onClick={() => shiftDiaryDay(1)} disabled={isToday} aria-label={t("w.recovery.nutrition.nextDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: isToday ? C("line") : C("chalk"), cursor: isToday ? "default" : "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={isToday ? C("line") : C("chalk")} /></button>
+          <button className="pressable" onClick={() => shiftDiaryDay(1)} disabled={isToday} aria-label={t("w.recovery.nutrition.nextDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: isToday ? C("line") : C("chalk"), cursor: isToday ? "default" : "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={isToday ? C("line") : C("chalk")} /></button>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 16 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 34, fontWeight: 700, color: C("chalk"), fontVariantNumeric: "tabular-nums", letterSpacing: "-.02em" }}>{Math.round(daySummary.kcal)}</span>
@@ -2547,7 +2547,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             const kcal = entries.length ? entries.reduce((s, l) => s + l.kcal * l.qty, 0) : (dayPartKcal[p.key] ?? 0);
             return (
             <div key={p.key} style={{ borderTop: i ? `1px solid ${C("line")}` : "none", paddingTop: 12, paddingBottom: entries.length ? 6 : 12 }}>
-              <button onClick={() => isToday && openAdd(p.key)} disabled={!isToday} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: "none", padding: "0 2px", cursor: isToday ? "pointer" : "default", color: C("chalk") }}>
+              <button className="pressable" onClick={() => isToday && openAdd(p.key)} disabled={!isToday} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "transparent", border: "none", padding: "0 2px", cursor: isToday ? "pointer" : "default", color: C("chalk") }}>
                 <Glyph name={mealGlyph(p.key)} size={19} color={C("ash")} />
                 <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body }}>{p.label}</span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: kcal > 0 ? C("chalk") : C("ash"), fontVariantNumeric: "tabular-nums" }}>{kcal > 0 ? `${Math.round(kcal)} kcal` : "—"}</span>
@@ -2594,7 +2594,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           ) : recentDays.map((d, i) => {
             const on = d.date === diaryDay;
             return (
-            <button key={d.date} onClick={() => setDiaryDay(d.date)} aria-label={`${t("w.recovery.nutrition.viewDay")} ${d.date.slice(5)}`} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, padding: "12px 6px", borderTop: i ? `1px solid ${C("line")}` : "none", background: on ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", borderRadius: on ? 12 : 0, border: "none", borderLeft: on ? "2px solid var(--color-lime)" : "2px solid transparent", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
+            <button className="pressable" key={d.date} onClick={() => setDiaryDay(d.date)} aria-label={`${t("w.recovery.nutrition.viewDay")} ${d.date.slice(5)}`} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, padding: "12px 6px", borderTop: i ? `1px solid ${C("line")}` : "none", background: on ? `color-mix(in srgb, var(--color-lime) 10%, transparent)` : "transparent", borderRadius: on ? 12 : 0, border: "none", borderLeft: on ? "2px solid var(--color-lime)" : "2px solid transparent", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption }}>
               <span style={{ color: on ? "var(--lime-text)" : C("ash"), width: 48, textAlign: "left" }}>{d.date.slice(5)}</span>
               <span style={{ fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{Math.round(d.kcal)} kcal</span>
               <span style={{ color: C("ash"), flex: 1, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{Math.round(d.protein)}P {Math.round(d.carbs)}C {Math.round(d.fat)}F</span>
@@ -2664,9 +2664,9 @@ function RecipeDetail({ recipe, serves, setServes, msg, onBack, onSaveMeal, onCo
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 6px" }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.ingredients")}</div>
         <div style={{ display: "flex", alignItems: "center", border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden" }}>
-          <button onClick={() => setServes((x) => Math.max(1, x - 1))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 38, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 20, cursor: "pointer", display: "grid", placeItems: "center" }}>–</button>
+          <button className="pressable" onClick={() => setServes((x) => Math.max(1, x - 1))} aria-label={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 38, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 20, cursor: "pointer", display: "grid", placeItems: "center" }}>–</button>
           <div style={{ width: 52, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, fontWeight: 600, borderLeft: `1px solid ${C("line")}`, borderRight: `1px solid ${C("line")}`, lineHeight: "38px" }}>{serves}</div>
-          <button onClick={() => setServes((x) => Math.min(12, x + 1))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 38, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 20, cursor: "pointer", display: "grid", placeItems: "center" }}>+</button>
+          <button className="pressable" onClick={() => setServes((x) => Math.min(12, x + 1))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 38, background: C("ink2"), border: "none", color: "var(--lime-text)", fontSize: 20, cursor: "pointer", display: "grid", placeItems: "center" }}>+</button>
         </div>
       </div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginBottom: 4 }}>
@@ -2711,8 +2711,8 @@ function RecipeDetail({ recipe, serves, setServes, msg, onBack, onSaveMeal, onCo
       <div style={{ position: "sticky", bottom: 0, background: C("ink"), padding: "16px 0 20px", marginTop: 8 }}>
         {msg && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginBottom: 12 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{msg}</div>}
         <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 12 }}>
-          <button onClick={onSaveMeal} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "16px 20px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}><IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.createMeal")}</button>
-          <button onClick={onCook} style={{ width: "100%", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.startCooking")}</button>
+          <button className="pressable" onClick={onSaveMeal} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "16px 20px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}><IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.createMeal")}</button>
+          <button className="pressable" onClick={onCook} style={{ width: "100%", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.startCooking")}</button>
         </div>
       </div>
     </div>
@@ -2804,7 +2804,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
   const C = (v: string) => `var(--color-${v})`;
   const goalLabel = t(goal === "lose" ? "w.recovery.nutrition.goalLose" : goal === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const seg = (w: 7 | 30, label: string) => (
-    <button onClick={() => onWindow(w)} style={{ flex: 1, padding: "8px 0", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, letterSpacing: ".08em", textTransform: "uppercase", background: window === w ? C("lime") : "transparent", color: window === w ? C("ink") : C("ash") }}>{label}</button>
+    <button className="pressable" onClick={() => onWindow(w)} style={{ flex: 1, padding: "8px 0", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, letterSpacing: ".08em", textTransform: "uppercase", background: window === w ? C("lime") : "transparent", color: window === w ? C("ink") : C("ash") }}>{label}</button>
   );
   // Generic stats stay neutral (ash); the macro-average tile keeps its violet.
   const tiles: [string, string, string, string][] = [
@@ -2856,7 +2856,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
             </div>
           )}
           {!full && (
-            <button onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, marginTop: 16, textAlign: "left", background: `color-mix(in srgb, var(--premium-accent) 9%, ${C("ink")})`, border: `1px solid color-mix(in srgb, var(--premium-accent) 30%, transparent)`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
+            <button className="pressable" onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, marginTop: 16, textAlign: "left", background: `color-mix(in srgb, var(--premium-accent) 9%, ${C("ink")})`, border: `1px solid color-mix(in srgb, var(--premium-accent) 30%, transparent)`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
               <Glyph name="spark" size={19} color="var(--premium-accent-text)" />
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: fs.body }}>{t("w.recovery.nutrition.deepInsights")}</div>
@@ -2893,18 +2893,18 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
     { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
   ];
   const choiceCard = (on: boolean, label: string, sub: string, onClick: () => void) => (
-    <button onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 28, boxShadow: on ? `0 0 0 1px ${C("lime")}, var(--shadow-card)` : "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
+    <button className="pressable" onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 28, boxShadow: on ? `0 0 0 1px ${C("lime")}, var(--shadow-card)` : "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
       <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: fs.bodyLg }}>{label}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{sub}</div></div>
       <span style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent", display: "grid", placeItems: "center" }}>{on && <AuroraIcon name="check" size={12} color="var(--on-accent)" />}</span>
     </button>
   );
   const primary = (label: string, onClick: () => void) => (
-    <button onClick={onClick} style={{ width: "100%", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, marginTop: 6, cursor: "pointer" }}>{label}</button>
+    <button className="pressable" onClick={onClick} style={{ width: "100%", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, marginTop: 6, cursor: "pointer" }}>{label}</button>
   );
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {step > 0 && <button onClick={() => setStep((s) => s - 1)} aria-label={t("w.recovery.nutrition.back")} style={{ width: 36, height: 36, borderRadius: 12, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}><AuroraIcon name="back" size={16} color={C("chalk")} /></button>}
+        {step > 0 && <button className="pressable" onClick={() => setStep((s) => s - 1)} aria-label={t("w.recovery.nutrition.back")} style={{ width: 36, height: 36, borderRadius: 12, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center" }}><AuroraIcon name="back" size={16} color={C("chalk")} /></button>}
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.stepOf").replace("{n}", String(step + 1))}</div>
       </div>
       <div style={{ height: 4, borderRadius: 999, background: C("ink"), overflow: "hidden", marginTop: 12 }}><div style={{ width: `${((step + 1) / 3) * 100}%`, height: "100%", background: C("lime"), transition: "width .3s" }} /></div>
@@ -2938,7 +2938,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 5 }}>{t("w.recovery.nutrition.addWeighInSub")}</div>
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                   <input value={weight} onChange={(e) => setWeight(e.target.value)} inputMode="decimal" placeholder="kg" aria-label={t("w.recovery.nutrition.addWeighIn")} style={{ ...field, flex: 1 }} />
-                  <button onClick={() => { const kg = parseFloat(weight); if (Number.isFinite(kg) && kg > 0) onWeighIn(kg); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.save")}</button>
+                  <button className="pressable" onClick={() => { const kg = parseFloat(weight); if (Number.isFinite(kg) && kg > 0) onWeighIn(kg); }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.save")}</button>
                 </div>
               </>
             )}
@@ -2957,7 +2957,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
               <div style={{ fontWeight: 900, fontSize: 26, letterSpacing: "-.02em" }}>$9.99<span style={{ fontWeight: 400, fontSize: 13, color: C("ash") }}> {t("w.account.upgrade.per-month")}</span></div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", marginTop: 3 }}>{t("w.recovery.nutrition.trialNote")}</div>
             </div>
-            <button onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, color: "var(--premium-accent-ink)", background: "var(--premium-accent)", border: "none", borderRadius: 16, padding: 16, marginTop: 16, cursor: "pointer" }}>{t("w.recovery.nutrition.startTrial")} <Glyph name="chevron" size={15} color="var(--premium-accent-ink)" /></button>
+            <button className="pressable" onClick={onUpgrade} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, color: "var(--premium-accent-ink)", background: "var(--premium-accent)", border: "none", borderRadius: 16, padding: 16, marginTop: 16, cursor: "pointer" }}>{t("w.recovery.nutrition.startTrial")} <Glyph name="chevron" size={15} color="var(--premium-accent-ink)" /></button>
           </div>
           {/* The FREE alternative — a limited plan the user can start on now,
               no card needed. Full is the trial card above; this is the way out
@@ -2975,7 +2975,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
                 </div>
               ))}
             </div>
-            <button onClick={onContinueFree} style={{ width: "100%", marginTop: 16, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 16, cursor: "pointer" }}>{t("w.recovery.nutrition.continueFree")}</button>
+            <button className="pressable" onClick={onContinueFree} style={{ width: "100%", marginTop: 16, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.subtitle, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 16, cursor: "pointer" }}>{t("w.recovery.nutrition.continueFree")}</button>
           </div>
         </div>
       )}

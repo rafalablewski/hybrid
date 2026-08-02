@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { useMemo, useRef, useState } from "react";
+import { View, Text, ScrollView } from "react-native";
 import {
   fmtTonnage,
   sessionHeadline,
@@ -24,8 +24,10 @@ import {
   type StatRange,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
+import { SHARED_ELEMENTS } from "@hybrid/core";
+import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
@@ -227,6 +229,9 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
 // ============================================================
 
 export function WeeksView({ ctx }: { ctx: ViewCtx }) {
+  // One ref per row title; only the tapped row is ever measured.
+  const titleRefs = useRef<Record<string, Text | null>>({});
+  const armTitle = useSharedElementSource();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const weeks = useMemo(() => weekChapters(ctx.sessions, { bw: ctx.bw, prs: ctx.prs }), [ctx.sessions, ctx.bw, ctx.prs]);
@@ -258,14 +263,28 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
           {w.sessions.map((s) => {
             const key = localDayKey(s.startedAt);
             const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
+            const titleStyle = { fontFamily: F.bold, fontSize: fs.body, color: C.chalk } as const;
             return (
-              <Pressable key={s.id} onPress={() => ctx.onOpen(s.id)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+              <Pressable
+                key={s.id}
+                // SHARED ELEMENT: the session's title flies into the heading of
+                // its own breakdown rather than the page re-rendering it. Only
+                // the TAPPED row arms — a list of rows all claiming the name
+                // would collide — and if the destination declines it (a
+                // celebration reveal owns the motion there) the arm simply
+                // expires and the ordinary push carries the change.
+                onPress={() => {
+                  armTitle(SHARED_ELEMENTS.sessionHero, titleRefs.current[s.id] ?? null, s.title, titleStyle);
+                  ctx.onOpen(s.id);
+                }}
+                style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.line }}
+              >
                 <View style={{ width: 32, alignItems: "center" }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase" }}>{fmtWeekday(key)}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, fontWeight: "700" }}>{Number(key.slice(8, 10))}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{s.title}</Text>
+                  <Text ref={(r) => { titleRefs.current[s.id] = r; }} numberOfLines={1} style={titleStyle}>{s.title}</Text>
                   <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
                     {[`${h.value} ${unitOf(h, t)}`, ...headlineMeta(h, t)].join(" – ")}
                   </Text>

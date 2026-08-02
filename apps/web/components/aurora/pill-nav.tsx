@@ -279,14 +279,14 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 Settings cog, matching the mobile More tab's identity card. */}
             {session && (
               <div style={{ display: "flex", alignItems: "center", gap: 12, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, marginBottom: 16 }}>
-                <button onClick={() => go("profile")} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
+                <button className="pressable" onClick={() => go("profile")} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
                   <span style={{ width: 42, height: 42, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 13%, transparent)", border: `1px solid ${C("lime")}`, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.note, color: C("lime") }}>{initials}</span>
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session.name || t("nav.you")}</span>
                     <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{[session.role.toUpperCase(), session.entitlement === "paid" ? "FULL" : "FREE"].join(" – ")}</span>
                   </span>
                 </button>
-                <button onClick={() => go("settings")} aria-label={label("settings", "Settings")} style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, cursor: "pointer" }}>
+                <button className="pressable" onClick={() => go("settings")} aria-label={label("settings", "Settings")} style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, cursor: "pointer" }}>
                   <AuroraIcon name="settings" size={19} strokeWidth={2.6} color={C("chalk")} />
                 </button>
               </div>
@@ -295,7 +295,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             {/* Unlock Full — the one accent in the hub (parity with the mobile
                 More tab's membership card). Casual users only. */}
             {persona === "casual" && isEnabled("nav.upgrade") && (
-              <button
+              <button className="pressable"
                 onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "more" }); go("upgrade"); }}
                 style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 16, padding: 16, borderRadius: 28, background: C("ink"), border: `1px solid color-mix(in srgb, var(--premium-accent) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--premium-accent) 32%, transparent)" }}
               >
@@ -320,7 +320,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.body, padding: "12px 0" }}
               />
               {query.length > 0 && (
-                <button onClick={() => setQuery("")} aria-label="Clear search" style={{ background: "transparent", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
+                <button className="pressable" onClick={() => setQuery("")} aria-label="Clear search" style={{ background: "transparent", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
               )}
             </div>
 
@@ -340,7 +340,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                     const name = label(id, fb);
                     const openItem = () => { if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); go("upgrade"); } else go(id); };
                     return (
-                      <button key={id} onClick={openItem} title={locked ? `${name} (Full)` : name} aria-label={locked ? `${name} (Full)` : name} style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 4px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, cursor: "pointer", opacity: locked ? 0.6 : 1 }}>
+                      <button className="pressable" key={id} onClick={openItem} title={locked ? `${name} (Full)` : name} aria-label={locked ? `${name} (Full)` : name} style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 4px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, cursor: "pointer", opacity: locked ? 0.6 : 1 }}>
                         <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={22} strokeWidth={2.4} color={locked ? C("ash") : C("chalk")} />
                         <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: locked ? C("ash") : C("chalk"), textAlign: "center", lineHeight: 1.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{name}</span>
                         {locked && (
@@ -361,7 +361,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
 
             {/* Sign out — matching the mobile More tab's bottom action. */}
             {session && (
-              <button onClick={signOut} style={{ display: "block", width: "100%", textAlign: "center", marginTop: 10, padding: "16px 0", background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>{t("common.signout")}</button>
+              <button className="pressable" onClick={signOut} style={{ display: "block", width: "100%", textAlign: "center", marginTop: 10, padding: "16px 0", background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>{t("common.signout")}</button>
             )}
           </div>
         </div>
@@ -436,7 +436,7 @@ function SessionAccessory({ draft, nowTs, reduced, onResume, resumeLabel }: { dr
   return (
     <button
       onClick={onResume}
-      className="aurora-navglass"
+      className="aurora-navglass pressable"
       style={{
         display: "flex", alignItems: "center", gap: 10,
         width: "100%", height: AURORA_NAV_GEOMETRY.accessoryH,
@@ -499,7 +499,7 @@ function PillButton({ glyph, label, active, reduced, mini, onClick, innerRef }: 
   );
   const trans = reduced ? "none" : "width .22s cubic-bezier(.4,0,.2,1), height .22s cubic-bezier(.4,0,.2,1)";
   return (
-    <button ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 2, flex: 1, height: mini ? MINI_SLOT_H : SLOT_H, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: 0, transition: trans }}>
+    <button className="pressable" ref={innerRef} onClick={onClick} aria-label={label} aria-pressed={active} style={{ position: "relative", zIndex: 2, flex: 1, height: mini ? MINI_SLOT_H : SLOT_H, display: "grid", placeItems: "center", background: "transparent", border: "none", cursor: "pointer", padding: 0, transition: trans }}>
       <span style={{ position: "relative", width: mini ? MINI_LENS_W : LENS_W, height: mini ? MINI_SLOT_H : SLOT_H, display: "grid", placeItems: "center", transition: trans }}>
         {item(C("ash"))}
         <span

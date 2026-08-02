@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
+import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -15,7 +15,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, Loading } from "../../lib/ui";
+import { fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ABack, APill, RADIUS } from "./kit";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";

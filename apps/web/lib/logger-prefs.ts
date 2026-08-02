@@ -47,3 +47,10 @@ export function useLoggerPrefs(): LoggerPrefs {
     () => DEFAULT_LOGGER_PREFS,
   );
 }
+
+/** The current preferences, outside React. For imperative call sites (a haptic
+ *  fired from an event handler) that must not re-render anything to read a flag. */
+export function getLoggerPrefs(): LoggerPrefs {
+  hydrate();
+  return prefs;
+}

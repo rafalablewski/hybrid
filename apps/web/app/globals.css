@@ -163,6 +163,9 @@ html {
    treat it as a real number in calc() — an unregistered custom property is just
    a token string and `calc(1 - 0.18 * var(--x))` would be invalid. */
 @property --scroll-collapse { syntax:"<number>"; inherits:true; initial-value:0; }
+/* How far up a presented sheet is: 0 gone, 1 fully open. Drives the parent's
+   recede continuously so it can track a drag. */
+@property --sheet-p { syntax:"<number>"; inherits:true; initial-value:0; }
 
 :root {
   --lg-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -511,17 +514,34 @@ html {
 
 /* Pressed/hover feedback — the ONE utility every interactive element shares
    (buttons, rows, chips, tiles). Hover lifts the surface a touch brighter;
-   :active scales down on the nav spring so a click physically lands. Kept
-   subtle so it can sit on ANY surface (solid ink2, glass, lime fill). */
+   :active scales down so a click physically lands. Kept subtle so it can sit on
+   ANY surface (solid ink2, glass, lime fill).
+
+   DOWN 120ms / UP 200ms, matching the mobile PressScale twin: releasing is a
+   recovery, not an input, so it is gentler than the press. A symmetric timing
+   made taps feel snatched.
+
+   The scale rides the `scale` PROPERTY rather than `transform`, so it composes
+   with a component's own inline transform instead of being overridden by it —
+   this codebase styles inline almost everywhere, and an inline transform beats
+   a class rule every time. */
 .pressable {
-  transition: transform 0.16s var(--e-nav, cubic-bezier(0.2, 0.8, 0.2, 1)), filter 0.16s ease;
+  scale: 1;
+  transition: scale 200ms var(--e-press, cubic-bezier(0.2, 0.8, 0.2, 1)), filter 200ms ease;
 }
 @media (hover: hover) {
   .pressable:hover:not(:disabled) { filter: brightness(1.08); }
 }
-.pressable:active:not(:disabled) { transform: scale(0.97); filter: brightness(0.96); }
+.pressable:active:not(:disabled) {
+  scale: 0.97;
+  filter: brightness(0.96);
+  transition: scale 120ms var(--e-press, cubic-bezier(0.2, 0.8, 0.2, 1)), filter 120ms ease;
+}
 @media (prefers-reduced-motion: reduce) {
-  .pressable, .pressable:active:not(:disabled) { transform: none; }
+  /* SUBSTITUTE, don't delete: the scale goes, an opacity dip stays, so a press
+     is still acknowledged. */
+  .pressable, .pressable:active:not(:disabled) { scale: 1; }
+  .pressable:active:not(:disabled) { opacity: 0.72; }
 }
 
 /* Win pop-in — a PR/achievement should LAND, not just appear (Today recap badges).
@@ -561,6 +581,7 @@ html {
    spring as a linear() easing. An engine without linear() keeps the first
    declaration and still gets a sensible curve.
    ════════════════════════════════════════════════════════════════════ */
+/* ─ GENERATED: motion tokens — node apps/web/scripts/gen-motion-css.mjs ─ */
 :root {
   /* spring.slide — response .34 / damping 1.00, settles in 403ms */
   --e-slide: cubic-bezier(.2,.7,.3,1);
@@ -574,10 +595,14 @@ html {
   --e-sheet: cubic-bezier(.2,.7,.3,1);
   --e-sheet: linear(0,0.01364,0.0494,0.10064,0.16202,0.22934,0.29932,0.36944,0.43785,0.50321,0.56461,0.62147,0.6735,0.72058,0.76277,0.80023,0.83322,0.86202,0.88698,0.90843,0.92672,0.9422,0.95518,0.96598,0.97487,0.98212,0.98796,0.99261,0.99625,0.99905,1.00115,1.00268,1.00374,1.00443,1.00483,1.005,1.005);
   --d-sheet: 378ms;
-  /* spring.nav — response .32 / damping .74, settles in 365ms (the SHIPPED lens) */
-  --e-nav: cubic-bezier(.2,.7,.3,1);
-  --e-nav: linear(0,0.01795,0.06491,0.13189,0.21147,0.29772,0.38599,0.47274,0.55539,0.63216,0.70193,0.76409,0.81845,0.86516,0.90456,0.93717,0.96361,0.98454,1.00066,1.01265,1.02114,1.02675,1.03,1.0314,1.03137,1.03028,1.02842,1.02607,1.02343,1.02066,1.01788,1.01521,1.0127,1.01039,1.00832,1.00649,1.0049);
-  --d-nav: 365ms;
+  /* spring.press — response .32 / damping .74, settles in 365ms */
+  --e-press: cubic-bezier(.2,.7,.3,1);
+  --e-press: linear(0,0.01795,0.06491,0.13189,0.21147,0.29772,0.38599,0.47274,0.55539,0.63216,0.70193,0.76409,0.81845,0.86516,0.90456,0.93717,0.96361,0.98454,1.00066,1.01265,1.02114,1.02675,1.03,1.0314,1.03137,1.03028,1.02842,1.02607,1.02343,1.02066,1.01788,1.01521,1.0127,1.01039,1.00832,1.00649,1.0049);
+  --d-press: 365ms;
+  /* spring.lens — response .35 / damping .68, settles in 384ms */
+  --e-lens: cubic-bezier(.2,.7,.3,1);
+  --e-lens: linear(0,0.01679,0.06137,0.12594,0.20384,0.2895,0.37839,0.4669,0.55227,0.63248,0.70613,0.77235,0.83072,0.88115,0.92384,0.9592,0.98776,1.01017,1.02711,1.0393,1.04742,1.05216,1.05414,1.05391,1.05201,1.04886,1.04487,1.04035,1.03556,1.03073,1.02602,1.02155,1.01741,1.01366,1.01033,1.00743,1.00496);
+  --d-lens: 384ms;
   /* opacity-only — nothing positional, so nothing to interrupt */
   --e-fade: cubic-bezier(.2,.7,.3,1);
   --e-exit: cubic-bezier(.4,0,.9,.4);
@@ -586,6 +611,7 @@ html {
   /* the Reduce Motion cross-dissolve SUBSTITUTION — never zero */
   --d-reduced: 150ms;
 }
+/* ─ END GENERATED ─ */
 
 /* motion.parallaxUnder = 0.33, motion.pushOffset = 0.16, recede = 0.92 / 30px / 0.72 */
 @keyframes motionSlideInRight  { from { transform: translateX(100%); }  to { transform: none; } }
@@ -697,14 +723,19 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
    flight (see use-screen-transition), so only one thing is moving. */
 ::view-transition-group(hybrid-exercise-hero),
 ::view-transition-old(hybrid-exercise-hero),
-::view-transition-new(hybrid-exercise-hero) {
+::view-transition-new(hybrid-exercise-hero),
+::view-transition-group(hybrid-session-hero),
+::view-transition-old(hybrid-session-hero),
+::view-transition-new(hybrid-session-hero) {
   animation-duration: var(--d-zoom);
   animation-timing-function: var(--e-zoom);
 }
-/* Keep the travelling figure legible the whole way: the default cross-fade
-   would ghost two numbers over each other mid-flight. */
-::view-transition-old(hybrid-exercise-hero) { animation-name: motionDissolveOut; animation-duration: var(--d-fast); }
-::view-transition-new(hybrid-exercise-hero) { animation-name: motionDissolveIn;  animation-duration: var(--d-fast); }
+/* Keep the travelling element legible the whole way: the default cross-fade
+   would ghost two copies over each other mid-flight. */
+::view-transition-old(hybrid-exercise-hero),
+::view-transition-old(hybrid-session-hero) { animation-name: motionDissolveOut; animation-duration: var(--d-fast); }
+::view-transition-new(hybrid-exercise-hero),
+::view-transition-new(hybrid-session-hero) { animation-name: motionDissolveIn;  animation-duration: var(--d-fast); }
 
 /* ── SHEET PRESENTATION ──────────────────────────────────────────────
    The presenting screen recedes so the sheet sits on a real stack instead of
@@ -714,18 +745,21 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
 
    The host is TRANSFORMED, which would trap any position:fixed descendant, so
    Sheet portals itself to <body>. Do not render a modal inside the host. */
+/* The recede is a CONTINUOUS function of how far up the sheet is, published as
+   --sheet-p (0 = gone, 1 = fully open) by the Sheet component. That is what
+   lets a DRAG bring the screen behind back in step with the finger, rather
+   than the parent playing a fixed animation while the panel tracks your hand.
+   With no drag in progress the property is transitioned on the sheet spring,
+   so an ordinary open/close is unchanged. */
 .motion-recede-host {
   transform-origin: 50% 0;
-  transition:
-    transform var(--d-sheet) var(--e-sheet),
-    border-radius var(--d-sheet) var(--e-sheet),
-    filter var(--d-sheet) var(--e-sheet);
+  transform: scale(calc(1 - 0.08 * var(--sheet-p)));
+  border-radius: calc(30px * var(--sheet-p));
+  filter: brightness(calc(1 - 0.28 * var(--sheet-p)));
+  transition: --sheet-p var(--d-sheet) var(--e-sheet);
 }
-html[data-sheet-open] .motion-recede-host {
-  transform: scale(0.92);
-  border-radius: 30px;
-  filter: brightness(0.72);
-}
+/* While the finger is down the value IS the finger — no transition to lag it. */
+html[data-sheet-dragging] .motion-recede-host { transition: none; }
 /* Black behind the receded card, so its corners actually read — the same reason
    iOS darkens the window behind a presented sheet. */
 html[data-sheet-open] body { background: #000; }
@@ -741,7 +775,7 @@ html[data-sheet-open] body { background: #000; }
     transform: none !important;
     transition: opacity var(--d-reduced) linear !important;
   }
-  html[data-sheet-open] .motion-recede-host { transform: none; border-radius: 0; }
+  .motion-recede-host { transform: none; border-radius: 0; filter: none; }
 }
 
 /* REDUCE MOTION — a SUBSTITUTION, not a deletion. Positional keyframes are

@@ -53,7 +53,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
       <div style={card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div style={{ fontWeight: 800, fontSize: fs.heading }}>{monthLabel}</div>
-          <div style={{ display: "flex", gap: space.xs }}><button aria-label={t("common.previous")} onClick={() => go(-1)} style={navBtn}>‹</button><button onClick={jumpToday} style={navBtn}>{t("w.analyze.cal.today")}</button><button aria-label={t("common.next")} onClick={() => go(1)} style={navBtn}>›</button></div>
+          <div style={{ display: "flex", gap: space.xs }}><button className="pressable" aria-label={t("common.previous")} onClick={() => go(-1)} style={navBtn}>‹</button><button className="pressable" onClick={jumpToday} style={navBtn}>{t("w.analyze.cal.today")}</button><button className="pressable" aria-label={t("common.next")} onClick={() => go(1)} style={navBtn}>›</button></div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: space.xxs, marginBottom: 4 }}>
           {WEEKDAY_KEYS.map((d) => <span key={d} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textAlign: "center", textTransform: "uppercase", color: C("ash") }}>{t(d)}</span>)}
@@ -63,7 +63,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
             const day = byDay[cell.date]; const ev = eventsByDay[cell.date]; const asg = assignmentsByDay[cell.date];
             const inten = intensity(cell.date); const isToday = cell.date === today; const isSel = cell.date === selected;
             return (
-              <button key={cell.date} onClick={() => setSelected(cell.date)} style={{ textAlign: "left", minHeight: 62, borderRadius: 16, padding: 6, cursor: "pointer", opacity: cell.inMonth ? 1 : 0.35, border: `1px solid ${isSel ? C("lime") : isToday ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, background: day ? `color-mix(in srgb, ${C("lime")} ${Math.round((0.08 + inten * 0.5) * 100)}%, transparent)` : C("ink") }}>
+              <button className="pressable" key={cell.date} onClick={() => setSelected(cell.date)} style={{ textAlign: "left", minHeight: 62, borderRadius: 16, padding: 6, cursor: "pointer", opacity: cell.inMonth ? 1 : 0.35, border: `1px solid ${isSel ? C("lime") : isToday ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, background: day ? `color-mix(in srgb, ${C("lime")} ${Math.round((0.08 + inten * 0.5) * 100)}%, transparent)` : C("ink") }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: isToday ? C("lime") : C("chalk"), fontWeight: isToday ? 700 : 400 }}>{Number(cell.date.slice(8, 10))}</span>
                   <span style={{ display: "flex", gap: 3 }}>{asg && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("violet") }} />}{ev && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("amber") }} />}</span>
@@ -83,7 +83,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
           <div key={a.id} style={{ marginTop: 10 }}>{chip(C("violet"), t("w.analyze.cal.assigned"))}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
               <div style={{ fontWeight: 700, fontSize: fs.note }}>{a.name}</div>
-              {a.status === "completed" ? chip(C("lime"), t("w.analyze.cal.done")) : <button onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>{t("w.analyze.cal.markDone")}</button>}
+              {a.status === "completed" ? chip(C("lime"), t("w.analyze.cal.done")) : <button className="pressable" onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>{t("w.analyze.cal.markDone")}</button>}
             </div>
           </div>
         ))}

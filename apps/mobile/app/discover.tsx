@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { Screen, Card, F } from "../lib/ui";
+import { Screen, Card, F, PressScale as Pressable } from "../lib/ui";
 import { ABack } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";

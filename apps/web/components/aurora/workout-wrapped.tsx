@@ -8,7 +8,9 @@
 // workout-wrapped.tsx.
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { sharedElementStyle } from "@/lib/shared-element";
 import {
+  SHARED_ELEMENTS,
   sessionWrapped,
   fitScale,
   HERO_FIT_EM,
@@ -341,7 +343,7 @@ export function WorkoutWrapped({
   return (
     <div ref={scrollRef} onScroll={onScroll} style={container}>
       {/* Back — fixed top-left */}
-      <button onClick={onBack} aria-label={t("summary.doneToday")} style={{ position: "fixed", top: 14, left: 14, zIndex: 70, width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "rgba(0,0,0,.4)", color: txt(CHALK), fontSize: 18, cursor: "pointer" }}>←</button>
+      <button className="pressable" onClick={onBack} aria-label={t("summary.doneToday")} style={{ position: "fixed", top: 14, left: 14, zIndex: 70, width: 40, height: 40, borderRadius: 12, border: `1px solid ${LINE}`, background: "rgba(0,0,0,.4)", color: txt(CHALK), fontSize: 18, cursor: "pointer" }}>←</button>
 
       {/* ── REVEAL ── */}
       {cel && (
@@ -364,7 +366,13 @@ export function WorkoutWrapped({
       <section style={panelStyle}>
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(120% 60% at 85% 6%, color-mix(in srgb, ${VIOLET} 20%, transparent), transparent 55%), radial-gradient(90% 55% at 0% 100%, color-mix(in srgb, ${LIME} 12%, transparent), transparent 60%)` }} />
         {eyebrow(t("session.wrapped.title"))}
-        <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative" }}>{session.title}</div>
+        {/* SHARED ELEMENT (destination). The title the clicked row was showing
+            travels here and scales up instead of the page re-rendering it.
+            DECLINED while `cel` is true: a celebration session runs its own
+            reveal over this panel, and two things moving at once is the
+            "don't stack effects" rule — the armed source then simply expires
+            and the ordinary push carries the change. */}
+        <div style={{ ...disp, fontWeight: 900, fontSize: "clamp(34px, 10vw, 46px)", letterSpacing: "-.03em", lineHeight: 1.02, marginTop: 12, position: "relative", ...(cel ? {} : sharedElementStyle(SHARED_ELEMENTS.sessionHero)) }}>{session.title}</div>
         <div style={{ flex: 1 }} />
         <div style={{ ...disp, fontWeight: 900, fontSize: `calc(clamp(64px, 22vw, 112px) * ${fitScale(heroBig, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM })})`, letterSpacing: "-.03em", lineHeight: .8, position: "relative", whiteSpace: "nowrap" }}><CountUp value={heroBig} /></div>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.body, marginTop: 12, color: txt(cel ? LIME : CHALK), position: "relative" }}>{heroSub}</div>
@@ -433,7 +441,7 @@ export function WorkoutWrapped({
             ))}
           </div>
           {!full && (
-            <button onClick={() => go("upgrade")} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: VIOLET, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 20px", cursor: "pointer" }}>✦ {t("session.wrapped.unlock")}</button>
+            <button className="pressable" onClick={() => go("upgrade")} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: VIOLET, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 20px", cursor: "pointer" }}>✦ {t("session.wrapped.unlock")}</button>
           )}
         </section>
       )}
@@ -476,7 +484,7 @@ export function WorkoutWrapped({
           </div>
           <Mono s={{ fontSize: fs.micro, marginTop: 12, lineHeight: 1.5, position: "relative", display: "block" }}>{t(imported ? "session.device.truthImported" : "session.device.truth")}</Mono>
           <div style={{ display: "flex", gap: 16, marginTop: 16, position: "relative" }}>
-            <button onClick={() => void unlinkDevice()} disabled={unlinking} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: unlinking ? "default" : "pointer", padding: 0, opacity: unlinking ? 0.5 : 1 }}>{t("session.device.unlink")}</button>
+            <button className="pressable" onClick={() => void unlinkDevice()} disabled={unlinking} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: unlinking ? "default" : "pointer", padding: 0, opacity: unlinking ? 0.5 : 1 }}>{t("session.device.unlink")}</button>
           </div>
         </section>
       )}
@@ -500,7 +508,7 @@ export function WorkoutWrapped({
               </div>
             ))}
           </div>
-          <button onClick={() => go("connections")} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer", position: "relative" }}><CtaLabel>{`${t("session.wrapped.device.cta")} →`}</CtaLabel></button>
+          <button className="pressable" onClick={() => go("connections")} style={{ ...disp, marginTop: 24, alignSelf: "flex-start", fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer", position: "relative" }}><CtaLabel>{`${t("session.wrapped.device.cta")} →`}</CtaLabel></button>
           <Mono s={{ fontSize: fs.caption, marginTop: 16, lineHeight: 1.5, position: "relative", display: "block" }}>
             {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
           </Mono>
@@ -545,7 +553,7 @@ export function WorkoutWrapped({
             <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
               {keys.map((_, i) => (<div key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: 3, background: i === Math.min(panel, keys.length - 1) ? LIME_HEX : LINE }} />))}
             </div>
-            <button onClick={() => { setActive(0); setSheetOpen(true); }} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "16px", fontWeight: 900, fontSize: fs.note, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>↗ {t("summary.share")}</button>
+            <button className="pressable" onClick={() => { setActive(0); setSheetOpen(true); }} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "16px", fontWeight: 900, fontSize: fs.note, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.4)" }}>↗ {t("summary.share")}</button>
           </div>
         </div>
       )}
@@ -557,7 +565,7 @@ export function WorkoutWrapped({
             <div style={{ width: 38, height: 4, borderRadius: 2, background: LINE, margin: "2px auto 16px" }} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{t("session.wrapped.chooseStory")}</div>
-              <button onClick={() => setSheetOpen(false)} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>{t("summary.doneToday")}</button>
+              <button className="pressable" onClick={() => setSheetOpen(false)} style={{ ...mono, fontSize: fs.caption, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>{t("summary.doneToday")}</button>
             </div>
             <div ref={pagerRef} onScroll={onPagerScroll} style={{ display: "flex", gap: 0, overflowX: "auto", scrollSnapType: "x mandatory", scrollbarWidth: "none", touchAction: "pan-x", overscrollBehaviorX: "contain" }}>
               {slides.map((s, i) => (
@@ -569,9 +577,9 @@ export function WorkoutWrapped({
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 8, margin: "16px 0" }}>
-              {slides.map((_, i) => (<button key={i} type="button" onClick={() => goTo(i)} aria-label={slides[i]!.eyebrow} aria-current={i === activeIdx} style={{ width: i === activeIdx ? 20 : 7, height: 7, padding: 0, border: "none", borderRadius: 4, background: i === activeIdx ? LIME_HEX : LINE, cursor: "pointer" }} />))}
+              {slides.map((_, i) => (<button className="pressable" key={i} type="button" onClick={() => goTo(i)} aria-label={slides[i]!.eyebrow} aria-current={i === activeIdx} style={{ width: i === activeIdx ? 20 : 7, height: 7, padding: 0, border: "none", borderRadius: 4, background: i === activeIdx ? LIME_HEX : LINE, cursor: "pointer" }} />))}
             </div>
-            <button onClick={share} disabled={sharing} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "16px 16px", fontWeight: 900, fontSize: fs.note, cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1 }}>{shareMsg || (sharing ? "…" : `↗ ${t("summary.shareStory")}`)}</button>
+            <button className="pressable" onClick={share} disabled={sharing} style={{ ...disp, width: "100%", background: LIME, color: ON_ACCENT, border: "none", borderRadius: 16, padding: "16px 16px", fontWeight: 900, fontSize: fs.note, cursor: sharing ? "default" : "pointer", opacity: sharing ? 0.6 : 1 }}>{shareMsg || (sharing ? "…" : `↗ ${t("summary.shareStory")}`)}</button>
           </div>
         </div>
       )}

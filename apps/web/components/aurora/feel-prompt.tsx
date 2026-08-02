@@ -113,7 +113,7 @@ export function FeelPrompt({
       {levels.map((l) => {
         const on = picked === l.value;
         return (
-          <button
+          <button className="pressable"
             key={l.value}
             onClick={() => onPick(l.value)}
             aria-pressed={on}

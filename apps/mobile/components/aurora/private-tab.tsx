@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, TextInput, ActivityIndicator, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
@@ -16,7 +16,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { track } from "../../lib/track";
-import { fs, F, serifIf } from "../../lib/ui";
+import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { CtaLabel } from "./cta-label";

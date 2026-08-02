@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, ActivityIndicator } from "react-native";
 import { leavePlan } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { ACard, RADIUS } from "./kit";
 
 /** The active enrolled season, as the leave flow needs it (from fetchMacrocycle). */

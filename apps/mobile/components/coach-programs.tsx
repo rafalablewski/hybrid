@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import { localTodayKey } from "@hybrid/core";
-import { fs, space, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, space, Card, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
   getCoachPrograms,

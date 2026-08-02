@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
-import { fs, space, Card, Mono, Kicker, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Segmented } from "./_kit";
 

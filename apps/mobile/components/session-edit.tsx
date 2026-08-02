@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   editableBlockFields,
@@ -12,7 +12,7 @@ import {
 import { patchSessionEdit } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
-import { F, fs, space } from "../lib/ui";
+import { F, fs, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 
 const labelStyle = (C: Palette) =>

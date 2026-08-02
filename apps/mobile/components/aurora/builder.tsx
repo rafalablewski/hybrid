@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Animated, View, Text, TextInput, Pressable } from "react-native";
+import { Animated, View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import {
   sportDistanceUnit,
@@ -33,7 +33,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
@@ -41,6 +41,8 @@ import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import ExercisePickerSheet from "./exercise-picker";
 import SwipeRow from "../swipe-row";
+import { animateListChange } from "../../lib/list-motion";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import DragHandle from "../drag-handle";
 import { useDragReorder } from "../../lib/use-drag-reorder";
 import { setLoggerPref } from "../../lib/logger-prefs";
@@ -74,7 +76,7 @@ export default function AuroraBuilder() {
   const allowedSave = canSaveRoutine(persona, b.routines.length);
   const [picker, setPicker] = useState(false);
   // Hold-and-drag reorder of the block cards (grip in each card header).
-  const blockDrag = useDragReorder((_g, from, to) => b.moveBlockTo(from, to), prefs.haptics);
+  const blockDrag = useDragReorder((_g, from, to) => b.moveBlockTo(from, to));
 
   const add = (name: string, kind?: BlockKind) => {
     b.addExercise(name, kind);
@@ -374,12 +376,13 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
   field: FieldStyle;
   label: LabelFn;
 }) {
+  const reducedMotion = useReducedMotion();
   const { t } = useLang();
   // Warm-up / ramp / cool-down / drop tucked into a "Special ▾" menu — the
   // common path stays one "+ Add set" tap (same layout as the live logger).
   const [special, setSpecial] = useState(false);
   // Hold-and-drag reorder of the set rows (grip on each row).
-  const setDrag = useDragReorder((_g, from, to) => builder.moveSet(b.uid, from, to), haptics);
+  const setDrag = useDragReorder((_g, from, to) => builder.moveSet(b.uid, from, to));
   // The exercise DB drives how THIS lift's sets read: a plank counts seconds,
   // a carry counts metres, a pull-up's load is BW + added weight.
   const sp = exerciseProfile(b.name).strength;
@@ -426,7 +429,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
             onLayout={setDrag.onRowLayout("", i)}
             style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
           >
-          <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => builder.removeSet(b.uid, i)} background={C.ink2}>
+          <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => { animateListChange(reducedMotion); builder.removeSet(b.uid, i); }} background={C.ink2}>
             <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
               <Pressable
                 onPress={() => builder.cycleType(b.uid, i)}

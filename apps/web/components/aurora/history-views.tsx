@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { armSharedElement } from "@/lib/shared-element";
 import {
+  SHARED_ELEMENTS,
   fs,
   space,
   fmtTonnage,
@@ -133,7 +135,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
       {HISTORY_VIEWS.map((v) => {
         const on = v.id === view;
         return (
-          <button
+          <button className="pressable"
             key={v.id}
             onClick={() => onChange(v.id)}
             style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 16px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
@@ -257,13 +259,25 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             const key = localDayKey(s.startedAt);
             const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
             return (
-              <div key={s.id} onClick={() => ctx.onOpen(s.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 2px", borderTop: `1px solid ${C("line")}`, cursor: "pointer" }}>
+              <div
+                key={s.id}
+                // SHARED ELEMENT: the session's title travels into the heading
+                // of its own breakdown rather than the page re-rendering it.
+                // Only the CLICKED row may claim the name — a list of rows all
+                // declaring it would collide and silently kill the transition —
+                // so it is armed here, imperatively, before the navigation.
+                onClick={(e) => {
+                  armSharedElement(e.currentTarget.querySelector<HTMLElement>("[data-shared-session-title]"), SHARED_ELEMENTS.sessionHero);
+                  ctx.onOpen(s.id);
+                }}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 2px", borderTop: `1px solid ${C("line")}`, cursor: "pointer" }}
+              >
                 <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash"), width: 32, flex: "none", textAlign: "center", lineHeight: 1.25, textTransform: "uppercase" }}>
                   {new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })}<br />
                   <span style={{ fontSize: fs.body, color: C("chalk"), fontWeight: 700 }}>{Number(key.slice(8, 10))}</span>
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontWeight: 700, fontSize: fs.body, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
+                  <span data-shared-session-title style={{ display: "block", fontWeight: 700, fontSize: fs.body, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
                   <span style={{ display: "block", fontFamily: MONO, fontSize: fs.micro, color: C("ash"), marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {[`${h.value} ${unitOf(h, t)}`, ...headlineMeta(h, t)].join(" – ")}
                   </span>
@@ -349,7 +363,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
         {TREND_RANGES.map((rg) => {
           const on = range === rg.id;
           return (
-            <button
+            <button className="pressable"
               key={rg.id}
               onClick={() => setRange(rg.id)}
               aria-pressed={on}

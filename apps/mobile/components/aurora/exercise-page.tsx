@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, Animated, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { View, Text, ScrollView, Animated, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import Svg, { G, Path, Polyline, Rect, Circle, Defs, LinearGradient, Stop, Line as SvgLine, Text as SvgText } from "react-native-svg";
 import { useLocalSearchParams } from "expo-router";
 import {
@@ -20,7 +20,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ABack } from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";

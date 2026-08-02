@@ -19,7 +19,7 @@ export default function AdminContent() {
             ["datanet", "Data network"],
           ] as const
         ).map(([id, label]) => (
-          <button
+          <button className="pressable"
             key={id}
             onClick={() => setTab(id)}
             style={{

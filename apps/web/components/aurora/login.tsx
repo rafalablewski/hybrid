@@ -157,8 +157,8 @@ export default function AuroraLogin() {
             <Mono s={{ fontSize: fs.bodyLg, display: "block", marginBottom: 20 }} c={ASH}>{t("w.account.login.verify-sub")}</Mono>
             <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoFocus aria-label={t("w.account.login.verify-title")} placeholder="000000" style={{ ...roundField, fontSize: 22, letterSpacing: ".3em", textAlign: "center" }} />
             <div role="alert">{error && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono>}</div>
-            <button disabled={busy || !isValidTotpCode(mfaCode)} onClick={verifyMfa} style={{ ...lightPill, opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1 }}>{busy ? "…" : t("w.account.login.verify")}</button>
-            <button onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={linkBtn}><Mono s={{ fontSize: fs.body }} c={ASH}>← {t("w.account.login.cancel")}</Mono></button>
+            <button className="pressable" disabled={busy || !isValidTotpCode(mfaCode)} onClick={verifyMfa} style={{ ...lightPill, opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1 }}>{busy ? "…" : t("w.account.login.verify")}</button>
+            <button className="pressable" onClick={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={linkBtn}><Mono s={{ fontSize: fs.body }} c={ASH}>← {t("w.account.login.cancel")}</Mono></button>
           </>
         ) : (
           <>
@@ -173,7 +173,7 @@ export default function AuroraLogin() {
                   {ROLE_INFO.map((r) => {
                     const on = role === r.id;
                     return (
-                      <button key={r.id} onClick={() => setRole(r.id)} style={{ flex: 1, ...mono, fontSize: fs.body, fontWeight: 700, padding: "12px 0", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? r.accent : LINE}`, background: on ? r.accent : "transparent", color: on ? ON_ACCENT : ASH }}>{r.label}</button>
+                      <button className="pressable" key={r.id} onClick={() => setRole(r.id)} style={{ flex: 1, ...mono, fontSize: fs.body, fontWeight: 700, padding: "12px 0", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? r.accent : LINE}`, background: on ? r.accent : "transparent", color: on ? ON_ACCENT : ASH }}>{r.label}</button>
                     );
                   })}
                 </div>
@@ -193,19 +193,19 @@ export default function AuroraLogin() {
             <div role="alert">{error && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{error}</Mono>}</div>
             <div role="status">{notice && <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={LIME}>{notice}</Mono>}</div>
 
-            <button disabled={busy} onClick={() => (live ? emailSubmit() : demoEnter("email"))} style={{ ...lightPill, opacity: busy ? 0.6 : 1 }}>
+            <button className="pressable" disabled={busy} onClick={() => (live ? emailSubmit() : demoEnter("email"))} style={{ ...lightPill, opacity: busy ? 0.6 : 1 }}>
               {busy ? "…" : isSignup ? t("w.account.login.register") : t("w.account.login.login")}
             </button>
 
             <div style={{ textAlign: "center", margin: "16px 0" }}><Mono s={{ fontSize: fs.body }}>{t("w.account.login.or-continue")}</Mono></div>
             <div style={{ display: "flex", gap: space.ms }}>
               {(["apple", "google"] as const).map((p) => (
-                <button key={p} disabled={busy} onClick={() => (live ? oauth(p) : demoEnter(p))} style={{ ...softPill, flex: 1, textTransform: "capitalize" }}>{p}</button>
+                <button className="pressable" key={p} disabled={busy} onClick={() => (live ? oauth(p) : demoEnter(p))} style={{ ...softPill, flex: 1, textTransform: "capitalize" }}>{p}</button>
               ))}
             </div>
 
             {live && (
-              <button onClick={() => { setMode((m) => (m === "signin" ? "signup" : "signin")); setError(""); setNotice(""); }} style={linkBtn}>
+              <button className="pressable" onClick={() => { setMode((m) => (m === "signin" ? "signup" : "signin")); setError(""); setNotice(""); }} style={linkBtn}>
                 <Mono s={{ fontSize: fs.bodyLg }} c={ASH}>
                   {isSignup ? t("w.account.login.have-account") : t("w.account.login.no-account")}
                   <span style={{ color: txt(LIME), fontWeight: 700 }}>{isSignup ? t("w.account.login.login-now") : t("w.account.login.register-now")}</span>
@@ -213,7 +213,7 @@ export default function AuroraLogin() {
               </button>
             )}
 
-            <button onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>← {t("w.account.login.back")}</Mono></button>
+            <button className="pressable" onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>← {t("w.account.login.back")}</Mono></button>
           </>
         )}
         <div style={{ marginTop: 24, textAlign: "center" }}>
@@ -234,7 +234,7 @@ function Field({ icon, trailing, onTrailingClick, trailingActive, children }: { 
       {children}
       {trailing && (
         onTrailingClick ? (
-          <button type="button" onClick={onTrailingClick} aria-label={t("w.account.login.toggle-pw")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
+          <button className="pressable" type="button" onClick={onTrailingClick} aria-label={t("w.account.login.toggle-pw")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
             <AuroraIcon name={trailing} size={20} color={trailingActive ? LIME : ASH} />
           </button>
         ) : (

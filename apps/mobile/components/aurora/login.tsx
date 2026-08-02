@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput, AccessibilityInfo } from "react-native";
+import { View, Text, TextInput, AccessibilityInfo } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
@@ -7,7 +7,7 @@ import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, AuroraMark, APill, AField, AHeading, ABack } from "./kit";
 import { LegalLinks } from "../legal-links";
 

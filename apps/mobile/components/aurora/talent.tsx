@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, ScrollView, Alert } from "react-native";
 import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/core";
 import {
   fetchTalent, saveTalentProfile, searchTalent, reportProfile,
   type TalentProfile, type TalentReport, type TalentResult,
 } from "../../lib/api";
-import { fs, space, F } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { ABack, AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";

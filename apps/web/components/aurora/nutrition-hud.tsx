@@ -229,7 +229,7 @@ export default function AuroraNutritionHud({
               : { bg: C("ink2"), bd: C("line") };
           const open = has(key);
           return (
-            <button
+            <button className="pressable"
               key={key}
               type="button"
               tabIndex={open ? 0 : -1}

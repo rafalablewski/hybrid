@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Stat, ErrorNote, Segmented, PillBtn } from "./_kit";
 

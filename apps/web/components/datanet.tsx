@@ -99,10 +99,10 @@ export default function DataNet() {
               </Mono>
             </div>
             <div style={{ display: "flex", gap: space.sm }}>
-              <button onClick={snapshot} style={{ ...disp, fontWeight: 800, fontSize: fs.body, background: "transparent", color: CHALK, border: `1px solid ${LINE}`, borderRadius: 9, padding: "9px 14px", cursor: "pointer" }}>
+              <button className="pressable" onClick={snapshot} style={{ ...disp, fontWeight: 800, fontSize: fs.body, background: "transparent", color: CHALK, border: `1px solid ${LINE}`, borderRadius: 9, padding: "9px 14px", cursor: "pointer" }}>
                 Snapshot negatives
               </button>
-              <button onClick={refit} style={{ ...disp, fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" }}>
+              <button className="pressable" onClick={refit} style={{ ...disp, fontWeight: 800, fontSize: fs.body, background: LIME, color: ON_ACCENT, border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" }}>
                 Refit now
               </button>
             </div>

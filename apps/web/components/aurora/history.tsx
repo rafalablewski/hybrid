@@ -144,7 +144,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
   const archivedToggle = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.hist.title")}</h1>
-      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? "var(--lime-text)" : C("ash"), background: "none", border: `1px solid ${showArchived ? C("lime") : C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
+      <button className="pressable" onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? "var(--lime-text)" : C("ash"), background: "none", border: `1px solid ${showArchived ? C("lime") : C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
     </div>
   );
 
@@ -254,7 +254,7 @@ function SwipeCard({ actions, busy, children }: { actions: SwipeAction[]; busy: 
         {/* Revealed actions, pinned right behind the card. */}
         <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, display: "flex" }}>
           {actions.map((a) => (
-            <button
+            <button className="pressable"
               key={a.key}
               disabled={busy}
               onClick={() => { openRef.current = false; setTx(0); a.onPress(); }}

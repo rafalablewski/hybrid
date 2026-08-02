@@ -72,7 +72,7 @@ export default function LeavePlanSection({ forPlanId }: { forPlanId: string | nu
   return (
     <div style={{ marginTop: 28 }}>
       {!open && (
-        <button onClick={() => setOpen(true)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+        <button className="pressable" onClick={() => setOpen(true)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
           {t("w.train.plans.leavePlan")}…
         </button>
       )}
@@ -93,10 +93,10 @@ export default function LeavePlanSection({ forPlanId }: { forPlanId: string | nu
           )}
           {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.leaveError")}</div>}
           <div style={{ display: "flex", gap: space.ms, marginTop: 16, alignItems: "center" }}>
-            <button onClick={leave} disabled={!armed || busy} style={{ fontWeight: 800, fontSize: fs.note, color: "#fff", background: armed && !busy ? C("red") : `color-mix(in srgb, ${C("red")} 33%, transparent)`, border: "none", borderRadius: 999, padding: "12px 20px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
+            <button className="pressable" onClick={leave} disabled={!armed || busy} style={{ fontWeight: 800, fontSize: fs.note, color: "#fff", background: armed && !busy ? C("red") : `color-mix(in srgb, ${C("red")} 33%, transparent)`, border: "none", borderRadius: 999, padding: "12px 20px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
               {busy ? t("w.train.plans.leaving") : wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}
             </button>
-            <button onClick={() => { setOpen(false); setWipe(false); setConfirmText(""); setError(false); }} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), background: "none", border: "none", cursor: "pointer" }}>
+            <button className="pressable" onClick={() => { setOpen(false); setWipe(false); setConfirmText(""); setError(false); }} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), background: "none", border: "none", cursor: "pointer" }}>
               {t("w.train.plans.leaveCancel")}
             </button>
           </div>

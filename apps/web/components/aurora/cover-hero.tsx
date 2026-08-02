@@ -189,7 +189,7 @@ export function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpe
         {/* bar chrome — counter-translates so it never moves on screen */}
         <div style={{ position: "absolute", top: 8, left: 16, right: 20, height: 42, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: `translateY(calc(${p} * ${COVER_DELTA}px))` }}>
           {back ? (
-            <button onClick={back} aria-label={`← ${backLabel}`} style={{ width: 40, height: 40, borderRadius: 999, background: "rgba(255,255,255,.12)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "none", color: "#fff", cursor: "pointer", fontSize: 17 }}>←</button>
+            <button className="pressable" onClick={back} aria-label={`← ${backLabel}`} style={{ width: 40, height: 40, borderRadius: 999, background: "rgba(255,255,255,.12)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "none", color: "#fff", cursor: "pointer", fontSize: 17 }}>←</button>
           ) : (
             <span />
           )}

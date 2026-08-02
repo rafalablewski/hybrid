@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, Text, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { F } from "../lib/ui";
+import { F, PressScale as Pressable } from "../lib/ui";
 import type { PublicProfileResponse, CompareResult, SharedLift } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
 

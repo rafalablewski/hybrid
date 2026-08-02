@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, AccessibilityInfo } from "react-native";
+import { View, Text, AccessibilityInfo } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   buildIntervalPlan,
@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { fs, space, F } from "../lib/ui";
+import { fs, space, F, PressScale as Pressable } from "../lib/ui";
 import { ABack, AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Animated, type LayoutChangeEvent } from "react-native";
-import * as Haptics from "expo-haptics";
+import { haptic } from "./haptics";
 
 /**
  * Hold-and-drag vertical reorder for a list of rows/cards — the one drag
@@ -13,7 +13,7 @@ import * as Haptics from "expo-haptics";
  * lists rendered in the same component (e.g. each exercise's sets in the live
  * logger) — a drag never crosses groups. Single-list callers just pass "".
  */
-export function useDragReorder(onMove: (group: string, from: number, to: number) => void, haptics = false) {
+export function useDragReorder(onMove: (group: string, from: number, to: number) => void) {
   const dragY = useRef(new Animated.Value(0)).current;
   const rows = useRef<Record<string, { y: number; height: number }>>({});
   const drag = useRef({ group: "", from: -1, to: -1, count: 0 });
@@ -30,7 +30,7 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
     drag.current = { group, from: index, to: index, count };
     dragY.setValue(0);
     setDragKey(key(group, index));
-    if (haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    haptic.medium();
   };
 
   const move = (dy: number) => {
@@ -57,7 +57,7 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
     const { group, from, to } = drag.current;
     if (from >= 0 && to >= 0 && from !== to) {
       onMove(group, from, to);
-      if (haptics) Haptics.selectionAsync().catch(() => {});
+      haptic.selection();
     }
     drag.current = { group: "", from: -1, to: -1, count: 0 };
     dragY.setValue(0);

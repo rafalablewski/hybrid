@@ -46,7 +46,7 @@ export default function AuroraConnections() {
         {providers.map((p) => {
           const c = connected(p.id);
           return (
-            <button key={p.id} onClick={() => setFocus(p.id)} style={card}>
+            <button className="pressable" key={p.id} onClick={() => setFocus(p.id)} style={card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <div style={{ fontWeight: 800, fontSize: fs.title }}>{p.label}</div>
                 {c ? chip(c.status === "active" ? C("lime") : C("amber"), t(`w.account.connections.status-${c.status}`)) : p.configured ? chip(C("ash"), t("w.account.connections.not-connected")) : chip(C("amber"), t("w.account.connections.setup-pending"))}

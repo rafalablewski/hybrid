@@ -59,7 +59,7 @@ export default function RtpPanel() {
         <Select value={tissue} onChange={(e) => setTissue(e.target.value)} style={{ textTransform: "capitalize" }}>
           {TISSUES.map((t) => <option key={t} value={t}>{t}</option>)}
         </Select>
-        <button onClick={create} style={btn}>Open protocol</button>
+        <button className="pressable" onClick={create} style={btn}>Open protocol</button>
       </div>
 
       <div style={{ marginTop: 14, display: "grid", gap: space.md }}>
@@ -85,13 +85,13 @@ export default function RtpPanel() {
                     </label>
                   ))}
                   <div style={{ display: "flex", gap: space.sm, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
-                    <button onClick={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} style={{ ...btn, opacity: ev.canAdvance ? 1 : 0.4 }}>
+                    <button className="pressable" onClick={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} style={{ ...btn, opacity: ev.canAdvance ? 1 : 0.4 }}>
                       Advance → {ev.nextStage ? STAGE_LABEL[ev.nextStage] : ""}
                     </button>
                     {!ev.canAdvance && (
                       <>
                         <Mono s={{ fontSize: fs.micro }} c={AMBER}>{ev.blockedBy.length} gate(s) remaining</Mono>
-                        <button onClick={() => setOverrideFor(overrideFor === p.id ? null : p.id)} style={{ ...btn, background: "transparent", color: txt(RED), border: `1px solid ${RED}` }}>
+                        <button className="pressable" onClick={() => setOverrideFor(overrideFor === p.id ? null : p.id)} style={{ ...btn, background: "transparent", color: txt(RED), border: `1px solid ${RED}` }}>
                           Override
                         </button>
                       </>
@@ -100,7 +100,7 @@ export default function RtpPanel() {
                   {overrideFor === p.id && (
                     <div style={{ display: "flex", gap: space.sm, marginTop: 8, alignItems: "center" }}>
                       <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (logged to audit)" style={{ ...input, flex: 1, textTransform: "none" }} />
-                      <button onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: "#0c0d0c" }}>Force advance</button>
+                      <button className="pressable" onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: "#0c0d0c" }}>Force advance</button>
                     </div>
                   )}
                 </>

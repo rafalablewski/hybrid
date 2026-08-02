@@ -187,7 +187,7 @@ export default function AdminAnnouncements() {
           {list ? `${list.length} announcement${list.length === 1 ? "" : "s"}` : "…"} – broadcast to the app
         </Mono>
         {editing === null && (
-          <button onClick={openNew} style={primaryBtn}>
+          <button className="pressable" onClick={openNew} style={primaryBtn}>
             + New announcement
           </button>
         )}
@@ -267,13 +267,13 @@ export default function AdminAnnouncements() {
           )}
 
           <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
-            <button disabled={busy} onClick={() => save("draft")} style={secondaryBtn}>
+            <button className="pressable" disabled={busy} onClick={() => save("draft")} style={secondaryBtn}>
               Save draft
             </button>
-            <button disabled={busy} onClick={() => save("published")} style={primaryBtn}>
+            <button className="pressable" disabled={busy} onClick={() => save("published")} style={primaryBtn}>
               {editing === "new" ? "Publish" : "Save & publish"}
             </button>
-            <button disabled={busy} onClick={() => setEditing(null)} style={ghostBtn}>
+            <button className="pressable" disabled={busy} onClick={() => setEditing(null)} style={ghostBtn}>
               Cancel
             </button>
           </div>
@@ -312,19 +312,19 @@ export default function AdminAnnouncements() {
             </div>
 
             <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 14 }}>
-              <button disabled={busy} onClick={() => openEdit(a)} style={miniBtn}>Edit</button>
+              <button className="pressable" disabled={busy} onClick={() => openEdit(a)} style={miniBtn}>Edit</button>
               {a.status !== "published" ? (
-                <button disabled={busy} onClick={() => patch(a.id, { status: "published" })} style={miniBtn}>Publish</button>
+                <button className="pressable" disabled={busy} onClick={() => patch(a.id, { status: "published" })} style={miniBtn}>Publish</button>
               ) : (
-                <button disabled={busy} onClick={() => patch(a.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
+                <button className="pressable" disabled={busy} onClick={() => patch(a.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
               )}
               {a.status !== "archived" && (
-                <button disabled={busy} onClick={() => patch(a.id, { status: "archived" })} style={miniBtn}>Archive</button>
+                <button className="pressable" disabled={busy} onClick={() => patch(a.id, { status: "archived" })} style={miniBtn}>Archive</button>
               )}
-              <button disabled={busy} onClick={() => patch(a.id, { pinned: !a.pinned })} style={miniBtn}>
+              <button className="pressable" disabled={busy} onClick={() => patch(a.id, { pinned: !a.pinned })} style={miniBtn}>
                 {a.pinned ? "Unpin" : "Pin"}
               </button>
-              <button disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>
+              <button className="pressable" disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>
                 Delete
               </button>
             </div>

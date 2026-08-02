@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Card, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Input, PillBtn, Banner } from "./_kit";
 

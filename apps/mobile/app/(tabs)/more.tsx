@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, Linking, TextInput } from "react-native";
+import { View, Text, Linking, TextInput } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { groupedNavWithLocks, FUNNEL, AURORA_NAV_ICONS, type AuroraIconName, type NavGroup } from "@hybrid/core";
 import { track } from "../../lib/track";
@@ -9,7 +9,7 @@ import { useNavAccess } from "../../lib/access";
 import { useFlags } from "../../lib/flags";
 import { WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { fs, Screen, Kicker, Mono, H1, F } from "../../lib/ui";
+import { fs, Screen, Kicker, Mono, H1, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen } from "../../components/aurora/kit";
 import { AuroraIcon } from "../../components/aurora/icons";
 import { useTheme, txt, type Palette } from "../../lib/theme";

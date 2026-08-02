@@ -367,7 +367,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
               {/* Still blank? Go straight back to the first one — the day is
                   upserted, so answering more is an edit, not a second check-in. */}
               {!allAnswered && (
-                <button
+                <button className="pressable"
                   onClick={() => { setDone(false); setStep(Math.max(minStep, steps.findIndex((st) => st.kind !== "details" && !isAnswered(st)))); }}
                   style={{ ...btnPrimary, flex: "none", padding: "12px 24px" }}
                 >
@@ -378,11 +378,11 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                   themselves — it no longer vanishes out from under the
                   confirmation. */}
               {embedded && onClose ? (
-                <button onClick={onClose} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "12px 24px" } : { ...btnGhost, padding: "12px 24px" }}>
+                <button className="pressable" onClick={onClose} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "12px 24px" } : { ...btnGhost, padding: "12px 24px" }}>
                   {t("w.recovery.checkins.doneClose")}
                 </button>
               ) : (
-                <button onClick={restart} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "12px 24px" } : { ...btnGhost, padding: "12px 24px" }}>
+                <button className="pressable" onClick={restart} style={allAnswered ? { ...btnPrimary, flex: "none", padding: "12px 24px" } : { ...btnGhost, padding: "12px 24px" }}>
                   {t("w.recovery.checkins.newCheckin")}
                 </button>
               )}
@@ -404,7 +404,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                 const on = answered.has(m.key);
                 const to = stepOf(m.key);
                 return (
-                  <button
+                  <button className="pressable"
                     key={m.key}
                     onClick={() => !locked && to >= 0 && setStep(to)}
                     disabled={locked}
@@ -433,7 +433,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
               </div>
             )}
 
-            <button onClick={() => isPaid && toggleShare()} disabled={!isPaid || locked}
+            <button className="pressable" onClick={() => isPaid && toggleShare()} disabled={!isPaid || locked}
               style={{ display: "flex", alignItems: "center", gap: space.md, width: "100%", textAlign: "left", marginTop: 16, padding: 16, borderRadius: 16, background: sharedWithCoach && isPaid ? `color-mix(in srgb, ${C("lime")} 10%, transparent)` : "transparent", border: `1px solid ${sharedWithCoach && isPaid ? C("lime") : C("line")}`, cursor: isPaid && !locked ? "pointer" : "default", opacity: !isPaid ? 0.6 : locked ? 0.55 : 1, color: C("chalk") }}>
               <AuroraIcon name={sharedWithCoach && isPaid ? "check" : "lock"} size={20} color={sharedWithCoach && isPaid ? C("lime") : C("ash")} />
               <span style={{ flex: 1 }}>
@@ -449,18 +449,18 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                 reads as work still outstanding. Locked, the card offers Done
                 (or nothing but Back) and the banner's Edit is the way back in. */}
             <div style={{ display: "flex", gap: space.ms, marginTop: 16 }}>
-              {!locked && step > minStep && <button onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
+              {!locked && step > minStep && <button className="pressable" onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
               {locked ? (
                 <>
                   {/* EDIT LIVES HERE AND ONLY HERE — beside Done, where the
                       athlete already is when they decide the read is wrong. */}
-                  <button onClick={() => setEditing(true)} style={{ ...btnGhost, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <button className="pressable" onClick={() => setEditing(true)} style={{ ...btnGhost, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                     <AuroraIcon name="edit" size={16} color={C("ash")} /> {t("w.recovery.checkins.edit")}
                   </button>
-                  {onClose && <button onClick={onClose} style={btnPrimary}>{t("w.recovery.checkins.doneClose")}</button>}
+                  {onClose && <button className="pressable" onClick={onClose} style={btnPrimary}>{t("w.recovery.checkins.doneClose")}</button>}
                 </>
               ) : (
-                <button onClick={submit} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.6 : 1 }}>
+                <button className="pressable" onClick={submit} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.6 : 1 }}>
                   {saving ? t("w.recovery.checkins.submitting") : t(editing || storedAll ? "w.recovery.checkins.saveChanges" : "w.recovery.checkins.submit")}
                 </button>
               )}
@@ -490,7 +490,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                   {FEELS.map((f) => {
                     const sel = touched && val === f.value;
                     return (
-                      <button key={f.value} onClick={() => answerEffort(sess.id, f.value)} disabled={locked}
+                      <button className="pressable" key={f.value} onClick={() => answerEffort(sess.id, f.value)} disabled={locked}
                         aria-label={`${sess.title}: ${t(f.labelKey)}`} aria-pressed={sel}
                         style={{ ...tile(sel), fontSize: 22, ...(sel && !locked ? { background: `color-mix(in srgb, var(--${f.tone}-text) 12%, transparent)`, border: `1px solid var(--${f.tone}-text)`, boxShadow: "none" } : null) }}>
                         {f.emoji}
@@ -499,8 +499,8 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                   })}
                 </div>
                 <div style={{ display: "flex", gap: space.ms, width: "100%", marginTop: 24 }}>
-                  {step > minStep && <button onClick={() => setStep((v) => v - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
-                  <button onClick={() => setStep((v) => v + 1)} style={touched ? btnPrimary : { ...btnGhost, flex: 1 }}>
+                  {step > minStep && <button className="pressable" onClick={() => setStep((v) => v - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
+                  <button className="pressable" onClick={() => setStep((v) => v + 1)} style={touched ? btnPrimary : { ...btnGhost, flex: 1 }}>
                     {touched ? t("w.recovery.checkins.next") : t("w.recovery.checkins.skip")}
                   </button>
                 </div>
@@ -538,7 +538,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                   {CHECKIN_SCALE.map((n) => {
                     const sel = touched && val === n;
                     return (
-                      <button key={n} onClick={() => answer(m.key, n)} disabled={locked}
+                      <button className="pressable" key={n} onClick={() => answer(m.key, n)} disabled={locked}
                         aria-label={`${t(m.labelKey)}: ${t(checkinMetricWordKey(m.key, n))}`} aria-pressed={sel}
                         style={tile(sel)}>
                         <ReadinessFace feeling={checkinScaleFeeling(n)} size={24} />
@@ -548,11 +548,11 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
                 </div>
 
                 <div style={{ display: "flex", gap: space.ms, width: "100%", marginTop: 24 }}>
-                  {step > minStep && <button onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
+                  {step > minStep && <button className="pressable" onClick={() => setStep((s) => s - 1)} style={btnGhost}>{t("w.recovery.checkins.prev")}</button>}
                   {/* Moving on without answering is called Skip. It was called
                       Next, which is how a skipped question came to feel like an
                       answered one. */}
-                  <button onClick={() => setStep((s) => s + 1)} style={touched ? btnPrimary : { ...btnGhost, flex: 1 }}>
+                  <button className="pressable" onClick={() => setStep((s) => s + 1)} style={touched ? btnPrimary : { ...btnGhost, flex: 1 }}>
                     {touched ? t("w.recovery.checkins.next") : t("w.recovery.checkins.skip")}
                   </button>
                 </div>

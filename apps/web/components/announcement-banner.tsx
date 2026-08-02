@@ -73,7 +73,7 @@ export default function AnnouncementBanner() {
                 {a.body}
               </div>
             </div>
-            <button
+            <button className="pressable"
               onClick={() => dismiss(a.id)}
               aria-label="Dismiss"
               style={{ background: "transparent", border: "none", color: ASH, cursor: "pointer", fontSize: fs.title, lineHeight: 1, padding: 2, flexShrink: 0 }}

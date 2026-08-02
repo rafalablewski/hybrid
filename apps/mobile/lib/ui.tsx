@@ -290,37 +290,66 @@ export function GlassField() {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Press feedback — the ONE tap affordance both clients share (web has the
- *  `.pressable` CSS utility; this is the RN twin). The surface scales to .97 on
- *  the shared nav spring while pressed, so a tap physically lands — RN's
- *  Pressable has no default feedback, which left most taps visually silent.
- *  Under Reduce Motion the scale is dropped and a small opacity dip substitutes
- *  (feedback, not motion). Drop-in replacement for Pressable. */
+/**
+ * Press feedback — the ONE tap affordance both clients share (web has the
+ * `.pressable` CSS utility; this is the RN twin). The surface scales to .97 on
+ * the shared press spring while pressed, so a tap physically lands — RN's
+ * Pressable has NO default feedback, which left the overwhelming majority of
+ * taps in the app visually silent.
+ *
+ * A STRICT DROP-IN for Pressable, deliberately: `style` accepts the function
+ * form, `children` accepts the render-prop form, and every other prop passes
+ * through. That is what lets a file adopt it with one import line
+ * (`import { PressScale as Pressable } from "…/lib/ui"`) instead of touching
+ * every JSX site — which is the only way a sweep this size stays reviewable.
+ *
+ * DOWN 120ms / UP 200ms. Releasing is a recovery, not an input, so it is
+ * gentler than the press. (A single symmetric spring made taps feel snatched.)
+ *
+ * `noScale` opts out for the few surfaces where a scale is wrong — a
+ * full-screen scrim, or a child of something that already animates.
+ *
+ * Under Reduce Motion the scale is dropped and a small opacity dip substitutes:
+ * feedback, not motion. Never nothing.
+ */
 export function PressScale({
   style,
   children,
   onPressIn,
   onPressOut,
   disabled,
+  noScale,
   ...rest
-}: Omit<ComponentProps<typeof Pressable>, "style"> & { style?: StyleProp<ViewStyle> }) {
+}: Omit<ComponentProps<typeof Pressable>, "style"> & {
+  style?: StyleProp<ViewStyle> | ((s: { pressed: boolean }) => StyleProp<ViewStyle>);
+  /** Skip the scale — for scrims and anything inside an animating parent. */
+  noScale?: boolean;
+}) {
   const reducedMotion = useReducedMotion();
   const pressed = useRef(new Animated.Value(0)).current;
+  // Down is quick and definite; up is a slower recovery. Timings rather than a
+  // single symmetric spring, because a spring on the release reads as the
+  // surface being snatched back out from under the finger.
   const to = useCallback(
     (v: number) => {
-      Animated.spring(pressed, { toValue: v, ...springToRN(springs.nav), useNativeDriver: true }).start();
+      Animated.timing(pressed, {
+        toValue: v,
+        duration: v === 1 ? 120 : 200,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
     },
     [pressed],
   );
   const fx = useMemo(
     () =>
-      reducedMotion
+      reducedMotion || noScale
         ? { opacity: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.72] }) }
         : {
             opacity: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] }),
             transform: [{ scale: pressed.interpolate({ inputRange: [0, 1], outputRange: [1, 0.97] }) }],
           },
-    [pressed, reducedMotion],
+    [pressed, reducedMotion, noScale],
   );
   return (
     <AnimatedPressable
@@ -336,7 +365,8 @@ export function PressScale({
       }}
       // Skip the animated opacity when disabled so a caller's static
       // `opacity: 0.5` dim isn't overridden by the (later) animated 1.
-      style={[style, disabled ? null : fx]}
+      // `style` may be Pressable's function form; resolve it before merging.
+      style={(state) => [typeof style === "function" ? style(state) : style, disabled ? null : fx]}
     >
       {children}
     </AnimatedPressable>

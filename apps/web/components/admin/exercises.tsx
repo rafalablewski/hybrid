@@ -234,7 +234,7 @@ export default function AdminExercises() {
           {list ? `${customCount} custom – ${builtinCount} built-in` : "…"}
         </Mono>
         {editing === null && (
-          <button onClick={openNew} style={primaryBtn}>
+          <button className="pressable" onClick={openNew} style={primaryBtn}>
             + New exercise
           </button>
         )}
@@ -303,7 +303,7 @@ export default function AdminExercises() {
               {ALL_MUSCLES.map((m) => {
                 const on = draft.muscles.includes(m);
                 return (
-                  <button
+                  <button className="pressable"
                     key={m}
                     onClick={() => toggleMuscle(m)}
                     style={{
@@ -349,9 +349,9 @@ export default function AdminExercises() {
           {err && <div role="alert"><Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>{err}</Mono></div>}
 
           <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap" }}>
-            <button disabled={busy} onClick={() => save("draft")} style={secondaryBtn}>Save draft</button>
-            <button disabled={busy} onClick={() => save("published")} style={primaryBtn}>{editing === "new" ? "Publish" : "Save & publish"}</button>
-            <button disabled={busy} onClick={() => setEditing(null)} style={ghostBtn}>Cancel</button>
+            <button className="pressable" disabled={busy} onClick={() => save("draft")} style={secondaryBtn}>Save draft</button>
+            <button className="pressable" disabled={busy} onClick={() => save("published")} style={primaryBtn}>{editing === "new" ? "Publish" : "Save & publish"}</button>
+            <button className="pressable" disabled={busy} onClick={() => setEditing(null)} style={ghostBtn}>Cancel</button>
           </div>
         </Card>
       )}
@@ -383,17 +383,17 @@ export default function AdminExercises() {
 
             <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 14 }}>
               {isBuiltin ? (
-                <button disabled={busy || unavailable} onClick={() => openEdit(x)} style={miniBtn} title={unavailable ? "Create the Exercise table to override built-ins" : undefined}>Edit / override</button>
+                <button className="pressable" disabled={busy || unavailable} onClick={() => openEdit(x)} style={miniBtn} title={unavailable ? "Create the Exercise table to override built-ins" : undefined}>Edit / override</button>
               ) : (
                 <>
-                  <button disabled={busy} onClick={() => openEdit(x)} style={miniBtn}>Edit</button>
+                  <button className="pressable" disabled={busy} onClick={() => openEdit(x)} style={miniBtn}>Edit</button>
                   {x.status !== "published" ? (
-                    <button disabled={busy} onClick={() => patch(x.id, { status: "published" })} style={miniBtn}>Publish</button>
+                    <button className="pressable" disabled={busy} onClick={() => patch(x.id, { status: "published" })} style={miniBtn}>Publish</button>
                   ) : (
-                    <button disabled={busy} onClick={() => patch(x.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
+                    <button className="pressable" disabled={busy} onClick={() => patch(x.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
                   )}
-                  {x.status !== "archived" && <button disabled={busy} onClick={() => patch(x.id, { status: "archived" })} style={miniBtn}>Archive</button>}
-                  <button disabled={busy} onClick={() => remove(x)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
+                  {x.status !== "archived" && <button className="pressable" disabled={busy} onClick={() => patch(x.id, { status: "archived" })} style={miniBtn}>Archive</button>}
+                  <button className="pressable" disabled={busy} onClick={() => remove(x)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
                 </>
               )}
             </div>

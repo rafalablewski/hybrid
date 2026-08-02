@@ -1,11 +1,11 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { formatSessionElapsed } from "@hybrid/core";
 import { loadDraft, type Draft } from "../../lib/draft";
 import { useTheme } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 
 /**
  * THE SESSION ACCESSORY — a workout in progress, in the system tab-bar
