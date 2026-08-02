@@ -147,6 +147,80 @@ export const swipe = {
 } as const;
 
 /**
+ * SHEET GESTURE — dragging a presented sheet, and where it lands on release.
+ *
+ * Both clients drew iOS's 40×4 grab handle on every sheet and bound NOTHING to
+ * it: the app displayed the platform's universal "drag me" glyph and ignored
+ * the gesture users try first. This is the physics behind fixing that.
+ *
+ * A sheet is the one surface in the app that MUST be interruptible — you catch
+ * it halfway, change your mind, throw it back. That is the exact capability
+ * springs were chosen over beziers for at the top of this file, and until now
+ * nothing exercised it.
+ */
+export const sheetGesture = {
+  /** Fraction of the panel's height a release must PROJECT past to dismiss. */
+  dismissAt: 0.4,
+  /** Speed (px/s) that moves a detent (or dismisses) regardless of distance. */
+  flick: 800,
+  /** Seconds of velocity to project the release by. Shared with swipe actions
+   *  deliberately: one "where is this going" constant for the whole app. */
+  project: swipe.project,
+  /** Rubber-band constant when dragged ABOVE its resting position. */
+  resist: 90,
+  /** Detent heights, as a fraction of the screen. `large` is not 1.0 — a sheet
+   *  that reaches the top edge reads as a full-screen cover, and the strip of
+   *  parent left visible is what says "this is temporary, you'll be back". */
+  detents: { medium: 0.5, large: 0.92 },
+} as const;
+
+export type SheetDetent = keyof typeof sheetGesture.detents;
+
+/**
+ * Where a released sheet drag lands.
+ *
+ * The panel is laid out at its LARGEST detent and translated down, so one axis
+ * describes everything: `y` 0 is fully open, `y` = panelH is dismissed, and each
+ * smaller detent is a `y` in between. `snaps` are those detent offsets, ascending.
+ *
+ * A FLICK moves exactly one detent rather than jumping the whole way — the
+ * gesture's force says "further in this direction", not "all the way". From the
+ * smallest detent, further down is dismissal.
+ */
+export function resolveSheetRelease(
+  y: number,
+  velocity: number,
+  panelH: number,
+  snaps: readonly number[],
+): { target: number; dismiss: boolean } {
+  const stops = [...snaps].sort((a, b) => a - b);
+  const dismissY = panelH;
+
+  if (velocity > sheetGesture.flick) {
+    // Downward flick: the next stop below, or out.
+    const below = stops.find((s) => s > y + 1);
+    const target = below ?? dismissY;
+    return { target, dismiss: target === dismissY };
+  }
+  if (velocity < -sheetGesture.flick) {
+    // Upward flick: the next stop above; already at the top means stay.
+    const above = [...stops].reverse().find((s) => s < y - 1);
+    return { target: above ?? stops[0]!, dismiss: false };
+  }
+
+  // Otherwise: land on whatever the projected position is nearest to.
+  const projected = y + velocity * sheetGesture.project;
+  const candidates = [...stops, dismissY];
+  let target = candidates[0]!;
+  let best = Infinity;
+  for (const c of candidates) {
+    const d = Math.abs(projected - c);
+    if (d < best) { best = d; target = c; }
+  }
+  return { target, dismiss: target === dismissY };
+}
+
+/**
  * Rubber-banded travel: 1:1 up to `limit`, then asymptotically approaching
  * `limit + resist`. The standard iOS overscroll feel, as a pure function so
  * both clients rubber-band identically.

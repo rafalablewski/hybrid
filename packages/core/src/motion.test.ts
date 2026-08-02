@@ -12,6 +12,8 @@ import {
   swipe,
   rubberBand,
   projectSwipe,
+  sheetGesture,
+  resolveSheetRelease,
   cssSpringVar,
   navRootRank,
   screenTransition,
@@ -20,8 +22,21 @@ import {
 } from "./motion";
 
 describe("springs", () => {
-  it("keeps the SHIPPED nav lens values (global-nav.tsx must not drift)", () => {
+  it("keeps the press spring's shipped values", () => {
+    // Was `springs.nav`, named for global-nav.tsx — a component deleted when the
+    // bottom bar became the system tab bar. The numbers never changed; press
+    // feedback is what actually rides them.
     expect(springs.press).toEqual({ response: 0.32, dampingFraction: 0.74 });
+  });
+
+  it("keeps the selection lens inside the ceiling", () => {
+    // Both clients used to hard-code SwiftUI's DEFAULT spring here (response
+    // .551), which settles in 629ms — 40% over. It went unnoticed for exactly
+    // one reason: this loop only ever sees tokens, and that was not one.
+    expect(springDurationMs(springs.lens)).toBeLessThanOrEqual(450);
+    // Playful is FAST with overshoot, not slow with it.
+    expect(springs.lens.dampingFraction).toBeLessThan(0.745);
+    expect(springs.lens.response).toBeLessThan(0.551);
   });
 
   it("never overshoots on a full-screen slide", () => {
@@ -218,5 +233,57 @@ describe("swipe actions", () => {
 
   it("commits a full swipe further out than it commits a reveal", () => {
     expect(swipe.fullAt).toBeGreaterThan(swipe.openAt);
+  });
+});
+
+describe("sheet drag release", () => {
+  // A 600px panel with two detents: large (y=0) and medium (y=250).
+  const H = 600;
+  const SNAPS = [0, 250];
+
+  it("stays put when barely moved", () => {
+    expect(resolveSheetRelease(20, 0, H, SNAPS)).toEqual({ target: 0, dismiss: false });
+  });
+
+  it("dismisses on a slow drag past the halfway point", () => {
+    expect(resolveSheetRelease(460, 0, H, SNAPS).dismiss).toBe(true);
+  });
+
+  it("dismisses a downward FLICK from the lowest detent, however short", () => {
+    // The whole point of projecting: 260px in is barely past the medium detent,
+    // but it is leaving at speed and must not snap back.
+    const r = resolveSheetRelease(260, 1200, H, SNAPS);
+    expect(r.dismiss).toBe(true);
+  });
+
+  it("moves exactly ONE detent on a flick, not all the way out", () => {
+    // Flicking down from fully open goes to medium — the gesture says
+    // "further", not "gone".
+    expect(resolveSheetRelease(0, 1200, H, SNAPS)).toEqual({ target: 250, dismiss: false });
+  });
+
+  it("expands on an upward flick", () => {
+    expect(resolveSheetRelease(250, -1200, H, SNAPS)).toEqual({ target: 0, dismiss: false });
+  });
+
+  it("cannot be flicked up past its largest detent", () => {
+    expect(resolveSheetRelease(0, -2000, H, SNAPS)).toEqual({ target: 0, dismiss: false });
+  });
+
+  it("snaps to the NEAREST detent on a lazy release", () => {
+    expect(resolveSheetRelease(200, 0, H, SNAPS).target).toBe(250);
+    expect(resolveSheetRelease(90, 0, H, SNAPS).target).toBe(0);
+  });
+
+  it("works for a single-detent sheet (the common case)", () => {
+    expect(resolveSheetRelease(100, 0, H, [0])).toEqual({ target: 0, dismiss: false });
+    expect(resolveSheetRelease(400, 0, H, [0]).dismiss).toBe(true);
+    expect(resolveSheetRelease(30, 1200, H, [0]).dismiss).toBe(true);
+  });
+
+  it("keeps `large` short of the screen top", () => {
+    // A sheet that reaches the top edge reads as a full-screen cover; the strip
+    // of parent left visible is what says you'll be coming back.
+    expect(sheetGesture.detents.large).toBeLessThan(1);
   });
 });
