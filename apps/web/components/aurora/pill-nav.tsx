@@ -297,18 +297,18 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             {persona === "casual" && isEnabled("nav.upgrade") && (
               <button
                 onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "more" }); go("upgrade"); }}
-                style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 28, background: C("ink"), border: `1px solid color-mix(in srgb, var(--premium-accent) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--premium-accent) 32%, transparent)" }}
+                style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 16, padding: 16, borderRadius: 28, background: C("ink"), border: `1px solid color-mix(in srgb, var(--premium-accent) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--premium-accent) 32%, transparent)" }}
               >
                 <span style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--premium-accent) 16%, transparent)", pointerEvents: "none" }} />
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: "var(--premium-accent-text)" }}>{t("w.home.pillnav.upgradeKicker")}</span>
                 <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>{t("nav.upgrade")}</span>
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>{t("w.home.pillnav.upgradeBlurb")}</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: "var(--premium-accent)", color: "var(--premium-accent-ink)", borderRadius: 999, padding: "8px 18px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 16, background: "var(--premium-accent)", color: "var(--premium-accent-ink)", borderRadius: 999, padding: "8px 16px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
               </button>
             )}
 
             {/* Search — filters the springboard tiles by label (parity with the mobile More tab). */}
-            <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "0 14px", marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "0 16px", marginBottom: 16 }}>
               <AuroraIcon name="search" size={18} strokeWidth={2.4} color={C("ash")} />
               <input
                 value={query}
@@ -327,7 +327,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             {shown.map((g) => {
               const groupName = t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`);
               return (
-              <div key={g.group} style={{ marginBottom: 18 }}>
+              <div key={g.group} style={{ marginBottom: 16 }}>
                 {/* Cluster header — label only, no marker (decorative dots/squares
                     before text are banned; parity with the mobile More tab). */}
                 <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
@@ -356,18 +356,18 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
               );
             })}
             {q.length > 0 && shown.length === 0 && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "center", padding: "22px 0 10px" }}>{`No tools match “${query}”.`}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "center", padding: "20px 0 10px" }}>{`No tools match “${query}”.`}</div>
             )}
 
             {/* Sign out — matching the mobile More tab's bottom action. */}
             {session && (
-              <button onClick={signOut} style={{ display: "block", width: "100%", textAlign: "center", marginTop: 10, padding: "14px 0", background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>{t("common.signout")}</button>
+              <button onClick={signOut} style={{ display: "block", width: "100%", textAlign: "center", marginTop: 10, padding: "16px 0", background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>{t("common.signout")}</button>
             )}
           </div>
         </div>
       )}
 
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 18px 18px", pointerEvents: "none" }}>
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none" }}>
         {/* The bar stack: [session accessory] over [glass capsule with the five
             tabs], shrinking together on scroll. */}
         <div ref={wrapRef} style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: ACC_GAP, width: "100%", maxWidth: 480 }}>

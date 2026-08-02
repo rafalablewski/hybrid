@@ -12,7 +12,7 @@ import { fs, space } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "4px 14px" } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "4px 16px" } as const;
 const mono = (size: number, color: string) => ({ fontFamily: "var(--font-mono)", fontSize: size, letterSpacing: 0.7, textTransform: "uppercase" as const, color });
 
 type SortMode = "smart" | "groups" | "az";
@@ -71,7 +71,7 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
       {entries.length === 0 ? (
         <div style={{ ...card, textAlign: "center", padding: 40, borderRadius: 28, marginTop: 16 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.analyze.ex.empty")}</span></div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 16 }}>
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.analyze.ex.search")} style={input} />
 
           {/* SORT PILLS — Smart (decay order) / Groups (fixed buckets) / A–Z */}
@@ -88,7 +88,7 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
                   onClick={() => setMode(p.id)}
                   className="pressable"
                   aria-pressed={on}
-                  style={{ ...mono(10.5, on ? "var(--on-accent)" : C("ash")), letterSpacing: 0.8, fontWeight: on ? 700 : 400, padding: "8px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent" }}
+                  style={{ ...mono(10.5, on ? "var(--on-accent)" : C("ash")), letterSpacing: 0.8, fontWeight: on ? 700 : 400, padding: "8px 16px", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent" }}
                 >
                   {p.label}
                 </button>
@@ -98,7 +98,7 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
 
           {/* THIS BLOCK — the gradient band (Profile's cover wash + stat row). */}
           {summary.inRotation > 0 && (
-            <div style={{ position: "relative", overflow: "hidden", borderRadius: 28, border: `1px solid ${C("line")}`, padding: "14px 16px", background: `linear-gradient(120deg, color-mix(in srgb, ${C("violet")} 32%, transparent), color-mix(in srgb, ${C("lime")} 16%, transparent) 55%, ${C("ink2")})` }}>
+            <div style={{ position: "relative", overflow: "hidden", borderRadius: 28, border: `1px solid ${C("line")}`, padding: "16px 16px", background: `linear-gradient(120deg, color-mix(in srgb, ${C("violet")} 32%, transparent), color-mix(in srgb, ${C("lime")} 16%, transparent) 55%, ${C("ink2")})` }}>
               <div aria-hidden style={{ position: "absolute", top: -40, right: -28, width: 150, height: 150, borderRadius: "50%", background: C("lime"), opacity: 0.16 }} />
               <div style={{ ...mono(8.5, C("ash")), letterSpacing: 1.4 }}>{t("w.analyze.ex.block")}</div>
               <div style={{ display: "flex", gap: 24, marginTop: 8 }}>
@@ -129,7 +129,7 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
           ) : (
             flat.length > 0 && <Card list={flat} />
           )}
-          {filtered.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), display: "block", padding: "14px 0" }}>{t("w.analyze.ex.noMatch")}</span>}
+          {filtered.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), display: "block", padding: "16px 0" }}>{t("w.analyze.ex.noMatch")}</span>}
         </div>
       )}
     </div>

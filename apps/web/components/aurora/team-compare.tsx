@@ -122,7 +122,7 @@ export default function AuroraTeamCompare() {
       </div>
 
       <div style={card}>
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={kicker(meta.color)}>{t("w.teams.compare.teamComparison")}</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, marginTop: 2 }}>{data?.lift ?? lift}</div>
         </div>

@@ -66,7 +66,7 @@ export default function AuroraOtherSports({
   const rest = lanes.length - OTHER_SPORT_CAP;
 
   return (
-    <div style={{ marginTop: 26 }}>
+    <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, ONE mono fact right —
           the wave-3 parentage quote ("3.1 of 5.2 h this week"), naming the
           slice of the verdict's hours column this block decomposes. */}

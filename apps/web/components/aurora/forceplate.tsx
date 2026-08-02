@@ -54,7 +54,7 @@ export default function AuroraForcePlate() {
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.fp.importTitle")}</div>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, margin: "8px 0 12px", color: C("ash") }}>{t("w.analyze.fp.importBody")}</p>
         <div style={{ display: "flex", gap: space.sm, marginBottom: 8 }}>
-          <label style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>
+          <label style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>
             {t("w.analyze.fp.chooseFile")}<input type="file" accept=".csv,text/csv,text/plain" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
           </label>
         </div>

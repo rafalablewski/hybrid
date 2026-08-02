@@ -146,7 +146,7 @@ export function FeelPrompt({
       {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
 
       {feel != null && (
-        <div style={{ marginTop: 18 }}>
+        <div style={{ marginTop: 16 }}>
           <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }}>{t("session.fatigue.q")}</Mono>
           {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
           {/* WHAT THIS ANSWER IS WORTH. "Wrecked" ten minutes after a hard
@@ -171,7 +171,7 @@ export function FeelPrompt({
       )}
 
       {load != null && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 18, paddingTop: 14, borderTop: `1px solid ${LINE}` }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${LINE}` }}>
           <div style={{ ...disp, fontWeight: 900, fontSize: 30, color: txt(LIME), fontVariantNumeric: "tabular-nums" }}>{load}</div>
           <Mono s={{ flex: 1, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>{t("session.feel.load")}</Mono>
           <div style={{ textAlign: "right" }}>

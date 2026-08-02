@@ -622,7 +622,7 @@ export default function WorkoutBlocks({
                               floating + is retired). Full-width, banks the set and
                               starts the rest timer. The screen's one lime fill in
                               the logging loop. */}
-                          <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.logSet")} aria-label={t("workout.logSet")} style={{ ...disp, marginTop: 14, width: "100%", borderRadius: 16, background: LIME, color: "var(--color-ink)", fontSize: fs.subtitle, fontWeight: 800, letterSpacing: "-.01em", padding: "14px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, border: "none", cursor: "pointer", boxShadow: "0 10px 24px -14px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.35)" }}>
+                          <button onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.logSet")} aria-label={t("workout.logSet")} style={{ ...disp, marginTop: 16, width: "100%", borderRadius: 16, background: LIME, color: "var(--color-ink)", fontSize: fs.subtitle, fontWeight: 800, letterSpacing: "-.01em", padding: "16px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, border: "none", cursor: "pointer", boxShadow: "0 10px 24px -14px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.35)" }}>
                             <span style={{ fontSize: 17, lineHeight: 0, fontWeight: 900 }}>✓</span> {t("workout.logSet")}
                           </button>
                         </div>
@@ -854,7 +854,7 @@ export default function WorkoutBlocks({
                     <div style={{ flex: 1, display: "flex", alignItems: "stretch", borderRadius: 16, overflow: "hidden", background: INK2, border: `1px solid ${ghost ? `${CHALK}59` : LINE}` }}>
                       <button
                         onClick={() => addSet(b.uid)}
-                        style={{ ...disp, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontWeight: 700, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: "none", padding: "12px 14px", cursor: "pointer" }}
+                        style={{ ...disp, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontWeight: 700, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: "none", padding: "12px 16px", cursor: "pointer" }}
                       >
                         <span style={{ width: 20, height: 20, borderRadius: 999, border: `1.5px solid ${ghost ? CHALK : ASH}`, color: ghost ? txt(CHALK) : txt(ASH), display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 15, lineHeight: 0 }}>+</span>
                         {t("w.train.blocks.addSet").replace(/^\+\s*/, "")}
@@ -887,9 +887,9 @@ export default function WorkoutBlocks({
                 {planUid === b.uid && (
                   <>
                     <div onClick={() => setPlanUid(null)} style={{ position: "fixed", inset: 0, zIndex: 30 }} />
-                    <div style={{ position: "absolute", top: 52, left: 0, zIndex: 31, width: 300, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 16, padding: 14, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
+                    <div style={{ position: "absolute", top: 52, left: 0, zIndex: 31, width: 300, background: "var(--color-card)", border: `1px solid ${LINE}`, borderRadius: 16, padding: 16, boxShadow: "0 22px 50px -20px rgba(0,0,0,.85)" }}>
                       <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH), marginBottom: 12 }}>{t("w.train.blocks.presetsTitle")}</div>
-                      <div style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -14px", padding: "0 14px 2px", scrollbarWidth: "none" }}>
+                      <div style={{ display: "flex", gap: 10, overflowX: "auto", margin: "0 -14px", padding: "0 16px 2px", scrollbarWidth: "none" }}>
                         {([
                           { sets: 3, reps: 3, k: "schemeHeavy" },
                           { sets: 5, reps: 5, k: "schemeStrength" },
@@ -1098,7 +1098,7 @@ export default function WorkoutBlocks({
         />
       )}
 
-      <div style={{ display: "flex", gap: space.sm, marginTop: 4, marginBottom: 14, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: space.sm, marginTop: 4, marginBottom: 16, flexWrap: "wrap" }}>
         <button onClick={addStrength} className="pressable" style={blockBtn(LIME)}>
           {t("w.train.blocks.addStrength")}
         </button>
@@ -1209,13 +1209,13 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
     </div>
   );
   const customAdd = q.length > 0 && !exact && (
-    <button type="button" onClick={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ ...disp, display: "block", width: "100%", marginTop: 14, textAlign: "center", fontWeight: 800, fontSize: fs.body, background: LIME, color: "var(--on-accent)", border: 0, borderRadius: 999, padding: "12px", cursor: "pointer" }}>
+    <button type="button" onClick={() => onPick(query.trim(), inferBlockKind(query.trim()))} style={{ ...disp, display: "block", width: "100%", marginTop: 16, textAlign: "center", fontWeight: 800, fontSize: fs.body, background: LIME, color: "var(--on-accent)", border: 0, borderRadius: 999, padding: "12px", cursor: "pointer" }}>
       + “{query.trim()}”
     </button>
   );
 
   return (
-    <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+    <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div
         ref={dialogRef}
         role="dialog"
@@ -1241,7 +1241,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
               const on = view === p.id;
               return (
                 <button key={p.id} type="button" onClick={() => { setView(p.id); setRoom(null); }} aria-pressed={on}
-                  style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: on ? 700 : 400, color: on ? "var(--on-accent)" : ASH, background: on ? LIME : "transparent", border: `1px solid ${on ? LIME : LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>
+                  style={{ ...mono, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", fontWeight: on ? 700 : 400, color: on ? "var(--on-accent)" : ASH, background: on ? LIME : "transparent", border: `1px solid ${on ? LIME : LINE}`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>
                   {p.label}
                 </button>
               );
@@ -1261,7 +1261,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
               /* A–Z — display-face letter heads; ids feed the rail. */
               az.map((sec) => (
                 <div key={sec.letter} id={`xpk-${sec.letter}`}>
-                  <div style={{ ...disp, fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", color: ASH, margin: "14px 2px 6px" }}>{sec.letter}</div>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", color: ASH, margin: "16px 2px 6px" }}>{sec.letter}</div>
                   {slab(sec.entries)}
                 </div>
               ))
@@ -1409,9 +1409,9 @@ function ExerciseDetailSheet({
         const loadPart = s.load.trim() ? `${displayLoad(s.load, units)} ${units}` : "";
         const setLine = [loadPart, s.reps.trim()].filter(Boolean).join(" × ") || "–";
         return (
-          <div style={{ marginTop: 18 }}>
+          <div style={{ marginTop: 16 }}>
             {/* Flat totals — big number over a small mono label, no boxes. */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "14px 36px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "16px 36px" }}>
               <div>
                 <div style={{ ...disp, fontSize: 26, fontWeight: 900, letterSpacing: "-.02em", color: CHALK }}>{fmtTonnage(ls.volumeKg, units)}</div>
                 <div style={{ ...mono, fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: txt(ASH), marginTop: 3 }}>{t("workout.totalVolume")}</div>

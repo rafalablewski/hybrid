@@ -20,7 +20,7 @@ export default function FetchError({ onRetry, style }: { onRetry: () => void; st
         border: `1px solid ${C("line")}`,
         borderRadius: 28,
         boxShadow: "var(--shadow-card)",
-        padding: "34px 22px",
+        padding: "34px 20px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -32,7 +32,7 @@ export default function FetchError({ onRetry, style }: { onRetry: () => void; st
       <div style={{ fontSize: 15, lineHeight: 1.5, color: C("ash"), marginTop: 8, maxWidth: 320 }}>{t("common.loadErrorHint")}</div>
       <button
         onClick={onRetry}
-        style={{ marginTop: 18, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "10px 28px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: C("chalk"), cursor: "pointer" }}
+        style={{ marginTop: 16, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "10px 28px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: C("chalk"), cursor: "pointer" }}
       >
         {t("common.retry")}
       </button>

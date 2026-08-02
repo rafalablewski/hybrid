@@ -91,7 +91,7 @@ export default function AuroraTalent() {
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
   const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "8px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
   const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "8px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
-  const btn: React.CSSProperties = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" };
+  const btn: React.CSSProperties = { fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 16px", cursor: "pointer" };
   const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
   return (
@@ -144,7 +144,7 @@ export default function AuroraTalent() {
           {!report && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 12, color: C("ash") }}>{t("w.teams.talent.saveToSeePercentiles")}</div>}
           {report && (
             <>
-              <div style={{ display: "flex", gap: space.sm, margin: "10px 0 14px" }}>
+              <div style={{ display: "flex", gap: space.sm, margin: "10px 0 16px" }}>
                 {chip(pctColor(report.overall), `${t("w.teams.talent.overall")} ${report.overall}${t("w.teams.talent.ordinal")}`)}
                 {chip(pctColor(report.potential), `${t("w.teams.talent.potential")} ${report.potential}${t("w.teams.talent.ordinal")}`)}
               </div>
@@ -183,7 +183,7 @@ export default function AuroraTalent() {
           </label>
           <button onClick={search} style={btn}>{t("w.teams.talent.search")}</button>
         </div>
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 16 }}>
           {results.length === 0 && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.talent.noMatch")}</div>}
           {results.map((r, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C("line")}` }}>

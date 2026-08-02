@@ -283,7 +283,7 @@ export default function AuroraEnduranceLanes({
   const km = Math.round(parentage.distanceKm * 10) / 10;
 
   return (
-    <div style={{ marginTop: 26 }}>
+    <div style={{ marginTop: 24 }}>
       {/* One item in the head's right slot: the quoted FACT (ash). The sort
           ACTION moved to its own quiet row below — a head carries at most one
           right-slot item, and the fact is the one that names the block. */}
@@ -323,7 +323,7 @@ export default function AuroraEnduranceLanes({
           style={{
             display: "flex", width: "calc(100% - 4px)", margin: "12px 2px 0", alignItems: "center",
             gap: 12, cursor: "pointer", textAlign: "left", color: C("chalk"),
-            background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px",
+            background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px",
           }}
         >
           <span style={{

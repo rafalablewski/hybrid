@@ -13,7 +13,7 @@ import { MetaLine } from "./meta";
 import { CoverHero, useHeroCollapse, COVER_INK, COVER_BAR } from "./cover-hero";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 18 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
 /** AURORA Plans (web) — goal grid → plan list → detail + enroll, reusing the
@@ -71,14 +71,14 @@ function Library({ query, setQuery, pick }: { query: string; setQuery: (v: strin
         heroRef={heroRef}
       />
       {shelves.length > 0 && <CategoryRail categories={shelves.map((s) => s.category)} />}
-      <div style={{ position: "relative", margin: "14px 0 0" }}>
+      <div style={{ position: "relative", margin: "16px 0 0" }}>
         <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}><AuroraIcon name="search" size={16} color={C("ash")} /></span>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t("w.train.plans.searchGoals")}
           aria-label={t("w.train.plans.searchGoals")}
-          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px 12px 40px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body, outline: "none" }}
+          style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px 12px 40px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body, outline: "none" }}
         />
       </div>
       <div style={{ marginTop: 16 }}><EnrolledCard /></div>
@@ -389,7 +389,7 @@ function PlanHero({ goal, plan, program, back, heroRef }: { goal: GoalNode; plan
  *  right. Used for the maxes ledger and the schedule heads. */
 function PlanSecHead({ title, meta }: { title: string; meta?: string | null }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "22px 0 10px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "24px 0 10px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em" }}>{title}</span>
       {meta && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), textAlign: "right" }}>{meta}</span>}
     </div>
@@ -519,7 +519,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
       )}
       {multiWeek && <PlanWeekRail bars={cover.weekBars} weeks={view.weeks} week={view.week} setWeek={setWeek} wkLabel={t("w.train.plans.wkShort")} />}
 
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: 16 }}>
         <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} />
       </div>
 

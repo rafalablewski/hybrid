@@ -24,7 +24,7 @@ const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRa
 const fieldStyle = (extra: CSSProperties = {}): CSSProperties => ({
   fontFamily: "var(--font-mono)",
   fontSize: fs.bodyLg,
-  padding: "12px 14px",
+  padding: "12px 16px",
   borderRadius: 16,
   background: C("ink"),
   color: C("chalk"),
@@ -355,7 +355,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       <h2 style={{ fontWeight: 900, fontSize: fs.display, marginBottom: 4 }}>{personName(link.client, t)}</h2>
       <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 10 }}>{link.client?.email}</Mono>
 
-      <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexWrap: "wrap", marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: space.xs, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
         {tags.map((tg) => (
           <span key={tg} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: `color-mix(in srgb, ${C("ash")} 12%, transparent)`, border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 8px 3px 10px", display: "inline-flex", alignItems: "center", gap: space.xs }}>
             {tg}
@@ -548,7 +548,7 @@ function ClientWeek({ sessions }: { sessions: LoggedSession[] }) {
           <Mono>{t("w.teams.coach.noSessions7d")}</Mono>
         ) : (
           <>
-            <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
               <Metric label={t("w.teams.coach.metricSessions")} value={`${r.sessions}`} c={C("chalk")} />
               <Metric label={t("w.teams.coach.metricVolume")} value={`${r.volume.toLocaleString()} kg`} c={C("lime")} />
               <Metric label={t("w.teams.coach.metricSets")} value={`${r.sets}`} c={C("chalk")} />
@@ -631,7 +631,7 @@ function Select({
       style={{
         fontFamily: "var(--font-mono)",
         fontSize: fs.body,
-        padding: "10px 14px",
+        padding: "10px 16px",
         borderRadius: 16,
         background: C("ink"),
         color: C("chalk"),

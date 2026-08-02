@@ -62,7 +62,7 @@ function StateSkeleton() {
           <Bar w="100%" h={20} />
         </div>
       </div>
-      <div style={{ display: "flex", gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+      <div style={{ display: "flex", gap: 12, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
         {[0, 1, 2].map((i) => (
           <div key={i} style={{ flex: 1, display: "grid", gap: 8 }}><Bar w="55%" h={18} /><Bar w="80%" h={9} /></div>
         ))}
@@ -240,7 +240,7 @@ export default function AuroraPerformance({
         )}
       </div>
 
-      <div style={{ display: "grid", gap: 14, marginTop: 14 }}>
+      <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
         {/* ═════ GROUP: STATE — how the body is doing right now: the headline
             read, its 14-day trajectory, what's at risk, and the protocols for
             what already broke. First of the FOUR named clusters this page is
@@ -266,12 +266,12 @@ export default function AuroraPerformance({
                 </div>
               </div>
               {/* three columns — strength · endurance · recovery (big numbers, full words) */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 18, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
                 <Comp label={t("w.home.cockpit.tab.strength")} value={`${state.hpi.components.strength}`} />
                 <Comp label={t("w.home.cockpit.tab.endurance")} value={`${state.hpi.components.endurance}`} />
                 <Comp label={t("w.home.cockpit.recovery")} value={`${state.hpi.components.recovery >= 0 ? "+" : ""}${state.hpi.components.recovery}`} />
               </div>
-              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "flex-start", gap: space.md }}>
+              <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "flex-start", gap: space.md }}>
                 <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
                 {/* The explanation takes the card's width (flex:1, readable ~62ch
                     measure — the old 36ch cap squeezed it into a skinny column on
@@ -319,7 +319,7 @@ export default function AuroraPerformance({
             <SHead
               title={t("w.analyze.perf.trajectory")}
               meta={
-                <span style={{ display: "inline-flex", gap: 14, alignItems: "center" }}>
+                <span style={{ display: "inline-flex", gap: 12, alignItems: "center" }}>
                   <Swatch color={LIME_HEX} label="HPI" />
                   <Swatch color={BLUE} label="Readiness" dashed />
                 </span>
@@ -394,7 +394,7 @@ export default function AuroraPerformance({
             {/* TISSUE DETAIL — the depth the analyze Performance screen used to
                 own: the anterior/posterior body map, the per-tissue calibrated
                 probability table, and the plain-language driver explanations. */}
-            <div style={{ marginTop: 16, borderTop: `1px dashed color-mix(in srgb, ${C("line")} 80%, ${C("red")})`, paddingTop: 14 }}>
+            <div style={{ marginTop: 16, borderTop: `1px dashed color-mix(in srgb, ${C("line")} 80%, ${C("red")})`, paddingTop: 16 }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <button onClick={() => setTissueOpen((v) => !v)} aria-expanded={tissueOpen} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em", color: calm ? "var(--lime-text)" : "var(--red-text)" }}>
                   {t("w.analyze.perf.tissueDetail")} <span aria-hidden style={{ fontSize: 8 }}>{tissueOpen ? "▲" : "▼"}</span>
@@ -406,7 +406,7 @@ export default function AuroraPerformance({
               </div>
               {tissueOpen && (
                 <>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 14, alignItems: "start" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 16, alignItems: "start" }}>
                     <div style={{ display: "flex", gap: space.lg, justifyContent: isMobile ? "center" : "flex-start" }}>
                       <Figure regions={FRONT} label={t("w.analyze.perf.anterior")} byTissue={byTissue} />
                       <Figure regions={BACK} label={t("w.analyze.perf.posterior")} byTissue={byTissue} />
@@ -438,7 +438,7 @@ export default function AuroraPerformance({
                       engine decides who sees this (awaitingBaseline), so web and
                       mobile can never disagree about it. */}
                   {risk.awaitingBaseline.length > 0 && (
-                    <div style={{ marginTop: 14, padding: 12, borderRadius: 12, border: `1px solid ${C("line")}`, background: `color-mix(in srgb, ${C("ash")} 8%, transparent)` }}>
+                    <div style={{ marginTop: 16, padding: 12, borderRadius: 12, border: `1px solid ${C("line")}`, background: `color-mix(in srgb, ${C("ash")} 8%, transparent)` }}>
                       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginBottom: 4 }}>{t("w.injury.acwrPending")}</div>
                       <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("chalk") }}>{t("w.injury.acwrPendingBody")}</div>
                     </div>
@@ -446,7 +446,7 @@ export default function AuroraPerformance({
                   {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
                       at play (workload spike, high load, return-from-lull, recovery). */}
                   {driverKinds.length > 0 && (
-                    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
                       {driverKinds.map((k) => (
                         <div key={k}>
                           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C(riskVar(risk.band)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</div>
@@ -486,7 +486,7 @@ export default function AuroraPerformance({
               <Stat label={t("w.home.today.sets")} value={`${recap.sets}`} />
             </div>
             {recap.prs.length > 0 && (
-              <div style={{ marginTop: 14, paddingTop: 4 }}>
+              <div style={{ marginTop: 16, paddingTop: 4 }}>
                 {recap.prs.slice(0, 4).map((p) => (
                   <div key={p.lift} style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 0", borderTop: `1px solid ${C("line")}` }}>
                     <span>{p.lift}</span>
@@ -556,7 +556,7 @@ export default function AuroraPerformance({
             ) : macroSettled ? (
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, marginBottom: 10, lineHeight: 1.5 }}>{t("w.home.cockpit.fourQuestions")}</div>
             ) : <div style={{ margin: "2px 0 10px" }}><Bar w="90%" h={12} /></div>}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px" }}>
               {macro && <button onClick={() => setScreen("periodize")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}><CtaLabel size={12}>{`${t("w.home.cockpit.periodize")} →`}</CtaLabel></button>}
               <button onClick={() => setSetupOpen((v) => !v)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>{setupOpen ? t("w.home.cockpit.close") : t("w.home.cockpit.openSetup")}</button>
             </div>
@@ -622,18 +622,18 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
       <div style={{ marginTop: 16 }}>
         {tab === "strength" && (
           <>
-            <div style={{ display: "flex", gap: 22 }}>
+            <div style={{ display: "flex", gap: 20 }}>
               <Stat label={t("w.home.cockpit.strIndex")} value={`${state.hpi.components.strength}`} />
               <Stat label={t("w.home.cockpit.lifts")} value={`${recap.lifts}`} />
               <Stat label={t("w.home.today.topMuscle")} value={recap.topMuscle ? cap(recap.topMuscle.muscle) : "—"} />
             </div>
-            {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 14 }}>{state.drivers[0].detail}</div>}
+            {state.drivers[0] && <div style={{ fontSize: fs.body, lineHeight: 1.6, marginTop: 16 }}>{state.drivers[0].detail}</div>}
           </>
         )}
         {tab === "endurance" && (
           totals.efforts > 0 ? (
             <>
-              <div style={{ display: "flex", gap: 22 }}>
+              <div style={{ display: "flex", gap: 20 }}>
                 <Stat label={t("w.home.cockpit.efforts")} value={`${totals.efforts}`} />
                 <Stat label={t("w.home.cockpit.km")} value={totals.distanceKm.toLocaleString()} />
                 <Stat label={t("w.home.cockpit.min")} value={totals.minutes.toLocaleString()} />
@@ -653,7 +653,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
         {tab === "velocity" && (
           bestProfile ? (
             <>
-              <div style={{ display: "flex", gap: 22 }}>
+              <div style={{ display: "flex", gap: 20 }}>
                 <Stat label={bestProfile[0]} value={`${Math.round(bestProfile[1].estimated1rm)}kg`} />
                 <Stat label="R²" value={bestProfile[1].r2.toFixed(2)} />
                 <Stat label={t("w.home.cockpit.points")} value={`${bestProfile[1].n}`} />
@@ -783,9 +783,9 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: "0 0 6px" }}>{t("w.home.cockpit.teaseTitle")}</h1>
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, color: C("ash") }}>{t("w.home.cockpit.teaseSub1")}<b style={{ color: C("lime") }}>{t("w.home.cockpit.teaseSub2")}</b>{t("w.home.cockpit.teaseSub3")}</p>
-      <div style={{ display: "grid", gap: space.ms, marginTop: 14 }}>
+      <div style={{ display: "grid", gap: space.ms, marginTop: 16 }}>
         {TEASE.map((s) => (
-          <div key={s.key} style={{ ...CARD, padding: 18, opacity: 0.75, display: "flex", alignItems: "center", gap: space.md }}>
+          <div key={s.key} style={{ ...CARD, padding: 16, opacity: 0.75, display: "flex", alignItems: "center", gap: space.md }}>
             <span style={{ width: 9, height: 9, borderRadius: 5, background: C("lime") }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</div>
@@ -795,7 +795,7 @@ function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
           </div>
         ))}
       </div>
-      <button onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "16px 28px", marginTop: 18, cursor: "pointer" }}>
+      <button onClick={onUnlock} style={{ fontWeight: 700, fontSize: fs.subtitle, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "16px 28px", marginTop: 16, cursor: "pointer" }}>
         {paid ? t("w.home.cockpit.switchToFull") : t("w.home.cockpit.upgradeToFull")}
       </button>
     </div>

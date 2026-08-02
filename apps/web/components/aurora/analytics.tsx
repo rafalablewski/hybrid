@@ -20,7 +20,7 @@ import type { RosterRow } from "@/lib/use-roster";
  * and the brand accents — a real dashboard, not the token-skinned classic grid.
  */
 const C = (v: string) => `var(--color-${v})`;
-const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 };
+const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 };
 const grid: CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: space.lg };
 const chartTip = { background: colors.ink2, border: `1px solid ${colors.line}`, borderRadius: 16, fontFamily: "var(--font-mono)", fontSize: fs.caption } as const;
 const mono = { fontFamily: "var(--font-mono)" } as const;

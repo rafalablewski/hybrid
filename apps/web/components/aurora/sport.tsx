@@ -49,7 +49,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
         {t("w.train.sport.intro")}
       </p>
 
-      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 14 }}>
+      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 16 }}>
         {SPORT_NAMES.map((s) => {
           const on = s === sport;
           return (
@@ -91,7 +91,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: ".08em",
-                padding: "8px 18px",
+                padding: "8px 16px",
                 borderRadius: 999,
                 cursor: "pointer",
                 border: `1px solid ${on ? C("lime") : C("line")}`,
@@ -113,7 +113,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{meta.family} – {LEVELS[levelIdx]}</div>
           </div>
         </div>
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 16 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{meta.marker.label}</div>
           <input
             value={markers[sport] ?? ""}
@@ -124,7 +124,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
               fontSize: fs.bodyLg,
               width: "100%",
               marginTop: 6,
-              padding: "12px 14px",
+              padding: "12px 16px",
               borderRadius: 16,
               background: C("ink"),
               color: C("chalk"),
@@ -148,7 +148,7 @@ export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: 
               color: "var(--on-accent)",
               border: "none",
               borderRadius: 999,
-              padding: "12px 18px",
+              padding: "12px 16px",
               cursor: "pointer",
             }}
           >

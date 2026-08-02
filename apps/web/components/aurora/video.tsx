@@ -26,7 +26,7 @@ export default function AuroraVideo() {
         <p style={{ fontSize: fs.body, lineHeight: 1.5, marginTop: 6 }}>{t("w.analyze.vid.intelBody")}</p>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 12, color: C("ash") }}>{t("w.analyze.vid.captureNote")}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
         {analyses.length === 0 && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.analyze.vid.empty")}</span>}
         {analyses.map((a) => (
           <div key={a.id} style={card}>

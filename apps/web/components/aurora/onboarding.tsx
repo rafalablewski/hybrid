@@ -65,7 +65,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
         ))}
       </div>
 
-      <div style={{ marginTop: 22 }}>
+      <div style={{ marginTop: 24 }}>
         {q ? (
           <Step title={q.title} sub={q.subtitle}>
             <QuestionBody q={q} answers={answers} setAnswer={setAnswer} personaChoice={personaChoice} C={C} />
@@ -152,7 +152,7 @@ function QuestionBody({
     const value = (answers[q.key] as string) ?? "";
     return (
       <input value={value} onChange={(e) => setAnswer(q.key, e.target.value)}
-        style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, width: "100%", padding: "12px 14px", borderRadius: 16, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }} />
+        style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, width: "100%", padding: "12px 16px", borderRadius: 16, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" }} />
     );
   }
 
@@ -185,7 +185,7 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
     <div>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0, letterSpacing: "-.01em" }}>{title}</h1>
       {sub ? <p style={{ color: C("ash"), fontSize: fs.bodyLg, marginTop: 8 }}>{sub}</p> : null}
-      <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: space.ms }}>{children}</div>
+      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: space.ms }}>{children}</div>
     </div>
   );
 }

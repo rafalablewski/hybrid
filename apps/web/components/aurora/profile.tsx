@@ -234,7 +234,7 @@ export default function AuroraProfile({
   }, [followersN, followingN, rank, t]);
 
   const sectionHead = (title: string, action?: string) => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "26px 2px 12px" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 2px 12px" }}>
       {/* Display face per the SectionHead standard — Mincho under Kyoto Hour. */}
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</div>
       {action && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{action}</div>}
@@ -247,7 +247,7 @@ export default function AuroraProfile({
       {socialP && !sComplete && (
         <button
           onClick={go("settings", "/settings")}
-          style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, color-mix(in srgb, var(--color-lime) 12%, transparent), transparent)", borderRadius: 28, padding: 16, display: "flex", alignItems: "center", gap: 14, color: C("chalk") }}
+          style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 16, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, color-mix(in srgb, var(--color-lime) 12%, transparent), transparent)", borderRadius: 28, padding: 16, display: "flex", alignItems: "center", gap: 16, color: C("chalk") }}
         >
           <span style={{ width: 44, height: 44, borderRadius: 12, background: C("lime"), display: "grid", placeItems: "center", flexShrink: 0 }}>
             <AuroraIcon name="user-circle" size={22} color={C("ink")} />
@@ -305,7 +305,7 @@ export default function AuroraProfile({
       </div>
 
       {/* SOCIAL COUNTS — followers / following / (derived) friends rank. */}
-      <div style={{ display: "flex", gap: 22, marginTop: 14, padding: "0 4px" }}>
+      <div style={{ display: "flex", gap: 20, marginTop: 16, padding: "0 4px" }}>
         {socialCounts.map((c) => (
           <div key={c.k} style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
             <span style={{ fontWeight: 900, fontSize: 17 }}>{c.n}</span>
@@ -351,9 +351,9 @@ export default function AuroraProfile({
         <div style={{ marginTop: 16 }}>
           {/* THIS WEEK — a current-focus snapshot above the lifetime tiles. */}
           {thisWeek.count > 0 && (
-            <div style={{ border: `1px solid ${C("line")}`, borderRadius: 16, background: C("ink2"), padding: "12px 14px", marginBottom: space.sm }}>
+            <div style={{ border: `1px solid ${C("line")}`, borderRadius: 16, background: C("ink2"), padding: "12px 16px", marginBottom: space.sm }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.ov-tw")}</div>
-              <div style={{ display: "flex", gap: 26, marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 24, marginTop: 8 }}>
                 {[{ v: String(thisWeek.count), k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
                   <div key={s.k} style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                     <span style={{ fontWeight: 900, fontSize: 19, letterSpacing: "-.02em" }}>{s.v}</span>
@@ -385,7 +385,7 @@ export default function AuroraProfile({
         <div style={{ marginTop: 16 }}>
           {prs.length ? (
             prs.map(([lift, wt]) => (
-              <div key={lift} style={{ ...card, padding: "12px 14px", marginBottom: 8 }}>
+              <div key={lift} style={{ ...card, padding: "12px 16px", marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <AuroraIcon name="trophy" size={fs.subtitle + 2} color={C("chalk")} />
@@ -740,7 +740,7 @@ function HighlightGrid({
         <div data-hl-keep style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: 16, zIndex: 60, pointerEvents: "none" }}>
           <button
             onClick={() => setEditMode(false)}
-            style={{ pointerEvents: "auto", background: C("chalk"), color: C("ink"), border: "none", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", padding: "14px 40px", borderRadius: 16, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.5)" }}
+            style={{ pointerEvents: "auto", background: C("chalk"), color: C("ink"), border: "none", fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", padding: "16px 40px", borderRadius: 16, cursor: "pointer", boxShadow: "0 10px 30px rgba(0,0,0,.5)" }}
           >
             {t("w.account.profile.ov-done")}
           </button>

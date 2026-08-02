@@ -59,7 +59,7 @@ export default function LeavePlanSection({ forPlanId }: { forPlanId: string | nu
     <div
       role="radio" aria-checked={selected} tabIndex={0} onClick={pick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } }}
-      style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 16, cursor: "pointer", background: selected ? `color-mix(in srgb, ${tone} 10%, transparent)` : C("ink"), border: `1px solid ${selected ? tone : C("line")}` }}
+      style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 16px", borderRadius: 16, cursor: "pointer", background: selected ? `color-mix(in srgb, ${tone} 10%, transparent)` : C("ink"), border: `1px solid ${selected ? tone : C("line")}` }}
     >
       <span aria-hidden style={{ fontWeight: 800, color: tone, width: 16 }}>{selected ? "✓" : ""}</span>
       <div>
@@ -81,19 +81,19 @@ export default function LeavePlanSection({ forPlanId }: { forPlanId: string | nu
         <div style={card}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red"), marginBottom: 10 }}>{t("w.train.plans.leavePlan")}</div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), margin: 0 }}>{t("w.train.plans.leaveExplain")}</p>
-          <div style={{ display: "grid", gap: space.sm, marginTop: 14 }} role="radiogroup" aria-label={t("w.train.plans.leavePlan")}>
+          <div style={{ display: "grid", gap: space.sm, marginTop: 16 }} role="radiogroup" aria-label={t("w.train.plans.leavePlan")}>
             {option(!wipe, C("lime"), t("w.train.plans.leaveKeep"), t("w.train.plans.leaveKeepSub"), () => setWipe(false))}
             {option(wipe, C("red"), t("w.train.plans.leaveWipe"), t("w.train.plans.leaveWipeSub"), () => setWipe(true))}
           </div>
           {wipe && (
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 16 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginBottom: 6 }}>{t("w.train.plans.leaveTypeDelete")}</div>
               <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="DELETE" autoCapitalize="characters" style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: 12, background: C("ink"), color: C("chalk"), border: `1px solid ${armed ? C("red") : C("line")}`, outline: "none" }} />
             </div>
           )}
           {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.leaveError")}</div>}
           <div style={{ display: "flex", gap: space.ms, marginTop: 16, alignItems: "center" }}>
-            <button onClick={leave} disabled={!armed || busy} style={{ fontWeight: 800, fontSize: fs.note, color: "#fff", background: armed && !busy ? C("red") : `color-mix(in srgb, ${C("red")} 33%, transparent)`, border: "none", borderRadius: 999, padding: "12px 22px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
+            <button onClick={leave} disabled={!armed || busy} style={{ fontWeight: 800, fontSize: fs.note, color: "#fff", background: armed && !busy ? C("red") : `color-mix(in srgb, ${C("red")} 33%, transparent)`, border: "none", borderRadius: 999, padding: "12px 20px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
               {busy ? t("w.train.plans.leaving") : wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}
             </button>
             <button onClick={() => { setOpen(false); setWipe(false); setConfirmText(""); setError(false); }} style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), background: "none", border: "none", cursor: "pointer" }}>

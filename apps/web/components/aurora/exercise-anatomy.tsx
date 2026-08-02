@@ -37,7 +37,7 @@ function MuscleBar({ m, t }: { m: MuscleActivation; t: (k: string) => string }) 
 function Group({ label, rows, t }: { label: string; rows: MuscleActivation[]; t: (k: string) => string }) {
   if (rows.length === 0) return null;
   return (
-    <div style={{ marginTop: 18 }}>
+    <div style={{ marginTop: 16 }}>
       <div style={{ ...monoRow(9.5, C("ash")), letterSpacing: 1.2, textTransform: "uppercase" }}>{label}</div>
       {rows.map((m) => <MuscleBar key={m.muscle} m={m} t={t} />)}
     </div>
@@ -52,7 +52,7 @@ function AnatomyBody({ a, name, active, t }: { a: ExerciseAnatomy; name: string;
       {/* the movement demo (swappable: procedural skeleton today, professional
           sketch later — see exercise-animation.tsx). Loops only while the sheet
           is open. */}
-      <div style={{ marginTop: 4, borderRadius: 28, border: `1px solid ${C("line")}`, background: C("ink2"), padding: "10px 14px", display: "flex", justifyContent: "center" }}>
+      <div style={{ marginTop: 4, borderRadius: 28, border: `1px solid ${C("line")}`, background: C("ink2"), padding: "10px 16px", display: "flex", justifyContent: "center" }}>
         <div style={{ width: "58%", maxWidth: 220 }}>
           <AuroraExerciseAnimation name={name} active={active} />
         </div>
@@ -79,7 +79,7 @@ function AnatomyBody({ a, name, active, t }: { a: ExerciseAnatomy; name: string;
       </div>
 
       {/* how it's done */}
-      <div style={{ marginTop: 22 }}>
+      <div style={{ marginTop: 24 }}>
         <div style={{ ...monoRow(9.5, C("ash")), letterSpacing: 1.2, textTransform: "uppercase" }}>{t("w.analyze.exp.anatomy.howto")}</div>
         <ol style={{ margin: "12px 0 0", padding: 0, listStyle: "none" }}>
           {a.cues.map((cue, i) => (
@@ -139,7 +139,7 @@ function BottomSheet({ open, onClose, title, meta, children }: { open: boolean; 
         onClick={(e) => e.stopPropagation()}
         style={{ width: "100%", maxWidth: 560, maxHeight: "86vh", overflowY: "auto", background: C("card"), borderTop: `1px solid ${C("line")}`, borderRadius: "26px 26px 0 0", boxShadow: "0 -20px 50px -20px rgba(0,0,0,.6)", padding: "10px 20px 30px", transform: shown ? "translateY(0)" : "translateY(101%)", transition: "transform .38s cubic-bezier(.32,.72,0,1)", fontFamily: "var(--font-display)", color: C("chalk") }}
       >
-        <div aria-hidden style={{ width: 38, height: 4, borderRadius: 3, background: C("line"), margin: "2px auto 14px" }} />
+        <div aria-hidden style={{ width: 38, height: 4, borderRadius: 3, background: C("line"), margin: "2px auto 16px" }} />
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
             <h2 style={{ fontWeight: 900, fontSize: 20, letterSpacing: -0.3, margin: 0, color: C("chalk") }}>{title}</h2>
@@ -147,7 +147,7 @@ function BottomSheet({ open, onClose, title, meta, children }: { open: boolean; 
           </div>
           <button ref={closeRef} onClick={onClose} style={{ ...monoRow(11, C("ash")), background: "none", border: "none", cursor: "pointer", padding: "2px 2px 2px 12px", flexShrink: 0 }}>✕</button>
         </div>
-        <div style={{ marginTop: 14 }}>{children}</div>
+        <div style={{ marginTop: 16 }}>{children}</div>
       </div>
     </div>
   );

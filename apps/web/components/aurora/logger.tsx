@@ -479,7 +479,7 @@ export default function AuroraLogger({
         <button
           onClick={handlePause}
           title={paused ? t("workout.go") : t("workout.paused")}
-          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: paused ? C("ink") : C("amber"), background: paused ? C("amber") : "transparent", border: `1px solid ${C("amber")}`, borderRadius: 999, padding: "5px 14px", cursor: "pointer" }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: paused ? C("ink") : C("amber"), background: paused ? C("amber") : "transparent", border: `1px solid ${C("amber")}`, borderRadius: 999, padding: "5px 16px", cursor: "pointer" }}
         >
           {paused ? "▶" : "❚❚"}
         </button>
@@ -493,7 +493,7 @@ export default function AuroraLogger({
         const accent = over ? C("lime") : C("ash");
         const clock = restTarget == null ? mmss(restNow) : over ? `+${mmss(restNow - restTarget)}` : `${mmss(remaining!)} ${t("workout.restLeft")}`;
         return (
-          <div style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`, borderRadius: 16, padding: "10px 14px", marginBottom: 16 }}>
+          <div style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`, borderRadius: 16, padding: "10px 16px", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
               <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: accent }}>
                 {over ? t("workout.restDone") : t("workout.resting")} – {clock}
@@ -518,7 +518,7 @@ export default function AuroraLogger({
 
       {/* Live in-session scoreboard — appears as soon as the first set lands. */}
       {live.sets > 0 && (
-        <div style={{ display: "flex", gap: space.sm, marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: space.sm, marginBottom: 16 }}>
           <LiveStat label={t("w.train.logger.liveExercises")} value={String(live.exercises)} />
           <LiveStat label={t("w.train.logger.liveSets")} value={String(live.sets)} />
           <LiveStat label={t("w.train.logger.liveVolume")} value={fmtTonnage(live.volume, prefs.units)} />
@@ -545,14 +545,14 @@ export default function AuroraLogger({
             setLoggerPref("restTimer", next);
             if (!next) setRestSince(null);
           }}
-          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: prefs.restTimer ? C("blue") : C("ash"), background: "none", border: `1px solid ${prefs.restTimer ? C("blue") : C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: prefs.restTimer ? C("blue") : C("ash"), background: "none", border: `1px solid ${prefs.restTimer ? C("blue") : C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}
           title={t("loggerPrefs.restTimer")}
         >
           ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
         </button>
         <button
           onClick={() => setLoggerPref("detailed", !prefs.detailed)}
-          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}
           title={t("w.train.logger.toggleRpeVel")}
         >
           {prefs.detailed ? t("w.train.logger.detailed") : t("w.train.logger.simple")}
@@ -560,7 +560,7 @@ export default function AuroraLogger({
         {prefs.detailed && (
           <button
             onClick={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
-            style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}
+            style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}
             title={t("w.train.logger.logEffortAs")}
           >
             {prefs.rpeAsRir ? "RIR" : "RPE"}
@@ -575,7 +575,7 @@ export default function AuroraLogger({
           builder): pull today's AI-prescribed session, or load a saved routine.
           Hidden once you've added/seeded blocks. */}
       {blocks.length === 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: 14 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: 16 }}>
           <button onClick={loadPrescribed} style={isAthlete ? pill("lime") : { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: "var(--premium-accent-text)", background: "color-mix(in srgb, var(--premium-accent) 14%, transparent)", border: "1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>
             {!isAthlete
               ? `✦ ${t("w.home.today.unlockFullBtn")}`
@@ -964,7 +964,7 @@ function BodyweightNudge({ units }: { units: WeightUnit }) {
     }
   };
   return (
-    <div style={{ background: `color-mix(in srgb, ${a} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${a} 40%, transparent)`, borderRadius: 16, padding: "12px 14px", marginBottom: 14 }}>
+    <div style={{ background: `color-mix(in srgb, ${a} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${a} 40%, transparent)`, borderRadius: 16, padding: "12px 16px", marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: a }}>⚖️ {t("w.train.logger.bwNudgeTitle")}</span>
         <button onClick={() => setDismissed(true)} aria-label={t("w.train.logger.bwNudgeDismiss")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "transparent", border: "none", cursor: "pointer", padding: 4 }}>✕</button>
@@ -986,7 +986,7 @@ function BodyweightNudge({ units }: { units: WeightUnit }) {
         <button
           onClick={save}
           disabled={state === "saving"}
-          style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.caption, color: "var(--on-accent)", background: a, border: "none", borderRadius: 999, padding: "10px 18px", cursor: state === "saving" ? "default" : "pointer", opacity: state === "saving" ? 0.6 : 1, whiteSpace: "nowrap" }}
+          style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.caption, color: "var(--on-accent)", background: a, border: "none", borderRadius: 999, padding: "10px 16px", cursor: state === "saving" ? "default" : "pointer", opacity: state === "saving" ? 0.6 : 1, whiteSpace: "nowrap" }}
         >
           {state === "saving" ? t("w.train.logger.bwNudgeSaving") : state === "saved" ? t("w.train.logger.bwNudgeSaved") : t("w.train.logger.bwNudgeSave")}
         </button>

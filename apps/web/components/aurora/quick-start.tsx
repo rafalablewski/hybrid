@@ -61,14 +61,14 @@ export default function QuickStartSheet({
   return (
     <Sheet open={open} onClose={onClose} title={t("w.home.quickStart.title")} sub={t("w.home.quickStart.sub")}>
       {routines.length === 0 ? (
-        <div style={{ padding: "18px 2px 8px" }}>
+        <div style={{ padding: "16px 2px 8px" }}>
           <div style={{ fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{t("w.home.quickStart.empty")}</div>
           <div style={{ fontSize: fs.note, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{t("w.home.quickStart.emptySub")}</div>
         </div>
       ) : (
         <>
           {favourites.length > 0 && (
-            <div style={{ marginBottom: rediscover.length > 0 ? 18 : 4 }}>
+            <div style={{ marginBottom: rediscover.length > 0 ? 16 : 4 }}>
               <SubHead label={`★ ${t("w.home.quickStart.favourites")}`} />
               {/* Favourites rail — snap slider that RESPECTS the sheet padding
                   (no negative-margin bleed): a rail hosted in a Sheet honours its
@@ -222,7 +222,7 @@ function FavouriteCard({ r, t, onLaunch, onToggleFav }: { r: QuickRoutine; t: (k
         textAlign: "left",
         border: `1px solid ${C("line")}`,
         borderRadius: 28,
-        padding: 14,
+        padding: 16,
         cursor: "pointer",
         color: C("chalk"),
         background: `radial-gradient(120% 80% at 90% -12%, color-mix(in srgb, ${fill} 16%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 6%, ${C("ink2")}), ${C("ink2")})`,
@@ -232,7 +232,7 @@ function FavouriteCard({ r, t, onLaunch, onToggleFav }: { r: QuickRoutine; t: (k
         <Star on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onClick={onToggleFav} />
       </div>
       <span aria-hidden style={{ fontSize: 16, lineHeight: 1, color: text }}>{glyph}</span>
-      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, letterSpacing: "-.01em", marginTop: 10, paddingRight: 18, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, letterSpacing: "-.01em", marginTop: 10, paddingRight: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), marginTop: 5 }}>{metaLine(r.blocks, t)}</div>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: text, marginTop: 12, display: "block" }}><CtaLabel size={12}>{`${t("w.home.quickStart.start")} →`}</CtaLabel></span>
     </button>

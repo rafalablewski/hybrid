@@ -528,7 +528,7 @@ export default function AuroraToday({
       : null;
 
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 12, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
   // The shell every hub tab wears: the profile header, then the three pills.
   // Hoisted so the non-dashboard tabs render the SAME masthead chrome without
@@ -718,7 +718,7 @@ export default function AuroraToday({
            training, so a plan-less regular gets the calendar from their first
            session instead of the chooser forever. The chooser demotes to slim
            rows under an Explore-standard "Add structure" head. */
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 16 }}>
           <div ref={railSourceCard}>
             <AuroraLogbookRail
               sessions={sessions}
@@ -855,7 +855,7 @@ export default function AuroraToday({
               <button
                 onClick={() => onStart(plan.blocks, `${plan.planName} – ${plan.day}`)}
                 className="start-glow"
-                style={{ marginTop: 14, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
+                style={{ marginTop: 16, width: "100%", display: "block", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, cursor: "pointer" }}
               >
                 <CtaLabel>{t("w.home.today.start")}</CtaLabel>
               </button>
@@ -1010,7 +1010,7 @@ export default function AuroraToday({
         onClick={() => (isAthlete ? (onNavigate ? onNavigate("performance") : router.push("/performance")) : upsell("today-cockpit"))}
         aria-label={`${t("w.home.today.goFull")} – ${t("w.home.today.goFullRowSub")}`}
         className="pressable"
-        style={{ display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 14, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", cursor: "pointer", textAlign: "left", color: C("chalk") }}
+        style={{ display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 16, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", cursor: "pointer", textAlign: "left", color: C("chalk") }}
       >
         <span aria-hidden style={{ width: 32, height: 32, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "var(--premium-accent-text)", flex: "0 0 32px" }}>✦</span>
         <span style={{ flex: 1 }}>
@@ -1036,7 +1036,7 @@ export default function AuroraToday({
           your goal" is a subtitle, not a meta value, and at 30-odd characters in
           PL/DE it would collide with the title on a phone. Same anatomy the
           rail's own built-in header uses. */}
-      <div style={{ margin: "26px 0 12px" }}>
+      <div style={{ margin: "24px 0 12px" }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.rowCoach")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</div>
       </div>
@@ -1087,7 +1087,7 @@ export default function AuroraToday({
             ))}
           </div>
         )}
-        <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 14, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}><AuroraIcon name="calendar" size={15} color={C("ash")} /> {t("w.home.today.doneCalendar")}</button>
+        <button onClick={() => { setDoneOpen(false); if (onNavigate) onNavigate("calendar"); else router.push("/calendar"); }} style={{ marginTop: 16, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}><AuroraIcon name="calendar" size={15} color={C("ash")} /> {t("w.home.today.doneCalendar")}</button>
       </Sheet>
     </div>
   );
@@ -1135,7 +1135,7 @@ function StructureCard({ glyph, accent, title, sub, cta, onClick }: { glyph: str
       onClick={onClick}
       aria-label={title}
       className="pressable"
-      style={{ flex: "0 0 min(72%, 300px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 18, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
+      style={{ flex: "0 0 min(72%, 300px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left", background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, ${fill} 13%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${fill} 5%, ${C("ink2")}), ${C("ink2")})`, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, cursor: "pointer", color: C("chalk"), boxShadow: "0 6px 22px -12px rgba(0,0,0,.55)" }}
     >
       <span aria-hidden style={{ fontSize: 15, lineHeight: 1, color: text }}>{glyph}</span>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.02em", marginTop: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{title}</span>
@@ -1201,7 +1201,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
   const copy = alsoTodayCopy({ doneCount, isToday });
   const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
   return (
-    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 18, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
       {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
       <button type="button" onClick={onDone} aria-label={`${doneCount} ${doneLabel}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, background: "none", border: "none", padding: "6px 0 4px", cursor: "pointer", textAlign: "left", color: C("chalk") }}>
         {/* a status count, not a hero — fs.display keeps it below the masthead
@@ -1214,7 +1214,7 @@ function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw,
         <span style={{ color: quiet, flexShrink: 0, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
       </button>
       {/* rows + the ghost action row — one vocabulary, separated by space alone */}
-      <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 4 }}>
         {rows.map((s) => {
           const onPlanRow = planIds.has(s.id);
           return (
@@ -1440,7 +1440,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
     }
   };
   return (
-    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 18, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same
@@ -1483,7 +1483,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
             reading must never outrank the day's Start action */}
         <span style={{
           fontFamily: "var(--font-heading)", fontWeight: shownFeeling ? 800 : 300, fontSize: fs.display, lineHeight: .96,
-          letterSpacing: shownFeeling ? "-.04em" : "-.01em",
+          letterSpacing: shownFeeling ? "-.03em" : "-.01em",
           color: shownFeeling ? `var(--${READINESS_FACE[shownFeeling].accent}-text)` : `color-mix(in srgb, ${C("ash")} 55%, transparent)`,
         }}>
           {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}
@@ -1533,7 +1533,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
           was given at, and how long after training that was. The one training
           is prescribed off is marked; none of them is ever overwritten. */}
       {dayReads.length > 0 && (
-        <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
           {/* THE DOOR. Shut by default — the hero is what the card is for, and a
               list under it is the thing that made the card grow in the first
               place. The count sits on the door so the day's shape is legible
@@ -1586,7 +1586,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
         <>
           <button
             onClick={() => setFollowUpOpen(true)}
-            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 14, padding: "12px 14px", borderRadius: 16, background: done.complete || asking ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete || asking ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
+            style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", marginTop: 16, padding: "12px 16px", borderRadius: 16, background: done.complete || asking ? "transparent" : `color-mix(in srgb, var(--lime-text) 7%, transparent)`, border: `1px solid ${done.complete || asking ? C("line") : `color-mix(in srgb, var(--lime-text) 26%, transparent)`}`, cursor: "pointer", color: C("chalk") }}
           >
             <span style={{ flex: 1 }}>
               <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.body }}>

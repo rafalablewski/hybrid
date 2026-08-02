@@ -50,7 +50,7 @@ export default function AuroraAskCoach() {
           background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`,
           border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`,
           borderRadius: 999,
-          padding: "10px 18px",
+          padding: "10px 16px",
           cursor: busy ? "default" : "pointer",
           opacity: busy ? 0.6 : 1,
         }}

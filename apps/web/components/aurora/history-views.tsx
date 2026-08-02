@@ -136,7 +136,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
           <button
             key={v.id}
             onClick={() => onChange(v.id)}
-            style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 14px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
+            style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 16px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
           >
             {t(v.labelKey)}
           </button>
@@ -297,7 +297,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
             </span>
           </div>
         ) : (
-          <div key={item.dateKey} style={{ position: "relative", marginBottom: 18 }}>
+          <div key={item.dateKey} style={{ position: "relative", marginBottom: 16 }}>
             <div style={{ position: "absolute", left: -56, top: 0, width: 48, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <span style={{ width: item.level >= 3 ? 13 : 10, height: item.level >= 3 ? 13 : 10, borderRadius: "50%", background: item.shape === "cardio" ? C("blue") : C("lime"), border: `3px solid ${C("ink")}`, outline: `2px solid ${item.shape === "cardio" ? C("blue") : item.level >= 3 ? C("lime") : `color-mix(in srgb, ${C("lime")} 55%, transparent)`}`, marginBottom: 5, boxSizing: "content-box" }} />
               <span style={{ fontFamily: MONO, fontSize: fs.nano, color: C("ash"), textAlign: "center", lineHeight: 1.3, textTransform: "uppercase" }}>
@@ -337,7 +337,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
   const mini = (label: string, value: string) => (
-    <div style={{ ...card, flex: 1, padding: 14 }}>
+    <div style={{ ...card, flex: 1, padding: 16 }}>
       <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
       <div style={{ fontFamily: MONO, fontVariantNumeric: "tabular-nums", fontSize: fs.heading, letterSpacing: "-.02em", marginTop: 4 }}>{value}</div>
     </div>
@@ -370,7 +370,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
           <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.analyze.stats.sessions")}</span>
           <span style={{ fontFamily: MONO, fontSize: fs.micro, color: C("ash") }}>{buckets.total} {t("w.analyze.stats.inRange")} {t(TREND_RANGES.find((r) => r.id === range)!.key).toLowerCase()}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 14, gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 118, marginTop: 16, gap: 6 }}>
           {buckets.buckets.map((b, i) => (
             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: space.xs }}>
               <div style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, background: i === buckets.peakIndex ? C("lime") : C("line") }} />

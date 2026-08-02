@@ -48,7 +48,7 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
 
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.nano }}>{label}</span>;
-  const pill = (border: string, fill: boolean): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: fill ? C("lime") : "transparent", color: fill ? C("ink") : C("chalk"), border: `1px solid ${border}`, borderRadius: 999, padding: "10px 18px", cursor: "pointer", display: "inline-block", textDecoration: "none" });
+  const pill = (border: string, fill: boolean): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, background: fill ? C("lime") : "transparent", color: fill ? C("ink") : C("chalk"), border: `1px solid ${border}`, borderRadius: 999, padding: "10px 16px", cursor: "pointer", display: "inline-block", textDecoration: "none" });
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -68,7 +68,7 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
             {t("w.account.connections.sync-last")} {new Date(conn.lastSyncAt).toLocaleString()}
           </div>
         ) : null}
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 16 }}>
           {p?.auth === "native" ? (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.connections.native")}</span>
           ) : p?.auth === "team" ? (
@@ -85,7 +85,7 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
         </div>
       </div>
 
-      <div style={{ ...card, marginTop: 14 }}>
+      <div style={{ ...card, marginTop: 16 }}>
         <div style={{ fontWeight: 800, fontSize: fs.title }}>{t("w.account.connections.recent")}</div>
         {signals.length === 0 ? (
           <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 10 }}>{t("w.account.connections.recent-empty")}</div>

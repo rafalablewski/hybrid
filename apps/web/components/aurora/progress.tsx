@@ -60,7 +60,7 @@ export default function AuroraProgress() {
     load();
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 22 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const notice = (color: string, body: React.ReactNode) => (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={{ ...card, color }}>{body}</div>
@@ -75,7 +75,7 @@ export default function AuroraProgress() {
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.recovery.progress.title")}</h1>
 
       <div style={{ ...card, marginTop: 16 }}>
-        <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 14px" }}>{t("w.recovery.progress.intro")}</p>
+        <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, margin: "0 0 16px" }}>{t("w.recovery.progress.intro")}</p>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
         <button onClick={() => fileRef.current?.click()} disabled={busy}
           style={{ display: "flex", alignItems: "center", gap: space.sm, fontWeight: 700, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "12px 24px", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1 }}>

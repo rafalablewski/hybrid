@@ -144,7 +144,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
   const archivedToggle = (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.analyze.hist.title")}</h1>
-      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? "var(--lime-text)" : C("ash"), background: "none", border: `1px solid ${showArchived ? C("lime") : C("line")}`, borderRadius: 999, padding: "6px 14px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
+      <button onClick={toggleArchived} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: showArchived ? "var(--lime-text)" : C("ash"), background: "none", border: `1px solid ${showArchived ? C("lime") : C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}>{showArchived ? t("w.analyze.hist.backToHistory") : t("w.analyze.hist.archivedToggle")}</button>
     </div>
   );
 
@@ -182,7 +182,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
                   <div style={{ fontWeight: 800, fontSize: fs.title }}>{s.title}</div>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{fmtDate(s.startedAt)}</span>
                 </div>
-                <div style={{ display: "flex", gap: space.sm, margin: "10px 0 14px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: space.sm, margin: "10px 0 16px", flexWrap: "wrap" }}>
                   {/* Sport-aware headline chip — a run/match has no tonnage, so
                       cardio sessions read distance/time; conditioning-only
                       sessions fall back to summed minutes (matches the

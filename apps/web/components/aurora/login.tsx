@@ -147,7 +147,7 @@ export default function AuroraLogin() {
       <GlassField />
       <div style={{ width: "100%", maxWidth: 400, position: "relative", zIndex: 1 }}>
         {/* brand mark */}
-        <div style={{ width: 60, height: 60, borderRadius: 30, border: `1.5px solid ${LINE}`, display: "grid", placeItems: "center", marginBottom: 22 }}>
+        <div style={{ width: 60, height: 60, borderRadius: 30, border: `1.5px solid ${LINE}`, display: "grid", placeItems: "center", marginBottom: 24 }}>
           <span style={{ ...disp, fontWeight: 900, fontSize: fs.display }}>H<span style={{ color: txt(LIME) }}>.</span></span>
         </div>
 
@@ -162,14 +162,14 @@ export default function AuroraLogin() {
           </>
         ) : (
           <>
-            <h1 style={{ ...disp, fontWeight: 900, fontSize: 32, letterSpacing: "-.02em", margin: "0 0 26px", lineHeight: 1.1 }}>
+            <h1 style={{ ...disp, fontWeight: 900, fontSize: 32, letterSpacing: "-.02em", margin: "0 0 24px", lineHeight: 1.1 }}>
               {isSignup ? t("w.account.login.signup-title") : t("w.account.login.signin-title")}
             </h1>
 
             {!live && (
               <>
                 <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }}>{t("w.account.login.demo-label")}</Mono>
-                <div style={{ display: "flex", gap: space.sm, marginBottom: 18 }}>
+                <div style={{ display: "flex", gap: space.sm, marginBottom: 16 }}>
                   {ROLE_INFO.map((r) => {
                     const on = role === r.id;
                     return (
@@ -216,7 +216,7 @@ export default function AuroraLogin() {
             <button onClick={() => router.push("/")} style={{ ...linkBtn, marginTop: 8 }}><Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>← {t("w.account.login.back")}</Mono></button>
           </>
         )}
-        <div style={{ marginTop: 22, textAlign: "center" }}>
+        <div style={{ marginTop: 24, textAlign: "center" }}>
           <a href="/privacy" style={{ ...mono, fontSize: fs.caption, color: ASH, textDecoration: "underline" }}>{t("legal.privacy")}</a>
           <span style={{ ...mono, fontSize: fs.caption, color: ASH, margin: "0 8px" }}>{t("legal.and")}</span>
           <a href="/terms" style={{ ...mono, fontSize: fs.caption, color: ASH, textDecoration: "underline" }}>{t("legal.terms")}</a>
@@ -244,8 +244,8 @@ function Field({ icon, trailing, onTrailingClick, trailingActive, children }: { 
     </div>
   );
 }
-const roundField = { ...mono, fontSize: fs.note, width: "100%", padding: "16px 18px", borderRadius: 16, background: INK2, color: CHALK, border: `1px solid ${LINE}`, marginBottom: 12, outline: "none" } as const;
+const roundField = { ...mono, fontSize: fs.note, width: "100%", padding: "16px 16px", borderRadius: 16, background: INK2, color: CHALK, border: `1px solid ${LINE}`, marginBottom: 12, outline: "none" } as const;
 const bareInput = { ...mono, fontSize: fs.note, flex: 1, padding: "16px 0", background: "transparent", color: CHALK, border: "none", outline: "none" } as const;
 const lightPill = { ...disp, fontWeight: 800, fontSize: fs.subtitle, width: "100%", padding: 16, borderRadius: 999, cursor: "pointer", border: "none", background: CHALK, color: ON_ACCENT } as const;
 const softPill = { ...disp, fontWeight: 700, fontSize: fs.note, padding: 16, borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK } as const;
-const linkBtn = { display: "block", width: "100%", textAlign: "center" as const, marginTop: 22, background: "none", border: "none", cursor: "pointer" };
+const linkBtn = { display: "block", width: "100%", textAlign: "center" as const, marginTop: 24, background: "none", border: "none", cursor: "pointer" };

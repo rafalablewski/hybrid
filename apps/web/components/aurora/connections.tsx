@@ -42,7 +42,7 @@ export default function AuroraConnections() {
       <h1 style={{ fontWeight: 900, fontSize: fs.display, margin: 0 }}>{t("w.account.connections.title")}</h1>
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>{t("w.account.connections.intro")}</p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))", gap: 14, marginTop: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))", gap: 16, marginTop: 16 }}>
         {providers.map((p) => {
           const c = connected(p.id);
           return (

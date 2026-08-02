@@ -183,7 +183,7 @@ function Card({ children }: { children: React.ReactNode }) {
 // The all-prose week card's header (endurance weeks keep the one-card layout).
 function WeekHeader({ title, right }: { title: string; right: string | null }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "12px 18px", borderBottom: `1px solid ${HAIR}` }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "12px 16px", borderBottom: `1px solid ${HAIR}` }}>
       <span style={{ fontFamily: disp, fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", color: CHALK }}>{title}</span>
       {right && <span style={{ fontFamily: mono, fontSize: 10, color: ASH }}>{right}</span>}
     </div>
@@ -217,7 +217,7 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
         disabled={!expandable}
         onClick={onToggle}
         aria-expanded={open}
-        style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", cursor: expandable ? "pointer" : "default" }}
+        style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: expandable ? "pointer" : "default" }}
       >
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontFamily: disp, fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -250,7 +250,7 @@ function DayCard({ day, open, onToggle, onLift }: { day: ProgramDayView; open: b
 // session volume on the right. No background wash.
 function SessionRule({ marker, color, volume, top }: { marker: string; color: LoadColor; volume: string | null; top: boolean }) {
   return (
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, padding: "8px 18px 6px", borderBottom: `1px solid ${HAIR}`, borderTop: top ? `1px solid ${HAIR}` : undefined }}>
+    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, padding: "8px 16px 6px", borderBottom: `1px solid ${HAIR}`, borderTop: top ? `1px solid ${HAIR}` : undefined }}>
       <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: HEX_T[color] }}>{marker}</span>
       {volume && <span style={{ fontFamily: mono, fontSize: 10, color: ASH }}>{volume}</span>}
     </div>
@@ -260,7 +260,7 @@ function SessionRule({ marker, color, volume, top }: { marker: string; color: Lo
 // A lone group label line (runs inside a mixed day).
 function GroupRule({ label }: { label: string }) {
   return (
-    <div style={{ padding: "8px 18px 5px", borderBottom: `1px solid ${HAIR}` }}>
+    <div style={{ padding: "8px 16px 5px", borderBottom: `1px solid ${HAIR}` }}>
       <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: ASH }}>{label}</span>
     </div>
   );
@@ -360,7 +360,7 @@ function QuietMatrix({ lifts, dayMax, label, onPress }: { lifts: ProgramLiftView
           <table style={{ width: "100%", minWidth: 132 + cols.length * 62, borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${HAIR}` }}>
-                <th scope="col" style={{ ...sticky, width: 132, textAlign: "left", padding: "8px 8px 5px 18px", fontFamily: mono, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: ASH, fontWeight: 400 }}>
+                <th scope="col" style={{ ...sticky, width: 132, textAlign: "left", padding: "8px 8px 5px 16px", fontFamily: mono, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: ASH, fontWeight: 400 }}>
                   {label ?? <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Exercise</span>}
                 </th>
                 {cols.map((c) => (
@@ -375,7 +375,7 @@ function QuietMatrix({ lifts, dayMax, label, onPress }: { lifts: ProgramLiftView
                 const byLoad = new Map((l.steps ?? []).map((st) => [st.load, st]));
                 return (
                   <tr key={i} onClick={() => onPress(l)} style={{ borderTop: i > 0 ? `1px solid ${HAIR}` : undefined, cursor: "pointer" }}>
-                    <th scope="row" style={{ ...sticky, textAlign: "left", padding: "12px 8px 12px 18px", fontWeight: 400 }}>
+                    <th scope="row" style={{ ...sticky, textAlign: "left", padding: "12px 8px 12px 16px", fontWeight: 400 }}>
                       <button type="button" onClick={(e) => { e.stopPropagation(); onPress(l); }} style={rowBtn} aria-label={`${l.name} — details`}>
                         <NameCell lift={l} />
                       </button>
@@ -409,7 +409,7 @@ function QuietMatrix({ lifts, dayMax, label, onPress }: { lifts: ProgramLiftView
 // empty lane: name left, the whole prescription in words right.
 function OutlierRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTop: string; onPress: () => void }) {
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", borderTop }}>
+    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <NameCell lift={lift} />
       </span>
@@ -426,7 +426,7 @@ function AccessoryRows({ lifts, label, onPress }: { lifts: ProgramLiftView[]; la
   return (
     <div>
       {(label || hasRpe) && (
-        <div style={{ display: "flex", alignItems: "baseline", padding: "8px 18px 5px", borderBottom: `1px solid ${HAIR}` }}>
+        <div style={{ display: "flex", alignItems: "baseline", padding: "8px 16px 5px", borderBottom: `1px solid ${HAIR}` }}>
           <span style={{ flex: 1, fontFamily: mono, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: ASH }}>{label ?? ""}</span>
           {hasRpe && (
             <>
@@ -446,7 +446,7 @@ function AccessoryRows({ lifts, label, onPress }: { lifts: ProgramLiftView[]; la
 // bodybuilding row — Sets×Reps + RPE heat (RPE keeps its semantic heat colour).
 function HeatRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTop: string; onPress: () => void }) {
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", padding: "12px 18px", borderTop }}>
+    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", alignItems: "center", padding: "12px 16px", borderTop }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <NameCell lift={lift} />
       </span>
@@ -461,7 +461,7 @@ function HeatRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTo
 // way the % matrix colours its loads; otherwise it stays chalk.
 function FallbackRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderTop: string; onPress: () => void }) {
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", gap: 14, padding: "12px 18px", alignItems: "baseline", borderTop }}>
+    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, display: "flex", gap: 16, padding: "12px 16px", alignItems: "baseline", borderTop }}>
       <span style={{ flex: 1, minWidth: 0 }}>
         <NameCell lift={lift} />
       </span>
@@ -475,7 +475,7 @@ function ProseRow({ lift, borderTop, onPress }: { lift: ProgramLiftView; borderT
   const rest = /rest/i.test(lift.name);
   const detail = lift.prescription && lift.note ? `${lift.prescription} (${lift.note})` : lift.prescription || lift.note || null;
   return (
-    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, padding: "12px 18px", borderTop }}>
+    <button type="button" onClick={onPress} aria-label={`${lift.name} — details`} style={{ ...rowBtn, padding: "12px 16px", borderTop }}>
       <span style={{ display: "block", fontFamily: disp, fontWeight: rest ? 500 : 600, fontSize: 15, color: rest ? ASH : CHALK }}>
         <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 8, verticalAlign: "middle", background: HEX[liftColor(lift)] }} />
         {lift.name}

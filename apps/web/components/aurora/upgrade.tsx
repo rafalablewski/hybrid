@@ -54,11 +54,11 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", background: `color-mix(in srgb, var(--premium-accent) 16%, transparent)`, borderRadius: 999, padding: "6px 13px" }}>✦ Full</span>
       </div>
 
-      <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 26, letterSpacing: "-.02em", color: C("chalk"), textAlign: "center", marginTop: 14 }}>{t("w.account.upgrade.sheet-title")}</div>
+      <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 26, letterSpacing: "-.02em", color: C("chalk"), textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), textAlign: "center", marginTop: 8, lineHeight: 1.5 }}>{t("w.account.upgrade.sheet-sub")}</div>
 
       {/* benefits */}
-      <div style={{ marginTop: 18 }}>
+      <div style={{ marginTop: 16 }}>
         {BENEFITS.map((b, i) => (
           <div key={b.t} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
             <span style={{ fontSize: 15, color: "var(--premium-accent-text)", marginTop: 1 }}>{paid ? "✓" : "✦"}</span>
@@ -71,14 +71,14 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
       </div>
 
       {/* price */}
-      <div style={{ textAlign: "center", marginTop: 18 }}>
+      <div style={{ textAlign: "center", marginTop: 16 }}>
         <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 28, letterSpacing: "-.02em", color: C("chalk") }}>
           $9.99<span style={{ fontWeight: 400, fontSize: 14, color: C("ash") }}> {t("w.account.upgrade.per-month")}</span>
         </div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--lime-text)", marginTop: 3, letterSpacing: ".08em" }}>{t("w.account.upgrade.trial-note")}</div>
       </div>
 
-      {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 14, textAlign: "center", lineHeight: 1.5 }}>{msg}</div>}
+      {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 16, textAlign: "center", lineHeight: 1.5 }}>{msg}</div>}
 
       {/* CTA */}
       <button
@@ -89,7 +89,7 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
       >
         {busy ? t("w.account.upgrade.starting") : paid ? `${t("w.account.upgrade.switch-full")}` : t("w.account.upgrade.start-trial")}
       </button>
-      <button onClick={onClose} style={{ width: "100%", background: "none", border: "none", padding: "14px", marginTop: 4, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>{t("w.account.upgrade.maybe-later")}</button>
+      <button onClick={onClose} style={{ width: "100%", background: "none", border: "none", padding: "16px", marginTop: 4, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), cursor: "pointer" }}>{t("w.account.upgrade.maybe-later")}</button>
     </Sheet>
   );
 }

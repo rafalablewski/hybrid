@@ -95,7 +95,7 @@ export function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: st
       style={{
         display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 10,
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
-        padding: "12px 14px", cursor: "pointer", textAlign: "left", color: C("chalk"),
+        padding: "12px 16px", cursor: "pointer", textAlign: "left", color: C("chalk"),
       }}
     >
       <span style={{
@@ -234,7 +234,7 @@ export default function AuroraWeekVerdict({
   const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
 
   return (
-    <div style={{ marginTop: 22 }}>
+    <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, mono meta right. The
           head names the window so no figure below it needs a qualifier. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
@@ -276,7 +276,7 @@ export default function AuroraWeekVerdict({
 
       <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontSize: fs.bodyLg, lineHeight: 1.4, color: C("chalk") }}>
               <Lead template={t(verdictLeadKey(v))} word={v.metric ? t(verdictMetricKey(v.metric)) : null} />
@@ -290,7 +290,7 @@ export default function AuroraWeekVerdict({
 
         {/* THE RECEIPTS — the figures the sentence was drawn from. Each one is
             a button onto its own breakdown. */}
-        <div style={{ position: "relative", display: "flex", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ position: "relative", display: "flex", marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
           {ordered.map((f, i) => {
             const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
@@ -351,7 +351,7 @@ export default function AuroraWeekVerdict({
                 key={detail.metric}
                 style={{
                   background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16,
-                  padding: "12px 14px", animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
+                  padding: "12px 16px", animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
                 }}
               >
                 <MetricDetail
@@ -574,7 +574,7 @@ function MetricDetail({
 
 function PickerSection({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div style={{ marginTop: 14 }}>
+    <div style={{ marginTop: 16 }}>
       <div style={{ ...kicker, color: C("ash"), margin: "0 4px 6px" }}>{label}</div>
       <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, overflow: "hidden" }}>
         {children}
@@ -590,7 +590,7 @@ function PickerRow({ label, active, onClick }: { label: string; active: boolean;
       aria-current={active}
       style={{
         display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 10,
-        padding: "12px 14px", background: "transparent", border: "none",
+        padding: "12px 16px", background: "transparent", border: "none",
         borderTop: `1px solid ${C("line")}`, cursor: "pointer", textAlign: "left",
         fontSize: fs.bodyLg, color: active ? C("chalk") : C("ash"),
       }}

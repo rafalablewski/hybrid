@@ -125,7 +125,7 @@ export default function Sheet({
           border: `1px solid ${C("line")}`,
           borderBottom: "none",
           boxShadow: "0 -10px 44px -14px rgba(0,0,0,.6)",
-          padding: "12px 20px calc(26px + env(safe-area-inset-bottom))",
+          padding: "12px 20px calc(24px + env(safe-area-inset-bottom))",
           maxHeight: "90vh",
           overflowY: "auto",
           transform: shown ? "translateY(0)" : "translateY(100%)",
@@ -140,7 +140,7 @@ export default function Sheet({
         <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
         {title && <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 22, letterSpacing: "-.02em", color: C("chalk") }}>{title}</div>}
         {sub && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), margin: "4px 0 0" }}>{sub}</div>}
-        <div style={{ marginTop: title || sub ? 14 : 0 }}>{children}</div>
+        <div style={{ marginTop: title || sub ? 16 : 0 }}>{children}</div>
       </div>
     </div>,
     document.body,

@@ -206,9 +206,9 @@ function DeltasChart({ runs }: { runs: { date: string; deltaSec: number }[] }) {
 function MeterRows({ rows, color }: { rows: { label: string; pct: number; value: string }[]; color: string }) {
   const hi = Math.max(...rows.map((r) => r.pct), 1);
   return (
-    <div style={{ padding: "22px 0 8px" }}>
+    <div style={{ padding: "20px 0 8px" }}>
       {rows.map((r) => (
-        <div key={r.label} style={{ display: "grid", gridTemplateColumns: "64px 1fr 56px", alignItems: "center", gap: 12, marginTop: 14 }}>
+        <div key={r.label} style={{ display: "grid", gridTemplateColumns: "64px 1fr 56px", alignItems: "center", gap: 12, marginTop: 16 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{r.label}</span>
           <span style={{ height: 3, borderRadius: 2, background: C("line"), overflow: "hidden", display: "block" }}>
             <span style={{ display: "block", height: "100%", borderRadius: 2, width: `${(r.pct / hi) * 100}%`, background: color, opacity: 0.45 + (r.pct / hi) * 0.55 }} />
@@ -382,7 +382,7 @@ function CompareChart({ slide, units, t }: { slide: SlideOf<"compare">; units: W
         </LineChart>
       </ResponsiveContainer>
       <CornerLabels l={t("w.analyze.ex.comparePrev")} r={t("w.analyze.ex.compareCur")} />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", marginTop: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", marginTop: 16 }}>
         {tiles.map((tile) => (
           <div key={tile.l} style={{ padding: "8px 0" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
@@ -569,7 +569,7 @@ export default function AuroraExercisePage({
       <AuroraExerciseAnatomy name={name} />
 
       {/* padding grew for a ≥44px hit target; the top margin shrank to match. */}
-      <div style={{ display: "flex", gap: 18, margin: "10px 2px 6px" }}>
+      <div style={{ display: "flex", gap: 16, margin: "10px 2px 6px" }}>
         {PERIODS.map((p) => (
           <button key={p.id} onClick={() => setPeriod(p.id)} className="pressable" style={{ background: "none", border: "none", cursor: "pointer", padding: "12px 4px", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: period === p.id ? C("chalk") : C("ash"), borderBottom: `2px solid ${period === p.id ? C("lime") : "transparent"}` }}>
             {t(p.key)}
@@ -578,7 +578,7 @@ export default function AuroraExercisePage({
       </div>
 
       {/* HERO — one number, paired with the visible chart */}
-      <div style={{ margin: "18px 2px 4px", minHeight: 84, opacity: heroFade ? 0 : 1, transition: "opacity .15s ease" }}>
+      <div style={{ margin: "16px 2px 4px", minHeight: 84, opacity: heroFade ? 0 : 1, transition: "opacity .15s ease" }}>
         {/* SHARED ELEMENT (destination). The figure the tapped card was showing
             travels here and scales up, instead of the page re-rendering it —
             the app shows one continuous truth rather than re-fetching a page.
@@ -634,7 +634,7 @@ export default function AuroraExercisePage({
           {slides.map((slide, i) => (
             <div key={slide.kind} style={{ borderTop: i === 0 ? "none" : `1px solid ${C("line")}`, padding: i === 0 ? "6px 0 26px" : "22px 0 26px" }}>
               {i > 0 && (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 14 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 16 }}>
                   {slideHero(slide, units, t).label}
                 </div>
               )}
@@ -644,17 +644,17 @@ export default function AuroraExercisePage({
         </div>
       )}
 
-      <div style={{ display: "grid", justifyContent: "center", marginTop: 18 }}>
+      <div style={{ display: "grid", justifyContent: "center", marginTop: 16 }}>
         <button
           onClick={() => { setShowAll(!showAll); setPage(0); pagerRef.current?.scrollTo({ left: 0 }); }}
-          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), padding: "8px 14px" }}
+          style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), padding: "8px 16px" }}
         >
           {showAll ? t("w.analyze.exp.less") : t("w.analyze.exp.allStats")}
         </button>
       </div>
 
       {/* quiet substats — typography over one hairline */}
-      <div style={{ display: "flex", margin: `${space.lg}px 2px 0`, paddingTop: 18, borderTop: `1px solid ${C("line")}` }}>
+      <div style={{ display: "flex", margin: `${space.lg}px 2px 0`, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
         {substats.map((st) => (
           <div key={st.l} style={{ flex: 1 }}>
             <div style={{ fontSize: fs.subtitle, fontWeight: 700 }}>{st.v}</div>
@@ -666,7 +666,7 @@ export default function AuroraExercisePage({
       {/* BEST SET + velocity — quiet typography over one hairline (the rest of
           the retired dashboard lives IN the slide pager above). */}
       {s.kind === "strength" && s.bestSet && (
-        <div style={{ margin: "18px 2px 0", paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ margin: "16px 2px 0", paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)" }}>{t("w.analyze.ex.bestSet")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps} <span style={{ color: C("ash") }}>– {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</span></div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</div>

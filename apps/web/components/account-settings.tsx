@@ -467,7 +467,7 @@ export default function AccountSettings() {
                 </div>
                 <textarea value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder={t("w.account.settings.coach-credentials-ph")} rows={3} style={{ ...mono, fontSize: fs.body, width: "100%", marginTop: 12, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical" }} />
                 {coachMsg && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={RED}>{coachMsg}</Mono>}
-                <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
+                <button onClick={applyCoach} disabled={!credentials.trim() || coachBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 16px", marginTop: 12, cursor: !credentials.trim() || coachBusy ? "not-allowed" : "pointer", opacity: !credentials.trim() || coachBusy ? 0.6 : 1 }}>
                   {coachBusy ? t("w.account.settings.applying") : t("w.account.settings.apply")}
                 </button>
               </>
@@ -565,7 +565,7 @@ export default function AccountSettings() {
                     </div>
                   ))}
                 </div>
-                <button onClick={upgrade} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
+                <button onClick={upgrade} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: r, padding: "10px 16px", marginTop: 16, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
                   {billingBusy ? t("w.account.settings.starting") : t("w.account.settings.upgrade-full")}
                 </button>
                 <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
@@ -575,7 +575,7 @@ export default function AccountSettings() {
               </>
             ) : (
               <>
-                <button onClick={manageSubscription} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: r, padding: "10px 18px", marginTop: 14, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
+                <button onClick={manageSubscription} disabled={billingBusy} style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: r, padding: "10px 16px", marginTop: 16, cursor: billingBusy ? "not-allowed" : "pointer", opacity: billingBusy ? 0.6 : 1 }}>
                   {billingBusy ? t("w.account.settings.opening") : t("w.account.settings.manage-subscription")}
                 </button>
                 {billingUnconfigured && <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>{t("w.account.settings.billing-unconfigured")}</Mono>}
@@ -594,7 +594,7 @@ export default function AccountSettings() {
         return (
           <Section label={t("w.account.settings.export")}>
             <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block" }} c={CHALK}>{t("w.account.settings.export-data-desc")}</Mono>
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 16 }}>
               <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 8 }} c={ASH}>{t("w.account.settings.data-included")}</Mono>
               {[1, 2, 3].map((n) => (
                 <div key={n} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
@@ -618,7 +618,7 @@ export default function AccountSettings() {
             <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="RESET" autoCapitalize="characters" style={{ ...mono, fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${armed ? RED : LINE}`, outline: "none" }} />
             {msg && <div role="alert"><Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{msg}</Mono></div>}
             <div style={{ display: "flex", gap: space.ms, marginTop: 16, alignItems: "center" }}>
-              <button onClick={reset} disabled={!armed || busy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armed && !busy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "12px 18px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
+              <button onClick={reset} disabled={!armed || busy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armed && !busy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "12px 16px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
                 {busy ? t("w.account.settings.erasing") : t("w.account.settings.erase-everything")}
               </button>
               <button onClick={() => void logout()} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: "none", cursor: "pointer" }}>
@@ -637,7 +637,7 @@ export default function AccountSettings() {
               <input value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} placeholder="DELETE" autoCapitalize="characters" style={{ ...mono, fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: r, background: INK2, color: CHALK, border: `1px solid ${armedDelete ? RED : LINE}`, outline: "none" }} />
               {delMsg && <div role="alert"><Mono s={{ fontSize: fs.caption, display: "block", marginTop: 10 }} c={RED}>{delMsg}</Mono></div>}
               <div style={{ marginTop: 16 }}>
-                <button onClick={del} disabled={!armedDelete || delBusy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armedDelete && !delBusy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "12px 18px", cursor: armedDelete && !delBusy ? "pointer" : "not-allowed" }}>
+                <button onClick={del} disabled={!armedDelete || delBusy} className="pressable" style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: "#fff", background: armedDelete && !delBusy ? RED : `${RED}55`, border: "none", borderRadius: r, padding: "12px 16px", cursor: armedDelete && !delBusy ? "pointer" : "not-allowed" }}>
                   {delBusy ? t("settings.deleting") : t("settings.deleteAccount")}
                 </button>
               </div>
@@ -683,7 +683,7 @@ export default function AccountSettings() {
       {active ? (
         /* ── SUB-PAGE ── a focused category with a back button. */
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <button onClick={() => setCat(null)} aria-label={t("w.account.settings.back")} className="pressable" style={{ width: 40, height: 40, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: INK2, border: `1px solid ${LINE}`, cursor: "pointer", color: CHALK }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
@@ -702,7 +702,7 @@ export default function AccountSettings() {
           <div style={{ marginBottom: 20, padding: 16, background: INK2, border: `1px solid ${LINE}`, borderRadius: 28 }}>
             {/* Tappable identity row → opens Edit profile. The avatar is wrapped
                 in a completeness ring; the nudge says what's left to fill. */}
-            <button onClick={() => setCat("account")} aria-label={t("w.account.settings.edit-profile")} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: CHALK }}>
+            <button onClick={() => setCat("account")} aria-label={t("w.account.settings.edit-profile")} style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: CHALK }}>
               <span style={{ position: "relative", width: 60, height: 60, flex: "none", display: "grid", placeItems: "center" }}>
                 <svg width="60" height="60" viewBox="0 0 60 60" style={{ position: "absolute", inset: 0 }} aria-hidden="true">
                   <circle cx="30" cy="30" r="27" fill="none" stroke={LINE} strokeWidth="3" />
@@ -722,9 +722,9 @@ export default function AccountSettings() {
               <span style={{ ...mono, fontSize: fs.nano, letterSpacing: ".5px", flex: "none", color: txt(paid ? LIME_HEX : ASH), background: `${paid ? LIME_HEX : ASH}1a`, border: `1px solid ${paid ? LIME_HEX : ASH}66`, borderRadius: 999, padding: "4px 12px" }}>{paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</span>
             </button>
             {/* Quick actions */}
-            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap", alignItems: "center" }}>
-              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--color-lime) 40%, transparent)", borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
-              {socialProfile?.handle && <button onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
+            <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
+              <button onClick={() => setCat("account")} style={{ ...mono, fontSize: fs.caption, color: txt(LIME_HEX), background: "color-mix(in srgb, var(--color-lime) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--color-lime) 40%, transparent)", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.account.settings.edit-profile")}</button>
+              {socialProfile?.handle && <button onClick={shareProfile} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: `1px solid ${LINE}`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>↗ {t("w.account.settings.share-profile")}</button>}
               {shareMsg && <Mono s={{ fontSize: fs.micro }} c={LIME}>{shareMsg}</Mono>}
             </div>
           </div>
@@ -781,7 +781,7 @@ function Row({ icon, accent, title, subtitle, danger, first, onOpen }: {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 14,
+        gap: 16,
         width: "100%",
         textAlign: "left",
         background: "none",
@@ -811,7 +811,7 @@ function Row({ icon, accent, title, subtitle, danger, first, onOpen }: {
  *  sections (matching the Sectioned edit-profile screen). */
 function Section({ label, tone, children }: { label: string; tone?: string; children: ReactNode }) {
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div style={{ marginBottom: 16 }}>
       <div style={{ ...mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", color: tone ?? txt(ASH), marginBottom: 10, marginLeft: 2 }}>{label}</div>
       <Card>{children}</Card>
     </div>
@@ -833,7 +833,7 @@ function groupRows<T extends { group: string }>(rows: readonly T[]): { group: st
 /** A labelled preference row with an on/off pill — used by Notifications + Privacy. */
 function PrefRow({ title, desc, on, onToggle, disabled, first }: { title: string; desc: string; on: boolean; onToggle: () => void; disabled?: boolean; first?: boolean }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderTop: first ? "none" : `1px solid ${LINE}` }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 0", borderTop: first ? "none" : `1px solid ${LINE}` }}>
       <div style={{ flex: 1 }}>
         <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{title}</div>
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 2 }} c={ASH}>{desc}</Mono>

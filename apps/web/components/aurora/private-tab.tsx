@@ -80,7 +80,7 @@ function CommandCenterCard({ locked, onClick }: { locked: boolean; onClick: () =
       aria-label={t("w.account.profile.priv-cockpit-t")}
       style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, var(--premium-accent) 14%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--premium-accent) 5%, ${C("ink2")}), ${C("ink2")})`, boxShadow: "var(--shadow-card)" }}
     >
-      <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <span style={{ width: 48, height: 48, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--premium-accent) 14%, transparent)", border: "1px solid color-mix(in srgb, var(--premium-accent) 35%, transparent)" }}>
           <AuroraIcon name="navigation" size={22} color="var(--premium-accent-text)" strokeWidth={4} />
         </span>
@@ -89,7 +89,7 @@ function CommandCenterCard({ locked, onClick }: { locked: boolean; onClick: () =
           <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash"), marginTop: 3 }}>{t("w.account.profile.priv-cockpit-s")}</span>
         </span>
       </span>
-      <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", marginTop: 18 }}>
+      <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", marginTop: 16 }}>
         <CtaLabel size={12}>{locked ? `${t("w.home.today.cardUnlock")} →` : `${t("w.home.today.cardOpen")} →`}</CtaLabel>
       </span>
     </button>
@@ -154,7 +154,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
       <button
         onClick={() => setOpen(true)}
         aria-label={t("w.account.profile.priv-body-t")}
-        style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}
+        style={{ display: "flex", alignItems: "center", gap: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}
       >
         <IconTile icon="user-square" />
         <span style={{ flex: 1, minWidth: 0 }}>
@@ -176,7 +176,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
         {metrics !== undefined && has && (
           <>
             <ReportHero report={report!} units={units} />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 0 10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "16px 0 10px" }}>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-trends")}</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash") }}>{t("w.account.profile.priv-trends-sub")}</span>
             </div>
@@ -186,7 +186,7 @@ function BodyBlock({ units, onPhotos }: { units: "kg" | "lb"; onPhotos: () => vo
           </>
         )}
 
-        <button onClick={onPhotos} style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
+        <button onClick={onPhotos} style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: LIME }}>
           <AuroraIcon name="eye" size={14} color={LIME} /> <CtaLabel size={12}>{`${t("w.account.profile.priv-photos")} →`}</CtaLabel>
         </button>
       </Sheet>
@@ -206,7 +206,7 @@ function ReportHero({ report, units }: { report: WeeklyReport; units: "kg" | "lb
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.account.profile.priv-report-kicker")}</div>
-      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), margin: "8px 0 14px", textWrap: "balance" }}>{t(BODY_VERDICT_KEY[report.verdict])}</div>
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), margin: "8px 0 16px", textWrap: "balance" }}>{t(BODY_VERDICT_KEY[report.verdict])}</div>
       {wv && (
         <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 40, fontWeight: 600, lineHeight: 0.85, letterSpacing: "-.03em", color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{wv.value}<span style={{ fontSize: 15, color: C("ash"), fontWeight: 400, marginLeft: 3 }}>{wv.unit}</span></div>
@@ -294,7 +294,7 @@ function IconTile({ icon }: { icon: AuroraIconName }) {
 
 function Row({ icon, title, sub, onClick }: { icon: AuroraIconName; title: string; sub: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} aria-label={title} style={{ display: "flex", alignItems: "center", gap: 14, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}>
+    <button onClick={onClick} aria-label={title} style={{ display: "flex", alignItems: "center", gap: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}>
       <IconTile icon={icon} />
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: "block", fontWeight: 700, fontSize: 16, color: C("chalk") }}>{title}</span>

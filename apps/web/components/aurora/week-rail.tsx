@@ -176,14 +176,14 @@ export default function AuroraWeekRail({
       </div>
 
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
-      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
+      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "16px 0 0" }}>
         {windowDays.map((d) => (
           <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
       </div>
 
       {/* full-bleed hairline — the only separator between week and session */}
-      <div style={{ height: 1, background: C("line"), margin: "18px -20px 16px" }} />
+      <div style={{ height: 1, background: C("line"), margin: "16px -20px 16px" }} />
 
       {/* state-aware session, flowing directly on the card (no nested surface) */}
       <DayDetail
@@ -281,7 +281,7 @@ function LiftRow({ r, showSession, first }: { r: { name: string; session?: strin
         {r.name}
         {r.note ? <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), fontWeight: 400 }}> ({r.note})</span> : null}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px" }}>
         {steps ? steps.map((s, i) => (
           <span key={i} style={{ display: "inline-flex", alignItems: "baseline", gap: 6 }}>
             <b style={{ fontWeight: 600, fontSize: fs.bodyLg, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{s.load}</b>
@@ -357,7 +357,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
             <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</span>
             <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</span>
           </span>
-          <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 14px" }}>{t("w.home.rail.doItNow")}</button>
+          <button onClick={() => onStart(it.blocks)} style={{ ...neutralGhostBtn, flex: "0 0 auto", padding: "8px 16px" }}>{t("w.home.rail.doItNow")}</button>
         </div>
       ))}
     </div>
@@ -387,7 +387,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
           {stripWeekdayPrefix(day.title)}<span style={{ opacity: 0.65 }}>{finished}</span>
         </div>
         {stats.length > 0 && (
-          <div style={{ display: "flex", gap: 26, margin: "16px 0 0 31px" }}>
+          <div style={{ display: "flex", gap: 24, margin: "16px 0 0 31px" }}>
             {stats.map((s) => (
               <span key={s.labelKey}>
                 <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
@@ -425,7 +425,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
       {/* session toggle — an underlined text switch (no boxed segment), only when
           the day holds more than one training. Label = time-of-day or "Training N". */}
       {multi && (
-        <div role="tablist" aria-label={day.title} style={{ display: "flex", gap: 20, margin: "14px 0 2px" }}>
+        <div role="tablist" aria-label={day.title} style={{ display: "flex", gap: 20, margin: "16px 0 2px" }}>
           {sessions.map((s, i) => {
             const on = i === activeIdx;
             return (

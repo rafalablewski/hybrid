@@ -160,8 +160,8 @@ export default function AuroraOrg() {
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
   const input: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, padding: "10px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
-  const btn = (bg: string): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C(bg), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 18px", cursor: "pointer" });
-  const orgChip = (active: boolean): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 14px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 16%, transparent)` : "transparent", color: active ? C("lime") : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` });
+  const btn = (bg: string): React.CSSProperties => ({ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, background: C(bg), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "10px 16px", cursor: "pointer" });
+  const orgChip = (active: boolean): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "8px 16px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 16%, transparent)` : "transparent", color: active ? C("lime") : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` });
   const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
   const selectStyle: React.CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.body, padding: "8px 12px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none", cursor: "pointer" };
 
@@ -264,7 +264,7 @@ export default function AuroraOrg() {
                 </div>
               )}
               {canManage && detail.invites.length > 0 && (
-                <div style={{ marginTop: 14 }}>
+                <div style={{ marginTop: 16 }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.teams.org.pendingInvites")}</div>
                   {detail.invites.map((iv) => (
                     <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>

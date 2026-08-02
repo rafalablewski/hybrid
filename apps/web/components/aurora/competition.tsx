@@ -54,7 +54,7 @@ export default function AuroraCompetition() {
   const event = events.find((e) => e.id === selected) ?? null;
   const plan = useMemo(() => (event ? optimizeForEvent(event.sport, event.date) : null), [event]);
 
-  const input: React.CSSProperties = { ...mono, fontSize: fs.body, padding: "10px 14px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
+  const input: React.CSSProperties = { ...mono, fontSize: fs.body, padding: "10px 16px", borderRadius: 16, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, outline: "none" };
 
   return (
     <div style={{ display: "grid", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -65,7 +65,7 @@ export default function AuroraCompetition() {
         <div style={{ ...mono, fontSize: fs.body, marginTop: 6, lineHeight: 1.5, color: C("chalk") }}>
           {t("w.train.comp.intro")}
         </div>
-        <div style={{ display: "flex", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: space.sm, marginTop: 16, flexWrap: "wrap" }}>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("w.train.comp.eventName")} style={input} />
           <select value={sport} onChange={(e) => setSport(e.target.value)} style={input}>
             {SPORTS.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -77,7 +77,7 @@ export default function AuroraCompetition() {
           {events.map((e) => {
             const active = e.id === selected;
             return (
-              <button key={e.id} onClick={() => setSelected(e.id)} style={{ ...mono, fontSize: fs.caption, padding: "8px 14px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink"), color: active ? "var(--lime-text)" : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` }}>
+              <button key={e.id} onClick={() => setSelected(e.id)} style={{ ...mono, fontSize: fs.caption, padding: "8px 16px", borderRadius: 999, cursor: "pointer", background: active ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink"), color: active ? "var(--lime-text)" : C("ash"), border: `1px solid ${active ? C("lime") : C("line")}` }}>
                 {e.name} – {new Date(e.date).toLocaleDateString()}
               </button>
             );
@@ -93,11 +93,11 @@ export default function AuroraCompetition() {
                 <div style={{ fontWeight: 900, fontSize: 22 }}>{event.name}</div>
                 <div style={{ ...mono, fontSize: fs.caption, color: C("ash") }}>{event.sport} – {new Date(event.date).toLocaleDateString()} – {plan.weeksToEvent} {t("w.train.comp.weeksOut")}</div>
               </div>
-              <span style={{ ...mono, fontSize: fs.micro, borderRadius: 999, padding: "5px 14px", background: `color-mix(in srgb, ${plan.landsPeak ? C("lime") : C("amber")} 14%, transparent)`, color: plan.landsPeak ? C("lime") : C("amber") }}>
+              <span style={{ ...mono, fontSize: fs.micro, borderRadius: 999, padding: "5px 16px", background: `color-mix(in srgb, ${plan.landsPeak ? C("lime") : C("amber")} 14%, transparent)`, color: plan.landsPeak ? C("lime") : C("amber") }}>
                 {plan.landsPeak ? t("w.train.comp.peakLands") : `${t("w.train.comp.peakAtWeek")} ${plan.peakWeek} ${t("w.train.comp.adjustTaper")}`}
               </span>
             </div>
-            <div style={{ display: "flex", gap: 3, height: 10, borderRadius: 5, overflow: "hidden", margin: "14px 0 6px" }}>
+            <div style={{ display: "flex", gap: 3, height: 10, borderRadius: 5, overflow: "hidden", margin: "16px 0 6px" }}>
               {plan.macro.blocks.map((b) => (
                 <div key={b.key} title={`${b.label} – ${b.weeks} ${t("w.train.comp.wk")}`} style={{ flex: b.weeks, background: b.color }} />
               ))}

@@ -15,7 +15,7 @@ import { track } from "@/lib/track";
 
 const C = (v: string) => `var(--color-${v})`;
 const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
-const input = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 14px", outline: "none", minWidth: 0, boxSizing: "border-box" } as const;
+const input = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", outline: "none", minWidth: 0, boxSizing: "border-box" } as const;
 
 type Template = { id: string; name: string; description: string | null; blocks: SessionBlock[]; createdAt: string };
 
@@ -80,7 +80,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("w.train.builder.workoutNamePh")}
           style={{ ...input, fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, width: "100%", marginBottom: 8 }} />
         <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={tr("w.train.builder.descriptionPh")}
-          style={{ ...input, width: "100%", marginBottom: 14 }} />
+          style={{ ...input, width: "100%", marginBottom: 16 }} />
 
         <SessionPulse blocks={blocks} units={prefs.units} bodyweightKg={bodyweightKg} />
 
@@ -101,7 +101,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
         {canSaveRoutine(persona, templates.length) ? (
           <>
             <button onClick={save} disabled={saving || blocks.length === 0}
-              style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "14px 28px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
+              style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: "16px 28px", cursor: saving || !blocks.length ? "default" : "pointer", opacity: saving || !blocks.length ? 0.5 : 1 }}>
               {saving ? tr("w.train.builder.saving") : tr("w.train.builder.saveAsTemplate")}
             </button>
             {isFree && (
@@ -113,7 +113,7 @@ export default function AuroraBuilder({ onUpgrade }: { onUpgrade?: () => void })
         ) : (
           // Free user at the template limit — more saved templates is Full.
           // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
-          <div style={{ border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, transparent)`, background: `color-mix(in srgb, var(--premium-accent) 8%, transparent)`, borderRadius: 16, padding: 14 }}>
+          <div style={{ border: `1px solid color-mix(in srgb, var(--premium-accent) 45%, transparent)`, background: `color-mix(in srgb, var(--premium-accent) 8%, transparent)`, borderRadius: 16, padding: 16 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)" }}>✦ {tr("w.train.logger.routineFullTitle")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{tr("w.train.logger.routineFullBlurb")}</div>
             <button onClick={goUpgrade} style={{ marginTop: 12, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note, background: "var(--premium-accent)", color: "var(--premium-accent-ink)", border: "none", borderRadius: 999, padding: "12px 24px", cursor: "pointer" }}>{tr("w.train.logger.routineUnlock")}</button>
@@ -172,7 +172,7 @@ function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]
       <div style={{ display: "flex", height: 4, borderRadius: 999, overflow: "hidden", background: C("ink2"), marginTop: 12 }}>
         {segs.map((s, i) => s.pct > 0 && <span key={i} style={{ width: `${s.pct}%`, background: s.color }} />)}
       </div>
-      <div style={{ display: "flex", gap: 14, marginTop: 6 }}>
+      <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
         {segs.filter((s) => s.pct > 0).map((s, i) => (
           <span key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: s.textColor }}>{s.pct}% {s.label}</span>
         ))}
@@ -183,5 +183,5 @@ function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]
 
 function smallBtn(token: string): React.CSSProperties {
   const c = C(token);
-  return { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "8px 14px", cursor: "pointer" };
+  return { fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: c, background: `color-mix(in srgb, ${c} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${c} 40%, transparent)`, borderRadius: 999, padding: "8px 16px", cursor: "pointer" };
 }

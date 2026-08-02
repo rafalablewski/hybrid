@@ -228,13 +228,13 @@ export function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpe
       </div>
 
       {cover.stats.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${cover.stats.length}, 1fr)`, gap: cover.stats.length > 3 ? 12 : 18, margin: "18px 0 14px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${cover.stats.length}, 1fr)`, gap: cover.stats.length > 3 ? 12 : 16, margin: "16px 0 16px" }}>
           {cover.stats.map((s) => (
             <div key={s.label} style={{ borderTop: `2px solid ${rule}`, paddingTop: 10 }}>
               <div style={{ fontWeight: 800, fontSize: cover.stats.length > 3 ? 23 : 28, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
                 {s.value}{s.unit && <span style={{ fontSize: cover.stats.length > 3 ? 13 : 15, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: cover.stats.length > 3 ? ".1em" : ".14em", textTransform: "uppercase", color: C("ash"), marginTop: 6 }}>{s.label}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: cover.stats.length > 3 ? ".08em" : ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 6 }}>{s.label}</div>
             </div>
           ))}
         </div>

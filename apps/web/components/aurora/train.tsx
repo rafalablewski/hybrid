@@ -127,12 +127,12 @@ export default function AuroraTrainWeb({
       <button
         onClick={() => onNavigate("builder")}
         className="pressable"
-        style={{ width: "100%", marginTop: 16, padding: "14px 0", border: `1px solid ${C("line")}`, borderRadius: 999, background: "transparent", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note }}
+        style={{ width: "100%", marginTop: 16, padding: "16px 0", border: `1px solid ${C("line")}`, borderRadius: 999, background: "transparent", cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note }}
       >
         ＋ {t("train.buildRoutine")}
       </button>
 
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 14, lineHeight: 1.5 }}>{t("train.finishedNote")}</p>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 16, lineHeight: 1.5 }}>{t("train.finishedNote")}</p>
     </div>
   );
 }
@@ -149,14 +149,14 @@ function PrescribedHero({ rx, hasHistory, onStart, t }: { rx: ReturnType<typeof 
     <button
       onClick={onStart}
       className="pressable"
-      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", border: "none", background: C("lime"), borderRadius: 28, padding: 22, marginTop: 18, color: "var(--on-accent)" }}
+      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", border: "none", background: C("lime"), borderRadius: 28, padding: 20, marginTop: 16, color: "var(--on-accent)" }}
     >
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", opacity: 0.62, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {t("home.readiness")} {rx.readiness}/100
       </div>
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 25, letterSpacing: "-.03em", marginTop: 10 }}>{title}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, opacity: 0.7, marginTop: 8, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{blurb}</div>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 9, marginTop: 16, background: C("ink"), color: "var(--lime-text)", borderRadius: 12, padding: "12px 18px", fontWeight: 800, fontSize: fs.note }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 9, marginTop: 16, background: C("ink"), color: "var(--lime-text)", borderRadius: 12, padding: "12px 16px", fontWeight: 800, fontSize: fs.note }}>
         <AuroraIcon name="play" size={13} strokeWidth={2.6} color={C("lime")} />{t("train.startSession")}
       </span>
     </button>
@@ -169,7 +169,7 @@ function PremiumHero({ onUpsell, t }: { onUpsell: () => void; t: T }) {
     <button
       onClick={onUpsell}
       className="pressable"
-      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 28, padding: 18, marginTop: 18 }}
+      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 28, padding: 16, marginTop: 16 }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--premium-accent-text)" }}>{t("train.aiCoach")}</span>
@@ -188,7 +188,7 @@ function DoneMarker({ session, onOpen, t }: { session: LoggedSession; onOpen: ()
     <button
       onClick={onOpen}
       className="pressable"
-      style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid ${C("line")}`, borderLeft: `3px solid ${C("lime")}`, borderRadius: 28, padding: 16, marginTop: 18 }}
+      style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left", cursor: "pointer", background: C("ink2"), border: `1px solid ${C("line")}`, borderLeft: `3px solid ${C("lime")}`, borderRadius: 28, padding: 16, marginTop: 16 }}
     >
       <span style={{ width: 44, height: 44, borderRadius: 999, background: C("lime"), display: "grid", placeItems: "center", flex: "none" }}>
         <AuroraIcon name="check" size={24} strokeWidth={2.8} color={C("ink")} />
@@ -222,7 +222,7 @@ function ListRow({
     <button
       onClick={onClick}
       className="pressable"
-      style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left", cursor: "pointer", background: "transparent", border: "none", borderTop: first ? "none" : `1px solid ${C("line")}`, padding: "18px 2px" }}
+      style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", textAlign: "left", cursor: "pointer", background: "transparent", border: "none", borderTop: first ? "none" : `1px solid ${C("line")}`, padding: "16px 2px" }}
     >
       <span style={{ width: 24, display: "grid", placeItems: "center", flex: "none" }}>
         <AuroraIcon name={icon} size={19} strokeWidth={2.2} color={iconColor} />

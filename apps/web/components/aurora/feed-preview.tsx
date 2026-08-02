@@ -59,7 +59,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
                 <div className="skeleton" style={{ width: "55%", height: 9, borderRadius: 6, background: C("line"), marginTop: 8 }} />
               </div>
             </div>
-            <div className="skeleton" style={{ width: "90%", height: 12, borderRadius: 6, background: C("line"), marginTop: 14 }} />
+            <div className="skeleton" style={{ width: "90%", height: 12, borderRadius: 6, background: C("line"), marginTop: 16 }} />
           </div>
         ))}
       </div>
@@ -115,7 +115,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
               )}
 
               {/* action row — monochrome glyphs, full width */}
-              <span style={{ display: "flex", justifyContent: "space-between", maxWidth: 300, marginTop: 14, color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 12 }}>
+              <span style={{ display: "flex", justifyContent: "space-between", maxWidth: 300, marginTop: 16, color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 12 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M3 4.5h10v6H7l-3 2.5v-2.5H3Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>{it.comments}</span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M4 6 2 8l2 2M2 8h9M12 10l2-2-2-2M14 8H5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>{(it as { reposts?: number }).reposts ?? 0}</span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M8 13S2.5 9.5 2.5 5.8A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5.8C13.5 9.5 8 13 8 13Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>{it.kudos}</span>

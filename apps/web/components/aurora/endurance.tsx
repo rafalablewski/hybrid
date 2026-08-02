@@ -50,7 +50,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       aria-pressed={on}
       style={{
         display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)", fontSize: fs.caption,
-        padding: "6px 14px", borderRadius: 999, cursor: "pointer",
+        padding: "6px 16px", borderRadius: 999, cursor: "pointer",
         color: on ? C("ink") : C("ash"), background: on ? C("blue") : "transparent",
         border: `1px solid ${on ? C("blue") : C("line")}`,
       }}
@@ -125,7 +125,7 @@ export default function AuroraEndurance({ sessions }: { sessions: LoggedSession[
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: 16 }}>
         <Stat label={t("endurance.efforts")} value={totals.efforts} />
         <Stat label="KM" value={totals.distanceKm} c={C("blue")} />
         <Stat label="H" value={Math.round(totals.minutes / 6) / 10} />
@@ -183,7 +183,7 @@ export default function AuroraEndurance({ sessions }: { sessions: LoggedSession[
               ([k, v, c]) => v > 0 && <div key={k} style={{ width: `${(v / splitTotal) * 100}%`, background: c }} />,
             )}
           </div>
-          <div style={{ display: "flex", gap: 18, marginTop: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
             <Legend c={C("lime")} label={`${t("running.easy")} ${split.easy}m`} />
             <Legend c={C("amber")} label={`${t("running.moderate")} ${split.moderate}m`} />
             <Legend c={C("red")} label={`${t("running.hard")} ${split.hard}m`} />

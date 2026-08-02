@@ -51,7 +51,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
   return (
     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: space.lg, alignItems: "start", maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <div style={card}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div style={{ fontWeight: 800, fontSize: fs.heading }}>{monthLabel}</div>
           <div style={{ display: "flex", gap: space.xs }}><button aria-label={t("common.previous")} onClick={() => go(-1)} style={navBtn}>‹</button><button onClick={jumpToday} style={navBtn}>{t("w.analyze.cal.today")}</button><button aria-label={t("common.next")} onClick={() => go(1)} style={navBtn}>›</button></div>
         </div>

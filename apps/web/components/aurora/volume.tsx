@@ -244,21 +244,21 @@ export default function AuroraVolume({ sessions, unified = false }: {
         </div>
         <button
           onClick={() => { setEditing((v) => !v); setOpen(null); }}
-          style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 14px", borderRadius: 999, cursor: "pointer", color: editing ? C("lime") : C("ash"), background: editing ? mix("lime", 12) : "transparent", border: `1px solid ${editing ? C("lime") : C("line")}` }}
+          style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, cursor: "pointer", color: editing ? C("lime") : C("ash"), background: editing ? mix("lime", 12) : "transparent", border: `1px solid ${editing ? C("lime") : C("line")}` }}
         >
           {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
         </button>
       </div>
 
       {/* ── HERO — the whole week as one number and one shape ─────────────── */}
-      <section style={{ ...card, paddingBottom: 18 }}>
+      <section style={{ ...card, paddingBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={eyebrow}>{t("w.analyze.vol.range7d")}</span>
           {customized && <span style={{ ...eyebrow, color: C("lime") }}>{t("w.analyze.vol.customised")}</span>}
         </div>
 
         {summary.empty ? (
-          <p style={{ marginTop: 14, marginBottom: 0, fontSize: fs.note, lineHeight: 1.55, color: C("ash"), maxWidth: 460 }}>{t("w.analyze.vol.empty")}</p>
+          <p style={{ marginTop: 16, marginBottom: 0, fontSize: fs.note, lineHeight: 1.55, color: C("ash"), maxWidth: 460 }}>{t("w.analyze.vol.empty")}</p>
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 10 }}>
@@ -267,7 +267,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
             </div>
             <p style={{ fontSize: fs.note, lineHeight: 1.4, color: C("ash"), margin: 0, maxWidth: 260 }}>{t("w.analyze.vol.heroCaption")}</p>
 
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: 6, marginTop: 22, maxWidth: 520 }}>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: 6, marginTop: 24, maxWidth: 520 }}>
               {rows.map((r) => {
                 const on = picked === r.muscle;
                 const label = ml(r.muscle);
@@ -345,7 +345,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{gloss ? "–" : "+"}</span>
         </button>
         {gloss && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
             {([["MV", "w.analyze.vol.glossMv"], ["MEV", "w.analyze.vol.glossMev"], ["MAV", "w.analyze.vol.glossMav"], ["MRV", "w.analyze.vol.glossMrv"]] as const).map(([k, key]) => (
               <div key={k} style={{ display: "flex", gap: space.md }}>
                 <span style={{ ...mono(fs.caption), fontWeight: 700, color: C("lime"), width: 42, flexShrink: 0 }}>{k}</span>
@@ -357,7 +357,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
       </section>
 
       {editing && customized && (
-        <button onClick={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 4, padding: "10px 18px", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}>
+        <button onClick={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 4, padding: "10px 16px", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}>
           {t("w.analyze.vol.resetDefaults")}
         </button>
       )}
@@ -392,15 +392,15 @@ function Prescription({ title, why, items, token, ml, unit }: {
         <h2 style={sectionTitle}>{title}</h2>
         <span style={eyebrow}>{unit}</span>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 14 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
         {items.map((s) => (
-          <span key={s.muscle} style={{ display: "inline-flex", alignItems: "center", gap: space.sm, padding: "8px 14px", borderRadius: 999, border: `1px solid ${mix(token, 35)}`, background: mix(token, 10) }}>
+          <span key={s.muscle} style={{ display: "inline-flex", alignItems: "center", gap: space.sm, padding: "8px 16px", borderRadius: 999, border: `1px solid ${mix(token, 35)}`, background: mix(token, 10) }}>
             <span style={{ fontSize: fs.bodyLg, fontWeight: 600, color: C("chalk") }}>{ml(s.muscle)}</span>
             <span style={{ ...mono(fs.bodyLg), fontWeight: 700, color: C(token) }}>{deltaLabel(s)}</span>
           </span>
         ))}
       </div>
-      <p style={{ marginTop: 14, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{why}</p>
+      <p style={{ marginTop: 16, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{why}</p>
     </section>
   );
 }
@@ -479,7 +479,7 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
           <p style={{ marginTop: 12, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.rampCaption")}</p>
 
           {editing && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
               <Stepper label={t("w.analyze.vol.currentWeek")} value={block.week} min={1} max={block.weeks} onChange={(v) => setBlock({ week: v })} />
               <Stepper label={t("w.analyze.vol.blockLength")} value={block.weeks} suffix={t("w.analyze.vol.weeksShort")} min={1} max={16} onChange={(v) => setBlock({ weeks: v })} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
@@ -552,7 +552,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       {/* HOW COMPLETE THE PROFILE IS, weighted by influence rather than by
           counting boxes — and what the single most valuable missing answer
           would buy. "Estimated for you" should be able to say how well. */}
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{Math.round(done.score * 100)}% {t("w.analyze.vol.knownAbout")}</span>
           {done.next && <span style={{ ...mono(fs.caption), color: C("lime") }}>{t("w.analyze.vol.nextUp")}: {t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</span>}
@@ -566,7 +566,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       </div>
 
       {/* YOUR LEVEL, FROM YOUR LIFTS. */}
-      <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+      <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
           <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.levelTitle")}</h3>
           {level.basis !== "none" && (
@@ -609,7 +609,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       </div>
 
       {resolved.factors.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
           {resolved.factors.map((f) => (
             <div key={f.key} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
               <span style={{ fontSize: fs.body, color: C("chalk") }}>
@@ -631,7 +631,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       )}
 
       {/* The log's correction — what your own training proved. */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}`, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}`, flexWrap: "wrap" }}>
         <span style={{ fontSize: fs.body, color: C("chalk"), flex: 1, minWidth: 160 }}>{t("w.analyze.vol.adaptive")}</span>
         <Toggle on={adaptive} label={adaptive ? t("w.analyze.vol.done") : t("w.analyze.vol.adaptive")} onClick={() => setLoggerPref("adaptiveLandmarks", !adaptive)} />
       </div>
@@ -654,7 +654,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           stopped moving is worth training against; one that is still jumping
           says so. See core/engines/landmark-replay.ts. */}
       {adaptive && (
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 16 }}>
           <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.replayTitle")}</h3>
           {tested.length === 0 ? (
             <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.replayNone")}</p>
@@ -681,7 +681,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
       )}
 
       {editing && (
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C("line")}` }}>
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
           <h3 style={{ ...sectionTitle, fontSize: fs.body, margin: 0 }}>{t("w.analyze.vol.aboutYou")}</h3>
           {measuredKeys.size > 0 && (
             <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.measuredWhy")}</p>
@@ -726,7 +726,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
           {Object.keys(stored).length > 0 && (
             <button
               onClick={() => setLoggerPref("volumeProfile", {})}
-              style={{ marginTop: 14, padding: "8px 0", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}
+              style={{ marginTop: 16, padding: "8px 0", background: "none", border: "none", cursor: "pointer", ...mono(fs.caption), color: C("ash") }}
             >
               {t("w.analyze.vol.clearProfile")}
             </button>
@@ -873,7 +873,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
   // not become a restyled one.
   return (
     <div>
-      <div style={{ ...mono(9), letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 14, marginBottom: 8 }}>{t("w.analyze.trends.weeklySets8w")}</div>
+      <div style={{ ...mono(9), letterSpacing: ".08em", textTransform: "uppercase", color: C("ash"), marginTop: 16, marginBottom: 8 }}>{t("w.analyze.trends.weeklySets8w")}</div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 56, maxWidth: 420 }}>
         {sets.map((n, i) => (
           <div key={i} style={{ flex: 1, height: 56, display: "flex", alignItems: "flex-end", background: C("ink"), borderRadius: 7, overflow: "hidden" }}>

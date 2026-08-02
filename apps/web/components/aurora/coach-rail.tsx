@@ -58,13 +58,13 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
       aria-label={`${t("w.explore.coachOpen")} ${c.name}`}
-      style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 290, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "16px 16px 14px", cursor: "pointer", boxShadow: "var(--shadow-card)", overflow: "hidden", display: "flex", flexDirection: "column" }}
+      style={{ position: "relative", scrollSnapAlign: "start", flex: "0 0 auto", width: 290, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "16px 16px 16px", cursor: "pointer", boxShadow: "var(--shadow-card)", overflow: "hidden", display: "flex", flexDirection: "column" }}
     >
       {/* accent wash — the coach's colour bleeding in from the top corner */}
       <span aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", background: `radial-gradient(120% 130% at 100% 0%, color-mix(in srgb, ${accent} 14%, transparent), transparent 60%)` }} />
       <span style={{ position: "absolute", top: 16, right: 16, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}><Chevron /></span>
 
-      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, paddingRight: 18 }}>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, paddingRight: 16 }}>
         <span style={{ width: 46, height: 46, borderRadius: 999, boxShadow: `inset 0 0 0 1.5px ${accent}`, background: C("ink"), color: accentText, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, flexShrink: 0, display: "grid", placeItems: "center" }}>{initials(c.name)}</span>
         <div style={{ minWidth: 0 }}>
           {/* Name in the display face — Mincho under Kyoto Hour — so the
@@ -128,7 +128,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
   const items = coaches ?? coachRailItems(null);
 
   return (
-    <div style={{ marginTop: headerless ? 0 : 18 }}>
+    <div style={{ marginTop: headerless ? 0 : 16 }}>
       {!headerless && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div>

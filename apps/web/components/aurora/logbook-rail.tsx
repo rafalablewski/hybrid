@@ -97,14 +97,14 @@ export default function AuroraLogbookRail({
       </div>
 
       {/* the seven-day week — the plan rail's chip anatomy, logbook vocabulary */}
-      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "18px 0 0" }}>
+      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "16px 0 0" }}>
         {week.days.map((d) => (
           <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
       </div>
 
       {/* full-bleed hairline — the only separator between week and day */}
-      <div style={{ height: 1, background: C("line"), margin: "18px -20px 16px" }} />
+      <div style={{ height: 1, background: C("line"), margin: "16px -20px 16px" }} />
 
       <DayDetail
         key={sel.dateKey}
@@ -190,7 +190,7 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
           {daySessions.map((s) => s.title).join(" – ")}<span style={{ opacity: 0.65 }}>{finished}</span>
         </div>
         {stats.length > 0 && (
-          <div style={{ display: "flex", gap: 26, margin: "16px 0 0 31px" }}>
+          <div style={{ display: "flex", gap: 24, margin: "16px 0 0 31px" }}>
             {stats.map((s) => (
               <span key={s.labelKey}>
                 <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
