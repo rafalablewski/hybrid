@@ -117,6 +117,7 @@ export default function AuroraWeekRail({
   onSelectDay,
   resetToken,
   onWeekRowLayout,
+  doneFloor,
 }: {
   planId: string;
   planStartedAt: string;
@@ -137,6 +138,13 @@ export default function AuroraWeekRail({
   /** Today's pill rail measures the date capsule's capture point off the week
    *  strip's own bottom edge (y + height, within this card). */
   onWeekRowLayout?: (bottom: number) => void;
+  /** The DONE FLOOR — every session logged on the viewed day, rendered as this
+   *  card's lower floor under a labelled seam (aurora/done-floor.tsx). The plan
+   *  floor above states what is ASKED of the athlete; this one states what they
+   *  DID, and the seam is what keeps a tennis row from reading as the last line
+   *  of the prescription. Passed in because the screen owns the day's sessions,
+   *  the quick-log sheet and the Done-today sheet. */
+  doneFloor?: ReactNode;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -229,6 +237,7 @@ export default function AuroraWeekRail({
         receipt={receipt}
         units={units}
         streakDays={streakDays}
+        doneFloor={doneFloor}
         onStart={(b) => onStart(b, titleFor(sel))}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
@@ -321,7 +330,7 @@ function LiftRow({ C, r, showSession, first }: { C: Pal; r: { name: string; sess
   );
 }
 
-function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   C: Pal;
   scheme: "dark" | "light";
   day: ScheduledDay;
@@ -330,6 +339,8 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
   units: WeightUnit;
   /** the athlete's current day-streak, for the done-today stamp. */
   streakDays: number;
+  /** the day's logged sessions as this card's lower floor (see the prop above). */
+  doneFloor?: ReactNode;
   onStart: (b?: SessionBlock[]) => void;
   onSkip: () => void;
   onUnskip: () => void;
@@ -365,12 +376,18 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
 
   if (day.isRest) {
     return (
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <Moon c={C.ash} s={26} />
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: leading(fs.caption) }}>{t("w.home.rail.restNote")}</Text>
+      <View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Moon c={C.ash} s={26} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: leading(fs.caption) }}>{t("w.home.rail.restNote")}</Text>
+          </View>
         </View>
+        {/* A rest day asks for nothing — but an easy swim still happened, and it
+            used to sit in a card of its own with nothing tying it to the rest
+            note above. One card now says both. */}
+        {doneFloor}
       </View>
     );
   }
@@ -433,6 +450,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
             ))}
           </View>
         )}
+        {doneFloor}
         <Pressable
           onPress={onHistory}
           accessibilityRole="button"
@@ -530,6 +548,11 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
       </View>
 
       {catchUp}
+      {/* …and below the seam, what was already logged on this day — an off-plan
+          run on a day the plan is still waiting for, or the tennis you played
+          instead of the session you missed. Both are true at once, and the card
+          now says so. */}
+      {doneFloor}
     </View>
   );
 }
