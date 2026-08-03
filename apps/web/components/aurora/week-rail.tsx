@@ -5,7 +5,6 @@ import {
   planSchedule,
   doneReceipt,
   doneReceiptStats,
-  stripWeekdayPrefix,
   dayStamp,
   dayStampText,
   streak,
@@ -364,13 +363,19 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
   );
 
   // DONE — the day collapses to a receipt ("The receipt, corrected", see
-  // design/done-card-redesign-ideas.html): one headline, the day's work as an
-  // en-dash meta line, only trustworthy figures, and a quiet text link into
-  // History instead of a pill. The prescription is settled — it doesn't re-list.
+  // design/done-card-redesign-ideas.html): one headline, the finishing time,
+  // only trustworthy figures, and a quiet text link into History instead of a
+  // pill. The prescription is settled — it doesn't re-list.
+  //
+  // NO WORKOUT NAME HERE. The line used to lead with the plan day's title
+  // ("Upper + Engine – finished 11:18") — and the Done-today card below names
+  // the very session that fulfilled it, wearing a PLAN tag. One screen, one
+  // name for the work. What survives is the fact that card withholds: the
+  // clock time the day finished at.
   if (day.status === "done") {
     const stats = receipt ? doneReceiptStats(receipt, units) : [];
     const finished = receipt?.finishedClock
-      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
       : "";
     return (
       <div>
@@ -383,9 +388,11 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
           </div>
           {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
-          {stripWeekdayPrefix(day.title)}<span style={{ opacity: 0.65 }}>{finished}</span>
-        </div>
+        {finished && (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
+            {finished}
+          </div>
+        )}
         {stats.length > 0 && (
           <div style={{ display: "flex", gap: 24, margin: "16px 0 0 31px" }}>
             {stats.map((s) => (

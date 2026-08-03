@@ -109,7 +109,6 @@ export default function AuroraLogbookRail({
       <DayDetail
         key={sel.dateKey}
         day={sel}
-        daySessions={daySessions}
         receipt={receipt}
         units={units}
         streakDays={streakDays}
@@ -148,9 +147,8 @@ function DayChip({ day, selected, onSelect, t }: { day: LogbookDay; selected: bo
   );
 }
 
-function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHistory, t }: {
+function DayDetail({ day, receipt, units, streakDays, onLog, onHistory, t }: {
   day: LogbookDay;
-  daySessions: LoggedSession[];
   receipt: ReturnType<typeof mergeDoneReceipts>;
   units: WeightUnit;
   /** the athlete's current day-streak, for the done-today stamp. */
@@ -168,12 +166,19 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
   );
 
   // LOGGED — the day collapses to a receipt, exactly like the plan rail's done
-  // state: one headline, the day's work as an en-dash meta line, only
-  // trustworthy figures, and a quiet text link into History.
+  // state: one headline, the finishing time, only trustworthy figures, and a
+  // quiet text link into History.
+  //
+  // NO WORKOUT NAMES HERE. This line used to join the day's session titles
+  // ("Tennis – Afternoon workout – finished 14:33"), and the Done-today card a
+  // few hundred pixels below lists those very sessions by name, one row each,
+  // with their own figures — the same words twice on one screen. The receipt
+  // keeps the one fact that card deliberately withholds: the clock time the day
+  // finished at.
   if (day.logged) {
     const stats = receipt ? doneReceiptStats(receipt, units) : [];
     const finished = receipt?.finishedClock
-      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
       : "";
     return (
       <div>
@@ -186,9 +191,11 @@ function DayDetail({ day, daySessions, receipt, units, streakDays, onLog, onHist
           </div>
           {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
-          {daySessions.map((s) => s.title).join(" – ")}<span style={{ opacity: 0.65 }}>{finished}</span>
-        </div>
+        {finished && (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
+            {finished}
+          </div>
+        )}
         {stats.length > 0 && (
           <div style={{ display: "flex", gap: 24, margin: "16px 0 0 31px" }}>
             {stats.map((s) => (

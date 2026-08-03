@@ -122,7 +122,6 @@ export default function AuroraLogbookRail({
         C={C}
         scheme={scheme}
         day={sel}
-        daySessions={daySessions}
         receipt={receipt}
         units={units}
         streakDays={streakDays}
@@ -169,11 +168,10 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
   );
 }
 
-function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, onLog, onHistory, t }: {
+function DayDetail({ C, scheme, day, receipt, units, streakDays, onLog, onHistory, t }: {
   C: Pal;
   scheme: "dark" | "light";
   day: LogbookDay;
-  daySessions: LoggedSession[];
   receipt: ReturnType<typeof mergeDoneReceipts>;
   units: WeightUnit;
   /** the athlete's current day-streak, for the done-today stamp. */
@@ -191,12 +189,19 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
   );
 
   // LOGGED — the day collapses to a receipt, exactly like the plan rail's done
-  // state: one headline, the day's work as an en-dash meta line, only
-  // trustworthy figures, and a quiet text link into History.
+  // state: one headline, the finishing time, only trustworthy figures, and a
+  // quiet text link into History.
+  //
+  // NO WORKOUT NAMES HERE. This line used to join the day's session titles
+  // ("Tennis – Afternoon workout – finished 14:33"), and the Done-today card a
+  // few hundred pixels below lists those very sessions by name, one row each,
+  // with their own figures — the same words twice on one screen. The receipt
+  // keeps the one fact that card deliberately withholds: the clock time the day
+  // finished at.
   if (day.logged) {
     const stats = receipt ? doneReceiptStats(receipt, units) : [];
     const finished = receipt?.finishedClock
-      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
       : "";
     return (
       <View>
@@ -209,9 +214,11 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
           </View>
           {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: leading(fs.caption) }}>
-          {daySessions.map((s) => s.title).join(" – ")}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
-        </Text>
+        {!!finished && (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: leading(fs.caption) }}>
+            {finished}
+          </Text>
+        )}
         {stats.length > 0 && (
           <View style={{ flexDirection: "row", gap: 24, marginTop: 16, marginLeft: 31 }}>
             {stats.map((s) => (

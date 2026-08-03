@@ -186,13 +186,7 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
   return out;
 }
 
-const WEEKDAY_PREFIX_RE = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,\s*/;
-
-/**
- * Drop a plan-day title's leading weekday ("Thu, Upper + Engine" → "Upper +
- * Engine"): under an "All done for today" headline — and beside the rail's own
- * date line — the weekday is said twice. Titles without the prefix pass through.
- */
-export function stripWeekdayPrefix(title: string): string {
-  return (title || "").replace(WEEKDAY_PREFIX_RE, "");
-}
+// stripWeekdayPrefix lived here to trim the weekday off the done receipt's
+// title line ("Thu, Upper + Engine" → "Upper + Engine"). That line no longer
+// names the work at all — the Done-today card below the rail is the one place a
+// finished session is named — so the helper went with it.

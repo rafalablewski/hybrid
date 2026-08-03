@@ -6,7 +6,6 @@ import {
   planSchedule,
   doneReceipt,
   doneReceiptStats,
-  stripWeekdayPrefix,
   dayStamp,
   dayStampText,
   streak,
@@ -393,14 +392,20 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
   );
 
   // DONE — the day collapses to a receipt ("The receipt, corrected", see
-  // design/done-card-redesign-ideas.html): one headline, the day's work as an
-  // en-dash meta line, only trustworthy figures, and a quiet text link into
-  // History instead of a pill. The prescription is settled — it doesn't
-  // re-list. Mirrors the web rail exactly.
+  // design/done-card-redesign-ideas.html): one headline, the finishing time,
+  // only trustworthy figures, and a quiet text link into History instead of a
+  // pill. The prescription is settled — it doesn't re-list. Mirrors the web
+  // rail exactly.
+  //
+  // NO WORKOUT NAME HERE. The line used to lead with the plan day's title
+  // ("Upper + Engine – finished 11:18") — and the Done-today card below names
+  // the very session that fulfilled it, wearing a PLAN tag. One screen, one
+  // name for the work. What survives is the fact that card withholds: the
+  // clock time the day finished at.
   if (day.status === "done") {
     const stats = receipt ? doneReceiptStats(receipt, units) : [];
     const finished = receipt?.finishedClock
-      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
       : "";
     return (
       <View>
@@ -413,9 +418,11 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
           </View>
           {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: leading(fs.caption) }}>
-          {stripWeekdayPrefix(day.title)}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
-        </Text>
+        {!!finished && (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: leading(fs.caption) }}>
+            {finished}
+          </Text>
+        )}
         {stats.length > 0 && (
           <View style={{ flexDirection: "row", gap: 24, marginTop: 16, marginLeft: 31 }}>
             {stats.map((s) => (
