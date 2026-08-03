@@ -927,6 +927,16 @@ export default function AppShell() {
               refresh();
               setScreen("today");
             }}
+            // Minimize: same destination as onHome, but the seeded blocks are
+            // dropped rather than the session — the running draft stays in
+            // localStorage, so the nav accessory picks it up and re-entering the
+            // logger restores it. Clearing the pending seed is what makes that
+            // restore win over a stale plan/AI hand-off on the way back in.
+            onMinimize={() => {
+              setPendingBlocks(undefined);
+              setPendingTitle(undefined);
+              setScreen("today");
+            }}
             onUpgrade={openUpgrade}
           />
         )}

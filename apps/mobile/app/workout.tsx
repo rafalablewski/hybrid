@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
@@ -104,6 +104,7 @@ import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import { ArrowGlyph } from "../components/aurora/cta-label";
 import Sheet from "../components/aurora/sheet";
+import { useConfirm } from "../components/aurora/confirm";
 import { FeelPrompt } from "../components/feel-prompt";
 import SwipeRow from "../components/swipe-row";
 import DragHandle from "../components/drag-handle";
@@ -533,10 +534,52 @@ export default function Workout() {
     })();
   }, [ready, guest, source, templateId, sport]);
 
+  /**
+   * THE TWO EXITS — deliberately unequal.
+   *
+   * MINIMIZE is the top-level glyph and costs nothing: the draft is already
+   * persisted on every change, so leaving the route hands the running session
+   * to the tab-bar accessory rather than ending it. This is what the header's
+   * left slot always DID — it called router.back() under the word "Cancel",
+   * which is why people read the only safe exit as the destructive one.
+   *
+   * DISCARD is the irreversible one, so it is not a peer: it lives a layer down
+   * in the ⋯ menu and behind a confirm. Two adjacent unlabelled glyphs — one
+   * reversible, one not — in the corner a thumb rests on is precisely the
+   * arrangement that loses sessions.
+   */
+  const { confirm } = useConfirm();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const discarded = useRef(false);
+
+  const minimize = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  const discard = useCallback(async () => {
+    setMenuOpen(false);
+    const ok = await confirm({
+      title: t("workout.discardTitle"),
+      message: t("workout.discardBody"),
+      confirmLabel: t("train.discard"),
+      destructive: true,
+    });
+    if (!ok) return;
+    discarded.current = true;
+    await clearDraft();
+    router.back();
+  }, [confirm, router, t]);
+
   // Persist the in-progress draft as it changes (debounced) so it survives a
   // crash / kill. Only after the initial restore, so we never clobber a draft.
+  //
+  // `discarded` latches once the athlete has thrown the session away: the save
+  // is on a 500ms timer, so without the latch a write scheduled just before the
+  // discard could land AFTER clearDraft() and resurrect the very session they
+  // just confirmed away — which the accessory would then cheerfully offer to
+  // resume.
   useEffect(() => {
-    if (!restored) return;
+    if (!restored || discarded.current) return;
     const id = setTimeout(() => {
       if (exercises.length) saveDraft({ title, startedAt: startedAt.current.toISOString(), exercises });
       else clearDraft();
@@ -940,18 +983,49 @@ export default function Workout() {
           rest of the Aurora app uses rather than wrapping in AuroraScreen. */}
       {aurora && <AuroraField />}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={{ width: 64 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.teams.coach.cancel")}</Text>
-        </Pressable>
+        {/* MINIMIZE — a chevron pointing DOWN, at where the session goes: the
+            accessory strip above the tab bar. The direction is the affordance,
+            and it is the same direction as the drag that will eventually do the
+            same job. The flanks both take flex:1 so the clock stays optically
+            centred whatever the side content measures. */}
+        <View style={{ flex: 1, alignItems: "flex-start" }}>
+          <Pressable
+            onPress={minimize}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t("workout.minimize")}
+            style={{
+              width: 34, height: 34, borderRadius: 17,
+              alignItems: "center", justifyContent: "center",
+              backgroundColor: withAlpha(C.chalk, 0.06),
+              borderWidth: 1, borderColor: withAlpha(C.chalk, 0.14),
+            }}
+          >
+            <AuroraIcon name="chevron-down" size={19} color={C.chalk} />
+          </Pressable>
+        </View>
         <View style={{ alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: paused ? txt(C, C.amber) : C.chalk, letterSpacing: 0.9 }}>{mmss(elapsed)}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: 0.9 }}>{paused ? t("workout.paused") : t("workout.elapsed")}</Text>
         </View>
-        <Pressable onPress={finish} disabled={saving} style={{ width: 64, alignItems: "flex-end" }} hitSlop={10}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: saving ? C.ash : txt(C, C.lime) }}>
-            {saving ? "…" : t("workout.finish")}
-          </Text>
-        </Pressable>
+        {/* Finish keeps the right edge it has always had; the ⋯ beside it is the
+            way in to everything that must NOT be one tap. */}
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+          <Pressable
+            onPress={() => setMenuOpen(true)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t("workout.moreOptions")}
+            style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
+          </Pressable>
+          <Pressable onPress={finish} disabled={saving} hitSlop={10}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: saving ? C.ash : txt(C, C.lime) }}>
+              {saving ? "…" : t("workout.finish")}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -1611,6 +1685,23 @@ export default function Workout() {
       </KeyboardAvoidingView>
 
       <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
+
+      {/* The ⋯ menu. One row today, and that is the point: the header carries a
+          single top-level exit, and the irreversible one is reached through a
+          menu and then a confirm. Anything added here later inherits that
+          protection for free. */}
+      <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")} scroll={false} detents={["medium"]}>
+        <Pressable
+          onPress={discard}
+          accessibilityRole="button"
+          accessibilityLabel={t("workout.discardSession")}
+          style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }}
+        >
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.red) }}>
+            {t("workout.discardSession")}
+          </Text>
+        </Pressable>
+      </Sheet>
 
       {/* Get-ready count-in — covers the screen on a fresh start until GO. */}
       {countdown != null && (
