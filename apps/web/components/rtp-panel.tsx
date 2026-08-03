@@ -1,125 +1,159 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Select } from "@/lib/ui";
-import { evaluateRtp, STAGE_LABEL, type RtpStage } from "@hybrid/core";
+import { useCallback, useEffect, useState } from "react";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, ON_ACCENT, disp, mono, txt, Mono } from "@/lib/ui";
+import { evaluateRtp, STAGE_LABEL, ALL_MUSCLES, type RtpStage } from "@hybrid/core";
+import { useLang } from "@/lib/i18n";
 
 type AuditEntry = { action: string; by: string; role: string; ts: string; from?: string; to?: string; gate?: string; reason?: string };
-type Protocol = { id: string; tissue: string; injuryDate: string; stage: RtpStage; completed: string[]; status: string; audit?: AuditEntry[] };
+export type Protocol = { id: string; tissue: string; injuryDate: string; stage: RtpStage; completed: string[]; status: string; audit?: AuditEntry[] };
 
-const TISSUES = ["quads", "glutes", "posterior", "back", "chest", "shoulders", "triceps"];
-
-// Return-to-play rails. Each protocol shows its gated stage; an athlete can't
-// advance until every gate is met (the core engine enforces it).
-export default function RtpPanel() {
+/**
+ * RETURN-TO-PLAY — the gated protocol rails, as PIECES rather than a card.
+ *
+ * RTP is not a neighbour of injury risk, it is its deep end: an open protocol
+ * is what the Tissue card looks like once something is actually hurt. So this
+ * module no longer renders a card of its own — it hands the Tissue card a
+ * hook, a protocol block and an injury picker, and that card owns the layout.
+ * Mirrors the same split on mobile (apps/mobile/components/aurora/performance).
+ */
+export function useRtpProtocols() {
   const [protocols, setProtocols] = useState<Protocol[]>([]);
-  const [tissue, setTissue] = useState("posterior");
-  const [overrideFor, setOverrideFor] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const res = await fetch("/api/rtp");
     if (res.ok) {
       const d = (await res.json()) as { protocols: Protocol[] };
       setProtocols(d.protocols.map((p) => ({ ...p, completed: (p.completed as string[]) ?? [], audit: (p.audit as AuditEntry[]) ?? [] })));
     }
-  };
+  }, []);
   useEffect(() => {
     refresh();
-  }, []);
+  }, [refresh]);
 
-  const create = async () => {
-    const res = await fetch("/api/rtp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tissue }),
-    });
+  const create = useCallback(async (tissue: string) => {
+    const res = await fetch("/api/rtp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tissue }) });
     if (res.ok) refresh();
-  };
-  const mutate = async (id: string, body: object) => {
+  }, [refresh]);
+
+  const mutate = useCallback(async (id: string, body: object) => {
     const res = await fetch(`/api/rtp/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) refresh();
-  };
-  const doOverride = async (id: string) => {
-    if (!reason.trim()) return;
-    await mutate(id, { action: "override", reason });
-    setOverrideFor(null);
-    setReason("");
-  };
+  }, [refresh]);
 
-  const active = protocols.filter((p) => p.status !== "abandoned");
+  return { active: protocols.filter((p) => p.status !== "abandoned"), create, mutate };
+}
 
+/** The tissue chips — shown only AFTER the athlete says something is hurt, so
+ *  an always-open form never sits on the screen for a twice-a-year event. */
+export function InjuryPicker({ onPick, onCancel }: { onPick: (tissue: string) => void; onCancel: () => void }) {
+  const { t } = useLang();
+  const [tissue, setTissue] = useState<string>(ALL_MUSCLES[0] ?? "quads");
   return (
-    <Card style={{ borderLeft: `3px solid ${RED}` }}>
-      <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={RED}>
-        Return-to-play – gated protocols
+    <div style={{ marginTop: 12, padding: 14, borderRadius: 14, border: `1px solid ${LINE}`, background: INK2 }}>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 9 }} c={ASH}>
+        {t("w.injury.pickArea")}
       </Mono>
-
-      <div style={{ display: "flex", gap: space.sm, marginTop: 10, alignItems: "center" }}>
-        <Select value={tissue} onChange={(e) => setTissue(e.target.value)} style={{ textTransform: "capitalize" }}>
-          {TISSUES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </Select>
-        <button className="pressable" onClick={create} style={btn}>Open protocol</button>
-      </div>
-
-      <div style={{ marginTop: 14, display: "grid", gap: space.md }}>
-        {active.length === 0 && <Mono s={{ fontSize: fs.body }}>No active protocols. Open one when an athlete is injured.</Mono>}
-        {active.map((p) => {
-          const ev = evaluateRtp({ stage: p.stage, completed: p.completed });
-          const cleared = p.stage === "cleared";
+      <div role="radiogroup" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {ALL_MUSCLES.map((tt) => {
+          const on = tt === tissue;
           return (
-            <div key={p.id} style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <Mono s={{ fontSize: fs.bodyLg, textTransform: "capitalize" }} c={CHALK}>{p.tissue}</Mono>
-                <Chip c={cleared ? LIME : BLUE}>{STAGE_LABEL[p.stage]}</Chip>
-              </div>
-              <div style={{ height: 6, borderRadius: 3, background: INK2, margin: "10px 0", overflow: "hidden" }}>
-                <div style={{ width: `${Math.round(ev.progress * 100)}%`, height: "100%", background: cleared ? LIME : BLUE }} />
-              </div>
-              {!cleared && (
-                <>
-                  {ev.gates.map((g) => (
-                    <label key={g.key} style={{ display: "flex", gap: space.sm, alignItems: "center", padding: "4px 0", cursor: "pointer" }}>
-                      <input type="checkbox" checked={g.done} onChange={() => mutate(p.id, { action: "toggleGate", gate: g.key })} />
-                      <Mono s={{ fontSize: fs.body }} c={g.done ? LIME : ASH}>{g.label}</Mono>
-                    </label>
-                  ))}
-                  <div style={{ display: "flex", gap: space.sm, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
-                    <button className="pressable" onClick={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} style={{ ...btn, opacity: ev.canAdvance ? 1 : 0.4 }}>
-                      Advance → {ev.nextStage ? STAGE_LABEL[ev.nextStage] : ""}
-                    </button>
-                    {!ev.canAdvance && (
-                      <>
-                        <Mono s={{ fontSize: fs.micro }} c={AMBER}>{ev.blockedBy.length} gate(s) remaining</Mono>
-                        <button className="pressable" onClick={() => setOverrideFor(overrideFor === p.id ? null : p.id)} style={{ ...btn, background: "transparent", color: txt(RED), border: `1px solid ${RED}` }}>
-                          Override
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  {overrideFor === p.id && (
-                    <div style={{ display: "flex", gap: space.sm, marginTop: 8, alignItems: "center" }}>
-                      <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (logged to audit)" style={{ ...input, flex: 1, textTransform: "none" }} />
-                      <button className="pressable" onClick={() => doOverride(p.id)} style={{ ...btn, background: RED, color: "#0c0d0c" }}>Force advance</button>
-                    </div>
-                  )}
-                </>
-              )}
-              {p.audit && p.audit.length > 0 && (
-                <div style={{ marginTop: 12, borderTop: `1px solid ${LINE}`, paddingTop: 10 }}>
-                  <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>Audit trail</Mono>
-                  {p.audit.slice(-5).reverse().map((a, i) => (
-                    <Mono key={i} s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={a.action === "override" ? RED : ASH}>
-                      {new Date(a.ts).toLocaleDateString()} – {a.by} ({a.role.toLowerCase()}) – {auditText(a)}
-                    </Mono>
-                  ))}
-                </div>
-              )}
-            </div>
+            <button
+              key={tt}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              className="pressable"
+              onClick={() => setTissue(tt)}
+              style={{
+                ...mono, fontSize: fs.micro, textTransform: "capitalize", cursor: "pointer",
+                borderRadius: 999, padding: "6px 12px",
+                border: `1px solid ${on ? LIME : LINE}`,
+                background: on ? `color-mix(in srgb, ${LIME} 12%, transparent)` : "transparent",
+                color: on ? txt(LIME) : ASH,
+              }}
+            >
+              {tt}
+            </button>
           );
         })}
       </div>
-    </Card>
+      <div style={{ display: "flex", gap: space.sm, marginTop: 12, alignItems: "center" }}>
+        <button type="button" className="pressable" onClick={() => onPick(tissue)} style={btn}>{t("w.injury.openProtocol")}</button>
+        <button type="button" className="pressable" onClick={onCancel} style={{ ...btn, background: "transparent", color: ASH, border: `1px solid ${LINE}` }}>{t("w.injury.cancel")}</button>
+      </div>
+    </div>
+  );
+}
+
+/** One open protocol. The gates, the audit trail and the override-reason field
+ *  are unchanged — they simply live inside the Tissue card now. */
+export function RtpProtocol({ p, mutate }: { p: Protocol; mutate: (id: string, body: object) => void }) {
+  const { t } = useLang();
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const ev = evaluateRtp({ stage: p.stage, completed: p.completed });
+  const cleared = p.stage === "cleared";
+  const accent = cleared ? LIME : BLUE;
+
+  const doOverride = () => {
+    if (!reason.trim()) return;
+    mutate(p.id, { action: "override", reason });
+    setOverrideOpen(false);
+    setReason("");
+  };
+
+  return (
+    <div style={{ border: `1px solid ${LINE}`, borderRadius: 14, padding: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+        <span style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: CHALK, textTransform: "capitalize" }}>{p.tissue}</span>
+        <Mono s={{ fontSize: fs.nano, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", border: `1px solid color-mix(in srgb, ${accent} 55%, transparent)`, borderRadius: 999, padding: "3px 10px" }} c={txt(accent)}>
+          {STAGE_LABEL[p.stage]}
+        </Mono>
+      </div>
+      <div style={{ height: 6, borderRadius: 3, background: INK2, margin: "11px 0", overflow: "hidden" }}>
+        <div style={{ width: `${Math.round(ev.progress * 100)}%`, height: "100%", background: accent }} />
+      </div>
+      {!cleared && (
+        <>
+          {ev.gates.map((g) => (
+            <label key={g.key} style={{ display: "flex", gap: space.sm, alignItems: "center", padding: "4px 0", cursor: "pointer" }}>
+              <input type="checkbox" checked={g.done} onChange={() => mutate(p.id, { action: "toggleGate", gate: g.key })} />
+              <Mono s={{ fontSize: fs.body }} c={g.done ? txt(LIME) : ASH}>{g.label}</Mono>
+            </label>
+          ))}
+          <div style={{ display: "flex", gap: space.sm, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <button type="button" className="pressable" onClick={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} style={{ ...btn, opacity: ev.canAdvance ? 1 : 0.4 }}>
+              {t("w.rtp.advance")} → {ev.nextStage ? STAGE_LABEL[ev.nextStage] : ""}
+            </button>
+            {!ev.canAdvance && (
+              <>
+                <Mono s={{ fontSize: fs.micro }} c={txt(AMBER)}>{ev.blockedBy.length} {t("w.rtp.gatesLeft")}</Mono>
+                <button type="button" className="pressable" onClick={() => setOverrideOpen((v) => !v)} style={{ ...btn, background: "transparent", color: txt(RED), border: `1px solid ${RED}` }}>
+                  {t("w.rtp.override")}
+                </button>
+              </>
+            )}
+          </div>
+          {overrideOpen && (
+            <div style={{ display: "flex", gap: space.sm, marginTop: 8, alignItems: "center" }}>
+              <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("w.rtp.reason")} style={{ ...input, flex: 1, textTransform: "none" }} />
+              <button type="button" className="pressable" onClick={doOverride} style={{ ...btn, background: RED, color: "#0c0d0c" }}>{t("w.rtp.force")}</button>
+            </div>
+          )}
+        </>
+      )}
+      {p.audit && p.audit.length > 0 && (
+        <div style={{ marginTop: 12, borderTop: `1px solid ${LINE}`, paddingTop: 10 }}>
+          <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>{t("w.rtp.audit")}</Mono>
+          {p.audit.slice(-5).reverse().map((a, i) => (
+            <Mono key={i} s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={a.action === "override" ? txt(RED) : ASH}>
+              {new Date(a.ts).toLocaleDateString()} – {a.by} ({a.role.toLowerCase()}) – {auditText(a)}
+            </Mono>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

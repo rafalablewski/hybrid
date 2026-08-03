@@ -6,21 +6,18 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory, weeklyRecap,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
   fmtWeight, strengthPrDelta,
-  ROLE_COLOR, hpiRole, riskRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, localDayKey,
-  RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
-  type Biometrics, type LoggedSession, type Macrocycle, type AcwrBand, type RiskDriverKind,
-  type MuscleGroup, type TissueRisk, colors,
+  ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, localDayKey,
+  type Biometrics, type LoggedSession, type Macrocycle,
 } from "@hybrid/core";
-import { LINE_HEX, ASH, BLUE, LIME_HEX, tip, mono, roleHex } from "@/lib/ui";
+import { LINE_HEX, ASH, BLUE, LIME_HEX, tip, mono } from "@/lib/ui";
 import { readSportSelection } from "@/lib/sport-store";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useCheckins } from "@/lib/use-checkins";
 import { useToday } from "@/lib/use-today";
-import { useIsMobile } from "@/lib/use-media-query";
 import AuroraOnboarding from "./onboarding";
 import { HeroScreen } from "./hero";
 import GroupMark from "./group-mark";
-import RtpPanel from "../rtp-panel";
+import TissueCard from "./tissue-card";
 import AuroraVolume from "./volume";
 import AuroraTrends from "./trends";
 import { usePersona, setClientPersona } from "@/lib/persona";
@@ -32,15 +29,10 @@ import ReadinessFace from "./readiness-face";
 
 // State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
 const hpiVar = (b: string) => ROLE_COLOR[hpiRole(b)];
-const riskVar = (b: string) => ROLE_COLOR[riskRole(b)];
 const readyVar = (v: number) => ROLE_COLOR[readinessRole(v)];
-const bandHex = (b: string) => roleHex(riskRole(b)); // injury-risk scale → hex (SVG body map)
-const acwrVar = (b: AcwrBand): string =>
-  b === "sweet-spot" ? "lime" : b === "caution" ? "amber" : b === "danger" ? "red" : b === "detraining" ? "blue" : "ash";
 const C = (v: string) => `var(--color-${v})`;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
 const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
-const SVG_INK2 = colors.ink2;
 
 /* ---------- unknown-state placeholders ---------- */
 /** One skeleton bar — a placeholder that states nothing. Deliberately not a
@@ -68,35 +60,6 @@ function StateSkeleton() {
           <div key={i} style={{ flex: 1, display: "grid", gap: 8 }}><Bar w="55%" h={18} /><Bar w="80%" h={9} /></div>
         ))}
       </div>
-    </div>
-  );
-}
-
-/* ---------- tissue body map (from the retired analyze Performance screen) ---------- */
-type Region = { tissue: MuscleGroup; x: number; y: number; w: number; h: number };
-const FRONT: Region[] = [
-  { tissue: "shoulders", x: 8, y: 30, w: 30, h: 14 }, { tissue: "shoulders", x: 82, y: 30, w: 30, h: 14 },
-  { tissue: "chest", x: 40, y: 32, w: 40, h: 28 }, { tissue: "triceps", x: 6, y: 46, w: 20, h: 40 },
-  { tissue: "triceps", x: 94, y: 46, w: 20, h: 40 }, { tissue: "quads", x: 40, y: 116, w: 18, h: 72 }, { tissue: "quads", x: 62, y: 116, w: 18, h: 72 },
-];
-const BACK: Region[] = [
-  { tissue: "back", x: 40, y: 32, w: 40, h: 46 }, { tissue: "glutes", x: 40, y: 82, w: 40, h: 24 },
-  { tissue: "posterior", x: 40, y: 110, w: 18, h: 78 }, { tissue: "posterior", x: 62, y: 110, w: 18, h: 78 },
-];
-
-function Figure({ regions, label, byTissue }: { regions: Region[]; label: string; byTissue: Record<string, TissueRisk> }) {
-  return (
-    <div style={{ textAlign: "center" }}>
-      <svg viewBox="0 0 120 200" style={{ width: 130, height: 216 }}>
-        <circle cx={60} cy={16} r={11} fill={SVG_INK2} stroke={LINE_HEX} />
-        {regions.map((r, i) => {
-          const t = byTissue[r.tissue];
-          const fill = t && t.risk > 0 ? `${bandHex(t.band)}55` : SVG_INK2;
-          const stroke = t && t.risk > 0 ? bandHex(t.band) : LINE_HEX;
-          return <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} rx={5} fill={fill} stroke={stroke} strokeWidth={1}><title>{r.tissue}: {t ? `${t.risk}/100 (${t.band})` : "—"}</title></rect>;
-        })}
-      </svg>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div>
     </div>
   );
 }
@@ -137,13 +100,8 @@ export default function AuroraPerformance({
   macroSettled?: boolean;
 }) {
   const { t } = useLang();
-  const isMobile = useIsMobile();
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
-  // Injury-risk depth is a DISCLOSURE: the body map + per-tissue probability
-  // table (and the plain-language driver explanations) stay one tap away so the
-  // card itself remains a glance.
-  const [tissueOpen, setTissueOpen] = useState(false);
   const persona = usePersona();
   const { entitlement } = useSession();
 
@@ -193,7 +151,6 @@ export default function AuroraPerformance({
   const traj = useMemo(() =>
     performanceTrajectory(log, 14).map((p) => ({ day: p.daysAgo === 0 ? t("w.analyze.perf.today") : `-${p.daysAgo}d`, HPI: p.hpi, Readiness: p.readiness })),
   [log, t]);
-  const byTissue = useMemo(() => Object.fromEntries(risk.tissues.map((ti) => [ti.tissue, ti])) as Record<string, TissueRisk>, [risk]);
 
   if (persona === "casual") {
     return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete", true) : setScreen("upgrade"))} />;
@@ -203,16 +160,6 @@ export default function AuroraPerformance({
   // first response an empty list means "we haven't asked", not "nothing logged".
   const hasData = sessionsReady && sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
-  // Injury risk is exception-driven: a slim all-clear row when nothing's flagged,
-  // the full maroon alert only when a tissue needs attention.
-  const calm = risk.flagged.length === 0;
-  // The distinct risk DRIVERS across flagged tissues, heaviest first — explained
-  // in plain language inside the tissue-detail disclosure.
-  const driverKinds = ((): RiskDriverKind[] => {
-    const weight = new Map<RiskDriverKind, number>();
-    for (const ti of risk.flagged) for (const d of ti.drivers) weight.set(d.kind, (weight.get(d.kind) ?? 0) + d.contribution);
-    return [...weight.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
-  })();
   // Season completion %, guarded against a 0 / malformed totalWeeks.
   const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
 
@@ -346,130 +293,13 @@ export default function AuroraPerformance({
           </div>
         )}
 
-        {/* 4 · INJURY RISK — exception-driven summary; the tissue body-map +
-            calibrated probability table (the old analyze depth) live in the
-            "Tissue detail" disclosure so the glance stays a glance. */}
-        {hasData && (
-          <div style={{ ...CARD,
-            border: calm ? `1px solid ${C("line")}` : `1px solid color-mix(in srgb, ${C("red")} 45%, ${C("line")})`,
-            background: calm ? C("ink2") : `linear-gradient(180deg, color-mix(in srgb, ${C("red")} 7%, ${C("ink2")}), ${C("ink2")})` }}>
-            <SHead
-              title={t("w.home.today.injuryRisk")}
-              titleColor={calm ? undefined : "var(--red-text)"}
-              meta={<span style={{ fontWeight: 800, fontSize: fs.subtitle, color: C(riskVar(risk.band)) }}>{cap(risk.band)} – {risk.overall}</span>}
-            />
-            {calm ? (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime") }}>{t("w.home.today.noTissues")}</div>
-            ) : (
-              <>
-                <div style={{ height: 9, borderRadius: 5, background: C("ink"), overflow: "hidden" }}>
-                  <div style={{ width: `${risk.overall}%`, height: "100%", background: C(riskVar(risk.band)) }} />
-                </div>
-                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.sm }}>
-                  {risk.flagged.map((ti) => (
-                    <div key={ti.tissue} style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, color: C(riskVar(ti.band)), border: `1px solid color-mix(in srgb, ${C(riskVar(ti.band))} 55%, transparent)`, borderRadius: 999, padding: "2px 8px" }}>{ti.risk}</span>
-                      <span style={{ fontSize: fs.caption, textTransform: "capitalize" }}>{ti.tissue}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginLeft: "auto" }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : `ACWR ${ti.acwr.toFixed(2)}`}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-            {/* THINGS TO WATCH — ACWR · s-RPE · monotony · strain (always available) */}
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), margin: "16px 0 8px" }}>{t("w.home.cockpit.toWatch")}</div>
-            {load.enoughHistory ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: C("line"), border: `1px solid ${C("line")}`, borderRadius: 12, overflow: "hidden" }}>
-                <Watch label={t("w.home.cockpit.acwr")} value={load.acwr.toFixed(2)} color={C(acwrVar(load.band))} />
-                <Watch label={t("w.home.cockpit.srpe")} value={load.acute.toLocaleString()} />
-                <Watch label={t("w.home.cockpit.monotony")} value={load.monotony.toFixed(1)} />
-                <Watch label={t("w.home.cockpit.strain")} value={load.strain.toLocaleString()} />
-              </div>
-            ) : (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), lineHeight: 1.6 }}>{t("w.home.cockpit.watchBuilding")}</div>
-            )}
-            {/* A one-line plain-language gloss on ACWR — the ratio the "workload
-                spike" driver is built on — so the bare number reads for everyone. */}
-            {load.enoughHistory && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), lineHeight: 1.5, marginTop: 8 }}>{t("w.injury.acwrNote")}</div>
-            )}
-
-            {/* TISSUE DETAIL — the depth the analyze Performance screen used to
-                own: the anterior/posterior body map, the per-tissue calibrated
-                probability table, and the plain-language driver explanations. */}
-            <div style={{ marginTop: 16, borderTop: `1px dashed color-mix(in srgb, ${C("line")} 80%, ${C("red")})`, paddingTop: 16 }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <button className="pressable" onClick={() => setTissueOpen((v) => !v)} aria-expanded={tissueOpen} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em", color: calm ? "var(--lime-text)" : "var(--red-text)" }}>
-                  {t("w.analyze.perf.tissueDetail")} <span aria-hidden style={{ fontSize: 8 }}>{tissueOpen ? "▲" : "▼"}</span>
-                </button>
-                {/* The model-version annotation the old analyze header carried —
-                    always visible, qualifying the risk numbers above and the
-                    probability table inside the disclosure. */}
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{t("w.analyze.perf.model")} {risk.modelVersion} – {t("w.analyze.perf.calibrated")}</span>
-              </div>
-              {tissueOpen && (
-                <>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr", gap: 28, marginTop: 16, alignItems: "start" }}>
-                    <div style={{ display: "flex", gap: space.lg, justifyContent: isMobile ? "center" : "flex-start" }}>
-                      <Figure regions={FRONT} label={t("w.analyze.perf.anterior")} byTissue={byTissue} />
-                      <Figure regions={BACK} label={t("w.analyze.perf.posterior")} byTissue={byTissue} />
-                    </div>
-                    <div style={{ overflowX: "auto", maxWidth: "100%", minWidth: 0 }}>
-                      <table style={{ width: "100%", minWidth: 420, borderCollapse: "collapse" }}>
-                        <thead>
-                          <tr>{["w.analyze.perf.colTissue", "w.analyze.perf.colRisk", "w.analyze.perf.colProb", "w.analyze.perf.colAcwr", "w.analyze.perf.colDriver"].map((h) => (
-                            <th key={h} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", color: C("ash"), textAlign: "left", padding: "6px 8px", borderBottom: `1px solid ${C("line")}` }}>{t(h)}</th>
-                          ))}</tr>
-                        </thead>
-                        <tbody>
-                          {risk.tissues.map((ti) => (
-                            <tr key={ti.tissue}>
-                              <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, padding: 8, textTransform: "capitalize", borderBottom: `1px solid ${C("line")}` }}>{cap(ti.tissue)}</td>
-                              <td style={{ padding: 8, borderBottom: `1px solid ${C("line")}` }}><span style={{ background: `color-mix(in srgb, ${ti.risk > 0 ? C(riskVar(ti.band)) : C("ash")} 14%, transparent)`, color: ti.risk > 0 ? C(riskVar(ti.band)) : C("ash"), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{ti.risk}</span></td>
-                              <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: 8, color: ti.risk > 0 ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{(ti.prob * 100).toFixed(1)}%</td>
-                              <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: 8, color: ti.enoughHistory ? C("chalk") : C("ash"), borderBottom: `1px solid ${C("line")}` }}>{ti.enoughHistory ? ti.acwr.toFixed(2) : "—"}</td>
-                              <td style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, padding: 8, color: C("ash"), borderBottom: `1px solid ${C("line")}` }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : "—"}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  {/* WHY THE DASH — an athlete who IS training but has no chronic
-                      baseline yet reads "—" in the ACWR column. Say why, rather
-                      than leaving a blank that looks like a broken number. The
-                      engine decides who sees this (awaitingBaseline), so web and
-                      mobile can never disagree about it. */}
-                  {risk.awaitingBaseline.length > 0 && (
-                    <div style={{ marginTop: 16, padding: 12, borderRadius: 12, border: `1px solid ${C("line")}`, background: `color-mix(in srgb, ${C("ash")} 8%, transparent)` }}>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginBottom: 4 }}>{t("w.injury.acwrPending")}</div>
-                      <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("chalk") }}>{t("w.injury.acwrPendingBody")}</div>
-                    </div>
-                  )}
-                  {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
-                      at play (workload spike, high load, return-from-lull, recovery). */}
-                  {driverKinds.length > 0 && (
-                    <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-                      {driverKinds.map((k) => (
-                        <div key={k}>
-                          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C(riskVar(risk.band)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</div>
-                          <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("chalk") }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 5 · RETURN-TO-PLAY — gated protocols (from the retired analyze
-            screen). Moved up from the page's foot into the STATE cluster
-            (Performance categorisation): it is injury management, and when a
-            tissue is flagged in the card directly above, the protocol you
-            open now sits beside the flag rather than a whole page away. */}
-        <RtpPanel />
+        {/* 4 · TISSUE — injury risk AND return-to-play in ONE card. They
+            were two siblings stating the same subject twice: a risk summary
+            that showed no tissue, and an always-open seven-chip form for an
+            event that happens twice a year. The merged card's SHAPE is the
+            signal — short while nothing is wrong, opening itself the moment a
+            tissue is flagged, and becoming the protocol once one is open. */}
+        <TissueCard risk={risk} load={load} hasData={hasData} />
 
         {/* ═════ GROUP: TRAINING — the work itself: what this week produced,
             per discipline, the week's dose against the athlete's own
@@ -735,15 +565,6 @@ function Spark({ series, color, height = 24 }: { series: number[]; color: string
       {series.map((v, i) => (
         <div key={i} style={{ flex: 1, height: 4 + ((v - min) / range) * (height - 4), borderRadius: 2, background: i === series.length - 1 ? color : `color-mix(in srgb, ${color} 40%, transparent)` }} />
       ))}
-    </div>
-  );
-}
-
-function Watch({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div style={{ background: C("ink2"), padding: "12px 6px", textAlign: "center" }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, color: color ?? C("chalk") }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash"), marginTop: 4 }}>{label}</div>
     </div>
   );
 }
