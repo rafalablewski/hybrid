@@ -53,6 +53,7 @@ import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/wor
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
 import { ArrowGlyph } from "./cta-label";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
@@ -93,6 +94,7 @@ export default function AuroraLogger({
   sessions,
   onSaved,
   onHome,
+  onMinimize,
   onUpgrade,
   initialBlocks,
   initialTitle,
@@ -101,6 +103,10 @@ export default function AuroraLogger({
   onSaved: () => void;
   /** Go back to Today from the summary (the analysis link uses onSaved → history). */
   onHome?: () => void;
+  /** Leave the running session for another screen. The draft is already in
+   *  localStorage, so the session carries on in the nav accessory and comes
+   *  back exactly as it was — mobile parity for the header's chevron. */
+  onMinimize?: () => void;
   /** In-shell navigation to the upgrade screen (Save-as-routine is Full). */
   onUpgrade?: () => void;
   initialBlocks?: SessionBlock[];
@@ -155,6 +161,29 @@ export default function AuroraLogger({
     setRestTarget(prefs.restTimer ? prefs.restSeconds : null);
   }, [prefs.restTimer, prefs.restSeconds]);
 
+  /**
+   * THE TWO EXITS — deliberately unequal, at parity with the mobile logger.
+   *
+   * MINIMIZE is the top-level glyph and costs nothing: the draft is persisted on
+   * every change, so leaving hands the running session to the nav accessory,
+   * which is already watching localStorage for exactly this.
+   *
+   * DISCARD is the irreversible one, so it is not a peer — a row inside the ⋯
+   * menu, behind a confirm. Two adjacent unlabelled glyphs, one reversible and
+   * one not, is the arrangement that loses people's sessions.
+   */
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const discarded = useRef(false);
+
+  const leave = () => (onMinimize ?? onHome)?.();
+  const discard = () => {
+    discarded.current = true;
+    clearWorkoutDraft();
+    setDiscardOpen(false);
+    leave();
+  };
+
   // Restore an interrupted draft once on mount (unless we were seeded with a
   // plan/AI day, which wins). Keeps the original clock running via resumeFrom.
   useEffect(() => {
@@ -175,8 +204,11 @@ export default function AuroraLogger({
 
   // Persist the in-progress draft as it changes (debounced) so a refresh / crash
   // / accidental nav never costs the session. Only after the initial restore.
+  // `discarded` latches on an explicit discard: the save is on a 500ms timer, so
+  // without it a write scheduled just before could land AFTER clearWorkoutDraft()
+  // and bring back the session the athlete just confirmed away.
   useEffect(() => {
-    if (!restored) return;
+    if (!restored || discarded.current) return;
     const id = setTimeout(() => {
       if (blocks.length) saveWorkoutDraft({ title, startedAt: startedAt.current.toISOString(), blocks });
       else clearWorkoutDraft();
@@ -458,10 +490,10 @@ export default function AuroraLogger({
           zIndex: 5,
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "space-between",
           gap: space.md,
           marginBottom: 16,
-          padding: "8px 16px",
+          padding: "8px 12px",
           background: "color-mix(in srgb, var(--color-ink2) 86%, transparent)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
@@ -469,17 +501,42 @@ export default function AuroraLogger({
           borderRadius: 999,
         }}
       >
+        {/* MINIMIZE — a chevron pointing DOWN, at where the session goes: the
+            accessory strip riding above the nav capsule. The flanks both take
+            flex:1 so the clock stays optically centred. */}
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
+          <button className="pressable"
+            onClick={leave}
+            aria-label={t("workout.minimize")}
+            title={t("workout.minimize")}
+            style={{ width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center", color: C("chalk"), background: "color-mix(in srgb, var(--color-chalk) 6%, transparent)", border: `1px solid color-mix(in srgb, var(--color-chalk) 14%, transparent)`, cursor: "pointer" }}
+          >
+            <AuroraIcon name="chevron-down" size={19} />
+          </button>
+        </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: space.sm }}>
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, letterSpacing: 1, color: paused ? C("amber") : C("chalk") }}>{mmss(elapsed)}</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: paused ? C("amber") : C("ash") }}>{paused ? t("workout.paused") : t("workout.elapsed")}</span>
         </div>
-        <button className="pressable"
-          onClick={handlePause}
-          title={paused ? t("workout.go") : t("workout.paused")}
-          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: paused ? C("ink") : C("amber"), background: paused ? C("amber") : "transparent", border: `1px solid ${C("amber")}`, borderRadius: 999, padding: "5px 16px", cursor: "pointer" }}
-        >
-          {paused ? "▶" : "❚❚"}
-        </button>
+        {/* Pause keeps its place beside the clock; the ⋯ is the way in to
+            everything that must NOT be one tap. */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: space.xs }}>
+          <button className="pressable"
+            onClick={handlePause}
+            title={paused ? t("workout.go") : t("workout.paused")}
+            style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: paused ? C("ink") : C("amber"), background: paused ? C("amber") : "transparent", border: `1px solid ${C("amber")}`, borderRadius: 999, padding: "5px 14px", cursor: "pointer" }}
+          >
+            {paused ? "▶" : "❚❚"}
+          </button>
+          <button className="pressable"
+            onClick={() => setMenuOpen(true)}
+            aria-label={t("workout.moreOptions")}
+            title={t("workout.moreOptions")}
+            style={{ width: 32, height: 32, borderRadius: 999, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: fs.subtitle, letterSpacing: ".09em", color: C("ash"), background: "transparent", border: "none", cursor: "pointer" }}
+          >
+            ⋯
+          </button>
+        </div>
       </div>
 
       {/* Rest countdown — appears after you bank a set (✓); ticks down to the
@@ -634,6 +691,42 @@ export default function AuroraLogger({
       >
         {saving ? t("w.train.logger.saving") : t("w.train.logger.finishWorkout")}
       </button>
+
+      {/* The ⋯ menu. One row today, and that is the point: the header carries a
+          single top-level exit, and the irreversible one is reached through a
+          menu and then a confirm. Anything added here later inherits that
+          protection for free. */}
+      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")} detents={["medium"]}>
+        <button className="pressable"
+          onClick={() => { setMenuOpen(false); setDiscardOpen(true); }}
+          style={{ display: "flex", alignItems: "center", width: "100%", padding: "14px 0", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: C("red"), background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
+        >
+          {t("workout.discardSession")}
+        </button>
+      </Sheet>
+
+      {/* The confirm. Cancel sits FIRST and the destructive action second — on a
+          phone the lower button is the one under a resting thumb, and that must
+          never be the irreversible one. Mirrors the mobile ConfirmProvider. */}
+      <Sheet open={discardOpen} onClose={() => setDiscardOpen(false)} title={t("workout.discardTitle")} detents={["medium"]}>
+        <div style={{ display: "grid", gap: space.md, paddingBottom: space.sm }}>
+          <p style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: fs.note, lineHeight: 1.55, color: C("ash") }}>
+            {t("workout.discardBody")}
+          </p>
+          <button className="pressable"
+            onClick={() => setDiscardOpen(false)}
+            style={{ padding: "13px 0", borderRadius: 999, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: C("chalk"), background: "color-mix(in srgb, var(--color-chalk) 8%, transparent)", border: "none", cursor: "pointer" }}
+          >
+            {t("common.cancel")}
+          </button>
+          <button className="pressable"
+            onClick={discard}
+            style={{ padding: "13px 0", borderRadius: 999, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: C("red"), background: "transparent", border: `1px solid ${C("red")}`, cursor: "pointer" }}
+          >
+            {t("train.discard")}
+          </button>
+        </div>
+      </Sheet>
 
       {/* Get-ready count-in — covers the screen on entry until GO, then the
           elapsed clock starts from zero (the timer "goes off"). */}
