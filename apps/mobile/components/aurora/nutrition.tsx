@@ -60,7 +60,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS, Ring, withAlpha } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, RADIUS, Ring, withAlpha, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";
@@ -154,22 +154,6 @@ function RecipeHero({ tint, emoji, height, fontSize, style, children }: { tint: 
 // The head above a screen-level rail — the Explore SectionHead anatomy: a bold
 // display-face title with the action as small mono uppercase on the RIGHT of
 // the same row. No marker before the title (the no-decorative-dot rule).
-function RailHead({ C, title, actionLabel, actionColor, onAction }: {
-  C: ReturnType<typeof useTheme>["palette"]; title: string; actionLabel: string; actionColor: string; onAction: () => void;
-}) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 28, marginBottom: 10, marginHorizontal: 2 }}>
-      {/* F.black (not serifIf) — every other section head on this screen
-          ("Today's meals", "Checked items") is set in it, and one serif head
-          among them would read as a different screen. */}
-      <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{title}</Text>
-      <Pressable onPress={onAction} accessibilityRole="button" hitSlop={8}>
-        <CtaLabel label={actionLabel} color={actionColor} fontSize={fs.micro} font={F.mono} style={{ letterSpacing: 0.9, textTransform: "uppercase" }} />
-      </Pressable>
-    </View>
-  );
-}
-
 // A food row in the picker — a lime add-circle, name + macro meta, and either a
 // chevron (a DB hit), a favourite star, or a trash affordance (a personal item).
 // The row body + the add-circle both open the portion editor.
@@ -1970,7 +1954,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               screen-level rail: negative margins the width of AuroraScreen's
               16dp gutter pull the scroll clip to the true screen edge, with
               matching internal padding so resting cards stay on the column. */}
-          <RailHead C={C} title={t("w.recovery.nutrition.recipes")} actionLabel={`${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`} actionColor={recipesUnlocked ? C.ash : pa.text} onAction={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} />
+          <ASection flat title={t("w.recovery.nutrition.recipes")} meta={`${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`} action={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
             {RECIPES.map((r) => (
               <PressScale key={r.id} onPress={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" accessibilityLabel={r.name} style={{ width: recipeCardW, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: C.ink2 }}>
@@ -1988,7 +1972,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               was previously only reachable by stumbling into one of its foods
               through search; the rail puts the companies themselves on the
               screen. */}
-          <RailHead C={C} title={t("w.recovery.nutrition.verifiedFoods")} actionLabel={`${t("w.explore.seeAll")} →`} actionColor={C.ash} onAction={() => setView("sources")} />
+          <ASection flat title={t("w.recovery.nutrition.verifiedFoods")} meta={`${t("w.explore.seeAll")} →`} action={() => setView("sources")} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={sourceCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;

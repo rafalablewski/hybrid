@@ -17,7 +17,7 @@ import { adminGet, adminSend } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
-import { ACard, cardStack } from "../aurora/kit";
+import { ACard, cardStack, ASection } from "../aurora/kit";
 import { useConfirm } from "../aurora/confirm";
 
 // Mobile "AI agents" builder — parity with apps/web/components/admin/agents.tsx.
@@ -310,22 +310,22 @@ function Editor({
 
       <Input label="Mandate – the spine of the prompt" multiline value={draft.mandate} onChangeText={(v) => set("mandate", v)} />
 
-      <SectionHead title="Responsibilities" />
+      <ASection title="Responsibilities" />
       <StringList items={draft.responsibilities} onChange={(v) => set("responsibilities", v)} placeholder="+ Add a responsibility" />
 
-      <SectionHead title="KPIs" hint="what the agent is steered + evaluated on" />
+      <ASection title="KPIs" meta="what the agent is steered + evaluated on" />
       <KpiList items={draft.kpis} onChange={(v) => set("kpis", v)} />
 
-      <SectionHead title="Guardrails & ethics" />
+      <ASection title="Guardrails & ethics" />
       <StringList items={draft.guardrails} onChange={(v) => set("guardrails", v)} placeholder="+ Add a hard limit" />
 
       <Input label="Escalation threshold – when to stop and ask the admin" multiline value={draft.escalationThreshold} onChangeText={(v) => set("escalationThreshold", v)} />
       <Input label="Tone & communication" multiline value={draft.tone} onChangeText={(v) => set("tone", v)} />
 
-      <SectionHead title="Collaborators" />
+      <ASection title="Collaborators" />
       <StringList items={draft.collaborators} onChange={(v) => set("collaborators", v)} placeholder="+ Add a role" />
 
-      <SectionHead title="Tools" />
+      <ASection title="Tools" />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
         {TOOL_OPTIONS.map((t) => {
           const on = draft.tools.includes(t.value);
@@ -340,7 +340,7 @@ function Editor({
         })}
       </View>
 
-      <SectionHead title="Spend controls" hint="0 = off" />
+      <ASection title="Spend controls" meta="0 = off" />
       <Input
         label="Approval threshold ($) – hold for a 2nd operator at/above this est. cost"
         keyboardType="numeric"
@@ -355,19 +355,19 @@ function Editor({
       />
 
       {/* ---- run ---- */}
-      <SectionHead title="Run" hint="give the agent a task and see its response" />
+      <ASection title="Run" meta="give the agent a task and see its response" />
       <RunPanel draft={draft} dirty={dirty} onError={onError} />
 
       {/* ---- schedules ---- */}
-      <SectionHead title="Schedules" hint="standing tasks on a cadence (fires via cron; only while active)" />
+      <ASection title="Schedules" meta="standing tasks on a cadence (fires via cron; only while active)" />
       <Schedules agentId={draft.id} onError={onError} />
 
       {/* ---- run history ---- */}
-      <SectionHead title="History" hint="recent runs (transcripts)" />
+      <ASection title="History" meta="recent runs (transcripts)" />
       <History agentId={draft.id} />
 
       {/* ---- live prompt preview ---- */}
-      <SectionHead title="Live system prompt" hint="exactly what the agent runs on" />
+      <ASection title="Live system prompt" meta="exactly what the agent runs on" />
       <Pressable onPress={() => setShowPrompt((s) => !s)}>
         <Mono color={palette.lime} style={{ marginBottom: 8 }}>{showPrompt ? "▾ hide" : "▸ show"} generated prompt</Mono>
       </Pressable>
@@ -636,16 +636,6 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
 function FieldLabel({ children }: { children: React.ReactNode }) {
   const { palette } = useTheme();
   return <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 6 }}>{children}</Mono>;
-}
-
-function SectionHead({ title, hint }: { title: string; hint?: string }) {
-  const { palette } = useTheme();
-  return (
-    <View style={{ marginTop: 16, marginBottom: 10, paddingTop: 16, borderTopWidth: 1, borderTopColor: palette.line }}>
-      <Kicker color={palette.amber}>{title}</Kicker>
-      {hint ? <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{hint}</Mono> : null}
-    </View>
-  );
 }
 
 function ToolToggle({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {

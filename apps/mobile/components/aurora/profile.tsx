@@ -30,7 +30,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { AuroraScreen, RADIUS } from "./kit";
+import { AuroraScreen, RADIUS, ASection } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
 import PrivateTab from "./private-tab";
 import { AuroraIcon } from "./icons";
@@ -406,7 +406,7 @@ export default function AuroraProfile() {
           </View>
 
           {/* Achievements — earned/locked badge tiles with progress. */}
-          <SectionHeader C={C} title={t("w.account.profile.achievements")} action={`${earnedCount} ${t("w.account.profile.earned")}`} />
+          <ASection title={t("w.account.profile.achievements")} meta={`${earnedCount} ${t("w.account.profile.earned")}`} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start", gap: 8 }}>
             {achievements.map((a) => {
               const pct = Math.round(a.progress * 100);
@@ -729,17 +729,6 @@ function HighlightGrid({
         )}
       </View>
     </>
-  );
-}
-
-function SectionHeader({ C, title, action }: { C: P; title: string; action: string }) {
-  // Display face per the SectionHead standard — Mincho under Kyoto Hour.
-  const { scheme } = useTheme();
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: fs.note, color: C.chalk, letterSpacing: -0.3 }}>{title}</Text>
-      {!!action && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{action}</Text>}
-    </View>
   );
 }
 

@@ -42,7 +42,7 @@ import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
-import { withAlpha } from "./aurora/kit";
+import { withAlpha, ASection } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
 
@@ -138,7 +138,7 @@ export default function PercentProgram({
       top={
         <>
           {/* the LEDGER — maxes / paces as hairline rows, unit stated once */}
-          <SecHead scheme={scheme} C={C} title={inputsHead.title} meta={inputsHead.meta} />
+          <ASection title={inputsHead.title} meta={inputsHead.meta} />
           <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
             {view.inputs.map((inp) => {
               const val = inputValue(inp.key);
@@ -164,7 +164,7 @@ export default function PercentProgram({
 
           {/* schedule head — the week volume is the SectionHead's right meta */}
           {(multiWeek || !!view.weekVolume) && (
-            <SecHead scheme={scheme} C={C} title="Schedule" meta={view.weekVolume ? `${view.weekVolume} ${t("w.train.plans.thisWeek")}` : view.peakNote ?? undefined} />
+            <ASection title="Schedule" meta={view.weekVolume ? `${view.weekVolume} ${t("w.train.plans.thisWeek")}` : view.peakNote ?? undefined} />
           )}
         </>
       }
@@ -202,15 +202,6 @@ export default function PercentProgram({
 
 /** The Explore SectionHead vocabulary — display-face title left, mono meta
  *  right. Shared by the ledger and schedule heads on this screen. */
-function SecHead({ C, scheme, title, meta }: { C: Palette; scheme: "light" | "dark"; title: string; meta?: string | null }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 24, marginBottom: 10 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk, flexShrink: 1 }}>{title}</Text>
-      {!!meta && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, textAlign: "right", flexShrink: 1 }}>{meta}</Text>}
-    </View>
-  );
-}
-
 /**
  * The WAVEFORM week rail — one slim column per week whose bar height is that
  * week's real volume, so the plan's wave and taper read as shape before they're

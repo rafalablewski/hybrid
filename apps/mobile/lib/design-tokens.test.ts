@@ -146,6 +146,25 @@ describe("touch targets", () => {
   });
 });
 
+describe("section headers", () => {
+  it("RATCHET — one section head, to the documented standard", () => {
+    // CLAUDE.md already NAMES the standard: a bold display-face title in chalk,
+    // any meta or action as small mono uppercase on the RIGHT of the same row,
+    // never a decorative marker on the left. It was then reimplemented eight
+    // times — SHead, SecHead, SubHead, RailHead, SectionHead, SectionHeader,
+    // SectionLabel ×2 — each agreeing on the shape and disagreeing on everything
+    // measurable: title 18 / fs.bodyLg / fs.title / fs.note, serif-swapped or
+    // not, meta at nano vs micro, tracking 0.9 vs 1.2, top margin 6/16/24/28.
+    //
+    // A standard that lives in prose gets re-derived. ASection is that standard
+    // as a component. What still matches this pattern are genuinely different
+    // objects: ColHead (a table column), WeekHeader, PickerSection, FieldLabel,
+    // AppleHealthSection and LeavePlanSection (whole sections, not their heads).
+    const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Section|Head|SubHead)[A-Za-z]*\s*\(/gm);
+    expectAtMost(decls, 8, "section-header component → ASection");
+  });
+});
+
 describe("loading", () => {
   it("RATCHET — spinners are for ACTIONS; arriving content gets a skeleton", () => {
     // The app had no skeleton at all. All 33 `<Loading />` sites were the shape

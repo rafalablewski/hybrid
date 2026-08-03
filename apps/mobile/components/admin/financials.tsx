@@ -21,7 +21,7 @@ import { adminGet } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Intro, Stat, Input, PillBtn, FilterGroup } from "./_kit";
-import { ACard, cardStack } from "../aurora/kit";
+import { ACard, cardStack, ASection } from "../aurora/kit";
 
 // Mobile Financials — parity with apps/web/components/admin/financials.tsx + the
 // @hybrid/core economics engine. Same DATA (revenue, COGS/margin, per-segment
@@ -153,7 +153,7 @@ function RevenueTab({
       <PillBtn label={showGlossary ? "Hide glossary" : "What do these terms mean?"} color={palette.amber} outline onPress={() => setShowGlossary(!showGlossary)} />
       {showGlossary && <Glossary />}
 
-      <SectionLabel kicker="Revenue streams – who pays" title="How HYBRID makes money" />
+      <ASection meta="Revenue streams – who pays" title="How HYBRID makes money" />
       {REVENUE_STREAMS.map((stream) => {
         const color = streamColor[stream.id];
         const monthly = stream.id === "b2c" ? r.revenue.b2c : stream.id === "coach" ? r.revenue.coach : stream.id === "org" ? r.revenue.org : null;
@@ -180,7 +180,7 @@ function RevenueTab({
         );
       })}
 
-      <SectionLabel kicker={`Localized price – FX ${PRICING_REF_DATE}`} title="Focus markets & pricing" />
+      <ASection meta={`Localized price – FX ${PRICING_REF_DATE}`} title="Focus markets & pricing" />
       {MARKET_PRICING.map((m) => {
         const isPLN = m.currency === "PLN";
         const loc = (n: number) => (isPLN ? `${Math.round(n)} zł` : `${m.symbol}${Number.isInteger(n) ? n : n.toFixed(2)}`);
@@ -203,7 +203,7 @@ function RevenueTab({
         );
       })}
 
-      <SectionLabel kicker="Entitlement matrix – free → org" title="What each plan includes" />
+      <ASection meta="Entitlement matrix – free → org" title="What each plan includes" />
       <PlanMatrix />
     </View>
   );
@@ -255,7 +255,7 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
   const { palette } = useTheme();
   return (
     <View>
-      <SectionLabel kicker="COGS drivers + fixed opex" title="What it costs us" />
+      <ASection meta="COGS drivers + fixed opex" title="What it costs us" />
       {agentCost && agentCost.runs > 0 && (
         <ACard accent={palette.blue} style={cardStack}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -343,8 +343,8 @@ function CalcTab({
   const { palette } = useTheme();
   return (
     <View>
-      <SectionLabel
-        kicker={seedErr ? "Live counts unavailable — model defaults" : seed ? `Seeded: ${seed.totalUsers.toLocaleString()} users – ${seed.coaches} coaches` : "Loading…"}
+      <ASection
+        meta={seedErr ? "Live counts unavailable — model defaults" : seed ? `Seeded: ${seed.totalUsers.toLocaleString()} users – ${seed.coaches} coaches` : "Loading…"}
         title="Unit-economics calculator"
       />
       <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 12 }}>
@@ -416,11 +416,11 @@ function SegmentsTab({ r }: { r: ReturnType<typeof computeEconomics> }) {
   const h = r.health;
   return (
     <View>
-      <SectionLabel kicker="B2C vs coach, un-blended" title="Unit economics by segment" />
+      <ASection meta="B2C vs coach, un-blended" title="Unit economics by segment" />
       <SegmentCard seg={r.segments.b2c} color={palette.lime} />
       <SegmentCard seg={r.segments.coach} color={palette.violet} />
 
-      <SectionLabel kicker="The ratios investors read first" title="SaaS health scorecard" />
+      <ASection meta="The ratios investors read first" title="SaaS health scorecard" />
       <Indicator label="Rule of 40" value={Math.round(h.ruleOf40).toString()} c={band(palette, h.ruleOf40, 40, 25)}
         note={`${Math.round(h.annualGrowthRatePct)}% growth + ${Math.round(r.grossMargin * 100)}% margin`}
         says="Fast growth can excuse thin margins and vice-versa. Pass at 40." />
@@ -508,7 +508,7 @@ function ForecastTab({
   const maxCashAbs = Math.max(1, ...cashVals.map((v) => Math.abs(v)));
   return (
     <View>
-      <SectionLabel kicker="MRR trajectory + cumulative cash" title="12-month forecast" />
+      <ASection meta="MRR trajectory + cumulative cash" title="12-month forecast" />
       <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="MRR in 12 mo" value={usdFull(ps.endingMrr)} sub={`ARR ${usdFull(ps.endingArr)}`} color={palette.lime} />
         <Stat label="Cash in 12 mo" value={usdFull(ps.cumulativeCashEnd)}
@@ -551,16 +551,6 @@ function ForecastTab({
 }
 
 // ---- shared small blocks ----
-function SectionLabel({ kicker, title }: { kicker: string; title: string }) {
-  const { palette } = useTheme();
-  return (
-    <View style={{ marginTop: 16, marginBottom: 10 }}>
-      <Kicker color={palette.amber}>{kicker}</Kicker>
-      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>{title}</Text>
-    </View>
-  );
-}
-
 function NumIn({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   // Local string state so editing (incl. "0", "1.", "") isn't fought by the model.
   const [text, setText] = useState(String(value));

@@ -5,7 +5,7 @@ import { routineSummary, type SessionBlock } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { withAlpha } from "./kit";
+import { withAlpha, ASection } from "./kit";
 import Sheet from "./sheet";
 import { CtaLabel } from "./cta-label";
 
@@ -71,7 +71,7 @@ export default function QuickStartSheet({
           <>
             {favourites.length > 0 && (
               <View style={{ marginBottom: rediscover.length > 0 ? 16 : 2 }}>
-                <SubHead C={C} label={`★ ${t("w.home.quickStart.favourites")}`} />
+                <ASection title={`★ ${t("w.home.quickStart.favourites")}`} />
                 {/* Favourites rail — snap slider that RESPECTS the sheet padding
                     (no negative-margin bleed): a rail hosted in a Sheet honours
                     its container, per the full-bleed rule. */}
@@ -91,14 +91,10 @@ export default function QuickStartSheet({
 
             {rediscover.length > 0 && (
               <View>
-                <SubHead
-                  C={C}
-                  label={favourites.length > 0 ? t("w.home.quickStart.rediscover") : t("w.home.quickStart.all")}
-                  action={
-                    rediscover.length > 1
-                      ? { label: `↻ ${t("w.home.quickStart.shuffle")}`, onPress: () => setOrder(shuffle(rest.map((x) => x.id))) }
-                      : undefined
-                  }
+                <ASection
+                  title={favourites.length > 0 ? t("w.home.quickStart.rediscover") : t("w.home.quickStart.all")}
+                  meta={rediscover.length > 1 ? `↻ ${t("w.home.quickStart.shuffle")}` : undefined}
+                  action={rediscover.length > 1 ? () => setOrder(shuffle(rest.map((x) => x.id))) : undefined}
                 />
                 {rediscover.map((r, i) => (
                   <RoutineRow key={r.id} C={C} first={i === 0} r={r} t={t} onLaunch={() => onLaunch(r)} onToggleFav={() => onToggleFavourite(r)} />
@@ -123,23 +119,6 @@ export default function QuickStartSheet({
 // ── pieces ────────────────────────────────────────────────────────────────
 
 type P = ReturnType<typeof useTheme>["palette"];
-
-function SubHead({ C, label, action }: { C: P; label: string; action?: { label: string; onPress: () => void } }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, marginTop: 6, paddingHorizontal: 2 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      {action && (
-        <Pressable
-          onPress={action.onPress}
-          accessibilityRole="button"
-          style={{ backgroundColor: withAlpha(C.violet, 0.12), borderWidth: 1, borderColor: withAlpha(C.violet, 0.32), borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}
-        >
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: txt(C, C.violet) }}>{action.label}</Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
 
 /** Honest one-liner: "6 moves" (+ " – 34 min" when the routine actually carries
  *  cardio/conditioning minutes). No fabricated durations. */

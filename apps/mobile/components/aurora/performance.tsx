@@ -19,7 +19,7 @@ import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, Spark, withAlpha } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, Spark, withAlpha, ASection } from "./kit";
 import AuroraVolume from "./volume";
 import AuroraTrends from "./trends";
 import { AuroraIcon } from "./icons";
@@ -212,7 +212,7 @@ function Full({ top }: { top?: ReactNode }) {
           columns, the top driver, and today's readiness (with the check-in
           nudge) below. */}
       <ACard solid style={{ marginTop: 16 }}>
-        <SHead C={C} scheme={scheme} title={t("w.home.cockpit.perfTwin")} />
+        <ASection title={t("w.home.cockpit.perfTwin")} />
         {hasData ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
@@ -278,10 +278,9 @@ function Full({ top }: { top?: ReactNode }) {
           identity: bar vs tick, hue second). */}
       {hasData && (
         <ACard solid style={{ marginTop: 16 }}>
-          <SHead
-            C={C} scheme={scheme}
+          <ASection
             title={t("w.analyze.perf.trajectory")}
-            metaNode={
+            meta={
               <View style={{ flexDirection: "row", gap: space.md }}>
                 {([["HPI", C.lime], ["Readiness", C.blue]] as const).map(([l, col]) => (
                   <View key={l} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
@@ -312,11 +311,10 @@ function Full({ top }: { top?: ReactNode }) {
           detail" disclosure so the glance stays a glance. */}
       {hasData && (
         <ACard solid style={{ marginTop: 16, borderColor: calm ? C.line : `${C.red}73`, backgroundColor: calm ? undefined : `${C.red}12` }}>
-          <SHead
-            C={C} scheme={scheme}
+          <ASection
             title={t("w.home.today.injuryRisk")}
-            titleColor={calm ? undefined : txt(C, C.red)}
-            metaNode={<Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, riskColor(risk.band, C)) }}>{cap(risk.band)} – {risk.overall}</Text>}
+            titleStyle={{ color: calm ? undefined : txt(C, C.red) }}
+            meta={<Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, riskColor(risk.band, C)) }}>{cap(risk.band)} – {risk.overall}</Text>}
           />
           {calm ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.today.noTissues")}</Text>
@@ -439,10 +437,9 @@ function Full({ top }: { top?: ReactNode }) {
       {hasData && (
         <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 16 }}>
           <ACard solid>
-            <SHead
-              C={C} scheme={scheme}
+            <ASection
               title={t("w.home.today.yourWeek")}
-              metaNode={recap.prs.length > 0 ? <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><AuroraIcon name="trophy" size={13} color={C.onAccent} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>{recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View> : undefined}
+              meta={recap.prs.length > 0 ? <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><AuroraIcon name="trophy" size={13} color={C.onAccent} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>{recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View> : undefined}
             />
             <View style={{ flexDirection: "row" }}>
               <View style={{ flex: 1 }}><Stat C={C} label={t("w.home.today.sessions")} value={`${recap.sessions}`} /></View>
@@ -494,7 +491,7 @@ function Full({ top }: { top?: ReactNode }) {
       <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
         {/* widget 1 — goal */}
         <ACard solid style={{ flex: 1 }}>
-          <SHead C={C} scheme={scheme} title={t("w.home.cockpit.goal")} small />
+          <ASection title={t("w.home.cockpit.goal")} titleStyle={{ fontSize: fs.bodyLg }} />
           {macro ? (
             <>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{macro.goalOrSport}</Text>
@@ -513,7 +510,7 @@ function Full({ top }: { top?: ReactNode }) {
           {/* The HEADING itself is a claim ("Set up" vs "Season") — hold it
               until enrollment is known, or an enrolled athlete is briefly told
               to set up a season they already have. */}
-          <SHead C={C} scheme={scheme} title={!macroRead.settled ? " " : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} small />
+          <ASection title={!macroRead.settled ? " " : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} titleStyle={{ fontSize: fs.bodyLg }} />
           {macro ? (
             <View style={{ height: 6, borderRadius: RADIUS.pill, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 2, marginBottom: 10 }}>
               <View style={{ width: `${seasonPct}%`, height: 6, backgroundColor: C.violet }} />
@@ -536,7 +533,7 @@ function Full({ top }: { top?: ReactNode }) {
 
       {/* 11 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
       <ACard solid style={{ marginTop: 16 }}>
-        <SHead C={C} scheme={scheme} title={t("w.home.cockpit.horizon")} />
+        <ASection title={t("w.home.cockpit.horizon")} />
         <Mod C={C} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/sport")} />
         <Mod C={C} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/velocity")} />
         <Mod C={C} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onPress={() => router.push("/endurance")} />
@@ -570,7 +567,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
 
   return (
     <ACard solid style={{ marginTop: 16 }}>
-      <SHead C={C} scheme={scheme} title={t("w.home.cockpit.breakdown")} />
+      <ASection title={t("w.home.cockpit.breakdown")} />
       {/* segmented tabs */}
       <View style={{ flexDirection: "row", gap: 0, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4 }}>
         {TABS.map((x) => {
@@ -664,19 +661,6 @@ function StateSkeleton({ C }: { C: Palette }) {
 /** SectionHead — the golden-standard card header (Explore's SectionHead idiom):
  *  a bold display-face title on the left, any meta/action as small mono
  *  uppercase (or a pill) on the RIGHT of the same row. No decorative dot. */
-function SHead({ C, scheme, title, meta, metaNode, titleColor, small }: {
-  C: Palette; scheme: Scheme; title: string; meta?: string; metaNode?: React.ReactNode; titleColor?: string; small?: boolean;
-}) {
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 4, columnGap: 12, marginBottom: 12 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: small ? fs.bodyLg : 18, letterSpacing: -0.3, color: titleColor ?? C.chalk }}>{title}</Text>
-      {metaNode ?? (meta != null && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{meta}</Text>
-      ))}
-    </View>
-  );
-}
-
 /**
  * A status READOUT — not a chip.
  *

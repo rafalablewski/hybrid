@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, leading, tracking, F, serifIf, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable, MAX_FONT_SCALE, HIT_TARGET, HIT_SLOP } from "../../lib/ui";
+import { fs, space, leading, tracking, F, serifIf, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable, MAX_FONT_SCALE, FIXED_FONT_SCALE, HIT_TARGET, HIT_SLOP } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
@@ -644,6 +644,79 @@ export function ASegment<T extends string>({
  * should take a `hero` and let the Hero System own its rail, collapse and
  * metadata. AHeading exists for the surfaces that genuinely have no stack.
  */
+/**
+ * THE SECTION HEAD — the one cluster label, to the standard CLAUDE.md already
+ * names: a bold DISPLAY-face title in chalk, with any meta or action as small
+ * mono uppercase on the RIGHT of the same row, and never a decorative marker on
+ * the left.
+ *
+ * The standard was documented and then reimplemented eight times — SHead,
+ * SecHead, SubHead, RailHead, SectionHead, SectionHeader, SectionLabel ×2 —
+ * each agreeing on the SHAPE and disagreeing on everything measurable: title 18
+ * vs fs.bodyLg vs fs.title vs fs.note, serif-swapped or not, meta at nano vs
+ * micro, tracking 0.9 vs 1.2, top margin 6 / 16 / 24 / 28. A standard that lives
+ * in prose gets re-derived; a standard that lives in a component gets used.
+ *
+ * `action` makes the meta a button (the "See all →" affordance). `flat` drops
+ * the serif swap for screens whose other heads are all sans — nutrition made
+ * that call deliberately and it was right: one serif head among sans siblings
+ * reads as a different screen.
+ */
+export function ASection({
+  title,
+  meta,
+  action,
+  flat,
+  titleStyle,
+  style,
+}: {
+  title: string;
+  /** Small mono uppercase, right-aligned on the title's row. A NODE is allowed
+   *  (a chip, an icon + count) — the meta slot is a slot, not a string field. */
+  meta?: ReactNode;
+  /** Makes the meta tappable — the "See all →" affordance. */
+  action?: () => void;
+  /** Keep the sans display face even under Kyoto Hour. */
+  flat?: boolean;
+  /** The ONE escape hatch, for a head that genuinely needs a different title
+   *  treatment (a state colour, a smaller rung inside a card). Deliberately one
+   *  prop rather than the `titleColor` + `small` pair it replaces: a section
+   *  head that wants to look different should have to say so explicitly. */
+  titleStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette, scheme } = useTheme();
+  const metaText =
+    meta == null ? null : typeof meta === "string" ? (
+      <Text
+        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: palette.ash }}
+      >
+        {meta}
+      </Text>
+    ) : (
+      meta
+    );
+  return (
+    <View style={[{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, marginTop: space.xxl, marginBottom: space.ms }, style]}>
+      <Text
+        accessibilityRole="header"
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        style={[{ fontFamily: flat ? F.black : serifIf(scheme, F.black), fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: palette.chalk, flexShrink: 1 }, titleStyle]}
+      >
+        {title}
+      </Text>
+      {action && metaText ? (
+        <PressScale onPress={action} accessibilityRole="button" accessibilityLabel={typeof meta === "string" ? meta : title} hitSlop={HIT_SLOP}>
+          {metaText}
+        </PressScale>
+      ) : (
+        metaText
+      )}
+    </View>
+  );
+}
+
 export function AHeading({ children, style }: { children: ReactNode; style?: TextStyle }) {
   const { palette, scheme } = useTheme();
   const type = heroTitleType(typeof children === "string" ? children : "", "title");
