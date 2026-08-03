@@ -399,6 +399,11 @@ section{margin-top:76px}
         <span class="mono">@hybrid/core</span> decides what a sport shows; web and mobile render it and nothing else.
         The Sport screen became the index — your sports first, then the ones we prescribe for, the whole catalog
         behind a search — and Today's sport tiles open the page directly.</p></div></div>
+      <div class="note"><span class="n">✓</span><div><h3>Every sport has an address</h3><p>Web
+        <span class="mono">?s=sportpage&amp;sport=&lt;slug&gt;</span>, mobile
+        <span class="mono">/sport-page</span> — so a sport page survives a refresh, a bookmark and a paste, and a link
+        from one client opens on the other. Every surface that names a sport (Today's tiles, the Cockpit's Sport
+        module) now lands on that sport, not on the picker.</p></div></div>
       <div class="note"><span class="n">✓</span><div><h3>The marker keeps a history</h3><p>A marker is typed, not
         derived, so the delta and the sparkline appear only from the SECOND typing. Up to 24 are kept, under the one
         store shape both clients write.</p></div></div>

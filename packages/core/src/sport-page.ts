@@ -724,3 +724,44 @@ export function sportIndexMeta(e: SportIndexEntry): string {
   if (e.category && e.category !== e.name) return e.category;
   return e.family ?? e.category;
 }
+
+/* ── 9. ADDRESSES — one slug, both clients ───────────────────────────────── */
+
+/**
+ * A sport's URL slug: "Open Water Swimming" → "open-water-swimming".
+ *
+ * Sport NAMES are display strings — they carry spaces, ampersands and slashes
+ * ("Track & Field", "Canoe Slalom"), and the web shell's deep-link parser
+ * deliberately accepts only `[A-Za-z0-9_-]` because that parser is the one
+ * place an attacker-controlled string is read into screen state. A slug is what
+ * gets both: a link that survives a URL bar, and a value that never has to be
+ * loosened past that pattern.
+ *
+ * The slug is DERIVED, never stored, so adding a sport to the catalog gives it
+ * an address for free.
+ */
+export function sportSlug(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * A link's sport, resolved back to the catalog. Accepts EITHER form — the slug
+ * a shared link carries, or the display name a client already holds — so one
+ * resolver serves the web query param, the mobile route param and any link
+ * written by an older build. Unknown input returns null rather than a guess:
+ * the caller shows the index, never a page for a sport that does not exist.
+ */
+export function sportFromSlug(input: string | null | undefined): string | null {
+  const raw = (input ?? "").trim();
+  if (!raw) return null;
+  if (OLYMPIC_SPORTS[raw]) return raw;
+  const slug = sportSlug(raw);
+  if (!slug) return null;
+  for (const s of Object.values(OLYMPIC_SPORTS)) if (sportSlug(s.name) === slug) return s.name;
+  return null;
+}

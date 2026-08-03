@@ -6,6 +6,8 @@ import {
   searchSports,
   sportIndex,
   sportIndexMeta,
+  sportFromSlug,
+  sportSlug,
   markerNumber,
   sportDistance,
   sportPace,
@@ -303,5 +305,29 @@ describe("an index row says something useful about a sport with no efforts", () 
     expect(sportIndexMeta(by("Boxing"))).toBe("Combat");
     // "Cycling — Cycling" reads as a bug, so it falls back to the S&C family.
     expect(sportIndexMeta(by("Cycling"))).toBe("Endurance");
+  });
+});
+
+describe("a sport has an address", () => {
+  it("slugs a display name down to what a URL can carry", () => {
+    expect(sportSlug("Running")).toBe("running");
+    expect(sportSlug("Open Water Swimming")).toBe("open-water-swimming");
+    expect(sportSlug("Track & Field")).toBe("track-and-field");
+    expect(sportSlug("Table Tennis")).toBe("table-tennis");
+  });
+
+  it("every catalog sport slugs to something unique — no two share an address", () => {
+    const slugs = searchSports("").map((e) => sportSlug(e.name));
+    expect(slugs.every((s) => /^[a-z0-9-]+$/.test(s))).toBe(true);
+    expect(new Set(slugs).size).toBe(slugs.length);
+  });
+
+  it("resolves either form back to the catalog, and refuses to guess", () => {
+    expect(sportFromSlug("open-water-swimming")).toBe("Open Water Swimming");
+    expect(sportFromSlug("Swimming")).toBe("Swimming");
+    expect(sportFromSlug("track-and-field")).toBe("Track & Field");
+    expect(sportFromSlug("not-a-sport")).toBeNull();
+    expect(sportFromSlug("")).toBeNull();
+    expect(sportFromSlug(undefined)).toBeNull();
   });
 });

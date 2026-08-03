@@ -110,7 +110,7 @@ function Figure({ regions, label, byTissue }: { regions: Region[]; label: string
  *  engines as before; nothing removed — RTP moved up beside the injury card it
  *  serves, the horizon doors close the page like Today's Explore. */
 export default function AuroraPerformance({
-  sessions, bio, macro, currentWeek = 1, setScreen, onEnrolled, onOpenExercise,
+  sessions, bio, macro, currentWeek = 1, setScreen, onEnrolled, onOpenExercise, onOpenSport,
   sessionsReady = true, macroReady = true, macroSettled = true,
 }: {
   sessions: LoggedSession[];
@@ -121,6 +121,8 @@ export default function AuroraPerformance({
   onEnrolled: () => void;
   /** Open ONE movement's stats page — the exercise-analytics table's rows. */
   onOpenExercise?: (name: string) => void;
+  /** Opens one sport's own page. A module that names a sport must land on it. */
+  onOpenSport?: (sport: string) => void;
   /** SAFE CACHE (lib/read.ts): whether the shell's sessions / macrocycle reads
    *  have a real server answer yet. Without these the page cannot tell "no
    *  training history" from "we haven't asked", and states the zero-case as
@@ -504,7 +506,7 @@ export default function AuroraPerformance({
         )}
 
         {/* 7 · BREAKDOWN — disciplines, tabbed */}
-        {hasData && <Breakdown state={state} recap={recap} totals={totals} sport={sport} profiles={profiles} setScreen={setScreen} />}
+        {hasData && <Breakdown state={state} recap={recap} totals={totals} sport={sport} profiles={profiles} setScreen={setScreen} onOpenSport={onOpenSport} />}
 
         {/* 8 · VOLUME — this week's hard sets against the athlete's own
             MEV/MAV/MRV: the hero shape, the block ramp, the week's
@@ -572,7 +574,7 @@ export default function AuroraPerformance({
         {/* 11 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach: quick rails out */}
         <div style={CARD}>
           <SHead title={t("w.home.cockpit.horizon")} />
-          <Mod label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => setScreen("sport")} />
+          <Mod label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")} onClick={() => (sport && onOpenSport ? onOpenSport(sport.sport) : setScreen("sport"))} />
           <Mod label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onClick={() => setScreen("velocity")} />
           <Mod label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onClick={() => setScreen("endurance")} />
           {/* The AI coach's one door on the web — the prescription lives here. */}
@@ -585,13 +587,14 @@ export default function AuroraPerformance({
 
 /* ---------- Breakdown (tabbed disciplines) ---------- */
 type BreakTab = "strength" | "endurance" | "sport" | "velocity";
-function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
+function Breakdown({ state, recap, totals, sport, profiles, setScreen, onOpenSport }: {
   state: ReturnType<typeof computePerformanceState>;
   recap: ReturnType<typeof weeklyRecap>;
   totals: ReturnType<typeof runTotals>;
   sport: { sport: string; levelIdx: number } | null;
   profiles: ReturnType<typeof velocityProfiles>;
   setScreen: (id: string) => void;
+  onOpenSport?: (sport: string) => void;
 }) {
   const { t } = useLang();
   const TABS: { id: BreakTab; label: string }[] = [
@@ -647,7 +650,7 @@ function Breakdown({ state, recap, totals, sport, profiles, setScreen }: {
           sport ? (
             <>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle }}>{sport.sport} – {LEVELS[sport.levelIdx] ?? LEVELS[0]}</div>
-              <button className="pressable" onClick={() => setScreen("sport")} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}><CtaLabel size={12}>{`${t("w.home.cockpit.sport")} →`}</CtaLabel></button>
+              <button className="pressable" onClick={() => (onOpenSport ? onOpenSport(sport.sport) : setScreen("sport"))} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 12 }}><CtaLabel size={12}>{`${t("w.home.cockpit.sport")} →`}</CtaLabel></button>
             </>
           ) : <div style={{ fontSize: fs.body, lineHeight: 1.6 }}>{t("w.home.cockpit.sportEmpty")}</div>
         )}

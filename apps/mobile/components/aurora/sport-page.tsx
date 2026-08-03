@@ -12,6 +12,7 @@ import {
   recordMarker,
   sportDistance,
   sportPace,
+  sportFromSlug,
   sportPageModel,
   transferSessionBlocks,
   type LoggedSession,
@@ -43,8 +44,13 @@ export default function AuroraSportPage() {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
+  // The param carries EITHER the display name (an in-app push) or the slug (a
+  // link shared from the web app, where the URL parser accepts only [A-Za-z0-9_-]).
+  // One resolver takes both; anything else falls back to the raw string, which
+  // still renders — a sport typed by hand is a page too.
   const { name: raw } = useLocalSearchParams<{ name?: string }>();
-  const name = typeof raw === "string" && raw.trim() ? raw : "Running";
+  const param = typeof raw === "string" ? raw.trim() : "";
+  const name = sportFromSlug(param) ?? param;
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [store, setStore] = useState<SportStore | null>(null);
@@ -58,6 +64,11 @@ export default function AuroraSportPage() {
       return () => { active = false; };
     }, []),
   );
+
+  // A link with no sport on it belongs on the index, never on an empty page.
+  useEffect(() => {
+    if (!name) router.replace("/sport");
+  }, [name, router]);
 
   useEffect(() => {
     AsyncStorage.getItem(STORE_KEY)
