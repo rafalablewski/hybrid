@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, ErrorNote, Segmented, KV } from "./_kit";
+import { Intro, ErrorNote, FilterGroup, KV } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 
 // Read-only platform directory: organizations + coach↔client links. Mirrors
@@ -50,7 +50,7 @@ export default function AdminDirectory() {
 
   return (
     <View>
-      <Segmented<View2>
+      <FilterGroup<View2>
         options={[
           { value: "orgs", label: `Orgs${orgs ? ` – ${orgs.length}` : ""}` },
           { value: "coaching", label: `Coaching${links ? ` – ${links.length}` : ""}` },

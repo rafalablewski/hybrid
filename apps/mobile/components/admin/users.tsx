@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { Intro, ErrorNote, Input, PillBtn, Segmented, KV } from "./_kit";
+import { Intro, ErrorNote, Input, PillBtn, FilterGroup, KV } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import AdminAnon from "./anon";
 import { useConfirm } from "../aurora/confirm";
@@ -50,7 +50,7 @@ export default function AdminUsers() {
   const [tab, setTab] = useState<UsersTab>("accounts");
   return (
     <View>
-      <Segmented<UsersTab>
+      <FilterGroup<UsersTab>
         value={tab}
         onChange={setTab}
         options={[
@@ -286,7 +286,7 @@ function UserDetail({
         </Text>
 
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Role</Text>
-        <Segmented<RoleVal>
+        <FilterGroup<RoleVal>
           options={[
             { value: "CLIENT", label: "Client" },
             { value: "COACH", label: "Coach" },
@@ -297,7 +297,7 @@ function UserDetail({
         />
 
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Language</Text>
-        <Segmented<LangVal>
+        <FilterGroup<LangVal>
           options={[
             { value: "en", label: "EN" },
             { value: "pl", label: "PL" },

@@ -16,7 +16,7 @@ import {
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { useConfirm } from "../aurora/confirm";
 
@@ -272,7 +272,7 @@ function Editor({
       <Input label="Role / title" value={draft.role} onChangeText={(v) => set("role", v)} />
 
       <FieldLabel>Status</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={AGENT_STATUSES.map((s) => ({ value: s, label: s }))}
         value={draft.status}
         onChange={(v) => set("status", v as AgentStatus)}
@@ -281,28 +281,28 @@ function Editor({
       <Input label="Reports to (blank = the human admin)" value={draft.reportsTo ?? ""} onChangeText={(v) => set("reportsTo", v || null)} />
 
       <FieldLabel>Model</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={MODELS.map((m) => ({ value: m.id, label: m.label.replace("Claude ", "") }))}
         value={draft.model}
         onChange={(v) => set("model", v as AgentDefinition["model"])}
       />
 
       <FieldLabel>Effort – thinking depth / token spend</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={EFFORTS.map((e) => ({ value: e, label: e }))}
         value={draft.effort}
         onChange={(v) => set("effort", v as AgentDefinition["effort"])}
       />
 
       <FieldLabel>Authority level</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={AUTHORITY_LEVELS.map((a) => ({ value: a.value, label: a.value }))}
         value={draft.authority}
         onChange={(v) => set("authority", v as AgentDefinition["authority"])}
       />
 
       <FieldLabel>Runtime – managed = durable memory across runs</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={RUNTIMES.map((r) => ({ value: r.value, label: r.value }))}
         value={draft.runtime}
         onChange={(v) => set("runtime", v as AgentDefinition["runtime"])}
@@ -529,7 +529,7 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
       {schedules.length === 0 && <Mono color={palette.ash}>No schedules yet.</Mono>}
 
       <Input value={newTask} onChangeText={setNewTask} placeholder="Standing task, e.g. Daily ops status." />
-      <Segmented
+      <FilterGroup
         options={CADENCES.map((c) => ({ value: c.value, label: c.label }))}
         value={newCadence}
         onChange={setNewCadence}

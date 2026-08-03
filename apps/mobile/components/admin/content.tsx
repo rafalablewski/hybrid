@@ -12,7 +12,7 @@ import {
 import { adminGet } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { Segmented, Stat, ErrorNote } from "./_kit";
+import { FilterGroup, Stat, ErrorNote } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile Capabilities & data — parity with apps/web/components/admin/content.tsx
@@ -27,7 +27,7 @@ export default function AdminContent() {
   const [tab, setTab] = useState<Tab>("capabilities");
   return (
     <View>
-      <Segmented<Tab>
+      <FilterGroup<Tab>
         value={tab}
         onChange={setTab}
         options={[

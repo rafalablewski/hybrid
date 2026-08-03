@@ -20,7 +20,7 @@ import {
 import { adminGet } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { Intro, Stat, Input, PillBtn, Segmented } from "./_kit";
+import { Intro, Stat, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile Financials — parity with apps/web/components/admin/financials.tsx + the
@@ -113,7 +113,7 @@ export default function AdminFinancials() {
         <Stat label="Rule of 40" value={Math.round(h.ruleOf40).toString()} sub={h.ruleOf40 >= 40 ? "passes (≥40)" : "below 40"} color={band(palette, h.ruleOf40, 40, 25)} />
       </View>
 
-      <Segmented<Tab>
+      <FilterGroup<Tab>
         value={tab}
         onChange={setTab}
         options={[

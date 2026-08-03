@@ -11,6 +11,7 @@ import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import { heroTitleType, type AuroraIconName } from "@hybrid/core";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { LiquidSeg } from "./liquid-seg";
 import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
 
 /**
@@ -574,7 +575,23 @@ export function AField({
   );
 }
 
-/** Rounded segmented pill control (e.g. lb/kg, Day/Week/Month). */
+/**
+ * THE SEGMENTED CONTROL — one entry point, two renderings, no third.
+ *
+ * `ASegment` dispatches: on iOS it is a real SwiftUI `Picker` (GlassSegment,
+ * tinted with the live accent); everywhere else it is `LiquidSeg`, the
+ * gesture-tracked lens that inflates under touch, scrubs across segments as you
+ * drag and lands on the shared `springs.lens`.
+ *
+ * That second branch is the change. The fallback used to be a static RN pill
+ * row — correct, inert, and nothing like the control beside it — so the best
+ * motion in the product reached exactly two surfaces while everything else got
+ * a flat highlight. The audit counted eight segmented implementations; two of
+ * them (the admin `Segmented` and History's `ViewSwitcher`) turned out on
+ * reading to be WRAPPING and SCROLLING chip rails rather than segmented
+ * controls at all, and became `AChip` rows. What is left is this and the
+ * LiquidSeg it delegates to.
+ */
 export function ASegment<T extends string>({
   options,
   value,
@@ -585,53 +602,32 @@ export function ASegment<T extends string>({
   onPick: (v: T) => void;
 }) {
   const { palette } = useTheme();
-  const glass = LIQUID_GLASS_SUPPORTED;
-  // When active (iOS + toggle on) a real SwiftUI segmented Picker (tinted with
-  // the brand lime); the RN pill segment below is the fallback everywhere else.
-  if (glass) {
+  const index = Math.max(0, options.findIndex((o) => o.id === value));
+  if (LIQUID_GLASS_SUPPORTED) {
     return <GlassSegment options={options} value={value} onPick={onPick} accent={palette.lime} />;
   }
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        backgroundColor: palette.ink2,
-        borderRadius: RADIUS.pill,
-        borderWidth: 1,
-        borderColor: palette.line,
-        padding: 4,
-      }}
-    >
-      {options.map((o) => {
-        const on = value === o.id;
-        return (
-          <Pressable
-            key={o.id}
-            onPress={() => onPick(o.id)}
-            accessibilityRole="radio"
-            accessibilityLabel={o.label}
-            accessibilityState={{ selected: on }}
-            style={{
-              flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: 11,
-              // A segment is the most-tapped control on the screens that carry
-              // one, and at 11+11+~16 it sat ~6dp under the HIG minimum. The
-              // track's own 4dp padding means the outer control still grows to
-              // 52 — which is what a segmented control should be.
-              minHeight: HIT_TARGET,
-              borderRadius: RADIUS.pill,
-              backgroundColor: on ? palette.lime : "transparent",
-            }}
+    <LiquidSeg
+      items={options.map((o) => ({
+        key: o.id,
+        label: o.label,
+        render: (on: boolean) => (
+          <Text
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+            numberOfLines={1}
+            style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.chalk : palette.ash }}
           >
-            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.onAccent : palette.ash }}>
-              {o.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+            {o.label}
+          </Text>
+        ),
+      }))}
+      index={index}
+      onSelect={(i) => onPick(options[i]!.id)}
+      // 44 so the segment clears the HIG target; the track's own padding puts
+      // the control at 52, which is what a segmented control should be.
+      segHeight={HIT_TARGET}
+      trackStyle={{ backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line }}
+    />
   );
 }
 

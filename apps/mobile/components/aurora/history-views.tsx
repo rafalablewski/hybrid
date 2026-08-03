@@ -28,7 +28,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS, withAlpha } from "./kit";
+import { RADIUS, withAlpha, AChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -119,20 +119,23 @@ function RestGapRow({ C, days }: { C: Palette; days: number }) {
 //  Switcher
 // ============================================================
 
+/**
+ * History's view rail — a SCROLLING chip rail, which is why it is AChip rows
+ * and not ASegment. A segmented control is equal-width and lives in a track;
+ * this rail is full-bleed, scrolls past the screen edge, and its items are
+ * independent filters. Naming that correctly is what kept it out of the
+ * segmented-control merge.
+ *
+ * Its hand-rolled pills also sat at ~27dp. AChip declares the 44dp floor.
+ */
 export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange: (v: HistoryViewId) => void }) {
-  const { palette: C } = useTheme();
   const { t } = useLang();
   return (
     // Full-bleed chip rail — clips at the screen edge, rests on the column.
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingBottom: 4, paddingHorizontal: 16 }}>
-      {HISTORY_VIEWS.map((v) => {
-        const on = v.id === view;
-        return (
-          <Pressable key={v.id} onPress={() => onChange(v.id)} style={{ borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : C.ink2 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? C.onAccent : C.ash, fontWeight: on ? "700" : "400" }}>{t(v.labelKey)}</Text>
-          </Pressable>
-        );
-      })}
+      {HISTORY_VIEWS.map((v) => (
+        <AChip key={v.id} label={t(v.labelKey)} selected={v.id === view} onPress={() => onChange(v.id)} />
+      ))}
     </ScrollView>
   );
 }

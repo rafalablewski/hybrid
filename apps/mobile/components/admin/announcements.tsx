@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { Intro, Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { useConfirm } from "../aurora/confirm";
@@ -207,10 +207,10 @@ export default function AdminAnnouncements() {
           <Input label="Body" value={draft.body} onChangeText={(t) => setDraft({ ...draft, body: t })} placeholder="What every athlete should see…" multiline />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Level</Text>
-          <Segmented options={LEVEL_OPTS} value={draft.level} onChange={(v) => setDraft({ ...draft, level: v })} />
+          <FilterGroup options={LEVEL_OPTS} value={draft.level} onChange={(v) => setDraft({ ...draft, level: v })} />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Audience</Text>
-          <Segmented options={AUDIENCE_OPTS} value={draft.audience} onChange={(v) => setDraft({ ...draft, audience: v })} />
+          <FilterGroup options={AUDIENCE_OPTS} value={draft.audience} onChange={(v) => setDraft({ ...draft, audience: v })} />
 
           <Input label="Publish at — ISO, optional" value={draft.publishAt} onChangeText={(t) => setDraft({ ...draft, publishAt: t })} placeholder="2026-07-01T09:00:00Z" />
           <Input label="Expires at — ISO, optional" value={draft.expiresAt} onChangeText={(t) => setDraft({ ...draft, expiresAt: t })} placeholder="2026-08-01T09:00:00Z" />

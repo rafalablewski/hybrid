@@ -12,7 +12,7 @@ import { adminGet, adminSend } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraIcon } from "../aurora/icons";
-import { Intro, Banner, ErrorNote, PillBtn, Segmented } from "./_kit";
+import { Intro, Banner, ErrorNote, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { useConfirm } from "../aurora/confirm";
 
@@ -122,7 +122,7 @@ export default function AdminAccess() {
 
   return (
     <View>
-      <Segmented<Tab>
+      <FilterGroup<Tab>
         value={tab}
         onChange={setTab}
         options={[

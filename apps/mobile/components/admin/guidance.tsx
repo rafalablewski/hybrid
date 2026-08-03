@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
 import { leading, fs, space, Mono, Kicker, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { Segmented } from "./_kit";
+import { FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 
 // Clipboard: this Expo project has no expo-clipboard dependency (verified — not
@@ -25,7 +25,7 @@ export default function AdminGuidance() {
   return (
     <View>
       {GUIDES.length > 1 ? (
-        <Segmented
+        <FilterGroup
           value={guideId}
           onChange={setGuideId}
           options={GUIDES.map((g) => ({ value: g.id, label: g.id }))}

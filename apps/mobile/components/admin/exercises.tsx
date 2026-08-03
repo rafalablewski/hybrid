@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { ALL_MUSCLES } from "@hybrid/core";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { Intro, Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { useConfirm } from "../aurora/confirm";
@@ -250,15 +250,15 @@ export default function AdminExercises() {
           <Input label="Category (optional)" value={draft.category} onChangeText={(t) => setDraft({ ...draft, category: t })} placeholder="e.g. Lower / Olympic" />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Pattern</Text>
-          <Segmented options={PATTERN_OPTS} value={draft.pattern} onChange={(v) => setDraft({ ...draft, pattern: v })} />
+          <FilterGroup options={PATTERN_OPTS} value={draft.pattern} onChange={(v) => setDraft({ ...draft, pattern: v })} />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Kind</Text>
-          <Segmented options={KIND_OPTS} value={draft.kind} onChange={(v) => setDraft({ ...draft, kind: v })} />
+          <FilterGroup options={KIND_OPTS} value={draft.kind} onChange={(v) => setDraft({ ...draft, kind: v })} />
 
           <Input label="Base load (kg, blank for conditioning)" value={draft.baseLoad} onChangeText={(t) => setDraft({ ...draft, baseLoad: t })} placeholder="100" keyboardType="numeric" />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Energy system (conditioning)</Text>
-          <Segmented options={SYSTEM_OPTS} value={draft.system} onChange={(v) => setDraft({ ...draft, system: v })} />
+          <FilterGroup options={SYSTEM_OPTS} value={draft.system} onChange={(v) => setDraft({ ...draft, system: v })} />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 6 }}>
             Muscles worked (drives fatigue + volume)

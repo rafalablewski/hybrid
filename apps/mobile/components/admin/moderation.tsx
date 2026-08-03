@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, Banner, ErrorNote, Segmented, PillBtn } from "./_kit";
+import { Intro, Banner, ErrorNote, FilterGroup, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { useConfirm } from "../aurora/confirm";
 
@@ -108,7 +108,7 @@ export default function AdminModeration() {
 
   return (
     <View>
-      <Segmented<Tab>
+      <FilterGroup<Tab>
         options={[
           { value: "profiles", label: `Pending profiles${pCount ? ` – ${pCount}` : ""}` },
           { value: "reports", label: `Reports${rCount ? ` – ${rCount}` : ""}` },

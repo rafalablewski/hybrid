@@ -4,13 +4,13 @@ import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { Stat, ErrorNote, Segmented, PillBtn } from "./_kit";
+import { Stat, ErrorNote, FilterGroup, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile "Agent HQ" command center — parity with apps/web/components/admin/
 // agent-hq.tsx (+ agent-runs.tsx as the Reports tab). recharts is web-only, so
 // the 7-day activity / cost data render as compact bar-rows / Stat tiles. Tabs
-// via <Segmented/>. Mutations mirror the web optimistic+resync flow.
+// via <FilterGroup/>. Mutations mirror the web optimistic+resync flow.
 
 // ---- types (mirror the web overview/route shapes) ------------------------
 
@@ -127,7 +127,7 @@ export default function AdminAgentHQ() {
 
   return (
     <View>
-      <Segmented options={TABS.map((t) => ({ value: t.value, label: tabLabel(t, data) }))} value={tab} onChange={(v) => setTab(v as TabId)} />
+      <FilterGroup options={TABS.map((t) => ({ value: t.value, label: tabLabel(t, data) }))} value={tab} onChange={(v) => setTab(v as TabId)} />
       <Pressable onPress={load} style={{ alignSelf: "flex-end", marginBottom: 8 }} hitSlop={8}>
         <Mono color={palette.ash}>↻ refresh</Mono>
       </Pressable>
@@ -710,7 +710,7 @@ function Reports() {
           <Mono color={palette.chalk}>Run history isn't persisted yet — run reference/sql-agent-runs.sql in Supabase.</Mono>
         </ACard>
       )}
-      <Segmented options={FILTERS.map((f) => ({ value: f, label: f }))} value={filter} onChange={(v) => setFilter(v as (typeof FILTERS)[number])} />
+      <FilterGroup options={FILTERS.map((f) => ({ value: f, label: f }))} value={filter} onChange={(v) => setFilter(v as (typeof FILTERS)[number])} />
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV / PDF export is web-only.</Mono>
 
       {runs === null ? (

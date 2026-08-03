@@ -3,7 +3,7 @@ import { View, Text, TextInput, ActivityIndicator, type ViewStyle } from "react-
 import { fs, space, F, Mono, PressScale, PressScale as Pressable, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "../aurora/cta-label";
-import { ACard, cardStack, RADIUS } from "../aurora/kit";
+import { ACard, cardStack, RADIUS, AChip } from "../aurora/kit";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
 // share one look (matching the web console's lib/ui primitives). Section bodies
@@ -166,8 +166,21 @@ export function PillBtn({
   );
 }
 
-/** A horizontal segmented control (tabs / filters). */
-export function Segmented<T extends string>({
+/**
+ * A wrapping FILTER GROUP — named "Segmented" for years, and it never was one.
+ *
+ * A segmented control is equal-width and lives in a track; this is a
+ * `flexWrap` row of independent pills, which is a chip filter group. Reading it
+ * for the consolidation is what settled the count: of the eight "segmented
+ * controls" the audit found, this and History's ViewSwitcher were chip rails,
+ * so they belong to AChip rather than to ASegment. The name went with the
+ * misconception.
+ *
+ * Kept as a thin wrapper rather than inlined at 24 call sites: the admin's
+ * filter rows share a layout (wrap + gap + bottom margin) that is worth naming
+ * once.
+ */
+export function FilterGroup<T extends string>({
   options,
   value,
   onChange,
@@ -176,28 +189,11 @@ export function Segmented<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
-  const { palette } = useTheme();
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 12 }}>
-      {options.map((o) => {
-        const on = o.value === value;
-        return (
-          <Pressable
-            key={o.value}
-            onPress={() => onChange(o.value)}
-            style={{
-              borderWidth: 1,
-              borderColor: on ? palette.amber : palette.line,
-              backgroundColor: on ? `${palette.amber}1c` : "transparent",
-              borderRadius: 999,
-              paddingVertical: 6,
-              paddingHorizontal: 13,
-            }}
-          >
-            <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(palette, palette.amber) : palette.ash }}>{o.label}</Text>
-          </Pressable>
-        );
-      })}
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: space.md }}>
+      {options.map((o) => (
+        <AChip key={o.value} label={o.label} selected={o.value === value} onPress={() => onChange(o.value)} />
+      ))}
     </View>
   );
 }

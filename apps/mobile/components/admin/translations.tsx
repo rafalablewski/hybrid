@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { allTranslationKeys, baselineString, LANGS, type Lang } from "@hybrid/core";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 
@@ -123,7 +123,7 @@ export default function AdminTranslations() {
   return (
     <View>
       <Input value={q} onChangeText={setQ} placeholder="Search keys or text…" />
-      <Segmented<FilterMode>
+      <FilterGroup<FilterMode>
         options={[
           { value: "all", label: "All keys" },
           { value: "overridden", label: "Overridden" },
