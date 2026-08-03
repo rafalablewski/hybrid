@@ -60,6 +60,7 @@ import { fs, space,
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
+import { sportForDiscipline } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
@@ -979,7 +980,13 @@ export default function AuroraToday({
           an eight-week volume chart is not a property of the day you happen to
           be scrubbed to. Renders nothing until there's endurance to show.
           Mirrors mobile. ───── */}
-      {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => (onNavigate ? onNavigate("endurance") : router.push("/endurance"))} />}
+      {isAthlete && (
+        <AuroraEnduranceLanes
+          sessions={sessions}
+          canOpen={(d) => !!onOpenSport && !!sportForDiscipline(d)}
+          onOpen={(d) => { const sport = sportForDiscipline(d); if (sport) onOpenSport?.(sport); }}
+        />
+      )}
 
       {/* ───── OTHER SPORTS — tennis, squash, five-a-side: everything logged as
           `discipline: "sport"`, the bucket ENDURANCE_DISCIPLINES deliberately

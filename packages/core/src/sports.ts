@@ -10,6 +10,7 @@
  * here follows automatically.
  */
 
+import { gymExercise } from "./exercise-db";
 import { movementFor } from "./engines/movements";
 import { bestE1rmByLift, type LoggedSession } from "./engines/session";
 import { OLYMPIC_SPORTS, type SportMarker, type PoolExercise } from "./olympic-sports";
@@ -27,13 +28,28 @@ export interface Sport {
   pool: PoolExercise[];
 }
 
+/**
+ * What a movement is COUNTED in. Read from the exercise database's own property
+ * sheet (`GymExercise.measure`), never guessed here: a hold is counted in
+ * seconds and a carry in metres, and prescribing either in reps is how
+ * Swimming's Hollow Body Hold came out as "4×6".
+ */
+export type SportMeasure = "reps" | "time" | "distance";
+
 export interface SportBlock {
   name: string;
   demand: string;
-  /** display scheme — "4×6 @ 90kg" when loaded, "4×6" when bodyweight/tempo */
+  /** display scheme — "4×6 @ 90kg" loaded, "4×6" bodyweight, "4×30 s" a hold,
+   *  "4×40 m" a carry. */
   scheme: string;
   sets: number;
-  reps: number;
+  /** what the per-set quantity below is counted in. */
+  measure: SportMeasure;
+  /** the per-set quantity, IN `measure`: reps, seconds, or metres. */
+  amount: number;
+  /** Per-set reps — set only when `measure` is "reps", so a caller that reads
+   *  it can never silently treat a 30-second hold as 30 repetitions. */
+  reps?: number;
   /** working load in kg, when the movement is loadable and we can estimate it */
   load?: number;
   /** where the load came from — the athlete's e1RM, or a starting estimate */
@@ -81,6 +97,10 @@ export const SPORT_NAMES: string[] = Object.keys(SPORTS);
 const LEVEL_SETS = [3, 4, 4, 5];
 const LEVEL_REPS = [8, 6, 5, 3];
 const LEVEL_PCT = [0.7, 0.75, 0.8, 0.85];
+// A hold and a carry progress the other way — the quantity GROWS with the
+// level, because there are no reps to take away.
+const LEVEL_HOLD_SEC = [20, 30, 40, 45];
+const LEVEL_CARRY_M = [20, 30, 40, 50];
 
 // ---- the prescription engine: sport + level (+ the athlete's real logs) ----
 // Ranks the transferable exercises, then doses today's working set from the
@@ -114,8 +134,35 @@ export function prescribeForSport(
   // the athlete's best e1RM per lift, from their REAL logged sessions
   const e1rmByLift = new Map(bestE1rmByLift(opts.sessions ?? []).map((p) => [p.lift, p.e1rm]));
 
+  const holdSec = LEVEL_HOLD_SEC[levelIdx] ?? 30;
+  const carryM = LEVEL_CARRY_M[levelIdx] ?? 30;
+
   let personalized = false;
   const blocks: SportBlock[] = picks.map((p) => {
+    const ex = gymExercise(p.name);
+    const measure: SportMeasure = ex?.measure ?? "reps";
+
+    // A HOLD and a CARRY are prescribed as effort, not as load. The engine
+    // derives a working load from an e1RM, and a movement measured in seconds
+    // or metres has none it can know — blockBestE1rm returns 0 for exactly that
+    // reason. Naming a percentage of a number that does not exist would be a
+    // fabricated claim, so these carry the quantity and leave the load to the
+    // athlete.
+    if (measure === "time") {
+      return {
+        name: p.name, demand: p.demand, sets, measure, amount: holdSec,
+        scheme: `${sets}×${holdSec} s`,
+        bodyweight: ex?.loadMode === "bodyweight",
+      };
+    }
+    if (measure === "distance") {
+      return {
+        name: p.name, demand: p.demand, sets, measure, amount: carryM,
+        scheme: `${sets}×${carryM} m`,
+        bodyweight: ex?.loadMode === "bodyweight",
+      };
+    }
+
     const logged = e1rmByLift.get(p.name);
     const baseLoad = movementFor(p.name)?.baseLoad ?? null;
     const loadable = logged != null || baseLoad != null;
@@ -127,6 +174,8 @@ export function prescribeForSport(
         name: p.name,
         demand: p.demand,
         sets,
+        measure,
+        amount: reps,
         reps,
         load,
         scheme: `${sets}×${reps} @ ${load}kg`,
@@ -136,7 +185,7 @@ export function prescribeForSport(
             : `starting estimate — log ${p.name} to tune this`,
       };
     }
-    return { name: p.name, demand: p.demand, sets, reps, scheme: setScheme, bodyweight: true };
+    return { name: p.name, demand: p.demand, sets, measure, amount: reps, reps, scheme: setScheme, bodyweight: true };
   });
 
   return { sport, ranked, blocks, setScheme, personalized };

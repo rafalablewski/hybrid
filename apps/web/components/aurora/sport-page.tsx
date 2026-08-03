@@ -13,6 +13,7 @@ import {
   space,
   sportDistance,
   sportPace,
+  sportMarkPaths,
   sportPageModel,
   transferSessionBlocks,
   type SessionBlock,
@@ -197,6 +198,9 @@ export default function AuroraSportPage({
         rank: "cover",
         title: name,
         eyebrow: heroMetaLine([m.category, m.family]),
+        // The drawn mark for this KIND of sport; the catalog emoji only when
+        // the name is not in the catalog at all (a hand-typed activity).
+        artPaths: sportMarkPaths(name),
         glyph: m.icon,
         meta: [
           m.meta.efforts > 0 ? t("w.train.sportPage.effortsMeta").replace("{n}", String(m.meta.efforts)) : null,
@@ -396,7 +400,7 @@ export default function AuroraSportPage({
                   <div style={{ textAlign: "right" }}>
                     <span style={{ ...mono(fs.caption, C("lime")), fontWeight: 700, background: `color-mix(in srgb, ${C("lime")} 16%, transparent)`, borderRadius: 999, padding: "4px 11px", whiteSpace: "nowrap" }}>{b.scheme}</span>
                     <div style={{ ...mono(fs.nano), marginTop: 6, maxWidth: 170, marginLeft: "auto", lineHeight: 1.4 }}>
-                      {b.loadBasis ?? (b.bodyweight ? t("w.train.sport.bodyweightTempo") : "")}
+                      {b.loadBasis ?? (b.bodyweight && b.measure === "reps" ? t("w.train.sport.bodyweightTempo") : "")}
                     </div>
                   </div>
                 </div>

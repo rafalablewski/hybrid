@@ -397,6 +397,12 @@ export const GYM_EXERCISES: GymExercise[] = [
   E("Bear Crawl", "Carries & Conditioning", "core", ["abs", "front-delts"], ["quads", "obliques"], "bodyweight", null, DIST),
   E("Battle Ropes", "Carries & Conditioning", "plyo", ["front-delts", "abs"], ["forearms", "obliques"], "other", null, { loadMode: "bodyweight", measure: "time" }),
   E("Jump Rope", "Carries & Conditioning", "plyo", ["calves"], ["forearms", "quads"], "other", null, { loadMode: "bodyweight", measure: "time" }),
+  // Boxing's transfer pool prescribes "Assault Bike Intervals", which resolved
+  // to nothing — the alias below already pointed at this canonical name, but
+  // the entry it named did not exist, so the sport engine fell back to REPS and
+  // prescribed an ergometer interval as eight repetitions. It is a timed
+  // effort with no external load.
+  E("Assault Bike", "Carries & Conditioning", "plyo", ["quads", "front-delts"], ["hamstrings", "lats"], "machine", null, { loadMode: "bodyweight", measure: "time" }),
   E("Burpee", "Carries & Conditioning", "plyo", ["quads", "chest"], ["glutes", "abs", "triceps"], "bodyweight", null),
   E("Tire Flip", "Carries & Conditioning", "hinge", ["glutes", "hamstrings"], ["upper-back", "biceps"], "other", 100),
 

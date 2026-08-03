@@ -898,7 +898,7 @@ export default function AppShell() {
 
         {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
 
-        {screen === "endurance" && <AuroraEndurance sessions={sessions} />}
+        {screen === "endurance" && <AuroraEndurance sessions={sessions} onOpenSport={openSportPage} />}
 
         {screen === "exercises" && <AuroraExercises sessions={sessions} onOpen={openExercisePage} />}
 

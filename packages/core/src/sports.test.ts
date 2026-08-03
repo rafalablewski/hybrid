@@ -78,3 +78,38 @@ describe("prescribeForSport", () => {
     expect(SPORT_NAMES).toEqual(["Running", "Swimming", "Cycling", "Boxing", "BJJ", "Squash", "Climbing"]);
   });
 });
+
+describe("a movement is dosed in the measure it is MEASURED in", () => {
+  it("prescribes a hold in seconds, not in reps", () => {
+    // Swimming's Core demand is the Hollow Body Hold, which the exercise
+    // database measures in time — it used to come out as "4×6".
+    const rx = prescribeForSport("Swimming", 1);
+    const hold = rx.blocks.find((b) => b.name === "Hollow Body Hold")!;
+    expect(hold.measure).toBe("time");
+    expect(hold.scheme).toBe("4×30 s");
+    expect(hold.amount).toBe(30);
+    // and nothing can mistake it for a rep count
+    expect(hold.reps).toBeUndefined();
+  });
+
+  it("grows the hold with the level, because there are no reps to take away", () => {
+    const at = (lvl: number) => prescribeForSport("Swimming", lvl).blocks.find((b) => b.name === "Hollow Body Hold")!;
+    expect(at(0).scheme).toBe("3×20 s");
+    expect(at(3).scheme).toBe("5×45 s");
+  });
+
+  it("keeps reps for a reps-measured movement, load and all", () => {
+    const rx = prescribeForSport("Swimming", 1, { sessions: [session("Lat Pulldown", "80", "6")] });
+    const pull = rx.blocks.find((b) => b.name === "Lat Pulldown")!;
+    expect(pull.measure).toBe("reps");
+    expect(pull.reps).toBe(6);
+    expect(pull.amount).toBe(6);
+    expect(pull.scheme).toContain("kg");
+  });
+
+  it("never claims a percentage of a 1RM a hold cannot have", () => {
+    const hold = prescribeForSport("Swimming", 2).blocks.find((b) => b.name === "Hollow Body Hold")!;
+    expect(hold.load).toBeUndefined();
+    expect(hold.loadBasis).toBeUndefined();
+  });
+});

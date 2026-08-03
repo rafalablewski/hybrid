@@ -5,6 +5,7 @@ import {
   recordMarker,
   searchSports,
   sportIndex,
+  sportForDiscipline,
   sportIndexMeta,
   sportFromSlug,
   sportSlug,
@@ -17,6 +18,7 @@ import {
   SPORT_PAGE_RECENT,
 } from "./sport-page";
 import { OLYMPIC_SPORTS } from "./olympic-sports";
+import { SPORT_MARK_PATHS, sportMark, sportMarkPaths } from "./theme/sport-marks";
 import type { LoggedSession } from "./engines/session";
 
 const NOW = Date.parse("2026-07-31T12:00:00.000Z");
@@ -329,5 +331,68 @@ describe("a sport has an address", () => {
     expect(sportFromSlug("not-a-sport")).toBeNull();
     expect(sportFromSlug("")).toBeNull();
     expect(sportFromSlug(undefined)).toBeNull();
+  });
+});
+
+describe("a discipline names the sport it IS", () => {
+  it("maps each endurance discipline to its catalog sport", () => {
+    expect(sportForDiscipline("running")).toBe("Running");
+    expect(sportForDiscipline("swimming")).toBe("Swimming");
+    expect(sportForDiscipline("rowing")).toBe("Rowing");
+  });
+
+  it("does not file a cross-country ski under Skateboarding", () => {
+    // cardioDiscipline's skiing pattern matches "skate", so scanning the
+    // catalog in order picked the wrong sport. The map is explicit for this.
+    expect(sportForDiscipline("skiing")).toBe("Cross-Country Skiing");
+  });
+
+  it("leaves a discipline with no honest catalog sport unmapped", () => {
+    // The only walking sport in the catalog is Race Walking, a track event —
+    // filing somebody's hike under it would be a lie a link then repeats.
+    expect(sportForDiscipline("walking")).toBeNull();
+    expect(sportForDiscipline("other")).toBeNull();
+  });
+
+  it("indexes a logged ski as skiing, not as skateboarding", () => {
+    const ski: LoggedSession[] = [
+      { id: "k1", title: "Ski", startedAt: new Date(NOW - DAY).toISOString(),
+        blocks: [{ kind: "cardio", name: "Ski tour", discipline: "skiing", distance: 22, minutes: 140 }] } as LoggedSession,
+    ];
+    expect(sportIndex(ski).yours.map((e) => e.name)).toEqual(["Cross-Country Skiing"]);
+  });
+});
+
+describe("the cover art is a drawn mark, not an emoji", () => {
+  it("gives every catalog sport a mark", () => {
+    const missing = searchSports("").filter((e) => !sportMark(e.name));
+    expect(missing.map((e) => e.name)).toEqual([]);
+  });
+
+  it("draws the sport's own instrument where it has one, its category's otherwise", () => {
+    expect(sportMark("Rowing")).toBe("oar");
+    expect(sportMark("Canoe Sprint")).toBe("oar");
+    expect(sportMark("Swimming")).toBe("water");
+    // Tennis and Squash are the same drawing on purpose — there are not 65
+    // distinctive silhouettes, and the title already says which sport it is.
+    expect(sportMark("Tennis")).toBe(sportMark("Squash"));
+  });
+
+  it("has no mark for a name the catalog does not hold, so the caller can fall back", () => {
+    expect(sportMark("Underwater Basket Weaving")).toBeNull();
+    expect(sportMarkPaths("Underwater Basket Weaving")).toEqual([]);
+  });
+
+  it("draws every closed shape with two arcs — a self-returning arc renders nothing", () => {
+    // The first cut used "A24 24 0 1 0 36 12.01Z" for a circle; two of the
+    // marks came out empty and it took a screenshot to notice.
+    for (const [name, paths] of Object.entries(SPORT_MARK_PATHS)) {
+      for (const d of paths) {
+        const arcs = d.match(/A[\d. ]+/g) ?? [];
+        const closed = d.trim().endsWith("Z");
+        // A closed path whose ONLY curve is a single arc is the degenerate case.
+        expect(!(closed && arcs.length === 1 && !/[LHVC]/.test(d)), `${name}: ${d}`).toBe(true);
+      }
+    }
   });
 });

@@ -555,19 +555,34 @@ export interface SportIndexEntry {
 }
 
 /**
- * The canonical catalog sport for an endurance discipline — the FIRST catalog
- * entry that resolves to it (Running for `running`, Swimming for `swimming`).
- * A logged "Long run" is a Running effort, and the index must name the sport,
- * not the move.
+ * The catalog sport each endurance discipline IS.
+ *
+ * Named explicitly rather than inferred. The first pass took the first catalog
+ * entry whose name resolves to the discipline, and `cardioDiscipline`'s skiing
+ * pattern matches "skate" — so a logged cross-country ski came out as
+ * SKATEBOARDING. A six-line map cannot drift like that.
+ *
+ * `walking` has no entry on purpose: the catalog's only walking sport is Race
+ * Walking, a track event, and filing somebody's hike under it would be a lie a
+ * link then repeats. A discipline with no sport simply has no page, and the
+ * lanes fall back to the index.
  */
-const CANONICAL_BY_DISCIPLINE: Partial<Record<CardioDiscipline, string>> = (() => {
-  const out: Partial<Record<CardioDiscipline, string>> = {};
-  for (const s of Object.values(OLYMPIC_SPORTS)) {
-    const d = cardioDiscipline(s.name);
-    if (d !== "sport" && d !== "other" && out[d] == null) out[d] = s.name;
-  }
-  return out;
-})();
+const CANONICAL_BY_DISCIPLINE: Partial<Record<CardioDiscipline, string>> = {
+  running: "Running",
+  cycling: "Cycling",
+  swimming: "Swimming",
+  rowing: "Rowing",
+  skiing: "Cross-Country Skiing",
+};
+
+/**
+ * The catalog sport an endurance DISCIPLINE is — "running" → "Running". The
+ * Endurance lanes are keyed by discipline and the sport page by name, so this
+ * is the one place the two vocabularies meet.
+ */
+export function sportForDiscipline(d: CardioDiscipline): string | null {
+  return CANONICAL_BY_DISCIPLINE[d] ?? null;
+}
 
 /** Which sport a logged cardio block belongs to, or null when it names none. */
 export function sportForBlock(b: CardioBlock): string | null {
@@ -712,7 +727,10 @@ export function transferSessionBlocks(rx: SportPrescription): SessionBlock[] {
   return rx.blocks.map((b) => ({
     kind: "strength" as const,
     name: b.name,
-    sets: Array.from({ length: b.sets }, () => ({ load: b.load != null ? String(b.load) : "", reps: String(b.reps) })),
+    // The per-set field is whatever the exercise is MEASURED in — the logger
+    // labels it "reps" / "s" / "m" off exerciseProfile — so a hold seeds its
+    // seconds and a carry its metres, not a rep count neither one has.
+    sets: Array.from({ length: b.sets }, () => ({ load: b.load != null ? String(b.load) : "", reps: String(b.amount) })),
   }));
 }
 

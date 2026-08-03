@@ -52,9 +52,20 @@ const TILE_H = 118;
 export default function AuroraEnduranceLanes({
   sessions,
   onOpen,
+  canOpen,
+  cap = LANE_CAP,
+  head = true,
 }: {
   sessions: LoggedSession[];
   onOpen?: (discipline: CardioDiscipline) => void;
+  /** Whether a discipline has somewhere to open — a lane with no destination
+   *  shows no exit rather than a button that does nothing. */
+  canOpen?: (discipline: CardioDiscipline) => boolean;
+  /** Lanes shown before the expander. The Endurance SCREEN passes Infinity:
+   *  it is the comparison, so there is nothing to hold back. */
+  cap?: number;
+  /** The block's own title row. Off on the screen, whose hero already says it. */
+  head?: boolean;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -71,8 +82,8 @@ export default function AuroraEnduranceLanes({
   if (lanes.length === 0) return null;
 
   const stacked = orderLanes(lanes, order);
-  const shown = expanded ? stacked : stacked.slice(0, LANE_CAP);
-  const rest = stacked.length - LANE_CAP;
+  const shown = expanded || !Number.isFinite(cap) ? stacked : stacked.slice(0, cap);
+  const rest = Number.isFinite(cap) ? stacked.length - cap : 0;
   const km = Math.round(parentage.distanceKm * 10) / 10;
 
   return (
@@ -81,12 +92,14 @@ export default function AuroraEnduranceLanes({
           ACTION moved to its own quiet row below — a head carries at most one
           right-slot item, and the fact is the one that names the block.
           Mirrors web endurance-lanes.tsx. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 8 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-          {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
-        </Text>
-      </View>
+      {head && (
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 8 }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+            {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
+          </Text>
+        </View>
+      )}
       {/* The lane-order toggle — only when there is an order to change. */}
       {stacked.length > 1 && (
         <View style={{ flexDirection: "row", justifyContent: "flex-end", marginHorizontal: 2 }}>
@@ -103,7 +116,7 @@ export default function AuroraEnduranceLanes({
         </View>
       )}
 
-      {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}
+      {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} canOpen={canOpen ? canOpen(lane.discipline) : true} />)}
 
       {/* The block's exit, in the DOOR-ROW anatomy (the This-week card's
           idiom): full-width blocks end in a door, rails end in a trailing
@@ -133,7 +146,7 @@ export default function AuroraEnduranceLanes({
   );
 }
 
-function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscipline) => void }) {
+function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscipline) => void; canOpen: boolean }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const zones = zonePercents(lane.zones);
@@ -147,7 +160,7 @@ function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscip
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
             {lane.efforts} {t("endurance.efforts")}
           </Text>
-          {onOpen && (
+          {onOpen && canOpen && (
             <Pressable onPress={() => onOpen(lane.discipline)} accessibilityRole="button" hitSlop={10}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.explore.seeAll")} ›</Text>
             </Pressable>
