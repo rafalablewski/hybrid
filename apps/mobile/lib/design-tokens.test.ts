@@ -165,6 +165,24 @@ describe("section headers", () => {
   });
 });
 
+describe("meters", () => {
+  it("RATCHET — labelled proportions converge on AMeter", () => {
+    // The audit counted 13 "bar/meter implementations", and reading them split
+    // the number three ways. FIVE were the same labelled horizontal proportion
+    // (MeterRow, MeterRows, BarRow ×2, MuscleBar) disagreeing on track height
+    // (3 / 7 / 8dp), radius (2 vs 4), where the value sits and whether the label
+    // is mono or sans. THREE were vertical COLUMN charts — a different object,
+    // with real differences (pace inversion, a muted state, highlight-last).
+    // And FIVE were not bars at all: a rail container, a face stroke, a sized
+    // rectangle, an animated share-card fill. Those are renamed for what they
+    // are (RailSurface, FaceStroke, Rule), because the same misnaming is what
+    // hid `Pill` from the chip merge — a wrong name invites a wrong merge as
+    // readily as it hides a right one.
+    const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm);
+    expectAtMost(decls, 9, "labelled proportion → AMeter");
+  });
+});
+
 describe("loading", () => {
   it("RATCHET — spinners are for ACTIONS; arriving content gets a skeleton", () => {
     // The app had no skeleton at all. All 33 `<Loading />` sites were the shape

@@ -95,7 +95,7 @@ export default function AuroraPlans() {
       </View>
       <EnrolledCard enrolled={enrolled} />
       {shelves.length === 0 ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.train.plans.noMatches")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.train.plans.noMatches")}</Text>
       ) : (
         shelves.map((group) => (
           <GoalShelf

@@ -87,7 +87,7 @@ export default function AuroraTeamMonitor() {
       return (
         <ACard style={{ marginTop: space.md }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.monitor.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.monitor.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.monitor.emptyBody")}</Text>
         </ACard>
       );
     }

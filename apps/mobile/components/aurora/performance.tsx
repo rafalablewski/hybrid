@@ -502,7 +502,7 @@ function Full({ top }: { top?: ReactNode }) {
                the retry card above owns that — either way, stop waiting. */
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.noSeason")}</Text>
           ) : (
-            <Bar C={C} w="80%" h={14} />
+            <Rule C={C} w="80%" h={14} />
           )}
         </ACard>
         {/* widget 2 — season progress / plan controls */}
@@ -518,7 +518,7 @@ function Full({ top }: { top?: ReactNode }) {
           ) : macroRead.settled ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, marginBottom: 10, lineHeight: leading(fs.caption, "snug") }}>{t("w.home.cockpit.fourQuestions")}</Text>
           ) : (
-            <View style={{ marginTop: 2, marginBottom: 10 }}><Bar C={C} w="90%" h={12} /></View>
+            <View style={{ marginTop: 2, marginBottom: 10 }}><Rule C={C} w="90%" h={12} /></View>
           )}
           <View style={{ gap: 8 }}>
             {macro && <Pressable onPress={() => router.push("/periodize")}><CtaLabel label={`${t("w.home.cockpit.periodize")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>}
@@ -632,7 +632,12 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
 /** One skeleton bar — a placeholder that states nothing. Deliberately not a
  *  shimmer: the pull-to-refresh spinner already carries "we're working on it",
  *  and a second animated element competing with it just adds noise. */
-function Bar({ C, w, h, mt }: { C: Palette; w: number | `${number}%`; h: number; mt?: number }) {
+/**
+ * A sized rectangle — a hairline or a spacer rule. A layout helper, not a
+ * meter: the caller passes an explicit width and height, and nothing here reads
+ * a value.
+ */
+function Rule({ C, w, h, mt }: { C: Palette; w: number | `${number}%`; h: number; mt?: number }) {
   return <View style={{ width: w, height: h, borderRadius: h / 2, backgroundColor: C.line, opacity: 0.45, marginTop: mt }} />;
 }
 
@@ -643,16 +648,16 @@ function StateSkeleton({ C }: { C: Palette }) {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-        <Bar C={C} w={64} h={40} />
+        <Rule C={C} w={64} h={40} />
         <View style={{ flex: 1, gap: 8 }}>
-          <Bar C={C} w="70%" h={11} />
-          <Bar C={C} w="100%" h={20} />
+          <Rule C={C} w="70%" h={11} />
+          <Rule C={C} w="100%" h={20} />
         </View>
       </View>
       <View style={{ flexDirection: "row", gap: 12, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
-        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
-        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Rule C={C} w="55%" h={18} /><Rule C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Rule C={C} w="55%" h={18} /><Rule C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Rule C={C} w="55%" h={18} /><Rule C={C} w="80%" h={9} /></View>
       </View>
     </View>
   );

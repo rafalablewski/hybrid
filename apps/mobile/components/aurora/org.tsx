@@ -120,7 +120,7 @@ export default function AuroraOrg() {
       <ACard style={{ marginTop: space.md }}>
         <Text style={kicker(txt(C, C.lime))}>{t("w.teams.org.headerKicker")}</Text>
         {orgs.length === 0 ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.teams.org.noOrgs")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.teams.org.noOrgs")}</Text>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
             {orgs.map((o) => (
@@ -145,7 +145,7 @@ export default function AuroraOrg() {
           <ACard style={{ marginTop: space.md }}>
             <Text style={kicker(C.ash)}>{t("w.teams.org.teamHierarchy")}</Text>
             {tree.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.teams.org.noTeams")}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.teams.org.noTeams")}</Text>
             ) : (
               tree.map((node) => {
                 const count = detail.members.filter((m) => m.teamId === node.id).length;

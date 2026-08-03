@@ -90,7 +90,7 @@ export default function AuroraTodayRail({
       pointerEvents={state.pinned ? "box-none" : "none"}
       style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 30 }}
     >
-      <Bar visible={state.pinned} reduced={reduced} C={C} topInset={topInset}>
+      <RailSurface visible={state.pinned} reduced={reduced} C={C} topInset={topInset}>
         {/* DATE — the week strip's residue. At the ceiling it sheds its month
             and dot track and contracts to "Sun 26". */}
         <RailAction open={has("date")} reduced={reduced} C={C} onPress={onOpenMonth} label={t("w.home.pill.dateAria")}>
@@ -144,7 +144,7 @@ export default function AuroraTodayRail({
             {feeling ? t(`w.recovery.readiness.${feeling}`) : t("w.home.pill.howReady")}
           </Text>
         </RailAction>
-      </Bar>
+      </RailSurface>
     </View>
   );
 }
@@ -161,7 +161,13 @@ const READY_ACCENT: Record<ReadinessFeeling, "lime" | "blue" | "amber" | "red"> 
 };
 
 /** The bar: fades up 7dp with its hairline as the first pill lands. */
-function Bar({ visible, reduced, C, topInset, children }: { visible: boolean; reduced: boolean; C: ReturnType<typeof useTheme>["palette"]; topInset: number; children: React.ReactNode }) {
+/**
+ * The rail's animated CONTAINER — not a bar in the chart sense. It slides the
+ * quick-action rail in from the top inset and holds it there; it draws no value
+ * and has no proportion. Named for the job, so the meter consolidation cannot
+ * mistake it for one (the same misnaming hid `Pill` from the chip merge).
+ */
+function RailSurface({ visible, reduced, C, topInset, children }: { visible: boolean; reduced: boolean; C: ReturnType<typeof useTheme>["palette"]; topInset: number; children: React.ReactNode }) {
   const m = railMotion("pin", reduced);
   const v = useRef(new Animated.Value(visible ? 1 : 0)).current;
   useEffect(() => {

@@ -16,7 +16,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, ASub, ASegment } from "./kit";
+import { AuroraScreen, ACard, ASub, ASegment, AMeter } from "./kit";
 
 /**
  * AURORA Analytics — the 3-scope dashboard (Athlete / Coach / Operator), now
@@ -113,21 +113,6 @@ function Bars({ data, color, highlightLast }: { data: { label: string; v: number
 
 /** A labelled horizontal meter — the mobile stand-in for the web's vertical
  *  category bar chart (adherence by client, language split). */
-function MeterRow({ label, value, display, max, color }: { label: string; value: number; display: string; max: number; color: string }) {
-  const C = useTheme().palette;
-  return (
-    <View style={{ marginTop: 10 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5, gap: space.sm }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{display}</Text>
-      </View>
-      <View style={{ height: 7, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden" }}>
-        <View style={{ width: `${Math.min(100, (value / (max || 1)) * 100)}%`, height: "100%", borderRadius: 4, backgroundColor: color }} />
-      </View>
-    </View>
-  );
-}
-
 /** Shared table — horizontally scrollable so a wide roster never squeezes. */
 function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[][]; widths: number[] }) {
   const C = useTheme().palette;
@@ -243,7 +228,7 @@ function CoachAnalytics() {
 
       <AFrame title={t("w.home.analytics.adherenceByClient")} kicker={t("w.home.analytics.last7days")}>
         {roster.map((c) => (
-          <MeterRow key={c.linkId} label={c.name} value={c.adherence} display={`${c.adherence}%`} max={100} color={C.lime} />
+          <AMeter key={c.linkId} label={c.name} value={`${c.adherence}%`} pct={c.adherence} color={C.lime} />
         ))}
       </AFrame>
 
@@ -303,7 +288,7 @@ function OperatorAnalytics() {
       {stats.planPopularity.length > 0 && (
         <AFrame title={t("w.home.analytics.plansEnrolled")} kicker={t("w.home.analytics.byGoal")}>
           {stats.planPopularity.map((p) => (
-            <MeterRow key={p.goal} label={p.goal} value={p.n} display={String(p.n)} max={maxPlan} color={C.lime} />
+            <AMeter key={p.goal} label={p.goal} value={String(p.n)} pct={((p.n) / ((maxPlan) || 1)) * 100} color={C.lime} />
           ))}
         </AFrame>
       )}
@@ -311,14 +296,14 @@ function OperatorAnalytics() {
       {stats.langSplit.length > 0 && (
         <AFrame title={t("w.home.analytics.languageSplit")} kicker={t("w.home.analytics.usersByLanguage")}>
           {stats.langSplit.map((l) => (
-            <MeterRow key={l.lang} label={l.lang} value={l.n} display={String(l.n)} max={maxLang} color={C.blue} />
+            <AMeter key={l.lang} label={l.lang} value={String(l.n)} pct={((l.n) / ((maxLang) || 1)) * 100} color={C.blue} />
           ))}
         </AFrame>
       )}
 
       {stats.totalUsers === 0 && (
         <ACard style={{ marginTop: 16, alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.analytics.noUsers")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.home.analytics.noUsers")}</Text>
         </ACard>
       )}
     </>

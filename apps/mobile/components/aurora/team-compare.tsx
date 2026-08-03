@@ -70,7 +70,7 @@ export default function AuroraTeamCompare() {
       return (
         <ACard style={{ marginTop: space.md }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.compare.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.compare.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.compare.emptyBody")}</Text>
         </ACard>
       );
     }

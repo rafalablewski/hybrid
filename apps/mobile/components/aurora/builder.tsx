@@ -146,7 +146,7 @@ export default function AuroraBuilder() {
         title={t("w.train.builder.pickExercise")}
       />
 
-      {b.msg && <Text accessibilityLiveRegion={b.msg.ok ? "polite" : "assertive"} accessibilityRole={b.msg.ok ? undefined : "alert"} style={{ fontFamily: F.mono, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.red), marginTop: 16 }}>{b.msg.text}</Text>}
+      {b.msg && <Text accessibilityLiveRegion={b.msg.ok ? "polite" : "assertive"} accessibilityRole={b.msg.ok ? undefined : "alert"} style={{ fontFamily: F.reg, fontSize: fs.body, color: b.msg.ok ? txt(C, C.lime) : txt(C, C.red), marginTop: 16 }}>{b.msg.text}</Text>}
 
       {allowedSave ? (
         <>

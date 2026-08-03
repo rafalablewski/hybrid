@@ -21,7 +21,7 @@ import { adminGet } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Intro, Stat, Input, PillBtn, FilterGroup } from "./_kit";
-import { ACard, cardStack, ASection } from "../aurora/kit";
+import { ACard, cardStack, ASection, AMeter } from "../aurora/kit";
 
 // Mobile Financials — parity with apps/web/components/admin/financials.tsx + the
 // @hybrid/core economics engine. Same DATA (revenue, COGS/margin, per-segment
@@ -535,8 +535,8 @@ function ForecastTab({
                 <Mono color={palette.ash} style={{ fontSize: fs.micro }}>M{p.month}</Mono>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{usd(p.mrr)} – {usd(p.cumulativeCash)}</Mono>
               </View>
-              <BarRow value={mrrPct} color={palette.lime} />
-              <BarRow value={cashPct} color={p.cumulativeCash < 0 ? palette.red : palette.blue} />
+              <AMeter pct={mrrPct} color={palette.lime} />
+              <AMeter pct={cashPct} color={p.cumulativeCash < 0 ? palette.red : palette.blue} />
             </View>
           );
         })}
@@ -590,15 +590,6 @@ function Legend({ color, label }: { color: string; label: string }) {
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: color }} />
       <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{label}</Mono>
-    </View>
-  );
-}
-
-function BarRow({ value, color }: { value: number; color: string }) {
-  const { palette } = useTheme();
-  return (
-    <View style={{ height: 8, borderRadius: 4, backgroundColor: palette.line, overflow: "hidden", marginTop: 3 }}>
-      <View style={{ width: `${value}%`, height: "100%", backgroundColor: color, borderRadius: 4 }} />
     </View>
   );
 }

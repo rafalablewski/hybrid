@@ -392,7 +392,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           <ACard>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.assignWorkout")}</Text>
             {templates.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8 }}>{t("w.teams.coach.noTemplates")}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8 }}>{t("w.teams.coach.noTemplates")}</Text>
             ) : (
               <>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
@@ -467,11 +467,11 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   {t("w.teams.coach.energy")} {c.energy ?? "—"} – {t("w.teams.coach.sleep")} {c.sleep ?? "—"} – {t("w.teams.coach.freshness")} {c.soreness ?? "—"} – {t("w.teams.coach.mood")} {c.mood ?? "—"}
                   {c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
                 </Text>
-                {c.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: leading(fs.bodyLg) }}>{c.note}</Text> : null}
+                {c.note ? <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: leading(fs.bodyLg) }}>{c.note}</Text> : null}
                 {c.coachReply ? (
                   <View style={{ marginTop: 10, paddingLeft: 10 }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.yourReply")}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 4, lineHeight: leading(fs.bodyLg) }}>{c.coachReply}</Text>
+                    <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 4, lineHeight: leading(fs.bodyLg) }}>{c.coachReply}</Text>
                   </View>
                 ) : replyFor === c.id ? (
                   <View style={{ marginTop: 10 }}>
@@ -505,7 +505,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.teams.coach.private")}</Text>
                 </View>
               )}
-              <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: n.private ? 8 : 0, lineHeight: leading(fs.bodyLg) }}>{n.body}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: n.private ? 8 : 0, lineHeight: leading(fs.bodyLg) }}>{n.body}</Text>
             </ACard>
           ))}
 

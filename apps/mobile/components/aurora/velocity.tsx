@@ -121,7 +121,7 @@ export default function AuroraVelocity() {
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vel.recentSets")}</Text>
         <View style={{ marginTop: 8 }}>
-          {recentSets.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vel.noVelSetsPre")} {active} {t("w.analyze.vel.noVelSetsTail")}</Text> : recentSets.map((r, i) => {
+          {recentSets.length === 0 ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vel.noVelSetsPre")} {active} {t("w.analyze.vel.noVelSetsTail")}</Text> : recentSets.map((r, i) => {
             const z = velocityZone(r.vel);
             return (
               <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>

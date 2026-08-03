@@ -167,7 +167,7 @@ export default function AuroraTalent() {
         </View>
         <View style={{ marginTop: 12 }}>
           {results.length === 0 ? (
-            searched ? <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{t("w.teams.talent.noMatch")}</Text> : null
+            searched ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{t("w.teams.talent.noMatch")}</Text> : null
           ) : (
             results.map((r) => (
               <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>

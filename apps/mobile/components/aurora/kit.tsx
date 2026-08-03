@@ -662,6 +662,75 @@ export function ASegment<T extends string>({
  * that call deliberately and it was right: one serif head among sans siblings
  * reads as a different screen.
  */
+/**
+ * THE METER — a labelled horizontal proportion. One row: a name on the left, its
+ * value on the right, and a track beneath with the filled share.
+ *
+ * The audit counted thirteen "bar/meter implementations", and reading them
+ * split the number three ways. FIVE were this: MeterRow, MeterRows, BarRow ×2
+ * and MuscleBar, agreeing on the idea and disagreeing on the track (3 / 7 / 8dp
+ * tall, radius 2 vs 4), on where the value sits, and on whether the label is
+ * mono or sans. THREE were vertical COLUMN charts, which is a different object.
+ * The remaining five were not bars at all — a rail container, a face feature, a
+ * sized rectangle helper and an animated share-card fill — and have been renamed
+ * for what they are.
+ *
+ * The track is `RADIUS.mark`-rounded and 6dp: tall enough to read a small
+ * proportion, short enough not to become a chart.
+ */
+export function AMeter({
+  label,
+  value,
+  pct,
+  color,
+  emphasis,
+}: {
+  label?: string;
+  /** The right-hand readout — already formatted ("128 kg", "62%"). */
+  value?: string;
+  /** 0–100. Clamped, and a non-zero share always draws at least a sliver, so
+   *  "a little" never renders as "none". */
+  pct: number;
+  color?: string;
+  /** Lifts the label to the bold face — the "primary mover" treatment. */
+  emphasis?: boolean;
+}) {
+  const { palette } = useTheme();
+  const fill = color ?? palette.lime;
+  const clamped = Math.max(0, Math.min(100, pct));
+  const width = clamped > 0 ? Math.max(2, clamped) : 0;
+  return (
+    <View style={{ marginTop: space.ms }}>
+      {(label || value) && (
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: space.xxs }}>
+          {label ? (
+            <Text
+              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              numberOfLines={1}
+              style={{ flex: 1, fontFamily: emphasis ? F.bold : F.semi, fontSize: fs.caption, color: emphasis ? palette.chalk : palette.ash }}
+            >
+              {label}
+            </Text>
+          ) : null}
+          {value ? (
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>
+              {value}
+            </Text>
+          ) : null}
+        </View>
+      )}
+      <View
+        accessibilityRole="progressbar"
+        accessibilityValue={{ now: Math.round(clamped), min: 0, max: 100 }}
+        accessibilityLabel={label}
+        style={{ height: 6, borderRadius: RADIUS.mark, backgroundColor: palette.line, overflow: "hidden" }}
+      >
+        <View style={{ width: `${width}%`, height: "100%", borderRadius: RADIUS.mark, backgroundColor: fill }} />
+      </View>
+    </View>
+  );
+}
+
 export function ASection({
   title,
   meta,
