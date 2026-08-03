@@ -62,6 +62,7 @@ export function AuroraScreen({
   refreshing,
   onRefresh,
   top,
+  hubTab,
 }: {
   children: ReactNode;
   /** THE HERO. Give a screen a `hero` and AuroraScreen hands the whole shell to
@@ -100,6 +101,15 @@ export function AuroraScreen({
    *  destination. It is ordinary content: it scrolls away with everything
    *  else, and it reserves no space when absent. */
   top?: ReactNode;
+  /** Force the hub-tab shell when a screen shows as one of Today's tabs but
+   *  supplies no `top` of its own (the Feed tab renders that chrome itself).
+   *  Defaults to `top != null`, the ordinary case.
+   *
+   *  It matters because a hub tab MOUNTS IN FULL VIEW on every pill switch, and
+   *  a freshly mounted native SafeAreaView applies its inset one frame late —
+   *  the chrome renders jammed under the status bar for a visible frame. The
+   *  hub shell pads with the provider's already-measured insets instead. */
+  hubTab?: boolean;
 }) {
   // A hero means the HERO SYSTEM owns the shell — safe area, rail, collapse
   // track and scroll clearance all come from it. Dispatched before ANY hook
@@ -114,7 +124,7 @@ export function AuroraScreen({
     );
   }
   return (
-    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} top={top}>
+    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} top={top} hubTab={hubTab}>
       {children}
     </AuroraPlainScreen>
   );
@@ -132,6 +142,7 @@ function AuroraPlainScreen({
   refreshing,
   onRefresh,
   top,
+  hubTab,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -140,6 +151,7 @@ function AuroraPlainScreen({
   refreshing?: boolean;
   onRefresh?: () => void;
   top?: ReactNode;
+  hubTab?: boolean;
 }) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
@@ -156,7 +168,7 @@ function AuroraPlainScreen({
   // making the "stable" header jump. So the chrome renders plainly and only
   // the CONTENT below it dissolves in (lib/ui useHubDissolve — the flying lens
   // owns the motion; web twin is the data-nav-kind="hub" view transition).
-  const hub = top != null;
+  const hub = hubTab ?? top != null;
   const inner = hub ? <HubDissolve active>{children}</HubDissolve> : children;
   const body = scroll ? (
     <ScrollView
@@ -355,30 +367,59 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
   );
 }
 
-type PillVariant = "primary" | "light" | "soft";
+/**
+ * THE BUTTON'S VARIANTS.
+ *
+ * `outline` came across from lib/ui's retired `Button`, which was the other half
+ * of this primitive: same job, different geometry (16 vs 18 vertical padding,
+ * fs.note vs fs.subtitle) and a different API — it took a `color` and offered a
+ * hairline ghost for destructive actions, which APill could not express, while
+ * APill offered the `light` and glass-`soft` fills, which Button could not. Two
+ * buttons that each did something the other couldn't is how you end up with
+ * both. This is the union.
+ */
+type PillVariant = "primary" | "light" | "soft" | "outline";
 
 export function APill({
   label,
   onPress,
   variant = "primary",
+  color,
   disabled,
   style,
 }: {
   label: string;
   onPress: () => void;
   variant?: PillVariant;
+  /** Overrides the accent. On a fill it paints the surface; on `outline` it
+   *  tints the label and the hairline (a destructive action's red). */
+  color?: string;
   disabled?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const { palette } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED;
   // The bright primary/light fills stay on brand on every client. The neutral
-  // `soft` pill becomes a native Liquid Glass surface when active (iOS + toggle
-  // on): transparent RN base + GlassSurface behind the label; ink2 otherwise.
+  // `soft` pill becomes a native Liquid Glass surface when active (iOS): a
+  // transparent RN base + GlassSurface behind the label; ink2 otherwise.
   const glassSoft = variant === "soft" && glass;
-  const bg =
-    variant === "primary" ? palette.lime : variant === "light" ? palette.chalk : glassSoft ? "transparent" : palette.ink2;
-  const fg = variant === "soft" ? palette.chalk : palette.onAccent;
+  const outline = variant === "outline";
+  const bg = outline
+    ? "transparent"
+    : variant === "primary"
+      ? color ?? palette.lime
+      : variant === "light"
+        ? palette.chalk
+        : glassSoft
+          ? "transparent"
+          : palette.ink2;
+  const fg = outline
+    ? color
+      ? txt(palette, color)
+      : palette.ash
+    : variant === "soft"
+      ? palette.chalk
+      : palette.onAccent;
   return (
     <PressScale
       onPress={onPress}
@@ -386,7 +427,7 @@ export function APill({
       // APill is the app's primary action and was the ONE button primitive with
       // no accessibility contract — VoiceOver announced it as a plain view with
       // no role and no disabled state, while lib/ui's Button next to it was
-      // fully labelled. Same props, same order, so the two can't drift again.
+      // fully labelled. The merge keeps the labelled behaviour.
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
@@ -395,19 +436,23 @@ export function APill({
           backgroundColor: bg,
           borderRadius: RADIUS.pill,
           paddingVertical: 18,
+          // Was absent, because APill was only ever stretched by its parent.
+          // Button's inline callers need it, and on a full-width pill it just
+          // insets a label that is centred anyway.
+          paddingHorizontal: space.xxl,
           alignItems: "center",
           justifyContent: "center",
           minHeight: HIT_TARGET,
           opacity: disabled ? 0.5 : 1,
-          borderWidth: variant === "soft" ? 1 : 0,
-          borderColor: palette.line,
+          borderWidth: variant === "soft" || outline ? 1 : 0,
+          borderColor: outline && color ? withAlpha(color, 0.45) : palette.line,
           overflow: "hidden",
         },
         style,
       ]}
     >
       {glassSoft && <GlassSurface radius={RADIUS.pill} />}
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
     </PressScale>
   );
 }

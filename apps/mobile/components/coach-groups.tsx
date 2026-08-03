@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { plansForGoal } from "@hybrid/core";
-import { fs, space, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
+import { fs, space, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
   getCoachGroups,
@@ -11,7 +11,7 @@ import {
   assignPlanToGroup,
   type CoachGroup,
 } from "../lib/api";
-import { ACard, cardStack } from "./aurora/kit";
+import { ACard, cardStack, APill } from "./aurora/kit";
 
 // Goals whose periodization model is meaningful (mirrors the web coach's
 // GEN_GOALS) — a group plan is built from one of these by goal.
@@ -78,7 +78,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
             placeholderTextColor={C.ash}
             style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }}
           />
-          <Button label="Create" onPress={create} />
+          <APill label="Create" onPress={create} />
         </View>
       </ACard>
 
@@ -147,7 +147,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
             );
           })()}
           <View style={{ marginTop: 10 }}>
-            <Button label="Assign plan to group" color={C.lime} onPress={() => assign(g)} />
+            <APill label="Assign plan to group" color={C.lime} onPress={() => assign(g)} />
           </View>
         </ACard>
       ))}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Alert, FlatList, RefreshControl, Animated } from "react-native";
-import { Screen, Loading, F, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
+import { Loading, F, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type { FeedItemView, CommentView } from "@hybrid/core";
@@ -171,10 +171,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   // doesn't jump under the status bar for the remount's first frame.
   if (hub || top) {
     return (
-      <Screen scroll={false} hubTab={hub}>
+      <AuroraScreen scroll={false} hubTab={hub}>
         {list({ ...navScroll, contentContainerStyle: { padding: 16, paddingBottom: padBottom } })}
         {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
-      </Screen>
+      </AuroraScreen>
     );
   }
   return (

@@ -1,10 +1,11 @@
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { Screen, Kicker, Mono, H1, F, PressScale as Pressable } from "../../lib/ui";
+import { Kicker, Mono, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useSession } from "../../lib/session";
 import { AuroraIcon } from "../../components/aurora/icons";
 import { ADMIN_SECTIONS, ADMIN_GROUPS } from "../../components/admin/sections";
+import { AuroraScreen, AHeading } from "../../components/aurora/kit";
 
 // The mobile admin console home — a grouped springboard of every admin section
 // (parity with the web sidebar). Tapping a tile opens app/admin/[section].
@@ -14,14 +15,14 @@ export default function AdminHome() {
   const { name } = useSession();
 
   return (
-    <Screen>
+    <AuroraScreen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <Kicker color={palette.amber}>admin.hybrid.app</Kicker>
         <Pressable onPress={() => router.replace("/(tabs)")} hitSlop={8}>
           <Mono color={palette.ash}>← App</Mono>
         </Pressable>
       </View>
-      <H1>Admin console</H1>
+      <AHeading>Admin console</AHeading>
       <Mono color={palette.ash} style={{ marginTop: 4, marginBottom: 18 }}>
         Signed in as {name} – restricted to admins
       </Mono>
@@ -62,6 +63,6 @@ export default function AdminHome() {
           </View>
         </View>
       ))}
-    </Screen>
+    </AuroraScreen>
   );
 }

@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Screen, Mono } from "../../lib/ui";
+import { Mono } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { AuroraScreen } from "../../components/aurora/kit";
 import { ADMIN_SECTIONS, type AdminSectionId } from "../../components/admin/sections";

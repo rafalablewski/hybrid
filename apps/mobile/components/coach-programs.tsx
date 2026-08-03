@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { localTodayKey } from "@hybrid/core";
-import { fs, space, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
+import { fs, space, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
   getCoachPrograms,
@@ -15,7 +15,7 @@ import {
   type ProgramItem,
   type CoachGroup,
 } from "../lib/api";
-import { ACard, cardStack } from "./aurora/kit";
+import { ACard, cardStack, APill } from "./aurora/kit";
 
 const sessionsOf = (w: ProgramWeek[]) => w.reduce((n, x) => n + x.days.length, 0);
 const today = localTodayKey;
@@ -65,7 +65,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
       <ACard style={[cardStack, { marginTop: 12 }]}>
         <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
           <TextInput value={draft.name} onChangeText={(t) => setDraft({ ...draft, name: t })} placeholderTextColor={C.ash} style={[inp, { flex: 1, fontSize: fs.note }]} />
-          <Button label="Save" onPress={save} />
+          <APill label="Save" onPress={save} />
         </View>
         <Mono style={{ marginTop: 6, fontSize: fs.micro }}>{draft.weeks.length} wk – {sessionsOf(draft.weeks)} session{sessionsOf(draft.weeks) === 1 ? "" : "s"}</Mono>
 
@@ -94,13 +94,13 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
               </View>
             ))}
             <View style={{ marginTop: 10 }}>
-              <Button label="+ day" color={C.ash} onPress={() => mapWeek(wi, (x) => ({ days: [...x.days, { day: `Day ${x.days.length + 1}`, items: [] }] }))} />
+              <APill label="+ day" color={C.ash} onPress={() => mapWeek(wi, (x) => ({ days: [...x.days, { day: `Day ${x.days.length + 1}`, items: [] }] }))} />
             </View>
           </View>
         ))}
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
-          <Button label="+ week" color={C.lime} onPress={() => setWeeks([...draft.weeks, { days: [] }])} />
-          <Button label="Close" color={C.ash} onPress={() => setDraft(null)} />
+          <APill label="+ week" color={C.lime} onPress={() => setWeeks([...draft.weeks, { days: [] }])} />
+          <APill label="Close" color={C.ash} onPress={() => setDraft(null)} />
         </View>
         {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8, fontSize: fs.caption }}>{msg}</Mono></View>}
       </ACard>
@@ -120,7 +120,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
           <TextInput value={newName} onChangeText={setNewName} placeholder="e.g. 8-Week Strength Base" placeholderTextColor={C.ash}
             style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }} />
-          <Button label="Create" onPress={create} />
+          <APill label="Create" onPress={create} />
         </View>
       </ACard>
       {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 6, fontSize: fs.caption }}>{msg}</Mono></View>}
@@ -182,7 +182,7 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
           <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8, alignItems: "center" }}>
             <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={C.ash}
               style={{ width: 130, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }} />
-            <Button label="Assign" color={target ? C.lime : C.ash} onPress={assign} />
+            <APill label="Assign" color={target ? C.lime : C.ash} onPress={assign} />
           </View>
         </>
       )}

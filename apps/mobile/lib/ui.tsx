@@ -243,71 +243,12 @@ const FIELD_RINGS = [
   { f: 0.3, o: 0.09 },
 ];
 
-function FieldBlob({
-  color,
-  size,
-  anchor,
-  dx,
-  dy,
-  ms,
-}: {
-  color: string;
-  size: number;
-  anchor: ViewStyle;
-  dx: number;
-  dy: number;
-  ms: number;
-}) {
-  const a = useRef(new Animated.Value(0)).current;
-  const reducedMotion = useReducedMotion();
-  useEffect(() => {
-    // Reduce Motion: hold the blob still (a stays 0 → no translate/scale) rather
-    // than running the perpetual drift loop.
-    if (reducedMotion) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(a, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(a, { toValue: 0, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [a, ms, reducedMotion]);
-  const translateX = a.interpolate({ inputRange: [0, 1], outputRange: [0, dx] });
-  const translateY = a.interpolate({ inputRange: [0, 1], outputRange: [0, dy] });
-  const scale = a.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] });
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        { position: "absolute", width: size, height: size, alignItems: "center", justifyContent: "center" },
-        anchor,
-        { transform: [{ translateX }, { translateY }, { scale }] },
-      ]}
-    >
-      {FIELD_RINGS.map((r, i) => (
-        <View
-          key={i}
-          style={{ position: "absolute", width: size * r.f, height: size * r.f, borderRadius: (size * r.f) / 2, backgroundColor: color, opacity: r.o }}
-        />
-      ))}
-    </Animated.View>
-  );
-}
-
-/** The ambient Liquid Glass field — slow-drifting accent blobs that the glass
- *  surfaces refract. Mounted once behind every Screen (the mobile analog of the
- *  web `.lg-field`), so the BlurView cards have real content to frost. */
-export function GlassField() {
-  const { palette } = useTheme();
-  return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}>
-      <FieldBlob color={palette.lime} size={340} anchor={{ left: "-16%", top: "-10%" }} dx={70} dy={90} ms={19000} />
-      <FieldBlob color={palette.blue} size={300} anchor={{ right: "-18%", top: "4%" }} dx={-60} dy={110} ms={23000} />
-      <FieldBlob color={palette.violet} size={380} anchor={{ left: "26%", bottom: "-22%" }} dx={-50} dy={-60} ms={27000} />
-    </View>
-  );
-}
+/*
+ * `GlassField` LIVED HERE and is gone with `Screen`, its only consumer. It was a
+ * THIRD ambient field — three animated blobs — beside components/aurora/field's
+ * AuroraField (which the rest of the app renders) and the hero's own backdrop.
+ * One ground, one field.
+ */
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -329,6 +270,7 @@ export type PressStyle = StyleProp<ViewStyle> | ((s: { pressed: boolean }) => St
  * — `style` accepts both shapes by design — and the bundle export cannot,
  * because neither one renders.
  */
+
 export function resolvePressStyle(
   style: PressStyle | undefined,
   pressed: boolean,
@@ -441,70 +383,19 @@ export function useScreenBottomPad(): number {
   return aurora ? auroraScrollClearance(insets.bottom) : 48;
 }
 
-export function Screen({
-  children,
-  refreshing,
-  onRefresh,
-  scroll = true,
-  hubTab = false,
-}: {
-  children: ReactNode;
-  refreshing?: boolean;
-  onRefresh?: () => void;
-  /** false → render a plain flex container instead of a ScrollView, so the
-   *  screen can supply its own virtualized scroller (a FlatList). The caller
-   *  then owns the RefreshControl + contentContainerStyle padding (see
-   *  useScreenBottomPad). */
-  scroll?: boolean;
-  /** true when the screen is showing as one of Today's hub tabs, where it
-   *  MOUNTS IN FULL VIEW on every pill switch. A freshly mounted native
-   *  SafeAreaView applies its inset a frame late, so the chrome renders under
-   *  the status bar for one visible frame — the hub shell pads with the
-   *  provider's insets instead, which are correct on the very first render. */
-  hubTab?: boolean;
-}) {
-  const { palette } = useTheme();
-  const padBottom = useScreenBottomPad();
-  const insets = useSafeAreaInsets();
-  // Drive the floating nav's shrink-on-scroll from this screen's scroller too
-  // (Aurora is the only template, so classic-Screen screens sit under the pill).
-  const navScroll = useNavScrollProps();
-  const inner = (
-    <>
-      <GlassField />
-      {/* Lift the form above the keyboard so low inputs/submit buttons aren't
-          hidden when the keyboard opens (no screen had keyboard avoidance). */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        {scroll ? (
-          <ScrollView
-            contentContainerStyle={{ padding: 16, paddingBottom: padBottom }}
-            {...navScroll}
-            keyboardShouldPersistTaps="handled"
-            refreshControl={
-              onRefresh ? (
-                <RefreshControl
-                  refreshing={!!refreshing}
-                  onRefresh={onRefresh}
-                  tintColor={palette.lime}
-                  colors={[palette.lime]}
-                />
-              ) : undefined
-            }
-          >
-            {children}
-          </ScrollView>
-        ) : (
-          <View style={{ flex: 1 }}>{children}</View>
-        )}
-      </KeyboardAvoidingView>
-    </>
-  );
-  return hubTab ? (
-    <View style={{ flex: 1, backgroundColor: palette.ink, paddingTop: insets.top }}>{inner}</View>
-  ) : (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>{inner}</SafeAreaView>
-  );
-}
+/*
+ * `Screen` LIVED HERE and is gone: use AuroraScreen from components/aurora/kit.
+ *
+ * It was a near-clone of that shell — same ambient field, same
+ * KeyboardAvoidingView, same 16dp scroller with nav-collapse and pull-to-refresh,
+ * same SafeAreaView-vs-measured-insets split for a hub tab — minus the screen
+ * entrance animation, so the four screens still on it cut in where every other
+ * screen faded. AuroraScreen gained an explicit `hubTab` prop to cover the one
+ * caller (the Feed tab) that needed the hub shell without passing `top`.
+ *
+ * Two of the four call sites were `aurora ? <AuroraScreen> : <Screen>`
+ * ternaries, so retiring it also deleted those classic-template branches.
+ */
 
 export function Loading() {
   const { palette } = useTheme();
@@ -568,21 +459,12 @@ export function Mono({ children, style, color, numberOfLines }: { children: Reac
   );
 }
 
-export function H1({ children }: { children: ReactNode }) {
-  const { palette, scheme } = useTheme();
-  // Was fontSize 30 / letterSpacing -1 — both off-scale. `display` (26) is the
-  // ladder's screen-heading rung and `tracking.display` the named tightening;
-  // serifIf keeps it on the Mincho face under Kyoto Hour like every other head.
-  return (
-    <Text
-      accessibilityRole="header"
-      maxFontSizeMultiplier={MAX_FONT_SCALE}
-      style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.display, lineHeight: leading(fs.display, "tight"), color: palette.chalk, letterSpacing: tracking.display }}
-    >
-      {children}
-    </Text>
-  );
-}
+/*
+ * `H1` LIVED HERE and is gone: use AHeading from components/aurora/kit, which
+ * now reads the same rung the Hero System's `title` rank does. H1 was 30/-1 —
+ * a size on neither the type ladder nor the hero ramp — with no header role and
+ * no serif swap under Kyoto Hour, on two call sites.
+ */
 
 export function Chip({ children, color }: { children: ReactNode; color?: string }) {
   const { palette } = useTheme();
@@ -601,57 +483,12 @@ export function Chip({ children, color }: { children: ReactNode; color?: string 
   );
 }
 
-export function Button({
-  label,
-  onPress,
-  color,
-  variant = "fill",
-  disabled,
-  style,
-}: {
-  label: string;
-  onPress: () => void;
-  color?: string;
-  /** "outline" = a transparent ghost with a hairline border; `color` tints the
-   *  label + border (muted ash/line when omitted) — e.g. destructive actions. */
-  variant?: "fill" | "outline";
-  disabled?: boolean;
-  style?: ViewStyle;
-}) {
-  const { palette } = useTheme();
-  const aurora = useTemplate().template === "aurora";
-  // Default fill = the theme's PRIMARY accent (clay on light, chartreuse on dark);
-  // an explicit color still wins. Text is always the theme's onAccent ink.
-  const fill = color ?? palette.lime;
-  const outline = variant === "outline";
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-      style={[
-        {
-          backgroundColor: outline ? "transparent" : fill,
-          borderWidth: outline ? 1 : 0,
-          borderColor: color ? `${color}73` : palette.line,
-          borderRadius: aurora ? 999 : 12,
-          paddingVertical: aurora ? 16 : 14,
-          paddingHorizontal: 24,
-          alignItems: "center",
-          justifyContent: "center",
-          // The HIG minimum, stated rather than implied. The padding above
-          // already clears it at the default text size; declaring it means the
-          // button survives a caller passing a tighter `style` and keeps its
-          // target when the label shrinks.
-          minHeight: HIT_TARGET,
-          opacity: disabled ? 0.5 : 1,
-        },
-        style,
-      ]}
-    >
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: aurora ? F.bold : F.black, fontSize: fs.note, color: outline ? (color ? txt(palette, color) : palette.ash) : palette.onAccent }}>{label}</Text>
-    </Pressable>
-  );
-}
+/*
+ * `Button` LIVED HERE and is gone: use APill from components/aurora/kit, which
+ * absorbed its `outline` variant and its `color` prop. The two were one button
+ * split in half — this one could draw a hairline ghost for a destructive action
+ * but not the `light` or glass-`soft` fills; APill could do those but had no way
+ * to express a destructive outline, and no accessibility contract at all. Each
+ * did something the other couldn't, which is exactly how a codebase ends up
+ * keeping both.
+ */

@@ -41,10 +41,10 @@ import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSessionsQuery } from "../../lib/queries";
 import { useSessionActions } from "../../lib/session-actions";
-import { fs, space, Screen, Kicker, Mono, Loading, Button, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Kicker, Mono, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
-import { AuroraScreen, ACard, cardStack } from "../../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack, APill } from "../../components/aurora/kit";
 import { HeroNav } from "../../components/aurora/hero";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
 import { SessionEditSheet } from "../../components/session-edit";
@@ -87,7 +87,7 @@ export default function SessionDetail() {
   // shared Card/Mono primitives already round up on Aurora.
   const aurora = useTemplate().template === "aurora";
   const wrap = (node: ReactNode) =>
-    aurora ? <AuroraScreen>{node}</AuroraScreen> : <Screen>{node}</Screen>;
+    <AuroraScreen>{node}</AuroraScreen>;
 
   if (all === null) {
     return wrap(<Loading />);
@@ -236,11 +236,11 @@ export default function SessionDetail() {
           leads them: a wrong number is far more common than a workout you want
           gone (see components/session-edit.tsx). */}
       <View style={{ marginTop: 24 }}>
-        <Button label={t("session.edit.cta")} variant="outline" onPress={() => setEditOpen(true)} disabled={busy} />
+        <APill label={t("session.edit.cta")} variant="outline" onPress={() => setEditOpen(true)} disabled={busy} />
       </View>
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: space.ms }}>
-        <Button label={t("w.analyze.hist.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
-        <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
+        <APill label={t("w.analyze.hist.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
+        <APill label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>
 
       <SessionEditSheet
