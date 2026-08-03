@@ -14,9 +14,10 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile "AI agents" builder — parity with apps/web/components/admin/agents.tsx.
 // Roster (GET /api/admin/agents) → select → editor (PATCH /[id]) with a live
@@ -187,18 +188,16 @@ export default function AdminAgents() {
 
       {/* ---- roster ---- */}
       {agents.length === 0 ? (
-        <Card>
+        <ACard style={cardStack}>
           <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 16 }}>
             No agents yet — create one from a preset above.
           </Mono>
-        </Card>
+        </ACard>
       ) : (
         agents.map((a) => (
           <Pressable key={a.id} onPress={() => setSelectedId(a.id === selectedId ? null : a.id)}>
-            <Card
-              accent={STATUS_COLOR(palette)[a.status]}
-              style={selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined}
-            >
+            <ACard
+              accent={STATUS_COLOR(palette)[a.status]} style={[cardStack, selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined]}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm }}>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
@@ -218,7 +217,7 @@ export default function AdminAgents() {
                   onToggle={() => patch(a.id, { status: a.status === "active" ? "paused" : "active" })}
                 />
               </View>
-            </Card>
+            </ACard>
           </Pressable>
         ))
       )}
@@ -266,7 +265,7 @@ function Editor({
   const [showPrompt, setShowPrompt] = useState(false);
 
   return (
-    <Card style={{ marginTop: 6 }}>
+    <ACard style={[cardStack, { marginTop: 6 }]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: palette.chalk }}>Edit agent</Text>
         <View style={{ flexDirection: "row", gap: space.sm }}>
@@ -383,7 +382,7 @@ function Editor({
           <Mono color={palette.chalk} style={{ fontSize: fs.micro, lineHeight: 17 }}>{preview}</Mono>
         </View>
       )}
-    </Card>
+    </ACard>
   );
 }
 

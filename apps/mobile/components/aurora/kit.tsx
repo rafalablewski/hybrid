@@ -31,6 +31,17 @@ import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
  */
 export const RADIUS = { mark: 3, inner: 12, field: 16, card: 28, pill: 999 } as const;
 
+/**
+ * The gap below a card that is one of a VERTICAL RUN.
+ *
+ * The retired `Card` baked this in as `marginBottom`, which is why the two card
+ * families could not be stacked together — a component that owns spacing outside
+ * its own box cannot be composed. Passing it explicitly puts the layout back
+ * where it is read, and leaves one greppable marker for the eventual sweep to
+ * `gap` on the parent, which is where it really belongs.
+ */
+export const cardStack: ViewStyle = { marginBottom: space.md };
+
 export { AuroraField, withAlpha } from "./field";
 import { AuroraField, withAlpha } from "./field";
 
@@ -290,9 +301,29 @@ export function Spark({
   );
 }
 
-export function ACard({ children, style, solid }: { children: ReactNode; style?: ViewStyle; solid?: boolean }) {
+/**
+ * THE CARD. One surface for the whole app.
+ *
+ * There used to be two: this, and a `Card` in lib/ui.tsx. They shared a radius
+ * and a shadow and then disagreed on padding (20 vs 16), on whether the
+ * component shipped its own outer margin (lib/ui's did, so the two could not be
+ * stacked together), and — decisively — on MATERIAL: this one drops a native
+ * SwiftUI glass surface on iOS and that one never could. Since
+ * LIQUID_GLASS_SUPPORTED is simply `Platform.OS === "ios"` with no toggle, that
+ * was a permanent split no user could reconcile: 234 cards across two materials,
+ * decided by which file the developer happened to import from. Glass on Today,
+ * Nutrition, Performance, Plans, Profile; solid on Session detail, Feed,
+ * Discover, Coaches, Leaderboard and all 20 admin sections — so on an iOS 26
+ * device the material changed when you tapped into a session.
+ *
+ * `accent` came across from the retired twin (admin uses it to group rows);
+ * the outer margin did NOT — spacing belongs to the parent, and callers that
+ * need a vertical run pass `cardStack`.
+ */
+export function ACard({ children, style, solid, accent }: { children: ReactNode; style?: StyleProp<ViewStyle>; solid?: boolean; accent?: string }) {
   const { palette, scheme } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED && !solid;
+  const flat = StyleSheet.flatten(style) as ViewStyle | undefined;
   // When Liquid Glass is active (iOS + toggle on) the surface is a native SwiftUI
   // layer dropped behind the content (transparent RN base so the glass refracts
   // the screen field); otherwise the solid ink2 card. The glass clips itself to
@@ -300,7 +331,7 @@ export function ACard({ children, style, solid }: { children: ReactNode; style?:
   // card out of the glass even on iOS — for data-dense read surfaces (charts,
   // stat columns) where translucency costs contrast and the solid ink2 panel
   // (the web treatment, and Today's) reads better.
-  const radius = typeof style?.borderRadius === "number" ? style.borderRadius : RADIUS.card;
+  const radius = typeof flat?.borderRadius === "number" ? flat.borderRadius : RADIUS.card;
   return (
     <View
       style={[
@@ -314,6 +345,7 @@ export function ACard({ children, style, solid }: { children: ReactNode; style?:
           // classic glass shadow), warm-toned on the light washi (cardShadow).
           ...cardShadow(scheme),
         },
+        accent ? { borderLeftWidth: 3, borderLeftColor: accent } : null,
         style,
       ]}
     >

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { ALL_MUSCLES } from "@hybrid/core";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 
 // Mobile parity for apps/web/components/admin/exercises.tsx. Same
@@ -246,7 +247,7 @@ export default function AdminExercises() {
       )}
 
       {editing !== null && (
-        <Card accent={palette.lime}>
+        <ACard accent={palette.lime} style={cardStack}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk, marginBottom: 12 }}>
             {editing === "new" ? "New exercise" : "Edit exercise"}
           </Text>
@@ -296,13 +297,13 @@ export default function AdminExercises() {
             <PillBtn label={editing === "new" ? "Publish" : "Save & publish"} disabled={busy} onPress={() => save("published")} />
             <PillBtn label="Cancel" outline color={palette.ash} disabled={busy} onPress={() => setEditing(null)} />
           </View>
-        </Card>
+        </ACard>
       )}
 
       {err && editing === null ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
       {filtered.map((x) => (
-        <Card key={x.id} accent={statusColor(x.status)}>
+        <ACard key={x.id} accent={statusColor(x.status)} style={cardStack}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
             <Chip color={statusColor(x.status)}>{x.status}</Chip>
             <Chip color={palette.ash}>{x.pattern}</Chip>
@@ -331,7 +332,7 @@ export default function AdminExercises() {
             ) : null}
             <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(x)} />
           </View>
-        </Card>
+        </ACard>
       ))}
 
       {list && filtered.length === 0 ? (

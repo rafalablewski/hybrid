@@ -525,40 +525,17 @@ export function cardShadow(scheme: "dark" | "light"): ViewStyle {
     : { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 };
 }
 
-export function Card({
-  children,
-  style,
-  accent,
-}: {
-  children: ReactNode;
-  style?: ViewStyle;
-  /** Optional left accent rail (used for admin grouping). */
-  accent?: string;
-}) {
-  const { palette, scheme } = useTheme();
-  // The solid ink2 card — matching the kit's ACard and the web Aurora cards.
-  // (The old frosted GlassCard branch is gone with the dead glass layer.)
-  return (
-    <View
-      style={[
-        {
-          backgroundColor: palette.ink2,
-          borderWidth: 1,
-          borderColor: palette.line,
-          borderRadius: 28,
-          padding: space.lg,
-          marginBottom: space.md,
-          ...cardShadow(scheme),
-        },
-        accent ? { borderLeftWidth: 3, borderLeftColor: accent } : null,
-        style,
-      ]}
-    >
-      {children}
-    </View>
-  );
-}
-
+/*
+ * `Card` LIVED HERE and is gone: it is now ACard in components/aurora/kit.tsx.
+ *
+ * The two were a genuine fork — same radius and shadow, then different padding
+ * (16 vs 20), a built-in outer margin on this one that made the two impossible
+ * to stack together, and, decisively, different MATERIAL: ACard drops a native
+ * SwiftUI glass surface on iOS and this one never could. That put 234 cards on
+ * two materials chosen by import path, so the surface changed when you tapped
+ * from Today into a session. All 97 call sites now render ACard; the `accent`
+ * rail moved with them and the outer margin became the explicit `cardStack`.
+ */
 export function Kicker({ children, color }: { children: ReactNode; color?: string }) {
   const { palette } = useTheme();
   return (

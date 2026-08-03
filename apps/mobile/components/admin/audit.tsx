@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Input, PillBtn, Banner } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile Audit log — parity with apps/web/components/admin/audit.tsx, fed by
 // GET /api/admin/audit?page&pageSize&action. Action text filter (debounced like
@@ -86,7 +87,7 @@ export default function AdminAudit() {
       {data?.entries.map((e) => {
         const isOpen = open === e.id;
         return (
-          <Card key={e.id}>
+          <ACard key={e.id} style={cardStack}>
             <Pressable onPress={() => setOpen(isOpen ? null : e.id)}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro }}>
@@ -109,7 +110,7 @@ export default function AdminAudit() {
                 </Mono>
               </View>
             ) : null}
-          </Card>
+          </ACard>
         );
       })}
 

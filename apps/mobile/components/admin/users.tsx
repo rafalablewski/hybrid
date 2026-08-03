@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Intro, ErrorNote, Input, PillBtn, Segmented, KV } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import AdminAnon from "./anon";
 
 // Paginated, searchable user directory + per-user management drawer. Mirrors
@@ -112,7 +113,7 @@ function AccountsTab() {
         data.users.map((u) => (
           <View key={u.id}>
             <Pressable onPress={() => setSelected(selected === u.id ? null : u.id)}>
-              <Card>
+              <ACard style={cardStack}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: space.ms }}>
                   <View style={{ flexShrink: 1 }}>
                     <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk }}>{u.name || "—"}</Text>
@@ -125,7 +126,7 @@ function AccountsTab() {
                   <Chip color={palette.ash}>{u.sessions} sessions</Chip>
                   <Chip color={palette.ash}>joined {fmt(u.createdAt)}</Chip>
                 </View>
-              </Card>
+              </ACard>
             </Pressable>
             {selected === u.id && (
               <UserDetail
@@ -238,13 +239,13 @@ function UserDetail({
 
   if (!d)
     return (
-      <Card style={{ marginTop: -4 }}>
+      <ACard style={[cardStack, { marginTop: -4 }]}>
         <Loading />
-      </Card>
+      </ACard>
     );
 
   return (
-    <Card accent={palette.amber} style={{ marginTop: -4 }}>
+    <ACard accent={palette.amber} style={[cardStack, { marginTop: -4 }]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
         <View style={{ flexShrink: 1 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
@@ -345,6 +346,6 @@ function UserDetail({
           busy={deleting}
         />
       </View>
-    </Card>
+    </ACard>
   );
 }

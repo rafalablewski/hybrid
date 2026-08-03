@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { View, Text, ScrollView, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { LEADERBOARD_METRICS, type LeaderboardMetric } from "@hybrid/core";
-import { Card, Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen } from "../components/aurora/kit";
+import { Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
+import { AuroraScreen, ACard, cardStack } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { getLeaderboard } from "../lib/social-api";
@@ -51,7 +51,7 @@ export default function LeaderboardScreen() {
           <Empty title={t("w.social.noFriends")} sub={t("w.social.noFriendsSub")} />
         </View>
       ) : (
-        <Card style={{ flex: 1, marginHorizontal: 18, marginBottom: 12 }}>
+        <ACard style={[cardStack, { flex: 1, marginHorizontal: 18, marginBottom: 12 }]}>
           <FlatList
             data={board}
             keyExtractor={(r) => String(r.id)}
@@ -62,7 +62,7 @@ export default function LeaderboardScreen() {
             windowSize={11}
             contentContainerStyle={{ paddingBottom: padBottom }}
           />
-        </Card>
+        </ACard>
       )}
       {drawer && <ProfileModal handle={drawer} onClose={() => setDrawer(null)} />}
     </AuroraScreen>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { localTodayKey } from "@hybrid/core";
-import { fs, space, Card, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
+import { fs, space, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
   getCoachPrograms,
@@ -15,6 +15,7 @@ import {
   type ProgramItem,
   type CoachGroup,
 } from "../lib/api";
+import { ACard, cardStack } from "./aurora/kit";
 
 const sessionsOf = (w: ProgramWeek[]) => w.reduce((n, x) => n + x.days.length, 0);
 const today = localTodayKey;
@@ -61,7 +62,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
       mapWeek(wi, (w) => ({ days: w.days.map((d, j) => (j === di ? fn(d) : d)) }));
 
     return (
-      <Card style={{ marginTop: 12 }}>
+      <ACard style={[cardStack, { marginTop: 12 }]}>
         <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
           <TextInput value={draft.name} onChangeText={(t) => setDraft({ ...draft, name: t })} placeholderTextColor={C.ash} style={[inp, { flex: 1, fontSize: fs.note }]} />
           <Button label="Save" onPress={save} />
@@ -102,18 +103,18 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
           <Button label="Close" color={C.ash} onPress={() => setDraft(null)} />
         </View>
         {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8, fontSize: fs.caption }}>{msg}</Mono></View>}
-      </Card>
+      </ACard>
     );
   }
 
   return (
     <View>
       {unavailable && (
-        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.line, marginTop: 12 }}>
+        <ACard style={[cardStack, { borderLeftWidth: 3, borderLeftColor: C.line, marginTop: 12 }]}>
           <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>Programs aren&apos;t enabled yet — run reference/sql-coach-programs.sql in Supabase.</Mono>
-        </Card>
+        </ACard>
       )}
-      <Card style={{ marginTop: 12 }}>
+      <ACard style={[cardStack, { marginTop: 12 }]}>
         <Kicker>New program</Kicker>
         <Mono style={{ marginTop: 6, fontSize: fs.caption, lineHeight: 18 }}>Build a multi-week program once, then assign it to a client or group as scheduled sessions.</Mono>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
@@ -121,7 +122,7 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
             style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }} />
           <Button label="Create" onPress={create} />
         </View>
-      </Card>
+      </ACard>
       {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 6, fontSize: fs.caption }}>{msg}</Mono></View>}
       {programs.map((p) => (
         <ProgramRow key={p.id} program={p} clients={clients} groups={groups} onEdit={() => setDraft(p)} onDelete={() => del(p.id)} onAssigned={setMsg} />
@@ -161,7 +162,7 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
   };
 
   return (
-    <Card style={{ marginTop: 10 }}>
+    <ACard style={[cardStack, { marginTop: 10 }]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{program.name}</Text>
@@ -185,6 +186,6 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
           </View>
         </>
       )}
-    </Card>
+    </ACard>
   );
 }

@@ -1,8 +1,9 @@
 import { type ReactNode } from "react";
 import { View, Text, TextInput, ActivityIndicator, type ViewStyle } from "react-native";
-import { fs, space, F, Card, Mono, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, F, Mono, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "../aurora/cta-label";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
 // share one look (matching the web console's lib/ui primitives). Section bodies
@@ -20,10 +21,10 @@ export function Banner({ tone = "amber", title, children }: { tone?: "amber" | "
   const { palette } = useTheme();
   const accent = tone === "red" ? palette.red : palette.amber;
   return (
-    <Card accent={accent} style={{ marginBottom: 16 }}>
+    <ACard accent={accent} style={[cardStack, { marginBottom: 16 }]}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, marginBottom: children ? 6 : 0 }}>{title}</Text>
       {children ? <Mono color={palette.chalk} style={{ lineHeight: 18 }}>{children}</Mono> : null}
-    </Card>
+    </ACard>
   );
 }
 
@@ -45,11 +46,11 @@ export function ErrorNote({ error, onDismiss }: { error: string | null; onDismis
 export function Stat({ label, value, sub, color }: { label: string; value: ReactNode; sub?: string; color?: string }) {
   const { palette } = useTheme();
   return (
-    <Card>
+    <ACard style={cardStack}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: color ? txt(palette, color) : palette.chalk, marginTop: 4 }}>{value}</Text>
       {sub ? <Mono color={palette.ash} style={{ marginTop: 2 }}>{sub}</Mono> : null}
-    </Card>
+    </ACard>
   );
 }
 

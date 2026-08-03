@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Stat, ErrorNote, Segmented, PillBtn } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile "Agent HQ" command center — parity with apps/web/components/admin/
 // agent-hq.tsx (+ agent-runs.tsx as the Reports tab). recharts is web-only, so
@@ -180,15 +181,15 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
       </Row2>
 
       {/* org chart as a status list */}
-      <Card>
+      <ACard style={cardStack}>
         <Kicker color={palette.amber}>Org chart – the executive team</Kicker>
         <View style={{ marginTop: 10 }}>
           <OrgChart agents={agents} />
         </View>
-      </Card>
+      </ACard>
 
       {/* 7-day activity as bar rows (recharts is web-only) */}
-      <Card>
+      <ACard style={cardStack}>
         <Kicker color={palette.amber}>Activity – runs – last 7 days</Kicker>
         <View style={{ flexDirection: "row", gap: space.md, marginTop: 8, marginBottom: 6 }}>
           <Legend color={palette.lime} label="ok" />
@@ -206,10 +207,10 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
             </View>
           ));
         })()}
-      </Card>
+      </ACard>
 
       {/* recent activity feed */}
-      <Card>
+      <ACard style={cardStack}>
         <Kicker color={palette.amber}>Recent activity – latest runs</Kicker>
         <View style={{ marginTop: 8 }}>
           {recent.length === 0 ? (
@@ -220,10 +221,10 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
             ))
           )}
         </View>
-      </Card>
+      </ACard>
 
       {/* upcoming scheduled work */}
-      <Card>
+      <ACard style={cardStack}>
         <Kicker color={palette.amber}>Upcoming work – next scheduled runs</Kicker>
         <View style={{ marginTop: 8 }}>
           {upcoming.length === 0 ? (
@@ -240,7 +241,7 @@ function Command({ data, err }: { data: Overview | null; err: string | null }) {
             ))
           )}
         </View>
-      </Card>
+      </ACard>
     </View>
   );
 }
@@ -321,7 +322,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
   const sr = s.successRate;
   const srColor = sr == null ? palette.ash : sr >= 90 ? palette.lime : sr >= 70 ? palette.amber : palette.red;
   return (
-    <Card>
+    <ACard style={cardStack}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 10 }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: DOT(palette)[s.status] ?? palette.ash }} />
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -355,7 +356,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
           {s.kpis.map((k, i) => <KpiRow key={i} agentId={s.id} k={k} actual={s.actuals[k.metric]} onLogged={onChange} />)}
         </View>
       )}
-    </Card>
+    </ACard>
   );
 }
 
@@ -436,9 +437,9 @@ function Approvals({ onChange }: { onChange: () => void }) {
   if (items === null) return <Loading />;
   if (items.length === 0)
     return (
-      <Card>
+      <ACard style={cardStack}>
         <Mono color={palette.lime} style={{ textAlign: "center", paddingVertical: 24 }}>✓ No runs awaiting approval.</Mono>
-      </Card>
+      </ACard>
     );
 
   return (
@@ -448,7 +449,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
       </Mono>
       <ErrorNote error={err} onDismiss={() => setErr(null)} />
       {items.map((a) => (
-        <Card key={a.id} accent={palette.amber}>
+        <ACard key={a.id} accent={palette.amber} style={cardStack}>
           <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.agentName}</Text>
             <MiniChip color={palette.ash}>{a.runtime}</MiniChip>
@@ -460,7 +461,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
             <PillBtn label="Approve & run" disabled={busy === a.id} onPress={() => decide(a.id, "approve")} />
             <PillBtn label="Deny" outline color={palette.ash} disabled={busy === a.id} onPress={() => decide(a.id, "deny")} />
           </View>
-        </Card>
+        </ACard>
       ))}
     </View>
   );
@@ -500,15 +501,15 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
   if (notifs === null) return <Loading />;
   if (list.length === 0 && brokenSchedules.length === 0)
     return (
-      <Card>
+      <ACard style={cardStack}>
         <Mono color={palette.lime} style={{ textAlign: "center", paddingVertical: 24 }}>✓ All clear — nothing needs attention.</Mono>
-      </Card>
+      </ACard>
     );
 
   return (
     <View>
       {list.length > 0 && (
-        <Card accent={palette.red}>
+        <ACard accent={palette.red} style={cardStack}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <Kicker color={palette.amber}>Notifications – {unread} unread</Kicker>
             {unread > 0 && <PillBtn label="Mark all read" outline color={palette.ash} disabled={busy} onPress={() => markRead()} />}
@@ -528,10 +529,10 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
               )}
             </View>
           ))}
-        </Card>
+        </ACard>
       )}
       {brokenSchedules.length > 0 && (
-        <Card accent={palette.amber}>
+        <ACard accent={palette.amber} style={cardStack}>
           <Kicker color={palette.amber}>Schedules that can't fire – the agent isn't active</Kicker>
           <View style={{ marginTop: 8 }}>
             {brokenSchedules.map((b) => (
@@ -548,7 +549,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
               </View>
             ))}
           </View>
-        </Card>
+        </ACard>
       )}
     </View>
   );
@@ -579,7 +580,7 @@ function DigestTab() {
   }
 
   return (
-    <Card>
+    <ACard style={cardStack}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <Kicker color={palette.amber}>Daily digest – last 24h</Kicker>
         <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
@@ -590,7 +591,7 @@ function DigestTab() {
       <Mono color={sent ? palette.lime : palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
         {sent ?? (d && !d.slackConfigured ? "Set SLACK_WEBHOOK_URL in the server env to enable delivery." : "Posts daily at 08:05 UTC.")}
       </Mono>
-    </Card>
+    </ACard>
   );
 }
 
@@ -631,7 +632,7 @@ function CostTab() {
       </View>
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV export is web-only.</Mono>
       {[d.current, d.previous].map((m, i) => (
-        <Card key={m.month}>
+        <ACard key={m.month} style={cardStack}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <Kicker color={i === 0 ? palette.amber : palette.ash}>{m.month}{i === 0 ? " – MTD" : ""}</Kicker>
           </View>
@@ -657,7 +658,7 @@ function CostTab() {
               })()
             )}
           </View>
-        </Card>
+        </ACard>
       ))}
       {sent && <Mono color={palette.lime} style={{ fontSize: fs.micro, marginTop: 4 }}>{sent}</Mono>}
     </View>
@@ -705,9 +706,9 @@ function Reports() {
   return (
     <View>
       {unavailable && (
-        <Card accent={palette.amber}>
+        <ACard accent={palette.amber} style={cardStack}>
           <Mono color={palette.chalk}>Run history isn't persisted yet — run reference/sql-agent-runs.sql in Supabase.</Mono>
-        </Card>
+        </ACard>
       )}
       <Segmented options={FILTERS.map((f) => ({ value: f, label: f }))} value={filter} onChange={(v) => setFilter(v as (typeof FILTERS)[number])} />
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV / PDF export is web-only.</Mono>
@@ -715,16 +716,16 @@ function Reports() {
       {runs === null ? (
         <Loading />
       ) : runs.length === 0 ? (
-        <Card>
+        <ACard style={cardStack}>
           <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 20 }}>
             No runs yet{filter !== "all" ? ` with status "${filter}"` : ""}.
           </Mono>
-        </Card>
+        </ACard>
       ) : (
         runs.map((r) => {
           const open = openId === r.id;
           return (
-            <Card key={r.id}>
+            <ACard key={r.id} style={cardStack}>
               <Pressable onPress={() => setOpenId(open ? null : r.id)}>
                 <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
                   <MiniChip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</MiniChip>
@@ -751,7 +752,7 @@ function Reports() {
                   </Mono>
                 </View>
               )}
-            </Card>
+            </ACard>
           );
         })
       )}

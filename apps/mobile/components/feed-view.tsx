@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Alert, FlatList, RefreshControl, Animated } from "react-native";
-import { Screen, Card, Loading, F, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
+import { Screen, Loading, F, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type { FeedItemView, CommentView } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
+import { ACard, cardStack } from "./aurora/kit";
 import { CosignInbox } from "./pr-attestation";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScrollProps } from "../lib/nav-scroll";
@@ -101,20 +102,20 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       <CosignInbox units={units} />
 
       {/* COMPOSER — share a status or your latest PR card. */}
-      <Card>
+      <ACard style={cardStack}>
         <TextInput value={text} onChangeText={setText} multiline maxLength={500} placeholder={t("w.social.sharePlaceholder")} placeholderTextColor={C.ash} style={{ minHeight: 48, color: C.chalk, fontSize: 15, fontFamily: F.reg }} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
           <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? C.lime : C.ash, fontSize: 13, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} 🏆 {t("w.social.attachPr")}</Text></Pressable>
           <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
         </View>
-      </Card>
+      </ACard>
       </Animated.View>
     </>
   );
 
   const renderItem = ({ item }: { item: FeedItemView }) => (
     <Animated.View style={fade}>
-    <Card>
+    <ACard style={cardStack}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <Pressable onPress={() => setDrawer(item.author.handle)}><Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={42} /></Pressable>
         <View style={{ flex: 1 }}>
@@ -143,7 +144,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         <Pressable onPress={() => setOpen(open === item.id ? null : item.id)}><Text style={{ color: C.ash, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>💬 {item.comments > 0 ? item.comments : ""} {t("w.social.comment")}</Text></Pressable>
       </View>
       {open === item.id && <Comments item={item} />}
-    </Card>
+    </ACard>
     </Animated.View>
   );
 

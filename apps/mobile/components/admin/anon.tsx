@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, ErrorNote, PillBtn } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Anonymous (guest, pre-account) workouts — sessions logged on a device before
 // the user ever signed in. Admin-only housekeeping: review and prune them.
@@ -78,7 +79,7 @@ export default function AdminAnon() {
         <Mono color={palette.ash}>No anonymous workouts.</Mono>
       ) : (
         sessions.map((s) => (
-          <Card key={s.id}>
+          <ACard key={s.id} style={cardStack}>
             <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk }}>{s.title}</Text>
             <Mono color={palette.ash} style={{ marginTop: 2 }}>
               {s.blocks.length} block{s.blocks.length === 1 ? "" : "s"}
@@ -101,7 +102,7 @@ export default function AdminAnon() {
                 busy={busy === s.id}
               />
             </View>
-          </Card>
+          </ACard>
         ))
       )}
     </View>

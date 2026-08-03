@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Loading } from "../../lib/ui";
+import { fs, space, Mono, Kicker, Loading } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Stat, ErrorNote } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile Overview — parity with apps/web/components/admin/overview.tsx, fed by
 // GET /api/admin/stats. Web draws recharts line/bar charts; on mobile we keep the
@@ -64,7 +65,7 @@ export default function AdminOverview() {
       </Row2>
 
       {/* Growth — the web line chart's underlying numbers as paired bar rows. */}
-      <Card>
+      <ACard style={cardStack}>
         <Kicker color={palette.lime}>Growth</Kicker>
         <Mono color={palette.ash} style={{ marginTop: 2, marginBottom: 10 }}>Last 12 weeks – signups vs sessions</Mono>
         <View style={{ flexDirection: "row", gap: space.md, marginBottom: 8 }}>
@@ -81,10 +82,10 @@ export default function AdminOverview() {
             </View>
           ));
         })()}
-      </Card>
+      </ACard>
 
       {s.planPopularity.length > 0 && (
-        <Card>
+        <ACard style={cardStack}>
           <Kicker color={palette.lime}>Plans enrolled – by goal</Kicker>
           <View style={{ marginTop: 10 }}>
             {(() => {
@@ -100,11 +101,11 @@ export default function AdminOverview() {
               ));
             })()}
           </View>
-        </Card>
+        </ACard>
       )}
 
       <Row2>
-        <Card style={{ flex: 1 }}>
+        <ACard style={[cardStack, { flex: 1 }]}>
           <Kicker color={palette.amber}>Roles – user base</Kicker>
           <View style={{ marginTop: 8 }}>
             {s.roleSplit.length === 0 && <Mono style={{ fontSize: fs.body }}>No users yet.</Mono>}
@@ -115,8 +116,8 @@ export default function AdminOverview() {
               </View>
             ))}
           </View>
-        </Card>
-        <Card style={{ flex: 1 }}>
+        </ACard>
+        <ACard style={[cardStack, { flex: 1 }]}>
           <Kicker color={palette.blue}>Languages – by locale</Kicker>
           <View style={{ marginTop: 8 }}>
             {s.langSplit.length === 0 && <Mono style={{ fontSize: fs.body }}>—</Mono>}
@@ -127,7 +128,7 @@ export default function AdminOverview() {
               </View>
             ))}
           </View>
-        </Card>
+        </ACard>
       </Row2>
     </View>
   );

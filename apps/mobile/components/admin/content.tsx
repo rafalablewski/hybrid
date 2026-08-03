@@ -10,9 +10,10 @@ import {
   type BenchmarkMetric,
 } from "@hybrid/core";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Segmented, Stat, ErrorNote } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile Capabilities & data — parity with apps/web/components/admin/content.tsx
 // (which tabs CapabilitiesScreen ⇄ DataNet). Capabilities come from @hybrid/core
@@ -89,7 +90,7 @@ function Capabilities() {
 function CapRow({ cap, color }: { cap: Capability; color: string }) {
   const { palette } = useTheme();
   return (
-    <Card accent={color}>
+    <ACard accent={color} style={cardStack}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, flex: 1 }}>{cap.title}</Text>
         <Chip color={palette.ash}>{cap.area}</Chip>
@@ -101,7 +102,7 @@ function CapRow({ cap, color }: { cap: Capability; color: string }) {
           <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18, marginTop: 3 }}>{cap.blockedBy}</Mono>
         </View>
       ) : null}
-    </Card>
+    </ACard>
   );
 }
 
@@ -129,13 +130,13 @@ function DataNet() {
 
   return (
     <View>
-      <Card accent={palette.violet}>
+      <ACard accent={palette.violet} style={cardStack}>
         <Kicker color={palette.violet}>Data network – benchmarking intelligence</Kicker>
         <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 19, marginTop: 6 }}>
           The flywheel: every consented athlete sharpens the cohort norms and (with labeled outcomes) the injury
           calibration. De-identified — only cohorts with ≥ {K_ANON} athletes are released.
         </Mono>
-      </Card>
+      </ACard>
 
       <View style={{ flexDirection: "row", gap: space.md }}>
         <View style={{ flex: 1 }}><Stat label="Athletes" value={d.stats.athletes} color={palette.lime} /></View>
@@ -146,7 +147,7 @@ function DataNet() {
         <View style={{ flex: 1 }}><Stat label={`Releasable (≥${K_ANON})`} value={d.stats.releasableCohorts} color={palette.violet} /></View>
       </View>
 
-      <Card accent={d.calibration.n > 0 ? palette.lime : palette.ash}>
+      <ACard accent={d.calibration.n > 0 ? palette.lime : palette.ash} style={cardStack}>
         <Kicker color={palette.blue}>Injury calibration</Kicker>
         <Mono color={palette.chalk} style={{ fontSize: fs.body, marginTop: 4 }}>
           model {d.calibration.version} – {d.calibration.n > 0 ? `refit on ${d.calibration.n} outcomes` : "synthetic prior"}
@@ -155,9 +156,9 @@ function DataNet() {
           labels: {d.calibration.positives} injured – {d.calibration.negatives} healthy – σ(a + b·score): a=
           {d.calibration.coeffs.intercept.toFixed(2)}, b={d.calibration.coeffs.slope.toFixed(2)}
         </Mono>
-      </Card>
+      </ACard>
 
-      <Card>
+      <ACard style={cardStack}>
         <Kicker>Cohort norms (released)</Kicker>
         {d.norms.length === 0 ? (
           <Mono color={palette.ash} style={{ fontSize: fs.body, marginTop: 10, lineHeight: 19 }}>
@@ -178,7 +179,7 @@ function DataNet() {
             ))}
           </View>
         )}
-      </Card>
+      </ACard>
     </View>
   );
 }

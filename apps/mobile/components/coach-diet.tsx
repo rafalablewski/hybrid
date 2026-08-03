@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
-import { fs, space, Card, Kicker, Mono, Button, F } from "../lib/ui";
+import { fs, space, Kicker, Mono, Button, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { getCoachDiet, saveCoachDiet } from "../lib/api";
+import { ACard, cardStack } from "./aurora/kit";
 
 type Fields = { kcal: string; protein: string; carbs: string; fat: string; note: string };
 const EMPTY: Fields = { kcal: "", protein: "", carbs: "", fat: "", note: "" };
@@ -52,7 +53,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
   );
 
   return (
-    <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
+    <ACard style={[cardStack, { borderLeftWidth: 3, borderLeftColor: C.lime }]}>
       <Kicker color={C.lime}>Assign diet – daily macros</Kicker>
       <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
         {field("kcal", "kcal")}
@@ -70,6 +71,6 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
       <View style={{ marginTop: 10 }}><Button label="Save diet" color={C.lime} onPress={save} /></View>
       {msg !== "" && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono></View>}
       {unavailable && <Mono color={C.ash} style={{ marginTop: 8 }}>Diet assignment isn&apos;t enabled yet — run reference/sql-coach-diet.sql.</Mono>}
-    </Card>
+    </ACard>
   );
 }

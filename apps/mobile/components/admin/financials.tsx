@@ -18,9 +18,10 @@ import {
   type EntitlementCell,
 } from "@hybrid/core";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Intro, Stat, Input, PillBtn, Segmented } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile Financials — parity with apps/web/components/admin/financials.tsx + the
 // @hybrid/core economics engine. Same DATA (revenue, COGS/margin, per-segment
@@ -158,7 +159,7 @@ function RevenueTab({
         const monthly = stream.id === "b2c" ? r.revenue.b2c : stream.id === "coach" ? r.revenue.coach : stream.id === "org" ? r.revenue.org : null;
         const share = monthly != null && r.revenue.total > 0 ? (monthly / r.revenue.total) * 100 : null;
         return (
-          <Card key={stream.id} accent={color}>
+          <ACard key={stream.id} accent={color} style={cardStack}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap" }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk }}>{stream.label}</Text>
               {stream.future && <Chip color={palette.ash}>Future</Chip>}
@@ -175,7 +176,7 @@ function RevenueTab({
               {stream.tiers.map((t) => <Chip key={t.name} color={color}>{t.name} – {t.price}</Chip>)}
             </View>
             <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 10, lineHeight: 17 }}>{stream.howItWorks}</Mono>
-          </Card>
+          </ACard>
         );
       })}
 
@@ -185,7 +186,7 @@ function RevenueTab({
         const loc = (n: number) => (isPLN ? `${Math.round(n)} zł` : `${m.symbol}${Number.isInteger(n) ? n : n.toFixed(2)}`);
         const eq = (n: number) => `≈ $${toUsd(n, m.fxPerUsd).toFixed(2)}`;
         return (
-          <Card key={m.id}>
+          <ACard key={m.id} style={cardStack}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm, flexWrap: "wrap" }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk }}>{m.flag} {m.market}</Text>
               <Chip color={palette.blue}>{m.currency} – {Math.round(m.priceIndex * 100)}% of US</Chip>
@@ -198,7 +199,7 @@ function RevenueTab({
             </Mono>
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>{m.tax} – Stripe {m.stripeFee}</Mono>
             <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{m.rationale}</Mono>
-          </Card>
+          </ACard>
         );
       })}
 
@@ -228,7 +229,7 @@ function PlanMatrix() {
                 {row.group}
               </Mono>
             )}
-            <Card style={{ marginBottom: 8 }}>
+            <ACard style={[cardStack, { marginBottom: 8 }]}>
               <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{row.feature}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.md, marginTop: 6 }}>
                 {PLAN_COLUMNS.map((c) => {
@@ -241,7 +242,7 @@ function PlanMatrix() {
                   );
                 })}
               </View>
-            </Card>
+            </ACard>
           </View>
         );
       })}
@@ -256,7 +257,7 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
     <View>
       <SectionLabel kicker="COGS drivers + fixed opex" title="What it costs us" />
       {agentCost && agentCost.runs > 0 && (
-        <Card accent={palette.blue}>
+        <ACard accent={palette.blue} style={cardStack}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>Actual AI agent spend</Text>
             <Chip color={palette.blue}>real – 30d</Chip>
@@ -267,14 +268,14 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
           <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>
             Measured from real agent runs (tokens × model list price). Calibrate the modeled AI COGS below against it.
           </Mono>
-        </Card>
+        </ACard>
       )}
       {COST_DRIVERS.map((c) => {
         const live = c.id === "ai" ? r.cogs.ai : c.id === "infra" ? r.cogs.infra : c.id === "stripe" ? r.cogs.stripe : c.id === "support" ? r.cogs.support : c.id === "fixed" ? r.cogs.fixed : null;
         const share = live != null && r.revenue.total > 0 ? (live / r.revenue.total) * 100 : null;
         const accent = c.kind === "fixed" ? palette.amber : palette.red;
         return (
-          <Card key={c.id} accent={accent}>
+          <ACard key={c.id} accent={accent} style={cardStack}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>{c.label}</Text>
               <Chip color={accent}>{c.kind === "fixed" ? "fixed" : "COGS"}</Chip>
@@ -287,7 +288,7 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
             )}
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{c.note}</Mono>
             {c.id === "fixed" && <FixedOpexBreakdown />}
-          </Card>
+          </ACard>
         );
       })}
     </View>
@@ -351,7 +352,7 @@ function CalcTab({
         <PillBtn label="Defaults" color={palette.ash} outline onPress={reset} />
       </View>
 
-      <Card>
+      <ACard style={cardStack}>
         <Kicker>Assumptions</Kicker>
         <View style={{ marginTop: 10 }}>
           <NumIn label="Total users" value={a.totalUsers} onChange={(v) => setNum({ totalUsers: v })} />
@@ -375,7 +376,7 @@ function CalcTab({
           <NumIn label="Net expansion /mo %" value={a.monthlyExpansionPct} onChange={(v) => setNum({ monthlyExpansionPct: v })} />
           <NumIn label="Cash on hand ($)" value={a.cashOnHand} onChange={(v) => setNum({ cashOnHand: v })} />
         </View>
-      </Card>
+      </ACard>
 
       <View style={{ flexDirection: "row", gap: space.md }}>
         <Stat label="MRR" value={usdFull(r.revenue.total)} color={palette.lime} />
@@ -390,7 +391,7 @@ function CalcTab({
         <Stat label="CAC payback" value={mo(r.cacPaybackMonths)} color={Number.isFinite(r.cacPaybackMonths) && r.cacPaybackMonths <= 12 ? palette.lime : palette.amber} />
       </View>
 
-      <Card>
+      <ACard style={cardStack}>
         <Kicker>Monthly P&amp;L</Kicker>
         <View style={{ marginTop: 8 }}>
           <PnL k="Revenue (MRR)" v={usdFull(r.revenue.total)} c={palette.lime} />
@@ -404,7 +405,7 @@ function CalcTab({
         <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 10, lineHeight: 16 }}>
           Break-even at {Number.isFinite(r.breakEvenProUsers) ? `${r.breakEvenProUsers.toLocaleString()} Pro subscribers` : "— (Pro contribution ≤ 0)"} holding other assumptions fixed.
         </Mono>
-      </Card>
+      </ACard>
     </View>
   );
 }
@@ -450,7 +451,7 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
   const paybackOk = Number.isFinite(seg.cacPaybackMonths) && seg.cacPaybackMonths <= 12;
   const ratioOk = Number.isFinite(seg.ltvToCac) && seg.ltvToCac >= 3;
   return (
-    <Card accent={color}>
+    <ACard accent={color} style={cardStack}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk }}>{seg.label}</Text>
         <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{seg.payingUnits.toLocaleString()} paying</Mono>
@@ -466,7 +467,7 @@ function SegmentCard({ seg, color }: { seg: SegmentEconomics; color: string }) {
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 10 }}>
         {Math.round(seg.monthlyChurn * 1000) / 10}% monthly churn – ~{seg.monthlyChurn > 0 ? Math.round(1 / seg.monthlyChurn) : "∞"} mo avg lifetime
       </Mono>
-    </Card>
+    </ACard>
   );
 }
 
@@ -483,12 +484,12 @@ function SegMetric({ label, value, c }: { label: string; value: string; c?: stri
 function Indicator({ label, value, c, note, says }: { label: string; value: string; c: string; note: string; says: string }) {
   const { palette } = useTheme();
   return (
-    <Card accent={c}>
+    <ACard accent={c} style={cardStack}>
       <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9 }}>{label}</Mono>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: txt(palette, c), marginTop: 2 }}>{value}</Text>
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{note}</Mono>
       <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{says}</Mono>
-    </Card>
+    </ACard>
   );
 }
 
@@ -519,7 +520,7 @@ function ForecastTab({
         <Stat label="Cash-out" value={ps.cashOutMonth === null ? "—" : `mo ${ps.cashOutMonth}`} sub={ps.cashOutMonth === null ? "never within 12mo" : "runs dry"} color={ps.cashOutMonth === null ? palette.lime : palette.red} />
       </View>
 
-      <Card>
+      <ACard style={cardStack}>
         <Kicker color={palette.lime}>MRR vs cumulative cash – next 12 months</Kicker>
         <View style={{ flexDirection: "row", gap: space.md, marginTop: 8, marginBottom: 8 }}>
           <Legend color={palette.lime} label="MRR" />
@@ -544,7 +545,7 @@ function ForecastTab({
           revenue while fixed opex holds. Cash bars turn red when cumulative cash is negative.
           Assumptions, not booked revenue.
         </Mono>
-      </Card>
+      </ACard>
     </View>
   );
 }
@@ -615,7 +616,7 @@ function BarRow({ value, color }: { value: number; color: string }) {
 function Glossary() {
   const { palette } = useTheme();
   return (
-    <Card>
+    <ACard style={cardStack}>
       <Kicker color={palette.amber}>Metric glossary</Kicker>
       <View style={{ marginTop: 10 }}>
         {METRIC_GUIDE.map((m) => (
@@ -627,7 +628,7 @@ function Glossary() {
           </View>
         ))}
       </View>
-    </Card>
+    </ACard>
   );
 }
 

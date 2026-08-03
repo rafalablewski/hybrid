@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { plansForGoal } from "@hybrid/core";
-import { fs, space, Card, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
+import { fs, space, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
   getCoachGroups,
@@ -11,6 +11,7 @@ import {
   assignPlanToGroup,
   type CoachGroup,
 } from "../lib/api";
+import { ACard, cardStack } from "./aurora/kit";
 
 // Goals whose periodization model is meaningful (mirrors the web coach's
 // GEN_GOALS) — a group plan is built from one of these by goal.
@@ -60,14 +61,14 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
   return (
     <View>
       {unavailable && (
-        <Card style={{ borderLeftWidth: 3, borderLeftColor: C.line, marginTop: 12 }}>
+        <ACard style={[cardStack, { borderLeftWidth: 3, borderLeftColor: C.line, marginTop: 12 }]}>
           <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>
             Groups aren&apos;t enabled yet — run reference/sql-coach-groups.sql in Supabase.
           </Mono>
-        </Card>
+        </ACard>
       )}
 
-      <Card style={{ marginTop: 12 }}>
+      <ACard style={[cardStack, { marginTop: 12 }]}>
         <Kicker>New group</Kicker>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
           <TextInput
@@ -79,12 +80,12 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
           />
           <Button label="Create" onPress={create} />
         </View>
-      </Card>
+      </ACard>
 
       {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 6, fontSize: fs.caption }}>{msg}</Mono></View>}
 
       {groups.map((g) => (
-        <Card key={g.id} style={{ marginTop: 10 }}>
+        <ACard key={g.id} style={[cardStack, { marginTop: 10 }]}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{g.name}</Text>
             <Pressable onPress={() => del(g.id)}><Mono color={C.ash} style={{ fontSize: fs.caption }}>Delete</Mono></Pressable>
@@ -148,7 +149,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
           <View style={{ marginTop: 10 }}>
             <Button label="Assign plan to group" color={C.lime} onPress={() => assign(g)} />
           </View>
-        </Card>
+        </ACard>
       ))}
     </View>
   );

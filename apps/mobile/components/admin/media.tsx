@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Image, Alert } from "react-native";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 
 // Mobile parity for apps/web/components/admin/media.tsx. Same /api/admin/media
@@ -126,7 +127,7 @@ export default function AdminMedia() {
       {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
       {list?.map((a) => (
-        <Card key={a.id} accent={statusColor(a.status)}>
+        <ACard key={a.id} accent={statusColor(a.status)} style={cardStack}>
           {a.kind === "image" ? (
             <Image
               source={{ uri: a.url }}
@@ -184,7 +185,7 @@ export default function AdminMedia() {
               </View>
             </>
           )}
-        </Card>
+        </ACard>
       ))}
 
       {list && list.length === 0 ? (

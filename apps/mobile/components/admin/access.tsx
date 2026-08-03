@@ -9,10 +9,11 @@ import {
   type PersonaAccess,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Kicker, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraIcon } from "../aurora/icons";
 import { Intro, Banner, ErrorNote, PillBtn, Segmented } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile Access (Governance) — parity with the web "access" section, which
 // renders <CoachApplications/> then <AdminAccess/>. Combined here into ONE body
@@ -140,7 +141,7 @@ export default function AdminAccess() {
           </Intro>
 
           {/* Coach applications */}
-          <Card accent={palette.violet}>
+          <ACard accent={palette.violet} style={cardStack}>
             <Kicker color={palette.violet}>Pending coach applications – {apps.length}</Kicker>
             <View style={{ marginTop: 10 }}>
               {apps.length === 0 ? (
@@ -161,7 +162,7 @@ export default function AdminAccess() {
                 ))
               )}
             </View>
-          </Card>
+          </ACard>
         </View>
       )}
 
@@ -174,13 +175,13 @@ export default function AdminAccess() {
           {ROLE_MODEL.map(([name, key, desc]) => {
             const c = palette[key];
             return (
-              <Card key={name} accent={c}>
+              <ACard key={name} accent={c} style={cardStack}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(palette, c) }}>{name}</Text>
                 <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 6, lineHeight: 17 }}>{desc}</Mono>
-              </Card>
+              </ACard>
             );
           })}
-          <Card>
+          <ACard style={cardStack}>
             <Kicker>Permission matrix</Kicker>
             <View style={{ marginTop: 12 }}>
               {/* header */}
@@ -199,7 +200,7 @@ export default function AdminAccess() {
                 </View>
               ))}
             </View>
-          </Card>
+          </ACard>
         </View>
       )}
 
@@ -222,7 +223,7 @@ export default function AdminAccess() {
           <ErrorNote error={err} onDismiss={() => setErr(null)} />
 
           {groups.map(({ group, items }) => (
-            <Card key={group}>
+            <ACard key={group} style={cardStack}>
               <Kicker color={palette.violet}>{GROUP_LABEL[group]}</Kicker>
               <View style={{ marginTop: 10 }}>
                 {items.map((item) => {
@@ -270,7 +271,7 @@ export default function AdminAccess() {
                   );
                 })}
               </View>
-            </Card>
+            </ACard>
           ))}
         </View>
       )}

@@ -117,12 +117,12 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { fs, space, F, Mono, Card, PressScale as Pressable } from "../lib/ui";
+import { fs, space, F, Mono, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
-import { AuroraField, withAlpha } from "../components/aurora/kit";
+import { AuroraField, withAlpha, ACard, cardStack } from "../components/aurora/kit";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
@@ -1091,7 +1091,7 @@ export default function Workout() {
             } : undefined}
             delayLongPress={400}
           >
-          <Card>
+          <ACard style={cardStack}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 10 }}>
               <DragHandle onStart={() => beginDrag(x.uid)} onMove={moveDrag} onEnd={endDrag} color={dragging ? C.chalk : C.ash} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: x.kind === "strength" ? txt(C, C.lime) : x.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>
@@ -1513,7 +1513,7 @@ export default function Workout() {
                 </View>
               </View>
             )}
-          </Card>
+          </ACard>
           </Pressable>
           </Animated.View>
           );

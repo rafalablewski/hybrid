@@ -1,12 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Image, AccessibilityInfo } from "react-native";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
-import { Card, Loading, F, fs, PressScale as Pressable } from "../../lib/ui";
+import { Loading, F, fs, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
 import { useAccountSettings } from "../../lib/account";
 import { SButton, SPill } from "../social-kit";
+import { ACard, cardStack } from "./kit";
 import { HeroNav } from "./hero";
 
 // The unified EDIT PROFILE screen (Instagram-style): a live preview + the avatar
@@ -82,7 +83,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     const back = () => { setErr(null); setEditing(null); };
     const titles: Record<FieldKey, string> = { name: t("w.profile.titleName"), handle: t("w.profile.username"), displayName: t("w.profile.displayName"), bio: t("w.profile.bioLabel"), email: t("w.profile.email"), visibility: t("w.profile.whoCanSee") };
     return (
-      <Card>
+      <ACard style={cardStack}>
         {/* An editor inside a Card, not a screen — so it has no rail of its
             own and takes the system's nav CONTROL rather than a hero. Same
             circle, same 40pt, same glyph as every screen head. */}
@@ -136,7 +137,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
           {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
           <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
         </>)}
-      </Card>
+      </ACard>
     );
   }
 
@@ -163,7 +164,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     <>
       {/* ── PHOTO ── avatar + one-tap branded gradient presets (upload soon). */}
       <SectionLabel first>{t("w.profile.secPhoto")}</SectionLabel>
-      <Card>
+      <ACard style={cardStack}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
           <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
             <View style={{ width: 53, height: 53, borderRadius: 27, borderWidth: 2.5, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
@@ -190,33 +191,33 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.profile.uploadSoon")}</Text>
           </Pressable>
         </View>
-      </Card>
+      </ACard>
 
       {/* ── IDENTITY ── name, handle, display name, bio. */}
       <SectionLabel>{t("w.profile.secIdentity")}</SectionLabel>
-      <Card>
+      <ACard style={cardStack}>
         {fieldRow({ rk: "name", label: t("w.profile.name"), value: acct.name || t("w.profile.addName"), muted: !acct.name, first: true })}
         {fieldRow({ rk: "handle", label: t("w.profile.username"), value: form.handle ? `@${form.handle}` : t("w.profile.claimAHandle"), muted: !form.handle })}
         {fieldRow({ rk: "displayName", label: t("w.profile.displayName"), value: form.displayName || t("w.profile.optional"), muted: !form.displayName })}
         {fieldRow({ rk: "bio", label: t("w.profile.bioLabel"), value: form.bio || t("w.profile.addBio"), muted: !form.bio })}
-      </Card>
+      </ACard>
 
       {/* ── CONTACT ── account email. */}
       <SectionLabel>{t("w.profile.secContact")}</SectionLabel>
-      <Card>
+      <ACard style={cardStack}>
         {fieldRow({ rk: "email", label: t("w.profile.email"), value: acct.email || t("w.profile.addEmail"), muted: !acct.email, first: true })}
-      </Card>
+      </ACard>
 
       {/* ── VISIBILITY ── inline segment, saves on tap. */}
       <SectionLabel>{t("w.profile.secVisibility")}</SectionLabel>
-      <Card>
+      <ACard style={cardStack}>
         <View style={{ flexDirection: "row", gap: 8 }}>
           {(["public", "followers", "private"] as const).map((v) => (
             <SPill key={v} label={visLabel(v)} active={form.visibility === v} onPress={() => pickVisibility(v)} />
           ))}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 15 }}>{t("w.profile.visibilityNote")}</Text>
-      </Card>
+      </ACard>
 
       {onDone && (
         <View style={{ marginTop: 16 }}>

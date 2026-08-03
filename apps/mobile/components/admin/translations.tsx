@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { allTranslationKeys, baselineString, LANGS, type Lang } from "@hybrid/core";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 
 // Mobile parity for apps/web/components/admin/translations.tsx. Same
@@ -139,7 +140,7 @@ export default function AdminTranslations() {
       {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
       {capped.map((key) => (
-        <Card key={key}>
+        <ACard key={key} style={cardStack}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.chalk, marginBottom: 8 }}>{key}</Text>
           {LANG_LIST.map((lang) => {
             const ck = `${lang}:${key}`;
@@ -173,7 +174,7 @@ export default function AdminTranslations() {
               </View>
             );
           })}
-        </Card>
+        </ACard>
       ))}
 
       {loaded && visible.length === 0 ? (

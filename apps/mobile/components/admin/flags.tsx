@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, PillBtn } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 
 // Mobile parity for apps/web/components/admin/flags.tsx. Same /api/admin/flags
@@ -90,7 +91,7 @@ export default function AdminFlags() {
       </Mono>
 
       {flags?.map((f) => (
-        <Card key={f.key} accent={f.enabled ? palette.lime : palette.ash}>
+        <ACard key={f.key} accent={f.enabled ? palette.lime : palette.ash} style={cardStack}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 4 }}>
             <Chip color={f.enabled ? palette.lime : palette.ash}>{f.enabled ? "on" : "off"}</Chip>
             {f.overridden ? <Chip color={palette.amber}>overridden</Chip> : <Chip color={palette.ash}>default</Chip>}
@@ -129,7 +130,7 @@ export default function AdminFlags() {
               <PillBtn label="↺ Reset to default" outline color={palette.ash} disabled={busy === f.key} onPress={() => reset(f.key)} />
             ) : null}
           </View>
-        </Card>
+        </ACard>
       ))}
 
       {flags && flags.length === 0 ? (

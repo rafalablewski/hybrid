@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { Card, Loading, F, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen } from "../components/aurora/kit";
+import { Loading, F, PressScale as Pressable } from "../lib/ui";
+import { AuroraScreen, ACard, cardStack } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type {
@@ -146,8 +146,8 @@ function Storefront() {
 
   return (
     <View>
-      {!data.handle && <Card><Text style={{ color: txt(C, C.amber) }}>⚠ {t("w.coaches.claimHandle")}</Text></Card>}
-      <Card>
+      {!data.handle && <ACard style={cardStack}><Text style={{ color: txt(C, C.amber) }}>⚠ {t("w.coaches.claimHandle")}</Text></ACard>}
+      <ACard style={cardStack}>
         <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 12 }}>{t("w.coaches.yourStorefront")}</Text>
         <TextInput value={form.headline} onChangeText={(v) => setForm({ ...form, headline: v })} placeholder={t("w.coaches.headline")} placeholderTextColor={C.ash} style={inp} />
         <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline placeholder={t("w.coaches.bio")} placeholderTextColor={C.ash} style={{ ...inp, minHeight: 70 }} />
@@ -157,22 +157,22 @@ function Storefront() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.acceptingClients")}</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel={t("w.coaches.acceptingClients")} /></View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.autoAccept")}</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel={t("w.coaches.autoAccept")} /></View>
         <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { Alert.alert(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
-      </Card>
+      </ACard>
 
       <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.programsCount")} ({programs.length})</Text>
-      <Card>
+      <ACard style={cardStack}>
         {programs.length === 0 ? <Empty title={t("w.coaches.noPrograms")} sub={t("w.coaches.noProgramsSub")} /> : programs.map((p) => (
           <View key={p.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <View><Text style={{ color: C.chalk, fontWeight: "600" }}>{p.name}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{p.goal ?? "—"}</Text></View>
             <SButton label={p.published ? `${t("w.coaches.published")} ✓` : t("w.coaches.publish")} ghost={!p.published} small onPress={async () => { await patchProgram(p.id, { published: !p.published }); load(); }} />
           </View>
         ))}
-      </Card>
+      </ACard>
 
       {enroll.incoming?.length > 0 && (
         <>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.enrolmentRequests")}</Text>
-          <Card>
+          <ACard style={cardStack}>
             {enroll.incoming.map((e: EnrollmentRow) => (
               <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
@@ -180,7 +180,7 @@ function Storefront() {
                 {e.status === "requested" && <View style={{ flexDirection: "row", gap: 6 }}><SButton label={t("w.coaches.accept")} small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "accept" }); load(); }} /><SButton label={t("w.coaches.decline")} ghost small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "decline" }); load(); }} /></View>}
               </View>
             ))}
-          </Card>
+          </ACard>
         </>
       )}
     </View>
@@ -215,7 +215,7 @@ export default function CoachesScreen() {
           <TextInput value={q} onChangeText={setQ} placeholder={t("w.coaches.search")} placeholderTextColor={C.ash} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 15, marginBottom: 16 }} />
           {!coaches ? <Loading /> : coaches.length === 0 ? <Empty title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} /> : coaches.map((c) => (
             <Pressable key={c.userId} onPress={() => setDetail(c.handle)}>
-              <Card>
+              <ACard style={cardStack}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
                   <View style={{ flex: 1 }}>
@@ -227,7 +227,7 @@ export default function CoachesScreen() {
                     </View>
                   </View>
                 </View>
-              </Card>
+              </ACard>
             </Pressable>
           ))}
         </>

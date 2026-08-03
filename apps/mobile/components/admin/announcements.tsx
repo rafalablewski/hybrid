@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Alert } from "react-native";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 
 // Mobile parity for apps/web/components/admin/announcements.tsx. Talks to the
@@ -203,7 +204,7 @@ export default function AdminAnnouncements() {
       )}
 
       {editing !== null && (
-        <Card accent={palette.lime}>
+        <ACard accent={palette.lime} style={cardStack}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk, marginBottom: 12 }}>
             {editing === "new" ? "New announcement" : "Edit announcement"}
           </Text>
@@ -239,13 +240,13 @@ export default function AdminAnnouncements() {
             <PillBtn label={editing === "new" ? "Publish" : "Save & publish"} disabled={busy} onPress={() => save("published")} />
             <PillBtn label="Cancel" outline color={palette.ash} disabled={busy} onPress={() => setEditing(null)} />
           </View>
-        </Card>
+        </ACard>
       )}
 
       {err && editing === null ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
       {list?.map((a) => (
-        <Card key={a.id} accent={statusColor(a.status)}>
+        <ACard key={a.id} accent={statusColor(a.status)} style={cardStack}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
             <Chip color={statusColor(a.status)}>{a.status}</Chip>
             <Chip color={levelColor(a.level)}>{a.level}</Chip>
@@ -273,7 +274,7 @@ export default function AdminAnnouncements() {
             <PillBtn label={a.pinned ? "Unpin" : "Pin"} outline color={palette.ash} disabled={busy} onPress={() => patch(a.id, { pinned: !a.pinned })} />
             <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(a)} />
           </View>
-        </Card>
+        </ACard>
       ))}
 
       {list && list.length === 0 ? (

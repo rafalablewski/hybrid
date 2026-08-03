@@ -41,10 +41,10 @@ import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSessionsQuery } from "../../lib/queries";
 import { useSessionActions } from "../../lib/session-actions";
-import { fs, space, Screen, Card, Kicker, Mono, Loading, Button, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Screen, Kicker, Mono, Loading, Button, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
-import { AuroraScreen } from "../../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack } from "../../components/aurora/kit";
 import { HeroNav } from "../../components/aurora/hero";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
 import { SessionEditSheet } from "../../components/session-edit";
@@ -102,9 +102,9 @@ export default function SessionDetail() {
     return wrap(
       <>
         <HeroNav onPress={() => router.back()} />
-        <Card style={{ marginTop: 12, alignItems: "center", paddingVertical: 28 }}>
+        <ACard style={[cardStack, { marginTop: 12, alignItems: "center", paddingVertical: 28 }]}>
           <Mono>{t("session.notFound")}</Mono>
-        </Card>
+        </ACard>
       </>,
     );
   }
@@ -174,7 +174,7 @@ export default function SessionDetail() {
         {/* The breakdown reads the session as the DEVICE measured it — the typed
             figures live on the summary's comparison panel and nowhere else. */}
         {deviceTrueSession(session).blocks.map((b, i) => (
-          <Card key={i}>
+          <ACard key={i} style={cardStack}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
@@ -228,7 +228,7 @@ export default function SessionDetail() {
             ) : (
               <Mono style={{ marginTop: 8 }}>{conditioningSummary(b, { rpe: true })}</Mono>
             )}
-          </Card>
+          </ACard>
         ))}
       </View>
 
@@ -283,7 +283,7 @@ function MuscleFocus({ blocks, bodyweightKg, t }: { blocks: LoggedSession["block
   if (vol.length === 0) return null;
   const max = vol[0]!.volume || 1;
   return (
-    <Card style={{ marginTop: 16 }}>
+    <ACard style={[cardStack, { marginTop: 16 }]}>
       <Kicker>{t("session.muscleFocus")}</Kicker>
       <View style={{ marginTop: 10, gap: space.sm }}>
         {vol.map((m) => (
@@ -298,7 +298,7 @@ function MuscleFocus({ blocks, bodyweightKg, t }: { blocks: LoggedSession["block
           </View>
         ))}
       </View>
-    </Card>
+    </ACard>
   );
 }
 
