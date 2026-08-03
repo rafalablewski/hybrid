@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, Modal, ScrollView } from "react-native";
+import { View, Text, TextInput, ScrollView } from "react-native";
 import {
   MOVEMENTS,
   exercisesByCategory,
@@ -11,9 +11,10 @@ import {
 import { useExercises } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 type Entry = { name: string; kind: BlockKind; icon?: string };
@@ -140,8 +141,8 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
             ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
             : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
         </View>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
+        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
       </Pressable>
     );
   };
@@ -165,11 +166,8 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   const letters = az.map((s) => s.letter);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
-      <Pressable onPress={close} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
-        <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
+    <Sheet visible={visible} onClose={close} title={title} scroll={false} detents={["large"]}>
+          <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
             <Pressable onPress={close} hitSlop={10}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.builder.close")}</Text>
             </Pressable>
@@ -250,7 +248,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
                               : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
                           </View>
-                          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
+                          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
                           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
                         </Pressable>
                       );
@@ -268,15 +266,13 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                     // Instant jump (animated: false) — the index can be
                     // thousands of px away; a rail should snap, not glide.
                     <Pressable key={L} onPress={() => scrollRef.current?.scrollTo({ y: letterY.current[L] ?? 0, animated: false })} hitSlop={{ left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={L}>
-                      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, textAlign: "center", paddingHorizontal: 4 }}>{L}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", paddingHorizontal: 4 }}>{L}</Text>
                     </Pressable>
                   ))}
                 </View>
               </View>
             )}
           </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }

@@ -165,7 +165,7 @@ export const web_account = {
     "w.account.connections.hk-sync-failed": "Sync failed — check your connection and try again.",
     "w.account.connections.hk-synced": "Synced",
     "w.account.connections.hk-samples": "new samples",
-    "w.account.connections.hk-repaired": "matched workouts re-read from your watch",
+    "w.account.connections.hk-repaired": "matched sessions re-read from your watch",
 
     // --- upgrade (aurora/upgrade.tsx) ---
     "w.account.upgrade.cat-train": "Train smarter",
@@ -225,7 +225,7 @@ export const web_account = {
     // --- notifications (notifications.tsx) ---
     "w.account.notifications.back": "Back",
     "w.account.notifications.title": "Notifications",
-    "w.account.notifications.empty": "Nothing yet. Log a workout or get a session from your coach and your activity shows up here.",
+    "w.account.notifications.empty": "Nothing yet. Log a session or get a session from your coach and your activity shows up here.",
 
     // --- onboarding (aurora/onboarding.tsx) ---
     "w.account.onboarding.exp-beginner": "Beginner",
@@ -327,7 +327,7 @@ export const web_account = {
     "w.account.settings.language": "Language",
     "w.account.settings.display": "Display",
     "w.account.settings.export": "Export",
-    "w.account.settings.workout-logger": "Workout logger",
+    "w.account.settings.session-logger": "Session logger",
     "w.account.settings.logger-detailed": "Detailed (RPE + velocity)",
     "w.account.settings.logger-simple": "Simple (load × reps)",
     "w.account.settings.units": "Units",
@@ -431,7 +431,7 @@ export const web_account = {
     "w.account.settings.save-name": "Save name",
     "w.account.settings.update-email": "Update email",
     "w.account.settings.update-password": "Update password",
-    "w.account.settings.workout-section": "Workout",
+    "w.account.settings.session-section": "Session",
     "w.account.settings.template-help": "Switch the whole app between the classic look and the new rounded design.",
     "w.account.settings.coach-apply-intro": "Coaching others is verification-gated. Tell us who you are — certifications, experience, who you train — and an admin reviews it. Approval unlocks the roster, squad monitor and athlete assignment.",
     "w.account.settings.coach-already-verified": "Already verified",
@@ -798,7 +798,7 @@ export const web_account = {
     "w.account.settings.language": "Język",
     "w.account.settings.display": "Wyświetlanie",
     "w.account.settings.export": "Eksport",
-    "w.account.settings.workout-logger": "Dziennik treningu",
+    "w.account.settings.session-logger": "Dziennik treningu",
     "w.account.settings.logger-detailed": "Szczegółowy (RPE + prędkość)",
     "w.account.settings.logger-simple": "Prosty (obciążenie × powtórzenia)",
     "w.account.settings.units": "Jednostki",
@@ -902,7 +902,7 @@ export const web_account = {
     "w.account.settings.save-name": "Zapisz nazwę",
     "w.account.settings.update-email": "Zaktualizuj e-mail",
     "w.account.settings.update-password": "Zaktualizuj hasło",
-    "w.account.settings.workout-section": "Trening",
+    "w.account.settings.session-section": "Trening",
     "w.account.settings.template-help": "Przełącz całą aplikację między klasycznym wyglądem a nowym, zaokrąglonym designem.",
     "w.account.settings.coach-apply-intro": "Trenowanie innych wymaga weryfikacji. Powiedz nam, kim jesteś — certyfikaty, doświadczenie, kogo trenujesz — a administrator to sprawdzi. Zatwierdzenie odblokowuje skład, monitor zespołu i przypisywanie zawodników.",
     "w.account.settings.coach-already-verified": "Już zweryfikowany",
@@ -1152,7 +1152,7 @@ export const web_account = {
     // --- notifications ---
     "w.account.notifications.back": "Zurück",
     "w.account.notifications.title": "Benachrichtigungen",
-    "w.account.notifications.empty": "Noch nichts da. Erfasse ein Workout oder erhalte eine Einheit von deinem Coach, und deine Aktivität erscheint hier.",
+    "w.account.notifications.empty": "Noch nichts da. Erfasse ein Session oder erhalte eine Einheit von deinem Coach, und deine Aktivität erscheint hier.",
 
     // --- onboarding ---
     "w.account.onboarding.exp-beginner": "Anfänger",
@@ -1254,7 +1254,7 @@ export const web_account = {
     "w.account.settings.language": "Sprache",
     "w.account.settings.display": "Anzeige",
     "w.account.settings.export": "Export",
-    "w.account.settings.workout-logger": "Workout-Logger",
+    "w.account.settings.session-logger": "Session-Logger",
     "w.account.settings.logger-detailed": "Detailliert (RPE + Geschwindigkeit)",
     "w.account.settings.logger-simple": "Einfach (Last × Wiederholungen)",
     "w.account.settings.units": "Einheiten",
@@ -1358,7 +1358,7 @@ export const web_account = {
     "w.account.settings.save-name": "Name speichern",
     "w.account.settings.update-email": "E-Mail aktualisieren",
     "w.account.settings.update-password": "Passwort aktualisieren",
-    "w.account.settings.workout-section": "Training",
+    "w.account.settings.session-section": "Training",
     "w.account.settings.template-help": "Schalte die ganze App zwischen dem klassischen Look und dem neuen runden Design um.",
     "w.account.settings.coach-apply-intro": "Andere zu coachen ist verifizierungspflichtig. Sag uns, wer du bist — Zertifikate, Erfahrung, wen du trainierst — und ein Admin prüft es. Die Freigabe schaltet den Kader, den Team-Monitor und die Athletenzuweisung frei.",
     "w.account.settings.coach-already-verified": "Bereits verifiziert",

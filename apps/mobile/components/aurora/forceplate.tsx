@@ -5,7 +5,7 @@ import { parseForcePlateCsv, type ForcePlateImport } from "@hybrid/core";
 import { fetchSignals, importSignal, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { leading, fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 
 /** AURORA Force plate — CSV import of jump-test data into the Signal ontology +
@@ -46,7 +46,7 @@ export default function AuroraForcePlate() {
     <AuroraScreen hero={{ rank: "title", title: t("w.analyze.fp.title") }}>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{t("w.analyze.fp.importBody-mobile")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg, "snug") }}>{t("w.analyze.fp.importBody-mobile")}</Text>
         <TextInput value={text} onChangeText={setText} placeholder={"date,metric,value,unit\n2026-06-01,Jump Height,42.1,cm"} placeholderTextColor={C.ash} multiline autoCapitalize="none"
           style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 12, marginTop: 12, minHeight: 120, textAlignVertical: "top" }} />
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 12 }}>

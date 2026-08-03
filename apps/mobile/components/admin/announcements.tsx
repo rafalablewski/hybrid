@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { View, Text } from "react-native";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { Intro, Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
+import { useConfirm } from "../aurora/confirm";
 
 // Mobile parity for apps/web/components/admin/announcements.tsx. Talks to the
 // same /api/admin/announcements (+/[id]) backend: full CRUD over the broadcast
@@ -56,6 +58,7 @@ const AUDIENCE_OPTS: { value: Audience; label: string }[] = [
 ];
 
 export default function AdminAnnouncements() {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [list, setList] = useState<Announcement[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -158,22 +161,14 @@ export default function AdminAnnouncements() {
     load();
   }
 
-  function remove(a: Announcement) {
-    Alert.alert("Delete announcement", `Delete “${a.title}” permanently?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setBusy(true);
-          setErr(null);
-          const r = await adminSend("DELETE", `/api/admin/announcements/${a.id}`);
-          setBusy(false);
-          if (!r.ok) setErr("Delete failed — re-syncing.");
-          load();
-        },
-      },
-    ]);
+  async function remove(a: Announcement) {
+    if (!(await confirm({ title: "Delete announcement", message: `Delete “${a.title}” permanently?`, confirmLabel: "Delete", destructive: true }))) return;
+    setBusy(true);
+    setErr(null);
+    const r = await adminSend("DELETE", `/api/admin/announcements/${a.id}`);
+    setBusy(false);
+    if (!r.ok) setErr("Delete failed — re-syncing.");
+    load();
   }
 
   if (list === null && !failed) return <Loading />;
@@ -203,7 +198,7 @@ export default function AdminAnnouncements() {
       )}
 
       {editing !== null && (
-        <Card accent={palette.lime}>
+        <ACard accent={palette.lime} style={cardStack}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk, marginBottom: 12 }}>
             {editing === "new" ? "New announcement" : "Edit announcement"}
           </Text>
@@ -212,10 +207,10 @@ export default function AdminAnnouncements() {
           <Input label="Body" value={draft.body} onChangeText={(t) => setDraft({ ...draft, body: t })} placeholder="What every athlete should see…" multiline />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Level</Text>
-          <Segmented options={LEVEL_OPTS} value={draft.level} onChange={(v) => setDraft({ ...draft, level: v })} />
+          <FilterGroup options={LEVEL_OPTS} value={draft.level} onChange={(v) => setDraft({ ...draft, level: v })} />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Audience</Text>
-          <Segmented options={AUDIENCE_OPTS} value={draft.audience} onChange={(v) => setDraft({ ...draft, audience: v })} />
+          <FilterGroup options={AUDIENCE_OPTS} value={draft.audience} onChange={(v) => setDraft({ ...draft, audience: v })} />
 
           <Input label="Publish at — ISO, optional" value={draft.publishAt} onChangeText={(t) => setDraft({ ...draft, publishAt: t })} placeholder="2026-07-01T09:00:00Z" />
           <Input label="Expires at — ISO, optional" value={draft.expiresAt} onChangeText={(t) => setDraft({ ...draft, expiresAt: t })} placeholder="2026-08-01T09:00:00Z" />
@@ -239,13 +234,13 @@ export default function AdminAnnouncements() {
             <PillBtn label={editing === "new" ? "Publish" : "Save & publish"} disabled={busy} onPress={() => save("published")} />
             <PillBtn label="Cancel" outline color={palette.ash} disabled={busy} onPress={() => setEditing(null)} />
           </View>
-        </Card>
+        </ACard>
       )}
 
       {err && editing === null ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
       {list?.map((a) => (
-        <Card key={a.id} accent={statusColor(a.status)}>
+        <ACard key={a.id} accent={statusColor(a.status)} style={cardStack}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
             <Chip color={statusColor(a.status)}>{a.status}</Chip>
             <Chip color={levelColor(a.level)}>{a.level}</Chip>
@@ -273,7 +268,7 @@ export default function AdminAnnouncements() {
             <PillBtn label={a.pinned ? "Unpin" : "Pin"} outline color={palette.ash} disabled={busy} onPress={() => patch(a.id, { pinned: !a.pinned })} />
             <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(a)} />
           </View>
-        </Card>
+        </ACard>
       ))}
 
       {list && list.length === 0 ? (

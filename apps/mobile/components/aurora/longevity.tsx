@@ -5,7 +5,7 @@ import { longevityReport } from "@hybrid/core";
 import { fetchSignals, type CoreSignal } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { leading, fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -83,12 +83,12 @@ export default function AuroraLongevity() {
               ))}
             </View>
           )}
-          {report.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 10, lineHeight: 18 }}>{report.flags.join(" – ")}</Text>}
+          {report.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 10, lineHeight: leading(fs.body, "snug") }}>{report.flags.join(" – ")}</Text>}
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10 }}>{t("w.recovery.longevity.model")} {report.modelVersion}</Text>
         </ACard>
       ) : (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{t("w.recovery.longevity.bioAgeEmpty")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg, "snug") }}>{t("w.recovery.longevity.bioAgeEmpty")}</Text>
         </ACard>
       )}
     </AuroraScreen>

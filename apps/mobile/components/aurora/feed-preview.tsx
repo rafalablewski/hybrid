@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View, Text, ScrollView, Animated, Easing, useWindowDimensions } from "react-native";
 import { feedCardView } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
-import { F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
@@ -97,7 +97,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
               <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, flex: 1, minWidth: 0 }}>
                 <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 14 }}>{v.name}</Text>
                 {it.author?.coachVerified ? <Text style={{ color: txt(C, C.blue), fontSize: 12 }}>✓</Text> : null}
-                <Text numberOfLines={1} style={{ color: C.ash, fontFamily: F.mono, fontSize: 12, flexShrink: 1 }}>{handle ? `@${handle}  ` : ""}{v.when}</Text>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ color: C.ash, fontFamily: F.mono, fontSize: 12, flexShrink: 1 }}>{handle ? `@${handle}  ` : ""}{v.when}</Text>
               </View>
             </View>
 

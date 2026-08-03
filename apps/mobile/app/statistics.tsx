@@ -13,7 +13,7 @@ import {
 import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
 import { useBodyweightLookup } from "../lib/use-bodyweight";
 import { useTheme, txt } from "../lib/theme";
-import { fs, space, F } from "../lib/ui";
+import { leading, fs, space, F } from "../lib/ui";
 import { AuroraScreen, ACard, ASegment, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
@@ -84,7 +84,7 @@ export default function Statistics() {
                   backgroundColor: i === buckets.peakIndex ? C.lime : C.line,
                 }}
               />
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{b.label}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{b.label}</Text>
             </View>
           ))}
         </View>
@@ -101,7 +101,7 @@ export default function Statistics() {
       </View>
 
       {!hasData && (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 18, lineHeight: 19 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 18, lineHeight: leading(fs.body) }}>
           Log a few workouts and your real training stats fill in here.
         </Text>
       )}

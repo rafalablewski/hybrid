@@ -4,8 +4,8 @@ import { athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/cor
 import { fetchSquad, type SquadRow, type SquadSummary } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { leading, fs, space, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE, Loading } from "../../lib/ui";
+import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—");
 
@@ -80,16 +80,14 @@ export default function AuroraTeamMonitor() {
   const body = () => {
     if (loading) {
       return (
-        <View style={{ paddingVertical: 40, alignItems: "center" }}>
-          <ActivityIndicator color={C.lime} />
-        </View>
+        <Loading />
       );
     }
     if (squad.length === 0) {
       return (
         <ACard style={{ marginTop: space.md }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.monitor.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("w.teams.monitor.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.monitor.emptyBody")}</Text>
         </ACard>
       );
     }
@@ -107,7 +105,7 @@ export default function AuroraTeamMonitor() {
         <Text style={kicker(C)}>{t("w.teams.monitor.segment")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
           {SEGS.map((s) => (
-            <Pill key={s} C={C} active={seg === s} onPress={() => setSeg(s)}
+            <AChip key={s} selected={seg === s} onPress={() => setSeg(s)}
               label={s === "all" ? `${t("w.teams.monitor.all")} ${squad.length}` : `${SEGMENT_LABELS[s as AthleteSegment]} ${counts[s] ?? 0}`} />
           ))}
         </ScrollView>
@@ -116,9 +114,9 @@ export default function AuroraTeamMonitor() {
           <>
             <Text style={kicker(C)}>{t("w.teams.monitor.tag")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
-              <Pill C={C} active={tag === ""} onPress={() => setTag("")} label={t("w.teams.monitor.all")} />
+              <AChip selected={tag === ""} onPress={() => setTag("")} label={t("w.teams.monitor.all")} />
               {allTags.map((tg) => (
-                <Pill key={tg} C={C} active={tag === tg} onPress={() => setTag(tg)} label={tg} />
+                <AChip key={tg} selected={tag === tg} onPress={() => setTag(tg)} label={tg} />
               ))}
             </ScrollView>
           </>
@@ -127,7 +125,7 @@ export default function AuroraTeamMonitor() {
         <Text style={kicker(C)}>{t("w.teams.monitor.sortBy")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
           {(["readiness", "acwr", "risk"] as const).map((k) => (
-            <Pill key={k} C={C} active={sort === k} onPress={() => setSort(k)} label={t(`w.teams.monitor.sort.${k}`)} />
+            <AChip key={k} selected={sort === k} onPress={() => setSort(k)} label={t(`w.teams.monitor.sort.${k}`)} />
           ))}
         </ScrollView>
 
@@ -136,13 +134,13 @@ export default function AuroraTeamMonitor() {
           return (
             <ACard key={a.linkId} style={{ marginTop: space.ms }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
-                <Chip C={C} color={segColor(s)} label={SEGMENT_LABELS[s]} />
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
+                <Chip color={segColor(s)}>{SEGMENT_LABELS[s]}</Chip>
               </View>
 
               {(a.tags ?? []).length > 0 ? (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
-                  {a.tags!.map((tg) => <Chip key={tg} C={C} color={txt(C, C.blue)} label={tg} />)}
+                  {a.tags!.map((tg) => <Chip key={tg} color={txt(C, C.blue)}>{tg}</Chip>)}
                 </View>
               ) : null}
 
@@ -159,11 +157,11 @@ export default function AuroraTeamMonitor() {
           );
         })}
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12, lineHeight: 18 }}>{t("w.teams.monitor.acwrNote")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12, lineHeight: leading(fs.micro, "relaxed") }}>{t("w.teams.monitor.acwrNote")}</Text>
         {/* Only when a row actually shows the dash — explain the gap so a coach
             doesn't read it as missing data or a broken metric. */}
         {sorted.some((a) => a.acwrBand === "insufficient") && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 18 }}>{t("w.teams.monitor.acwrInsufficient")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro, "relaxed") }}>{t("w.teams.monitor.acwrInsufficient")}</Text>
         )}
       </>
     );
@@ -188,33 +186,15 @@ function SummaryCard({ C, label, value, color }: { C: Palette; label: string; va
   );
 }
 
-function Pill({ C, active, label, onPress }: { C: Palette; active: boolean; label: string; onPress: () => void }) {
-  const accent = txt(C, C.lime);
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, textTransform: "uppercase", color: active ? accent : C.ash }}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function Chip({ C, color, label }: { C: Palette; color: string; label: string }) {
-  return (
-    <View style={{ backgroundColor: `${color}24`, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color }}>{label}</Text>
-    </View>
-  );
-}
-
 function Metric({ C, label, value, sub, color, dot = false }: { C: Palette; label: string; value: string; sub?: string; color: string; dot?: boolean }) {
   return (
     <View style={{ width: "33.33%", paddingVertical: 6 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 }}>
         {dot ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} /> : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color }}>{value}</Text>
       </View>
-      {sub ? <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9, color, marginTop: 1 }}>{sub}</Text> : null}
+      {sub ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color, marginTop: 1 }}>{sub}</Text> : null}
     </View>
   );
 }

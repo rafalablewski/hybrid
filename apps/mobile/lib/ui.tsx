@@ -18,13 +18,17 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, springs, springDurationMs, springToRN, durations } from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, springs, springDurationMs, springToRN, durations } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
 // Re-export the shared scale (same source the web client uses) so screens can
 //   import { fs, space } from "../../lib/ui"  →  fontSize: fs.body, gap: space.lg
-export { fs, space };
+// `leading` and `tracking` are the two axes that had no token until the design
+// audit: every lineHeight in the app was an absolute dp (29 of them) and every
+// letterSpacing a fresh guess (18 of them). Use leading(fs.body) rather than a
+// number — an absolute line box is also why Dynamic Type could not work.
+export { fs, space, lh, leading, tracking };
 import { useTemplate } from "./template";
 import { auroraScrollClearance } from "./layout";
 import { useReducedMotion } from "./use-reduced-motion";
@@ -40,6 +44,23 @@ import { useReducedMotion } from "./use-reduced-motion";
 // the layout can grow to fit. See capabilities.ts → `dynamic-type`.
 export const MAX_FONT_SCALE = 1.4; // reflow-safe surfaces — generous headroom
 export const FIXED_FONT_SCALE = 1.15; // fixed-height chrome — must not clip
+
+/**
+ * The HIG minimum touch target, in dp. Stated once so every interactive
+ * primitive can declare it instead of hoping its padding adds up.
+ *
+ * The design audit measured five selectable pills across five screens at
+ * ~25–31dp tall, built from three horizontal paddings and four vertical ones,
+ * and found exactly ONE `minHeight: 44` in the whole app. A control that is
+ * visually smaller than this by design (a dense row's chevron, an inline ✕)
+ * keeps its size and takes `hitSlop={HIT_SLOP}` instead — the target grows, the
+ * drawing doesn't.
+ */
+export const HIT_TARGET = 44;
+
+/** Companion to HIT_TARGET for controls that must stay visually small. 8dp on
+ *  each side turns a 28dp glyph button into a 44dp target. */
+export const HIT_SLOP = 8;
 
 // Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
 // FOCUS GLOW — the primary Start CTA's lime halo (parity with web `.start-glow`
@@ -222,71 +243,12 @@ const FIELD_RINGS = [
   { f: 0.3, o: 0.09 },
 ];
 
-function FieldBlob({
-  color,
-  size,
-  anchor,
-  dx,
-  dy,
-  ms,
-}: {
-  color: string;
-  size: number;
-  anchor: ViewStyle;
-  dx: number;
-  dy: number;
-  ms: number;
-}) {
-  const a = useRef(new Animated.Value(0)).current;
-  const reducedMotion = useReducedMotion();
-  useEffect(() => {
-    // Reduce Motion: hold the blob still (a stays 0 → no translate/scale) rather
-    // than running the perpetual drift loop.
-    if (reducedMotion) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(a, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(a, { toValue: 0, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [a, ms, reducedMotion]);
-  const translateX = a.interpolate({ inputRange: [0, 1], outputRange: [0, dx] });
-  const translateY = a.interpolate({ inputRange: [0, 1], outputRange: [0, dy] });
-  const scale = a.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] });
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        { position: "absolute", width: size, height: size, alignItems: "center", justifyContent: "center" },
-        anchor,
-        { transform: [{ translateX }, { translateY }, { scale }] },
-      ]}
-    >
-      {FIELD_RINGS.map((r, i) => (
-        <View
-          key={i}
-          style={{ position: "absolute", width: size * r.f, height: size * r.f, borderRadius: (size * r.f) / 2, backgroundColor: color, opacity: r.o }}
-        />
-      ))}
-    </Animated.View>
-  );
-}
-
-/** The ambient Liquid Glass field — slow-drifting accent blobs that the glass
- *  surfaces refract. Mounted once behind every Screen (the mobile analog of the
- *  web `.lg-field`), so the BlurView cards have real content to frost. */
-export function GlassField() {
-  const { palette } = useTheme();
-  return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}>
-      <FieldBlob color={palette.lime} size={340} anchor={{ left: "-16%", top: "-10%" }} dx={70} dy={90} ms={19000} />
-      <FieldBlob color={palette.blue} size={300} anchor={{ right: "-18%", top: "4%" }} dx={-60} dy={110} ms={23000} />
-      <FieldBlob color={palette.violet} size={380} anchor={{ left: "26%", bottom: "-22%" }} dx={-50} dy={-60} ms={27000} />
-    </View>
-  );
-}
+/*
+ * `GlassField` LIVED HERE and is gone with `Screen`, its only consumer. It was a
+ * THIRD ambient field — three animated blobs — beside components/aurora/field's
+ * AuroraField (which the rest of the app renders) and the hero's own backdrop.
+ * One ground, one field.
+ */
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -308,6 +270,7 @@ export type PressStyle = StyleProp<ViewStyle> | ((s: { pressed: boolean }) => St
  * — `style` accepts both shapes by design — and the bundle export cannot,
  * because neither one renders.
  */
+
 export function resolvePressStyle(
   style: PressStyle | undefined,
   pressed: boolean,
@@ -420,76 +383,74 @@ export function useScreenBottomPad(): number {
   return aurora ? auroraScrollClearance(insets.bottom) : 48;
 }
 
-export function Screen({
-  children,
-  refreshing,
-  onRefresh,
-  scroll = true,
-  hubTab = false,
-}: {
-  children: ReactNode;
-  refreshing?: boolean;
-  onRefresh?: () => void;
-  /** false → render a plain flex container instead of a ScrollView, so the
-   *  screen can supply its own virtualized scroller (a FlatList). The caller
-   *  then owns the RefreshControl + contentContainerStyle padding (see
-   *  useScreenBottomPad). */
-  scroll?: boolean;
-  /** true when the screen is showing as one of Today's hub tabs, where it
-   *  MOUNTS IN FULL VIEW on every pill switch. A freshly mounted native
-   *  SafeAreaView applies its inset a frame late, so the chrome renders under
-   *  the status bar for one visible frame — the hub shell pads with the
-   *  provider's insets instead, which are correct on the very first render. */
-  hubTab?: boolean;
-}) {
+/*
+ * `Screen` LIVED HERE and is gone: use AuroraScreen from components/aurora/kit.
+ *
+ * It was a near-clone of that shell — same ambient field, same
+ * KeyboardAvoidingView, same 16dp scroller with nav-collapse and pull-to-refresh,
+ * same SafeAreaView-vs-measured-insets split for a hub tab — minus the screen
+ * entrance animation, so the four screens still on it cut in where every other
+ * screen faded. AuroraScreen gained an explicit `hubTab` prop to cover the one
+ * caller (the Feed tab) that needed the hub shell without passing `top`.
+ *
+ * Two of the four call sites were `aurora ? <AuroraScreen> : <Screen>`
+ * ternaries, so retiring it also deleted those classic-template branches.
+ */
+
+/**
+ * A SKELETON block — a placeholder that holds the space its content will fill.
+ *
+ * The app had none. Every one of the 33 `<Loading />` sites was the shape
+ * `if (data === null) return <Loading />` — arriving CONTENT, not an in-flight
+ * action — and rendered a centred spinner, so a section collapsed to nothing and
+ * then popped in fully formed. On a phone, where a list IS most of the screen,
+ * that reads as a jump rather than an arrival, and it costs the user the sense
+ * that anything was ever going to appear there.
+ *
+ * The pulse is an opacity breath on the shared `durations`, and it stops under
+ * Reduce Motion — a placeholder that animates is a nicety; a placeholder that
+ * reserves space is the actual job, and that part never depends on motion.
+ */
+export function Skeleton({ width = "100%", height = 14, radius = 8, style }: { width?: number | `${number}%`; height?: number; radius?: number; style?: ViewStyle }) {
   const { palette } = useTheme();
-  const padBottom = useScreenBottomPad();
-  const insets = useSafeAreaInsets();
-  // Drive the floating nav's shrink-on-scroll from this screen's scroller too
-  // (Aurora is the only template, so classic-Screen screens sit under the pill).
-  const navScroll = useNavScrollProps();
-  const inner = (
-    <>
-      <GlassField />
-      {/* Lift the form above the keyboard so low inputs/submit buttons aren't
-          hidden when the keyboard opens (no screen had keyboard avoidance). */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        {scroll ? (
-          <ScrollView
-            contentContainerStyle={{ padding: 16, paddingBottom: padBottom }}
-            {...navScroll}
-            keyboardShouldPersistTaps="handled"
-            refreshControl={
-              onRefresh ? (
-                <RefreshControl
-                  refreshing={!!refreshing}
-                  onRefresh={onRefresh}
-                  tintColor={palette.lime}
-                  colors={[palette.lime]}
-                />
-              ) : undefined
-            }
-          >
-            {children}
-          </ScrollView>
-        ) : (
-          <View style={{ flex: 1 }}>{children}</View>
-        )}
-      </KeyboardAvoidingView>
-    </>
-  );
-  return hubTab ? (
-    <View style={{ flex: 1, backgroundColor: palette.ink, paddingTop: insets.top }}>{inner}</View>
-  ) : (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.ink }} edges={["top"]}>{inner}</SafeAreaView>
+  const reduced = useReducedMotion();
+  const pulse = useRef(new Animated.Value(0.55)).current;
+  useEffect(() => {
+    if (reduced) { pulse.setValue(0.45); return; }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.25, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.6, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse, reduced]);
+  return (
+    <Animated.View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[{ width, height, borderRadius: radius, backgroundColor: palette.line, opacity: pulse }, style]}
+    />
   );
 }
 
+/**
+ * The default content placeholder — what `if (!data) return <Loading />` should
+ * have been all along. Three bars at descending widths read as "a list is coming
+ * here" rather than "something is happening somewhere".
+ *
+ * Kept under the name `Loading` deliberately: 33 call sites already say exactly
+ * the right thing, and renaming them would have been churn in place of a fix.
+ * A spinner is still correct for an in-flight ACTION (a saving button) — that is
+ * what ActivityIndicator is for, and those sites keep it.
+ */
 export function Loading() {
-  const { palette } = useTheme();
   return (
-    <View style={{ paddingVertical: 56, alignItems: "center" }}>
-      <ActivityIndicator color={palette.lime} />
+    <View style={{ paddingVertical: space.xxl, gap: space.md }} accessibilityRole="progressbar" accessibilityLabel="Loading">
+      <Skeleton width="62%" height={16} />
+      <Skeleton height={12} />
+      <Skeleton width="84%" height={12} />
     </View>
   );
 }
@@ -504,40 +465,17 @@ export function cardShadow(scheme: "dark" | "light"): ViewStyle {
     : { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 };
 }
 
-export function Card({
-  children,
-  style,
-  accent,
-}: {
-  children: ReactNode;
-  style?: ViewStyle;
-  /** Optional left accent rail (used for admin grouping). */
-  accent?: string;
-}) {
-  const { palette, scheme } = useTheme();
-  // The solid ink2 card — matching the kit's ACard and the web Aurora cards.
-  // (The old frosted GlassCard branch is gone with the dead glass layer.)
-  return (
-    <View
-      style={[
-        {
-          backgroundColor: palette.ink2,
-          borderWidth: 1,
-          borderColor: palette.line,
-          borderRadius: 28,
-          padding: space.lg,
-          marginBottom: space.md,
-          ...cardShadow(scheme),
-        },
-        accent ? { borderLeftWidth: 3, borderLeftColor: accent } : null,
-        style,
-      ]}
-    >
-      {children}
-    </View>
-  );
-}
-
+/*
+ * `Card` LIVED HERE and is gone: it is now ACard in components/aurora/kit.tsx.
+ *
+ * The two were a genuine fork — same radius and shadow, then different padding
+ * (16 vs 20), a built-in outer margin on this one that made the two impossible
+ * to stack together, and, decisively, different MATERIAL: ACard drops a native
+ * SwiftUI glass surface on iOS and this one never could. That put 234 cards on
+ * two materials chosen by import path, so the surface changed when you tapped
+ * from Today into a session. All 97 call sites now render ACard; the `accent`
+ * rail moved with them and the outer margin became the explicit `cardStack`.
+ */
 export function Kicker({ children, color }: { children: ReactNode; color?: string }) {
   const { palette } = useTheme();
   return (
@@ -546,8 +484,13 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
       style={{
         fontFamily: F.mono,
         fontSize: fs.micro,
+        lineHeight: leading(fs.micro, "snug"),
         textTransform: "uppercase",
-        letterSpacing: 1.2,
+        // tracking.caps — the wider of the two eyebrow trackings, which is what
+        // this primitive has always emitted. The narrower `tracking.label` (0.9)
+        // is the one 216 inline kickers use; both are now named, so the choice
+        // between them is a decision rather than a coin toss.
+        letterSpacing: tracking.caps,
         color: color ? txt(palette, color) : palette.ash,
       }}
     >
@@ -559,79 +502,89 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
 export function Mono({ children, style, color, numberOfLines }: { children: ReactNode; style?: TextStyle; color?: string; numberOfLines?: number }) {
   const { palette } = useTheme();
   return (
-    <Text numberOfLines={numberOfLines} style={[{ fontFamily: F.mono, fontSize: fs.body, color: color ? txt(palette, color) : palette.ash }, style]}>
+    <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={numberOfLines} style={[{ fontFamily: F.mono, fontSize: fs.body, lineHeight: leading(fs.body), color: color ? txt(palette, color) : palette.ash }, style]}>
       {children}
     </Text>
   );
 }
 
-export function H1({ children }: { children: ReactNode }) {
-  const { palette } = useTheme();
-  return <Text style={{ fontFamily: F.black, fontSize: 30, color: palette.chalk, letterSpacing: -1 }}>{children}</Text>;
-}
+/*
+ * `H1` LIVED HERE and is gone: use AHeading from components/aurora/kit, which
+ * now reads the same rung the Hero System's `title` rank does. H1 was 30/-1 —
+ * a size on neither the type ladder nor the hero ramp — with no header role and
+ * no serif swap under Kyoto Hour, on two call sites.
+ */
 
-export function Chip({ children, color }: { children: ReactNode; color?: string }) {
+/**
+ * THE STATIC TAG — a small non-interactive label ("PR", "warm-up", "4 weeks").
+ *
+ * This is one of exactly TWO chip shapes in the app; the other is `AChip` in
+ * components/aurora/kit.tsx, which is the SELECTABLE filter. If a chip responds
+ * to a tap it is an AChip and it owes the user a 44dp target; if it does not, it
+ * is this.
+ *
+ * The design audit found eighteen chip implementations disagreeing on six axes
+ * at once — fill alpha (10 / 12 / 13 / 14 / 16%), radius (5 vs pill), padding
+ * (8/2, 10/3, 12/3, 12/4), size (nano vs micro), face (mono vs semi) and border
+ * (none vs hairline). Two of them also painted their label with the RAW accent
+ * instead of routing it through `txt()`, so they failed contrast on the Kyoto
+ * Hour washi — a legibility bug hiding inside a styling inconsistency.
+ *
+ * `tone` is the one axis that earned a variant: `soft` is the tinted fill this
+ * has always been, `outline` adds the hairline the settings tags needed to read
+ * against a card of the same tint.
+ */
+export function Chip({
+  children,
+  color,
+  tone = "soft",
+}: {
+  children: ReactNode;
+  color?: string;
+  tone?: "soft" | "outline";
+}) {
   const { palette } = useTheme();
-  const aurora = useTemplate().template === "aurora";
   // Default (no color) = the theme's PRIMARY accent: tint from the theme fill
-  // (clay on light, chartreuse on dark) and text via the brand key so txt() maps
+  // (pine on light, chartreuse on dark) and text via the brand key so txt() maps
   // it to the theme's accent-text tone. An explicit color keeps its own hue.
   const key = color ?? C.lime;
   const fill = color ?? palette.lime;
   return (
-    <View style={{ backgroundColor: `${fill}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, key), textTransform: "uppercase", letterSpacing: 0.5 }}>
+    <View
+      style={{
+        backgroundColor: `${fill}1f`,
+        borderRadius: 999,
+        borderWidth: tone === "outline" ? 1 : 0,
+        borderColor: `${fill}66`,
+        paddingHorizontal: 11,
+        paddingVertical: 3,
+        alignSelf: "flex-start",
+      }}
+    >
+      <Text
+        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        numberOfLines={1}
+        style={{
+          fontFamily: F.semi,
+          fontSize: fs.micro,
+          lineHeight: leading(fs.micro, "snug"),
+          color: txt(palette, key),
+          textTransform: "uppercase",
+          letterSpacing: tracking.label,
+        }}
+      >
         {children}
       </Text>
     </View>
   );
 }
 
-export function Button({
-  label,
-  onPress,
-  color,
-  variant = "fill",
-  disabled,
-  style,
-}: {
-  label: string;
-  onPress: () => void;
-  color?: string;
-  /** "outline" = a transparent ghost with a hairline border; `color` tints the
-   *  label + border (muted ash/line when omitted) — e.g. destructive actions. */
-  variant?: "fill" | "outline";
-  disabled?: boolean;
-  style?: ViewStyle;
-}) {
-  const { palette } = useTheme();
-  const aurora = useTemplate().template === "aurora";
-  // Default fill = the theme's PRIMARY accent (clay on light, chartreuse on dark);
-  // an explicit color still wins. Text is always the theme's onAccent ink.
-  const fill = color ?? palette.lime;
-  const outline = variant === "outline";
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-      style={[
-        {
-          backgroundColor: outline ? "transparent" : fill,
-          borderWidth: outline ? 1 : 0,
-          borderColor: color ? `${color}73` : palette.line,
-          borderRadius: aurora ? 999 : 12,
-          paddingVertical: aurora ? 16 : 14,
-          paddingHorizontal: 24,
-          alignItems: "center",
-          opacity: disabled ? 0.5 : 1,
-        },
-        style,
-      ]}
-    >
-      <Text style={{ fontFamily: aurora ? F.bold : F.black, fontSize: fs.note, color: outline ? (color ? txt(palette, color) : palette.ash) : palette.onAccent }}>{label}</Text>
-    </Pressable>
-  );
-}
+/*
+ * `Button` LIVED HERE and is gone: use APill from components/aurora/kit, which
+ * absorbed its `outline` variant and its `color` prop. The two were one button
+ * split in half — this one could draw a hairline ghost for a destructive action
+ * but not the `light` or glass-`soft` fills; APill could do those but had no way
+ * to express a destructive outline, and no accessibility contract at all. Each
+ * did something the other couldn't, which is exactly how a codebase ends up
+ * keeping both.
+ */

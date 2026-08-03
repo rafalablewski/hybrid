@@ -44,13 +44,13 @@ export const web_train = {
     "w.train.plans.startedOn": "Started",
     "w.train.plans.leavePlan": "Leave plan",
     "w.train.plans.leaveExplain": "Leaving removes this plan from Today and Periodize. You can re-enroll any time, but the season starts over from week 1.",
-    "w.train.plans.leaveKeep": "Keep my workout history",
+    "w.train.plans.leaveKeep": "Keep my session history",
     "w.train.plans.leaveKeepSub": "Everything you logged stays in History and analytics.",
-    "w.train.plans.leaveWipe": "Also delete my workouts from this plan",
-    "w.train.plans.leaveWipeSub": "Permanently deletes every workout logged while this plan was active. This cannot be undone.",
-    "w.train.plans.leaveTypeDelete": "Type DELETE to confirm deleting your workouts",
+    "w.train.plans.leaveWipe": "Also delete my sessions from this plan",
+    "w.train.plans.leaveWipeSub": "Permanently deletes every session logged while this plan was active. This cannot be undone.",
+    "w.train.plans.leaveTypeDelete": "Type DELETE to confirm deleting your sessions",
     "w.train.plans.leaveCta": "Leave plan",
-    "w.train.plans.leaveWipeCta": "Leave & delete workouts",
+    "w.train.plans.leaveWipeCta": "Leave & delete sessions",
     "w.train.plans.leaving": "Leaving…",
     "w.train.plans.leaveCancel": "Cancel",
     "w.train.plans.leaveError": "Couldn't leave the plan — try again.",
@@ -92,15 +92,15 @@ export const web_train = {
     "w.train.comp.event": "event",
 
     // builder.tsx
-    "w.train.builder.newWorkout": "New workout",
+    "w.train.builder.newWorkout": "New session",
     "w.train.builder.signInSave": "Sign in to save templates.",
     "w.train.builder.saveErrorPrefix": "Couldn't save (HTTP ",
-    "w.train.builder.saveErrorSuffix": "). The WorkoutTemplate table may need creating — run reference/sql-workout-builder.sql.",
+    "w.train.builder.saveErrorSuffix": "). The WorkoutTemplate table may need creating — run reference/sql-session-builder.sql.",
     "w.train.builder.templateSaved": "Template saved.",
     "w.train.builder.networkError": "Network error.",
-    "w.train.builder.workoutNamePh": "Workout name",
+    "w.train.builder.workoutNamePh": "Session name",
     "w.train.builder.descriptionPh": "Description (optional)",
-    "w.train.builder.emptyHint": "Empty workout — add blocks below, or load a template.",
+    "w.train.builder.emptyHint": "Empty session — add blocks below, or load a template.",
     "w.train.builder.saving": "Saving…",
     "w.train.builder.saveAsTemplate": "Save as template →",
     "w.train.builder.templateLibrary": "Template library",
@@ -109,7 +109,7 @@ export const web_train = {
     "w.train.builder.blocks": "blocks",
     "w.train.builder.load": "Load",
     "w.train.builder.delete": "Delete",
-    "w.train.builder.defaultWorkout": "Workout",
+    "w.train.builder.defaultWorkout": "Session",
 
     // run-track.tsx
     "w.train.runTrack.title": "Run tracking",
@@ -158,7 +158,7 @@ export const web_train = {
     "w.train.running.bestPace": "best pace",
 
     // logger.tsx
-    "w.train.logger.workout": "Workout",
+    "w.train.logger.session": "Session",
     "w.train.logger.signInRoutines": "Sign in to save routines.",
     "w.train.logger.saveRoutineErr": "Couldn't save routine.",
     "w.train.logger.savedRoutine": "★ Saved to your routines",
@@ -185,9 +185,9 @@ export const web_train = {
     "w.train.logger.emptyHint": "Empty session — add blocks below, or pull today's prescription.",
     "w.train.logger.saving": "Saving…",
     "w.train.logger.saveSession": "Save session →",
-    "w.train.logger.finishWorkout": "Finish workout",
+    "w.train.logger.finishWorkout": "Finish session",
     "w.train.logger.saveAsRoutine": "★ Save as routine",
-    // Private post-workout note (mood + tags) — owner-only
+    // Private post-session note (mood + tags) — owner-only
     "w.train.note.add": "Private note",
     "w.train.note.saved": "Note saved ✓",
     "w.train.note.ph": "Private note — only you can see this…",
@@ -204,11 +204,11 @@ export const web_train = {
     "w.train.note.tag-deload": "deload",
     "w.train.note.tag-tired": "tired",
     "w.train.note.tag-motivated": "motivated",
-    "w.train.logger.saveRoutineTitle": "Save this workout as a reusable routine",
+    "w.train.logger.saveRoutineTitle": "Save this session as a reusable routine",
     "w.train.logger.routineNamePh": "Routine name",
-    "w.train.logger.saveRoutineHint": "Reuse this exact workout later. This is the one place a name actually matters.",
+    "w.train.logger.saveRoutineHint": "Reuse this exact session later. This is the one place a name actually matters.",
     "w.train.logger.saveToRoutines": "★ Save to your routines",
-    "w.train.logger.nameOptional": "✎ Name this workout (optional)",
+    "w.train.logger.nameOptional": "✎ Name this session (optional)",
     "w.train.logger.firstTime": "(first time)",
     "w.train.logger.fasterPace": "faster pace",
     "w.train.logger.sets": "sets",
@@ -251,7 +251,7 @@ export const web_train = {
     "w.train.timer.total": "Total",
     "w.train.timer.leadIn": "– 10s lead-in",
 
-    // workout-blocks.tsx
+    // session-blocks.tsx
     "w.train.blocks.workingSet": "Working set",
     "w.train.blocks.warmupSet": "Warm-up set",
     "w.train.blocks.cooldownSet": "Cool-down set",
@@ -437,7 +437,7 @@ export const web_train = {
     "w.train.builder.newWorkout": "Nowy trening",
     "w.train.builder.signInSave": "Zaloguj się, aby zapisać szablony.",
     "w.train.builder.saveErrorPrefix": "Nie udało się zapisać (HTTP ",
-    "w.train.builder.saveErrorSuffix": "). Tabela WorkoutTemplate może wymagać utworzenia — uruchom reference/sql-workout-builder.sql.",
+    "w.train.builder.saveErrorSuffix": "). Tabela WorkoutTemplate może wymagać utworzenia — uruchom reference/sql-session-builder.sql.",
     "w.train.builder.templateSaved": "Szablon zapisany.",
     "w.train.builder.networkError": "Błąd sieci.",
     "w.train.builder.workoutNamePh": "Nazwa treningu",
@@ -500,7 +500,7 @@ export const web_train = {
     "w.train.running.bestPace": "najlepsze tempo",
 
     // logger.tsx
-    "w.train.logger.workout": "Trening",
+    "w.train.logger.session": "Trening",
     "w.train.logger.signInRoutines": "Zaloguj się, aby zapisać rutyny.",
     "w.train.logger.saveRoutineErr": "Nie udało się zapisać rutyny.",
     "w.train.logger.savedRoutine": "★ Zapisano w Twoich rutynach",
@@ -529,7 +529,7 @@ export const web_train = {
     "w.train.logger.saveSession": "Zapisz sesję →",
     "w.train.logger.saveAsRoutine": "★ Zapisz jako rutynę",
     "w.train.logger.saveRoutineTitle": "Zapisz ten trening jako rutynę do ponownego użycia",
-    // Private post-workout note (mood + tags) — owner-only
+    // Private post-session note (mood + tags) — owner-only
     "w.train.note.add": "Prywatna notatka",
     "w.train.note.saved": "Notatka zapisana ✓",
     "w.train.note.ph": "Prywatna notatka — widzisz to tylko Ty…",
@@ -588,7 +588,7 @@ export const web_train = {
     "w.train.timer.total": "Razem",
     "w.train.timer.leadIn": "– 10s rozbiegu",
 
-    // workout-blocks.tsx
+    // session-blocks.tsx
     "w.train.blocks.workingSet": "Seria robocza",
     "w.train.blocks.warmupSet": "Seria rozgrzewkowa",
     "w.train.blocks.cooldownSet": "Seria wyciszająca",
@@ -722,11 +722,11 @@ export const web_train = {
     "w.train.plans.leaveExplain": "Beim Verlassen verschwindet dieser Plan von Heute und Periodisierung. Du kannst dich jederzeit neu einschreiben, aber die Saison beginnt wieder bei Woche 1.",
     "w.train.plans.leaveKeep": "Trainingshistorie behalten",
     "w.train.plans.leaveKeepSub": "Alles Geloggte bleibt im Verlauf und in den Analysen.",
-    "w.train.plans.leaveWipe": "Auch meine Workouts aus diesem Plan löschen",
-    "w.train.plans.leaveWipeSub": "Löscht dauerhaft jedes Workout, das während dieses Plans geloggt wurde. Das lässt sich nicht rückgängig machen.",
-    "w.train.plans.leaveTypeDelete": "Tippe DELETE, um das Löschen deiner Workouts zu bestätigen",
+    "w.train.plans.leaveWipe": "Auch meine Sessions aus diesem Plan löschen",
+    "w.train.plans.leaveWipeSub": "Löscht dauerhaft jedes Session, das während dieses Plans geloggt wurde. Das lässt sich nicht rückgängig machen.",
+    "w.train.plans.leaveTypeDelete": "Tippe DELETE, um das Löschen deiner Sessions zu bestätigen",
     "w.train.plans.leaveCta": "Plan verlassen",
-    "w.train.plans.leaveWipeCta": "Verlassen & Workouts löschen",
+    "w.train.plans.leaveWipeCta": "Verlassen & Sessions löschen",
     "w.train.plans.leaving": "Wird verlassen…",
     "w.train.plans.leaveCancel": "Abbrechen",
     "w.train.plans.leaveError": "Plan konnte nicht verlassen werden — versuch es erneut.",
@@ -768,15 +768,15 @@ export const web_train = {
     "w.train.comp.event": "Veranstaltung",
 
     // builder.tsx
-    "w.train.builder.newWorkout": "Neues Workout",
+    "w.train.builder.newWorkout": "Neues Session",
     "w.train.builder.signInSave": "Melde dich an, um Vorlagen zu speichern.",
     "w.train.builder.saveErrorPrefix": "Speichern fehlgeschlagen (HTTP ",
-    "w.train.builder.saveErrorSuffix": "). Die WorkoutTemplate-Tabelle muss eventuell erstellt werden — führe reference/sql-workout-builder.sql aus.",
+    "w.train.builder.saveErrorSuffix": "). Die WorkoutTemplate-Tabelle muss eventuell erstellt werden — führe reference/sql-session-builder.sql aus.",
     "w.train.builder.templateSaved": "Vorlage gespeichert.",
     "w.train.builder.networkError": "Netzwerkfehler.",
-    "w.train.builder.workoutNamePh": "Workout-Name",
+    "w.train.builder.workoutNamePh": "Session-Name",
     "w.train.builder.descriptionPh": "Beschreibung (optional)",
-    "w.train.builder.emptyHint": "Leeres Workout — füge unten Blöcke hinzu oder lade eine Vorlage.",
+    "w.train.builder.emptyHint": "Leeres Session — füge unten Blöcke hinzu oder lade eine Vorlage.",
     "w.train.builder.saving": "Speichern…",
     "w.train.builder.saveAsTemplate": "Als Vorlage speichern →",
     "w.train.builder.templateLibrary": "Vorlagenbibliothek",
@@ -785,7 +785,7 @@ export const web_train = {
     "w.train.builder.blocks": "Blöcke",
     "w.train.builder.load": "Laden",
     "w.train.builder.delete": "Löschen",
-    "w.train.builder.defaultWorkout": "Workout",
+    "w.train.builder.defaultWorkout": "Session",
 
     // run-track.tsx
     "w.train.runTrack.title": "Lauf-Tracking",
@@ -834,7 +834,7 @@ export const web_train = {
     "w.train.running.bestPace": "bestes Tempo",
 
     // logger.tsx
-    "w.train.logger.workout": "Workout",
+    "w.train.logger.session": "Session",
     "w.train.logger.signInRoutines": "Melde dich an, um Routinen zu speichern.",
     "w.train.logger.saveRoutineErr": "Routine konnte nicht gespeichert werden.",
     "w.train.logger.savedRoutine": "★ In deinen Routinen gespeichert",
@@ -862,8 +862,8 @@ export const web_train = {
     "w.train.logger.saving": "Speichern…",
     "w.train.logger.saveSession": "Sitzung speichern →",
     "w.train.logger.saveAsRoutine": "★ Als Routine speichern",
-    "w.train.logger.saveRoutineTitle": "Speichere dieses Workout als wiederverwendbare Routine",
-    // Private post-workout note (mood + tags) — owner-only
+    "w.train.logger.saveRoutineTitle": "Speichere dieses Session als wiederverwendbare Routine",
+    // Private post-session note (mood + tags) — owner-only
     "w.train.note.add": "Private Notiz",
     "w.train.note.saved": "Notiz gespeichert ✓",
     "w.train.note.ph": "Private Notiz — nur du siehst das…",
@@ -922,7 +922,7 @@ export const web_train = {
     "w.train.timer.total": "Gesamt",
     "w.train.timer.leadIn": "– 10s Vorlauf",
 
-    // workout-blocks.tsx
+    // session-blocks.tsx
     "w.train.blocks.workingSet": "Arbeitssatz",
     "w.train.blocks.warmupSet": "Aufwärmsatz",
     "w.train.blocks.cooldownSet": "Cool-down-Satz",

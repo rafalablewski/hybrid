@@ -7,7 +7,7 @@ import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { ACard, AField, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
@@ -95,7 +95,7 @@ export default function AuroraPlans() {
       </View>
       <EnrolledCard enrolled={enrolled} />
       {shelves.length === 0 ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.train.plans.noMatches")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.train.plans.noMatches")}</Text>
       ) : (
         shelves.map((group) => (
           <GoalShelf
@@ -289,7 +289,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   return (
     <CoverScreen cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} backLabel={t("w.train.plans.allGoals")} back={back}>
       <View style={{ marginTop: 10 }}>
-        {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 19 }}>{t("w.train.plans.noPlansYet")}</Text>}
+        {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: leading(fs.bodyLg, "snug") }}>{t("w.train.plans.noPlansYet")}</Text>}
         {goal.plans.map((p) => {
           const hero = planHeroView(p, programFor(p.id) ?? undefined);
           return (
@@ -311,7 +311,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
                     </View>
                   ))}
                 </View>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{p.desc}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{p.desc}</Text>
               </ACard>
             </Pressable>
           );
@@ -395,7 +395,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <ACard style={{ marginBottom: 12 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{value}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: leading(fs.bodyLg) }}>{value}</Text>
     </ACard>
   );
 }

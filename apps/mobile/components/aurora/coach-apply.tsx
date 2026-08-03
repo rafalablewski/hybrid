@@ -5,7 +5,7 @@ import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 
 /** AURORA Become a coach — same verification-gated application flow (fetch,
@@ -52,14 +52,14 @@ export default function AuroraCoachApply() {
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("w.account.settings.become-coach") }}>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>
         {t("w.account.settings.coach-apply-intro")}
       </Text>
 
       {isCoach ? (
         <ACard style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.account.settings.coach-already-verified")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>
             {t("w.account.settings.coach-already-verified-body")}
           </Text>
         </ACard>
@@ -74,7 +74,7 @@ export default function AuroraCoachApply() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, statusColor(existing.status)) }}>
                 {t("w.account.settings.coach-app-label")} {t(`w.account.settings.coach-st-${existing.status}`)}
               </Text>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>{t(`w.account.settings.coach-status-${existing.status}`)}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>{t(`w.account.settings.coach-status-${existing.status}`)}</Text>
             </ACard>
           )}
 

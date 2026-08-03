@@ -18,7 +18,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
@@ -137,7 +137,7 @@ export default function ExerciseWidgetRail({
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
                 <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
               </View>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
@@ -148,7 +148,7 @@ export default function ExerciseWidgetRail({
                 <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
-                <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.label}</Text>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.label}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{t(KIND_KEY[card.kind])}</Text>
               </View>
             </Pressable>
@@ -161,7 +161,7 @@ export default function ExerciseWidgetRail({
           style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
         >
           <Text style={{ fontSize: 18, color: C.ash }}>＋</Text>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: 16 }}>{t("w.home.exw.allCard")}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.allCard")}</Text>
         </Pressable>
       </ScrollView>
     </View>

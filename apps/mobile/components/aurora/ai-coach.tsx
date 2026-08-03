@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { askAiCoach, type CoachNote } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { leading, fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 
 /** AURORA AI coach — same /api/ai-coach call (server-side Claude, engine
@@ -72,7 +72,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{t("w.home.aicoach.todaysNote")}</Text>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: 20 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>
           {t("w.home.aicoach.intro")}
         </Text>
         {body}

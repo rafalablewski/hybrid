@@ -10,7 +10,7 @@ import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
 import { useTheme, txt } from "../lib/theme";
-import { fs, F, serifIf, useEntrance, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, F, serifIf, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { AuroraField, withAlpha } from "./aurora/kit";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./aurora/hero";
@@ -337,16 +337,16 @@ export function CoverScreen({
                 <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 16, marginBottom: 16 }}>
                   {cover.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
-                      <Text numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: wide ? 12 : 14, color: C.ash }}>{s.unit}</Text>}
                       </Text>
-                      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: wide ? 8.5 : fs.nano, letterSpacing: wide ? 0.8 : 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: wide ? 8.5 : fs.nano, letterSpacing: wide ? 0.8 : 1.4, textTransform: "uppercase", color: C.ash, marginTop: 6 }}>{s.label}</Text>
                     </View>
                   ))}
                 </View>
               )}
-              {!blurbOnFace && !!cover.blurb && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: C.ash, marginTop: cover.stats.length ? 0 : 16, marginBottom: 4 }}>{cover.blurb}</Text>}
+              {!blurbOnFace && !!cover.blurb && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg, "relaxed"), color: C.ash, marginTop: cover.stats.length ? 0 : 16, marginBottom: 4 }}>{cover.blurb}</Text>}
               {top}
             </View>
 
@@ -453,7 +453,7 @@ export function CoverScreen({
               importantForAccessibility="no-hide-descendants"
               style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge + HERO.nav.hit + 8, right: HERO.gutter.edge + HERO.nav.hit + 8, height: HERO.rail.height, alignItems: "center", justifyContent: "center", zIndex: 2, opacity: compactFade, transform: [{ translateY: counter }] }}
             >
-              <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: "#fff" }}>{cover.title}</Text>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: "#fff" }}>{cover.title}</Text>
             </Animated.View>
 
             {/* the cover proper — chip, title, meta; slides up with the frame */}

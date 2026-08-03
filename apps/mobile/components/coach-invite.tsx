@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, Share } from "react-native";
 import QRCode from "qrcode";
-import { fs, Card, Kicker, Mono, Button, F, PressScale as Pressable } from "../lib/ui";
+import { fs, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { getCoachInvites, createCoachInvite, revokeCoachInvite, type CoachInviteRow } from "../lib/api";
+import { ACard, cardStack, APill } from "./aurora/kit";
 
 /** Render a QR code as a grid of Views from the qrcode module matrix — no native
  *  dependency (keeps the iOS export green), so a client can scan it to onboard.
@@ -66,7 +67,7 @@ export default function CoachInvite() {
   const revoke = async (token: string) => { await revokeCoachInvite(token); setInvites((v) => v.filter((i) => i.token !== token)); };
 
   return (
-    <Card style={{ borderLeftWidth: 3, borderLeftColor: C.lime }}>
+    <ACard style={[cardStack, { borderLeftWidth: 3, borderLeftColor: C.lime }]}>
       <Kicker color={C.lime}>Add a client</Kicker>
       <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 4 }}>Invite someone not on HYBRID yet</Text>
       <Mono style={{ marginTop: 4, lineHeight: 18 }}>Share a link or QR, or enter their email. They get the free app and see what you assign (read-only).</Mono>
@@ -79,14 +80,14 @@ export default function CoachInvite() {
         keyboardType="email-address"
         style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 10 }}
       />
-      <View style={{ marginTop: 10 }}><Button label={busy ? "Generating…" : "Generate invite"} color={C.lime} onPress={create} /></View>
+      <View style={{ marginTop: 10 }}><APill label={busy ? "Generating…" : "Generate invite"} color={C.lime} onPress={create} /></View>
       {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono></View>}
 
       {created && (
         <View style={{ marginTop: 16, alignItems: "center" }}>
           <QrMatrix url={created} />
           <Mono style={{ marginTop: 8, textAlign: "center" }}>{created}</Mono>
-          <View style={{ marginTop: 8, width: "100%" }}><Button label="Share invite link" color={C.lime} onPress={() => share(created)} /></View>
+          <View style={{ marginTop: 8, width: "100%" }}><APill label="Share invite link" color={C.lime} onPress={() => share(created)} /></View>
           <Mono color={C.ash} style={{ marginTop: 6 }}>Expires in 30 days – single use.</Mono>
         </View>
       )}
@@ -105,6 +106,6 @@ export default function CoachInvite() {
       )}
 
       {unavailable && <Mono color={C.ash} style={{ marginTop: 10 }}>Invites aren&apos;t enabled yet — run reference/sql-coach-invites.sql.</Mono>}
-    </Card>
+    </ACard>
   );
 }

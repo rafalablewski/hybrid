@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, ScrollView, Text, TextInput, View } from "react-native";
 import {
   editableBlockFields,
   sessionEditDirty,
@@ -12,11 +11,12 @@ import {
 import { patchSessionEdit } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
-import { F, fs, space, PressScale as Pressable } from "../lib/ui";
+import { leading, F, fs, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
+import Sheet from "./aurora/sheet";
 
 const labelStyle = (C: Palette) =>
-  ({ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
+  ({ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
 const fieldStyle = (C: Palette) =>
   ({
     fontFamily: F.mono,
@@ -47,7 +47,7 @@ function Num({ C, cap, value, onChange }: { C: Palette; cap?: string; value: str
 }
 
 /**
- * EDIT WORKOUT — the sheet behind the summary's "Edit workout": correct the
+ * EDIT WORKOUT — the sheet behind the summary's "Edit session": correct the
  * figures you typed into a workout you already saved (a distance that got
  * skipped, a fat-fingered time, the wrong load on a set) without deleting the
  * session and throwing away its PRs, your feel report and any device match.
@@ -72,7 +72,6 @@ export function SessionEditSheet({
   const C = useTheme().palette;
   const { t } = useLang();
   const units = useLoggerPrefs().units;
-  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<SessionEditDraft>(() => sessionEditDraft(session, { units }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
@@ -118,13 +117,7 @@ export function SessionEditSheet({
   const label = labelStyle(C);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={onClose}>
-          <Pressable
-            onPress={() => {}}
-            style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "88%" }}
-          >
+    <Sheet visible={visible} onClose={onClose} scroll={false}>
             <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
               <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, flex: 1, paddingRight: 10 }}>{t("session.edit.title")}</Text>
@@ -132,7 +125,7 @@ export function SessionEditSheet({
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("common.cancel")}</Text>
               </Pressable>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.ash, marginTop: 8 }}>{t("session.edit.lead")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 8 }}>{t("session.edit.lead")}</Text>
 
             <ScrollView style={{ marginTop: 16 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               <Text style={label}>{t("session.edit.name")}</Text>
@@ -204,7 +197,7 @@ export function SessionEditSheet({
                   else — say so here rather than let a corrected figure look like
                   it changed nothing. */}
               {session.device && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 16, color: C.ash, marginTop: 16 }}>{t("session.edit.matched")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: C.ash, marginTop: 16 }}>{t("session.edit.matched")}</Text>
               )}
               {error && (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber, marginTop: 16 }}>{t("session.edit.error")}</Text>
@@ -218,9 +211,6 @@ export function SessionEditSheet({
             >
               {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>{t("common.save")}</Text>}
             </Pressable>
-          </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
-    </Modal>
+    </Sheet>
   );
 }

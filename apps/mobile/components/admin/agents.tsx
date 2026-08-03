@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import {
   buildSystemPrompt,
   MODELS,
@@ -14,9 +14,11 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
+import { ACard, cardStack, ASection } from "../aurora/kit";
+import { useConfirm } from "../aurora/confirm";
 
 // Mobile "AI agents" builder — parity with apps/web/components/admin/agents.tsx.
 // Roster (GET /api/admin/agents) → select → editor (PATCH /[id]) with a live
@@ -51,6 +53,7 @@ type Schedule = {
 const STATUS_COLOR = (p: Palette): Record<AgentStatus, string> => ({ active: p.lime, paused: p.amber, draft: p.ash });
 
 export default function AdminAgents() {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [agents, setAgents] = useState<AgentDefinition[] | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
@@ -133,26 +136,18 @@ export default function AdminAgents() {
     await patch(id, { name, role, mandate, status, model, effort, authority, reportsTo, responsibilities, kpis, guardrails, escalationThreshold, tone, collaborators, tools, runtime, approvalThresholdUsd, budgetUsd7d });
   }
 
-  function remove(id: string) {
-    Alert.alert("Delete agent?", "This cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setBusy(true);
-          setErr(null);
-          const r = await adminSend("DELETE", `/api/admin/agents/${id}`);
-          setBusy(false);
-          if (!r.ok) {
-            setErr(r.error || "Could not delete the agent.");
-            return;
-          }
-          if (selectedId === id) setSelectedId(null);
-          load();
-        },
-      },
-    ]);
+  async function remove(id: string) {
+    if (!(await confirm({ title: "Delete agent?", message: "This cannot be undone.", confirmLabel: "Delete", destructive: true }))) return;
+    setBusy(true);
+    setErr(null);
+    const r = await adminSend("DELETE", `/api/admin/agents/${id}`);
+    setBusy(false);
+    if (!r.ok) {
+      setErr(r.error || "Could not delete the agent.");
+      return;
+    }
+    if (selectedId === id) setSelectedId(null);
+    load();
   }
 
   function set<K extends keyof AgentDefinition>(key: K, value: AgentDefinition[K]) {
@@ -187,26 +182,24 @@ export default function AdminAgents() {
 
       {/* ---- roster ---- */}
       {agents.length === 0 ? (
-        <Card>
+        <ACard style={cardStack}>
           <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 16 }}>
             No agents yet — create one from a preset above.
           </Mono>
-        </Card>
+        </ACard>
       ) : (
         agents.map((a) => (
           <Pressable key={a.id} onPress={() => setSelectedId(a.id === selectedId ? null : a.id)}>
-            <Card
-              accent={STATUS_COLOR(palette)[a.status]}
-              style={selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined}
-            >
+            <ACard
+              accent={STATUS_COLOR(palette)[a.status]} style={[cardStack, selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined]}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm }}>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
                     {a.name}
                   </Text>
                   <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>
-                    <MiniChip color={STATUS_COLOR(palette)[a.status]}>{a.status}</MiniChip>
-                    <MiniChip color={a.authority === "executive" ? palette.violet : palette.ash}>{a.role}</MiniChip>
+                    <Chip color={STATUS_COLOR(palette)[a.status]}>{a.status}</Chip>
+                    <Chip color={a.authority === "executive" ? palette.violet : palette.ash}>{a.role}</Chip>
                   </View>
                   <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
                     {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
@@ -218,7 +211,7 @@ export default function AdminAgents() {
                   onToggle={() => patch(a.id, { status: a.status === "active" ? "paused" : "active" })}
                 />
               </View>
-            </Card>
+            </ACard>
           </Pressable>
         ))
       )}
@@ -266,7 +259,7 @@ function Editor({
   const [showPrompt, setShowPrompt] = useState(false);
 
   return (
-    <Card style={{ marginTop: 6 }}>
+    <ACard style={[cardStack, { marginTop: 6 }]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: palette.chalk }}>Edit agent</Text>
         <View style={{ flexDirection: "row", gap: space.sm }}>
@@ -279,7 +272,7 @@ function Editor({
       <Input label="Role / title" value={draft.role} onChangeText={(v) => set("role", v)} />
 
       <FieldLabel>Status</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={AGENT_STATUSES.map((s) => ({ value: s, label: s }))}
         value={draft.status}
         onChange={(v) => set("status", v as AgentStatus)}
@@ -288,28 +281,28 @@ function Editor({
       <Input label="Reports to (blank = the human admin)" value={draft.reportsTo ?? ""} onChangeText={(v) => set("reportsTo", v || null)} />
 
       <FieldLabel>Model</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={MODELS.map((m) => ({ value: m.id, label: m.label.replace("Claude ", "") }))}
         value={draft.model}
         onChange={(v) => set("model", v as AgentDefinition["model"])}
       />
 
       <FieldLabel>Effort – thinking depth / token spend</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={EFFORTS.map((e) => ({ value: e, label: e }))}
         value={draft.effort}
         onChange={(v) => set("effort", v as AgentDefinition["effort"])}
       />
 
       <FieldLabel>Authority level</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={AUTHORITY_LEVELS.map((a) => ({ value: a.value, label: a.value }))}
         value={draft.authority}
         onChange={(v) => set("authority", v as AgentDefinition["authority"])}
       />
 
       <FieldLabel>Runtime – managed = durable memory across runs</FieldLabel>
-      <Segmented
+      <FilterGroup
         options={RUNTIMES.map((r) => ({ value: r.value, label: r.value }))}
         value={draft.runtime}
         onChange={(v) => set("runtime", v as AgentDefinition["runtime"])}
@@ -317,22 +310,22 @@ function Editor({
 
       <Input label="Mandate – the spine of the prompt" multiline value={draft.mandate} onChangeText={(v) => set("mandate", v)} />
 
-      <SectionHead title="Responsibilities" />
+      <ASection title="Responsibilities" />
       <StringList items={draft.responsibilities} onChange={(v) => set("responsibilities", v)} placeholder="+ Add a responsibility" />
 
-      <SectionHead title="KPIs" hint="what the agent is steered + evaluated on" />
+      <ASection title="KPIs" meta="what the agent is steered + evaluated on" />
       <KpiList items={draft.kpis} onChange={(v) => set("kpis", v)} />
 
-      <SectionHead title="Guardrails & ethics" />
+      <ASection title="Guardrails & ethics" />
       <StringList items={draft.guardrails} onChange={(v) => set("guardrails", v)} placeholder="+ Add a hard limit" />
 
       <Input label="Escalation threshold – when to stop and ask the admin" multiline value={draft.escalationThreshold} onChangeText={(v) => set("escalationThreshold", v)} />
       <Input label="Tone & communication" multiline value={draft.tone} onChangeText={(v) => set("tone", v)} />
 
-      <SectionHead title="Collaborators" />
+      <ASection title="Collaborators" />
       <StringList items={draft.collaborators} onChange={(v) => set("collaborators", v)} placeholder="+ Add a role" />
 
-      <SectionHead title="Tools" />
+      <ASection title="Tools" />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
         {TOOL_OPTIONS.map((t) => {
           const on = draft.tools.includes(t.value);
@@ -347,7 +340,7 @@ function Editor({
         })}
       </View>
 
-      <SectionHead title="Spend controls" hint="0 = off" />
+      <ASection title="Spend controls" meta="0 = off" />
       <Input
         label="Approval threshold ($) – hold for a 2nd operator at/above this est. cost"
         keyboardType="numeric"
@@ -362,28 +355,28 @@ function Editor({
       />
 
       {/* ---- run ---- */}
-      <SectionHead title="Run" hint="give the agent a task and see its response" />
+      <ASection title="Run" meta="give the agent a task and see its response" />
       <RunPanel draft={draft} dirty={dirty} onError={onError} />
 
       {/* ---- schedules ---- */}
-      <SectionHead title="Schedules" hint="standing tasks on a cadence (fires via cron; only while active)" />
+      <ASection title="Schedules" meta="standing tasks on a cadence (fires via cron; only while active)" />
       <Schedules agentId={draft.id} onError={onError} />
 
       {/* ---- run history ---- */}
-      <SectionHead title="History" hint="recent runs (transcripts)" />
+      <ASection title="History" meta="recent runs (transcripts)" />
       <History agentId={draft.id} />
 
       {/* ---- live prompt preview ---- */}
-      <SectionHead title="Live system prompt" hint="exactly what the agent runs on" />
+      <ASection title="Live system prompt" meta="exactly what the agent runs on" />
       <Pressable onPress={() => setShowPrompt((s) => !s)}>
         <Mono color={palette.lime} style={{ marginBottom: 8 }}>{showPrompt ? "▾ hide" : "▸ show"} generated prompt</Mono>
       </Pressable>
       {showPrompt && (
         <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
-          <Mono color={palette.chalk} style={{ fontSize: fs.micro, lineHeight: 17 }}>{preview}</Mono>
+          <Mono color={palette.chalk} style={{ fontSize: fs.micro, lineHeight: leading(fs.micro) }}>{preview}</Mono>
         </View>
       )}
-    </Card>
+    </ACard>
   );
 }
 
@@ -450,11 +443,11 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
                 ↳ delegated to {s.role} — {s.agent}
               </Mono>
               <Mono color={palette.ash} style={{ fontSize: fs.micro, marginVertical: 2 }}>"{s.task}"</Mono>
-              <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{s.output}</Mono>
+              <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{s.output}</Mono>
             </View>
           ))}
           <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
-            <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{run.output || "(no output)"}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: leading(fs.body) }}>{run.output || "(no output)"}</Mono>
           </View>
           {run.usage && (run.usage.input > 0 || run.usage.output > 0) && (
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
@@ -470,6 +463,7 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
 // ---- schedules -----------------------------------------------------------
 
 function Schedules({ agentId, onError }: { agentId: string; onError: (e: string | null) => void }) {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newTask, setNewTask] = useState("");
@@ -503,20 +497,12 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
     load();
   }
 
-  function del(id: string) {
-    Alert.alert("Delete schedule?", undefined, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          onError(null);
-          const r = await adminSend("DELETE", `/api/admin/agents/${agentId}/schedules/${id}`);
-          if (!r.ok) onError(r.error || "Could not delete the schedule.");
-          load();
-        },
-      },
-    ]);
+  async function del(id: string) {
+    if (!(await confirm({ title: "Delete schedule?", confirmLabel: "Delete", destructive: true }))) return;
+    onError(null);
+    const r = await adminSend("DELETE", `/api/admin/agents/${agentId}/schedules/${id}`);
+    if (!r.ok) onError(r.error || "Could not delete the schedule.");
+    load();
   }
 
   return (
@@ -526,8 +512,8 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
           <Toggle on={s.enabled} onToggle={() => toggle(s)} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ flexDirection: "row", gap: space.xs }}>
-              <MiniChip color={s.enabled ? palette.lime : palette.ash}>{s.cadence}</MiniChip>
-              <MiniChip color={palette.ash}>{s.enabled ? "on" : "off"}</MiniChip>
+              <Chip color={s.enabled ? palette.lime : palette.ash}>{s.cadence}</Chip>
+              <Chip color={palette.ash}>{s.enabled ? "on" : "off"}</Chip>
             </View>
             <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }}>{s.task}</Mono>
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
@@ -543,7 +529,7 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
       {schedules.length === 0 && <Mono color={palette.ash}>No schedules yet.</Mono>}
 
       <Input value={newTask} onChangeText={setNewTask} placeholder="Standing task, e.g. Daily ops status." />
-      <Segmented
+      <FilterGroup
         options={CADENCES.map((c) => ({ value: c.value, label: c.label }))}
         value={newCadence}
         onChange={setNewCadence}
@@ -574,8 +560,8 @@ function History({ agentId }: { agentId: string }) {
           <View key={r.id} style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 12 }}>
             <Pressable onPress={() => setOpenId(open ? null : r.id)}>
               <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
-                <MiniChip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</MiniChip>
-                <MiniChip color={palette.ash}>{r.runtime}</MiniChip>
+                <Chip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</Chip>
+                <Chip color={palette.ash}>{r.runtime}</Chip>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{new Date(r.createdAt).toLocaleString()}</Mono>
               </View>
               <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }} >{r.task}</Mono>
@@ -588,7 +574,7 @@ function History({ agentId }: { agentId: string }) {
                     <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{s.output}</Mono>
                   </View>
                 ))}
-                <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{r.output}</Mono>
+                <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{r.output}</Mono>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
                   {r.inputTokens.toLocaleString()} in – {r.outputTokens.toLocaleString()} out – {r.ranByEmail ?? "—"}
                 </Mono>
@@ -650,27 +636,6 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
 function FieldLabel({ children }: { children: React.ReactNode }) {
   const { palette } = useTheme();
   return <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 6 }}>{children}</Mono>;
-}
-
-function SectionHead({ title, hint }: { title: string; hint?: string }) {
-  const { palette } = useTheme();
-  return (
-    <View style={{ marginTop: 16, marginBottom: 10, paddingTop: 16, borderTopWidth: 1, borderTopColor: palette.line }}>
-      <Kicker color={palette.amber}>{title}</Kicker>
-      {hint ? <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{hint}</Mono> : null}
-    </View>
-  );
-}
-
-function MiniChip({ children, color }: { children: React.ReactNode; color: string }) {
-  const { palette } = useTheme();
-  return (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.9 }}>
-        {children}
-      </Text>
-    </View>
-  );
 }
 
 function ToolToggle({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {

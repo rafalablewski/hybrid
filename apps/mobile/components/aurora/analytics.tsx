@@ -15,8 +15,8 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
-import { AuroraScreen, ACard, ASub, ASegment } from "./kit";
+import { leading, fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
+import { AuroraScreen, ACard, ASub, ASegment, AMeter } from "./kit";
 
 /**
  * AURORA Analytics — the 3-scope dashboard (Athlete / Coach / Operator), now
@@ -46,7 +46,7 @@ function AStat({ label, value, sub, accent }: { label: string; value: string | n
     <View style={{ width: "50%", padding: 5 }}>
       <ACard style={{ padding: 16 }}>
         <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
-        <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.black, fontSize: 28, marginTop: 8, color: accent ? txt(C, accent) : C.chalk }}>{value}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.black, fontSize: 28, marginTop: 8, color: accent ? txt(C, accent) : C.chalk }}>{value}</Text>
         {!!sub && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{sub}</Text>}
       </ACard>
     </View>
@@ -76,7 +76,7 @@ function PrivacyNote({ scope, accent }: { scope: AnalyticsScope; accent: string 
   const { t } = useLang();
   return (
     <View style={{ marginTop: 16, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
     </View>
   );
 }
@@ -86,7 +86,7 @@ function AEmpty({ title, body }: { title: string; body: string }) {
   return (
     <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
       <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, textAlign: "center" }}>{title}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", lineHeight: 20, marginTop: 8 }}>{body}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", lineHeight: leading(fs.bodyLg), marginTop: 8 }}>{body}</Text>
     </ACard>
   );
 }
@@ -104,8 +104,8 @@ function Bars({ data, color, highlightLast }: { data: { label: string; v: number
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{data[0]?.label ?? ""}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{data[data.length - 1]?.label ?? ""}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{data[0]?.label ?? ""}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{data[data.length - 1]?.label ?? ""}</Text>
       </View>
     </>
   );
@@ -113,21 +113,6 @@ function Bars({ data, color, highlightLast }: { data: { label: string; v: number
 
 /** A labelled horizontal meter — the mobile stand-in for the web's vertical
  *  category bar chart (adherence by client, language split). */
-function MeterRow({ label, value, display, max, color }: { label: string; value: number; display: string; max: number; color: string }) {
-  const C = useTheme().palette;
-  return (
-    <View style={{ marginTop: 10 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5, gap: space.sm }}>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{display}</Text>
-      </View>
-      <View style={{ height: 7, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden" }}>
-        <View style={{ width: `${Math.min(100, (value / (max || 1)) * 100)}%`, height: "100%", borderRadius: 4, backgroundColor: color }} />
-      </View>
-    </View>
-  );
-}
-
 /** Shared table — horizontally scrollable so a wide roster never squeezes. */
 function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[][]; widths: number[] }) {
   const C = useTheme().palette;
@@ -137,7 +122,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
       <View>
         <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line }}>
           {head.map((h, i) => (
-            <Text key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{h}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{h}</Text>
           ))}
         </View>
         {rows.map((r, i) => (
@@ -145,7 +130,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
             {r.map((c, j) => (
               <View key={j} style={cell(widths[j] ?? 80)}>
                 {typeof c === "string" || typeof c === "number"
-                  ? <Text numberOfLines={1} style={{ fontFamily: j === 0 ? F.semi : F.mono, fontSize: fs.caption, color: C.chalk }}>{c}</Text>
+                  ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: j === 0 ? F.semi : F.mono, fontSize: fs.caption, color: C.chalk }}>{c}</Text>
                   : c}
               </View>
             ))}
@@ -243,7 +228,7 @@ function CoachAnalytics() {
 
       <AFrame title={t("w.home.analytics.adherenceByClient")} kicker={t("w.home.analytics.last7days")}>
         {roster.map((c) => (
-          <MeterRow key={c.linkId} label={c.name} value={c.adherence} display={`${c.adherence}%`} max={100} color={C.lime} />
+          <AMeter key={c.linkId} label={c.name} value={`${c.adherence}%`} pct={c.adherence} color={C.lime} />
         ))}
       </AFrame>
 
@@ -303,7 +288,7 @@ function OperatorAnalytics() {
       {stats.planPopularity.length > 0 && (
         <AFrame title={t("w.home.analytics.plansEnrolled")} kicker={t("w.home.analytics.byGoal")}>
           {stats.planPopularity.map((p) => (
-            <MeterRow key={p.goal} label={p.goal} value={p.n} display={String(p.n)} max={maxPlan} color={C.lime} />
+            <AMeter key={p.goal} label={p.goal} value={String(p.n)} pct={((p.n) / ((maxPlan) || 1)) * 100} color={C.lime} />
           ))}
         </AFrame>
       )}
@@ -311,14 +296,14 @@ function OperatorAnalytics() {
       {stats.langSplit.length > 0 && (
         <AFrame title={t("w.home.analytics.languageSplit")} kicker={t("w.home.analytics.usersByLanguage")}>
           {stats.langSplit.map((l) => (
-            <MeterRow key={l.lang} label={l.lang} value={l.n} display={String(l.n)} max={maxLang} color={C.blue} />
+            <AMeter key={l.lang} label={l.lang} value={String(l.n)} pct={((l.n) / ((maxLang) || 1)) * 100} color={C.blue} />
           ))}
         </AFrame>
       )}
 
       {stats.totalUsers === 0 && (
         <ACard style={{ marginTop: 16, alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.analytics.noUsers")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.home.analytics.noUsers")}</Text>
         </ACard>
       )}
     </>

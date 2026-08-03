@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, Banner, ErrorNote, Segmented, PillBtn } from "./_kit";
+import { Intro, Banner, ErrorNote, FilterGroup, PillBtn } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
+import { useConfirm } from "../aurora/confirm";
 
 // The moderation queue: discoverable talent profiles awaiting approval + open
 // content reports. Mirrors apps/web/components/admin/moderation.tsx and its
@@ -32,6 +34,7 @@ type ModResp = { pendingProfiles?: PendingProfile[]; reports?: ReportItem[]; una
 type Tab = "profiles" | "reports";
 
 export default function AdminModeration() {
+  const { confirmText } = useConfirm();
   const { palette } = useTheme();
   const [tab, setTab] = useState<Tab>("profiles");
   const [profiles, setProfiles] = useState<PendingProfile[] | null>(null);
@@ -69,25 +72,25 @@ export default function AdminModeration() {
     load();
   }
 
-  // Reject / takedown can carry an optional note. RN has no prompt(), so use
-  // Alert.alert.prompt on iOS; fall back to a plain confirm elsewhere.
-  const confirmWithNote = (
+  // Reject / takedown can carry an optional note. This used to branch on
+  // `Alert.prompt`, which is iOS-ONLY: the non-iOS path fell back to a plain
+  // confirm and silently DROPPED the note — a moderator on Android could not
+  // record why they took something down. The shared confirm sheet has the field
+  // on every platform, so the branch is gone with the system dialog.
+  const confirmWithNote = async (
     title: string,
     message: string,
     onConfirm: (note?: string) => void,
     destructive?: boolean,
   ) => {
-    if (typeof Alert.prompt === "function") {
-      Alert.prompt(title, message, [
-        { text: "Cancel", style: "cancel" },
-        { text: title, style: destructive ? "destructive" : "default", onPress: (note?: string) => onConfirm(note || undefined) },
-      ]);
-    } else {
-      Alert.alert(title, message, [
-        { text: "Cancel", style: "cancel" },
-        { text: title, style: destructive ? "destructive" : "default", onPress: () => onConfirm(undefined) },
-      ]);
-    }
+    const note = await confirmText({
+      title,
+      message,
+      confirmLabel: title,
+      destructive,
+      input: { placeholder: "Add a note (optional)" },
+    });
+    if (note !== null) onConfirm(note.trim() || undefined);
   };
 
   if (unavailable)
@@ -105,7 +108,7 @@ export default function AdminModeration() {
 
   return (
     <View>
-      <Segmented<Tab>
+      <FilterGroup<Tab>
         options={[
           { value: "profiles", label: `Pending profiles${pCount ? ` – ${pCount}` : ""}` },
           { value: "reports", label: `Reports${rCount ? ` – ${rCount}` : ""}` },
@@ -123,7 +126,7 @@ export default function AdminModeration() {
             <Mono color={palette.ash}>No profiles awaiting review.</Mono>
           ) : (
             profiles.map((p) => (
-              <Card key={p.id} accent={palette.amber}>
+              <ACard key={p.id} accent={palette.amber} style={cardStack}>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
                   <Chip color={palette.amber}>pending</Chip>
                   <Chip color={palette.ash}>{p.sport}</Chip>
@@ -161,7 +164,7 @@ export default function AdminModeration() {
                     disabled={busy === p.id}
                   />
                 </View>
-              </Card>
+              </ACard>
             ))
           )}
         </View>
@@ -176,7 +179,7 @@ export default function AdminModeration() {
             <Mono color={palette.ash}>No open reports.</Mono>
           ) : (
             reports.map((r) => (
-              <Card key={r.id} accent={palette.red}>
+              <ACard key={r.id} accent={palette.red} style={cardStack}>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
                   <Chip color={palette.red}>{r.reason}</Chip>
                   <Chip color={palette.ash}>{r.targetType}</Chip>
@@ -228,7 +231,7 @@ export default function AdminModeration() {
                     disabled={busy === r.id}
                   />
                 </View>
-              </Card>
+              </ACard>
             ))
           )}
         </View>

@@ -12,9 +12,9 @@ import { useAccountSettings } from "../../lib/account";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
-import { fs, space, F, PressScale } from "../../lib/ui";
+import { leading, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
-import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS, ASearch } from "./kit";
 import MfaSettings from "./mfa-settings";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
@@ -155,7 +155,7 @@ export default function AuroraSettings() {
       case "notifications":
         return (
       <>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 12, marginLeft: 4 }}>{t("w.account.settings.notifications-desc")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: leading(fs.micro), marginBottom: 12, marginLeft: 4 }}>{t("w.account.settings.notifications-desc")}</Text>
         {groupRows(ACCOUNT_NOTIF_ROWS).map((g) => (
           <Section key={g.group} label={g.group}>
             {g.items.map((row, i) => (
@@ -168,7 +168,7 @@ export default function AuroraSettings() {
       case "privacy":
         return (
       <>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: 16, marginBottom: 12, marginLeft: 4 }}>{t("w.account.settings.privacy-desc")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: leading(fs.micro), marginBottom: 12, marginLeft: 4 }}>{t("w.account.settings.privacy-desc")}</Text>
         {groupRows(ACCOUNT_PRIVACY_ROWS).map((g) => (
           <Section key={g.group} label={g.group}>
             {g.items.map((row, i) => (
@@ -188,7 +188,7 @@ export default function AuroraSettings() {
         <Section label={t("w.account.settings.sec-login-recovery")}>
           <Label color={C.ash} tight>{t("w.account.settings.change-password").toUpperCase()}</Label>
           {!emailProvider ? (
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
           ) : (
             <>
               <AField value={acct.newPw} onChange={acct.setNewPw} placeholder={t("w.account.settings.new-password-ph")} secure icon="lock" />
@@ -205,7 +205,7 @@ export default function AuroraSettings() {
             </>
           )}
           <Label color={C.ash} top>{t("w.account.settings.connected-account").toUpperCase()}</Label>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{!emailProvider ? acct.provider : (acct.email || t("w.account.settings.new-password-ph"))}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{!emailProvider ? acct.provider : (acct.email || t("w.account.settings.new-password-ph"))}</Text>
         </Section>
         <Section label={t("w.account.settings.sec-checks")}>
           <Label color={C.ash} tight>{t("w.account.settings.where-logged-in").toUpperCase()}</Label>
@@ -213,7 +213,7 @@ export default function AuroraSettings() {
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: txt(C, C.lime) }} />
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.this-device")}</Text>
           </View>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption, "snug"), marginBottom: 10 }}>{t("w.account.settings.active-sessions-desc")}</Text>
           <APill label={t("w.account.settings.sign-out-everywhere")} variant="soft" onPress={acct.signOutEverywhere} style={{ paddingVertical: 12 }} />
         </Section>
       </>
@@ -228,7 +228,7 @@ export default function AuroraSettings() {
         if (!isClient) {
           return (
         <Section label={t("w.account.settings.mode")}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>
             {paid ? t("w.account.settings.full-paid") : t("w.account.settings.free")} — {t("w.account.settings.mode-desc")}
           </Text>
         </Section>
@@ -253,7 +253,7 @@ export default function AuroraSettings() {
         return (
       <>
         <Section label={t("w.account.settings.mode")}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18, marginBottom: 12 }}>{t("w.account.settings.mode-desc")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption), marginBottom: 12 }}>{t("w.account.settings.mode-desc")}</Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <ModeCard on={personaChoice === "casual"} title={t("w.account.settings.simple")} tags={t("w.account.settings.simple-tags")} onPress={() => setClientPersona("casual", paid)} />
             <ModeCard on={paid && personaChoice === "athlete"} title={t("w.account.settings.full")} tags={t("w.account.settings.full-tags")} locked={!paid} onPress={() => (paid ? setClientPersona("athlete", true) : goUpgrade())} />
@@ -261,7 +261,7 @@ export default function AuroraSettings() {
           {!paid ? (
             <>
               <APill label={t("w.account.settings.upgrade-full")} variant="primary" onPress={goUpgrade} style={{ paddingVertical: 12, marginTop: 16 }} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 16 }}>{t("w.account.settings.unlocks")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: leading(fs.micro) }}>{t("w.account.settings.unlocks")}</Text>
             </>
           ) : (
             <APill label={t("w.account.settings.manage-subscription")} variant="soft" onPress={() => (iapAvailable() ? void manageSubscriptions() : goUpgrade())} style={{ paddingVertical: 12, marginTop: 16 }} />
@@ -274,7 +274,7 @@ export default function AuroraSettings() {
         return (
       <>
         <Section label={t("w.account.settings.export")}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 16, marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption, "snug"), marginBottom: 10 }}>{t("w.account.settings.export-data-desc")}</Text>
           <View style={{ marginBottom: 12 }}>
             {[1, 2, 3].map((n) => (
               <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}>
@@ -295,7 +295,7 @@ export default function AuroraSettings() {
           <APill label={t("common.signout")} variant="soft" onPress={() => void signOut()} style={{ paddingVertical: 12 }} />
         </Section>
         <Section label={t("w.account.settings.erase-all")} tone={C.red}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("settings.resetBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("settings.resetBody")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeReset")}</Text>
           <TextInput
             value={confirm} onChangeText={setConfirm} placeholder="RESET" placeholderTextColor={C.ash}
@@ -308,7 +308,7 @@ export default function AuroraSettings() {
           </PressScale>
         </Section>
         <Section label={t("settings.deleteTitle")} tone={C.red}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 17 }}>{t("settings.deleteBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("settings.deleteBody")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeDelete")}</Text>
           <TextInput
             value={delConfirm} onChangeText={setDelConfirm} placeholder="DELETE" placeholderTextColor={C.ash}
@@ -424,13 +424,13 @@ export default function AuroraSettings() {
             )}
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
             <View style={{ marginTop: 3 }}><MetaLine text={`${completeness.percent}% · ${nudge}`} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: completeness.complete ? (txt(C, C.lime) as string) : C.ash }} /></View>
             <View style={{ height: 5, borderRadius: 5, backgroundColor: C.line, marginTop: 8, overflow: "hidden" }}>
               <View style={{ width: `${completeness.percent}%`, height: "100%", backgroundColor: txt(C, C.lime) }} />
             </View>
           </View>
-          <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
+          <Chip color={entitlement === "paid" ? C.lime : C.ash} tone="outline">{entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</Chip>
         </PressScale>
         {/* Quick actions */}
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 16, flexWrap: "wrap" }}>
@@ -446,9 +446,8 @@ export default function AuroraSettings() {
       </View>
 
       {/* Search */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, marginTop: 20 }}>
-        <AuroraIcon name="search" size={18} color={C.ash} />
-        <TextInput value={query} onChangeText={setQuery} placeholder={t("w.account.settings.search")} placeholderTextColor={C.ash} autoCapitalize="none" autoCorrect={false} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, paddingVertical: 12 }} />
+      <View style={{ marginTop: 20 }}>
+        <ASearch value={query} onChange={setQuery} placeholder={t("w.account.settings.search")} />
       </View>
 
       {query ? (
@@ -507,11 +506,3 @@ function groupRows<T extends { group: string }>(rows: readonly T[]): { group: st
   return out;
 }
 
-function Tag({ label, color, upper }: { label: string; color: string; upper?: boolean }) {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ borderWidth: 1, borderColor: `${color}66`, backgroundColor: `${color}1a`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.9, textTransform: upper ? "uppercase" : undefined }}>{label}</Text>
-    </View>
-  );
-}

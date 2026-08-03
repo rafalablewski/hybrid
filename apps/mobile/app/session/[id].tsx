@@ -41,10 +41,10 @@ import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSessionsQuery } from "../../lib/queries";
 import { useSessionActions } from "../../lib/session-actions";
-import { fs, space, Screen, Card, Kicker, Mono, Loading, Button, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Kicker, Mono, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
-import { AuroraScreen } from "../../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack, APill } from "../../components/aurora/kit";
 import { HeroNav } from "../../components/aurora/hero";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
 import { SessionEditSheet } from "../../components/session-edit";
@@ -69,7 +69,7 @@ export default function SessionDetail() {
   const busy = manage.busyId !== null;
   // The "Wrapped" recap + story-share overlay (premium panels + story picker).
   const [wrappedOpen, setWrappedOpen] = useState(false);
-  // "Edit workout" — correcting the figures this session was logged with.
+  // "Edit session" — correcting the figures this session was logged with.
   const [editOpen, setEditOpen] = useState(false);
   // A session logged seconds ago may not be in a still-fresh cache yet —
   // refetch ONCE when the id is missing before declaring it not found.
@@ -87,7 +87,7 @@ export default function SessionDetail() {
   // shared Card/Mono primitives already round up on Aurora.
   const aurora = useTemplate().template === "aurora";
   const wrap = (node: ReactNode) =>
-    aurora ? <AuroraScreen>{node}</AuroraScreen> : <Screen>{node}</Screen>;
+    <AuroraScreen>{node}</AuroraScreen>;
 
   if (all === null) {
     return wrap(<Loading />);
@@ -102,9 +102,9 @@ export default function SessionDetail() {
     return wrap(
       <>
         <HeroNav onPress={() => router.back()} />
-        <Card style={{ marginTop: 12, alignItems: "center", paddingVertical: 28 }}>
+        <ACard style={[cardStack, { marginTop: 12, alignItems: "center", paddingVertical: 28 }]}>
           <Mono>{t("session.notFound")}</Mono>
-        </Card>
+        </ACard>
       </>,
     );
   }
@@ -174,10 +174,10 @@ export default function SessionDetail() {
         {/* The breakdown reads the session as the DEVICE measured it — the typed
             figures live on the summary's comparison panel and nowhere else. */}
         {deviceTrueSession(session).blocks.map((b, i) => (
-          <Card key={i}>
+          <ACard key={i} style={cardStack}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
                 {b.kind === "conditioning" ? (
                   <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>
                     {prSet.has(b.name) ? "🏆 " : ""}{b.name}
@@ -228,7 +228,7 @@ export default function SessionDetail() {
             ) : (
               <Mono style={{ marginTop: 8 }}>{conditioningSummary(b, { rpe: true })}</Mono>
             )}
-          </Card>
+          </ACard>
         ))}
       </View>
 
@@ -236,11 +236,11 @@ export default function SessionDetail() {
           leads them: a wrong number is far more common than a workout you want
           gone (see components/session-edit.tsx). */}
       <View style={{ marginTop: 24 }}>
-        <Button label={t("session.edit.cta")} variant="outline" onPress={() => setEditOpen(true)} disabled={busy} />
+        <APill label={t("session.edit.cta")} variant="outline" onPress={() => setEditOpen(true)} disabled={busy} />
       </View>
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: space.ms }}>
-        <Button label={t("w.analyze.hist.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
-        <Button label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
+        <APill label={t("w.analyze.hist.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
+        <APill label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>
 
       <SessionEditSheet
@@ -283,7 +283,7 @@ function MuscleFocus({ blocks, bodyweightKg, t }: { blocks: LoggedSession["block
   if (vol.length === 0) return null;
   const max = vol[0]!.volume || 1;
   return (
-    <Card style={{ marginTop: 16 }}>
+    <ACard style={[cardStack, { marginTop: 16 }]}>
       <Kicker>{t("session.muscleFocus")}</Kicker>
       <View style={{ marginTop: 10, gap: space.sm }}>
         {vol.map((m) => (
@@ -298,7 +298,7 @@ function MuscleFocus({ blocks, bodyweightKg, t }: { blocks: LoggedSession["block
           </View>
         ))}
       </View>
-    </Card>
+    </ACard>
   );
 }
 

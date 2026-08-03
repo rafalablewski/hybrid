@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { View, Text, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, Text, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { F, PressScale as Pressable } from "../lib/ui";
+import { F, PressScale as Pressable, Loading } from "../lib/ui";
 import type { PublicProfileResponse, CompareResult, SharedLift } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
+import { useConfirm } from "./aurora/confirm";
+import Sheet from "./aurora/sheet";
 
 export function initials(name?: string | null, handle?: string) {
   const s = (name || handle || "?").trim();
@@ -47,15 +49,6 @@ export function SButton({ label, onPress, ghost, tone, small, disabled }: { labe
   );
 }
 
-export function SPill({ label, active, onPress, count }: { label: string; active?: boolean; onPress?: () => void; count?: number }) {
-  const C = useTheme().palette;
-  return (
-    <Pressable onPress={onPress} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: active ? C.lime : C.line, backgroundColor: active ? C.lime : "transparent" }}>
-      <Text style={{ color: active ? C.onAccent : C.chalk, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>{label}{count ? ` ${count}` : ""}</Text>
-    </Pressable>
-  );
-}
-
 export function Empty({ title, sub }: { title: string; sub?: string }) {
   const C = useTheme().palette;
   return (
@@ -68,6 +61,7 @@ export function Empty({ title, sub }: { title: string; sub?: string }) {
 
 // A modal showing any user's public profile (reused by feed / discover / leaderboard).
 export function ProfileModal({ handle, onClose }: { handle: string; onClose: () => void }) {
+  const { confirm, notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
   const [data, setData] = useState<PublicProfileResponse | null>(null);
@@ -80,22 +74,24 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
   const rel: string = data?.followState === "requested" ? "requested" : (data?.relation ?? "none");
   const following = rel === "following" || rel === "friend" || rel === "close";
 
-  const doBlock = () => Alert.alert(t("w.social.block"), t("w.social.blockConfirm").replace("{h}", handle), [
-    { text: t("common.cancel"), style: "cancel" },
-    { text: t("w.social.block"), style: "destructive", onPress: async () => { await blockUser({ handle }); onClose(); } },
-  ]);
-  const doReport = () => { if (!p?.userId) return; Alert.alert(t("w.social.report"), t("w.social.reportConfirm").replace("{h}", handle), [
-    { text: t("common.cancel"), style: "cancel" },
-    { text: t("w.social.report"), style: "destructive", onPress: async () => { await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); Alert.alert(t("w.social.reportThanks")); } },
-  ]); };
+  const doBlock = async () => {
+    const ok = await confirm({ title: t("w.social.block"), message: t("w.social.blockConfirm").replace("{h}", handle), confirmLabel: t("w.social.block"), destructive: true });
+    if (!ok) return;
+    await blockUser({ handle });
+    onClose();
+  };
+  const doReport = async () => {
+    if (!p?.userId) return;
+    const ok = await confirm({ title: t("w.social.report"), message: t("w.social.reportConfirm").replace("{h}", handle), confirmLabel: t("w.social.report"), destructive: true });
+    if (!ok) return;
+    await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" });
+    void notify(t("w.social.reportThanks"));
+  };
 
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,.6)", justifyContent: "flex-end" }}>
-        <View style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "88%", borderWidth: 1, borderColor: C.line }}>
-          <Pressable onPress={onClose} style={{ alignSelf: "flex-end", padding: 16 }}><Text style={{ color: C.ash, fontSize: 22 }}>×</Text></Pressable>
-          <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0 }}>
-            {!data || !p ? <ActivityIndicator color={C.lime} /> : (
+    <Sheet visible onClose={onClose}>
+          <>
+            {!data || !p ? <Loading /> : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
                   <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
@@ -149,9 +145,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 )}
               </>
             )}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+          </>
+    </Sheet>
   );
 }

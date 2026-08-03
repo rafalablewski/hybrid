@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Modal, ScrollView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import {
   deviceDistanceLabel,
   deviceMarkFor,
@@ -14,9 +13,10 @@ import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } fr
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
-import { F, fs, PressScale as Pressable } from "../lib/ui";
+import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
+import Sheet from "./aurora/sheet";
 
 /**
  * DEVICE MATCH — the sheet behind the summary's "Match the workout from your
@@ -45,7 +45,6 @@ export function DeviceMatchSheet({
 }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<"loading" | "list" | "error" | "unavailable">("loading");
   const [ranked, setRanked] = useState<RankedDeviceWorkout[]>([]);
   const [busyUuid, setBusyUuid] = useState<string | null>(null);
@@ -111,13 +110,7 @@ export function DeviceMatchSheet({
     ].join(" – ");
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={onClose}>
-        <Pressable
-          style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 24, maxHeight: "80%" }}
-          onPress={() => {}}
-        >
-          <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
+    <Sheet visible={visible} onClose={onClose} scroll={false}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             {/* The lockup, never the accent — a manufacturer's mark reproduces
                 solid only (core/device-marks.ts). Only Apple's store can be read
@@ -132,7 +125,7 @@ export function DeviceMatchSheet({
               </Pressable>
             )}
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.ash, marginTop: 8 }}>{t("session.device.pickLead")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 8 }}>{t("session.device.pickLead")}</Text>
 
           {phase === "unavailable" && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
@@ -165,26 +158,26 @@ export function DeviceMatchSheet({
                       borderRadius: best ? 20 : 16,
                       padding: best ? 18 : 13,
                       marginBottom: best ? 14 : 10,
-                      backgroundColor: best ? `${C.lime}14` : "#0e0f0d",
+                      backgroundColor: best ? `${C.lime}14` : C.ink2,
                       opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1,
                     }}
                   >
                     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flex: 1 }}>
                         <DeviceMark provider={r.workout.provider} form="mark" height={best ? 15 : 11} on="dark" label={deviceSourceLabel(r.workout) ?? undefined} />
-                        <Text style={{ fontFamily: best ? F.black : F.bold, fontSize: best ? 19 : 14, color: C.chalk, flex: 1 }} numberOfLines={1}>
+                        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: best ? F.black : F.bold, fontSize: best ? 19 : 14, color: C.chalk, flex: 1 }} numberOfLines={1}>
                           {r.workout.activityLabel}
                         </Text>
                       </View>
                       {best && (
                         <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
-                          <Text style={{ fontFamily: F.black, fontSize: 9, letterSpacing: 0.9, color: C.onAccent, textTransform: "uppercase" }}>
+                          <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: 0.9, color: C.onAccent, textTransform: "uppercase" }}>
                             ✓ {t("session.device.best")}
                           </Text>
                         </View>
                       )}
                       {!best && linked && (
-                        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: txt(C, C.lime), textTransform: "uppercase" }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: txt(C, C.lime), textTransform: "uppercase" }}>
                           {t("session.device.matchedChip")}
                         </Text>
                       )}
@@ -206,8 +199,6 @@ export function DeviceMatchSheet({
               })}
             </ScrollView>
           )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }

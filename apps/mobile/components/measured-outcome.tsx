@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { efficacyLine, type ProgramEfficacy } from "@hybrid/core";
 import { fetchEfficacyCard } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
-import { fs, F } from "../lib/ui";
+import { leading, fs, F } from "../lib/ui";
 import { ACard } from "./aurora/kit";
 
 /** The Program Efficacy Index's read on THIS plan — what it measurably
@@ -28,7 +28,7 @@ export default function MeasuredOutcome({ planId }: { planId: string }) {
       </Text>
       <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6 }}>{line.headline}</Text>
       <View style={{ marginTop: 4 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, lineHeight: 16 }}>{line.sub}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, lineHeight: leading(fs.micro) }}>{line.sub}</Text>
       </View>
     </ACard>
   );

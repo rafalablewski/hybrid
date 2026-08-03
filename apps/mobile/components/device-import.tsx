@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, ScrollView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import {
   DEVICE_IMPORT_DAYS,
   DEVICE_IMPORT_PROVIDERS,
@@ -17,8 +16,9 @@ import { setLoggerPref, useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
 import { ToggleRow } from "./toggle-row";
-import { F, fs, PressScale as Pressable } from "../lib/ui";
+import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import Sheet from "./aurora/sheet";
 
 /**
  * DEVICE IMPORT — "I trained on my watch; put it in the app."
@@ -52,7 +52,6 @@ export function DeviceImportSheet({
 }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const insets = useSafeAreaInsets();
   const prefs = useLoggerPrefs();
   const [phase, setPhase] = useState<"loading" | "list" | "error" | "unavailable" | "importing">("loading");
   const [items, setItems] = useState<DeviceImportItem[]>([]);
@@ -104,13 +103,7 @@ export function DeviceImportSheet({
     new Date(isoTs).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={onClose}>
-        <Pressable
-          style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "88%" }}
-          onPress={() => {}}
-        >
-          <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
+    <Sheet visible={visible} onClose={onClose} scroll={false}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             {/* A manufacturer's mark reproduces solid only — never the accent. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, paddingRight: 10 }}>
@@ -123,7 +116,7 @@ export function DeviceImportSheet({
               </Pressable>
             )}
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.ash, marginTop: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 8 }}>
             {t("device.import.lead")}
           </Text>
 
@@ -173,14 +166,14 @@ export function DeviceImportSheet({
                       borderRadius: 16,
                       padding: 16,
                       marginBottom: 10,
-                      backgroundColor: off ? "#0e0f0d" : `${C.lime}12`,
+                      backgroundColor: off ? C.ink2 : `${C.lime}12`,
                       opacity: done ? 0.55 : 1,
                     }}
                   >
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
                         <DeviceMark provider={w.provider} form="mark" height={11} on="dark" label={deviceSourceLabel(w) ?? undefined} />
-                        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }} numberOfLines={1}>
+                        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }} numberOfLines={1}>
                           {item.title}
                         </Text>
                       </View>
@@ -235,7 +228,7 @@ export function DeviceImportSheet({
               looking for their Garmin should find the answer here. */}
           {(phase === "list" || phase === "unavailable") && (
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
                 {t("device.import.sources")}
               </Text>
               {DEVICE_IMPORT_PROVIDERS.map((p) => (
@@ -262,8 +255,6 @@ export function DeviceImportSheet({
               />
             </View>
           )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }

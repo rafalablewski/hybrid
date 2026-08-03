@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, ScrollView } from "react-native";
 import { METRIC_LABEL, BENCHMARK_METRICS, type BenchmarkMetric } from "@hybrid/core";
 import {
   fetchTalent, saveTalentProfile, searchTalent, reportProfile,
   type TalentProfile, type TalentReport, type TalentResult,
 } from "../../lib/api";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
+import { useConfirm } from "./confirm";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const SPORTS = ["Hyrox", "Triathlon", "Running", "Cycling", "Swimming", "Powerlifting", "Bodybuilding", "Hybrid"];
@@ -18,6 +19,7 @@ const numOrU = (s: string) => (s.trim() && Number.isFinite(parseFloat(s)) ? pars
 /** AURORA Talent — benchmark vs your cohort + opt-in discovery, reusing the
  *  talent API verbatim in the rounded Aurora style. */
 export default function AuroraTalent() {
+  const { confirm } = useConfirm();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const [profile, setProfile] = useState<TalentProfile | null>(null);
@@ -54,18 +56,22 @@ export default function AuroraTalent() {
     setResults(await searchTalent(q.metric, q.minPct, q.sport || undefined, q.byPotential));
   };
 
-  const flag = (id: string) =>
-    Alert.alert(t("w.teams.talent.reportTitle"), t("w.teams.talent.reportConfirmMsg"), [
-      { text: t("common.cancel"), style: "cancel" },
-      { text: t("w.teams.talent.reportConfirmBtn"), style: "destructive", onPress: () => reportProfile(id, "inappropriate") },
-    ]);
+  const flag = async (id: string) => {
+    const ok = await confirm({
+      title: t("w.teams.talent.reportTitle"),
+      message: t("w.teams.talent.reportConfirmMsg"),
+      confirmLabel: t("w.teams.talent.reportConfirmBtn"),
+      destructive: true,
+    });
+    if (ok) reportProfile(id, "inappropriate");
+  };
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("w.teams.talent.headerKicker") }}>
       {/* Eyebrow cut — "Talent graph" just named the screen; the heading leads. */}
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg) }}>
           {t("w.teams.talent.headerBody")}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.teams.talent.liveHpi")} {hpi ?? "—"}{report ? ` – ${t("w.teams.talent.model")} ${report.modelVersion}` : ""}</Text>
@@ -161,7 +167,7 @@ export default function AuroraTalent() {
         </View>
         <View style={{ marginTop: 12 }}>
           {results.length === 0 ? (
-            searched ? <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{t("w.teams.talent.noMatch")}</Text> : null
+            searched ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{t("w.teams.talent.noMatch")}</Text> : null
           ) : (
             results.map((r) => (
               <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>

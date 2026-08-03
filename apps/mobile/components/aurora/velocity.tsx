@@ -10,7 +10,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -55,7 +55,7 @@ export default function AuroraVelocity() {
       <AuroraScreen hero={{ rank: "title", title: t("w.analyze.vel.title") }} refreshing={refreshing} onRefresh={load}>
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vel.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.vel.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.bodyLg, "snug") }}>{t("w.analyze.vel.emptyBody")}</Text>
         </ACard>
       </AuroraScreen>
     );
@@ -121,7 +121,7 @@ export default function AuroraVelocity() {
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vel.recentSets")}</Text>
         <View style={{ marginTop: 8 }}>
-          {recentSets.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vel.noVelSetsPre")} {active} {t("w.analyze.vel.noVelSetsTail")}</Text> : recentSets.map((r, i) => {
+          {recentSets.length === 0 ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vel.noVelSetsPre")} {active} {t("w.analyze.vel.noVelSetsTail")}</Text> : recentSets.map((r, i) => {
             const z = velocityZone(r.vel);
             return (
               <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
@@ -133,7 +133,7 @@ export default function AuroraVelocity() {
             );
           })}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: 15 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: leading(fs.nano) }}>
           {t("w.analyze.vel.perRepNote")}
         </Text>
       </ACard>

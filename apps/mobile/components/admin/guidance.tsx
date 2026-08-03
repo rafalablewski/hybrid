@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
-import { fs, space, Card, Mono, Kicker, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { Segmented } from "./_kit";
+import { FilterGroup } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Clipboard: this Expo project has no expo-clipboard dependency (verified — not
 // in apps/mobile/package.json and no existing Clipboard import). So Copy is a
@@ -24,7 +25,7 @@ export default function AdminGuidance() {
   return (
     <View>
       {GUIDES.length > 1 ? (
-        <Segmented
+        <FilterGroup
           value={guideId}
           onChange={setGuideId}
           options={GUIDES.map((g) => ({ value: g.id, label: g.id }))}
@@ -35,7 +36,7 @@ export default function AdminGuidance() {
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4, marginBottom: 12 }}>Last reviewed {guide.updated}</Mono>
 
       {guide.sections.map((s) => (
-        <Card key={s.id}>
+        <ACard key={s.id} style={cardStack}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: s.summary ? 4 : 12 }}>
             <Text style={{ fontSize: fs.title, color: txt(palette, palette.lime) }}>{s.icon}</Text>
             <Text style={{ fontFamily: F.black, fontSize: 19, color: palette.chalk, letterSpacing: -0.5, flex: 1 }}>{s.title}</Text>
@@ -46,7 +47,7 @@ export default function AdminGuidance() {
               <Block key={i} b={b} />
             ))}
           </View>
-        </Card>
+        </ACard>
       ))}
     </View>
   );
@@ -56,7 +57,7 @@ function Block({ b }: { b: GuideBlock }) {
   const { palette } = useTheme();
 
   if (b.t === "p") {
-    return <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: palette.chalk }}>{b.text}</Text>;
+    return <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg, "relaxed"), color: palette.chalk }}>{b.text}</Text>;
   }
 
   if (b.t === "note") {

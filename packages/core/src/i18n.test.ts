@@ -59,3 +59,42 @@ describe("Analytics strings are localized on every client", () => {
     }
   });
 });
+
+/**
+ * THE VOCABULARY GUARD.
+ *
+ * The design audit found three nouns for one object in shipped English copy —
+ * session (296), workout (168) and training (116) — including two versions of
+ * the SAME empty-state sentence on two screens, and a tab labelled "Log session"
+ * leading to a settings category called "Workout logger". A user learns a
+ * product's vocabulary in the first session; three words for one object teaches
+ * them the product does not know its own name.
+ *
+ * THE VOCABULARY: a **session** is the object. **Training** is the mass noun for
+ * the activity and never labels an object. **Workout** has left the interface —
+ * with ONE deliberate exception below.
+ */
+describe("english vocabulary", () => {
+  // "workout" is CORRECT for what the DEVICE recorded: it is Apple's own noun in
+  // HealthKit, and device.import.lead turns the distinction into the sentence
+  // that explains the feature — "Workouts your device recorded. New ones become
+  // sessions". These keys are the contrast, not a lapse. A blind sweep would
+  // have destroyed the one place both words are doing real work.
+  const DEVICE_RECORDING = new Set([
+    "session.device.matchCta",
+    "session.device.rematch",
+    "session.device.pickTitle",
+    "session.device.none",
+    "device.import.lead",
+    "device.import.autoDesc",
+  ]);
+
+  it("calls the object a session everywhere but the device's own recordings", () => {
+    const offenders = allTranslationKeys()
+      .filter((key) => !DEVICE_RECORDING.has(key))
+      .map((key) => [key, baselineString("en", key)] as const)
+      .filter(([, value]) => value != null && /\bworkouts?\b/i.test(value))
+      .map(([key, value]) => `${key}: ${value}`);
+    expect(offenders).toEqual([]);
+  });
+});

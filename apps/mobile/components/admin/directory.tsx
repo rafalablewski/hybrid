@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, ErrorNote, Segmented, KV } from "./_kit";
+import { Intro, ErrorNote, FilterGroup, KV } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Read-only platform directory: organizations + coach↔client links. Mirrors
 // apps/web/components/admin/directory.tsx (/api/admin/orgs + /api/admin/coaching),
@@ -49,7 +50,7 @@ export default function AdminDirectory() {
 
   return (
     <View>
-      <Segmented<View2>
+      <FilterGroup<View2>
         options={[
           { value: "orgs", label: `Orgs${orgs ? ` – ${orgs.length}` : ""}` },
           { value: "coaching", label: `Coaching${links ? ` – ${links.length}` : ""}` },
@@ -69,12 +70,12 @@ export default function AdminDirectory() {
             <Mono color={palette.ash}>No organizations yet.</Mono>
           ) : (
             orgs.map((o) => (
-              <Card key={o.id}>
+              <ACard key={o.id} style={cardStack}>
                 <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk, marginBottom: 6 }}>{o.name}</Text>
                 <KV k="Teams" v={o.teams} />
                 <KV k="Members" v={o.members} />
                 <KV k="Created" v={fmt(o.createdAt)} />
-              </Card>
+              </ACard>
             ))
           )}
         </View>
@@ -98,7 +99,7 @@ export default function AdminDirectory() {
             <Mono color={palette.ash}>No coaching links yet.</Mono>
           ) : (
             links.map((l) => (
-              <Card key={l.id}>
+              <ACard key={l.id} style={cardStack}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
                   <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: palette.chalk, flexShrink: 1 }}>
                     {l.coach} → {l.client}
@@ -107,7 +108,7 @@ export default function AdminDirectory() {
                 </View>
                 <KV k="Notes" v={l.notes} />
                 <KV k="Since" v={fmt(l.createdAt)} />
-              </Card>
+              </ACard>
             ))
           )}
         </View>

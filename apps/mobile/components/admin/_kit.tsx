@@ -1,8 +1,9 @@
 import { type ReactNode } from "react";
 import { View, Text, TextInput, ActivityIndicator, type ViewStyle } from "react-native";
-import { fs, space, F, Card, Mono, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, F, Mono, PressScale, PressScale as Pressable, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "../aurora/cta-label";
+import { ACard, cardStack, RADIUS, AChip } from "../aurora/kit";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
 // share one look (matching the web console's lib/ui primitives). Section bodies
@@ -20,10 +21,10 @@ export function Banner({ tone = "amber", title, children }: { tone?: "amber" | "
   const { palette } = useTheme();
   const accent = tone === "red" ? palette.red : palette.amber;
   return (
-    <Card accent={accent} style={{ marginBottom: 16 }}>
+    <ACard accent={accent} style={[cardStack, { marginBottom: 16 }]}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, marginBottom: children ? 6 : 0 }}>{title}</Text>
       {children ? <Mono color={palette.chalk} style={{ lineHeight: 18 }}>{children}</Mono> : null}
-    </Card>
+    </ACard>
   );
 }
 
@@ -45,11 +46,11 @@ export function ErrorNote({ error, onDismiss }: { error: string | null; onDismis
 export function Stat({ label, value, sub, color }: { label: string; value: ReactNode; sub?: string; color?: string }) {
   const { palette } = useTheme();
   return (
-    <Card>
+    <ACard style={cardStack}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: color ? txt(palette, color) : palette.chalk, marginTop: 4 }}>{value}</Text>
       {sub ? <Mono color={palette.ash} style={{ marginTop: 2 }}>{sub}</Mono> : null}
-    </Card>
+    </ACard>
   );
 }
 
@@ -101,6 +102,20 @@ export function Input({
 }
 
 /** A compact action button (smaller than lib/ui Button — for inline row actions). */
+/**
+ * The COMPACT action button — the operator console's dense row action.
+ *
+ * A deliberate second size class, not a duplicate of the kit's APill: an admin
+ * table row cannot carry a 16dp-padded primary pill on every line. What it was
+ * NOT allowed to be is untappable — at 7dp of vertical padding around caption
+ * type it measured ~29dp, well under the HIG minimum, across 66 call sites. The
+ * visual size is unchanged; `minHeight` grows the TARGET to 44 while the fill
+ * stays compact, and PressScale gives it the app's one press feedback.
+ *
+ * The full merge into APill (as `size="compact"`) is tracked in capabilities as
+ * `admin-kit-merge` — it is a 66-site restyle of the console and wants a device
+ * to verify, not a blind sweep.
+ */
 export function PillBtn({
   label,
   onPress,
@@ -122,31 +137,50 @@ export function PillBtn({
   const c = color ?? palette.lime;
   const fg = outline ? txt(palette, c) : palette.onAccent;
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled, busy: !!busy }}
       style={{
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         gap: 7,
         backgroundColor: outline ? "transparent" : c,
         borderWidth: 1,
         borderColor: c,
-        borderRadius: 999,
+        borderRadius: RADIUS.pill,
         paddingVertical: 7,
         paddingHorizontal: 16,
+        // The drawing stays compact; the TARGET clears the HIG minimum.
+        minHeight: HIT_TARGET,
         opacity: disabled ? 0.5 : 1,
         alignSelf: "flex-start",
       }}
     >
       {busy ? <ActivityIndicator size="small" color={fg} /> : null}
       <CtaLabel label={label} color={fg} fontSize={fs.caption} />
-    </Pressable>
+    </PressScale>
   );
 }
 
-/** A horizontal segmented control (tabs / filters). */
-export function Segmented<T extends string>({
+/**
+ * A wrapping FILTER GROUP — named "Segmented" for years, and it never was one.
+ *
+ * A segmented control is equal-width and lives in a track; this is a
+ * `flexWrap` row of independent pills, which is a chip filter group. Reading it
+ * for the consolidation is what settled the count: of the eight "segmented
+ * controls" the audit found, this and History's ViewSwitcher were chip rails,
+ * so they belong to AChip rather than to ASegment. The name went with the
+ * misconception.
+ *
+ * Kept as a thin wrapper rather than inlined at 24 call sites: the admin's
+ * filter rows share a layout (wrap + gap + bottom margin) that is worth naming
+ * once.
+ */
+export function FilterGroup<T extends string>({
   options,
   value,
   onChange,
@@ -155,28 +189,11 @@ export function Segmented<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
-  const { palette } = useTheme();
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 12 }}>
-      {options.map((o) => {
-        const on = o.value === value;
-        return (
-          <Pressable
-            key={o.value}
-            onPress={() => onChange(o.value)}
-            style={{
-              borderWidth: 1,
-              borderColor: on ? palette.amber : palette.line,
-              backgroundColor: on ? `${palette.amber}1c` : "transparent",
-              borderRadius: 999,
-              paddingVertical: 6,
-              paddingHorizontal: 13,
-            }}
-          >
-            <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: on ? txt(palette, palette.amber) : palette.ash }}>{o.label}</Text>
-          </Pressable>
-        );
-      })}
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: space.md }}>
+      {options.map((o) => (
+        <AChip key={o.value} label={o.label} selected={o.value === value} onPress={() => onChange(o.value)} />
+      ))}
     </View>
   );
 }

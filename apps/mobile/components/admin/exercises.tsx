@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import { ALL_MUSCLES } from "@hybrid/core";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
-import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
+import { Intro, Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
+import { useConfirm } from "../aurora/confirm";
 
 // Mobile parity for apps/web/components/admin/exercises.tsx. Same
 // /api/admin/exercises (+/[id]) backend + the ./shared parse enums: CRUD over
@@ -86,6 +88,7 @@ const SYSTEM_OPTS: { value: System; label: string }[] = [
 ];
 
 export default function AdminExercises() {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [list, setList] = useState<Exercise[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -194,22 +197,14 @@ export default function AdminExercises() {
     load();
   }
 
-  function remove(x: Exercise) {
-    Alert.alert("Delete exercise", `Delete “${x.name}” permanently?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setBusy(true);
-          setErr(null);
-          const r = await adminSend("DELETE", `/api/admin/exercises/${x.id}`);
-          setBusy(false);
-          if (!r.ok) setErr("Delete failed — re-syncing.");
-          load();
-        },
-      },
-    ]);
+  async function remove(x: Exercise) {
+    if (!(await confirm({ title: "Delete exercise", message: `Delete “${x.name}” permanently?`, confirmLabel: "Delete", destructive: true }))) return;
+    setBusy(true);
+    setErr(null);
+    const r = await adminSend("DELETE", `/api/admin/exercises/${x.id}`);
+    setBusy(false);
+    if (!r.ok) setErr("Delete failed — re-syncing.");
+    load();
   }
 
   const filtered = useMemo(() => {
@@ -246,7 +241,7 @@ export default function AdminExercises() {
       )}
 
       {editing !== null && (
-        <Card accent={palette.lime}>
+        <ACard accent={palette.lime} style={cardStack}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk, marginBottom: 12 }}>
             {editing === "new" ? "New exercise" : "Edit exercise"}
           </Text>
@@ -255,15 +250,15 @@ export default function AdminExercises() {
           <Input label="Category (optional)" value={draft.category} onChangeText={(t) => setDraft({ ...draft, category: t })} placeholder="e.g. Lower / Olympic" />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Pattern</Text>
-          <Segmented options={PATTERN_OPTS} value={draft.pattern} onChange={(v) => setDraft({ ...draft, pattern: v })} />
+          <FilterGroup options={PATTERN_OPTS} value={draft.pattern} onChange={(v) => setDraft({ ...draft, pattern: v })} />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Kind</Text>
-          <Segmented options={KIND_OPTS} value={draft.kind} onChange={(v) => setDraft({ ...draft, kind: v })} />
+          <FilterGroup options={KIND_OPTS} value={draft.kind} onChange={(v) => setDraft({ ...draft, kind: v })} />
 
           <Input label="Base load (kg, blank for conditioning)" value={draft.baseLoad} onChangeText={(t) => setDraft({ ...draft, baseLoad: t })} placeholder="100" keyboardType="numeric" />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Energy system (conditioning)</Text>
-          <Segmented options={SYSTEM_OPTS} value={draft.system} onChange={(v) => setDraft({ ...draft, system: v })} />
+          <FilterGroup options={SYSTEM_OPTS} value={draft.system} onChange={(v) => setDraft({ ...draft, system: v })} />
 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 6 }}>
             Muscles worked (drives fatigue + volume)
@@ -296,13 +291,13 @@ export default function AdminExercises() {
             <PillBtn label={editing === "new" ? "Publish" : "Save & publish"} disabled={busy} onPress={() => save("published")} />
             <PillBtn label="Cancel" outline color={palette.ash} disabled={busy} onPress={() => setEditing(null)} />
           </View>
-        </Card>
+        </ACard>
       )}
 
       {err && editing === null ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
       {filtered.map((x) => (
-        <Card key={x.id} accent={statusColor(x.status)}>
+        <ACard key={x.id} accent={statusColor(x.status)} style={cardStack}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
             <Chip color={statusColor(x.status)}>{x.status}</Chip>
             <Chip color={palette.ash}>{x.pattern}</Chip>
@@ -331,7 +326,7 @@ export default function AdminExercises() {
             ) : null}
             <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(x)} />
           </View>
-        </Card>
+        </ACard>
       ))}
 
       {list && filtered.length === 0 ? (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Modal } from "react-native";
-import { fs, F, space, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, F, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 
@@ -19,7 +19,7 @@ export interface TourStep {
 export const FIRST_RUN_TOUR: TourStep[] = [
   { title: "Your day, here", body: "Today is your home. When you follow a plan, your exact session for the day shows up here — tap Start to log it." },
   { title: "Follow a plan", body: "Open Plans to browse the library and enrol. Following a plan is free — HYBRID walks you through it session by session." },
-  { title: "Your profile", body: "Your HPI, records and training history live in the You tab as you log. It builds from your real workouts — nothing is pre-filled." },
+  { title: "Your profile", body: "Your HPI, records and training history live in the You tab as you log. It builds from your real sessions — nothing is pre-filled." },
   { title: "Configure your account", body: "Set your name, language, notifications and privacy in More → Settings. You can switch to the full athlete toolkit anytime." },
 ];
 
@@ -38,7 +38,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
             {`Step ${i + 1} / ${steps.length}`}
           </Text>
           <Text style={{ fontFamily: F.bold, fontSize: fs.heading, color: C.chalk, marginTop: 8 }}>{step.title}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 22, marginTop: 8 }}>{step.body}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg, "relaxed"), marginTop: 8 }}>{step.body}</Text>
 
           {/* progress dots */}
           <View style={{ flexDirection: "row", gap: 6, marginTop: 16 }}>

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Stat, ErrorNote } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 
 // Mobile Security — parity with apps/web/components/admin/security.tsx, fed by
 // GET /api/admin/security. Posture score header, live runtime check chips, and
@@ -52,14 +53,14 @@ export default function AdminSecurity() {
   return (
     <View>
       {/* Posture summary */}
-      <Card accent={scoreColor}>
+      <ACard accent={scoreColor} style={cardStack}>
         <Kicker>Posture score</Kicker>
         <Text style={{ fontFamily: F.black, fontSize: 40, color: txt(palette, scoreColor), lineHeight: 44, marginTop: 4 }}>
           {d.posture.score}
           <Text style={{ fontFamily: F.bold, fontSize: fs.heading, color: palette.ash }}>/100</Text>
         </Text>
         <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{d.posture.pass}/{d.posture.total} controls green</Mono>
-      </Card>
+      </ACard>
 
       <View style={{ flexDirection: "row", gap: space.md }}>
         <View style={{ flex: 1 }}><Stat label="Passing" value={d.posture.pass} color={palette.lime} /></View>
@@ -68,15 +69,15 @@ export default function AdminSecurity() {
       </View>
 
       {d.posture.criticalOpen > 0 && (
-        <Card accent={palette.red}>
-          <Mono color={palette.red} style={{ fontSize: fs.body, lineHeight: 18 }}>
+        <ACard accent={palette.red} style={cardStack}>
+          <Mono color={palette.red} style={{ fontSize: fs.body, lineHeight: leading(fs.body, "snug") }}>
             ⚠ {d.posture.criticalOpen} critical control(s) not yet passing — address before launch.
           </Mono>
-        </Card>
+        </ACard>
       )}
 
       {/* Live runtime checks */}
-      <Card>
+      <ACard style={cardStack}>
         <Kicker color={palette.blue}>Live runtime checks – this deployment</Kicker>
         <View style={{ marginTop: 10, gap: space.sm }}>
           {d.runtime.map((r) => {
@@ -90,7 +91,7 @@ export default function AdminSecurity() {
             );
           })}
         </View>
-      </Card>
+      </ACard>
 
       {/* Control registry, grouped by category */}
       {categories.map((cat) => {
@@ -100,20 +101,20 @@ export default function AdminSecurity() {
             <Kicker>{cat} – {items.filter((i) => i.status === "pass").length}/{items.length}</Kicker>
             <View style={{ marginTop: 8 }}>
               {items.map((c) => (
-                <Card key={c.id} accent={statusColor(c.status)}>
+                <ACard key={c.id} accent={statusColor(c.status)} style={cardStack}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap", marginBottom: 6 }}>
                     <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: statusColor(c.status) }} />
                     <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, flex: 1 }}>{c.title}</Text>
                     <Chip color={sevColor[c.severity]}>{c.severity}</Chip>
                     <Chip color={statusColor(c.status)}>{statusLabel(c.status)}</Chip>
                   </View>
-                  <Mono color={palette.ash} style={{ fontSize: fs.caption, lineHeight: 18 }}>{c.detail}</Mono>
+                  <Mono color={palette.ash} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{c.detail}</Mono>
                   {c.evidence ? (
                     <Mono color={c.status === "pass" ? palette.lime : palette.amber} style={{ fontSize: fs.micro, marginTop: 6 }}>
                       {c.status === "pass" ? "✓ " : "→ "}{c.evidence}
                     </Mono>
                   ) : null}
-                </Card>
+                </ACard>
               ))}
             </View>
           </View>

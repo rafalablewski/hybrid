@@ -27,8 +27,8 @@ import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
-import { RADIUS, withAlpha } from "./kit";
+import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { RADIUS, withAlpha, AChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -53,14 +53,6 @@ export interface ViewCtx {
   schedule: PlanScheduleResult | null;
   prs: (id: string) => number;
   onOpen: (id: string) => void;
-}
-
-function Chip({ C, color, label, strong }: { C: Palette; color: string; label: string; strong?: boolean }) {
-  return (
-    <View style={{ backgroundColor: withAlpha(color, strong ? 0.16 : 0.13), borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), fontWeight: strong ? "700" : "400" }}>{label}</Text>
-    </View>
-  );
 }
 
 /** The headline's unit label — localized block count for the last-resort kind. */
@@ -94,7 +86,7 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
         {h.value}
         <Text style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C.ash }}> {unitOf(h, t)}</Text>
       </Text>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
         {[s.title, ...headlineMeta(h, t)].join(" – ")}
         {prs > 0 && (
           <>
@@ -127,20 +119,23 @@ function RestGapRow({ C, days }: { C: Palette; days: number }) {
 //  Switcher
 // ============================================================
 
+/**
+ * History's view rail — a SCROLLING chip rail, which is why it is AChip rows
+ * and not ASegment. A segmented control is equal-width and lives in a track;
+ * this rail is full-bleed, scrolls past the screen edge, and its items are
+ * independent filters. Naming that correctly is what kept it out of the
+ * segmented-control merge.
+ *
+ * Its hand-rolled pills also sat at ~27dp. AChip declares the 44dp floor.
+ */
 export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange: (v: HistoryViewId) => void }) {
-  const { palette: C } = useTheme();
   const { t } = useLang();
   return (
     // Full-bleed chip rail — clips at the screen edge, rests on the column.
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingBottom: 4, paddingHorizontal: 16 }}>
-      {HISTORY_VIEWS.map((v) => {
-        const on = v.id === view;
-        return (
-          <Pressable key={v.id} onPress={() => onChange(v.id)} style={{ borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : C.ink2 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? C.onAccent : C.ash, fontWeight: on ? "700" : "400" }}>{t(v.labelKey)}</Text>
-          </Pressable>
-        );
-      })}
+      {HISTORY_VIEWS.map((v) => (
+        <AChip key={v.id} label={t(v.labelKey)} selected={v.id === view} onPress={() => onChange(v.id)} />
+      ))}
     </ScrollView>
   );
 }
@@ -188,12 +183,12 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
         <View key={u.dateKey} style={{ gap: 8 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <DayLabel C={C} text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
-            <Chip C={C} color={u.isToday ? C.lime : C.ash} label={t("histview.planned")} />
+            <Chip color={u.isToday ? C.lime : C.ash}>{t("histview.planned")}</Chip>
           </View>
           <View style={{ borderRadius: RADIUS.card, padding: 16, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
             {u.blockNames.length > 0 && (
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
                 {u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}
               </Text>
             )}
@@ -253,12 +248,12 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             })}
           </View>
           <View style={{ flexDirection: "row", gap: 5 }}>
-            {WEEKDAY_LABEL_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
+            {WEEKDAY_LABEL_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
           </View>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", marginTop: 12, marginBottom: 4 }}>
-            {w.totals.volume > 0 && <Chip C={C} color={C.lime} label={fmtTonnage(w.totals.volume, ctx.units)} />}
-            <Chip C={C} color={C.ash} label={`${w.totals.sessions} ${t("histview.sessionsLbl")}`} />
-            {w.totals.prs > 0 && <Chip C={C} color={C.lime} label={`↑ ${w.totals.prs} PR`} strong />}
+            {w.totals.volume > 0 && <Chip color={C.lime}>{fmtTonnage(w.totals.volume, ctx.units)}</Chip>}
+            <Chip color={C.ash}>{`${w.totals.sessions} ${t("histview.sessionsLbl")}`}</Chip>
+            {w.totals.prs > 0 && <Chip color={C.lime}>{`↑ ${w.totals.prs} PR`}</Chip>}
           </View>
           {w.sessions.map((s) => {
             const key = localDayKey(s.startedAt);
@@ -284,8 +279,8 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, fontWeight: "700" }}>{Number(key.slice(8, 10))}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text ref={(r) => { titleRefs.current[s.id] = r; }} numberOfLines={1} style={titleStyle}>{s.title}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} ref={(r) => { titleRefs.current[s.id] = r; }} numberOfLines={1} style={titleStyle}>{s.title}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
                     {[`${h.value} ${unitOf(h, t)}`, ...headlineMeta(h, t)].join(" – ")}
                   </Text>
                 </View>
@@ -361,7 +356,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16 } as const;
   const Mini = ({ label, value }: { label: string; value: string }) => (
     <View style={{ ...cardStyle, flex: 1, padding: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.5, marginTop: 4, color: C.chalk }}>{value}</Text>
     </View>
   );
@@ -398,7 +393,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
           {buckets.buckets.map((b, i) => (
             <View key={i} style={{ flex: 1, alignItems: "center", gap: 6 }}>
               <View style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, backgroundColor: i === buckets.peakIndex ? C.lime : C.line }} />
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{b.label}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{b.label}</Text>
             </View>
           ))}
         </View>
@@ -411,7 +406,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
       </View>
 
       {!hasData && (
-        <Text style={{ fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 6, lineHeight: 20 }}>{t("w.analyze.stats.empty")}</Text>
+        <Text style={{ fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 6, lineHeight: leading(fs.body) }}>{t("w.analyze.stats.empty")}</Text>
       )}
     </View>
   );

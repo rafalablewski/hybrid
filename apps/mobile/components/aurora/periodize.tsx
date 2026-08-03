@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { currentPhase, type Macrocycle } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F } from "../../lib/ui";
+import { leading, fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
@@ -37,7 +37,7 @@ export default function AuroraPeriodize() {
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load} hero={{ rank: "title", title: t("w.train.periodize.noActivePlan") }}>
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg) }}>
             {loaded ? t("w.train.periodize.emptyBodyMobile") : t("w.train.periodize.loadingSeason")}
           </Text>
           <APill label={t("w.train.periodize.browsePlans")} onPress={() => router.push("/plans")} style={{ marginTop: 16 }} />
@@ -73,7 +73,7 @@ export default function AuroraPeriodize() {
             <Text style={{ fontFamily: F.black, fontSize: fs.title, color: txt(C, b.color) }}>{b.label}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.train.periodize.wk")} {b.startWeek}–{b.endWeek}</Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6, marginBottom: 12, lineHeight: 18 }}>{b.focus}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6, marginBottom: 12, lineHeight: leading(fs.caption) }}>{b.focus}</Text>
           <View style={{ flexDirection: "row", gap: space.xs }}>
             {b.micros.map((m) => (
               <View

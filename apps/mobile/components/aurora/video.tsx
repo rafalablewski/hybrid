@@ -5,7 +5,7 @@ import { readinessRole } from "@hybrid/core";
 import { fetchVideoAnalyses, type VideoAnalysis } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { leading, fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, ASub, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -33,7 +33,7 @@ export default function AuroraVideo() {
 
       {analyses.length === 0 ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 19 }}>{loaded ? t("w.analyze.vid.empty-mobile") : t("w.analyze.vid.loading")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg, "snug") }}>{loaded ? t("w.analyze.vid.empty-mobile") : t("w.analyze.vid.loading")}</Text>
         </ACard>
       ) : analyses.map((a) => {
         const m = a.metrics;
@@ -51,7 +51,7 @@ export default function AuroraVideo() {
               {m.minKneeAngle != null && chip(C.ash, `${t("w.analyze.vid.depth")} ${Math.round(m.minKneeAngle)}°`)}
               {m.kneeAsymmetryPct != null && chip(m.kneeAsymmetryPct > 10 ? C.amber : C.lime, `${t("w.analyze.vid.lr")} ${Math.round(m.kneeAsymmetryPct)}%`)}
             </View>
-            {m.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{m.flags.join(" – ")}</Text>}
+            {m.flags.length > 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber), marginTop: 8, lineHeight: leading(fs.body, "snug") }}>{m.flags.join(" – ")}</Text>}
           </ACard>
         );
       })}

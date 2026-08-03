@@ -12,7 +12,7 @@ import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 
@@ -69,10 +69,10 @@ const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 function Lead({ template, word, color }: { template: string; word: string | null; color: string }) {
   const [before, after] = template.split("{m}");
   if (after === undefined || !word) {
-    return <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 20, color }}>{template}</Text>;
+    return <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg), color }}>{template}</Text>;
   }
   return (
-    <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 20, color }}>
+    <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg), color }}>
       {before}
       <Text style={{ fontFamily: F.bold }}>{word}</Text>
       {after}
@@ -271,7 +271,7 @@ export default function AuroraWeekVerdict({
           label: s.label,
           intercept: s.id === "month" ? () => setPicker(true) : undefined,
           render: (on: boolean) => (
-            <Text
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE}
               numberOfLines={1}
               style={{
                 fontFamily: on ? F.monoBold : F.mono, fontSize: 11,
@@ -298,7 +298,7 @@ export default function AuroraWeekVerdict({
               word={v.metric ? t(verdictMetricKey(v.metric)) : null}
               color={C.chalk}
             />
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 16, color: C.ash, marginTop: 5 }}>{why}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: C.ash, marginTop: 5 }}>{why}</Text>
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: 23, letterSpacing: -0.5, color: toneText }}>
             {v.metric ? `${v.deltaPct > 0 ? "+" : "−"}${Math.abs(v.deltaPct)}%` : "—"}
@@ -328,7 +328,7 @@ export default function AuroraWeekVerdict({
                   borderLeftWidth: i === 0 ? 0 : 1, borderLeftColor: isOpen ? "transparent" : C.line,
                 }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: isNamed ? toneText : C.ash }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: isNamed ? toneText : C.ash }}>
                   {t(verdictLabelKey(f.metric))}
                 </Text>
                 <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: -0.5, marginTop: 3, color: isNamed ? toneText : C.chalk }}>
@@ -389,7 +389,7 @@ export default function AuroraWeekVerdict({
         </Animated.View>
 
         {!open && (
-          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
             {t("w.home.act.hint")}
           </Text>
         )}
@@ -475,12 +475,12 @@ function MetricDetail({
     return bits.join(" – ");
   };
 
-  const kicker = { fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase" as const };
+  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase" as const };
 
   return (
     <>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ ...kicker, color: C.ash, flex: 1 }} numberOfLines={1}>{t(activityDetailKey(detail.metric))}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...kicker, color: C.ash, flex: 1 }} numberOfLines={1}>{t(activityDetailKey(detail.metric))}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
           {detail.sessions === 1 ? t("w.home.act.oneSession") : t("w.home.act.nSessions").replace("{n}", String(detail.sessions))}
         </Text>
@@ -520,7 +520,7 @@ function MetricDetail({
                   }}
                 >
                   <Text style={{ fontSize: 13, width: 18, textAlign: "center" }}>{g.icon}</Text>
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>
                     {groupName(g)}
                   </Text>
                   <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{Math.round(g.share * 100)}%</Text>
@@ -554,7 +554,7 @@ function MetricDetail({
                     {dateFmt(new Date(it.startedAt).getTime(), { day: "numeric", month: "short" })}
                   </Text>
                   <View style={{ flex: 1 }}>
-                    <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{it.name}</Text>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{it.name}</Text>
                     {!!line && <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 1 }}>{line}</Text>}
                   </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
@@ -584,7 +584,7 @@ function PickerSection({ label, children }: { label: string; children: ReactNode
   const { palette: C } = useTheme();
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginHorizontal: 4, marginBottom: 6 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginHorizontal: 4, marginBottom: 6 }}>
         {label}
       </Text>
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden" }}>

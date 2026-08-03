@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TextInput, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { Card, Loading, F, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen } from "../components/aurora/kit";
+import { Loading, F, PressScale as Pressable } from "../lib/ui";
+import { AuroraScreen, ACard, cardStack, AChip, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type {
@@ -14,11 +14,14 @@ import {
   getCoaches, getCoach, enrollProgram, postReview,
   getCoachProfile, putCoachProfile, getCoachPrograms, patchProgram, getEnrollments, respondEnrollment,
 } from "../lib/social-api";
-import { Avatar, Stars, Empty, SButton, SPill } from "../components/social-kit";
+import { Avatar, Stars, Empty, SButton } from "../components/social-kit";
 import { GlassToggle } from "../components/glass-toggle";
+import { useConfirm } from "../components/aurora/confirm";
+import Sheet from "../components/aurora/sheet";
 
 // ---- coach detail (what a client sees) ----
 function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }) {
+  const { notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
   const [data, setData] = useState<CoachStorefrontResponse | null>(null);
@@ -31,12 +34,9 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
   const c = data?.coach;
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,.6)", justifyContent: "flex-end" }}>
-        <View style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "90%", borderWidth: 1, borderColor: C.line }}>
-          <Pressable onPress={onClose} style={{ alignSelf: "flex-end", padding: 16 }}><Text style={{ color: C.ash, fontSize: 22 }}>×</Text></Pressable>
-          <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0 }}>
-            {!data || !c ? <ActivityIndicator color={C.lime} /> : (
+    <Sheet visible onClose={onClose}>
+          <>
+            {!data || !c ? <Loading /> : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={64} />
@@ -63,7 +63,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                         <Text style={{ color: C.ash, fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} ${t("w.coaches.weeks")}` : null].filter(Boolean).join(" – ")}</Text>
                       </View>
                       {p.enrollmentStatus ? <Text style={{ color: p.enrollmentStatus === "active" ? C.lime : C.amber, fontFamily: F.mono, fontSize: 12 }}>{p.enrollmentStatus === "active" ? `${t("w.coaches.enrolled")} ✓` : t("w.social.requested")}</Text>
-                        : data.isMe ? null : <SButton label={enrolling === p.id ? t("w.coaches.starting") : t("w.coaches.start")} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { Alert.alert(t("common.error"), r.error); return; } load(); }} />}
+                        : data.isMe ? null : <SButton label={enrolling === p.id ? t("w.coaches.starting") : t("w.coaches.start")} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { notify(t("common.error"), r.error); return; } load(); }} />}
                     </View>
                     {p.summary ? <Text style={{ color: C.chalk, fontSize: 13, marginTop: 8, lineHeight: 19 }}>{p.summary}</Text> : null}
                     {Array.isArray(p.preview) && p.preview.length > 0 && (
@@ -99,7 +99,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                       {[1, 2, 3, 4, 5].map((n) => <Pressable key={n} onPress={() => setRating(n)}><Text style={{ fontSize: 24, color: n <= rating ? C.gold : C.line }}>★</Text></Pressable>)}
                     </View>
                     <TextInput value={body} onChangeText={setBody} multiline placeholder={t("w.coaches.reviewPlaceholder")} placeholderTextColor={C.ash} style={{ minHeight: 56, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: 13 }} />
-                    <View style={{ marginTop: 8 }}><SButton label={t("w.coaches.submitReview")} small onPress={async () => { const r = await postReview(handle, { rating, body }); if (r.error) { Alert.alert(t("common.error"), r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
+                    <View style={{ marginTop: 8 }}><SButton label={t("w.coaches.submitReview")} small onPress={async () => { const r = await postReview(handle, { rating, body }); if (r.error) { notify(t("common.error"), r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
                   </View>
                 )}
                 {data.reviews.map((rv: StorefrontReview) => (
@@ -114,15 +114,14 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                 ))}
               </>
             )}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+          </>
+    </Sheet>
   );
 }
 
 // ---- coach's own storefront ----
 function Storefront() {
+  const { notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
   const [data, setData] = useState<CoachProfileResponse | null>(null);
@@ -146,8 +145,8 @@ function Storefront() {
 
   return (
     <View>
-      {!data.handle && <Card><Text style={{ color: txt(C, C.amber) }}>⚠ {t("w.coaches.claimHandle")}</Text></Card>}
-      <Card>
+      {!data.handle && <ACard style={cardStack}><Text style={{ color: txt(C, C.amber) }}>⚠ {t("w.coaches.claimHandle")}</Text></ACard>}
+      <ACard style={cardStack}>
         <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 12 }}>{t("w.coaches.yourStorefront")}</Text>
         <TextInput value={form.headline} onChangeText={(v) => setForm({ ...form, headline: v })} placeholder={t("w.coaches.headline")} placeholderTextColor={C.ash} style={inp} />
         <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline placeholder={t("w.coaches.bio")} placeholderTextColor={C.ash} style={{ ...inp, minHeight: 70 }} />
@@ -156,23 +155,23 @@ function Storefront() {
         <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder={t("w.coaches.pricingNote")} placeholderTextColor={C.ash} style={inp} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.acceptingClients")}</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel={t("w.coaches.acceptingClients")} /></View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.autoAccept")}</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel={t("w.coaches.autoAccept")} /></View>
-        <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { Alert.alert(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
-      </Card>
+        <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { notify(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
+      </ACard>
 
       <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.programsCount")} ({programs.length})</Text>
-      <Card>
+      <ACard style={cardStack}>
         {programs.length === 0 ? <Empty title={t("w.coaches.noPrograms")} sub={t("w.coaches.noProgramsSub")} /> : programs.map((p) => (
           <View key={p.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
             <View><Text style={{ color: C.chalk, fontWeight: "600" }}>{p.name}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{p.goal ?? "—"}</Text></View>
             <SButton label={p.published ? `${t("w.coaches.published")} ✓` : t("w.coaches.publish")} ghost={!p.published} small onPress={async () => { await patchProgram(p.id, { published: !p.published }); load(); }} />
           </View>
         ))}
-      </Card>
+      </ACard>
 
       {enroll.incoming?.length > 0 && (
         <>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.enrolmentRequests")}</Text>
-          <Card>
+          <ACard style={cardStack}>
             {enroll.incoming.map((e: EnrollmentRow) => (
               <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
@@ -180,7 +179,7 @@ function Storefront() {
                 {e.status === "requested" && <View style={{ flexDirection: "row", gap: 6 }}><SButton label={t("w.coaches.accept")} small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "accept" }); load(); }} /><SButton label={t("w.coaches.decline")} ghost small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "decline" }); load(); }} /></View>}
               </View>
             ))}
-          </Card>
+          </ACard>
         </>
       )}
     </View>
@@ -205,17 +204,17 @@ export default function CoachesScreen() {
     <AuroraScreen hero={{ rank: "title", title: t("w.coaches.title"), meta: [t("w.coaches.sub")] }}>
       {isCoach && (
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
-          <SPill label={t("w.coaches.browse")} active={tab === "browse"} onPress={() => setTab("browse")} />
-          <SPill label={t("w.coaches.myCoaching")} active={tab === "storefront"} onPress={() => setTab("storefront")} />
+          <AChip label={t("w.coaches.browse")} selected={tab === "browse"} onPress={() => setTab("browse")} />
+          <AChip label={t("w.coaches.myCoaching")} selected={tab === "storefront"} onPress={() => setTab("storefront")} />
         </View>
       )}
 
       {tab === "storefront" && isCoach ? <Storefront /> : (
         <>
-          <TextInput value={q} onChangeText={setQ} placeholder={t("w.coaches.search")} placeholderTextColor={C.ash} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 15, marginBottom: 16 }} />
+          <ASearch value={q} onChange={setQ} placeholder={t("w.coaches.search")} />
           {!coaches ? <Loading /> : coaches.length === 0 ? <Empty title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} /> : coaches.map((c) => (
             <Pressable key={c.userId} onPress={() => setDetail(c.handle)}>
-              <Card>
+              <ACard style={cardStack}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
                   <View style={{ flex: 1 }}>
@@ -227,7 +226,7 @@ export default function CoachesScreen() {
                     </View>
                   </View>
                 </View>
-              </Card>
+              </ACard>
             </Pressable>
           ))}
         </>

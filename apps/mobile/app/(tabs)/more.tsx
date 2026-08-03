@@ -9,8 +9,8 @@ import { useNavAccess } from "../../lib/access";
 import { useFlags } from "../../lib/flags";
 import { WEB_APP_URL } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { fs, Screen, Kicker, Mono, H1, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen } from "../../components/aurora/kit";
+import { leading, fs, Kicker, Mono, F, PressScale as Pressable } from "../../lib/ui";
+import { AuroraScreen, AHeading } from "../../components/aurora/kit";
 import { AuroraIcon } from "../../components/aurora/icons";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
@@ -143,7 +143,7 @@ export default function More() {
   const body = (
     <>
       <Kicker>{t("nav.more")}</Kicker>
-      <H1>{t("more.title")}</H1>
+      <AHeading>{t("more.title")}</AHeading>
       <Mono style={{ marginTop: 6 }}>{t("more.intro")}</Mono>
 
       {/* Identity — profile, with a Settings shortcut (the cog people expect). */}
@@ -241,7 +241,7 @@ export default function More() {
                       style={{ position: "relative", minHeight: 80, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 4, alignItems: "center", justifyContent: "center", opacity: it.locked ? 0.6 : 1 }}
                     >
                       <AuroraIcon name={it.icon} size={22} color={it.locked ? C.ash : C.chalk} />
-                      <Text numberOfLines={2} style={{ marginTop: 7, fontFamily: F.semi, fontSize: fs.micro, lineHeight: 13, color: it.locked ? C.ash : C.chalk, textAlign: "center" }}>{it.label}</Text>
+                      <Text numberOfLines={2} style={{ marginTop: 7, fontFamily: F.semi, fontSize: fs.micro, lineHeight: leading(fs.micro, "tight"), color: it.locked ? C.ash : C.chalk, textAlign: "center" }}>{it.label}</Text>
                       {it.locked && (
                         <View style={{ position: "absolute", top: 6, right: 6 }}>
                           <AuroraIcon name="lock" size={11} color={pa.text} />
@@ -269,5 +269,5 @@ export default function More() {
     </>
   );
 
-  return aurora ? <AuroraScreen>{body}</AuroraScreen> : <Screen>{body}</Screen>;
+  return <AuroraScreen>{body}</AuroraScreen>;
 }

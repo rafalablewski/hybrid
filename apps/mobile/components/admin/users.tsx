@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Card, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { Intro, ErrorNote, Input, PillBtn, Segmented, KV } from "./_kit";
+import { Intro, ErrorNote, Input, PillBtn, FilterGroup, KV } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import AdminAnon from "./anon";
+import { useConfirm } from "../aurora/confirm";
 
 // Paginated, searchable user directory + per-user management drawer. Mirrors
 // apps/web/components/admin/users.tsx and /api/admin/users[/:id]. Each user is a
@@ -48,12 +50,12 @@ export default function AdminUsers() {
   const [tab, setTab] = useState<UsersTab>("accounts");
   return (
     <View>
-      <Segmented<UsersTab>
+      <FilterGroup<UsersTab>
         value={tab}
         onChange={setTab}
         options={[
           { value: "accounts", label: "Accounts" },
-          { value: "guests", label: "Guest workouts" },
+          { value: "guests", label: "Guest sessions" },
         ]}
       />
       {tab === "accounts" ? <AccountsTab /> : <AdminAnon />}
@@ -112,7 +114,7 @@ function AccountsTab() {
         data.users.map((u) => (
           <View key={u.id}>
             <Pressable onPress={() => setSelected(selected === u.id ? null : u.id)}>
-              <Card>
+              <ACard style={cardStack}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: space.ms }}>
                   <View style={{ flexShrink: 1 }}>
                     <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk }}>{u.name || "—"}</Text>
@@ -125,7 +127,7 @@ function AccountsTab() {
                   <Chip color={palette.ash}>{u.sessions} sessions</Chip>
                   <Chip color={palette.ash}>joined {fmt(u.createdAt)}</Chip>
                 </View>
-              </Card>
+              </ACard>
             </Pressable>
             {selected === u.id && (
               <UserDetail
@@ -210,41 +212,35 @@ function UserDetail({
 
   // Permanently delete the account + all data. Match the web's typed-confirm
   // intent with a clear destructive Alert.
-  const remove = () => {
+  const remove = async () => {
     if (!d) return;
-    Alert.alert(
-      "Delete account",
-      `Permanently delete ${d.email} and ALL their data — sessions, check-ins, everything. This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete forever",
-          style: "destructive",
-          onPress: async () => {
-            setDeleting(true);
-            setMsg(null);
-            const res = await adminSend(`DELETE`, `/api/admin/users/${id}`);
-            if (res.ok) {
-              onDeleted();
-            } else {
-              setMsg({ ok: false, text: res.error ?? "Delete failed." });
-              setDeleting(false);
-            }
-          },
-        },
-      ],
-    );
+    const ok = await confirm({
+      title: "Delete account",
+      message: `Permanently delete ${d.email} and ALL their data — sessions, check-ins, everything. This cannot be undone.`,
+      confirmLabel: "Delete forever",
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeleting(true);
+    setMsg(null);
+    const res = await adminSend(`DELETE`, `/api/admin/users/${id}`);
+    if (res.ok) {
+      onDeleted();
+    } else {
+      setMsg({ ok: false, text: res.error ?? "Delete failed." });
+      setDeleting(false);
+    }
   };
 
   if (!d)
     return (
-      <Card style={{ marginTop: -4 }}>
+      <ACard style={[cardStack, { marginTop: -4 }]}>
         <Loading />
-      </Card>
+      </ACard>
     );
 
   return (
-    <Card accent={palette.amber} style={{ marginTop: -4 }}>
+    <ACard accent={palette.amber} style={[cardStack, { marginTop: -4 }]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
         <View style={{ flexShrink: 1 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
@@ -290,7 +286,7 @@ function UserDetail({
         </Text>
 
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Role</Text>
-        <Segmented<RoleVal>
+        <FilterGroup<RoleVal>
           options={[
             { value: "CLIENT", label: "Client" },
             { value: "COACH", label: "Coach" },
@@ -301,7 +297,7 @@ function UserDetail({
         />
 
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Language</Text>
-        <Segmented<LangVal>
+        <FilterGroup<LangVal>
           options={[
             { value: "en", label: "EN" },
             { value: "pl", label: "PL" },
@@ -345,6 +341,8 @@ function UserDetail({
           busy={deleting}
         />
       </View>
-    </Card>
+    </ACard>
   );
 }
+
+  const { confirm } = useConfirm();

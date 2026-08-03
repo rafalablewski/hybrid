@@ -11,8 +11,8 @@ import {
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, APill, RADIUS } from "./kit";
+import { leading, fs, space, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { AuroraScreen, ACard, AHeading, APill, RADIUS, AChip } from "./kit";
 import { CtaLabel } from "./cta-label";
 
 const hpiColor = (C: Palette, b: string) =>
@@ -120,11 +120,11 @@ export default function AuroraOrg() {
       <ACard style={{ marginTop: space.md }}>
         <Text style={kicker(txt(C, C.lime))}>{t("w.teams.org.headerKicker")}</Text>
         {orgs.length === 0 ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.teams.org.noOrgs")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.teams.org.noOrgs")}</Text>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
             {orgs.map((o) => (
-              <Chip key={o.id} C={C} active={o.id === selected} onPress={() => setSelected(o.id)} label={`${o.name} – ${o.role.toLowerCase()}`} />
+              <AChip key={o.id} selected={o.id === selected} onPress={() => setSelected(o.id)} label={`${o.name} – ${o.role.toLowerCase()}`} />
             ))}
           </ScrollView>
         )}
@@ -138,14 +138,14 @@ export default function AuroraOrg() {
         <>
           <ACard style={{ marginTop: space.md }}>
             <Text style={kicker(txt(C, C.blue))}>{t("w.teams.org.yourAccess")} – {detail.myRole.toLowerCase()}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{roleScope(detail.myRole)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{roleScope(detail.myRole)}</Text>
           </ACard>
 
           {/* team hierarchy */}
           <ACard style={{ marginTop: space.md }}>
             <Text style={kicker(C.ash)}>{t("w.teams.org.teamHierarchy")}</Text>
             {tree.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.teams.org.noTeams")}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 10 }}>{t("w.teams.org.noTeams")}</Text>
             ) : (
               tree.map((node) => {
                 const count = detail.members.filter((m) => m.teamId === node.id).length;
@@ -165,9 +165,9 @@ export default function AuroraOrg() {
                 </View>
                 {tree.length > 0 ? (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
-                    <Chip C={C} active={newTeamParent === ""} onPress={() => setNewTeamParent("")} label={t("w.teams.org.topLevel")} />
+                    <AChip selected={newTeamParent === ""} onPress={() => setNewTeamParent("")} label={t("w.teams.org.topLevel")} />
                     {tree.map((node) => (
-                      <Chip key={node.id} C={C} active={newTeamParent === node.id} onPress={() => setNewTeamParent(node.id)} label={node.name} />
+                      <AChip key={node.id} selected={newTeamParent === node.id} onPress={() => setNewTeamParent(node.id)} label={node.name} />
                     ))}
                   </ScrollView>
                 ) : null}
@@ -212,13 +212,13 @@ export default function AuroraOrg() {
                     <View style={{ marginTop: 10 }}>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
                         {ORG_ROLES.map((r) => (
-                          <Chip key={r} C={C} active={m.role === r} onPress={() => onSetMember(m.id, { role: r })} label={r.toLowerCase()} />
+                          <AChip key={r} selected={m.role === r} onPress={() => onSetMember(m.id, { role: r })} label={r.toLowerCase()} />
                         ))}
                       </ScrollView>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
-                        <Chip C={C} active={m.teamId == null} onPress={() => onSetMember(m.id, { teamId: null })} label={t("w.teams.org.noTeam")} />
+                        <AChip selected={m.teamId == null} onPress={() => onSetMember(m.id, { teamId: null })} label={t("w.teams.org.noTeam")} />
                         {tree.map((node) => (
-                          <Chip key={node.id} C={C} active={m.teamId === node.id} onPress={() => onSetMember(m.id, { teamId: node.id })} label={node.name} />
+                          <AChip key={node.id} selected={m.teamId === node.id} onPress={() => onSetMember(m.id, { teamId: node.id })} label={node.name} />
                         ))}
                       </ScrollView>
                     </View>
@@ -235,7 +235,7 @@ export default function AuroraOrg() {
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
                   {ORG_ROLES.map((r) => (
-                    <Chip key={r} C={C} active={inviteRole === r} onPress={() => setInviteRole(r)} label={r.toLowerCase()} />
+                    <AChip key={r} selected={inviteRole === r} onPress={() => setInviteRole(r)} label={r.toLowerCase()} />
                   ))}
                 </ScrollView>
                 {inviteErr ? <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.red), marginTop: 8 }}>{inviteErr}</Text> : null}
@@ -247,7 +247,7 @@ export default function AuroraOrg() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.teams.org.pendingInvites")}</Text>
                 {detail.invites.map((iv) => (
                   <View key={iv.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                    <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{iv.email} – {iv.role.toLowerCase()}</Text>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{iv.email} – {iv.role.toLowerCase()}</Text>
                     <Pressable onPress={() => onRevoke(iv.id)} accessibilityRole="button" accessibilityLabel={`${t("w.teams.org.revoke")} ${iv.email}`} hitSlop={8}>
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>{t("w.teams.org.revoke")}</Text>
                     </Pressable>
@@ -269,16 +269,16 @@ export default function AuroraOrg() {
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.lg, marginTop: 8 }}>
                 <Text style={{ fontFamily: F.black, fontSize: 40, color: hpiColor(C, athlete.hpi.band) }}>{athlete.hpi.score}</Text>
                 <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  <Tag C={C} color={hpiColor(C, athlete.hpi.band)} label={athlete.hpi.band} />
-                  <Tag C={C} color={txt(C, C.amber)} label={`${t("w.teams.org.limiter")} – ${athlete.hpi.limiter}`} />
-                  <Tag C={C} color={athlete.injury.flaggedCount ? txt(C, C.red) : txt(C, C.lime)} label={`${t("w.teams.org.injury")} ${athlete.injury.overall}/100`} />
+                  <Chip color={hpiColor(C, athlete.hpi.band)}>{athlete.hpi.band}</Chip>
+                  <Chip color={txt(C, C.amber)}>{`${t("w.teams.org.limiter")} – ${athlete.hpi.limiter}`}</Chip>
+                  <Chip color={athlete.injury.flaggedCount ? txt(C, C.red) : txt(C, C.lime)}>{`${t("w.teams.org.injury")} ${athlete.injury.overall}/100`}</Chip>
                 </View>
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 10, lineHeight: 20 }}>{athlete.summary}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 10, lineHeight: leading(fs.body) }}>{athlete.summary}</Text>
               {athlete.injury.tissues ? (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
                   {athlete.injury.tissues.filter((x) => x.risk > 0).map((x) => (
-                    <Tag key={x.tissue} C={C} color={hpiColor(C, x.band)} label={`${x.tissue} ${x.risk}`} />
+                    <Chip key={x.tissue} color={hpiColor(C, x.band)}>{`${x.tissue} ${x.risk}`}</Chip>
                   ))}
                 </View>
               ) : (
@@ -311,20 +311,3 @@ function Field({ C, value, onChange, placeholder, keyboardType }: { C: Palette; 
   );
 }
 
-function Chip({ C, active, label, onPress }: { C: Palette; active: boolean; label: string; onPress: () => void }) {
-  const accent = txt(C, C.lime);
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: active ? accent : C.ash }}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function Tag({ C, color, label }: { C: Palette; color: string; label: string }) {
-  return (
-    <View style={{ backgroundColor: `${color}24`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color }}>{label}</Text>
-    </View>
-  );
-}

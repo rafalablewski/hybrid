@@ -3,7 +3,7 @@ import { View, Text, TextInput } from "react-native";
 import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit } from "@hybrid/core";
 import { fetchAttestations, requestAttestation } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../lib/ui";
 
 // Verified Strength Record — the attestation panel on a session's PR list.
 // Mirrors apps/web/components/pr-attestation.tsx: tier badge per PR
@@ -39,7 +39,7 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>Co-sign requests</Text>
       {inbox.map((i) => (
         <View key={i.id} style={{ marginTop: 10 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>
             <Text style={{ fontFamily: F.bold }}>{i.ownerName || (i.ownerHandle ? `@${i.ownerHandle}` : "Someone")}</Text> asks you to confirm you watched their{" "}
             <Text style={{ fontFamily: F.bold }}>{i.lift}</Text>
             {i.topLoad ? <> at <Text style={{ fontFamily: F.bold }}>{fmtWeight(i.topLoad, units)}</Text></> : null}.
@@ -54,7 +54,7 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
           </View>
         </View>
       ))}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 15 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: leading(fs.micro, "snug") }}>
         Your co-sign goes on the record under your name. Only confirm a lift you actually saw.
       </Text>
     </View>
@@ -151,7 +151,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
           </View>
         );
       })}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 15 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: leading(fs.micro, "snug") }}>
         {unavailable
           ? "Witness co-signing isn't switched on for this deployment yet."
           : "A witness co-signs under their own name — that's the whole point. Only ask someone who was actually there."}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { deploymentReadiness, unitReadiness, type UnitMember } from "@hybrid/core";
 import { fetchState, type StateSnapshot } from "../../lib/api";
-import { fs, space, F } from "../../lib/ui";
+import { leading, fs, space, F } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, RADIUS } from "./kit";
@@ -51,14 +51,14 @@ export default function AuroraTactical() {
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("w.teams.tactical.deploymentReadiness") }}>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>
         {t("w.teams.tactical.headerBody")}
       </Text>
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.blue) }}>{t("w.teams.tactical.yourReadiness")}</Text>
         {noData ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: 18 }}>{t("w.teams.tactical.logToCompute")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 8, lineHeight: leading(fs.body, "snug") }}>{t("w.teams.tactical.logToCompute")}</Text>
         ) : dr ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms, marginTop: 6 }}>
@@ -71,7 +71,7 @@ export default function AuroraTactical() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>HPI {state!.hpi}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.teams.tactical.injuryRisk")} {state!.injuryRisk}</Text>
             </View>
-            {dr.limiters.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 8, lineHeight: 18 }}>{dr.limiters.join(" – ")}</Text>}
+            {dr.limiters.length > 0 && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 8, lineHeight: leading(fs.caption) }}>{dr.limiters.join(" – ")}</Text>}
             <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
               <Field C={C} label={t("w.teams.tactical.loadCarriage")} value={loadCarriage} onChange={setLoadCarriage} />
               <Field C={C} label={t("w.teams.tactical.workCapacity")} value={workCapacity} onChange={setWorkCapacity} />

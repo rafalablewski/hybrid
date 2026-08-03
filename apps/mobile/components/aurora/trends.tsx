@@ -11,7 +11,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, ASub, RADIUS } from "./kit";
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
@@ -69,7 +69,7 @@ export default function AuroraTrends({ top, unified = false }: {
 
       {!trained ? (
         <ACard solid style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.trends.empty")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: leading(fs.bodyLg, "snug") }}>{t("w.analyze.trends.empty")}</Text>
         </ACard>
       ) : (
         <>
@@ -79,8 +79,8 @@ export default function AuroraTrends({ top, unified = false }: {
               {weeks.map((w, i) => <View key={i} style={{ flex: 1, height: 6 + (w.sets / maxSets) * 64, borderRadius: 3, backgroundColor: i === weeks.length - 1 ? C.lime : `${C.lime}66` }} />)}
             </View>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{t("w.analyze.trends.weeksAgo")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{`${weeks[weeks.length - 1]!.sets} ${t("w.analyze.trends.setsThisWk")}`}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.analyze.trends.weeksAgo")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{`${weeks[weeks.length - 1]!.sets} ${t("w.analyze.trends.setsThisWk")}`}</Text>
             </View>
           </ACard>
 
@@ -94,8 +94,8 @@ export default function AuroraTrends({ top, unified = false }: {
               {tonnes.map((v, i) => <View key={i} style={{ flex: 1, height: 6 + (v / maxTonnes) * 64, borderRadius: 3, backgroundColor: i === tonnes.length - 1 ? C.blue : `${C.blue}66` }} />)}
             </View>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{t("w.analyze.trends.weeksAgo")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{fmtTonnage(weeks[weeks.length - 1]?.tonnage ?? 0, units)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.analyze.trends.weeksAgo")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{fmtTonnage(weeks[weeks.length - 1]?.tonnage ?? 0, units)}</Text>
             </View>
           </ACard>
 
@@ -110,9 +110,9 @@ export default function AuroraTrends({ top, unified = false }: {
             </View>
             <View style={{ flexDirection: "row", marginTop: 12, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
               {([["w.analyze.trends.colExercise", "name", 2, "left"], ["w.analyze.trends.colFreq", "sessions", 1, "center"], ["w.analyze.trends.colHeaviest", "topWeight", 1, "center"]] as const).map(([h, k, fl, al]) => (
-                <Text key={h} onPress={() => sortBy(k)} style={{ flex: fl, textAlign: al, fontFamily: F.mono, fontSize: 9, color: sort.k === k ? txt(C, C.lime) : C.ash, letterSpacing: 0.9 }}>{t(h)}{sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</Text>
+                <Text key={h} onPress={() => sortBy(k)} style={{ flex: fl, textAlign: al, fontFamily: F.mono, fontSize: fs.nano, color: sort.k === k ? txt(C, C.lime) : C.ash, letterSpacing: 0.9 }}>{t(h)}{sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</Text>
               ))}
-              <Text onPress={() => sortBy("volume")} style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: 9, color: sort.k === "volume" ? txt(C, C.lime) : C.ash }}>↗</Text>
+              <Text onPress={() => sortBy("volume")} style={{ width: 28, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: sort.k === "volume" ? txt(C, C.lime) : C.ash }}>↗</Text>
             </View>
             {sortedTable.map((r) => { const tr = TREND[r.trend]; return (
               <Pressable key={r.name} onPress={() => router.push({ pathname: "/exercise", params: { name: r.name } })} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>

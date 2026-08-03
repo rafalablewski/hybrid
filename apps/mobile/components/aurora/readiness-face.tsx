@@ -24,7 +24,11 @@ function Arc({ color, width, depth, shape }: { color: string; width: number; dep
 }
 
 /** A short level (or slanted) eye stroke. */
-function Bar({ color, width, rotate }: { color: string; width: number; rotate?: string }) {
+/**
+ * One stroke of the readiness FACE — an eyebrow or a mouth, positioned and
+ * rotated. Not a meter: it encodes an expression, not a proportion.
+ */
+function FaceStroke({ color, width, rotate }: { color: string; width: number; rotate?: string }) {
   return <View style={{ width, height: STROKE, borderRadius: STROKE / 2, backgroundColor: color, transform: rotate ? [{ rotate }] : undefined }} />;
 }
 
@@ -42,22 +46,22 @@ function Eyes({ color, mouth }: { color: string; mouth: ReadinessMouth }) {
     // wrecked — eyes droop outward: left "/" and right "\"
     return (
       <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-        <Bar color={color} width={7} rotate="-20deg" />
-        <Bar color={color} width={7} rotate="20deg" />
+        <FaceStroke color={color} width={7} rotate="-20deg" />
+        <FaceStroke color={color} width={7} rotate="20deg" />
       </View>
     );
   }
   // smile / flat — calm level strokes
   return (
     <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-      <Bar color={color} width={5.5} />
-      <Bar color={color} width={5.5} />
+      <FaceStroke color={color} width={5.5} />
+      <FaceStroke color={color} width={5.5} />
     </View>
   );
 }
 
 function Mouth({ color, mouth }: { color: string; mouth: ReadinessMouth }) {
-  if (mouth === "flat") return <Bar color={color} width={12} />;
+  if (mouth === "flat") return <FaceStroke color={color} width={12} />;
   if (mouth === "frown") return <Arc color={color} width={14} depth={5} shape="peak" />;
   return <Arc color={color} width={15} depth={mouth === "grin" ? 7 : 5} shape="valley" />;
 }

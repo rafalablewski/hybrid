@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Alert } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import {
   CHECKIN_METRICS,
   CHECKIN_SCALE,
@@ -18,10 +18,11 @@ import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } fr
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
+import { useConfirm } from "./confirm";
 
 type Ratings = Record<CheckinMetricKey, number>;
 
@@ -53,6 +54,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
   onDone?: () => void;
   onClose?: () => void;
 } = {}) {
+  const { notify } = useConfirm();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const revalidate = useRevalidate();
@@ -216,9 +218,9 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
     if (!r.ok) {
       if (r.cooldownMs != null) {
         const mins = Math.ceil(r.cooldownMs / 60000);
-        Alert.alert(t("w.recovery.checkins.cooldownTitle"), `${t("w.recovery.checkins.cooldownBody")} ${Math.floor(mins / 60)}h ${mins % 60}m.`);
+        notify(t("w.recovery.checkins.cooldownTitle"), `${t("w.recovery.checkins.cooldownBody")} ${Math.floor(mins / 60)}h ${mins % 60}m.`);
       } else {
-        Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody"));
+        notify(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody"));
       }
       return;
     }
@@ -323,7 +325,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               check-in — an edit is not a second check-in, and calling it one
               would suggest the first is still sitting there somewhere. */}
           <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 16 }}>{t(updated ? "w.recovery.checkins.updatedTitle" : "w.recovery.checkins.loggedTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 18, maxWidth: 280 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption), maxWidth: 280 }}>
             {t(!allAnswered ? "w.recovery.checkins.loggedPartialSub" : updated ? "w.recovery.checkins.updatedSub" : "w.recovery.checkins.loggedSub")}
           </Text>
           {/* What actually landed. The count is the same one the Today card
@@ -384,7 +386,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                   ) : (
                     <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>–</Text>
                   )}
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t(m.labelKey)}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t(m.labelKey)}</Text>
                 </Pressable>
               );
             })}

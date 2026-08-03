@@ -6,7 +6,7 @@ import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } fr
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "./kit";
 
 const STORE_KEY = "hybrid.sport";
@@ -58,7 +58,7 @@ export default function AuroraSport() {
 
   return (
     <AuroraScreen hero={{ rank: "title", title: "Sport" }}>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: 20 }}>{t("sport.intro")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: leading(fs.bodyLg) }}>{t("sport.intro")}</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 12 }}>
         {SPORT_NAMES.map((s) => {
@@ -157,7 +157,7 @@ export default function AuroraSport() {
               <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{e.demand}</Text>
             </View>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 3, lineHeight: 19 }}>{e.why}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 3, lineHeight: leading(fs.body) }}>{e.why}</Text>
           </View>
         ))}
       </ACard>

@@ -18,8 +18,8 @@ import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, Spark, withAlpha } from "./kit";
+import { leading, fs, space, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, Spark, withAlpha, ASection } from "./kit";
 import AuroraVolume from "./volume";
 import AuroraTrends from "./trends";
 import { AuroraIcon } from "./icons";
@@ -183,13 +183,13 @@ function Full({ top }: { top?: ReactNode }) {
       {(macro || hasData) && (
         // Full-bleed chip rail — clips at the screen edge, rests on the column.
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-          {phaseBlock && <Pill C={C} dot={C.lime}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{phaseBlock.label}</Text> {t("w.home.today.phase")}</Pill>}
-          {macro?.eventInWeeks != null && <Pill C={C} icon={<AuroraIcon name="calendar-event" size={13} color={C.chalk} />}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</Pill>}
+          {phaseBlock && <MetaPill C={C} dot={C.lime}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{phaseBlock.label}</Text> {t("w.home.today.phase")}</MetaPill>}
+          {macro?.eventInWeeks != null && <MetaPill C={C} icon={<AuroraIcon name="calendar-event" size={13} color={C.chalk} />}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</MetaPill>}
           {/* ACWR rides on training data, not on having a season — a planless
               athlete still gets their workload ratio at a glance. */}
-          {hasData && <Pill C={C} icon={<AuroraIcon name="arrow-up" size={13} color={C.chalk} />}>{loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
+          {hasData && <MetaPill C={C} icon={<AuroraIcon name="arrow-up" size={13} color={C.chalk} />}>{loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</MetaPill>}
           {/* The headline number is visible before any scroll. */}
-          {hasData && <Pill C={C} dot={hpiColor(state.hpi.band, C)}>HPI <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.score}</Text> – {state.hpi.band}</Pill>}
+          {hasData && <MetaPill C={C} dot={hpiColor(state.hpi.band, C)}>HPI <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.score}</Text> – {state.hpi.band}</MetaPill>}
         </ScrollView>
       )}
 
@@ -212,7 +212,7 @@ function Full({ top }: { top?: ReactNode }) {
           columns, the top driver, and today's readiness (with the check-in
           nudge) below. */}
       <ACard solid style={{ marginTop: 16 }}>
-        <SHead C={C} scheme={scheme} title={t("w.home.cockpit.perfTwin")} />
+        <ASection title={t("w.home.cockpit.perfTwin")} />
         {hasData ? (
           <>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
@@ -238,7 +238,7 @@ function Full({ top }: { top?: ReactNode }) {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
                 <View style={{ gap: 5, marginTop: 5 }}>
                   {whyLines.map((line, i) => (
-                    <Text key={i} style={{ fontFamily: F.reg, fontSize: fs.body, color: i === 0 ? C.chalk : C.ash, lineHeight: 19 }}>{line}</Text>
+                    <Text key={i} style={{ fontFamily: F.reg, fontSize: fs.body, color: i === 0 ? C.chalk : C.ash, lineHeight: leading(fs.body) }}>{line}</Text>
                   ))}
                 </View>
                 {/* READINESS NUDGE — the one-tap check-in moved today's load;
@@ -261,7 +261,7 @@ function Full({ top }: { top?: ReactNode }) {
           </>
         ) : sessionsRead.ready ? (
           /* A real answer: the athlete genuinely has no logged training. */
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.twinEmpty")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{t("w.home.cockpit.twinEmpty")}</Text>
         ) : (
           /* UNKNOWN, or the read failed (the retry card above says so). Showing
              twinEmpty here is what told athletes with years of history to "log
@@ -278,10 +278,9 @@ function Full({ top }: { top?: ReactNode }) {
           identity: bar vs tick, hue second). */}
       {hasData && (
         <ACard solid style={{ marginTop: 16 }}>
-          <SHead
-            C={C} scheme={scheme}
+          <ASection
             title={t("w.analyze.perf.trajectory")}
-            metaNode={
+            meta={
               <View style={{ flexDirection: "row", gap: space.md }}>
                 {([["HPI", C.lime], ["Readiness", C.blue]] as const).map(([l, col]) => (
                   <View key={l} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
@@ -312,11 +311,10 @@ function Full({ top }: { top?: ReactNode }) {
           detail" disclosure so the glance stays a glance. */}
       {hasData && (
         <ACard solid style={{ marginTop: 16, borderColor: calm ? C.line : `${C.red}73`, backgroundColor: calm ? undefined : `${C.red}12` }}>
-          <SHead
-            C={C} scheme={scheme}
+          <ASection
             title={t("w.home.today.injuryRisk")}
-            titleColor={calm ? undefined : txt(C, C.red)}
-            metaNode={<Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, riskColor(risk.band, C)) }}>{cap(risk.band)} – {risk.overall}</Text>}
+            titleStyle={{ color: calm ? undefined : txt(C, C.red) }}
+            meta={<Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, riskColor(risk.band, C)) }}>{cap(risk.band)} – {risk.overall}</Text>}
           />
           {calm ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.home.today.noTissues")}</Text>
@@ -347,12 +345,12 @@ function Full({ top }: { top?: ReactNode }) {
               <Watch C={C} label={t("w.home.cockpit.strain")} value={loadState.strain.toLocaleString()} />
             </View>
           ) : (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 18 }}>{t("w.home.cockpit.watchBuilding")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
           )}
           {/* A one-line plain-language gloss on ACWR — the ratio the "workload
               spike" driver is built on — so the bare number reads for everyone. */}
           {loadState.enoughHistory && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: 15, marginTop: 8 }}>{t("w.injury.acwrNote")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: leading(fs.nano), marginTop: 8 }}>{t("w.injury.acwrNote")}</Text>
           )}
 
           {/* TISSUE DETAIL — the depth the standalone screen used to own: the
@@ -362,7 +360,7 @@ function Full({ top }: { top?: ReactNode }) {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <Pressable onPress={() => setTissueOpen((v) => !v)} hitSlop={6} accessibilityRole="button" accessibilityState={{ expanded: tissueOpen }} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: txt(C, calm ? C.lime : C.red) }}>{t("w.analyze.perf.tissueDetail")}</Text>
-                <Text style={{ fontSize: 8, color: txt(C, calm ? C.lime : C.red) }}>{tissueOpen ? "▲" : "▼"}</Text>
+                <Text style={{ fontSize: fs.nano, color: txt(C, calm ? C.lime : C.red) }}>{tissueOpen ? "▲" : "▼"}</Text>
               </Pressable>
               {/* The model-version annotation the old screen's header carried —
                   always visible, qualifying the risk numbers + the table. */}
@@ -383,7 +381,7 @@ function Full({ top }: { top?: ReactNode }) {
                   <View key={ti.tissue} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
                     <View style={{ flex: 1, paddingRight: 6 }}>
                       <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{cap(ti.tissue)}</Text>
-                      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : "—"}</Text>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{ti.drivers[0] ? t(RISK_DRIVER_LABEL_KEY[ti.drivers[0].kind]) : "—"}</Text>
                     </View>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: ti.enoughHistory ? C.chalk : C.ash, width: 46, textAlign: "right" }}>{ti.enoughHistory ? ti.acwr.toFixed(2) : "—"}</Text>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: ti.risk > 0 ? C.chalk : C.ash, width: 62, textAlign: "right" }}>{(ti.prob * 100).toFixed(1)}%</Text>
@@ -402,7 +400,7 @@ function Full({ top }: { top?: ReactNode }) {
                 {risk.awaitingBaseline.length > 0 && (
                   <View style={{ marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: `${C.ash}14` }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
-                    <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
+                    <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
                   </View>
                 )}
                 {/* WHAT'S RAISING THIS? — plain-language guidance for each driver
@@ -412,7 +410,7 @@ function Full({ top }: { top?: ReactNode }) {
                     {driverKinds.map((k) => (
                       <View key={k}>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: txt(C, riskColor(risk.band, C)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</Text>
-                        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: 18, color: C.chalk }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</Text>
+                        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</Text>
                       </View>
                     ))}
                   </View>
@@ -439,10 +437,9 @@ function Full({ top }: { top?: ReactNode }) {
       {hasData && (
         <Pressable onPress={() => router.push("/statistics")} style={{ marginTop: 16 }}>
           <ACard solid>
-            <SHead
-              C={C} scheme={scheme}
+            <ASection
               title={t("w.home.today.yourWeek")}
-              metaNode={recap.prs.length > 0 ? <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><AuroraIcon name="trophy" size={13} color={C.onAccent} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>{recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View> : undefined}
+              meta={recap.prs.length > 0 ? <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><AuroraIcon name="trophy" size={13} color={C.onAccent} /><Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: C.onAccent }}>{recap.prs.length} {t("w.home.cockpit.newPrs")}</Text></View> : undefined}
             />
             <View style={{ flexDirection: "row" }}>
               <View style={{ flex: 1 }}><Stat C={C} label={t("w.home.today.sessions")} value={`${recap.sessions}`} /></View>
@@ -494,7 +491,7 @@ function Full({ top }: { top?: ReactNode }) {
       <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
         {/* widget 1 — goal */}
         <ACard solid style={{ flex: 1 }}>
-          <SHead C={C} scheme={scheme} title={t("w.home.cockpit.goal")} small />
+          <ASection title={t("w.home.cockpit.goal")} titleStyle={{ fontSize: fs.bodyLg }} />
           {macro ? (
             <>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{macro.goalOrSport}</Text>
@@ -503,9 +500,9 @@ function Full({ top }: { top?: ReactNode }) {
           ) : macroRead.settled ? (
             /* Settled: the server said "not enrolled", or the read failed and
                the retry card above owns that — either way, stop waiting. */
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18 }}>{t("w.home.cockpit.noSeason")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.noSeason")}</Text>
           ) : (
-            <Bar C={C} w="80%" h={14} />
+            <Rule C={C} w="80%" h={14} />
           )}
         </ACard>
         {/* widget 2 — season progress / plan controls */}
@@ -513,15 +510,15 @@ function Full({ top }: { top?: ReactNode }) {
           {/* The HEADING itself is a claim ("Set up" vs "Season") — hold it
               until enrollment is known, or an enrolled athlete is briefly told
               to set up a season they already have. */}
-          <SHead C={C} scheme={scheme} title={!macroRead.settled ? " " : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} small />
+          <ASection title={!macroRead.settled ? " " : macro ? t("w.home.cockpit.season") : t("w.home.cockpit.setUp")} meta={macro ? `${seasonPct}%` : undefined} titleStyle={{ fontSize: fs.bodyLg }} />
           {macro ? (
             <View style={{ height: 6, borderRadius: RADIUS.pill, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 2, marginBottom: 10 }}>
               <View style={{ width: `${seasonPct}%`, height: 6, backgroundColor: C.violet }} />
             </View>
           ) : macroRead.settled ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, marginBottom: 10, lineHeight: 16 }}>{t("w.home.cockpit.fourQuestions")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, marginBottom: 10, lineHeight: leading(fs.caption, "snug") }}>{t("w.home.cockpit.fourQuestions")}</Text>
           ) : (
-            <View style={{ marginTop: 2, marginBottom: 10 }}><Bar C={C} w="90%" h={12} /></View>
+            <View style={{ marginTop: 2, marginBottom: 10 }}><Rule C={C} w="90%" h={12} /></View>
           )}
           <View style={{ gap: 8 }}>
             {macro && <Pressable onPress={() => router.push("/periodize")}><CtaLabel label={`${t("w.home.cockpit.periodize")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>}
@@ -536,7 +533,7 @@ function Full({ top }: { top?: ReactNode }) {
 
       {/* 11 · HORIZON — Sport S&C, Velocity, Endurance, AI Coach */}
       <ACard solid style={{ marginTop: 16 }}>
-        <SHead C={C} scheme={scheme} title={t("w.home.cockpit.horizon")} />
+        <ASection title={t("w.home.cockpit.horizon")} />
         <Mod C={C} label={t("w.home.cockpit.sportSC")} value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")} onPress={() => router.push("/sport")} />
         <Mod C={C} label={t("w.home.cockpit.velocity")} value={t("w.home.cockpit.velocityValue")} mono onPress={() => router.push("/velocity")} />
         <Mod C={C} label={t("w.home.cockpit.endurance")} value={totals.efforts > 0 ? `${totals.efforts} – ${totals.distanceKm.toLocaleString()} km – ${totals.minutes.toLocaleString()} min` : t("w.home.cockpit.tab.endurance")} mono onPress={() => router.push("/endurance")} />
@@ -570,7 +567,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
 
   return (
     <ACard solid style={{ marginTop: 16 }}>
-      <SHead C={C} scheme={scheme} title={t("w.home.cockpit.breakdown")} />
+      <ASection title={t("w.home.cockpit.breakdown")} />
       {/* segmented tabs */}
       <View style={{ flexDirection: "row", gap: 0, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4 }}>
         {TABS.map((x) => {
@@ -591,7 +588,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
               <Stat C={C} label={t("w.home.cockpit.lifts")} value={`${recap.lifts}`} />
               <Stat C={C} label={t("w.home.today.topMuscle")} value={recap.topMuscle ? cap(recap.topMuscle.muscle) : "—"} />
             </View>
-            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 16, lineHeight: 18 }}>{state.drivers[0].detail}</Text>}
+            {state.drivers[0] && <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 16, lineHeight: leading(fs.body, "snug") }}>{state.drivers[0].detail}</Text>}
           </>
         )}
         {tab === "endurance" && (
@@ -604,7 +601,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
               </View>
               <Pressable onPress={() => onOpen("/endurance")} style={{ marginTop: 16 }}><CtaLabel label={`${t("w.home.cockpit.tab.endurance")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>
             </>
-          ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.enduranceEmpty")}</Text>
+          ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{t("w.home.cockpit.enduranceEmpty")}</Text>
         )}
         {tab === "sport" && (
           sport ? (
@@ -612,7 +609,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{sport.sport} – {LEVELS[sport.levelIdx]}</Text>
               <Pressable onPress={() => onOpen("/sport")} style={{ marginTop: 12 }}><CtaLabel label={`${t("w.home.cockpit.sport")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>
             </>
-          ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.sportEmpty")}</Text>
+          ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{t("w.home.cockpit.sportEmpty")}</Text>
         )}
         {tab === "velocity" && (
           bestProfile ? (
@@ -624,7 +621,7 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
               </View>
               <Pressable onPress={() => onOpen("/velocity")} style={{ marginTop: 16 }}><CtaLabel label={`${t("w.home.cockpit.velocity")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} /></Pressable>
             </>
-          ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{t("w.home.cockpit.velocityBlurb")}</Text>
+          ) : <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{t("w.home.cockpit.velocityBlurb")}</Text>
         )}
       </View>
     </ACard>
@@ -635,7 +632,12 @@ function Breakdown({ C, scheme, state, recap, totals, sport, profiles, onOpen }:
 /** One skeleton bar — a placeholder that states nothing. Deliberately not a
  *  shimmer: the pull-to-refresh spinner already carries "we're working on it",
  *  and a second animated element competing with it just adds noise. */
-function Bar({ C, w, h, mt }: { C: Palette; w: number | `${number}%`; h: number; mt?: number }) {
+/**
+ * A sized rectangle — a hairline or a spacer rule. A layout helper, not a
+ * meter: the caller passes an explicit width and height, and nothing here reads
+ * a value.
+ */
+function Rule({ C, w, h, mt }: { C: Palette; w: number | `${number}%`; h: number; mt?: number }) {
   return <View style={{ width: w, height: h, borderRadius: h / 2, backgroundColor: C.line, opacity: 0.45, marginTop: mt }} />;
 }
 
@@ -646,16 +648,16 @@ function StateSkeleton({ C }: { C: Palette }) {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-        <Bar C={C} w={64} h={40} />
+        <Rule C={C} w={64} h={40} />
         <View style={{ flex: 1, gap: 8 }}>
-          <Bar C={C} w="70%" h={11} />
-          <Bar C={C} w="100%" h={20} />
+          <Rule C={C} w="70%" h={11} />
+          <Rule C={C} w="100%" h={20} />
         </View>
       </View>
       <View style={{ flexDirection: "row", gap: 12, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
-        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
-        <View style={{ flex: 1, gap: 8 }}><Bar C={C} w="55%" h={18} /><Bar C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Rule C={C} w="55%" h={18} /><Rule C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Rule C={C} w="55%" h={18} /><Rule C={C} w="80%" h={9} /></View>
+        <View style={{ flex: 1, gap: 8 }}><Rule C={C} w="55%" h={18} /><Rule C={C} w="80%" h={9} /></View>
       </View>
     </View>
   );
@@ -664,20 +666,16 @@ function StateSkeleton({ C }: { C: Palette }) {
 /** SectionHead — the golden-standard card header (Explore's SectionHead idiom):
  *  a bold display-face title on the left, any meta/action as small mono
  *  uppercase (or a pill) on the RIGHT of the same row. No decorative dot. */
-function SHead({ C, scheme, title, meta, metaNode, titleColor, small }: {
-  C: Palette; scheme: Scheme; title: string; meta?: string; metaNode?: React.ReactNode; titleColor?: string; small?: boolean;
-}) {
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 4, columnGap: 12, marginBottom: 12 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: small ? fs.bodyLg : 18, letterSpacing: -0.3, color: titleColor ?? C.chalk }}>{title}</Text>
-      {metaNode ?? (meta != null && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{meta}</Text>
-      ))}
-    </View>
-  );
-}
-
-function Pill({ C, children, dot, icon }: { C: Palette; children: React.ReactNode; dot?: string; icon?: ReactNode }) {
+/**
+ * A status READOUT — not a chip.
+ *
+ * It survives the chip consolidation because it is a different object: a
+ * neutral ink2 surface (not an accent tint), sentence-case mixed-weight children
+ * (not a single uppercase label), and a leading SEMANTIC dot or icon carrying
+ * state. `Chip` in lib/ui is a tag; `AChip` in the kit is a filter; this reads a
+ * value. Named for the job so the next person does not merge it by its old name.
+ */
+function MetaPill({ C, children, dot, icon }: { C: Palette; children: React.ReactNode; dot?: string; icon?: ReactNode }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
       {dot && <View style={{ width: 7, height: 7, borderRadius: 5, backgroundColor: dot }} />}
@@ -701,7 +699,7 @@ function Comp({ C, scheme, label, value }: { C: Palette; scheme: Scheme; label: 
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
       <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, color: C.chalk, letterSpacing: -0.5 }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 6 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 6 }}>{label}</Text>
     </View>
   );
 }
@@ -710,7 +708,7 @@ function Watch({ C, label, value, color }: { C: Palette; label: string; value: s
   return (
     <View style={{ flex: 1, backgroundColor: C.ink2, paddingVertical: 12, paddingHorizontal: 4, alignItems: "center" }}>
       <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: color ?? C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 8, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 4 }}>{label}</Text>
     </View>
   );
 }
@@ -876,7 +874,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime }} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 4, lineHeight: 17 }}>{t(`w.home.cockpit.tease.${s.key}.blurb`)}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 4, lineHeight: leading(fs.caption) }}>{t(`w.home.cockpit.tease.${s.key}.blurb`)}</Text>
           </View>
           <AuroraIcon name="lock" size={18} color={C.ash} />
         </ACard>

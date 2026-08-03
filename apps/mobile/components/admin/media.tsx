@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Image, Alert } from "react-native";
-import { fs, space, Card, Mono, Chip, Loading, F } from "../../lib/ui";
+import { View, Text, Image } from "react-native";
+import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn } from "./_kit";
+import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
+import { useConfirm } from "../aurora/confirm";
 
 // Mobile parity for apps/web/components/admin/media.tsx. Same /api/admin/media
 // (+/[id]) backend: list assets and manage them — edit metadata (title/alt/
@@ -39,6 +41,7 @@ function fmtSize(b: number | null) {
 }
 
 export default function AdminMedia() {
+  const { confirm, notify } = useConfirm();
   const { palette } = useTheme();
   const [list, setList] = useState<Asset[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -79,26 +82,19 @@ export default function AdminMedia() {
     load();
   }
 
-  function remove(a: Asset) {
-    Alert.alert("Delete asset", `Delete “${a.title}” permanently (file + catalog entry)?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setBusy(true);
-          setErr(null);
-          const r = await adminSend("DELETE", `/api/admin/media/${a.id}`);
-          setBusy(false);
-          if (!r.ok) setErr("Delete failed — re-syncing.");
-          load();
-        },
-      },
-    ]);
+  async function remove(a: Asset) {
+    const ok = await confirm({ title: "Delete asset", message: `Delete “${a.title}” permanently (file + catalog entry)?`, confirmLabel: "Delete", destructive: true });
+    if (!ok) return;
+    setBusy(true);
+    setErr(null);
+    const r = await adminSend("DELETE", `/api/admin/media/${a.id}`);
+    setBusy(false);
+    if (!r.ok) setErr("Delete failed — re-syncing.");
+    load();
   }
 
   function showUrl(a: Asset) {
-    Alert.alert("Public URL", a.url, [{ text: "OK" }]);
+    void notify("Public URL", a.url);
   }
 
   if (list === null && !failed) return <Loading />;
@@ -126,7 +122,7 @@ export default function AdminMedia() {
       {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
       {list?.map((a) => (
-        <Card key={a.id} accent={statusColor(a.status)}>
+        <ACard key={a.id} accent={statusColor(a.status)} style={cardStack}>
           {a.kind === "image" ? (
             <Image
               source={{ uri: a.url }}
@@ -184,7 +180,7 @@ export default function AdminMedia() {
               </View>
             </>
           )}
-        </Card>
+        </ACard>
       ))}
 
       {list && list.length === 0 ? (

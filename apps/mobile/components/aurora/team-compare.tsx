@@ -3,8 +3,8 @@ import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { fetchTeamCompare, type TeamCompareResponse, type TeamCompareAthlete } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, Loading } from "../../lib/ui";
+import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
  *  (apps/web/components/aurora/team-compare.tsx), so a coach reads the same
@@ -63,16 +63,14 @@ export default function AuroraTeamCompare() {
   const body = () => {
     if (loading) {
       return (
-        <View style={{ paddingVertical: 40, alignItems: "center" }}>
-          <ActivityIndicator color={C.lime} />
-        </View>
+        <Loading />
       );
     }
     if (athletes.length === 0) {
       return (
         <ACard style={{ marginTop: space.md }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.compare.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("w.teams.compare.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.compare.emptyBody")}</Text>
         </ACard>
       );
     }
@@ -82,18 +80,17 @@ export default function AuroraTeamCompare() {
         <Text style={kicker(C)}>{t("w.teams.compare.exercise")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
           {lifts.map((l) => (
-            <Pill key={l} C={C} label={l} active={lift === l} accent={txt(C, C.lime)} onPress={() => setLift(l)} />
+            <AChip key={l} label={l} selected={lift === l} accent={txt(C, C.lime)} onPress={() => setLift(l)} />
           ))}
         </ScrollView>
 
         <Text style={[kicker(C), { marginTop: space.md }]}>{t("w.teams.compare.metric")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
           {METRICS.map((m) => (
-            <Pill
+            <AChip
               key={m.key}
-              C={C}
               label={t(m.label)}
-              active={metric === m.key}
+              selected={metric === m.key}
               accent={txt(C, (C[m.color as keyof Palette] as string) ?? C.chalk)}
               onPress={() => setMetric(m.key)}
             />
@@ -109,7 +106,7 @@ export default function AuroraTeamCompare() {
             return (
               <View key={a.linkId} style={{ marginTop: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.ms }}>
-                  <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{v || "—"}{v && meta.unit ? ` ${meta.unit}` : ""}</Text>
                 </View>
                 <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden", marginTop: 6 }}>
@@ -151,23 +148,10 @@ export default function AuroraTeamCompare() {
 
 const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: 1.2, color: C.ash, marginTop: space.md });
 
-function Pill({ C, label, active, accent, onPress }: { C: Palette; label: string; active: boolean; accent: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}
-    >
-      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: active ? accent : C.ash }}>{label}</Text>
-    </Pressable>
-  );
-}
-
 function Cell({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View style={{ width: "33.33%", paddingVertical: 5 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );

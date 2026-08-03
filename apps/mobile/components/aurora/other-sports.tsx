@@ -7,7 +7,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
 
@@ -99,7 +99,7 @@ export default function AuroraOtherSports({
             }}
           >
             <Text style={{ fontSize: 18, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: 16 }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>
               {expanded ? t("w.home.other.fewer") : t("w.home.other.all")} {expanded ? `−${rest}` : `+${rest}`}
             </Text>
           </Pressable>
@@ -122,12 +122,12 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <Text style={{ fontSize: 13 }}>{lane.icon}</Text>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{lane.sport}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{lane.sport}</Text>
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.5, color: C.chalk }}>{lane.efforts}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.other.efforts")}
         </Text>
       </View>

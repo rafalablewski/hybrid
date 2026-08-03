@@ -5,7 +5,7 @@ import { buildActivityFeed, relativeTime, type ActivityAccent, type LoggedSessio
 import { fetchSessions, fetchAssignments, type Assignment } from "../lib/api";
 import { sapi, respondFollow, respondEnrollment } from "../lib/social-api";
 import { useTheme, txt } from "../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "../components/aurora/kit";
 import { HeroAccessory } from "../components/aurora/hero";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -80,7 +80,7 @@ export default function Notifications() {
 
       {feed.length === 0 && social.length === 0 ? (
         <ACard style={{ marginTop: 22 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: 20 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: leading(fs.bodyLg) }}>
             Nothing yet. Log a workout or get a session from your coach and your activity shows up here.
           </Text>
         </ACard>

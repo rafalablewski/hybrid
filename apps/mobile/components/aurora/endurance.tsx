@@ -9,7 +9,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -44,7 +44,7 @@ export default function AuroraEndurance() {
       <AuroraScreen hero={{ rank: "title", title: t("endurance.title") }} refreshing={refreshing} onRefresh={load}>
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("endurance.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 19 }}>{t("endurance.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.bodyLg, "snug") }}>{t("endurance.emptyBody")}</Text>
         </ACard>
       </AuroraScreen>
     );
@@ -84,8 +84,8 @@ export default function AuroraEndurance() {
           {mileage.map((w, i) => <View key={i} style={{ flex: 1, alignItems: "center" }}><View style={{ width: "100%", height: 6 + (w.km / maxKm) * 70, borderRadius: 3, backgroundColor: i === mileage.length - 1 ? C.blue : `${C.blue}66` }} /></View>)}
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{fmtWeek(mileage[0]!.weekStart)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{`${mileage[mileage.length - 1]!.km} km`}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{fmtWeek(mileage[0]!.weekStart)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{`${mileage[mileage.length - 1]!.km} km`}</Text>
         </View>
       </ACard>
 
@@ -100,7 +100,7 @@ export default function AuroraEndurance() {
             <Legend c={C.amber} label={`${t("running.moderate")} ${split.moderate}m`} />
             <Legend c={C.red} label={`${t("running.hard")} ${split.hard}m`} />
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: 15 }}>{t("running.paceNote")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: leading(fs.nano) }}>{t("running.paceNote")}</Text>
         </ACard>
       )}
 
@@ -165,7 +165,7 @@ function Metric({ label, value, color }: { label: string; value: string; color?:
   return (
     <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: 16, alignItems: "center" }}>
       <Text style={{ fontFamily: F.black, fontSize: 22, color: color ? txt(C, color) : C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -182,5 +182,5 @@ function Legend({ c, label }: { c: string; label: string }) {
 
 function ColHead({ children, flex = 1 }: { children: React.ReactNode; flex?: number }) {
   const { palette: C } = useTheme();
-  return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9 }}>{children}</Text>;
+  return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>{children}</Text>;
 }

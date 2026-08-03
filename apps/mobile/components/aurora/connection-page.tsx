@@ -11,7 +11,7 @@ import {
 } from "../../lib/healthkit";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ASub, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
 
@@ -208,7 +208,7 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
 
   if (availability !== "ready") {
     return (
-      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17, marginTop: 16 }}>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption), marginTop: 16 }}>
         {t("w.account.connections.hk-unavailable")}
       </Text>
     );
@@ -216,7 +216,7 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
 
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 17 }}>{t("w.account.connections.hk-intro")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{t("w.account.connections.hk-intro")}</Text>
       {!connected ? (
         btn(busy ? t("w.account.connections.syncing") : t("w.account.connections.hk-connect"), connect, true)
       ) : (
