@@ -28,6 +28,7 @@ import { ErrorBoundary } from "../components/error-boundary";
 import { NavScrollProvider } from "../lib/nav-scroll";
 import { SheetRecedeProvider, useRecedeStyle, useRecedeDim } from "../lib/sheet-recede";
 import { SharedElementProvider } from "../lib/shared-element";
+import { ConfirmProvider } from "../components/aurora/confirm";
 // The bottom nav is the SYSTEM tab bar now (app/(tabs)/_layout.tsx uses
 // expo-router native tabs), so there is no app-rendered bar to mount here.
 // The Classic template keeps its floating command orb, which used to be
@@ -146,7 +147,12 @@ export default function RootLayout() {
                     {/* Above Shell so the flying clone renders over every
                         screen — it must not be clipped by the navigator. */}
                     <SharedElementProvider>
-                      <Shell />
+                      {/* Inside SheetRecedeProvider so a confirm recedes the
+                          screen behind it like every other sheet, and inside
+                          LanguageProvider so its buttons localize. */}
+                      <ConfirmProvider>
+                        <Shell />
+                      </ConfirmProvider>
                     </SharedElementProvider>
                   </SheetRecedeProvider>
                 </LanguageProvider>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TextInput, Modal, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Loading, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack } from "../components/aurora/kit";
@@ -16,9 +16,11 @@ import {
 } from "../lib/social-api";
 import { Avatar, Stars, Empty, SButton, SPill } from "../components/social-kit";
 import { GlassToggle } from "../components/glass-toggle";
+import { useConfirm } from "../components/aurora/confirm";
 
 // ---- coach detail (what a client sees) ----
 function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }) {
+  const { notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
   const [data, setData] = useState<CoachStorefrontResponse | null>(null);
@@ -63,7 +65,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                         <Text style={{ color: C.ash, fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} ${t("w.coaches.weeks")}` : null].filter(Boolean).join(" – ")}</Text>
                       </View>
                       {p.enrollmentStatus ? <Text style={{ color: p.enrollmentStatus === "active" ? C.lime : C.amber, fontFamily: F.mono, fontSize: 12 }}>{p.enrollmentStatus === "active" ? `${t("w.coaches.enrolled")} ✓` : t("w.social.requested")}</Text>
-                        : data.isMe ? null : <SButton label={enrolling === p.id ? t("w.coaches.starting") : t("w.coaches.start")} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { Alert.alert(t("common.error"), r.error); return; } load(); }} />}
+                        : data.isMe ? null : <SButton label={enrolling === p.id ? t("w.coaches.starting") : t("w.coaches.start")} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { notify(t("common.error"), r.error); return; } load(); }} />}
                     </View>
                     {p.summary ? <Text style={{ color: C.chalk, fontSize: 13, marginTop: 8, lineHeight: 19 }}>{p.summary}</Text> : null}
                     {Array.isArray(p.preview) && p.preview.length > 0 && (
@@ -99,7 +101,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                       {[1, 2, 3, 4, 5].map((n) => <Pressable key={n} onPress={() => setRating(n)}><Text style={{ fontSize: 24, color: n <= rating ? C.gold : C.line }}>★</Text></Pressable>)}
                     </View>
                     <TextInput value={body} onChangeText={setBody} multiline placeholder={t("w.coaches.reviewPlaceholder")} placeholderTextColor={C.ash} style={{ minHeight: 56, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: 13 }} />
-                    <View style={{ marginTop: 8 }}><SButton label={t("w.coaches.submitReview")} small onPress={async () => { const r = await postReview(handle, { rating, body }); if (r.error) { Alert.alert(t("common.error"), r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
+                    <View style={{ marginTop: 8 }}><SButton label={t("w.coaches.submitReview")} small onPress={async () => { const r = await postReview(handle, { rating, body }); if (r.error) { notify(t("common.error"), r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
                   </View>
                 )}
                 {data.reviews.map((rv: StorefrontReview) => (
@@ -123,6 +125,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
 
 // ---- coach's own storefront ----
 function Storefront() {
+  const { notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
   const [data, setData] = useState<CoachProfileResponse | null>(null);
@@ -156,7 +159,7 @@ function Storefront() {
         <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder={t("w.coaches.pricingNote")} placeholderTextColor={C.ash} style={inp} />
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.acceptingClients")}</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel={t("w.coaches.acceptingClients")} /></View>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.autoAccept")}</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel={t("w.coaches.autoAccept")} /></View>
-        <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { Alert.alert(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
+        <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { notify(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
       </ACard>
 
       <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.programsCount")} ({programs.length})</Text>

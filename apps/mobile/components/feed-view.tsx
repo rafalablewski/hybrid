@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Alert, FlatList, RefreshControl, Animated } from "react-native";
+import { View, Text, TextInput, FlatList, RefreshControl, Animated } from "react-native";
 import { Loading, F, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -12,8 +12,10 @@ import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScrollProps } from "../lib/nav-scroll";
 import { AuroraScreen } from "./aurora/kit";
 import type { HeroScrollProps } from "./aurora/hero";
+import { useConfirm } from "./aurora/confirm";
 
 function Comments({ item }: { item: FeedItemView }) {
+  const { notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
   const [list, setList] = useState<CommentView[]>([]);
@@ -23,7 +25,7 @@ function Comments({ item }: { item: FeedItemView }) {
   const send = async () => {
     if (!text.trim()) return;
     const r = await postComment({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
-    if (r.error) { Alert.alert(t("common.error"), r.error); return; } // don't clear the box on a failed post
+    if (r.error) { notify(t("common.error"), r.error); return; } // don't clear the box on a failed post
     setText(""); load();
   };
   return (
@@ -43,6 +45,7 @@ function Comments({ item }: { item: FeedItemView }) {
 }
 
 export default function FeedView({ top }: { top?: ReactNode }) {
+  const { notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
   const units = useLoggerPrefs().units;
@@ -67,7 +70,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     setPosting(true);
     const r = await createPost({ text, attachPr });
     setPosting(false);
-    if (r.error) { Alert.alert(t("common.error"), r.error); return; }
+    if (r.error) { notify(t("common.error"), r.error); return; }
     setText(""); setAttachPr(false); load();
   };
   const del = async (item: FeedItemView) => { await deletePost(item.subjectId); load(); };

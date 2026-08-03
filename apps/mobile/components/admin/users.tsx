@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Intro, ErrorNote, Input, PillBtn, Segmented, KV } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import AdminAnon from "./anon";
+import { useConfirm } from "../aurora/confirm";
 
 // Paginated, searchable user directory + per-user management drawer. Mirrors
 // apps/web/components/admin/users.tsx and /api/admin/users[/:id]. Each user is a
@@ -211,30 +212,24 @@ function UserDetail({
 
   // Permanently delete the account + all data. Match the web's typed-confirm
   // intent with a clear destructive Alert.
-  const remove = () => {
+  const remove = async () => {
     if (!d) return;
-    Alert.alert(
-      "Delete account",
-      `Permanently delete ${d.email} and ALL their data — sessions, check-ins, everything. This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete forever",
-          style: "destructive",
-          onPress: async () => {
-            setDeleting(true);
-            setMsg(null);
-            const res = await adminSend(`DELETE`, `/api/admin/users/${id}`);
-            if (res.ok) {
-              onDeleted();
-            } else {
-              setMsg({ ok: false, text: res.error ?? "Delete failed." });
-              setDeleting(false);
-            }
-          },
-        },
-      ],
-    );
+    const ok = await confirm({
+      title: "Delete account",
+      message: `Permanently delete ${d.email} and ALL their data — sessions, check-ins, everything. This cannot be undone.`,
+      confirmLabel: "Delete forever",
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeleting(true);
+    setMsg(null);
+    const res = await adminSend(`DELETE`, `/api/admin/users/${id}`);
+    if (res.ok) {
+      onDeleted();
+    } else {
+      setMsg({ ok: false, text: res.error ?? "Delete failed." });
+      setDeleting(false);
+    }
   };
 
   if (!d)
@@ -349,3 +344,5 @@ function UserDetail({
     </ACard>
   );
 }
+
+  const { confirm } = useConfirm();

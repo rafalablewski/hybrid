@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { View, Text, Image, Modal, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { View, Text, Image, Modal, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { F, PressScale as Pressable } from "../lib/ui";
 import type { PublicProfileResponse, CompareResult, SharedLift } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
+import { useConfirm } from "./aurora/confirm";
 
 export function initials(name?: string | null, handle?: string) {
   const s = (name || handle || "?").trim();
@@ -68,6 +69,7 @@ export function Empty({ title, sub }: { title: string; sub?: string }) {
 
 // A modal showing any user's public profile (reused by feed / discover / leaderboard).
 export function ProfileModal({ handle, onClose }: { handle: string; onClose: () => void }) {
+  const { confirm, notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
   const [data, setData] = useState<PublicProfileResponse | null>(null);
@@ -80,14 +82,19 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
   const rel: string = data?.followState === "requested" ? "requested" : (data?.relation ?? "none");
   const following = rel === "following" || rel === "friend" || rel === "close";
 
-  const doBlock = () => Alert.alert(t("w.social.block"), t("w.social.blockConfirm").replace("{h}", handle), [
-    { text: t("common.cancel"), style: "cancel" },
-    { text: t("w.social.block"), style: "destructive", onPress: async () => { await blockUser({ handle }); onClose(); } },
-  ]);
-  const doReport = () => { if (!p?.userId) return; Alert.alert(t("w.social.report"), t("w.social.reportConfirm").replace("{h}", handle), [
-    { text: t("common.cancel"), style: "cancel" },
-    { text: t("w.social.report"), style: "destructive", onPress: async () => { await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); Alert.alert(t("w.social.reportThanks")); } },
-  ]); };
+  const doBlock = async () => {
+    const ok = await confirm({ title: t("w.social.block"), message: t("w.social.blockConfirm").replace("{h}", handle), confirmLabel: t("w.social.block"), destructive: true });
+    if (!ok) return;
+    await blockUser({ handle });
+    onClose();
+  };
+  const doReport = async () => {
+    if (!p?.userId) return;
+    const ok = await confirm({ title: t("w.social.report"), message: t("w.social.reportConfirm").replace("{h}", handle), confirmLabel: t("w.social.report"), destructive: true });
+    if (!ok) return;
+    await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" });
+    void notify(t("w.social.reportThanks"));
+  };
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>

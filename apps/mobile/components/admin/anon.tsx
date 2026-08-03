@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, ErrorNote, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
+import { useConfirm } from "../aurora/confirm";
 
 // Anonymous (guest, pre-account) workouts — sessions logged on a device before
 // the user ever signed in. Admin-only housekeeping: review and prune them.
@@ -24,6 +25,7 @@ const fmt = (d: string) => new Date(d).toISOString().slice(0, 19).replace("T", "
 const trunc = (s: string) => (s.length > 12 ? `${s.slice(0, 8)}…${s.slice(-4)}` : s);
 
 export default function AdminAnon() {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const platformColor = (p: string | null) =>
     p === "ios" ? palette.blue : p === "web" ? palette.lime : p === "android" ? palette.violet : palette.ash;
@@ -42,26 +44,20 @@ export default function AdminAnon() {
     load();
   }, [load]);
 
-  const remove = (id: string, title: string) => {
-    Alert.alert(
-      "Delete guest workout",
-      `Permanently delete the anonymous workout “${title}”? This can't be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setBusy(id);
-            setErr(null);
-            const res = await adminSend("DELETE", `/api/admin/anon-sessions?id=${encodeURIComponent(id)}`);
-            if (!res.ok) setErr(res.error ?? "Delete failed — re-syncing.");
-            setBusy(null);
-            load();
-          },
-        },
-      ],
-    );
+  const remove = async (id: string, title: string) => {
+    const ok = await confirm({
+      title: "Delete guest workout",
+      message: `Permanently delete the anonymous workout “${title}”? This can't be undone.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
+    setBusy(id);
+    setErr(null);
+    const res = await adminSend("DELETE", `/api/admin/anon-sessions?id=${encodeURIComponent(id)}`);
+    if (!res.ok) setErr(res.error ?? "Delete failed — re-syncing.");
+    setBusy(null);
+    load();
   };
 
   if (sessions === null) return <Loading />;

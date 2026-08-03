@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Alert, ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import Svg, { Path, Rect, Circle, SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -66,6 +66,7 @@ import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
+import { useConfirm } from "./confirm";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -318,6 +319,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   /** land directly on a verified source page (app/source/[id]) */
   openSource?: string;
 } = {}) {
+  const { notify } = useConfirm();
   const { palette: C, scheme } = useTheme();
   const pa = usePremiumAccent();
   const { t } = useLang();
@@ -475,7 +477,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // engines read (one round-trip). Per-serving macros + qty so it stays editable.
   const logEntry = async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; verifiedId?: string | null } & MicroFacts): Promise<boolean> => {
     const { ok } = await createFoodLog(e);
-    if (!ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return false; }
+    if (!ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return false; }
     return true;
   };
   const editLogQty = async (id: string, qty: number) => {
@@ -597,7 +599,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros, ...panelFields })
       : await createFoodProduct({ name: createForm.name.trim(), subname, servingLabel: serving ? `${serving} ${createForm.unit}`.trim() : undefined, servingGrams, ...macros, ...panelFields });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
-    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     setCreateForm(BLANK_CREATE_FORM);
     setShowPanelFields(false);
     setMealComps([]);
@@ -616,7 +618,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     setScanning(true);
     const out = await scanNutritionLabel(asset.base64, asset.mimeType ?? "image/jpeg");
     setScanning(false);
-    if (!out.ok || !out.data) { Alert.alert(t("w.recovery.nutrition.scanLabel"), t("w.recovery.nutrition.scanFailed")); return; }
+    if (!out.ok || !out.data) { notify(t("w.recovery.nutrition.scanLabel"), t("w.recovery.nutrition.scanFailed")); return; }
     const d = out.data;
     setCreateForm((s) => ({ ...s, name: d.name ?? s.name, kcal: d.kcal != null ? String(d.kcal) : s.kcal, protein: d.protein != null ? String(d.protein) : s.protein, carbs: d.carbs != null ? String(d.carbs) : s.carbs, fat: d.fat != null ? String(d.fat) : s.fat }));
   };
@@ -627,7 +629,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
     const res = await createSavedMeal({ name: mealForm.name.trim(), emoji: mealForm.emoji || undefined, kcal: num(mealForm.kcal) || undefined, protein: num(mealForm.protein), carbs: num(mealForm.carbs), fat: num(mealForm.fat) });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
-    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     setMealForm({ name: "", emoji: "", kcal: "", protein: "", carbs: "", fat: "" });
     setShowMealBuilder(false);
     loadLibrary();
@@ -644,7 +646,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     setRecipeMsg("");
     const res = await createSavedMeal(recipeToMeal(r));
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
-    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     loadLibrary();
     setRecipeMsg(t("w.recovery.nutrition.recipeSavedMeal"));
   };
@@ -655,7 +657,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
     const res = await createFoodProduct({ name: prodForm.name.trim(), servingLabel: prodForm.serving.trim() || undefined, kcal: num(prodForm.kcal) || undefined, protein: num(prodForm.protein), carbs: num(prodForm.carbs), fat: num(prodForm.fat) });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
-    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     setProdForm({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
     setShowProdBuilder(false);
     loadLibrary();
@@ -711,7 +713,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       verifiedId: food.id ?? null,
     });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
-    if (!res.ok) { Alert.alert(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+    if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     setFoodMsg(`${food.name} ${t("w.recovery.nutrition.savedToFoods")}`);
     loadLibrary();
   };
@@ -863,7 +865,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     setScanning(true);
     const out = await scanNutritionLabel(asset.base64, asset.mimeType ?? "image/jpeg");
     setScanning(false);
-    if (!out.ok || !out.data) { Alert.alert(t("w.recovery.nutrition.scanLabel"), t("w.recovery.nutrition.scanFailed")); return; }
+    if (!out.ok || !out.data) { notify(t("w.recovery.nutrition.scanLabel"), t("w.recovery.nutrition.scanFailed")); return; }
     const d = out.data;
     setF({ kcal: d.kcal != null ? String(d.kcal) : "", protein: d.protein != null ? String(d.protein) : "", carbs: d.carbs != null ? String(d.carbs) : "", fat: d.fat != null ? String(d.fat) : "" });
   };

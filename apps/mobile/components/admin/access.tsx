@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import {
   groupedNav,
   sanitizePersonaAccess,
@@ -14,6 +14,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { AuroraIcon } from "../aurora/icons";
 import { Intro, Banner, ErrorNote, PillBtn, Segmented } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
+import { useConfirm } from "../aurora/confirm";
 
 // Mobile Access (Governance) — parity with the web "access" section, which
 // renders <CoachApplications/> then <AdminAccess/>. Combined here into ONE body
@@ -54,6 +55,7 @@ type FlagRow = { key: string; value: unknown };
 type Tab = "queues" | "roles" | "personas";
 
 export default function AdminAccess() {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [tab, setTab] = useState<Tab>("queues");
 
@@ -85,17 +87,14 @@ export default function AdminAccess() {
   }, [load]);
 
   // --- coach application decision (optimistic + resync on failure) ---
-  const decideApp = (id: string, action: "approve" | "deny") => {
+  const decideApp = async (id: string, action: "approve" | "deny") => {
     const run = async () => {
       setApps((a) => a.filter((x) => x.id !== id));
       const res = await adminSend("PATCH", `/api/admin/coach-applications/${id}`, { action });
       if (!res.ok) load();
     };
     if (action === "deny") {
-      Alert.alert("Deny application?", "The applicant won't be promoted to coach.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Deny", style: "destructive", onPress: run },
-      ]);
+      if (await confirm({ title: "Deny application?", message: "The applicant won't be promoted to coach.", confirmLabel: "Deny", destructive: true })) run();
     } else run();
   };
 

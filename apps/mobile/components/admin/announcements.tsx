@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
+import { useConfirm } from "../aurora/confirm";
 
 // Mobile parity for apps/web/components/admin/announcements.tsx. Talks to the
 // same /api/admin/announcements (+/[id]) backend: full CRUD over the broadcast
@@ -57,6 +58,7 @@ const AUDIENCE_OPTS: { value: Audience; label: string }[] = [
 ];
 
 export default function AdminAnnouncements() {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [list, setList] = useState<Announcement[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -159,22 +161,14 @@ export default function AdminAnnouncements() {
     load();
   }
 
-  function remove(a: Announcement) {
-    Alert.alert("Delete announcement", `Delete “${a.title}” permanently?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setBusy(true);
-          setErr(null);
-          const r = await adminSend("DELETE", `/api/admin/announcements/${a.id}`);
-          setBusy(false);
-          if (!r.ok) setErr("Delete failed — re-syncing.");
-          load();
-        },
-      },
-    ]);
+  async function remove(a: Announcement) {
+    if (!(await confirm({ title: "Delete announcement", message: `Delete “${a.title}” permanently?`, confirmLabel: "Delete", destructive: true }))) return;
+    setBusy(true);
+    setErr(null);
+    const r = await adminSend("DELETE", `/api/admin/announcements/${a.id}`);
+    setBusy(false);
+    if (!r.ok) setErr("Delete failed — re-syncing.");
+    load();
   }
 
   if (list === null && !failed) return <Loading />;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Alert } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import {
   CHECKIN_METRICS,
   CHECKIN_SCALE,
@@ -22,6 +22,7 @@ import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
+import { useConfirm } from "./confirm";
 
 type Ratings = Record<CheckinMetricKey, number>;
 
@@ -53,6 +54,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
   onDone?: () => void;
   onClose?: () => void;
 } = {}) {
+  const { notify } = useConfirm();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const revalidate = useRevalidate();
@@ -216,9 +218,9 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
     if (!r.ok) {
       if (r.cooldownMs != null) {
         const mins = Math.ceil(r.cooldownMs / 60000);
-        Alert.alert(t("w.recovery.checkins.cooldownTitle"), `${t("w.recovery.checkins.cooldownBody")} ${Math.floor(mins / 60)}h ${mins % 60}m.`);
+        notify(t("w.recovery.checkins.cooldownTitle"), `${t("w.recovery.checkins.cooldownBody")} ${Math.floor(mins / 60)}h ${mins % 60}m.`);
       } else {
-        Alert.alert(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody"));
+        notify(t("w.recovery.checkins.errSubmit"), t("w.recovery.checkins.errSaveBody"));
       }
       return;
     }

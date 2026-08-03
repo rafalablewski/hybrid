@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import {
   buildSystemPrompt,
   MODELS,
@@ -18,6 +18,7 @@ import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable } from "..
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
+import { useConfirm } from "../aurora/confirm";
 
 // Mobile "AI agents" builder — parity with apps/web/components/admin/agents.tsx.
 // Roster (GET /api/admin/agents) → select → editor (PATCH /[id]) with a live
@@ -52,6 +53,7 @@ type Schedule = {
 const STATUS_COLOR = (p: Palette): Record<AgentStatus, string> => ({ active: p.lime, paused: p.amber, draft: p.ash });
 
 export default function AdminAgents() {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [agents, setAgents] = useState<AgentDefinition[] | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
@@ -134,26 +136,18 @@ export default function AdminAgents() {
     await patch(id, { name, role, mandate, status, model, effort, authority, reportsTo, responsibilities, kpis, guardrails, escalationThreshold, tone, collaborators, tools, runtime, approvalThresholdUsd, budgetUsd7d });
   }
 
-  function remove(id: string) {
-    Alert.alert("Delete agent?", "This cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setBusy(true);
-          setErr(null);
-          const r = await adminSend("DELETE", `/api/admin/agents/${id}`);
-          setBusy(false);
-          if (!r.ok) {
-            setErr(r.error || "Could not delete the agent.");
-            return;
-          }
-          if (selectedId === id) setSelectedId(null);
-          load();
-        },
-      },
-    ]);
+  async function remove(id: string) {
+    if (!(await confirm({ title: "Delete agent?", message: "This cannot be undone.", confirmLabel: "Delete", destructive: true }))) return;
+    setBusy(true);
+    setErr(null);
+    const r = await adminSend("DELETE", `/api/admin/agents/${id}`);
+    setBusy(false);
+    if (!r.ok) {
+      setErr(r.error || "Could not delete the agent.");
+      return;
+    }
+    if (selectedId === id) setSelectedId(null);
+    load();
   }
 
   function set<K extends keyof AgentDefinition>(key: K, value: AgentDefinition[K]) {
@@ -469,6 +463,7 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
 // ---- schedules -----------------------------------------------------------
 
 function Schedules({ agentId, onError }: { agentId: string; onError: (e: string | null) => void }) {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [newTask, setNewTask] = useState("");
@@ -502,20 +497,12 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
     load();
   }
 
-  function del(id: string) {
-    Alert.alert("Delete schedule?", undefined, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          onError(null);
-          const r = await adminSend("DELETE", `/api/admin/agents/${agentId}/schedules/${id}`);
-          if (!r.ok) onError(r.error || "Could not delete the schedule.");
-          load();
-        },
-      },
-    ]);
+  async function del(id: string) {
+    if (!(await confirm({ title: "Delete schedule?", confirmLabel: "Delete", destructive: true }))) return;
+    onError(null);
+    const r = await adminSend("DELETE", `/api/admin/agents/${agentId}/schedules/${id}`);
+    if (!r.ok) onError(r.error || "Could not delete the schedule.");
+    load();
   }
 
   return (

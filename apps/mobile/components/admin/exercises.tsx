@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Alert } from "react-native";
+import { View, Text } from "react-native";
 import { ALL_MUSCLES } from "@hybrid/core";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
+import { useConfirm } from "../aurora/confirm";
 
 // Mobile parity for apps/web/components/admin/exercises.tsx. Same
 // /api/admin/exercises (+/[id]) backend + the ./shared parse enums: CRUD over
@@ -87,6 +88,7 @@ const SYSTEM_OPTS: { value: System; label: string }[] = [
 ];
 
 export default function AdminExercises() {
+  const { confirm } = useConfirm();
   const { palette } = useTheme();
   const [list, setList] = useState<Exercise[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -195,22 +197,14 @@ export default function AdminExercises() {
     load();
   }
 
-  function remove(x: Exercise) {
-    Alert.alert("Delete exercise", `Delete “${x.name}” permanently?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setBusy(true);
-          setErr(null);
-          const r = await adminSend("DELETE", `/api/admin/exercises/${x.id}`);
-          setBusy(false);
-          if (!r.ok) setErr("Delete failed — re-syncing.");
-          load();
-        },
-      },
-    ]);
+  async function remove(x: Exercise) {
+    if (!(await confirm({ title: "Delete exercise", message: `Delete “${x.name}” permanently?`, confirmLabel: "Delete", destructive: true }))) return;
+    setBusy(true);
+    setErr(null);
+    const r = await adminSend("DELETE", `/api/admin/exercises/${x.id}`);
+    setBusy(false);
+    if (!r.ok) setErr("Delete failed — re-syncing.");
+    load();
   }
 
   const filtered = useMemo(() => {

@@ -117,11 +117,20 @@ describe("colour", () => {
 });
 
 describe("presentation", () => {
-  it("RATCHET — system alerts give way to the app's own sheet", () => {
-    // The app owns a Sheet with 1:1 drag tracking, detents, velocity-projected
-    // release and parent recede — and hands its highest-stakes moments (delete a
-    // session, leave a plan, erase an account) to the OS alert instead.
-    expectAtMost(hits(/Alert\.alert/g), 38, "Alert.alert → the shared confirm sheet");
+  it("HARD — no system alerts; the app draws its own decisions", () => {
+    // Was 34 Alert.alert calls plus an iOS-only Alert.prompt. They were not
+    // incidental sites: delete a session, erase an account, block a person, deny
+    // a coach application. All now run through components/aurora/confirm.tsx on
+    // the app's own Sheet. HARD, not a ratchet — reintroducing one puts the most
+    // consequential moment in the product back in the hands of the OS.
+    const src = FILES.filter((f) => !f.path.endsWith("aurora/confirm.tsx"));
+    const alerts: string[] = [];
+    for (const { path, text } of src) {
+      text.split("\n").forEach((line, i) => {
+        if (/\bAlert\.(alert|prompt)\(/.test(line)) alerts.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(alerts).toEqual([]);
   });
 
   it("RATCHET — raw Modals give way to <Sheet>", () => {
