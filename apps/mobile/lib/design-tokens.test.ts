@@ -266,4 +266,40 @@ describe("presentation", () => {
     );
     expect(raw).toEqual([]);
   });
+
+  it("HARD — a Sheet with a flexing body passes `fill`", () => {
+    // The cost of the Modal→Sheet conversion above, learned the hard way. The
+    // hand-rolled panels were `flex: 1` full-height boxes; Sheet is CONTENT-SIZED
+    // for a single detent. A `flex: 1` ScrollView in a content-sized column has
+    // nothing to fill, so it collapses to zero height — the exercise picker and
+    // the sport chooser opened to a title, a search field and a void. The picker
+    // is the only way to put a movement in a session, so the regression read as
+    // "I can't add an exercise". Sheet's `fill` gives the panel a real height.
+    const tagEnd = (t: string, i: number) => {
+      let depth = 0;
+      for (let j = i; j < t.length; j++) {
+        const c = t[j];
+        if (c === "{") depth++;
+        else if (c === "}") depth--;
+        else if (c === ">" && depth === 0) return j;
+      }
+      return t.length;
+    };
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      if (path.endsWith("aurora/sheet.tsx")) continue;
+      let i = 0;
+      while ((i = text.indexOf("<Sheet", i)) !== -1) {
+        const gt = tagEnd(text, i);
+        const close = text.indexOf("</Sheet>", gt);
+        const body = text.slice(gt + 1, close === -1 ? text.length : close);
+        const flexes = /<ScrollView[^>]*style=\{[^>]*flex:\s*1/.test(body);
+        if (flexes && !/\bfill\b/.test(text.slice(i, gt + 1))) {
+          bad.push(`${path}:${text.slice(0, i).split("\n").length}`);
+        }
+        i = gt + 1;
+      }
+    }
+    expect(bad).toEqual([]);
+  });
 });

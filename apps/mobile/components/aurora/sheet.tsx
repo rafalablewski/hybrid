@@ -58,6 +58,7 @@ export default function Sheet({
   sub,
   children,
   scroll = true,
+  fill = false,
   detents = ["large"],
 }: {
   visible: boolean;
@@ -69,6 +70,11 @@ export default function Sheet({
   sub?: ReactNode;
   children: ReactNode;
   scroll?: boolean;
+  /** Take the FULL height of the largest detent instead of sizing to content.
+   *  Required whenever the child owns a FLEXING body (`flex: 1`, typically its
+   *  own ScrollView): a content-sized panel has no height for a flex child to
+   *  fill, so the child collapses to zero and its content disappears. */
+  fill?: boolean;
   /** Resting heights, smallest first. Defaults to a single full-height sheet. */
   detents?: SheetDetent[];
 }) {
@@ -86,13 +92,15 @@ export default function Sheet({
 
   // A SINGLE-detent sheet stays CONTENT-SIZED (capped at `large`) — which is
   // what every short sheet in the app relies on; forcing them all to a fixed
-  // height would leave Quick Log and Readiness mostly empty. Only a
-  // multi-detent sheet needs a fixed height, because expanding needs a target.
+  // height would leave Quick Log and Readiness mostly empty. A multi-detent
+  // sheet needs a fixed height because expanding needs a target — and so does
+  // a `fill` sheet, whose child flexes into the panel rather than filling it.
   const expandable = detents.length > 1;
+  const fixedH = expandable || fill;
   const maxH = Math.round(screenH * sheetGesture.detents[detents[detents.length - 1] ?? "large"]);
-  // Measured height of a content-sized panel; the fixed height when expandable.
+  // Measured height of a content-sized panel; the fixed height when it's fixed.
   const [measured, setMeasured] = useState(maxH);
-  const panelH = expandable ? maxH : measured;
+  const panelH = fixedH ? maxH : measured;
   // Detent offsets, ascending (0 = largest/open).
   const snaps = useMemo(
     () => (expandable
@@ -231,9 +239,9 @@ export default function Sheet({
           box-none lets taps on the empty area fall through to the scrim. */}
       <KeyboardAvoidingView style={{ flex: 1, justifyContent: "flex-end" }} behavior={Platform.OS === "ios" ? "padding" : undefined} pointerEvents="box-none">
         <Animated.View
-          onLayout={(e) => { if (!expandable) setMeasured(Math.round(e.nativeEvent.layout.height)); }}
+          onLayout={(e) => { if (!fixedH) setMeasured(Math.round(e.nativeEvent.layout.height)); }}
           style={{
-            ...(expandable ? { height: maxH } : { maxHeight: maxH }),
+            ...(fixedH ? { height: maxH } : { maxHeight: maxH }),
             backgroundColor: C.ink2,
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
@@ -257,7 +265,7 @@ export default function Sheet({
             {header}
           </View>
           {scroll ? (
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 4 }}>
+            <ScrollView style={fixedH ? { flex: 1 } : undefined} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 4 }}>
               {children}
             </ScrollView>
           ) : (

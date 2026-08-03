@@ -108,7 +108,9 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
       </Pressable>
 
       {/* Searchable sport chooser → hands the pick to the log sheet */}
-      <Sheet visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t("w.home.quickSport.choose")} scroll={false}>
+      {/* `fill` — the sport list below is a flexing ScrollView, which collapses
+          to nothing in a content-sized panel (see Sheet's `fill`). */}
+      <Sheet visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t("w.home.quickSport.choose")} scroll={false} fill>
             <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
               <Pressable onPress={() => setPickerOpen(false)} hitSlop={10}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text>
