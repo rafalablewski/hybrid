@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import {
   logbookWeek,
@@ -40,6 +40,7 @@ export default function AuroraLogbookRail({
   onSelectDay,
   resetToken,
   onWeekRowLayout,
+  doneFloor,
 }: {
   sessions: LoggedSession[];
   /** Start an empty workout (today's primary action when nothing is logged). */
@@ -55,6 +56,11 @@ export default function AuroraLogbookRail({
   /** Today's pill rail measures the date capsule's capture point off the week
    *  strip's own bottom edge (y + height, within this card). */
   onWeekRowLayout?: (bottom: number) => void;
+  /** The DONE FLOOR — every session logged on the viewed day, rendered as this
+   *  card's lower floor under a labelled seam (aurora/done-floor.tsx). It is
+   *  passed in rather than built here because the screen owns the day's
+   *  sessions, the quick-log sheet and the Done-today sheet. */
+  doneFloor?: ReactNode;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -122,10 +128,10 @@ export default function AuroraLogbookRail({
         C={C}
         scheme={scheme}
         day={sel}
-        daySessions={daySessions}
         receipt={receipt}
         units={units}
         streakDays={streakDays}
+        doneFloor={doneFloor}
         onLog={onLog}
         onHistory={() => onNavigate?.("history")}
         t={t}
@@ -169,15 +175,16 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
   );
 }
 
-function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, onLog, onHistory, t }: {
+function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onLog, onHistory, t }: {
   C: Pal;
   scheme: "dark" | "light";
   day: LogbookDay;
-  daySessions: LoggedSession[];
   receipt: ReturnType<typeof mergeDoneReceipts>;
   units: WeightUnit;
   /** the athlete's current day-streak, for the done-today stamp. */
   streakDays: number;
+  /** the day's logged sessions as this card's lower floor (see the prop above). */
+  doneFloor?: ReactNode;
   onLog: () => void;
   onHistory: () => void;
   t: (k: string) => string;
@@ -191,12 +198,19 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
   );
 
   // LOGGED — the day collapses to a receipt, exactly like the plan rail's done
-  // state: one headline, the day's work as an en-dash meta line, only
-  // trustworthy figures, and a quiet text link into History.
+  // state: one headline, the finishing time, only trustworthy figures, and a
+  // quiet text link into History.
+  //
+  // NO WORKOUT NAMES HERE. This line used to join the day's session titles
+  // ("Tennis – Afternoon workout – finished 14:33"), and the Done-today card a
+  // few hundred pixels below lists those very sessions by name, one row each,
+  // with their own figures — the same words twice on one screen. The receipt
+  // keeps the one fact that card deliberately withholds: the clock time the day
+  // finished at.
   if (day.logged) {
     const stats = receipt ? doneReceiptStats(receipt, units) : [];
     const finished = receipt?.finishedClock
-      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
       : "";
     return (
       <View>
@@ -209,9 +223,11 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
           </View>
           {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: leading(fs.caption) }}>
-          {daySessions.map((s) => s.title).join(" – ")}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
-        </Text>
+        {!!finished && (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: leading(fs.caption) }}>
+            {finished}
+          </Text>
+        )}
         {stats.length > 0 && (
           <View style={{ flexDirection: "row", gap: 24, marginTop: 16, marginLeft: 31 }}>
             {stats.map((s) => (
@@ -222,6 +238,7 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
             ))}
           </View>
         )}
+        {doneFloor}
         <Pressable
           onPress={onHistory}
           accessibilityRole="button"
@@ -246,9 +263,16 @@ function DayDetail({ C, scheme, day, daySessions, receipt, units, streakDays, on
         <Pressable onPress={onLog} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", ...startGlow(C.lime, pressed) })}>
           <CtaLabel label={t("w.home.today.alsoTodayLogFirst")} color={C.onAccent} fontSize={fs.bodyLg} />
         </Pressable>
+        {/* the quick-SPORT door (a match, a run, a swim) — a different action to
+            the structured logger above it, and the only way to reach it here. */}
+        {doneFloor}
       </View>
     );
   }
+
+  // A PAST day with nothing logged gets NO floor: the arm below already says
+  // "nothing logged", and a logbook day is `logged` exactly when it holds
+  // sessions — so the floor could only repeat that sentence in smaller type.
 
   // A PAST day with nothing logged — quiet, factual, no guilt (the rest-day
   // register of the plan rail, without the moon: nothing was promised).

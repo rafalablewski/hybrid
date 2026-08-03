@@ -43,9 +43,7 @@ import { fs, space,
   type ReadGate,
   planSchedule,
   masthead,
-  alsoTodayCopy,
   sessionClockTime,
-  sessionIcon,
   READINESS_FEELINGS,
   READINESS_FACE,
   logbookWeek,
@@ -77,6 +75,7 @@ import QuickSportLog from "../quick-sport";
 import ExerciseWidgetRail from "./exercise-widget";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
+import DoneFloor from "./done-floor";
 import AuroraTodayRail from "./today-rail";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
@@ -325,6 +324,27 @@ export default function AuroraToday({
   // those rows "Plan" so the plan workout and the off-plan extras (the tennis
   // match, a freestyle lift) read apart while ALL of them stay listed.
   const fulfilledIds = useMemo(() => new Set(sched?.fulfilledSessionIds ?? []), [sched]);
+
+  // THE DONE FLOOR — what was actually logged on the viewed day, handed to the
+  // week rail to render as the LOWER FLOOR of its card (aurora/done-floor.tsx).
+  // It used to be a card of its own below the rail, which drew the same day
+  // twice on one screen. It is built here, not in the rail, because this screen
+  // owns the sessions, the quick-log sheet and the Done-today sheet — the rail
+  // only owns the surface it sits on.
+  const doneFloor = (
+    <DoneFloor
+      rows={doneOnDay}
+      planIds={fulfilledIds}
+      isToday={dayIsToday}
+      dayLabel={dayLabel}
+      units={units}
+      bw={bw}
+      onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
+      onLog={() => setQuickOpen(true)}
+      onDone={() => setDoneOpen(true)}
+    />
+  );
+
   const upsell = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "web", source }); onNavigate ? onNavigate("upgrade") : router.push("/upgrade"); };
 
   const initials = useMemo(
@@ -714,6 +734,7 @@ export default function AuroraToday({
             onSelectDay={setRailDay}
             resetToken={railResetToken}
             weekRowRef={railWeekRow}
+            doneFloor={doneFloor}
           />
         </div>
       ) : logbookMode ? (
@@ -731,6 +752,7 @@ export default function AuroraToday({
               onSelectDay={setRailDay}
               resetToken={railResetToken}
               weekRowRef={railWeekRow}
+              doneFloor={doneFloor}
             />
           </div>
           <div style={{ margin: "24px 0 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
@@ -890,31 +912,30 @@ export default function AuroraToday({
         </div>
       )}
 
-      {/* DONE TODAY — every session logged on the VIEWED day, one row each: the
-          plan's workout (wearing a Plan tag, lime tile) AND the off-plan extras
-          (teal tile — quick sport logs, freestyle sessions). The card above is
-          the SCHEDULED day (Start / Skip / Postpone); this one is what was
-          actually done, complete — the count and the rows always agree. Always
-          rendered — empty it explains itself — and it leads with the day's done
-          count as its display-weight stat (moved in from the feeling card).
-          Follows the week rail's selected day (dayTs) — on another day the label
-          carries the date and the log row hides (quick logs save at "now").
-          Hidden only for a true first run (no plan, nothing ever logged): the
-          first-run chooser above already owns that state, and
-          a 0-count card under it would be a second competing log CTA. */}
-      {(!!sched || sessions.length > 0) && (
-        <AlsoTodayCard
-          rows={doneOnDay}
-          planIds={fulfilledIds}
-          doneCount={doneOnDay.length}
-          isToday={dayIsToday}
-          dayLabel={dayLabel}
-          units={units}
-          bw={bw}
-          onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
-          onLog={() => setQuickOpen(true)}
-          onDone={() => setDoneOpen(true)}
-        />
+      {/* DONE TODAY, when there is no rail to hold it. Every session logged on
+          the VIEWED day normally renders as the week rail's LOWER FLOOR (the
+          doneFloor above) — one day, one card. But the count-based plan hero has
+          no rail to sit in, so on that path the floor keeps its own card: the
+          rows are the confirmation loop and must never simply vanish. Hidden for
+          a true first run (no plan, nothing ever logged): the chooser above owns
+          that state, and an empty card under it would be a second competing log
+          CTA. */}
+      {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
+        <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
+          <DoneFloor
+            rows={doneOnDay}
+            planIds={fulfilledIds}
+            isToday={dayIsToday}
+            dayLabel={dayLabel}
+            units={units}
+            bw={bw}
+            pad={16}
+            rule={false}
+            onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
+            onLog={() => setQuickOpen(true)}
+            onDone={() => setDoneOpen(true)}
+          />
+        </div>
       )}
 
       {/* ═════ GROUP: RECOVER — how the body is answering. The daily check-in
@@ -1171,94 +1192,6 @@ function Ring({ value, color, size = 44, ticks = 32, center }: { value: number; 
         </span>
       ))}
       <span style={{ position: "relative" }}>{center ?? <span style={{ fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</span>}</span>
-    </div>
-  );
-}
-
-
-// The row's meta line (sport-adaptive: distance/time/pace, or tonnage + lifts)
-// now lives in core/engines/session.ts — it was this exact function twice, once
-// here and once in mobile home.tsx, which is how two clients drift.
-
-// The "Done today" card, "number is the card" redesign: the day's TOTAL done
-// count (plan + off-plan) is the card's display-weight headline — the whole
-// stat strip taps through to the Done-Today sheet — with EVERY done session as
-// a row beneath it (the count and the rows always agree: a plan-claimed row
-// wears a lime tile + Plan tag, an off-plan one the teal tile) and the log
-// action as a ghost row in the same vocabulary. Always rendered: empty, the
-// numeral reads 0 and the sub-line does the inviting. Line-free inside
-// (surface fills + spacing, no hairlines/outlines/chips/pills) — the card's
-// own edge is the only border, with one deliberate exception: the ghost ＋
-// tile wears a dashed outline (the add affordance).
-// Rows open the session's breakdown. Mirrored on mobile (aurora/home.tsx).
-function AlsoTodayCard({ rows, planIds, doneCount, isToday, dayLabel, units, bw, onOpen, onLog, onDone }: {
-  rows: LoggedSession[];
-  planIds: Set<string>;
-  doneCount: number;
-  /** false when the week rail has another day selected — the label carries the
-   *  date and the log row hides (a quick log always saves at "now"). */
-  isToday: boolean;
-  dayLabel: string | null;
-  units: "kg" | "lb";
-  bw: (isoDate?: string) => number | null;
-  onOpen: (sessionId: string) => void;
-  onLog: () => void;
-  onDone: () => void;
-}) {
-  const { t } = useLang();
-  const quiet = `color-mix(in srgb, ${C("ash")} 60%, transparent)`;
-  // caption + log-label state machine lives in core so the mobile twin can't drift
-  const copy = alsoTodayCopy({ doneCount, isToday });
-  const doneLabel = isToday ? t("w.home.today.glanceDone") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "");
-  return (
-    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
-      {/* stat strip — the number IS the card (tap = the Done-Today sheet) */}
-      <button className="pressable" type="button" onClick={onDone} aria-label={`${doneCount} ${doneLabel}${copy.subKey ? `, ${t(copy.subKey)}` : ""}`} style={{ width: "100%", display: "flex", alignItems: "center", gap: 16, background: "none", border: "none", padding: "6px 0 4px", cursor: "pointer", textAlign: "left", color: C("chalk") }}>
-        {/* a status count, not a hero — fs.display keeps it below the masthead
-            (34) and the Start action (hierarchy sweep; was 44) */}
-        <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.display, letterSpacing: "-.03em", lineHeight: 0.9, fontVariantNumeric: "tabular-nums", flexShrink: 0, color: doneCount > 0 ? C("chalk") : quiet }}>{doneCount}</span>
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{doneLabel}</span>
-          {copy.subKey && <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.5, color: quiet, marginTop: 6 }}>{t(copy.subKey)}</span>}
-        </span>
-        <span style={{ color: quiet, flexShrink: 0, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
-      </button>
-      {/* rows + the ghost action row — one vocabulary, separated by space alone */}
-      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 4 }}>
-        {rows.map((s) => {
-          const onPlanRow = planIds.has(s.id);
-          return (
-            <button className="pressable" type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
-              <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C(onPlanRow ? "lime" : "blue")} 16%, transparent)` }}>
-                {sessionIcon(s)}
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {/* NO CLOCK TIME HERE. This line used to end with the session's
-                      startedAt as "21:33" — which reads as WHEN YOU TRAINED but,
-                      for a quick-logged sport, is stamped at save time: it is the
-                      moment the record was typed, not the moment the swim
-                      happened. A number that answers a question nobody asked with
-                      a value that isn't true of the thing it sits under. The row
-                      says what was DONE (distance/time, or tonnage + blocks); when
-                      it was entered is bookkeeping and belongs nowhere on Today. */}
-                  {sessionMeta(s, units, bw(s.startedAt))}
-                </span>
-              </span>
-              {onPlanRow && (
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)", flexShrink: 0 }}>{t("w.home.today.kPlan")}</span>
-              )}
-            </button>
-          );
-        })}
-        {isToday && (
-          <button className="pressable" type="button" onClick={onLog} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer" }}>
-            <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 17, background: "transparent", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, color: C("ash") }}>＋</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--lime-text)" }}>{t(copy.logKey)}</span>
-          </button>
-        )}
-      </div>
     </div>
   );
 }

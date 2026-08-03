@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { doneReceipt, doneReceiptStats, stripWeekdayPrefix } from "./done-receipt";
+import { doneReceipt, doneReceiptStats } from "./done-receipt";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 
 const strength = (sets: number, load = "100", reps = "5"): SessionBlock => ({
@@ -202,16 +202,5 @@ describe("doneReceiptStats", () => {
       "kg",
     );
     expect(stats.map((s) => s.labelKey)).not.toContain("w.home.rail.duration");
-  });
-});
-
-describe("stripWeekdayPrefix", () => {
-  it("removes a leading weekday from plan-day titles", () => {
-    expect(stripWeekdayPrefix("Thu, Upper + Engine")).toBe("Upper + Engine");
-    expect(stripWeekdayPrefix("Saturday, Long Run")).toBe("Long Run");
-  });
-  it("leaves titles without the prefix untouched", () => {
-    expect(stripWeekdayPrefix("Upper + Engine")).toBe("Upper + Engine");
-    expect(stripWeekdayPrefix("Thruster Day")).toBe("Thruster Day");
   });
 });

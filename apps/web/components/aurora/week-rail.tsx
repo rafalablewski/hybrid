@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useEffect, useState, type CSSProperties } from "react";
+import { useMemo, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import {
   planSchedule,
   doneReceipt,
   doneReceiptStats,
-  stripWeekdayPrefix,
   dayStamp,
   dayStampText,
   streak,
@@ -96,6 +95,7 @@ export default function AuroraWeekRail({
   onSelectDay,
   resetToken,
   weekRowRef,
+  doneFloor,
 }: {
   planId: string;
   planStartedAt: string;
@@ -116,6 +116,13 @@ export default function AuroraWeekRail({
   /** Today's pill rail measures the date capsule's capture point off the week
    *  strip's own bottom edge, so the pill appears exactly as the strip goes. */
   weekRowRef?: React.RefObject<HTMLDivElement | null>;
+  /** The DONE FLOOR — every session logged on the viewed day, rendered as this
+   *  card's lower floor under a labelled seam (aurora/done-floor.tsx). The plan
+   *  floor above states what is ASKED of the athlete; this one states what they
+   *  DID, and the seam is what keeps a tennis row from reading as the last line
+   *  of the prescription. Passed in because the screen owns the day's sessions,
+   *  the quick-log sheet and the Done-today sheet. */
+  doneFloor?: ReactNode;
 }) {
   const { t } = useLang();
   const { overrides, setOverride } = usePlanOverrides(planId);
@@ -192,6 +199,7 @@ export default function AuroraWeekRail({
         receipt={receipt}
         units={units}
         streakDays={streakDays}
+        doneFloor={doneFloor}
         onStart={(b) => onStart(b, titleFor(sel))}
         onSkip={() => setOverride(sel.dateKey, { status: "skipped" })}
         onUnskip={() => setOverride(sel.dateKey, null)}
@@ -295,13 +303,15 @@ function LiftRow({ r, showSession, first }: { r: { name: string; session?: strin
   );
 }
 
-function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ day, receipt, units, streakDays, doneFloor, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   day: ScheduledDay;
   /** the fulfilled day's summary (null when the logged session isn't loaded). */
   receipt: DoneReceipt | null;
   units: WeightUnit;
   /** the athlete's current day-streak, for the done-today stamp. */
   streakDays: number;
+  /** the day's logged sessions as this card's lower floor (see the prop above). */
+  doneFloor?: ReactNode;
   onStart: (b?: SessionBlock[]) => void;
   onSkip: () => void;
   onUnskip: () => void;
@@ -337,12 +347,18 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
 
   if (day.isRest) {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ color: C("ash"), display: "grid", placeItems: "center", flexShrink: 0 }}><Moon c={C("ash")} s={26} /></span>
-        <div>
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.home.rail.restDay")}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, lineHeight: 1.5 }}>{t("w.home.rail.restNote")}</div>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ color: C("ash"), display: "grid", placeItems: "center", flexShrink: 0 }}><Moon c={C("ash")} s={26} /></span>
+          <div>
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.home.rail.restDay")}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, lineHeight: 1.5 }}>{t("w.home.rail.restNote")}</div>
+          </div>
         </div>
+        {/* A rest day asks for nothing — but an easy swim still happened, and it
+            used to sit in a card of its own with nothing tying it to the rest
+            note above. One card now says both. */}
+        {doneFloor}
       </div>
     );
   }
@@ -364,13 +380,19 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
   );
 
   // DONE — the day collapses to a receipt ("The receipt, corrected", see
-  // design/done-card-redesign-ideas.html): one headline, the day's work as an
-  // en-dash meta line, only trustworthy figures, and a quiet text link into
-  // History instead of a pill. The prescription is settled — it doesn't re-list.
+  // design/done-card-redesign-ideas.html): one headline, the finishing time,
+  // only trustworthy figures, and a quiet text link into History instead of a
+  // pill. The prescription is settled — it doesn't re-list.
+  //
+  // NO WORKOUT NAME HERE. The line used to lead with the plan day's title
+  // ("Upper + Engine – finished 11:18") — and the Done-today card below names
+  // the very session that fulfilled it, wearing a PLAN tag. One screen, one
+  // name for the work. What survives is the fact that card withholds: the
+  // clock time the day finished at.
   if (day.status === "done") {
     const stats = receipt ? doneReceiptStats(receipt, units) : [];
     const finished = receipt?.finishedClock
-      ? ` – ${t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)}`
+      ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
       : "";
     return (
       <div>
@@ -383,9 +405,11 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
           </div>
           {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
-          {stripWeekdayPrefix(day.title)}<span style={{ opacity: 0.65 }}>{finished}</span>
-        </div>
+        {finished && (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
+            {finished}
+          </div>
+        )}
         {stats.length > 0 && (
           <div style={{ display: "flex", gap: 24, margin: "16px 0 0 31px" }}>
             {stats.map((s) => (
@@ -396,6 +420,7 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
             ))}
           </div>
         )}
+        {doneFloor}
         <button className="pressable" onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: "16px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
           <CtaLabel size={12}>{`${t("w.home.rail.viewHistory")} →`}</CtaLabel>
         </button>
@@ -473,6 +498,11 @@ function DayDetail({ day, receipt, units, streakDays, onStart, onSkip, onUnskip,
       </div>
 
       {catchUp}
+      {/* …and below the seam, what was already logged on this day — an off-plan
+          run on a day the plan is still waiting for, or the tennis you played
+          instead of the session you missed. Both are true at once, and the card
+          now says so. */}
+      {doneFloor}
     </div>
   );
 }
