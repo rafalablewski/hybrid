@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, ScrollView, Text, TextInput, View } from "react-native";
 import {
   editableBlockFields,
   sessionEditDirty,
@@ -14,6 +13,7 @@ import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { F, fs, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
+import Sheet from "./aurora/sheet";
 
 const labelStyle = (C: Palette) =>
   ({ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
@@ -72,7 +72,6 @@ export function SessionEditSheet({
   const C = useTheme().palette;
   const { t } = useLang();
   const units = useLoggerPrefs().units;
-  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState<SessionEditDraft>(() => sessionEditDraft(session, { units }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
@@ -118,13 +117,7 @@ export function SessionEditSheet({
   const label = labelStyle(C);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={onClose}>
-          <Pressable
-            onPress={() => {}}
-            style={{ backgroundColor: C.ink2, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 20, maxHeight: "88%" }}
-          >
+    <Sheet visible={visible} onClose={onClose} scroll={false}>
             <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
               <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, flex: 1, paddingRight: 10 }}>{t("session.edit.title")}</Text>
@@ -218,9 +211,6 @@ export function SessionEditSheet({
             >
               {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>{t("common.save")}</Text>}
             </Pressable>
-          </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
-    </Modal>
+    </Sheet>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, ScrollView, ActivityIndicator, Modal, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
+import { View, Text, TextInput, ScrollView, ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
@@ -1758,15 +1758,7 @@ function ExerciseSheet({
 function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () => void; t: (k: string) => string }) {
   const C = useTheme().palette;
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
-        <Pressable onPress={() => {}} style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: 36 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.train.blocks.rpeHelpTitle")}</Text>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("rpe.close")}</Text>
-            </Pressable>
-          </View>
+    <Sheet visible={visible} onClose={onClose} title={t("w.train.blocks.rpeHelpTitle")} scroll={false}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: 19, marginBottom: 16 }}>{RPE_INTRO}</Text>
           <View style={{ flexDirection: "row", marginBottom: 6 }}>
             <Text style={{ width: 40, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>RPE</Text>
@@ -1780,9 +1772,7 @@ function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () =
               <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{step.meaning}</Text>
             </View>
           ))}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }
 

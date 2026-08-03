@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Modal, View, Text, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { View, Text, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -69,6 +69,7 @@ import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "..
 import { fs, F, PressScale as Pressable } from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
+import Sheet from "./aurora/sheet";
 
 const GOLD = "#e6c34e";
 
@@ -629,12 +630,8 @@ export function WorkoutWrapped({
       />
 
       {/* ── SHARE SHEET ── */}
-      <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={() => setSheetOpen(false)}>
-          <Pressable style={{ backgroundColor: C.ink2, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 16, paddingBottom: insets.bottom + 24 }} onPress={() => {}}>
-            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{t("session.wrapped.chooseStory")}</Text>
+      <Sheet visible={sheetOpen} onClose={() => setSheetOpen(false)} title={t("session.wrapped.chooseStory")} scroll={false}>
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "baseline", marginBottom: 16 }}>
               <Pressable onPress={() => setSheetOpen(false)}><Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>{t("summary.doneToday")}</Text></Pressable>
             </View>
             <ScrollView ref={pagerRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setActive(Math.round(e.nativeEvent.contentOffset.x / win.width))} snapToInterval={win.width} decelerationRate="fast">
@@ -654,9 +651,7 @@ export function WorkoutWrapped({
             <Pressable onPress={shareNow} style={{ backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: 16, color: C.onAccent }}>↗ {t("summary.shareStory")}</Text>
             </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </Sheet>
     </View>
   );
 }

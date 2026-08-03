@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, Text, TextInput, ScrollView, Modal, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, ScrollView, KeyboardAvoidingView } from "react-native";
 import {
   olympicSport,
   olympicSportsByCategory,
@@ -23,6 +23,7 @@ import { DeviceMark } from "./aurora/device-mark";
 import { DeviceImportSheet } from "./device-import";
 import { healthKitAvailability } from "../lib/healthkit";
 import { ArrowGlyph } from "./aurora/cta-label";
+import Sheet from "./aurora/sheet";
 
 /**
  * Home quick-log — a horizontal CAROUSEL of one-tap sport cards (likely sports +
@@ -107,12 +108,8 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
       </Pressable>
 
       {/* Searchable sport chooser → hands the pick to the log sheet */}
-      <Modal visible={pickerOpen} transparent animationType="slide" onRequestClose={() => setPickerOpen(false)}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <Pressable onPress={() => setPickerOpen(false)} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
-          <Pressable onPress={() => {}} style={{ flex: 1, marginTop: 64, backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, paddingTop: 20, paddingHorizontal: 20 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.quickSport.choose")}</Text>
+      <Sheet visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t("w.home.quickSport.choose")} scroll={false}>
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
               <Pressable onPress={() => setPickerOpen(false)} hitSlop={10}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text>
               </Pressable>
@@ -141,10 +138,7 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
                 <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 28 }}>No sports match “{query}”.</Text>
               )}
             </ScrollView>
-          </Pressable>
-        </Pressable>
-        </KeyboardAvoidingView>
-      </Modal>
+      </Sheet>
 
       {/* Log sheet — minutes (+ distance) and Log, for the chosen sport */}
       <LogSheet sport={sheetSport} onClose={() => setSheetSport(null)} onSaved={() => { setSheetSport(null); onSaved?.(); }} />
@@ -185,13 +179,11 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
     onSaved();
   };
 
+  // Sheet already lifts the panel above the keyboard — these inputs autofocus
+  // and sit at the very bottom, which is what the hand-rolled
+  // KeyboardAvoidingView here was for.
   return (
-    <Modal visible={!!sport} transparent animationType="slide" onRequestClose={close}>
-      {/* Lift the panel above the numeric keyboard — its inputs autofocus and sit
-          at the very bottom, so without this the keyboard covers them entirely. */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <Pressable onPress={close} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
-        <Pressable onPress={() => {}} style={{ backgroundColor: C.ink2, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, borderColor: C.line, padding: 20, paddingBottom: 34 }}>
+    <Sheet visible={!!sport} onClose={close} scroll={false} detents={["medium"]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
             {!!meta && <Text style={{ fontSize: fs.heading }}>{meta.icon}</Text>}
             <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{name}</Text>
@@ -217,9 +209,6 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
               {msg || `${t("workout.pace")} ${pace}`}
             </Text>
           )}
-        </Pressable>
-      </Pressable>
-      </KeyboardAvoidingView>
-    </Modal>
+    </Sheet>
   );
 }

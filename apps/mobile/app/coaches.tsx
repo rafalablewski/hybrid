@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Modal, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Loading, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack } from "../components/aurora/kit";
@@ -17,6 +17,7 @@ import {
 import { Avatar, Stars, Empty, SButton, SPill } from "../components/social-kit";
 import { GlassToggle } from "../components/glass-toggle";
 import { useConfirm } from "../components/aurora/confirm";
+import Sheet from "../components/aurora/sheet";
 
 // ---- coach detail (what a client sees) ----
 function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }) {
@@ -33,11 +34,8 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
   const c = data?.coach;
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,.6)", justifyContent: "flex-end" }}>
-        <View style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "90%", borderWidth: 1, borderColor: C.line }}>
-          <Pressable onPress={onClose} style={{ alignSelf: "flex-end", padding: 16 }}><Text style={{ color: C.ash, fontSize: 22 }}>×</Text></Pressable>
-          <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0 }}>
+    <Sheet visible onClose={onClose}>
+          <>
             {!data || !c ? <ActivityIndicator color={C.lime} /> : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
@@ -116,10 +114,8 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
                 ))}
               </>
             )}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+          </>
+    </Sheet>
   );
 }
 

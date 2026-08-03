@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Modal, ScrollView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import {
   deviceDistanceLabel,
   deviceMarkFor,
@@ -17,6 +16,7 @@ import { DeviceMark } from "./aurora/device-mark";
 import { F, fs, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
+import Sheet from "./aurora/sheet";
 
 /**
  * DEVICE MATCH — the sheet behind the summary's "Match the workout from your
@@ -45,7 +45,6 @@ export function DeviceMatchSheet({
 }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<"loading" | "list" | "error" | "unavailable">("loading");
   const [ranked, setRanked] = useState<RankedDeviceWorkout[]>([]);
   const [busyUuid, setBusyUuid] = useState<string | null>(null);
@@ -111,13 +110,7 @@ export function DeviceMatchSheet({
     ].join(" – ");
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={onClose}>
-        <Pressable
-          style={{ backgroundColor: C.ink2, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 24, maxHeight: "80%" }}
-          onPress={() => {}}
-        >
-          <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
+    <Sheet visible={visible} onClose={onClose} scroll={false}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             {/* The lockup, never the accent — a manufacturer's mark reproduces
                 solid only (core/device-marks.ts). Only Apple's store can be read
@@ -206,8 +199,6 @@ export function DeviceMatchSheet({
               })}
             </ScrollView>
           )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    </Sheet>
   );
 }

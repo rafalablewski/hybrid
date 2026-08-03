@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { View, Text, Image, Modal, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { F, PressScale as Pressable } from "../lib/ui";
 import type { PublicProfileResponse, CompareResult, SharedLift } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
 import { useConfirm } from "./aurora/confirm";
+import Sheet from "./aurora/sheet";
 
 export function initials(name?: string | null, handle?: string) {
   const s = (name || handle || "?").trim();
@@ -97,11 +98,8 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
   };
 
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,.6)", justifyContent: "flex-end" }}>
-        <View style={{ backgroundColor: C.ink, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "88%", borderWidth: 1, borderColor: C.line }}>
-          <Pressable onPress={onClose} style={{ alignSelf: "flex-end", padding: 16 }}><Text style={{ color: C.ash, fontSize: 22 }}>×</Text></Pressable>
-          <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0 }}>
+    <Sheet visible onClose={onClose}>
+          <>
             {!data || !p ? <ActivityIndicator color={C.lime} /> : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
@@ -156,9 +154,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                 )}
               </>
             )}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+          </>
+    </Sheet>
   );
 }

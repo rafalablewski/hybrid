@@ -133,11 +133,21 @@ describe("presentation", () => {
     expect(alerts).toEqual([]);
   });
 
-  it("RATCHET — raw Modals give way to <Sheet>", () => {
-    // Twelve surfaces present as `<Modal animationType="slide">` — the exercise
-    // picker, session editor, device match, share sheet — so the drag gesture a
-    // user learns on Today is dead on the controls they touch most.
-    const raw = hits(/<Modal\b/g).filter((h) => !h.startsWith("components/aurora/sheet.tsx"));
-    expectAtMost(raw, 12, "<Modal> → <Sheet>");
+  it("HARD — every bottom sheet is THE Sheet", () => {
+    // Eleven surfaces hand-rolled `<Modal animationType="slide">` with their own
+    // scrim, panel, radius, drag-handle glyph and safe-area padding — the
+    // exercise picker, session editor, device match and import, quick sport, the
+    // share sheet, the social and coach profiles, the RPE guide, the anatomy
+    // viewer. Each was a re-draw of Sheet MINUS its drag, detents, velocity
+    // release and parent recede, so the gesture a user learns on Today died on
+    // the controls they touch most. All eleven now present through Sheet.
+    //
+    // tour.tsx is the ONE exemption and it is not a bottom sheet: it is a
+    // full-screen `animationType="fade"` coach-mark overlay, a different
+    // presentation with no panel to drag.
+    const raw = hits(/<Modal\b/g).filter(
+      (h) => !h.startsWith("components/aurora/sheet.tsx") && !h.startsWith("components/tour.tsx"),
+    );
+    expect(raw).toEqual([]);
   });
 });

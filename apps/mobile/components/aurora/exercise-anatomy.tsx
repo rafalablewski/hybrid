@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Modal, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -7,6 +7,7 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraBodyMap from "./body-map";
+import Sheet from "./sheet";
 
 /* ── muscle-activation bars ── */
 
@@ -135,13 +136,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.9, color: txt(C, C.lime) }}>{t("w.analyze.exp.anatomy.title")}</Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <Pressable onPress={() => setOpen(false)} style={{ flex: 1, backgroundColor: "#0009", justifyContent: "flex-end" }}>
-          <Pressable
-            onPress={() => {}}
-            style={{ maxHeight: "88%", backgroundColor: C.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderColor: C.line, paddingTop: 10, paddingHorizontal: 20 }}
-          >
-            <View style={{ width: 38, height: 4, borderRadius: 3, backgroundColor: C.line, alignSelf: "center", marginTop: 2, marginBottom: 16 }} />
+      <Sheet visible={open} onClose={() => setOpen(false)} scroll={false}>
             <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, flexShrink: 1 }}>
                 <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>{t("w.analyze.exp.anatomy.title")}</Text>
@@ -154,9 +149,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 16, paddingBottom: 30 }}>
               <AnatomyBody C={C} a={a} name={name} active={open} t={t} />
             </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </Sheet>
     </>
   );
 }
