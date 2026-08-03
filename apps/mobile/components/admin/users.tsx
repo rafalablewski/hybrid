@@ -55,7 +55,7 @@ export default function AdminUsers() {
         onChange={setTab}
         options={[
           { value: "accounts", label: "Accounts" },
-          { value: "guests", label: "Guest workouts" },
+          { value: "guests", label: "Guest sessions" },
         ]}
       />
       {tab === "accounts" ? <AccountsTab /> : <AdminAnon />}

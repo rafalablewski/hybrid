@@ -19,7 +19,7 @@ export interface TourStep {
 export const FIRST_RUN_TOUR: TourStep[] = [
   { title: "Your day, here", body: "Today is your home. When you follow a plan, your exact session for the day shows up here — tap Start to log it." },
   { title: "Follow a plan", body: "Open Plans to browse the library and enrol. Following a plan is free — HYBRID walks you through it session by session." },
-  { title: "Your profile", body: "Your HPI, records and training history live in the You tab as you log. It builds from your real workouts — nothing is pre-filled." },
+  { title: "Your profile", body: "Your HPI, records and training history live in the You tab as you log. It builds from your real sessions — nothing is pre-filled." },
   { title: "Configure your account", body: "Set your name, language, notifications and privacy in More → Settings. You can switch to the full athlete toolkit anytime." },
 ];
 

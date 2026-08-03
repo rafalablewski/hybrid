@@ -46,7 +46,7 @@ export default function AdminAnon() {
 
   const remove = async (id: string, title: string) => {
     const ok = await confirm({
-      title: "Delete guest workout",
+      title: "Delete guest session",
       message: `Permanently delete the anonymous workout “${title}”? This can't be undone.`,
       confirmLabel: "Delete",
       destructive: true,

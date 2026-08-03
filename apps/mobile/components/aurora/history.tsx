@@ -203,7 +203,7 @@ export default function AuroraHistory() {
     <Loading />
   ) : q.isError ? (
     // A real fetch failure — distinct from a genuine empty history, so an
-    // offline / 500 load never masquerades as "no workouts yet".
+    // offline / 500 load never masquerades as "no sessions yet".
     <FetchError onRetry={() => q.refetch()} style={{ marginTop: 16 }} />
   ) : (
     <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>

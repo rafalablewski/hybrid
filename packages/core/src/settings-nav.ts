@@ -52,7 +52,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     categories: [
       { id: "account", icon: "user", title: "Edit profile", subtitle: "Photo, name, handle, bio, visibility", keywords: ["name", "email", "display name", "profile", "handle", "username", "bio", "avatar", "photo", "picture", "visibility", "public", "followers", "private"] },
       { id: "preferences", icon: "settings", title: "Preferences", subtitle: "Appearance, language, units", keywords: ["theme", "appearance", "dark", "light", "language", "english", "polish", "german", "units", "kg", "lb", "liquid glass"] },
-      { id: "logger", icon: "play", title: "Workout logger", subtitle: "Detail, volume, rest timer", keywords: ["warmups", "volume", "fractional", "plate", "rest timer", "rpe", "rir", "haptics", "increment"] },
+      { id: "logger", icon: "play", title: "Session logger", subtitle: "Detail, volume, rest timer", keywords: ["warmups", "volume", "fractional", "plate", "rest timer", "rpe", "rir", "haptics", "increment"] },
       { id: "notifications", icon: "bell", title: "Notifications", subtitle: "Recaps, coach, reminders", keywords: ["weekly recap", "coach messages", "check-in reminders", "product updates", "push"] },
     ],
   },

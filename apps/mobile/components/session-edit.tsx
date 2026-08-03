@@ -47,7 +47,7 @@ function Num({ C, cap, value, onChange }: { C: Palette; cap?: string; value: str
 }
 
 /**
- * EDIT WORKOUT — the sheet behind the summary's "Edit workout": correct the
+ * EDIT WORKOUT — the sheet behind the summary's "Edit session": correct the
  * figures you typed into a workout you already saved (a distance that got
  * skipped, a fat-fingered time, the wrong load on a set) without deleting the
  * session and throwing away its PRs, your feel report and any device match.

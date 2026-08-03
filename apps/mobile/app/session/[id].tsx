@@ -69,7 +69,7 @@ export default function SessionDetail() {
   const busy = manage.busyId !== null;
   // The "Wrapped" recap + story-share overlay (premium panels + story picker).
   const [wrappedOpen, setWrappedOpen] = useState(false);
-  // "Edit workout" — correcting the figures this session was logged with.
+  // "Edit session" — correcting the figures this session was logged with.
   const [editOpen, setEditOpen] = useState(false);
   // A session logged seconds ago may not be in a still-fresh cache yet —
   // refetch ONCE when the id is missing before declaring it not found.
