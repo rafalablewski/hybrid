@@ -15,7 +15,7 @@ import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
-import { fs, F, PressScale } from "../../lib/ui";
+import { leading, fs, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
@@ -72,7 +72,7 @@ export default function AuroraTrain() {
   return (
     <AuroraScreen>
       <AHeading style={{ fontSize: 28 }}>{t("train.title")}</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("train.intro")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>{t("train.intro")}</Text>
 
       {/* Resume a workout left in progress — kept above the adaptive slot. */}
       {draft && (
@@ -149,7 +149,7 @@ export default function AuroraTrain() {
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>＋ {t("train.buildRoutine")}</Text>
       </PressScale>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: 19 }}>{t("train.finishedNote")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: leading(fs.caption, "relaxed") }}>{t("train.finishedNote")}</Text>
     </AuroraScreen>
   );
 }
@@ -164,11 +164,11 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
   const blurb = hasHistory ? rx.why : t("train.aiEmptyBlurb");
   return (
     <PressScale onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, padding: 20, marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
         {t("home.readiness")} {rx.readiness}/100
       </Text>
       <Text style={{ fontFamily: F.black, fontSize: 25, lineHeight: 28, color: C.onAccent, marginTop: 10, letterSpacing: -0.5 }}>{title}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: 17 }} numberOfLines={2}>{blurb}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: leading(fs.caption) }} numberOfLines={2}>{blurb}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink, borderRadius: 16, paddingVertical: 16, marginTop: 16 }}>
         <AuroraIcon name="play" size={15} color={C.lime} />
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
@@ -188,7 +188,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: pa.text }}>{t("w.home.today.unlockFullBtn")}</Text>
         </View>
         <Text style={{ fontFamily: F.black, fontSize: 22, lineHeight: 25, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 19 }} numberOfLines={3}>{t("train.aiLockedBlurb")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }} numberOfLines={3}>{t("train.aiLockedBlurb")}</Text>
       </ACard>
     </PressScale>
   );
@@ -208,7 +208,7 @@ function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSes
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("train.done")}</Text>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, marginTop: 5 }}>{session.title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names || t("train.tapSummary")}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names || t("train.tapSummary")}</Text>
       </View>
       <Chevron C={C} />
     </PressScale>

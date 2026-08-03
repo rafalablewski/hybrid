@@ -41,7 +41,7 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { fs, F, serifIf, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { withAlpha } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
@@ -185,7 +185,7 @@ export default function PercentProgram({
 
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, marginBottom: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{view.progression}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{view.progression}</Text>
       </View>
 
       <MeasuredOutcome planId={plan.id} />
@@ -402,12 +402,12 @@ function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayVi
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: C.chalk }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: C.chalk }} numberOfLines={1}>
             {day.title}
             {!!day.kindLabel && <Text style={{ color: C.ash }}> — {day.kindLabel}</Text>}
           </Text>
           {!!words && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }} numberOfLines={1}>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }} numberOfLines={1}>
               {words}
             </Text>
           )}
@@ -523,18 +523,18 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
         <View style={{ width: MX_NAME }}>
           <View style={{ height: HDR_H, justifyContent: "center", paddingLeft: 16, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
             {!!label && (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
                 {label}
               </Text>
             )}
           </View>
           {rows.map((l, i) => (
             <Pressable key={i} onPress={() => onPress(l)} accessibilityRole="button" accessibilityLabel={`${l.name} — details`} style={{ height: rowH(l), justifyContent: "center", paddingLeft: 16, paddingRight: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: hair(C) }}>
-              <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>
                 {l.name}
               </Text>
               {!!l.note && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>
                   {l.note}
                 </Text>
               )}
@@ -595,8 +595,8 @@ function OutlierRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boo
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{lift.name}</Text>
-        {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>{lift.note}</Text>}
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{lift.name}</Text>
+        {!!lift.note && <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>{lift.note}</Text>}
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>{outlierPrescription(lift)}</Text>
     </Pressable>
@@ -611,7 +611,7 @@ function AccessoryRows({ lifts, label, C, onPress }: { lifts: ProgramLiftView[];
     <View>
       {(label || hasRpe) && (
         <View style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
             {label ?? ""}
           </Text>
           {hasRpe && (
@@ -639,7 +639,7 @@ function ProseRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boole
         <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 8, backgroundColor: loadHex(C, liftColor(lift)) }} />
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{lift.name}</Text>
       </View>
-      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 16 }}>{detail}</Text>}
+      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: leading(fs.caption), marginLeft: 16 }}>{detail}</Text>}
     </Pressable>
   );
 }
@@ -657,7 +657,7 @@ function WeekRow({ lift, restName, first, C }: { lift?: ProgramLiftView; restNam
         <View style={{ width: 7, height: 7, borderRadius: 3.5, marginRight: 8, backgroundColor: loadHex(C, lift ? liftColor(lift) : "ash") }} />
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: rest ? C.ash : C.chalk }}>{name}</Text>
       </View>
-      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: 17, marginLeft: 16 }}>{detail}</Text>}
+      {!!detail && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3, lineHeight: leading(fs.caption), marginLeft: 16 }}>{detail}</Text>}
     </View>
   );
 }
@@ -689,7 +689,7 @@ function FallbackRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: bo
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <NameCell lift={lift} C={C} />
-      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: 18 }}>{lift.prescription}</Text>
+      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: leading(fs.caption) }}>{lift.prescription}</Text>
     </Pressable>
   );
 }
@@ -714,7 +714,7 @@ function ExerciseSheet({ sel, onClose, C }: { sel: SheetSel | null; onClose: () 
   return (
     <Sheet visible={!!sel} onClose={onClose} title={lift.name} sub={sub}>
       <View style={{ marginTop: 6 }}>
-        {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 18, marginBottom: 10 }}>{lift.note}</Text>}
+        {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption), marginBottom: 10 }}>{lift.note}</Text>}
         {steps.map((st, i) => (
           <View key={i} style={{ ...row, borderTopWidth: i > 0 ? 1 : 0 }}>
             <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
@@ -751,7 +751,7 @@ function ExerciseSheet({ sel, onClose, C }: { sel: SheetSel | null; onClose: () 
           </View>
         )}
         {steps.length === 0 && lift.setsReps == null && !!lift.prescription && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, lineHeight: 20 }}>{lift.prescription}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, lineHeight: leading(fs.note, "snug") }}>{lift.prescription}</Text>
         )}
       </View>
     </Sheet>

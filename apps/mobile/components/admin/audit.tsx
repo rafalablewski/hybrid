@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Input, PillBtn, Banner } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -105,7 +105,7 @@ export default function AdminAudit() {
             </Pressable>
             {isOpen ? (
               <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: palette.ink2 }}>
-                <Mono color={palette.ash} style={{ fontSize: fs.micro, lineHeight: 16 }}>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro, lineHeight: leading(fs.micro) }}>
                   {JSON.stringify({ ip: e.ip, targetType: e.targetType, targetId: e.targetId, metadata: e.metadata }, null, 2)}
                 </Mono>
               </View>

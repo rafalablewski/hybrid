@@ -3,7 +3,7 @@ import { View, Text, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
@@ -30,7 +30,7 @@ function initials(name: string) {
 function Stat({ C, value, label, first, star }: { C: Palette; value: string; label: string; first?: boolean; star?: boolean }) {
   return (
     <View style={{ flex: 1, paddingTop: 10, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line, paddingLeft: first ? 0 : 12 }}>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 13, color: C.chalk }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 13, color: C.chalk }}>
         {star ? <Text style={{ color: C.gold }}>★ </Text> : null}{value}
       </Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: `${C.ash}b3`, marginTop: 4 }}>{label}</Text>
@@ -112,10 +112,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
                   {/* Name + check as row siblings: nested inside one truncating
                       Text the ✓ would be the first thing ellipsized away. */}
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 16, flexShrink: 1 }}>{c.name}</Text>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 16, flexShrink: 1 }}>{c.name}</Text>
                     {c.verified ? <Text style={{ color: accentText, fontSize: 12, marginLeft: 4 }}>✓</Text> : null}
                   </View>
-                  <Text numberOfLines={1} style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, fontWeight: "600", letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, fontWeight: "600", letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
                 </View>
               </View>
 

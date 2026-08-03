@@ -3,7 +3,7 @@ import { View, Text, TextInput, ActivityIndicator } from "react-native";
 import { isValidTotpCode } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ACard, RADIUS } from "./kit";
 import { QrMatrix } from "../coach-invite";
 
@@ -112,7 +112,7 @@ export default function MfaSettings() {
             </Text>
           </View>
         </View>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: 18, marginTop: 6 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption), marginTop: 6 }}>
           Adds a one-time code on sign-in — strongly recommended for admin accounts. Works with any authenticator (1Password, Authy, Google Authenticator).
         </Text>
 

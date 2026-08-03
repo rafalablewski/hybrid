@@ -3,7 +3,7 @@ import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { fetchTeamCompare, type TeamCompareResponse, type TeamCompareAthlete } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
@@ -72,7 +72,7 @@ export default function AuroraTeamCompare() {
       return (
         <ACard style={{ marginTop: space.md }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.compare.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("w.teams.compare.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.compare.emptyBody")}</Text>
         </ACard>
       );
     }
@@ -108,7 +108,7 @@ export default function AuroraTeamCompare() {
             return (
               <View key={a.linkId} style={{ marginTop: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.ms }}>
-                  <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{v || "—"}{v && meta.unit ? ` ${meta.unit}` : ""}</Text>
                 </View>
                 <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden", marginTop: 6 }}>

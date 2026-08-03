@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { REST_SECONDS_CHOICES, type LoggerPrefs } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F } from "../../lib/ui";
+import { leading, fs, space, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { GlassToggle } from "../glass-toggle";
 import { AuroraScreen, ACard, ASub, ASegment } from "./kit";
@@ -66,7 +66,7 @@ export default function AuroraLoggerSettings() {
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t(r.titleKey)}</Text>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 16 }}>{t(r.descKey)}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: leading(fs.caption, "snug") }}>{t(r.descKey)}</Text>
             </View>
             <GlassToggle
               value={prefs[r.key]}

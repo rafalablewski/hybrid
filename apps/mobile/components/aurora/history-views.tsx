@@ -27,7 +27,7 @@ import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, Chip } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
@@ -86,7 +86,7 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
         {h.value}
         <Text style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C.ash }}> {unitOf(h, t)}</Text>
       </Text>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
         {[s.title, ...headlineMeta(h, t)].join(" – ")}
         {prs > 0 && (
           <>
@@ -183,9 +183,9 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <Chip color={u.isToday ? C.lime : C.ash}>{t("histview.planned")}</Chip>
           </View>
           <View style={{ borderRadius: RADIUS.card, padding: 16, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
             {u.blockNames.length > 0 && (
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
                 {u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}
               </Text>
             )}
@@ -276,8 +276,8 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, fontWeight: "700" }}>{Number(key.slice(8, 10))}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text ref={(r) => { titleRefs.current[s.id] = r; }} numberOfLines={1} style={titleStyle}>{s.title}</Text>
-                  <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} ref={(r) => { titleRefs.current[s.id] = r; }} numberOfLines={1} style={titleStyle}>{s.title}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
                     {[`${h.value} ${unitOf(h, t)}`, ...headlineMeta(h, t)].join(" – ")}
                   </Text>
                 </View>
@@ -403,7 +403,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
       </View>
 
       {!hasData && (
-        <Text style={{ fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 6, lineHeight: 20 }}>{t("w.analyze.stats.empty")}</Text>
+        <Text style={{ fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 6, lineHeight: leading(fs.body) }}>{t("w.analyze.stats.empty")}</Text>
       )}
     </View>
   );

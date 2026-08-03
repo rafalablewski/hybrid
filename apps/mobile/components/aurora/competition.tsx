@@ -3,7 +3,7 @@ import { View, Text, TextInput, ScrollView } from "react-native";
 import { optimizeForEvent, localDayKey } from "@hybrid/core";
 import { fetchEvents, createEvent, type EventRow } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 
@@ -45,7 +45,7 @@ export default function AuroraCompetition() {
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("w.account.upgrade.competition") }}>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("w.train.comp.intro")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>{t("w.train.comp.intro")}</Text>
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.comp.addEvent")}</Text>

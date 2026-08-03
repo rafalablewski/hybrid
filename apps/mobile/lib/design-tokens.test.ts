@@ -81,11 +81,21 @@ describe("type scale", () => {
 
 describe("leading and tracking", () => {
   it("RATCHET — absolute lineHeight gives way to leading()", () => {
-    // 29 distinct absolute dp values at audit time. Absolute leading is also why
-    // Dynamic Type cannot work: the OS scales glyphs and leaves the line box, so
-    // text collides with itself before it clips. leading(fs.body) derives the box
-    // from the size, so a scaled size carries its leading with it.
-    expectAtMost(hits(/lineHeight:\s*\d/g), 287, "absolute lineHeight → leading(size, role)");
+    // 287 → 77. The 210 that sat on a line with an fs.* size were DERIVED: each
+    // snapped to the nearest of the four roles, and the evidence was the finding
+    // itself — body/19, caption/17, bodyLg/20, caption/18 and micro/16 were all
+    // "normal" body leading, written five different ways.
+    //
+    // Absolute leading is also why Dynamic Type could not work: the OS scales the
+    // glyphs and leaves the line box where it was, so text collides with itself
+    // before it clips. leading(fs.body) derives the box from the size.
+    //
+    // What remains has no fs.* token on the same line — a raw size, or a
+    // lineHeight set apart from its fontSize — so each needs reading, not a
+    // regex. Four more were left deliberately: their ratio is >0.09 from any
+    // role, which means they are making a point (a 1.04 display, a 2.71 spacer)
+    // rather than picking a leading.
+    expectAtMost(hits(/lineHeight:\s*\d/g), 77, "absolute lineHeight → leading(size, role)");
   });
 
   it("RATCHET — raw letterSpacing gives way to tracking.*", () => {

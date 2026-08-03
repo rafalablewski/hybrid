@@ -11,7 +11,7 @@ import {
 import { useExercises } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
@@ -141,7 +141,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
             ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
             : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
         </View>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
       </Pressable>
     );
@@ -248,7 +248,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
                               : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
                           </View>
-                          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
+                          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
                           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
                         </Pressable>
                       );

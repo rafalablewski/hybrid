@@ -15,7 +15,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F } from "../../lib/ui";
+import { leading, fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, ASub, ASegment } from "./kit";
 
 /**
@@ -46,7 +46,7 @@ function AStat({ label, value, sub, accent }: { label: string; value: string | n
     <View style={{ width: "50%", padding: 5 }}>
       <ACard style={{ padding: 16 }}>
         <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
-        <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.black, fontSize: 28, marginTop: 8, color: accent ? txt(C, accent) : C.chalk }}>{value}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.black, fontSize: 28, marginTop: 8, color: accent ? txt(C, accent) : C.chalk }}>{value}</Text>
         {!!sub && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{sub}</Text>}
       </ACard>
     </View>
@@ -76,7 +76,7 @@ function PrivacyNote({ scope, accent }: { scope: AnalyticsScope; accent: string 
   const { t } = useLang();
   return (
     <View style={{ marginTop: 16, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
     </View>
   );
 }
@@ -86,7 +86,7 @@ function AEmpty({ title, body }: { title: string; body: string }) {
   return (
     <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
       <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, textAlign: "center" }}>{title}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", lineHeight: 20, marginTop: 8 }}>{body}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", lineHeight: leading(fs.bodyLg), marginTop: 8 }}>{body}</Text>
     </ACard>
   );
 }
@@ -118,7 +118,7 @@ function MeterRow({ label, value, display, max, color }: { label: string; value:
   return (
     <View style={{ marginTop: 10 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5, gap: space.sm }}>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{display}</Text>
       </View>
       <View style={{ height: 7, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden" }}>
@@ -137,7 +137,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
       <View>
         <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line }}>
           {head.map((h, i) => (
-            <Text key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{h}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{h}</Text>
           ))}
         </View>
         {rows.map((r, i) => (
@@ -145,7 +145,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
             {r.map((c, j) => (
               <View key={j} style={cell(widths[j] ?? 80)}>
                 {typeof c === "string" || typeof c === "number"
-                  ? <Text numberOfLines={1} style={{ fontFamily: j === 0 ? F.semi : F.mono, fontSize: fs.caption, color: C.chalk }}>{c}</Text>
+                  ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: j === 0 ? F.semi : F.mono, fontSize: fs.caption, color: C.chalk }}>{c}</Text>
                   : c}
               </View>
             ))}

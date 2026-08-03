@@ -33,7 +33,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
@@ -85,7 +85,7 @@ export default function AuroraBuilder() {
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("w.train.builder.title") }}>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: 20 }}>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: leading(fs.bodyLg) }}>
         {t("w.train.builder.intro")}
       </Text>
 
@@ -167,7 +167,7 @@ export default function AuroraBuilder() {
         // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
         <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${pa.fill}55`, backgroundColor: `${pa.fill}14`, borderRadius: RADIUS.card, padding: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 17 }}>{t("w.train.logger.routineFullBlurb")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
           <Pressable
             onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
             style={{ backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 12 }}

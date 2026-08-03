@@ -4,7 +4,7 @@ import Svg, { Path } from "react-native-svg";
 import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraBodyMap from "./body-map";
 import Sheet from "./sheet";
@@ -17,7 +17,7 @@ function MuscleBar({ C, m, t }: { C: Palette; m: MuscleActivation; t: (k: string
   return (
     <View style={{ marginTop: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE}
           numberOfLines={1}
           style={{ flex: 1, fontFamily: primary ? F.bold : F.reg, fontSize: fs.body, color: primary ? C.chalk : C.ash }}
         >
@@ -59,7 +59,7 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
           <AuroraExerciseAnimation name={name} active={active} />
         </View>
       </View>
-      <Text style={{ marginTop: 12, marginHorizontal: 2, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.ash }}>{a.emphasis}</Text>
+      <Text style={{ marginTop: 12, marginHorizontal: 2, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{a.emphasis}</Text>
 
       {/* muscles worked */}
       <View style={{ marginTop: 20 }}>
@@ -86,8 +86,8 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
         <View style={{ marginTop: 12, gap: 10 }}>
           {a.cues.map((cue, i) => (
             <View key={cue} style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
-              <Text style={{ width: 22, fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime), lineHeight: 19 }}>{String(i + 1).padStart(2, "0")}</Text>
-              <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: 19, color: C.chalk }}>{cue}</Text>
+              <Text style={{ width: 22, fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime), lineHeight: leading(fs.caption, "relaxed") }}>{String(i + 1).padStart(2, "0")}</Text>
+              <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.chalk }}>{cue}</Text>
             </View>
           ))}
         </View>

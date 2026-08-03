@@ -18,7 +18,7 @@ import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } fr
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
@@ -325,7 +325,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               check-in — an edit is not a second check-in, and calling it one
               would suggest the first is still sitting there somewhere. */}
           <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 16 }}>{t(updated ? "w.recovery.checkins.updatedTitle" : "w.recovery.checkins.loggedTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 18, maxWidth: 280 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption), maxWidth: 280 }}>
             {t(!allAnswered ? "w.recovery.checkins.loggedPartialSub" : updated ? "w.recovery.checkins.updatedSub" : "w.recovery.checkins.loggedSub")}
           </Text>
           {/* What actually landed. The count is the same one the Today card

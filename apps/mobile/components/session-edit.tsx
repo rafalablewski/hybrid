@@ -11,7 +11,7 @@ import {
 import { patchSessionEdit } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
-import { F, fs, space, PressScale as Pressable } from "../lib/ui";
+import { leading, F, fs, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 
@@ -125,7 +125,7 @@ export function SessionEditSheet({
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("common.cancel")}</Text>
               </Pressable>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.ash, marginTop: 8 }}>{t("session.edit.lead")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 8 }}>{t("session.edit.lead")}</Text>
 
             <ScrollView style={{ marginTop: 16 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               <Text style={label}>{t("session.edit.name")}</Text>
@@ -197,7 +197,7 @@ export function SessionEditSheet({
                   else — say so here rather than let a corrected figure look like
                   it changed nothing. */}
               {session.device && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 16, color: C.ash, marginTop: 16 }}>{t("session.edit.matched")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: C.ash, marginTop: 16 }}>{t("session.edit.matched")}</Text>
               )}
               {error && (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber, marginTop: 16 }}>{t("session.edit.error")}</Text>

@@ -10,7 +10,7 @@ import { LegalLinks } from "../legal-links";
 import { supabase } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
-import { fs, F } from "../../lib/ui";
+import { leading, fs, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 
@@ -155,7 +155,7 @@ export default function AuroraUpgrade() {
           </View>
 
           {!!error && (
-            <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 16, lineHeight: 18, textAlign: "center" }}>{error}</Text>
+            <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
           )}
         </ScrollView>
 

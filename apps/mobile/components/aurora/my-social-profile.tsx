@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Image, AccessibilityInfo } from "react-native";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
-import { Loading, F, fs, PressScale as Pressable } from "../../lib/ui";
+import { leading, Loading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
@@ -155,7 +155,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const fieldRow = ({ rk, label, value, muted, first }: { rk: FieldKey; label: string; value: string; muted: boolean; first?: boolean }): ReactNode => (
     <Pressable key={rk} onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 16, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
       <Text style={{ width: 96, color: C.ash, fontSize: 13 }}>{label}</Text>
-      <Text numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: 14 }}>{value}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: 14 }}>{value}</Text>
       <Text style={{ color: C.ash, fontSize: 18 }}>›</Text>
     </Pressable>
   );
@@ -216,7 +216,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
             <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => pickVisibility(v)} />
           ))}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 15 }}>{t("w.profile.visibilityNote")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: leading(fs.micro, "snug") }}>{t("w.profile.visibilityNote")}</Text>
       </ACard>
 
       {onDone && (

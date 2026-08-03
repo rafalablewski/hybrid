@@ -11,6 +11,7 @@ import {
 import { Animated, Easing, View, Text, type TextStyle } from "react-native";
 import { springs, springDurationMs, durations } from "@hybrid/core";
 import { useReducedMotion } from "./use-reduced-motion";
+import { FIXED_FONT_SCALE } from "./ui";
 
 /**
  * SHARED ELEMENTS (mobile) — the thing you tapped travels into the screen it
@@ -146,7 +147,7 @@ function FlyingClone({ flight, progress }: { flight: Flight; progress: Animated.
         zIndex: 9999,
       }}
     >
-      <Text numberOfLines={1} style={toStyle}>{text}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={toStyle}>{text}</Text>
     </Animated.View>
   );
 }

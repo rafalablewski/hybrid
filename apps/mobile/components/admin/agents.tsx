@@ -14,7 +14,7 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -194,7 +194,7 @@ export default function AdminAgents() {
               accent={STATUS_COLOR(palette)[a.status]} style={[cardStack, selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined]}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm }}>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
                     {a.name}
                   </Text>
                   <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>
@@ -373,7 +373,7 @@ function Editor({
       </Pressable>
       {showPrompt && (
         <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
-          <Mono color={palette.chalk} style={{ fontSize: fs.micro, lineHeight: 17 }}>{preview}</Mono>
+          <Mono color={palette.chalk} style={{ fontSize: fs.micro, lineHeight: leading(fs.micro) }}>{preview}</Mono>
         </View>
       )}
     </ACard>
@@ -443,11 +443,11 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
                 ↳ delegated to {s.role} — {s.agent}
               </Mono>
               <Mono color={palette.ash} style={{ fontSize: fs.micro, marginVertical: 2 }}>"{s.task}"</Mono>
-              <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{s.output}</Mono>
+              <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{s.output}</Mono>
             </View>
           ))}
           <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
-            <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{run.output || "(no output)"}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: leading(fs.body) }}>{run.output || "(no output)"}</Mono>
           </View>
           {run.usage && (run.usage.input > 0 || run.usage.output > 0) && (
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
@@ -574,7 +574,7 @@ function History({ agentId }: { agentId: string }) {
                     <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{s.output}</Mono>
                   </View>
                 ))}
-                <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{r.output}</Mono>
+                <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{r.output}</Mono>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
                   {r.inputTokens.toLocaleString()} in – {r.outputTokens.toLocaleString()} out – {r.ranByEmail ?? "—"}
                 </Mono>

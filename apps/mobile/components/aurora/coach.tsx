@@ -35,7 +35,7 @@ import {
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, RADIUS, AChip } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -408,7 +408,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
           <ACard style={{ marginTop: 12 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.generatePeriodizedWeek")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: 18 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: leading(fs.caption) }}>
               {sessions.length === 0
                 ? t("w.teams.coach.genEmptyHint")
                 : `${t("w.teams.coach.genHintPre")} (~${trainingDaysPerWeek(sessions)}/${t("w.teams.coach.wkAbbr")}), ${t("w.teams.coach.genHintPost")}`}
@@ -467,11 +467,11 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   {t("w.teams.coach.energy")} {c.energy ?? "—"} – {t("w.teams.coach.sleep")} {c.sleep ?? "—"} – {t("w.teams.coach.freshness")} {c.soreness ?? "—"} – {t("w.teams.coach.mood")} {c.mood ?? "—"}
                   {c.bodyMassKg != null ? ` – ${c.bodyMassKg}kg` : ""}
                 </Text>
-                {c.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{c.note}</Text> : null}
+                {c.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: leading(fs.bodyLg) }}>{c.note}</Text> : null}
                 {c.coachReply ? (
                   <View style={{ marginTop: 10, paddingLeft: 10 }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.yourReply")}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 4, lineHeight: 20 }}>{c.coachReply}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 4, lineHeight: leading(fs.bodyLg) }}>{c.coachReply}</Text>
                   </View>
                 ) : replyFor === c.id ? (
                   <View style={{ marginTop: 10 }}>
@@ -505,7 +505,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.teams.coach.private")}</Text>
                 </View>
               )}
-              <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: n.private ? 8 : 0, lineHeight: 20 }}>{n.body}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: n.private ? 8 : 0, lineHeight: leading(fs.bodyLg) }}>{n.body}</Text>
             </ACard>
           ))}
 
@@ -573,7 +573,7 @@ function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string)
             {r.prs.length > 0 && (
               <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 10 }}>
                 <AuroraIcon name="trophy" size={14} color={C.chalk} style={{ marginTop: 2 }} />
-                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, lineHeight: 18 }}>
+                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>
                   {r.prs.slice(0, 4).map((p) => formatStrengthPr(p, { first: t("w.teams.coach.first"), moreReps: t("summary.morePrReps") })).join(" – ")}
                 </Text>
               </View>

@@ -18,7 +18,7 @@ import {
   type EntitlementCell,
 } from "@hybrid/core";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Intro, Stat, Input, PillBtn, Segmented } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -175,7 +175,7 @@ function RevenueTab({
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
               {stream.tiers.map((t) => <Chip key={t.name} color={color}>{t.name} – {t.price}</Chip>)}
             </View>
-            <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 10, lineHeight: 17 }}>{stream.howItWorks}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 10, lineHeight: leading(fs.caption) }}>{stream.howItWorks}</Mono>
           </ACard>
         );
       })}
@@ -198,7 +198,7 @@ function RevenueTab({
               Coach {loc(m.coachStarter)} – {loc(m.coachPro)} – {loc(m.coachBusiness)}/mo – Org {loc(m.orgLow)}–{loc(m.orgHigh)}/athlete/yr
             </Mono>
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>{m.tax} – Stripe {m.stripeFee}</Mono>
-            <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{m.rationale}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: leading(fs.micro) }}>{m.rationale}</Mono>
           </ACard>
         );
       })}
@@ -265,7 +265,7 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
           <Mono color={palette.chalk} style={{ fontSize: fs.body, marginTop: 4 }}>
             {usdFull(agentCost.spend)} over {agentCost.runs.toLocaleString()} runs (≈ {usdFull(agentCost.spend / 30)}/day)
           </Mono>
-          <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: leading(fs.micro) }}>
             Measured from real agent runs (tokens × model list price). Calibrate the modeled AI COGS below against it.
           </Mono>
         </ACard>
@@ -286,7 +286,7 @@ function CostsTab({ r, agentCost }: { r: ReturnType<typeof computeEconomics>; ag
                 ≈ {usdFull(live)}/mo{share != null ? ` – ${share.toFixed(0)}% of revenue` : ""}
               </Mono>
             )}
-            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{c.note}</Mono>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: leading(fs.micro) }}>{c.note}</Mono>
             {c.id === "fixed" && <FixedOpexBreakdown />}
           </ACard>
         );
@@ -402,7 +402,7 @@ function CalcTab({
           <PnL k="Fixed opex" v={`−${usdFull(r.cogs.fixed)}`} />
           <PnL k={r.grossProfit >= 0 ? "Contribution" : "Burn"} v={`${r.grossProfit >= 0 ? "" : "−"}${usdFull(Math.abs(r.grossProfit))}`} c={r.grossProfit >= 0 ? palette.lime : palette.red} bold />
         </View>
-        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 10, lineHeight: 16 }}>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 10, lineHeight: leading(fs.micro) }}>
           Break-even at {Number.isFinite(r.breakEvenProUsers) ? `${r.breakEvenProUsers.toLocaleString()} Pro subscribers` : "— (Pro contribution ≤ 0)"} holding other assumptions fixed.
         </Mono>
       </ACard>
@@ -488,7 +488,7 @@ function Indicator({ label, value, c, note, says }: { label: string; value: stri
       <Mono color={palette.ash} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9 }}>{label}</Mono>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: txt(palette, c), marginTop: 2 }}>{value}</Text>
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{note}</Mono>
-      <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>{says}</Mono>
+      <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: leading(fs.micro) }}>{says}</Mono>
     </ACard>
   );
 }
@@ -540,7 +540,7 @@ function ForecastTab({
             </View>
           );
         })}
-        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: leading(fs.micro) }}>
           MRR compounds at the net monthly rate (new + expansion − churn); variable COGS scale with
           revenue while fixed opex holds. Cash bars turn red when cumulative cash is negative.
           Assumptions, not booked revenue.
@@ -622,7 +622,7 @@ function Glossary() {
         {METRIC_GUIDE.map((m) => (
           <View key={m.id} style={{ borderLeftWidth: 2, borderLeftColor: palette.line, paddingLeft: 10, marginBottom: 12 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: palette.chalk }}>{m.label}</Text>
-            <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 3, lineHeight: 16 }}>{m.what}</Mono>
+            <Mono color={palette.chalk} style={{ fontSize: fs.micro, marginTop: 3, lineHeight: leading(fs.micro) }}>{m.what}</Mono>
             <Mono color={palette.violet} style={{ fontSize: fs.micro, marginTop: 3 }}>= {m.formula}</Mono>
             <Mono color={palette.lime} style={{ fontSize: fs.micro, marginTop: 2 }}>{m.benchmark}</Mono>
           </View>

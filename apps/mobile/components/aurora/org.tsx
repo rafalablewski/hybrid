@@ -11,7 +11,7 @@ import {
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable, Chip } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, APill, RADIUS, AChip } from "./kit";
 import { CtaLabel } from "./cta-label";
 
@@ -138,7 +138,7 @@ export default function AuroraOrg() {
         <>
           <ACard style={{ marginTop: space.md }}>
             <Text style={kicker(txt(C, C.blue))}>{t("w.teams.org.yourAccess")} – {detail.myRole.toLowerCase()}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: 20 }}>{roleScope(detail.myRole)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{roleScope(detail.myRole)}</Text>
           </ACard>
 
           {/* team hierarchy */}
@@ -247,7 +247,7 @@ export default function AuroraOrg() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.teams.org.pendingInvites")}</Text>
                 {detail.invites.map((iv) => (
                   <View key={iv.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                    <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{iv.email} – {iv.role.toLowerCase()}</Text>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{iv.email} – {iv.role.toLowerCase()}</Text>
                     <Pressable onPress={() => onRevoke(iv.id)} accessibilityRole="button" accessibilityLabel={`${t("w.teams.org.revoke")} ${iv.email}`} hitSlop={8}>
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>{t("w.teams.org.revoke")}</Text>
                     </Pressable>
@@ -274,7 +274,7 @@ export default function AuroraOrg() {
                   <Chip color={athlete.injury.flaggedCount ? txt(C, C.red) : txt(C, C.lime)}>{`${t("w.teams.org.injury")} ${athlete.injury.overall}/100`}</Chip>
                 </View>
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 10, lineHeight: 20 }}>{athlete.summary}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 10, lineHeight: leading(fs.body) }}>{athlete.summary}</Text>
               {athlete.injury.tissues ? (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
                   {athlete.injury.tissues.filter((x) => x.risk > 0).map((x) => (

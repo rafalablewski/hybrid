@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Stat, ErrorNote } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -70,7 +70,7 @@ export default function AdminSecurity() {
 
       {d.posture.criticalOpen > 0 && (
         <ACard accent={palette.red} style={cardStack}>
-          <Mono color={palette.red} style={{ fontSize: fs.body, lineHeight: 18 }}>
+          <Mono color={palette.red} style={{ fontSize: fs.body, lineHeight: leading(fs.body, "snug") }}>
             ⚠ {d.posture.criticalOpen} critical control(s) not yet passing — address before launch.
           </Mono>
         </ACard>
@@ -108,7 +108,7 @@ export default function AdminSecurity() {
                     <Chip color={sevColor[c.severity]}>{c.severity}</Chip>
                     <Chip color={statusColor(c.status)}>{statusLabel(c.status)}</Chip>
                   </View>
-                  <Mono color={palette.ash} style={{ fontSize: fs.caption, lineHeight: 18 }}>{c.detail}</Mono>
+                  <Mono color={palette.ash} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{c.detail}</Mono>
                   {c.evidence ? (
                     <Mono color={c.status === "pass" ? palette.lime : palette.amber} style={{ fontSize: fs.micro, marginTop: 6 }}>
                       {c.status === "pass" ? "✓ " : "→ "}{c.evidence}

@@ -16,7 +16,7 @@ import {
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
-import { fs, F, PressScale as Pressable } from "../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
 /**
@@ -120,7 +120,7 @@ export function FeelPrompt({
             }}
           >
             <Text style={{ fontSize: 21, opacity: on ? 1 : 0.55 }}>{l.emoji}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
           </Pressable>
         );
       })}
@@ -148,7 +148,7 @@ export function FeelPrompt({
 
       {feel != null && (
         <View style={{ marginTop: 16 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
           {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
           {/* WHAT THIS ANSWER IS WORTH. "Wrecked" ten minutes after a hard
               session describes the session; the same tap ten hours later
@@ -156,7 +156,7 @@ export function FeelPrompt({
               so it says which one this is rather than scoring in silence. */}
           {reading && (
             <View style={{ marginTop: 12, flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: reading.read === "nextDay" || reading.read === "sameDay" ? txt(C, C.lime) : C.ash }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: reading.read === "nextDay" || reading.read === "sameDay" ? txt(C, C.lime) : C.ash }}>
                 {t(FEEL_READ_KEY[reading.read])}
               </Text>
               <Text numberOfLines={3} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, lineHeight: 15, color: C.ash }}>{t(readNoteKey(reading.read, reading.fatigue))}</Text>
@@ -174,11 +174,11 @@ export function FeelPrompt({
       {load != null && (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
           <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
-          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={{ fontFamily: F.bold, fontSize: 14, color: C.chalk }}>{t(LOAD_BAND_KEY[loadBand(load)])}</Text>
             {rel && (
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: rel.pct >= 0 ? txt(C, C.lime) : C.ash, marginTop: 3 }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: rel.pct >= 0 ? txt(C, C.lime) : C.ash, marginTop: 3 }}>
                 {rel.pct >= 0 ? "+" : "−"}{Math.abs(rel.pct)}% {t("session.feel.vsUsual")}
               </Text>
             )}

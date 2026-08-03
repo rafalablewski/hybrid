@@ -9,7 +9,7 @@ import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APill, ASegment, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -75,7 +75,7 @@ export default function AuroraOnboarding() {
                 <View style={{ backgroundColor: palette.ink2, borderColor: palette.line, borderWidth: 1, borderRadius: RADIUS.card, padding: 20 }}>
                   <Text style={{ fontFamily: F.black, fontSize: 22, color: palette.chalk }}>{plan.planName}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash, marginTop: 4 }}>{plan.goalLabel} – {plan.weeklyTarget}×/{t("w.train.comp.wk")} – {plan.weeks} {t("w.account.onboarding.weeks")}</Text>
-                  <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.chalk, marginTop: 12, lineHeight: 20 }}>{plan.why}</Text>
+                  <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.chalk, marginTop: 12, lineHeight: leading(fs.bodyLg) }}>{plan.why}</Text>
                 </View>
               ) : (
                 <ASub>{t("w.account.onboarding.no-plan")}</ASub>
@@ -187,7 +187,7 @@ function Choice({ active, title, sub, onPress }: { active: boolean; title: strin
       {active && <AuroraIcon name="check" size={22} color={txt(palette, palette.lime)} />}
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: active ? txt(palette, palette.lime) : palette.chalk }}>{title}</Text>
-        {!!sub && <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: 3, lineHeight: 17 }}>{sub}</Text>}
+        {!!sub && <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: 3, lineHeight: leading(fs.caption) }}>{sub}</Text>}
       </View>
     </Pressable>
   );

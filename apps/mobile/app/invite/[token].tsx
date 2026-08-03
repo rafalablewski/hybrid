@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { claimCoachInvite } from "../../lib/api";
 
 // Claim landing for a coach invite (QR / link / deep-link). Claims immediately
@@ -56,7 +56,7 @@ export default function InviteClaim() {
         <ActivityIndicator color={C.lime} style={{ marginTop: 16 }} />
       ) : !session ? (
         <>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", marginTop: 12, lineHeight: 20 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", marginTop: 12, lineHeight: leading(fs.bodyLg) }}>
             Create your free account or sign in to connect. Use the email your coach invited and you&apos;ll be linked automatically.
           </Text>
           <Pressable onPress={() => router.replace("/login")} style={{ marginTop: 20, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 24 }}>

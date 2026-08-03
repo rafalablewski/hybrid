@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Modal } from "react-native";
-import { fs, F, space, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, F, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 
@@ -38,7 +38,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
             {`Step ${i + 1} / ${steps.length}`}
           </Text>
           <Text style={{ fontFamily: F.bold, fontSize: fs.heading, color: C.chalk, marginTop: 8 }}>{step.title}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 22, marginTop: 8 }}>{step.body}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg, "relaxed"), marginTop: 8 }}>{step.body}</Text>
 
           {/* progress dots */}
           <View style={{ flexDirection: "row", gap: 6, marginTop: 16 }}>

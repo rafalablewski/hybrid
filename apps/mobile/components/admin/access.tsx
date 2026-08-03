@@ -9,7 +9,7 @@ import {
   type PersonaAccess,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Mono, Kicker, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraIcon } from "../aurora/icons";
 import { Intro, Banner, ErrorNote, PillBtn, Segmented } from "./_kit";
@@ -149,7 +149,7 @@ export default function AdminAccess() {
                 apps.map((a) => (
                   <View key={a.id} style={{ borderBottomWidth: 1, borderBottomColor: palette.line, paddingVertical: 10 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>{a.userEmail}</Text>
-                    <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4, lineHeight: 17 }}>{a.credentials}</Mono>
+                    <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4, lineHeight: leading(fs.caption) }}>{a.credentials}</Mono>
                     <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
                       {new Date(a.createdAt).toLocaleDateString()}
                     </Mono>
@@ -176,7 +176,7 @@ export default function AdminAccess() {
             return (
               <ACard key={name} accent={c} style={cardStack}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(palette, c) }}>{name}</Text>
-                <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 6, lineHeight: 17 }}>{desc}</Mono>
+                <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 6, lineHeight: leading(fs.caption) }}>{desc}</Mono>
               </ACard>
             );
           })}

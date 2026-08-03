@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { pacePerKm, mmss } from "@hybrid/core";
 import { createSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -66,7 +66,7 @@ export default function AuroraRunTrack() {
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("w.train.runTrack.title") }}>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: 20 }}>{t("w.train.runTrack.intro")}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: leading(fs.bodyLg) }}>{t("w.train.runTrack.intro")}</Text>
 
       {/* Map placeholder */}
       <ACard style={{ marginBottom: 12, padding: 0, overflow: "hidden" }}>
@@ -75,7 +75,7 @@ export default function AuroraRunTrack() {
           <View style={{ position: "absolute", bottom: 28, right: 30, width: 12, height: 12, borderRadius: 6, backgroundColor: C.amber }} />
           <AuroraIcon name="location" size={30} color={C.ash} />
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{t("w.train.runTrack.liveRouteMap")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, textAlign: "center", paddingHorizontal: 28, lineHeight: 17 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, textAlign: "center", paddingHorizontal: 28, lineHeight: leading(fs.micro) }}>
             {t("w.train.runTrack.mapNote")}
           </Text>
         </View>

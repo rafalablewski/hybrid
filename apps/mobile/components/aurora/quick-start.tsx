@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { routineSummary, type SessionBlock } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { withAlpha } from "./kit";
 import Sheet from "./sheet";
 import { CtaLabel } from "./cta-label";
@@ -65,7 +65,7 @@ export default function QuickStartSheet({
         {routines.length === 0 ? (
           <View style={{ paddingVertical: 10 }}>
             <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.home.quickStart.empty")}</Text>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: 20 }}>{t("w.home.quickStart.emptySub")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "snug") }}>{t("w.home.quickStart.emptySub")}</Text>
           </View>
         ) : (
           <>
@@ -177,8 +177,8 @@ function FavouriteCard({ C, scheme, width, r, t, onLaunch, onToggleFav }: { C: P
         <Star C={C} on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onPress={onToggleFav} />
       </View>
       <Text style={{ fontSize: 16, lineHeight: 18, color: txt(C, accent) }}>{glyph}</Text>
-      <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 15, letterSpacing: -0.3, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 15, letterSpacing: -0.3, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
       <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
     </Pressable>
   );
@@ -192,8 +192,8 @@ function RoutineRow({ C, first, r, t, onLaunch, onToggleFav }: { C: P; first: bo
         <Text style={{ fontSize: 15, color: txt(C, accent) }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>{metaLine(r.blocks, t)}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>{metaLine(r.blocks, t)}</Text>
       </View>
       <Star C={C} on={!!r.favourite} label={r.favourite ? t("w.home.quickStart.removeFav") : t("w.home.quickStart.addFav")} onPress={onToggleFav} />
       <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>›</Text>

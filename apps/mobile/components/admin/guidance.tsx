@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
-import { fs, space, Mono, Kicker, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Segmented } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -57,7 +57,7 @@ function Block({ b }: { b: GuideBlock }) {
   const { palette } = useTheme();
 
   if (b.t === "p") {
-    return <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 22, color: palette.chalk }}>{b.text}</Text>;
+    return <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg, "relaxed"), color: palette.chalk }}>{b.text}</Text>;
   }
 
   if (b.t === "note") {

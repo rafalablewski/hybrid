@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
 
@@ -261,12 +261,12 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
       w={176}
       label={t("session.paceTrend")}
       right={delta ? (
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, delta.faster ? C.lime : C.red) }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, delta.faster ? C.lime : C.red) }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </Text>
       ) : undefined}
     >
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>
         {formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
       </Text>
       <View style={{ marginTop: "auto" }}>
@@ -293,7 +293,7 @@ function Leg({ label, pct, c }: { label: string; pct: number; c: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <View style={{ width: 6, height: 6, borderRadius: 2, backgroundColor: c }} />
-      <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{label}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{label}</Text>
       <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: 10, color: C.chalk }}>{pct}%</Text>
     </View>
   );
@@ -328,7 +328,7 @@ function LastTile({ lane }: { lane: EnduranceLane }) {
   const e = lane.last!;
   return (
     <Tile w={184} label={t("w.home.end.last")}>
-      <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk, marginTop: 3 }}>{e.name}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk, marginTop: 3 }}>{e.name}</Text>
       <View style={{ gap: 3, marginTop: "auto" }}>
         <MetaRow
           l={e.distanceKm > 0 ? `${e.distanceKm} km` : "–"}

@@ -12,7 +12,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale } from "../../lib/ui";
+import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -66,7 +66,7 @@ export default function AuroraExercises() {
       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: e.staple ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
       </View>
-      <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
     </PressScale>
@@ -84,7 +84,7 @@ export default function AuroraExercises() {
 
       {entries.length === 0 ? (
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 30 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: 19 }}>{t("w.analyze.ex.empty")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, textAlign: "center", lineHeight: leading(fs.bodyLg, "snug") }}>{t("w.analyze.ex.empty")}</Text>
         </ACard>
       ) : (
         <>

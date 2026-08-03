@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { fs, F } from "../lib/ui";
+import { leading, fs, F } from "../lib/ui";
 import { GlassToggle } from "./glass-toggle";
 
 /** A labelled preference row with an on/off toggle — shared by Notifications +
@@ -22,7 +22,7 @@ export function ToggleRow({
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderTopWidth: noBorder ? 0 : 1, borderTopColor: C.line }}>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: 15 }}>{desc}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: leading(fs.micro, "snug") }}>{desc}</Text>
       </View>
       <GlassToggle value={on} onValueChange={onToggle} disabled={disabled} accessibilityLabel={title} accessibilityHint={desc} />
     </View>

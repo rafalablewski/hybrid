@@ -5,7 +5,7 @@ import {
   fetchTalent, saveTalentProfile, searchTalent, reportProfile,
   type TalentProfile, type TalentReport, type TalentResult,
 } from "../../lib/api";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
@@ -71,7 +71,7 @@ export default function AuroraTalent() {
       {/* Eyebrow cut — "Talent graph" just named the screen; the heading leads. */}
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg) }}>
           {t("w.teams.talent.headerBody")}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.teams.talent.liveHpi")} {hpi ?? "—"}{report ? ` – ${t("w.teams.talent.model")} ${report.modelVersion}` : ""}</Text>

@@ -4,7 +4,7 @@ import { athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/cor
 import { fetchSquad, type SquadRow, type SquadSummary } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable, Chip } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—");
@@ -89,7 +89,7 @@ export default function AuroraTeamMonitor() {
       return (
         <ACard style={{ marginTop: space.md }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.monitor.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: 20 }}>{t("w.teams.monitor.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.monitor.emptyBody")}</Text>
         </ACard>
       );
     }
@@ -136,7 +136,7 @@ export default function AuroraTeamMonitor() {
           return (
             <ACard key={a.linkId} style={{ marginTop: space.ms }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
                 <Chip color={segColor(s)}>{SEGMENT_LABELS[s]}</Chip>
               </View>
 
@@ -159,11 +159,11 @@ export default function AuroraTeamMonitor() {
           );
         })}
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12, lineHeight: 18 }}>{t("w.teams.monitor.acwrNote")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12, lineHeight: leading(fs.micro, "relaxed") }}>{t("w.teams.monitor.acwrNote")}</Text>
         {/* Only when a row actually shows the dash — explain the gap so a coach
             doesn't read it as missing data or a broken metric. */}
         {sorted.some((a) => a.acwrBand === "insufficient") && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: 18 }}>{t("w.teams.monitor.acwrInsufficient")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro, "relaxed") }}>{t("w.teams.monitor.acwrInsufficient")}</Text>
         )}
       </>
     );
@@ -196,7 +196,7 @@ function Metric({ C, label, value, sub, color, dot = false }: { C: Palette; labe
         {dot ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} /> : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color }}>{value}</Text>
       </View>
-      {sub ? <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color, marginTop: 1 }}>{sub}</Text> : null}
+      {sub ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color, marginTop: 1 }}>{sub}</Text> : null}
     </View>
   );
 }

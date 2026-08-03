@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Stat, ErrorNote, Segmented, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -293,7 +293,7 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
     <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
       <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: DOT(palette)[a.status] ?? palette.ash }} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontFamily: head ? F.bold : F.semi, fontSize: head ? 15 : 13, color: palette.chalk }} numberOfLines={1}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: head ? F.bold : F.semi, fontSize: head ? 15 : 13, color: palette.chalk }} numberOfLines={1}>
           {a.name}
         </Text>
         <Mono color={palette.ash} style={{ fontSize: fs.micro }}>
@@ -326,7 +326,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 10 }}>
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: DOT(palette)[s.status] ?? palette.ash }} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }} numberOfLines={1}>{s.name}</Text>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }} numberOfLines={1}>{s.name}</Text>
           <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – 🧠" : ""}</Mono>
         </View>
         <Chip color={s.authority === "executive" ? palette.violet : palette.ash}>{s.authority}</Chip>
@@ -586,7 +586,7 @@ function DigestTab() {
         <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
       <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
-        <Mono color={error ? palette.amber : palette.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>{error ?? (d ? d.text : "Loading…")}</Mono>
+        <Mono color={error ? palette.amber : palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{error ?? (d ? d.text : "Loading…")}</Mono>
       </View>
       <Mono color={sent ? palette.lime : palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
         {sent ?? (d && !d.slackConfigured ? "Set SLACK_WEBHOOK_URL in the server env to enable delivery." : "Posts daily at 08:05 UTC.")}
@@ -745,7 +745,7 @@ function Reports() {
                     </View>
                   ))}
                   <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
-                    <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{r.output || "(no output)"}</Mono>
+                    <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: leading(fs.body) }}>{r.output || "(no output)"}</Mono>
                   </View>
                   <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
                     {r.inputTokens.toLocaleString()} in – {r.outputTokens.toLocaleString()} out – {r.ranByEmail ?? "—"}
@@ -794,7 +794,7 @@ function FeedRow({ dot, title, body, right, rightColor }: { dot?: string; title:
     <View style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line }}>
       {dot ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot, marginTop: 5 }} /> : null}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }} numberOfLines={1}>{title}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }} numberOfLines={1}>{title}</Text>
         <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={1}>{body}</Mono>
       </View>
       <Mono color={rightColor ?? palette.ash} style={{ fontSize: fs.micro }}>{right}</Mono>

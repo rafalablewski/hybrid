@@ -29,7 +29,7 @@ import {
 import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../../lib/layout";
 import { useNavScroll } from "../../lib/nav-scroll";
 import { useTheme } from "../../lib/theme";
-import { F, serifIf, useEntrance, PressScale } from "../../lib/ui";
+import { F, serifIf, useEntrance, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
@@ -154,7 +154,7 @@ export function HeroMetadata({ parts, onDark = true }: { parts: (string | null |
   const { palette: C } = useTheme();
   const line = heroMetaLine(parts);
   if (!line) return null;
-  return <Text numberOfLines={1} style={metaStyle(onDark ? `rgba(255,255,255,${HERO.alpha.dim})` : C.ash)}>{line}</Text>;
+  return <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={metaStyle(onDark ? `rgba(255,255,255,${HERO.alpha.dim})` : C.ash)}>{line}</Text>;
 }
 
 /** The rail's TRAILING slot — one label, or one control. Never a fact the meta
@@ -619,7 +619,7 @@ export function HeroScreen({
               {/* the collapsed bar's inline title — arrives only after the
                   display title has fully left, so the two are never both up */}
               <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: "absolute", left: HERO.nav.hit + 8, right: HERO.nav.hit + 8, alignItems: "center", justifyContent: "center", height: HERO.rail.height, opacity: inlineOpacity as never }}>
-                <Text numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: onDark ? "#fff" : C.chalk }}>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: onDark ? "#fff" : C.chalk }}>
                   {hero.title}
                 </Text>
               </Animated.View>

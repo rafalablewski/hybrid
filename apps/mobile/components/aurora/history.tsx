@@ -12,7 +12,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
 import { ACard, APill, RADIUS } from "./kit";
 import { HeroScreen, HeroAccessory } from "./hero";
 import FetchError from "./fetch-error";
@@ -47,7 +47,7 @@ function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: str
       {(m || !!s.note) && (
         <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
           {m && <View style={{ marginTop: 5, width: 8, height: 8, borderRadius: 4, backgroundColor: moodColorH(C, m) }} />}
-          {!!s.note && <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: 19 }}>{s.note}</Text>}
+          {!!s.note && <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{s.note}</Text>}
         </View>
       )}
       {tags.length > 0 && (

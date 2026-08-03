@@ -19,7 +19,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, serifIf, startGlow, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, serifIf, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 import { usePlanOverrides } from "../../lib/plan-overrides";
@@ -205,7 +205,7 @@ export default function AuroraWeekRail({
     >
       {/* header: plan name + progress on one baseline row */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
           {schedule.planName}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{dayLine}</Text>
@@ -370,7 +370,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
         <Moon c={C.ash} s={26} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: 17 }}>{t("w.home.rail.restNote")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: leading(fs.caption) }}>{t("w.home.rail.restNote")}</Text>
         </View>
       </View>
     );
@@ -383,7 +383,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
       {day.postponedIn.map((it, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
           <View style={{ flex: 1 }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{it.title}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{it.title}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</Text>
           </View>
           <GhostBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(it.blocks)} auto />
@@ -413,7 +413,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
           </View>
           {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: 17 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: leading(fs.caption) }}>
           {stripWeekdayPrefix(day.title)}<Text style={{ color: `${C.ash}a6` }}>{finished}</Text>
         </Text>
         {stats.length > 0 && (
@@ -447,11 +447,11 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, onStart, onSkip
 
       {/* a short state note only where it carries meaning (moved / missed / skipped) */}
       {day.status === "postponed" ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: 17 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: leading(fs.caption) }}>
           {t("w.home.rail.movedTo")} {day.postponedTo ? fmtKey(day.postponedTo) : ""}
         </Text>
       ) : (day.status === "missed" || day.status === "skipped") ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: day.status === "missed" ? txt(C, C.red) : C.ash, marginTop: 5, lineHeight: 17 }}>{t(`w.home.rail.${day.status}Note`)}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: day.status === "missed" ? txt(C, C.red) : C.ash, marginTop: 5, lineHeight: leading(fs.caption) }}>{t(`w.home.rail.${day.status}Note`)}</Text>
       ) : null}
 
       {/* session toggle — an underlined text switch (no boxed segment), only when

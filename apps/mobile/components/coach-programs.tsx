@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { localTodayKey } from "@hybrid/core";
-import { fs, space, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, space, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
   getCoachPrograms,
@@ -111,12 +111,12 @@ export default function CoachPrograms({ clients }: { clients: { linkId: string; 
     <View>
       {unavailable && (
         <ACard style={[cardStack, { borderLeftWidth: 3, borderLeftColor: C.line, marginTop: 12 }]}>
-          <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>Programs aren&apos;t enabled yet — run reference/sql-coach-programs.sql in Supabase.</Mono>
+          <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>Programs aren&apos;t enabled yet — run reference/sql-coach-programs.sql in Supabase.</Mono>
         </ACard>
       )}
       <ACard style={[cardStack, { marginTop: 12 }]}>
         <Kicker>New program</Kicker>
-        <Mono style={{ marginTop: 6, fontSize: fs.caption, lineHeight: 18 }}>Build a multi-week program once, then assign it to a client or group as scheduled sessions.</Mono>
+        <Mono style={{ marginTop: 6, fontSize: fs.caption, lineHeight: leading(fs.caption) }}>Build a multi-week program once, then assign it to a client or group as scheduled sessions.</Mono>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
           <TextInput value={newName} onChangeText={setNewName} placeholder="e.g. 8-Week Strength Base" placeholderTextColor={C.ash}
             style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9 }} />

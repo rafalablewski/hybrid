@@ -5,7 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { useConfirm } from "./confirm";
@@ -94,19 +94,19 @@ export default function AuroraProgress() {
 
       {status === "no-auth" && (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20 }}>{t("w.recovery.progress.noAuth")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg) }}>{t("w.recovery.progress.noAuth")}</Text>
         </ACard>
       )}
       {status === "no-bucket" && (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: txt(C, C.red), lineHeight: 20 }}>{`${t("w.recovery.progress.noBucketPre")} progress ${t("w.recovery.progress.noBucketMid")} reference/sql-progress-photos.sql ${t("w.recovery.progress.noBucketPost")}`}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: txt(C, C.red), lineHeight: leading(fs.bodyLg) }}>{`${t("w.recovery.progress.noBucketPre")} progress ${t("w.recovery.progress.noBucketMid")} reference/sql-progress-photos.sql ${t("w.recovery.progress.noBucketPost")}`}</Text>
         </ACard>
       )}
 
       {status === "ready" && (
         <>
           <ACard style={{ marginTop: 16 }}>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: 20, marginBottom: 16 }}>{t("w.recovery.progress.intro")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg), marginBottom: 16 }}>{t("w.recovery.progress.intro")}</Text>
             <View style={{ flexDirection: "row", gap: space.ms }}>
               <Pressable onPress={takePhoto} disabled={busy} style={{ flex: 1, flexDirection: "row", gap: 8, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", justifyContent: "center", opacity: busy ? 0.5 : 1 }}>
                 <AuroraIcon name="add" size={18} color={C.onAccent} />

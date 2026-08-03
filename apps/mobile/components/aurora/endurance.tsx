@@ -9,7 +9,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -44,7 +44,7 @@ export default function AuroraEndurance() {
       <AuroraScreen hero={{ rank: "title", title: t("endurance.title") }} refreshing={refreshing} onRefresh={load}>
         <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("endurance.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: 19 }}>{t("endurance.emptyBody")}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.bodyLg, "snug") }}>{t("endurance.emptyBody")}</Text>
         </ACard>
       </AuroraScreen>
     );
@@ -100,7 +100,7 @@ export default function AuroraEndurance() {
             <Legend c={C.amber} label={`${t("running.moderate")} ${split.moderate}m`} />
             <Legend c={C.red} label={`${t("running.hard")} ${split.hard}m`} />
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: 15 }}>{t("running.paceNote")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: leading(fs.nano) }}>{t("running.paceNote")}</Text>
         </ACard>
       )}
 

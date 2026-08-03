@@ -16,7 +16,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { track } from "../../lib/track";
-import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { CtaLabel } from "./cta-label";
@@ -163,7 +163,7 @@ function BodyBlock({ C, units, onPhotos }: { C: Palette; units: "kg" | "lb"; onP
         <IconTile C={C} icon="user-square" />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.profile.priv-body-t")}</Text>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: has ? lime : C.ash, marginTop: 3 }}>{subline}</Text>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: has ? lime : C.ash, marginTop: 3 }}>{subline}</Text>
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
       </Pressable>
@@ -307,7 +307,7 @@ function Row({ C, icon, title, sub, onPress }: { C: Palette; icon: AuroraIconNam
       <IconTile C={C} icon={icon} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{sub}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{sub}</Text>
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
     </Pressable>
@@ -387,7 +387,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
           </Pressable>
         ) : null}
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 8 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: C.ash, marginTop: 8 }}>
         {t("w.account.profile.priv-height-why")}
       </Text>
     </View>

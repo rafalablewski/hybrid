@@ -16,7 +16,7 @@ import { setLoggerPref, useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
 import { ToggleRow } from "./toggle-row";
-import { F, fs, PressScale as Pressable } from "../lib/ui";
+import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 
@@ -116,7 +116,7 @@ export function DeviceImportSheet({
               </Pressable>
             )}
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.ash, marginTop: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 8 }}>
             {t("device.import.lead")}
           </Text>
 
@@ -173,7 +173,7 @@ export function DeviceImportSheet({
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
                         <DeviceMark provider={w.provider} form="mark" height={11} on="dark" label={deviceSourceLabel(w) ?? undefined} />
-                        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }} numberOfLines={1}>
+                        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }} numberOfLines={1}>
                           {item.title}
                         </Text>
                       </View>

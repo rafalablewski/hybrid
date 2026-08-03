@@ -13,7 +13,7 @@ import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } fr
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
-import { F, fs, PressScale as Pressable } from "../lib/ui";
+import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 import Sheet from "./aurora/sheet";
@@ -125,7 +125,7 @@ export function DeviceMatchSheet({
               </Pressable>
             )}
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 17, color: C.ash, marginTop: 8 }}>{t("session.device.pickLead")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 8 }}>{t("session.device.pickLead")}</Text>
 
           {phase === "unavailable" && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
@@ -165,7 +165,7 @@ export function DeviceMatchSheet({
                     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flex: 1 }}>
                         <DeviceMark provider={r.workout.provider} form="mark" height={best ? 15 : 11} on="dark" label={deviceSourceLabel(r.workout) ?? undefined} />
-                        <Text style={{ fontFamily: best ? F.black : F.bold, fontSize: best ? 19 : 14, color: C.chalk, flex: 1 }} numberOfLines={1}>
+                        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: best ? F.black : F.bold, fontSize: best ? 19 : 14, color: C.chalk, flex: 1 }} numberOfLines={1}>
                           {r.workout.activityLabel}
                         </Text>
                       </View>

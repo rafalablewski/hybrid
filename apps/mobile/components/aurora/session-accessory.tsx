@@ -5,7 +5,7 @@ import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { formatSessionElapsed } from "@hybrid/core";
 import { loadDraft, type Draft } from "../../lib/draft";
 import { useTheme } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 
 /**
  * THE SESSION ACCESSORY — a workout in progress, in the system tab-bar
@@ -104,7 +104,7 @@ export default function SessionAccessory() {
       style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16 }}
     >
       <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.lime }} />
-      <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>
         {draft.title}
       </Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{elapsed}</Text>

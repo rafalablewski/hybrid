@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { plansForGoal } from "@hybrid/core";
-import { fs, space, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, space, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
   getCoachGroups,
@@ -62,7 +62,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
     <View>
       {unavailable && (
         <ACard style={[cardStack, { borderLeftWidth: 3, borderLeftColor: C.line, marginTop: 12 }]}>
-          <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: 18 }}>
+          <Mono color={C.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>
             Groups aren&apos;t enabled yet — run reference/sql-coach-groups.sql in Supabase.
           </Mono>
         </ACard>
