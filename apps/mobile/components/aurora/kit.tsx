@@ -528,6 +528,9 @@ export function AField({
   secure,
   keyboard,
   icon,
+  autoFocus,
+  autoCorrect,
+  onClear,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -536,6 +539,11 @@ export function AField({
   keyboard?: "email-address";
   /** Optional leading icon (e.g. mail/lock); secure fields also show an eye. */
   icon?: AuroraIconName;
+  autoFocus?: boolean;
+  autoCorrect?: boolean;
+  /** Renders a trailing clear affordance. Pass only when there is something to
+   *  clear, so the control does not offer a dead button on an empty field. */
+  onClear?: () => void;
 }) {
   const { palette } = useTheme();
   // Secure fields start masked; the eye toggles visibility.
@@ -563,15 +571,58 @@ export function AField({
         accessibilityLabel={placeholder}
         secureTextEntry={secure ? !visible : false}
         keyboardType={keyboard ?? "default"}
+        autoFocus={autoFocus}
+        autoCorrect={autoCorrect}
         autoCapitalize="none"
         style={{ flex: 1, fontFamily: F.reg, fontSize: fs.note, color: palette.chalk, paddingVertical: 17 }}
       />
+      {onClear && (
+        <Pressable onPress={onClear} hitSlop={HIT_SLOP} accessibilityRole="button" accessibilityLabel="Clear">
+          <AuroraIcon name="add" size={18} color={palette.ash} style={{ transform: [{ rotate: "45deg" }] }} />
+        </Pressable>
+      )}
       {secure && (
         <Pressable onPress={() => setVisible((v) => !v)} hitSlop={HIT_SLOP} accessibilityRole="button" accessibilityLabel={visible ? "Hide password" : "Show password"}>
           <AuroraIcon name="eye" size={20} color={visible ? palette.lime : palette.ash} />
         </Pressable>
       )}
     </View>
+  );
+}
+
+/**
+ * THE SEARCH FIELD.
+ *
+ * Thirteen screens had one and none of them shared it: vertical padding 0 / 12 /
+ * 16, size fs.body / fs.bodyLg / fs.subtitle / a raw 15, some inside their own
+ * bordered row and some drawing one, one of them set in the MONO face. Not one
+ * of the thirteen had a clear button — the affordance an iOS user reaches for
+ * without looking, and the only one that matters when a query returns nothing.
+ *
+ * Built on AField so the field chrome (surface, hairline, radius, focus, the
+ * placeholder-as-accessibility-label) has exactly one definition.
+ */
+export function ASearch({
+  value,
+  onChange,
+  placeholder,
+  autoFocus,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  autoFocus?: boolean;
+}) {
+  return (
+    <AField
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      icon="search"
+      autoFocus={autoFocus}
+      autoCorrect={false}
+      onClear={value ? () => onChange("") : undefined}
+    />
   );
 }
 

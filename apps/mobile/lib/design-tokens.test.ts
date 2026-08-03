@@ -183,6 +183,24 @@ describe("meters", () => {
   });
 });
 
+describe("fields", () => {
+  it("RATCHET — search fields converge on ASearch", () => {
+    // Thirteen screens had a search field and none of them shared it: vertical
+    // padding 0 / 12 / 16, size fs.body / fs.bodyLg / fs.subtitle / a raw 15,
+    // some drawing their own bordered row and some sitting inside one, one set
+    // in the MONO face. Not one of the thirteen had a clear button — the
+    // affordance an iOS user reaches for without looking, and the only one that
+    // matters when a query returns nothing.
+    //
+    // The four standalone ones are ASearch. The rest sit INSIDE a bespoke row
+    // (nutrition's three, the exercise picker, quick-sport) where converting
+    // means restructuring the parent, so they are counted here rather than
+    // rushed.
+    const searches = hits(/placeholder=\{?["']?[^"'}]*[Ss]earch/g);
+    expectAtMost(searches, 10, "search field → <ASearch>");
+  });
+});
+
 describe("loading", () => {
   it("RATCHET — spinners are for ACTIONS; arriving content gets a skeleton", () => {
     // The app had no skeleton at all. All 33 `<Loading />` sites were the shape

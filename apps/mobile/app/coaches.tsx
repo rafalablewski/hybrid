@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Loading, F, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen, ACard, cardStack, AChip } from "../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack, AChip, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type {
@@ -211,7 +211,7 @@ export default function CoachesScreen() {
 
       {tab === "storefront" && isCoach ? <Storefront /> : (
         <>
-          <TextInput value={q} onChangeText={setQ} placeholder={t("w.coaches.search")} placeholderTextColor={C.ash} style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 15, marginBottom: 16 }} />
+          <ASearch value={q} onChange={setQ} placeholder={t("w.coaches.search")} />
           {!coaches ? <Loading /> : coaches.length === 0 ? <Empty title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} /> : coaches.map((c) => (
             <Pressable key={c.userId} onPress={() => setDetail(c.handle)}>
               <ACard style={cardStack}>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { F, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen, ACard, cardStack } from "../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type { PersonCard } from "@hybrid/core";
@@ -52,7 +52,7 @@ export default function DiscoverScreen() {
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("w.social.findFriends"), meta: [t("w.social.findFriendsSub")] }}>
-      <TextInput value={q} onChangeText={setQ} placeholder={t("w.social.searchPeople")} placeholderTextColor={C.ash} autoFocus style={{ paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 15, marginBottom: 16 }} />
+      <ASearch value={q} onChange={setQ} placeholder={t("w.social.searchPeople")} autoFocus />
       {results !== null ? (
         <ACard style={cardStack}>{results.length === 0 ? <Empty title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={setDrawer} />)}</ACard>
       ) : (

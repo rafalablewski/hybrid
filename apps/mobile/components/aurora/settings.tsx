@@ -14,7 +14,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
 import { leading, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
-import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS, ASearch } from "./kit";
 import MfaSettings from "./mfa-settings";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
@@ -446,9 +446,8 @@ export default function AuroraSettings() {
       </View>
 
       {/* Search */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, marginTop: 20 }}>
-        <AuroraIcon name="search" size={18} color={C.ash} />
-        <TextInput value={query} onChangeText={setQuery} placeholder={t("w.account.settings.search")} placeholderTextColor={C.ash} autoCapitalize="none" autoCorrect={false} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, paddingVertical: 12 }} />
+      <View style={{ marginTop: 20 }}>
+        <ASearch value={query} onChange={setQuery} placeholder={t("w.account.settings.search")} />
       </View>
 
       {query ? (

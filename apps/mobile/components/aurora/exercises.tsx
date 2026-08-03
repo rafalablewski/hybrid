@@ -13,7 +13,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, RADIUS } from "./kit";
+import { AuroraScreen, ACard, RADIUS, ASearch } from "./kit";
 import { AuroraIcon } from "./icons";
 
 type SortMode = "smart" | "groups" | "az";
@@ -88,9 +88,8 @@ export default function AuroraExercises() {
         </ACard>
       ) : (
         <>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16 }}>
-            <AuroraIcon name="search" size={20} color={C.ash} />
-            <TextInput value={query} onChangeText={setQuery} placeholder={t("w.analyze.ex.search")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 16 }} />
+          <View style={{ marginTop: 16 }}>
+            <ASearch value={query} onChange={setQuery} placeholder={t("w.analyze.ex.search")} />
           </View>
 
           {/* SORT PILLS — Smart (decay order) / Groups (fixed buckets) / A–Z */}
