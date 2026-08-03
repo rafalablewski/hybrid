@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, Loading } from "../../lib/ui";
 import { claimCoachInvite } from "../../lib/api";
 
 // Claim landing for a coach invite (QR / link / deep-link). Claims immediately
@@ -53,7 +53,7 @@ export default function InviteClaim() {
       </Text>
 
       {!ready ? (
-        <ActivityIndicator color={C.lime} style={{ marginTop: 16 }} />
+        <Loading />
       ) : !session ? (
         <>
           <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", marginTop: 12, lineHeight: leading(fs.bodyLg) }}>
@@ -71,7 +71,7 @@ export default function InviteClaim() {
           </Pressable>
         </>
       ) : (
-        <ActivityIndicator color={C.lime} style={{ marginTop: 16 }} />
+        <Loading />
       )}
     </View>
   );

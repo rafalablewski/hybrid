@@ -3,7 +3,7 @@ import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { fetchTeamCompare, type TeamCompareResponse, type TeamCompareAthlete } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, Loading } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
@@ -63,9 +63,7 @@ export default function AuroraTeamCompare() {
   const body = () => {
     if (loading) {
       return (
-        <View style={{ paddingVertical: 40, alignItems: "center" }}>
-          <ActivityIndicator color={C.lime} />
-        </View>
+        <Loading />
       );
     }
     if (athletes.length === 0) {

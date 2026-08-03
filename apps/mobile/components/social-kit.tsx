@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { F, PressScale as Pressable } from "../lib/ui";
+import { F, PressScale as Pressable, Loading } from "../lib/ui";
 import type { PublicProfileResponse, CompareResult, SharedLift } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
 import { useConfirm } from "./aurora/confirm";
@@ -91,7 +91,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
   return (
     <Sheet visible onClose={onClose}>
           <>
-            {!data || !p ? <ActivityIndicator color={C.lime} /> : (
+            {!data || !p ? <Loading /> : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
                   <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />

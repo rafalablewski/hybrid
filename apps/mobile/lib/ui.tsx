@@ -397,11 +397,60 @@ export function useScreenBottomPad(): number {
  * ternaries, so retiring it also deleted those classic-template branches.
  */
 
-export function Loading() {
+/**
+ * A SKELETON block — a placeholder that holds the space its content will fill.
+ *
+ * The app had none. Every one of the 33 `<Loading />` sites was the shape
+ * `if (data === null) return <Loading />` — arriving CONTENT, not an in-flight
+ * action — and rendered a centred spinner, so a section collapsed to nothing and
+ * then popped in fully formed. On a phone, where a list IS most of the screen,
+ * that reads as a jump rather than an arrival, and it costs the user the sense
+ * that anything was ever going to appear there.
+ *
+ * The pulse is an opacity breath on the shared `durations`, and it stops under
+ * Reduce Motion — a placeholder that animates is a nicety; a placeholder that
+ * reserves space is the actual job, and that part never depends on motion.
+ */
+export function Skeleton({ width = "100%", height = 14, radius = 8, style }: { width?: number | `${number}%`; height?: number; radius?: number; style?: ViewStyle }) {
   const { palette } = useTheme();
+  const reduced = useReducedMotion();
+  const pulse = useRef(new Animated.Value(0.55)).current;
+  useEffect(() => {
+    if (reduced) { pulse.setValue(0.45); return; }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.25, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.6, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse, reduced]);
   return (
-    <View style={{ paddingVertical: 56, alignItems: "center" }}>
-      <ActivityIndicator color={palette.lime} />
+    <Animated.View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[{ width, height, borderRadius: radius, backgroundColor: palette.line, opacity: pulse }, style]}
+    />
+  );
+}
+
+/**
+ * The default content placeholder — what `if (!data) return <Loading />` should
+ * have been all along. Three bars at descending widths read as "a list is coming
+ * here" rather than "something is happening somewhere".
+ *
+ * Kept under the name `Loading` deliberately: 33 call sites already say exactly
+ * the right thing, and renaming them would have been churn in place of a fix.
+ * A spinner is still correct for an in-flight ACTION (a saving button) — that is
+ * what ActivityIndicator is for, and those sites keep it.
+ */
+export function Loading() {
+  return (
+    <View style={{ paddingVertical: space.xxl, gap: space.md }} accessibilityRole="progressbar" accessibilityLabel="Loading">
+      <Skeleton width="62%" height={16} />
+      <Skeleton height={12} />
+      <Skeleton width="84%" height={12} />
     </View>
   );
 }

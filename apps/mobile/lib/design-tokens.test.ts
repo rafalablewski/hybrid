@@ -146,6 +146,22 @@ describe("touch targets", () => {
   });
 });
 
+describe("loading", () => {
+  it("RATCHET — spinners are for ACTIONS; arriving content gets a skeleton", () => {
+    // The app had no skeleton at all. All 33 `<Loading />` sites were the shape
+    // `if (data === null) return <Loading />` — arriving CONTENT — and rendered a
+    // centred spinner, so a section collapsed to nothing and then popped in fully
+    // formed. On a phone, where a list IS most of the screen, that reads as a
+    // jump rather than an arrival.
+    //
+    // Loading() is now a skeleton, which fixed all 33 without touching them. What
+    // this ratchet bounds is the RAW ActivityIndicator: legitimate inside a
+    // button while it saves, wrong as a stand-in for a list. Seven content-shaped
+    // ones have moved; the rest are in-flight actions.
+    expectAtMost(hits(/<ActivityIndicator/g), 19, "content ActivityIndicator → <Loading />");
+  });
+});
+
 describe("colour", () => {
   it("RATCHET — no new hex literals outside the palette", () => {
     // 36 distinct literals at audit time. The ones that matter are #0e0f0d and

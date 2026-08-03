@@ -36,7 +36,7 @@ function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }
   return (
     <Sheet visible onClose={onClose}>
           <>
-            {!data || !c ? <ActivityIndicator color={C.lime} /> : (
+            {!data || !c ? <Loading /> : (
               <>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={64} />
