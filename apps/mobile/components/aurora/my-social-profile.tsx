@@ -6,8 +6,8 @@ import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
 import { useAccountSettings } from "../../lib/account";
-import { SButton, SPill } from "../social-kit";
-import { ACard, cardStack } from "./kit";
+import { SButton } from "../social-kit";
+import { ACard, cardStack, AChip } from "./kit";
 import { HeroNav } from "./hero";
 
 // The unified EDIT PROFILE screen (Instagram-style): a live preview + the avatar
@@ -132,7 +132,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
 
         {editing === "visibility" && (<>
           <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
-            {(["public", "followers", "private"] as const).map((v) => <SPill key={v} label={visLabel(v)} active={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
+            {(["public", "followers", "private"] as const).map((v) => <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
           </View>
           {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
           <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
@@ -213,7 +213,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
       <ACard style={cardStack}>
         <View style={{ flexDirection: "row", gap: 8 }}>
           {(["public", "followers", "private"] as const).map((v) => (
-            <SPill key={v} label={visLabel(v)} active={form.visibility === v} onPress={() => pickVisibility(v)} />
+            <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => pickVisibility(v)} />
           ))}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: 15 }}>{t("w.profile.visibilityNote")}</Text>

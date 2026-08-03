@@ -27,7 +27,7 @@ import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, Chip } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
@@ -53,14 +53,6 @@ export interface ViewCtx {
   schedule: PlanScheduleResult | null;
   prs: (id: string) => number;
   onOpen: (id: string) => void;
-}
-
-function Chip({ C, color, label, strong }: { C: Palette; color: string; label: string; strong?: boolean }) {
-  return (
-    <View style={{ backgroundColor: withAlpha(color, strong ? 0.16 : 0.13), borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), fontWeight: strong ? "700" : "400" }}>{label}</Text>
-    </View>
-  );
 }
 
 /** The headline's unit label — localized block count for the last-resort kind. */
@@ -188,7 +180,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
         <View key={u.dateKey} style={{ gap: 8 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <DayLabel C={C} text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
-            <Chip C={C} color={u.isToday ? C.lime : C.ash} label={t("histview.planned")} />
+            <Chip color={u.isToday ? C.lime : C.ash}>{t("histview.planned")}</Chip>
           </View>
           <View style={{ borderRadius: RADIUS.card, padding: 16, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
             <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
@@ -256,9 +248,9 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             {WEEKDAY_LABEL_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
           </View>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", marginTop: 12, marginBottom: 4 }}>
-            {w.totals.volume > 0 && <Chip C={C} color={C.lime} label={fmtTonnage(w.totals.volume, ctx.units)} />}
-            <Chip C={C} color={C.ash} label={`${w.totals.sessions} ${t("histview.sessionsLbl")}`} />
-            {w.totals.prs > 0 && <Chip C={C} color={C.lime} label={`↑ ${w.totals.prs} PR`} strong />}
+            {w.totals.volume > 0 && <Chip color={C.lime}>{fmtTonnage(w.totals.volume, ctx.units)}</Chip>}
+            <Chip color={C.ash}>{`${w.totals.sessions} ${t("histview.sessionsLbl")}`}</Chip>
+            {w.totals.prs > 0 && <Chip color={C.lime}>{`↑ ${w.totals.prs} PR`}</Chip>}
           </View>
           {w.sessions.map((s) => {
             const key = localDayKey(s.startedAt);

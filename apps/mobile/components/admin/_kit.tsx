@@ -1,9 +1,9 @@
 import { type ReactNode } from "react";
 import { View, Text, TextInput, ActivityIndicator, type ViewStyle } from "react-native";
-import { fs, space, F, Mono, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, F, Mono, PressScale, PressScale as Pressable, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "../aurora/cta-label";
-import { ACard, cardStack } from "../aurora/kit";
+import { ACard, cardStack, RADIUS } from "../aurora/kit";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
 // share one look (matching the web console's lib/ui primitives). Section bodies
@@ -102,6 +102,20 @@ export function Input({
 }
 
 /** A compact action button (smaller than lib/ui Button — for inline row actions). */
+/**
+ * The COMPACT action button — the operator console's dense row action.
+ *
+ * A deliberate second size class, not a duplicate of the kit's APill: an admin
+ * table row cannot carry a 16dp-padded primary pill on every line. What it was
+ * NOT allowed to be is untappable — at 7dp of vertical padding around caption
+ * type it measured ~29dp, well under the HIG minimum, across 66 call sites. The
+ * visual size is unchanged; `minHeight` grows the TARGET to 44 while the fill
+ * stays compact, and PressScale gives it the app's one press feedback.
+ *
+ * The full merge into APill (as `size="compact"`) is tracked in capabilities as
+ * `admin-kit-merge` — it is a 66-site restyle of the console and wants a device
+ * to verify, not a blind sweep.
+ */
 export function PillBtn({
   label,
   onPress,
@@ -123,26 +137,32 @@ export function PillBtn({
   const c = color ?? palette.lime;
   const fg = outline ? txt(palette, c) : palette.onAccent;
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled, busy: !!busy }}
       style={{
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         gap: 7,
         backgroundColor: outline ? "transparent" : c,
         borderWidth: 1,
         borderColor: c,
-        borderRadius: 999,
+        borderRadius: RADIUS.pill,
         paddingVertical: 7,
         paddingHorizontal: 16,
+        // The drawing stays compact; the TARGET clears the HIG minimum.
+        minHeight: HIT_TARGET,
         opacity: disabled ? 0.5 : 1,
         alignSelf: "flex-start",
       }}
     >
       {busy ? <ActivityIndicator size="small" color={fg} /> : null}
       <CtaLabel label={label} color={fg} fontSize={fs.caption} />
-    </Pressable>
+    </PressScale>
   );
 }
 

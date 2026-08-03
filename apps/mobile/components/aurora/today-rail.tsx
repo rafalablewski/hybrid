@@ -93,7 +93,7 @@ export default function AuroraTodayRail({
       <Bar visible={state.pinned} reduced={reduced} C={C} topInset={topInset}>
         {/* DATE — the week strip's residue. At the ceiling it sheds its month
             and dot track and contracts to "Sun 26". */}
-        <Pill open={has("date")} reduced={reduced} C={C} onPress={onOpenMonth} label={t("w.home.pill.dateAria")}>
+        <RailAction open={has("date")} reduced={reduced} C={C} onPress={onOpenMonth} label={t("w.home.pill.dateAria")}>
           <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.chalk }}>
             {todayOf(days) ? `${todayOf(days)!.weekdayShort} ${todayOf(days)!.dayOfMonth}` : ""}
           </Text>
@@ -114,11 +114,11 @@ export default function AuroraTodayRail({
               ))}
             </View>
           </Contract>
-        </Pill>
+        </RailAction>
 
         {/* DONE — today's verdict. Only a finished day earns the accent, so the
             rail reports rather than nags. */}
-        <Pill
+        <RailAction
           open={has("done")}
           reduced={reduced}
           C={C}
@@ -130,11 +130,11 @@ export default function AuroraTodayRail({
             {doneState === "done" ? "✓ " : ""}
             {t(`w.home.pill.${doneState === "none" ? "log" : doneState}`)}
           </Text>
-        </Pill>
+        </RailAction>
 
         {/* READY — the check-in's residue. Not checked in yet is the state that
             matters most in the evening: the pill becomes the prompt. */}
-        <Pill open={has("ready")} reduced={reduced} C={C} onPress={onOpenCheckin} label={t("w.home.pill.readyAria")}>
+        <RailAction open={has("ready")} reduced={reduced} C={C} onPress={onOpenCheckin} label={t("w.home.pill.readyAria")}>
           {feeling ? (
             <View style={{ marginRight: 5 }}>
               <ReadinessFace feeling={feeling} scale={0.5} />
@@ -143,7 +143,7 @@ export default function AuroraTodayRail({
           <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: feeling ? txt(C, C[READY_ACCENT[feeling]]) : C.ash }}>
             {feeling ? t(`w.recovery.readiness.${feeling}`) : t("w.home.pill.howReady")}
           </Text>
-        </Pill>
+        </RailAction>
       </Bar>
     </View>
   );
@@ -197,7 +197,14 @@ function Bar({ visible, reduced, C, topInset, children }: { visible: boolean; re
 /** One pill: blooms in on the overshoot curve, retracts on the flat one. RN
  *  cannot animate width to `auto`, so the bloom is carried by scale + opacity
  *  and the pill is unmounted from layout when closed. */
-function Pill({
+/**
+ * A rail ACTION — not a chip.
+ *
+ * It owns a bloom/retract animation driven by the rail's open state and hosts
+ * arbitrary children, which is why the chip consolidation left it alone. The old
+ * name invited exactly the merge it should not have; this one states the job.
+ */
+function RailAction({
   open,
   reduced,
   C,

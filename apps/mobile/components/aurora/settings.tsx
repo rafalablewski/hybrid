@@ -12,7 +12,7 @@ import { useAccountSettings } from "../../lib/account";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type ThemePref } from "../../lib/theme";
-import { fs, space, F, PressScale } from "../../lib/ui";
+import { fs, space, F, PressScale, Chip } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS } from "./kit";
 import MfaSettings from "./mfa-settings";
@@ -430,7 +430,7 @@ export default function AuroraSettings() {
               <View style={{ width: `${completeness.percent}%`, height: "100%", backgroundColor: txt(C, C.lime) }} />
             </View>
           </View>
-          <Tag label={entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")} color={entitlement === "paid" ? C.lime : C.ash} />
+          <Chip color={entitlement === "paid" ? C.lime : C.ash} tone="outline">{entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</Chip>
         </PressScale>
         {/* Quick actions */}
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 16, flexWrap: "wrap" }}>
@@ -507,11 +507,3 @@ function groupRows<T extends { group: string }>(rows: readonly T[]): { group: st
   return out;
 }
 
-function Tag({ label, color, upper }: { label: string; color: string; upper?: boolean }) {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ borderWidth: 1, borderColor: `${color}66`, backgroundColor: `${color}1a`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), letterSpacing: 0.9, textTransform: upper ? "uppercase" : undefined }}>{label}</Text>
-    </View>
-  );
-}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Stat, ErrorNote, Segmented, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -329,7 +329,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }} numberOfLines={1}>{s.name}</Text>
           <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – 🧠" : ""}</Mono>
         </View>
-        <MiniChip color={s.authority === "executive" ? palette.violet : palette.ash}>{s.authority}</MiniChip>
+        <Chip color={s.authority === "executive" ? palette.violet : palette.ash}>{s.authority}</Chip>
       </View>
 
       <View style={{ marginBottom: 10 }}>
@@ -452,8 +452,8 @@ function Approvals({ onChange }: { onChange: () => void }) {
         <ACard key={a.id} accent={palette.amber} style={cardStack}>
           <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.agentName}</Text>
-            <MiniChip color={palette.ash}>{a.runtime}</MiniChip>
-            {a.estimateUsd > 0 && <MiniChip color={palette.violet}>est ${a.estimateUsd.toFixed(2)}</MiniChip>}
+            <Chip color={palette.ash}>{a.runtime}</Chip>
+            {a.estimateUsd > 0 && <Chip color={palette.violet}>est ${a.estimateUsd.toFixed(2)}</Chip>}
           </View>
           <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 4 }}>{a.task}</Mono>
           <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
@@ -541,8 +541,8 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
                     <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{b.agentName}</Text>
-                    <MiniChip color={palette.violet}>{b.cadence}</MiniChip>
-                    <MiniChip color={palette.amber}>{b.reason}</MiniChip>
+                    <Chip color={palette.violet}>{b.cadence}</Chip>
+                    <Chip color={palette.amber}>{b.reason}</Chip>
                   </View>
                   <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={1}>{b.task}</Mono>
                 </View>
@@ -728,10 +728,10 @@ function Reports() {
             <ACard key={r.id} style={cardStack}>
               <Pressable onPress={() => setOpenId(open ? null : r.id)}>
                 <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
-                  <MiniChip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</MiniChip>
+                  <Chip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</Chip>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{r.agentName}</Text>
-                  <MiniChip color={palette.ash}>{r.agentRole}</MiniChip>
-                  {r.steps.length > 0 && <MiniChip color={palette.violet}>{r.steps.length} delegated</MiniChip>}
+                  <Chip color={palette.ash}>{r.agentRole}</Chip>
+                  {r.steps.length > 0 && <Chip color={palette.violet}>{r.steps.length} delegated</Chip>}
                 </View>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{new Date(r.createdAt).toLocaleString()}</Mono>
                 <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }} numberOfLines={open ? undefined : 1}>{r.task}</Mono>
@@ -808,17 +808,6 @@ function Mini({ label, value }: { label: string; value: string }) {
     <View style={{ flex: 1, backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 10, padding: 10 }}>
       <Mono color={palette.ash} style={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9 }}>{label}</Mono>
       <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk, marginTop: 2 }}>{value}</Text>
-    </View>
-  );
-}
-
-function MiniChip({ children, color }: { children: React.ReactNode; color: string }) {
-  const { palette } = useTheme();
-  return (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.9 }}>
-        {children}
-      </Text>
     </View>
   );
 }

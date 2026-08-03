@@ -36,7 +36,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, RADIUS, AChip } from "./kit";
 import { AuroraIcon } from "./icons";
 
 // Goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
@@ -326,9 +326,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: accent ? txt(C, C.lime) : C.ash, marginTop: 20, marginBottom: 10 }}>{text}</Text>
   );
   const selChip = (key: string, lbl: string, selected: boolean, onPress: () => void) => (
-    <Pressable key={key} onPress={onPress} style={{ borderWidth: 1, borderColor: selected ? C.lime : C.line, backgroundColor: selected ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: selected ? txt(C, C.lime) : C.ash }}>{lbl}</Text>
-    </Pressable>
+    <AChip key={key} label={lbl} selected={selected} onPress={onPress} />
   );
 
   return (

@@ -49,15 +49,6 @@ export function SButton({ label, onPress, ghost, tone, small, disabled }: { labe
   );
 }
 
-export function SPill({ label, active, onPress, count }: { label: string; active?: boolean; onPress?: () => void; count?: number }) {
-  const C = useTheme().palette;
-  return (
-    <Pressable onPress={onPress} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: active ? C.lime : C.line, backgroundColor: active ? C.lime : "transparent" }}>
-      <Text style={{ color: active ? C.onAccent : C.chalk, fontFamily: F.bold, fontWeight: "600", fontSize: 13 }}>{label}{count ? ` ${count}` : ""}</Text>
-    </Pressable>
-  );
-}
-
 export function Empty({ title, sub }: { title: string; sub?: string }) {
   const C = useTheme().palette;
   return (

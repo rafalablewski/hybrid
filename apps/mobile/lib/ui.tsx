@@ -466,17 +466,64 @@ export function Mono({ children, style, color, numberOfLines }: { children: Reac
  * no serif swap under Kyoto Hour, on two call sites.
  */
 
-export function Chip({ children, color }: { children: ReactNode; color?: string }) {
+/**
+ * THE STATIC TAG — a small non-interactive label ("PR", "warm-up", "4 weeks").
+ *
+ * This is one of exactly TWO chip shapes in the app; the other is `AChip` in
+ * components/aurora/kit.tsx, which is the SELECTABLE filter. If a chip responds
+ * to a tap it is an AChip and it owes the user a 44dp target; if it does not, it
+ * is this.
+ *
+ * The design audit found eighteen chip implementations disagreeing on six axes
+ * at once — fill alpha (10 / 12 / 13 / 14 / 16%), radius (5 vs pill), padding
+ * (8/2, 10/3, 12/3, 12/4), size (nano vs micro), face (mono vs semi) and border
+ * (none vs hairline). Two of them also painted their label with the RAW accent
+ * instead of routing it through `txt()`, so they failed contrast on the Kyoto
+ * Hour washi — a legibility bug hiding inside a styling inconsistency.
+ *
+ * `tone` is the one axis that earned a variant: `soft` is the tinted fill this
+ * has always been, `outline` adds the hairline the settings tags needed to read
+ * against a card of the same tint.
+ */
+export function Chip({
+  children,
+  color,
+  tone = "soft",
+}: {
+  children: ReactNode;
+  color?: string;
+  tone?: "soft" | "outline";
+}) {
   const { palette } = useTheme();
-  const aurora = useTemplate().template === "aurora";
   // Default (no color) = the theme's PRIMARY accent: tint from the theme fill
-  // (clay on light, chartreuse on dark) and text via the brand key so txt() maps
+  // (pine on light, chartreuse on dark) and text via the brand key so txt() maps
   // it to the theme's accent-text tone. An explicit color keeps its own hue.
   const key = color ?? C.lime;
   const fill = color ?? palette.lime;
   return (
-    <View style={{ backgroundColor: `${fill}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.micro, lineHeight: leading(fs.micro, "snug"), color: txt(palette, key), textTransform: "uppercase", letterSpacing: tracking.label }}>
+    <View
+      style={{
+        backgroundColor: `${fill}1f`,
+        borderRadius: 999,
+        borderWidth: tone === "outline" ? 1 : 0,
+        borderColor: `${fill}66`,
+        paddingHorizontal: 11,
+        paddingVertical: 3,
+        alignSelf: "flex-start",
+      }}
+    >
+      <Text
+        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        numberOfLines={1}
+        style={{
+          fontFamily: F.semi,
+          fontSize: fs.micro,
+          lineHeight: leading(fs.micro, "snug"),
+          color: txt(palette, key),
+          textTransform: "uppercase",
+          letterSpacing: tracking.label,
+        }}
+      >
         {children}
       </Text>
     </View>

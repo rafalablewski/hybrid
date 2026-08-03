@@ -4,7 +4,7 @@ import { fetchTeamCompare, type TeamCompareResponse, type TeamCompareAthlete } f
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
  *  (apps/web/components/aurora/team-compare.tsx), so a coach reads the same
@@ -82,18 +82,17 @@ export default function AuroraTeamCompare() {
         <Text style={kicker(C)}>{t("w.teams.compare.exercise")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
           {lifts.map((l) => (
-            <Pill key={l} C={C} label={l} active={lift === l} accent={txt(C, C.lime)} onPress={() => setLift(l)} />
+            <AChip key={l} label={l} selected={lift === l} accent={txt(C, C.lime)} onPress={() => setLift(l)} />
           ))}
         </ScrollView>
 
         <Text style={[kicker(C), { marginTop: space.md }]}>{t("w.teams.compare.metric")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
           {METRICS.map((m) => (
-            <Pill
+            <AChip
               key={m.key}
-              C={C}
               label={t(m.label)}
-              active={metric === m.key}
+              selected={metric === m.key}
               accent={txt(C, (C[m.color as keyof Palette] as string) ?? C.chalk)}
               onPress={() => setMetric(m.key)}
             />
@@ -150,19 +149,6 @@ export default function AuroraTeamCompare() {
 }
 
 const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: 1.2, color: C.ash, marginTop: space.md });
-
-function Pill({ C, label, active, accent, onPress }: { C: Palette; label: string; active: boolean; accent: string; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: active ? accent : C.line, backgroundColor: active ? `${accent}29` : "transparent" }}
-    >
-      <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: active ? accent : C.ash }}>{label}</Text>
-    </Pressable>
-  );
-}
 
 function Cell({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (

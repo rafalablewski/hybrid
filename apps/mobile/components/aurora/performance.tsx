@@ -183,13 +183,13 @@ function Full({ top }: { top?: ReactNode }) {
       {(macro || hasData) && (
         // Full-bleed chip rail — clips at the screen edge, rests on the column.
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-          {phaseBlock && <Pill C={C} dot={C.lime}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{phaseBlock.label}</Text> {t("w.home.today.phase")}</Pill>}
-          {macro?.eventInWeeks != null && <Pill C={C} icon={<AuroraIcon name="calendar-event" size={13} color={C.chalk} />}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</Pill>}
+          {phaseBlock && <MetaPill C={C} dot={C.lime}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{phaseBlock.label}</Text> {t("w.home.today.phase")}</MetaPill>}
+          {macro?.eventInWeeks != null && <MetaPill C={C} icon={<AuroraIcon name="calendar-event" size={13} color={C.chalk} />}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</MetaPill>}
           {/* ACWR rides on training data, not on having a season — a planless
               athlete still gets their workload ratio at a glance. */}
-          {hasData && <Pill C={C} icon={<AuroraIcon name="arrow-up" size={13} color={C.chalk} />}>{loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</Pill>}
+          {hasData && <MetaPill C={C} icon={<AuroraIcon name="arrow-up" size={13} color={C.chalk} />}>{loadState.enoughHistory ? `ACWR ${loadState.acwr.toFixed(2)}` : t("w.home.cockpit.building")}</MetaPill>}
           {/* The headline number is visible before any scroll. */}
-          {hasData && <Pill C={C} dot={hpiColor(state.hpi.band, C)}>HPI <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.score}</Text> – {state.hpi.band}</Pill>}
+          {hasData && <MetaPill C={C} dot={hpiColor(state.hpi.band, C)}>HPI <Text style={{ fontFamily: F.bold, color: C.chalk }}>{state.hpi.score}</Text> – {state.hpi.band}</MetaPill>}
         </ScrollView>
       )}
 
@@ -677,7 +677,16 @@ function SHead({ C, scheme, title, meta, metaNode, titleColor, small }: {
   );
 }
 
-function Pill({ C, children, dot, icon }: { C: Palette; children: React.ReactNode; dot?: string; icon?: ReactNode }) {
+/**
+ * A status READOUT — not a chip.
+ *
+ * It survives the chip consolidation because it is a different object: a
+ * neutral ink2 surface (not an accent tint), sentence-case mixed-weight children
+ * (not a single uppercase label), and a leading SEMANTIC dot or icon carrying
+ * state. `Chip` in lib/ui is a tag; `AChip` in the kit is a filter; this reads a
+ * value. Named for the job so the next person does not merge it by its old name.
+ */
+function MetaPill({ C, children, dot, icon }: { C: Palette; children: React.ReactNode; dot?: string; icon?: ReactNode }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
       {dot && <View style={{ width: 7, height: 7, borderRadius: 5, backgroundColor: dot }} />}

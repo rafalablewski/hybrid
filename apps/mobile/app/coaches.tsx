@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Loading, F, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen, ACard, cardStack } from "../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack, AChip } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type {
@@ -14,7 +14,7 @@ import {
   getCoaches, getCoach, enrollProgram, postReview,
   getCoachProfile, putCoachProfile, getCoachPrograms, patchProgram, getEnrollments, respondEnrollment,
 } from "../lib/social-api";
-import { Avatar, Stars, Empty, SButton, SPill } from "../components/social-kit";
+import { Avatar, Stars, Empty, SButton } from "../components/social-kit";
 import { GlassToggle } from "../components/glass-toggle";
 import { useConfirm } from "../components/aurora/confirm";
 import Sheet from "../components/aurora/sheet";
@@ -204,8 +204,8 @@ export default function CoachesScreen() {
     <AuroraScreen hero={{ rank: "title", title: t("w.coaches.title"), meta: [t("w.coaches.sub")] }}>
       {isCoach && (
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
-          <SPill label={t("w.coaches.browse")} active={tab === "browse"} onPress={() => setTab("browse")} />
-          <SPill label={t("w.coaches.myCoaching")} active={tab === "storefront"} onPress={() => setTab("storefront")} />
+          <AChip label={t("w.coaches.browse")} selected={tab === "browse"} onPress={() => setTab("browse")} />
+          <AChip label={t("w.coaches.myCoaching")} selected={tab === "storefront"} onPress={() => setTab("storefront")} />
         </View>
       )}
 

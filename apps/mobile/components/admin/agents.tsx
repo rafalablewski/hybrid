@@ -14,7 +14,7 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, Segmented } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -198,8 +198,8 @@ export default function AdminAgents() {
                     {a.name}
                   </Text>
                   <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>
-                    <MiniChip color={STATUS_COLOR(palette)[a.status]}>{a.status}</MiniChip>
-                    <MiniChip color={a.authority === "executive" ? palette.violet : palette.ash}>{a.role}</MiniChip>
+                    <Chip color={STATUS_COLOR(palette)[a.status]}>{a.status}</Chip>
+                    <Chip color={a.authority === "executive" ? palette.violet : palette.ash}>{a.role}</Chip>
                   </View>
                   <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
                     {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
@@ -512,8 +512,8 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
           <Toggle on={s.enabled} onToggle={() => toggle(s)} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ flexDirection: "row", gap: space.xs }}>
-              <MiniChip color={s.enabled ? palette.lime : palette.ash}>{s.cadence}</MiniChip>
-              <MiniChip color={palette.ash}>{s.enabled ? "on" : "off"}</MiniChip>
+              <Chip color={s.enabled ? palette.lime : palette.ash}>{s.cadence}</Chip>
+              <Chip color={palette.ash}>{s.enabled ? "on" : "off"}</Chip>
             </View>
             <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }}>{s.task}</Mono>
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
@@ -560,8 +560,8 @@ function History({ agentId }: { agentId: string }) {
           <View key={r.id} style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 12 }}>
             <Pressable onPress={() => setOpenId(open ? null : r.id)}>
               <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
-                <MiniChip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</MiniChip>
-                <MiniChip color={palette.ash}>{r.runtime}</MiniChip>
+                <Chip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</Chip>
+                <Chip color={palette.ash}>{r.runtime}</Chip>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{new Date(r.createdAt).toLocaleString()}</Mono>
               </View>
               <Mono color={palette.chalk} style={{ fontSize: fs.caption, marginTop: 4 }} >{r.task}</Mono>
@@ -644,17 +644,6 @@ function SectionHead({ title, hint }: { title: string; hint?: string }) {
     <View style={{ marginTop: 16, marginBottom: 10, paddingTop: 16, borderTopWidth: 1, borderTopColor: palette.line }}>
       <Kicker color={palette.amber}>{title}</Kicker>
       {hint ? <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{hint}</Mono> : null}
-    </View>
-  );
-}
-
-function MiniChip({ children, color }: { children: React.ReactNode; color: string }) {
-  const { palette } = useTheme();
-  return (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: 5, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
-      <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, color), textTransform: "uppercase", letterSpacing: 0.9 }}>
-        {children}
-      </Text>
     </View>
   );
 }

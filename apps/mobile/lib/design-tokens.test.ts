@@ -101,6 +101,41 @@ describe("geometry", () => {
   });
 });
 
+describe("touch targets", () => {
+  it("HARD — every interactive PRIMITIVE declares the 44dp floor", () => {
+    // The audit measured five selectable pills across five screens at ~25–31dp,
+    // built from three horizontal paddings, four vertical ones and three type
+    // sizes — and found exactly ONE minHeight: 44 in the whole app. Padding
+    // cannot fix it: a chip's height is set by its label, so the floor has to be
+    // declared. These are the components every screen reaches through; a screen
+    // that hand-rolls a touchable is still on its own, which is the argument for
+    // reaching through them.
+    const PRIMITIVES = [
+      "components/aurora/kit.tsx",       // APill, AChip, ASegment
+      "components/admin/_kit.tsx",       // PillBtn — the compact admin action
+    ];
+    for (const path of PRIMITIVES) {
+      const file = FILES.find((f) => f.path === path);
+      expect(file, `${path} not found`).toBeDefined();
+      expect(file!.text, `${path} must declare HIT_TARGET`).toContain("HIT_TARGET");
+    }
+  });
+
+  it("RATCHET — chip implementations converge on Chip + AChip", () => {
+    // Eighteen at audit time, disagreeing on fill alpha, radius, padding, size,
+    // face and border — two of them painting their label with the RAW accent
+    // instead of txt(), which failed contrast on the Kyoto Hour washi. What
+    // survives is the pair (static tag, selectable filter) plus the genuinely
+    // different objects, renamed to say so: MetaPill (a status readout),
+    // RailAction (an animated rail item), DayChip ×2 (date tiles), PillBtn (the
+    // compact admin action) and PlanDockPill (a stateful docked CTA).
+    // Component declarations only — a capitalised name. `toggleTag`,
+    // `saveTags` and the like are handlers, not components.
+    const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm);
+    expectAtMost(decls, 8, "chip-shaped component → Chip or AChip");
+  });
+});
+
 describe("colour", () => {
   it("RATCHET — no new hex literals outside the palette", () => {
     // 36 distinct literals at audit time. The ones that matter are #0e0f0d and

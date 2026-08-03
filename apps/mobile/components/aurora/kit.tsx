@@ -457,6 +457,69 @@ export function APill({
   );
 }
 
+/**
+ * THE SELECTABLE CHIP — a filter, a segment of a scrolling row, a toggleable
+ * facet. The interactive half of the pair whose other half is `Chip` in
+ * lib/ui.tsx (the static tag). If it responds to a tap it is this, and it owes
+ * the user a 44dp target.
+ *
+ * That target is why this exists as a component rather than a convention. The
+ * audit measured five of these across five screens at ~25–31dp tall, built from
+ * three different horizontal paddings (10 / 12 / 16), four vertical ones
+ * (3 / 6 / 7 / 8) and three type sizes (11 / 12 / 13) — every one of them under
+ * the HIG minimum, and several of them filters on data-dense screens used while
+ * moving. Padding alone could not fix it: a chip's visual height is set by its
+ * label, so the floor has to be declared.
+ *
+ * The selected state carries BOTH a tinted fill and a coloured border, never
+ * colour alone — selection that is signalled only by hue fails WCAG 1.4.1, and
+ * `accessibilityState.selected` carries it to VoiceOver besides.
+ */
+export function AChip({
+  label,
+  selected,
+  onPress,
+  accent,
+  count,
+}: {
+  label: string;
+  selected?: boolean;
+  onPress: () => void;
+  /** Overrides the accent for a facet that owns a hue (a squad's colour). */
+  accent?: string;
+  /** A trailing tally, rendered inside the same pill ("Following 12"). */
+  count?: number;
+}) {
+  const { palette } = useTheme();
+  const tint = txt(palette, accent ?? palette.lime) ?? palette.lime;
+  return (
+    <PressScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={count != null ? `${label} ${count}` : label}
+      accessibilityState={{ selected: !!selected }}
+      style={{
+        minHeight: HIT_TARGET,
+        justifyContent: "center",
+        paddingHorizontal: space.lg,
+        borderRadius: RADIUS.pill,
+        borderWidth: 1,
+        borderColor: selected ? tint : palette.line,
+        backgroundColor: selected ? withAlpha(tint, 0.16) : "transparent",
+      }}
+    >
+      <Text
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        numberOfLines={1}
+        style={{ fontFamily: F.bold, fontSize: fs.body, color: selected ? tint : palette.ash }}
+      >
+        {label}
+        {count != null ? `  ${count}` : ""}
+      </Text>
+    </PressScale>
+  );
+}
+
 export function AField({
   value,
   onChange,
