@@ -167,7 +167,7 @@ function Pill({ C, label, active, accent, onPress }: { C: Palette; label: string
 function Cell({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View style={{ width: "33.33%", paddingVertical: 5 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );

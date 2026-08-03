@@ -16,7 +16,7 @@ import {
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
-import { F, PressScale as Pressable } from "../lib/ui";
+import { fs, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 
 /**
@@ -116,11 +116,11 @@ export function FeelPrompt({
               flex: 1, alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 2,
               borderRadius: 14, borderWidth: 1,
               borderColor: on ? C.lime : C.line,
-              backgroundColor: on ? `${C.lime}26` : compact ? C.ink2 : "#0e0f0d",
+              backgroundColor: on ? `${C.lime}26` : compact ? C.ink2 : C.ink,
             }}
           >
             <Text style={{ fontSize: 21, opacity: on ? 1 : 0.55 }}>{l.emoji}</Text>
-            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 8, letterSpacing: 0.9, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
           </Pressable>
         );
       })}

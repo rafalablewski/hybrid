@@ -384,7 +384,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                   ) : (
                     <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>–</Text>
                   )}
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t(m.labelKey)}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t(m.labelKey)}</Text>
                 </Pressable>
               );
             })}

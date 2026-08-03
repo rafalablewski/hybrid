@@ -176,6 +176,19 @@ export const HERO_INK = "#0c0d0c";
 /** The takeover's ground — a shade deeper than the cover, because a takeover has
  *  no page behind it to sit against. */
 export const HERO_TAKEOVER_INK = "#0a0b09";
+/**
+ * The RAISED surface on a takeover — stat cells, comparison rows, the tap-target
+ * pills that sit on the takeover's ground.
+ *
+ * This existed as the bare literal `#0e0f0d` at seven sites before it had a
+ * name, which made it indistinguishable from a theme-token BUG: the same literal
+ * was also being used on ordinary themed screens, where it does not flip under
+ * Kyoto Hour and strands a control at the wrong end of the value scale. Naming
+ * it separates the two cases — on a takeover, fixed-dark is the intent (a
+ * printed object does not change colour because the room did); anywhere else,
+ * this constant is the wrong tool and `palette.ink2` is the right one.
+ */
+export const HERO_TAKEOVER_RAISED = "#0e0f0d";
 
 /* ── 3. GEOMETRY + THE COLLAPSE TRACK ────────────────────────────────────── */
 

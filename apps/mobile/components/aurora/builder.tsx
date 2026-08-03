@@ -246,7 +246,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
 function Metric({ label, value, c, C }: { label: string; value: string; c?: string; C: Palette }) {
   return (
     <View style={{ marginRight: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
     </View>
   );
@@ -278,14 +278,14 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
 
   const field = { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 10, paddingVertical: 8, textAlign: "center" as const };
   const label = (s: string) => (
-    <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", marginBottom: 4 }}>{s}</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", marginBottom: 4 }}>{s}</Text>
   );
   return (
     <ACard style={{ marginBottom: 12 }}>
       {/* header */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
         {grip}
-        <Text style={{ fontFamily: F.mono, fontSize: 9, color: txt(C, c) }}>{b.kind.toUpperCase()}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, c) }}>{b.kind.toUpperCase()}</Text>
         <TextInput
           value={b.name}
           onChangeText={(v) => builder.setField(b.uid, "name", v)}
@@ -494,7 +494,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
       )}
       {/* planned rest between working sets — prescription, 15 s steps */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>
         <Pressable onPress={() => builder.bumpRest(b.uid, -15)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: C.ash, fontSize: fs.note }}>−</Text>
         </Pressable>

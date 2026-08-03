@@ -247,7 +247,7 @@ function ListRow({
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         {premium && (
           <View style={{ borderWidth: 1, borderColor: withAlpha(pa.fill, 0.33), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: pa.text }}>{t("train.premium")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: pa.text }}>{t("train.premium")}</Text>
           </View>
         )}
         {right}

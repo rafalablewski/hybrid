@@ -9,7 +9,7 @@ import {
   type Muscle,
 } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { fs, F } from "../../lib/ui";
 
 const poly = (pts: { x: number; y: number }[]) => pts.map((q) => `${q.x},${q.y}`).join(" ");
 
@@ -77,7 +77,7 @@ function Swatch({ C, label, opacity }: { C: Palette; label: string; opacity: num
 function SideCol({ label, C, children }: { label: string; C: Palette; children: React.ReactNode }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
       <View style={{ width: "100%", aspectRatio: 1 }}>{children}</View>
     </View>
   );

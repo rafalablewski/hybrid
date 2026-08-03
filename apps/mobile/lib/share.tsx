@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
-import { C, F, Kicker } from "./ui";
+import { C, F, fs, Kicker } from "./ui";
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -42,7 +42,7 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
           {brand.name}
           <Text style={{ color: C.lime }}>.</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.lime, letterSpacing: 2 }}>{t("welcome.tagline")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.lime, letterSpacing: 2 }}>{t("welcome.tagline")}</Text>
       </View>
       <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 14 }}>{stats.title || "Workout"}</Text>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
@@ -354,7 +354,7 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
             {brand.name}
             <Text style={{ color: C.lime }}>.</Text>
           </Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.lime, letterSpacing: 2 }}>{t("w.teams.coach.thisWeek").toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.lime, letterSpacing: 2 }}>{t("w.teams.coach.thisWeek").toUpperCase()}</Text>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
           <Stat label={t("w.teams.coach.sessionsWord")} value={String(recap.sessions)} />
@@ -402,7 +402,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ alignItems: "center", flex: 1 }}>
       <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }

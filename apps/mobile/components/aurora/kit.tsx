@@ -5,11 +5,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, F, serifIf, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, leading, tracking, F, serifIf, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable, MAX_FONT_SCALE, HIT_TARGET, HIT_SLOP } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import type { AuroraIconName } from "@hybrid/core";
+import { heroTitleType, type AuroraIconName } from "@hybrid/core";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
 
@@ -19,7 +19,17 @@ import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
  * but built on the HYBRID brand tokens (lime accent, ink surfaces, Archivo type)
  * via the shared theme palette, so the new look stays on-brand and theme-aware.
  */
-export const RADIUS = { card: 28, field: 16, pill: 999 } as const;
+/**
+ * The radius vocabulary. `inner` was a MAGIC NUMBER before it was a token: 12
+ * is the second-most-used radius in the app (68 sites) and the one everything
+ * nested inside a 28 card lands on — it just had no name, so it sat alongside
+ * 10, 13, 14 and 15 doing the same job. `mark` is the chart-bar/tick radius,
+ * which had been written as 1, 2, 3 and 4 interchangeably.
+ *
+ * Five rungs is the whole system. A radius that is not one of these is a
+ * decision that needs a reason (the audit found 36 distinct values).
+ */
+export const RADIUS = { mark: 3, inner: 12, field: 16, card: 28, pill: 999 } as const;
 
 export { AuroraField, withAlpha } from "./field";
 import { AuroraField, withAlpha } from "./field";
@@ -341,12 +351,21 @@ export function APill({
     <PressScale
       onPress={onPress}
       disabled={disabled}
+      // APill is the app's primary action and was the ONE button primitive with
+      // no accessibility contract — VoiceOver announced it as a plain view with
+      // no role and no disabled state, while lib/ui's Button next to it was
+      // fully labelled. Same props, same order, so the two can't drift again.
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
       style={[
         {
           backgroundColor: bg,
           borderRadius: RADIUS.pill,
           paddingVertical: 18,
           alignItems: "center",
+          justifyContent: "center",
+          minHeight: HIT_TARGET,
           opacity: disabled ? 0.5 : 1,
           borderWidth: variant === "soft" ? 1 : 0,
           borderColor: palette.line,
@@ -356,7 +375,7 @@ export function APill({
       ]}
     >
       {glassSoft && <GlassSurface radius={RADIUS.pill} />}
-      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
     </PressScale>
   );
 }
@@ -407,7 +426,7 @@ export function AField({
         style={{ flex: 1, fontFamily: F.reg, fontSize: fs.note, color: palette.chalk, paddingVertical: 17 }}
       />
       {secure && (
-        <Pressable onPress={() => setVisible((v) => !v)} hitSlop={8} accessibilityRole="button" accessibilityLabel={visible ? "Hide password" : "Show password"}>
+        <Pressable onPress={() => setVisible((v) => !v)} hitSlop={HIT_SLOP} accessibilityRole="button" accessibilityLabel={visible ? "Hide password" : "Show password"}>
           <AuroraIcon name="eye" size={20} color={visible ? palette.lime : palette.ash} />
         </Pressable>
       )}
@@ -455,12 +474,18 @@ export function ASegment<T extends string>({
             style={{
               flex: 1,
               alignItems: "center",
+              justifyContent: "center",
               paddingVertical: 11,
+              // A segment is the most-tapped control on the screens that carry
+              // one, and at 11+11+~16 it sat ~6dp under the HIG minimum. The
+              // track's own 4dp padding means the outer control still grows to
+              // 52 — which is what a segmented control should be.
+              minHeight: HIT_TARGET,
               borderRadius: RADIUS.pill,
               backgroundColor: on ? palette.lime : "transparent",
             }}
           >
-            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.onAccent : palette.ash }}>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.onAccent : palette.ash }}>
               {o.label}
             </Text>
           </Pressable>
@@ -470,10 +495,28 @@ export function ASegment<T extends string>({
   );
 }
 
+/**
+ * The heading for a screen that owns no hero.
+ *
+ * It used to be 30/36/-0.5 — a size on neither the type ladder nor the HERO
+ * SYSTEM's own title ramp, so a screen with an AHeading and a screen at
+ * HeroRank `title` presented their names at different sizes for no reason. It
+ * now reads the SAME rung the hero does (`fs.display`, via TITLE_BASE.title in
+ * packages/core/src/hero.ts), so the two heads are one head at rest.
+ *
+ * This is a stopgap, not a destination: a screen with a title to establish
+ * should take a `hero` and let the Hero System own its rail, collapse and
+ * metadata. AHeading exists for the surfaces that genuinely have no stack.
+ */
 export function AHeading({ children, style }: { children: ReactNode; style?: TextStyle }) {
   const { palette, scheme } = useTheme();
+  const type = heroTitleType(typeof children === "string" ? children : "", "title");
   return (
-    <Text accessibilityRole="header" style={[{ fontFamily: serifIf(scheme, F.black), fontSize: 30, color: palette.chalk, lineHeight: 36, letterSpacing: -0.5 }, style]}>
+    <Text
+      accessibilityRole="header"
+      maxFontSizeMultiplier={MAX_FONT_SCALE}
+      style={[{ fontFamily: serifIf(scheme, F.black), fontSize: type.size, color: palette.chalk, lineHeight: type.lineHeight, letterSpacing: tracking.display }, style]}
+    >
       {children}
     </Text>
   );
@@ -482,7 +525,7 @@ export function AHeading({ children, style }: { children: ReactNode; style?: Tex
 export function ASub({ children, style }: { children: ReactNode; style?: TextStyle }) {
   const { palette } = useTheme();
   return (
-    <Text style={[{ fontFamily: F.reg, fontSize: fs.note, color: palette.ash, lineHeight: 22 }, style]}>
+    <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={[{ fontFamily: F.reg, fontSize: fs.note, color: palette.ash, lineHeight: leading(fs.note, "relaxed") }, style]}>
       {children}
     </Text>
   );

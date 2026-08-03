@@ -114,7 +114,7 @@ export function DeviceMatchSheet({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: "rgba(4,4,4,0.72)", justifyContent: "flex-end" }} onPress={onClose}>
         <Pressable
-          style={{ backgroundColor: "#0e100d", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 24, maxHeight: "80%" }}
+          style={{ backgroundColor: C.ink2, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, borderColor: C.line, padding: 20, paddingBottom: insets.bottom + 24, maxHeight: "80%" }}
           onPress={() => {}}
         >
           <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
@@ -165,7 +165,7 @@ export function DeviceMatchSheet({
                       borderRadius: best ? 20 : 16,
                       padding: best ? 18 : 13,
                       marginBottom: best ? 14 : 10,
-                      backgroundColor: best ? `${C.lime}14` : "#0e0f0d",
+                      backgroundColor: best ? `${C.lime}14` : C.ink2,
                       opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1,
                     }}
                   >
@@ -178,13 +178,13 @@ export function DeviceMatchSheet({
                       </View>
                       {best && (
                         <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
-                          <Text style={{ fontFamily: F.black, fontSize: 9, letterSpacing: 0.9, color: C.onAccent, textTransform: "uppercase" }}>
+                          <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: 0.9, color: C.onAccent, textTransform: "uppercase" }}>
                             ✓ {t("session.device.best")}
                           </Text>
                         </View>
                       )}
                       {!best && linked && (
-                        <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: txt(C, C.lime), textTransform: "uppercase" }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: txt(C, C.lime), textTransform: "uppercase" }}>
                           {t("session.device.matchedChip")}
                         </Text>
                       )}

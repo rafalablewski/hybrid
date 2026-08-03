@@ -84,8 +84,8 @@ export default function AuroraEndurance() {
           {mileage.map((w, i) => <View key={i} style={{ flex: 1, alignItems: "center" }}><View style={{ width: "100%", height: 6 + (w.km / maxKm) * 70, borderRadius: 3, backgroundColor: i === mileage.length - 1 ? C.blue : `${C.blue}66` }} /></View>)}
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{fmtWeek(mileage[0]!.weekStart)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{`${mileage[mileage.length - 1]!.km} km`}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{fmtWeek(mileage[0]!.weekStart)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{`${mileage[mileage.length - 1]!.km} km`}</Text>
         </View>
       </ACard>
 
@@ -165,7 +165,7 @@ function Metric({ label, value, color }: { label: string; value: string; color?:
   return (
     <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: 16, alignItems: "center" }}>
       <Text style={{ fontFamily: F.black, fontSize: 22, color: color ? txt(C, color) : C.chalk }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -182,5 +182,5 @@ function Legend({ c, label }: { c: string; label: string }) {
 
 function ColHead({ children, flex = 1 }: { children: React.ReactNode; flex?: number }) {
   const { palette: C } = useTheme();
-  return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9 }}>{children}</Text>;
+  return <Text style={{ flex, textAlign: flex > 1 ? "left" : "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>{children}</Text>;
 }

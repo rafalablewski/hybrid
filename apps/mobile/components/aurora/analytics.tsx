@@ -104,8 +104,8 @@ function Bars({ data, color, highlightLast }: { data: { label: string; v: number
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{data[0]?.label ?? ""}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{data[data.length - 1]?.label ?? ""}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{data[0]?.label ?? ""}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{data[data.length - 1]?.label ?? ""}</Text>
       </View>
     </>
   );

@@ -209,12 +209,12 @@ function Chip({ C, color, label }: { C: Palette; color: string; label: string })
 function Metric({ C, label, value, sub, color, dot = false }: { C: Palette; label: string; value: string; sub?: string; color: string; dot?: boolean }) {
   return (
     <View style={{ width: "33.33%", paddingVertical: 6 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 }}>
         {dot ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} /> : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color }}>{value}</Text>
       </View>
-      {sub ? <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9, color, marginTop: 1 }}>{sub}</Text> : null}
+      {sub ? <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color, marginTop: 1 }}>{sub}</Text> : null}
     </View>
   );
 }

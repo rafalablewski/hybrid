@@ -177,7 +177,7 @@ export default function SessionDetail() {
           <Card key={i}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 9, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
                 {b.kind === "conditioning" ? (
                   <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>
                     {prSet.has(b.name) ? "🏆 " : ""}{b.name}

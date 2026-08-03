@@ -253,7 +253,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
             })}
           </View>
           <View style={{ flexDirection: "row", gap: 5 }}>
-            {WEEKDAY_LABEL_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: 8, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
+            {WEEKDAY_LABEL_KEYS.map((k) => <Text key={k} style={{ flex: 1, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(k).slice(0, 1)}</Text>)}
           </View>
           <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", marginTop: 12, marginBottom: 4 }}>
             {w.totals.volume > 0 && <Chip C={C} color={C.lime} label={fmtTonnage(w.totals.volume, ctx.units)} />}
@@ -361,7 +361,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16 } as const;
   const Mini = ({ label, value }: { label: string; value: string }) => (
     <View style={{ ...cardStyle, flex: 1, padding: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.5, marginTop: 4, color: C.chalk }}>{value}</Text>
     </View>
   );
@@ -398,7 +398,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
           {buckets.buckets.map((b, i) => (
             <View key={i} style={{ flex: 1, alignItems: "center", gap: 6 }}>
               <View style={{ width: "100%", height: Math.max(4, (b.value / maxVal) * 92), borderRadius: 5, backgroundColor: i === buckets.peakIndex ? C.lime : C.line }} />
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{b.label}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{b.label}</Text>
             </View>
           ))}
         </View>

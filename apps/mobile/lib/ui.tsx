@@ -18,13 +18,17 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, springs, springDurationMs, springToRN, durations } from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, springs, springDurationMs, springToRN, durations } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
 // Re-export the shared scale (same source the web client uses) so screens can
 //   import { fs, space } from "../../lib/ui"  →  fontSize: fs.body, gap: space.lg
-export { fs, space };
+// `leading` and `tracking` are the two axes that had no token until the design
+// audit: every lineHeight in the app was an absolute dp (29 of them) and every
+// letterSpacing a fresh guess (18 of them). Use leading(fs.body) rather than a
+// number — an absolute line box is also why Dynamic Type could not work.
+export { fs, space, lh, leading, tracking };
 import { useTemplate } from "./template";
 import { auroraScrollClearance } from "./layout";
 import { useReducedMotion } from "./use-reduced-motion";
@@ -40,6 +44,23 @@ import { useReducedMotion } from "./use-reduced-motion";
 // the layout can grow to fit. See capabilities.ts → `dynamic-type`.
 export const MAX_FONT_SCALE = 1.4; // reflow-safe surfaces — generous headroom
 export const FIXED_FONT_SCALE = 1.15; // fixed-height chrome — must not clip
+
+/**
+ * The HIG minimum touch target, in dp. Stated once so every interactive
+ * primitive can declare it instead of hoping its padding adds up.
+ *
+ * The design audit measured five selectable pills across five screens at
+ * ~25–31dp tall, built from three horizontal paddings and four vertical ones,
+ * and found exactly ONE `minHeight: 44` in the whole app. A control that is
+ * visually smaller than this by design (a dense row's chevron, an inline ✕)
+ * keeps its size and takes `hitSlop={HIT_SLOP}` instead — the target grows, the
+ * drawing doesn't.
+ */
+export const HIT_TARGET = 44;
+
+/** Companion to HIT_TARGET for controls that must stay visually small. 8dp on
+ *  each side turns a 28dp glyph button into a 44dp target. */
+export const HIT_SLOP = 8;
 
 // Shared depth shadow — the "lifted glass" feel (iOS shadow + Android elevation).
 // FOCUS GLOW — the primary Start CTA's lime halo (parity with web `.start-glow`
@@ -546,8 +567,13 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
       style={{
         fontFamily: F.mono,
         fontSize: fs.micro,
+        lineHeight: leading(fs.micro, "snug"),
         textTransform: "uppercase",
-        letterSpacing: 1.2,
+        // tracking.caps — the wider of the two eyebrow trackings, which is what
+        // this primitive has always emitted. The narrower `tracking.label` (0.9)
+        // is the one 216 inline kickers use; both are now named, so the choice
+        // between them is a decision rather than a coin toss.
+        letterSpacing: tracking.caps,
         color: color ? txt(palette, color) : palette.ash,
       }}
     >
@@ -559,15 +585,26 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
 export function Mono({ children, style, color, numberOfLines }: { children: ReactNode; style?: TextStyle; color?: string; numberOfLines?: number }) {
   const { palette } = useTheme();
   return (
-    <Text numberOfLines={numberOfLines} style={[{ fontFamily: F.mono, fontSize: fs.body, color: color ? txt(palette, color) : palette.ash }, style]}>
+    <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={numberOfLines} style={[{ fontFamily: F.mono, fontSize: fs.body, lineHeight: leading(fs.body), color: color ? txt(palette, color) : palette.ash }, style]}>
       {children}
     </Text>
   );
 }
 
 export function H1({ children }: { children: ReactNode }) {
-  const { palette } = useTheme();
-  return <Text style={{ fontFamily: F.black, fontSize: 30, color: palette.chalk, letterSpacing: -1 }}>{children}</Text>;
+  const { palette, scheme } = useTheme();
+  // Was fontSize 30 / letterSpacing -1 — both off-scale. `display` (26) is the
+  // ladder's screen-heading rung and `tracking.display` the named tightening;
+  // serifIf keeps it on the Mincho face under Kyoto Hour like every other head.
+  return (
+    <Text
+      accessibilityRole="header"
+      maxFontSizeMultiplier={MAX_FONT_SCALE}
+      style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.display, lineHeight: leading(fs.display, "tight"), color: palette.chalk, letterSpacing: tracking.display }}
+    >
+      {children}
+    </Text>
+  );
 }
 
 export function Chip({ children, color }: { children: ReactNode; color?: string }) {
@@ -580,7 +617,7 @@ export function Chip({ children, color }: { children: ReactNode; color?: string 
   const fill = color ?? palette.lime;
   return (
     <View style={{ backgroundColor: `${fill}1f`, borderRadius: aurora ? 999 : 5, paddingHorizontal: aurora ? 11 : 9, paddingVertical: 3, alignSelf: "flex-start" }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(palette, key), textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.micro, lineHeight: leading(fs.micro, "snug"), color: txt(palette, key), textTransform: "uppercase", letterSpacing: tracking.label }}>
         {children}
       </Text>
     </View>
@@ -626,12 +663,18 @@ export function Button({
           paddingVertical: aurora ? 16 : 14,
           paddingHorizontal: 24,
           alignItems: "center",
+          justifyContent: "center",
+          // The HIG minimum, stated rather than implied. The padding above
+          // already clears it at the default text size; declaring it means the
+          // button survives a caller passing a tighter `style` and keeps its
+          // target when the label shrinks.
+          minHeight: HIT_TARGET,
           opacity: disabled ? 0.5 : 1,
         },
         style,
       ]}
     >
-      <Text style={{ fontFamily: aurora ? F.bold : F.black, fontSize: fs.note, color: outline ? (color ? txt(palette, color) : palette.ash) : palette.onAccent }}>{label}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: aurora ? F.bold : F.black, fontSize: fs.note, color: outline ? (color ? txt(palette, color) : palette.ash) : palette.onAccent }}>{label}</Text>
     </Pressable>
   );
 }

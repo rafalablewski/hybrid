@@ -592,7 +592,7 @@ function Metric({ label, value, color }: { label: string; value: string; color: 
   return (
     <View>
       <Text style={{ fontFamily: F.black, fontSize: fs.heading, color }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", marginTop: 2 }}>{label}</Text>
     </View>
   );
 }

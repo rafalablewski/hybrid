@@ -22,6 +22,7 @@ export type TypeRole =
   | "subtitle" //16 — small headings
   | "title" //  18 — section titles
   | "heading" //20 — screen sub-headings
+  | "headline" //22 — the head of a screen that owns no hero (see below)
   | "display" //26 — screen headings
   | "hero" //   34 — mastheads / cover titles
   | "stat"; //  46 — the one hero figure on a screen (ring kcal, exercise 1RM)
@@ -39,6 +40,12 @@ export const fs: Record<TypeRole, number> = {
   subtitle: 16,
   title: 18,
   heading: 20,
+  // `headline` was a MAGIC NUMBER before it was a token: 22 appeared 26 times in
+  // apps/mobile with no name, and it is where a hand-rolled screen title lands —
+  // bigger than a section heading, smaller than a display. Naming it does not
+  // bless hand-rolled heads (those should take a HeroRank); it stops the ones
+  // that exist from being 22 in one file and 21 or 24 in the next.
+  headline: 22,
   display: 26,
   hero: 34,
   stat: 46,
@@ -70,4 +77,65 @@ export const space: Record<SpaceToken, number> = {
   xxl: 24,
   xxxl: 32,
   huge: 40,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEADING + TRACKING — the two axes that had no token, and therefore no limit.
+//
+// Before this, `fs` and `space` were the whole scale, so line height and letter
+// spacing were decided at every call site: apps/mobile alone carried 29 distinct
+// lineHeight values (nine of them — 15,16,17,18,19,19.5,20,21,22 — all serving
+// body-ish text) and 18 distinct letterSpacings. Two paragraphs set at the same
+// size read at different densities depending on which screen you were on.
+//
+// LEADING IS A RATIO, NOT A NUMBER. Every one of those 29 values was absolute
+// dp, which is also why Dynamic Type could not work: the OS scales the glyphs
+// and an absolute lineHeight leaves the line box where it was, so text collides
+// with itself before it clips. `leading()` derives the box from the size, so a
+// scaled size carries its leading with it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type LeadingRole =
+  | "tight" //   1.15 — display/hero titles, stat figures
+  | "snug" //    1.30 — headings, list rows, anything one-to-two lines
+  | "normal" //  1.50 — the default for reading text
+  | "relaxed"; // 1.62 — long-form prose, empty-state bodies
+
+/** Line-height RATIOS. Multiply by the font size (see `leading`). */
+export const lh: Record<LeadingRole, number> = {
+  tight: 1.15,
+  snug: 1.3,
+  normal: 1.5,
+  relaxed: 1.62,
+};
+
+/**
+ * Absolute line height for a size — `leading(fs.body)` → 20.
+ *
+ * React Native needs `lineHeight` in dp, so this is the mobile entry point;
+ * pass the ratio (`lh.normal`) directly wherever a ratio is accepted. Rounded
+ * to a whole dp because a fractional line box lands text off the pixel grid.
+ */
+export const leading = (size: number, role: LeadingRole = "normal"): number =>
+  Math.round(size * lh[role]);
+
+export type TrackingRole =
+  | "display" // -0.5 — large titles; big type needs the air taken out
+  | "normal" //   0   — body text is drawn on its natural sidebearings
+  | "label" //    0.9 — uppercase mono kickers (the app's dominant eyebrow)
+  | "caps"; //    1.2 — the widest tracked caps: section labels, nav eyebrows
+
+/**
+ * Letter spacing in dp, matching React Native's `letterSpacing` unit.
+ *
+ * `label` (0.9) and `caps` (1.2) codify the two eyebrow trackings that were
+ * already in use — 216 and 137 sites respectively — which had drifted apart
+ * with nothing to say which was correct. `label` is the default for a kicker;
+ * `caps` is for the wider, more architectural section labels.
+ */
+export const tracking: Record<TrackingRole, number> = {
+  display: -0.5,
+  normal: 0,
+  label: 0.9,
+  caps: 1.2,
 };

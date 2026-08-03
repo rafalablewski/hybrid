@@ -23,7 +23,7 @@ function MuscleBar({ C, m, t }: { C: Palette; m: MuscleActivation; t: (k: string
           {m.label}
         </Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, color: primary ? txt(C, C.lime) : C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: primary ? txt(C, C.lime) : C.ash }}>
             {t(`w.analyze.exp.anatomy.level.${m.level}`)}
           </Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{m.pct}%</Text>

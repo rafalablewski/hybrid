@@ -141,7 +141,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
             : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
         </View>
         <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
+        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
       </Pressable>
     );
   };
@@ -268,7 +268,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                     // Instant jump (animated: false) — the index can be
                     // thousands of px away; a rail should snap, not glide.
                     <Pressable key={L} onPress={() => scrollRef.current?.scrollTo({ y: letterY.current[L] ?? 0, animated: false })} hitSlop={{ left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={L}>
-                      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash, textAlign: "center", paddingHorizontal: 4 }}>{L}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", paddingHorizontal: 4 }}>{L}</Text>
                     </Pressable>
                   ))}
                 </View>

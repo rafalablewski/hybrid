@@ -84,7 +84,7 @@ export default function Statistics() {
                   backgroundColor: i === buckets.peakIndex ? C.lime : C.line,
                 }}
               />
-              <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>{b.label}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{b.label}</Text>
             </View>
           ))}
         </View>
