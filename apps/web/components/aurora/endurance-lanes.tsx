@@ -215,7 +215,7 @@ function LastTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string }
   );
 }
 
-function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscipline) => void }) {
+function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscipline) => void; canOpen: boolean }) {
   const { t } = useLang();
   return (
     <div style={{ marginTop: 16 }}>
@@ -228,7 +228,7 @@ function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscip
         </span>
         <span style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
           <span style={{ ...kicker, fontSize: 10 }}>{lane.efforts} {t("endurance.efforts")}</span>
-          {onOpen && (
+          {onOpen && canOpen && (
             <button className="pressable"
               onClick={() => onOpen(lane.discipline)}
               style={{ background: "none", border: 0, padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)" }}
@@ -260,9 +260,20 @@ function Lane({ lane, onOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscip
 export default function AuroraEnduranceLanes({
   sessions,
   onOpen,
+  canOpen,
+  cap = LANE_CAP,
+  head = true,
 }: {
   sessions: LoggedSession[];
   onOpen?: (discipline: CardioDiscipline) => void;
+  /** Whether a discipline has somewhere to open — a lane with no destination
+   *  shows no exit rather than a button that does nothing. */
+  canOpen?: (discipline: CardioDiscipline) => boolean;
+  /** Lanes shown before the expander. The Endurance SCREEN passes Infinity:
+   *  it is the comparison, so there is nothing to hold back. */
+  cap?: number;
+  /** The block's own title row. Off on the screen, whose hero already says it. */
+  head?: boolean;
 }) {
   const { t } = useLang();
   const [order, setOrder] = useState<LaneOrder>("trained");
@@ -278,8 +289,8 @@ export default function AuroraEnduranceLanes({
   if (lanes.length === 0) return null;
 
   const stacked = orderLanes(lanes, order);
-  const shown = expanded ? stacked : stacked.slice(0, LANE_CAP);
-  const rest = stacked.length - LANE_CAP;
+  const shown = expanded || !Number.isFinite(cap) ? stacked : stacked.slice(0, cap);
+  const rest = Number.isFinite(cap) ? stacked.length - cap : 0;
   const km = Math.round(parentage.distanceKm * 10) / 10;
 
   return (
@@ -287,12 +298,14 @@ export default function AuroraEnduranceLanes({
       {/* One item in the head's right slot: the quoted FACT (ash). The sort
           ACTION moved to its own quiet row below — a head carries at most one
           right-slot item, and the fact is the one that names the block. */}
+      {head && (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("endurance.title")}</span>
         <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".08em", color: C("ash") }}>
           {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
         </span>
       </div>
+      )}
       {/* The lane-order toggle — only when there is an order to change. */}
       {stacked.length > 1 && (
         <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 2px" }}>
@@ -310,7 +323,7 @@ export default function AuroraEnduranceLanes({
         </div>
       )}
 
-      {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} />)}
+      {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} canOpen={canOpen ? canOpen(lane.discipline) : true} />)}
 
       {/* The block's exit, in the DOOR-ROW anatomy (the This-week card's
           idiom): full-width blocks end in a door, rails end in a trailing

@@ -60,6 +60,7 @@ import { fs, space,
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
+import { sportForDiscipline } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
@@ -127,6 +128,7 @@ export default function AuroraToday({
   onNavigate,
   onOpenSession,
   onOpenExercise,
+  onOpenSport,
   onSaved,
   onEnrolled,
   fetchError = false,
@@ -153,6 +155,8 @@ export default function AuroraToday({
   onOpenSession?: (sessionId: string) => void;
   /** Open ONE movement's stats page (the Exercises widget tap-through). */
   onOpenExercise?: (name: string) => void;
+  /** Opens one sport's own page — the tile IS the hero, seen small. */
+  onOpenSport?: (sport: string) => void;
   /** Refresh sessions after the quick sport-log widget saves one. */
   onSaved?: () => void;
   /** The athlete enrolled in a season from the hub's Performance tab — the
@@ -976,7 +980,13 @@ export default function AuroraToday({
           an eight-week volume chart is not a property of the day you happen to
           be scrubbed to. Renders nothing until there's endurance to show.
           Mirrors mobile. ───── */}
-      {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => (onNavigate ? onNavigate("endurance") : router.push("/endurance"))} />}
+      {isAthlete && (
+        <AuroraEnduranceLanes
+          sessions={sessions}
+          canOpen={(d) => !!onOpenSport && !!sportForDiscipline(d)}
+          onOpen={(d) => { const sport = sportForDiscipline(d); if (sport) onOpenSport?.(sport); }}
+        />
+      )}
 
       {/* ───── OTHER SPORTS — tennis, squash, five-a-side: everything logged as
           `discipline: "sport"`, the bucket ENDURANCE_DISCIPLINES deliberately
@@ -986,7 +996,7 @@ export default function AuroraToday({
           sport gets ONE tile rather than a rail — the block spends its width on
           the NUMBER of sports, not the depth of each. Renders nothing until a
           sport is logged. Mirrors mobile. ───── */}
-      <AuroraOtherSports sessions={sessions} onOpen={() => (onNavigate ? onNavigate("sport") : router.push("/sport"))} />
+      <AuroraOtherSports sessions={sessions} onOpen={(sport) => (onOpenSport ? onOpenSport(sport) : onNavigate ? onNavigate("sport") : router.push("/sport"))} />
 
       {/* THE CLUSTER'S EXIT (wave 3) — the doors past this week, moved here
           from under the This-week card: summary → breakdowns → ONE exit point,

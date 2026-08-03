@@ -218,7 +218,7 @@ export function HeroTitle({ title, rank, as: Tag = "h1", onDark = true, style }:
 
 /* ── HeroBackground ──────────────────────────────────────────────────────── */
 
-export function HeroBackground({ backdrop, accent, glyph, emblem, colourArt }: { backdrop: HeroBackdropKind; accent: string; glyph?: string; emblem?: boolean; colourArt?: boolean }) {
+export function HeroBackground({ backdrop, accent, glyph, artPaths, emblem, colourArt }: { backdrop: HeroBackdropKind; accent: string; glyph?: string; artPaths?: string[]; emblem?: boolean; colourArt?: boolean }) {
   if (backdrop === "field") return null; // the page's own lg-field is the ground
   const story = backdrop === "story";
   const mirrored = heroLight(emblem ? "container" : "item") === "left";
@@ -237,7 +237,30 @@ export function HeroBackground({ backdrop, accent, glyph, emblem, colourArt }: {
           <span aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 92% at ${mirrored ? "14% 8%" : "86% 8%"}, color-mix(in srgb, ${accent} 42%, transparent), transparent 55%)` }} />
         </>
       )}
-      {!!glyph && (
+      {/* DRAWN art wins over a glyph: a stroke mark holds its shape at 152pt and
+          survives into the collapsed bar as texture, which a desaturated emoji
+          does not. Same box, same parallax, same opacity floor. */}
+      {!!artPaths?.length ? (
+        <svg
+          aria-hidden
+          viewBox="0 0 72 72"
+          fill="none"
+          style={{
+            position: "absolute",
+            top: emblem ? -18 : -30,
+            right: emblem ? -34 : -22,
+            width: emblem ? 232 : 176,
+            height: emblem ? 232 : 176,
+            pointerEvents: "none",
+            opacity: artOut,
+            transform: `translateY(calc(${P} * ${Math.round(100 * (emblem ? HERO.parallax.emblem : HERO.parallax.art))}%))`,
+          }}
+        >
+          {artPaths.map((d, i) => (
+            <path key={i} d={d} stroke={`rgba(255,255,255,${emblem ? ".1" : ".085"})`} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+          ))}
+        </svg>
+      ) : !!glyph && (
         <span
           aria-hidden
           style={{
@@ -286,6 +309,9 @@ export interface HeroSpec {
   meta?: (string | null | undefined | false)[];
   accent?: string;
   glyph?: string;
+  /** DRAWN cover art — stroke paths in a 72-unit box (core `sportMarkPaths`).
+   *  Takes precedence over `glyph`, which stays for subjects with no drawing. */
+  artPaths?: string[];
   emblem?: boolean;
   colourArt?: boolean;
 }
@@ -323,7 +349,7 @@ export function HeroScreen({
   const mode = hero.mode ?? "page";
   const accent = hero.accent ?? C("lime");
   const geom = heroGeometry(hero.rank, 0, mode);
-  const backdrop = heroBackdrop(hero.rank, mode, !!hero.glyph);
+  const backdrop = heroBackdrop(hero.rank, mode, !!hero.glyph || !!hero.artPaths?.length);
   const onDark = backdrop !== "field";
   const docked = useHeroCollapse(rootRef, heroRef, geom.delta);
   const { titleOut, inlineIn, hairlineIn, dock: dockAt } = HERO.detent;
@@ -350,7 +376,7 @@ export function HeroScreen({
           <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: geom.barHeight, background: "color-mix(in srgb, var(--color-ink) 72%, transparent)", backdropFilter: "blur(18px) saturate(1.4)", WebkitBackdropFilter: "blur(18px) saturate(1.4)", opacity: ramp(hairlineIn, 1) }} />
         )}
 
-        <HeroBackground backdrop={backdrop} accent={accent} glyph={hero.glyph} emblem={hero.emblem} colourArt={hero.colourArt} />
+        <HeroBackground backdrop={backdrop} accent={accent} glyph={hero.glyph} artPaths={hero.artPaths} emblem={hero.emblem} colourArt={hero.colourArt} />
 
         {/* THE RAIL — counter-translates the frame so the nav button never
             moves on screen, at the identical y in every rank. */}

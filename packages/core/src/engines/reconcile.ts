@@ -12,7 +12,7 @@ import { currentPhase } from "./periodization";
 import { prescribeSession, type PrescribeExperience, type PrescribeEquipment } from "./prescription";
 import type { LoadVelocityProfile } from "./velocity";
 import type { SessionBlock } from "./session";
-import type { SportPrescription, SportBlock } from "../sports";
+import type { SportPrescription, SportBlock, SportMeasure } from "../sports";
 
 /**
  * The reconciler — one session out of three engines.
@@ -59,10 +59,18 @@ export interface ReconciledBlock {
   /** the sport demand this trains (sport blocks only). */
   demand?: string;
   sets: number;
-  reps: number;
+  /** what the per-set quantity is counted in (sport blocks carry the movement's
+   *  own measure — a hold is seconds, a carry is metres). */
+  measure?: SportMeasure;
+  /** the per-set quantity, in `measure`. */
+  amount?: number;
+  /** Per-set reps — set only for a reps-measured movement, so nothing can read
+   *  a 30-second hold as 30 repetitions. */
+  reps?: number;
   /** working load in kg, when the movement is loadable. */
   load?: number;
-  /** display scheme — "4×5 @ 90kg", "8 rounds 40/20s", or "4×8" for bodyweight. */
+  /** display scheme — "4×5 @ 90kg", "8 rounds 40/20s", "4×8" bodyweight,
+   *  "4×30 s" a hold. */
   scheme: string;
   /** true when no external load applies (bodyweight / plyometric). */
   bodyweight?: boolean;
@@ -163,6 +171,11 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
         continue;
       }
       const sets = Math.max(1, Math.round(b.sets * volumeFactor));
+      // The week's envelope scales the SET COUNT; the per-set quantity stays as
+      // the sport engine dosed it, in that movement's own measure. A hold that
+      // came in as seconds must not come out as reps.
+      const unit = b.measure === "time" ? " s" : b.measure === "distance" ? " m" : "";
+      const per = `${b.amount}${unit}`;
       if (b.load != null && !b.bodyweight) {
         const load = roundPlate(b.load * loadFactor);
         blocks.push({
@@ -171,9 +184,11 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
           source: "sport",
           demand: b.demand,
           sets,
+          measure: b.measure,
+          amount: b.amount,
           reps: b.reps,
           load,
-          scheme: `${sets}×${b.reps} @ ${load}kg`,
+          scheme: `${sets}×${per} @ ${load}kg`,
         });
       } else {
         blocks.push({
@@ -182,8 +197,10 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
           source: "sport",
           demand: b.demand,
           sets,
+          measure: b.measure,
+          amount: b.amount,
           reps: b.reps,
-          scheme: `${sets}×${b.reps}`,
+          scheme: `${sets}×${per}`,
           bodyweight: true,
         });
       }
@@ -287,9 +304,13 @@ export function reconciledToSessionBlocks(blocks: ReconciledBlock[]): SessionBlo
     return {
       kind: "strength",
       name: b.name,
+      // The logger's per-set field is labelled off the exercise's own profile
+      // ("reps" / "s" / "m", see exerciseProfile), so the QUANTITY goes in
+      // whatever measure the block carries — seconds for a hold, metres for a
+      // carry — and a hold seeds "30", not six reps.
       sets: Array.from({ length: b.sets }, () => ({
         load: b.load != null ? String(b.load) : "",
-        reps: String(b.reps),
+        reps: String(b.amount ?? b.reps ?? 0),
         rpe: "",
       })),
     };

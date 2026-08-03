@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, sportFromSlug, sportSlug, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 // The AI coach screen, reached from the Cockpit module tile (see below).
 const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { AuroraIcon } from "./aurora/icons";
@@ -39,6 +39,7 @@ import { useIsMobile } from "@/lib/use-media-query";
 const AuroraHistory = dynamic(() => import("./aurora/history"), { ssr: false });
 const AuroraPlans = dynamic(() => import("./aurora/plans"), { ssr: false });
 const AuroraSport = dynamic(() => import("./aurora/sport"), { ssr: false });
+const AuroraSportPage = dynamic(() => import("./aurora/sport-page"), { ssr: false });
 const AuroraCompetition = dynamic(() => import("./aurora/competition"), { ssr: false });
 const AuroraPeriodize = dynamic(() => import("./aurora/periodize"), { ssr: false });
 const AuroraBuilder = dynamic(() => import("./aurora/builder"), { ssr: false });
@@ -186,18 +187,21 @@ export default function AppShell() {
     const p = readDeepLink();
     // setScreenRaw, not setScreen: landing on a link should not play a
     // directional transition from a screen the user was never on.
-    if (p.s) setScreenRaw(p.s);
+    const to = p.s ? landing(p) : undefined;
+    if (to) setScreenRaw(to);
     // Seed the landing entry with our index so the FIRST Back is measurable
     // against it (a fresh entry carries no state, which would read as 0 and be
     // indistinguishable from the root).
     navIdx.current = currentDeepLinkIndex();
-    writeDeepLink({ s: p.s || undefined }, { state: { hybridIdx: navIdx.current } });
+    // `to`, not `p.s`: a link that degraded (a sport page with no resolvable
+    // sport) must leave the URL saying where the user actually is.
+    writeDeepLink({ s: to || undefined }, { state: { hybridIdx: navIdx.current } });
     // Back/Forward: apply the screen WITH a transition, in the direction the
     // browser travelled. `popTo` deliberately does not re-push.
     return onDeepLinkChange((next, idx) => {
       const back = idx < navIdx.current;
       navIdx.current = idx;
-      popTo(next.s || "today", back);
+      popTo(landing(next) || "today", back);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -240,6 +244,51 @@ export default function AppShell() {
     setExerciseFocus(name);
     setScreen("exercise");
   };
+
+  // The same shape for a SPORT: one canonical page per catalog sport, reached
+  // from the Sport index (and, in time, from Today's sport blocks); back returns
+  // to wherever you came from.
+  const [sportFocus, setSportFocus] = useState("");
+  const [sportReturn, setSportReturn] = useState("sport");
+  /** Which screen a deep link actually resolves to. A `sportpage` link carries
+   *  the sport as a slug; one that names no catalog sport (an older build, a
+   *  mangled paste) lands on the sport INDEX rather than on an empty page. */
+  const landing = (p: { s?: string; sport?: string }): string => {
+    if (p.s !== "sportpage") return p.s ?? "today";
+    const name = sportFromSlug(p.sport);
+    if (!name) return "sport";
+    setSportFocus(name);
+    return "sportpage";
+  };
+  const openSportPage = (name: string) => {
+    if (screen !== "sportpage") setSportReturn(screen);
+    setSportFocus(name);
+    // Write the sub-target BEFORE the screen: `setScreen` pushes a history
+    // entry, and applyDeepLink patches only the keys it is given, so the
+    // pushed entry carries the sport with it. Land on that URL later and the
+    // page opens on the same sport.
+    writeDeepLink({ sport: sportSlug(name) });
+    setScreen("sportpage");
+  };
+  // A sport page's address is `?s=sportpage&sport=<slug>`; leaving it drops the
+  // slug, so a stale link can never point at a sport you are no longer on.
+  //
+  // The ref is load-bearing: effects run in declaration order, so on a cold
+  // landing this one fires BEFORE the state set by the deep-link effect above
+  // has re-rendered — an unguarded `else` branch would wipe the very slug the
+  // link arrived with. It only ever clears a param this effect itself wrote.
+  const sportParamWritten = useRef(false);
+  useEffect(() => {
+    if (screen === "sportpage") {
+      if (sportFocus) {
+        writeDeepLink({ sport: sportSlug(sportFocus) });
+        sportParamWritten.current = true;
+      }
+    } else if (sportParamWritten.current) {
+      writeDeepLink({ sport: undefined });
+      sportParamWritten.current = false;
+    }
+  }, [screen, sportFocus]);
 
   // The upgrade paywall is a slide-up sheet OVERLAY (not a screen), so it appears
   // over whatever you're on. `navigate` centralises the intercept so any
@@ -819,7 +868,7 @@ export default function AppShell() {
         {screen === "aicoach" && <AuroraAskCoach />}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onOpenSport={openSportPage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
         )}
 
         {screen === "profile" && (
@@ -840,7 +889,7 @@ export default function AppShell() {
             volume + trends are promotedTo "performance", so the menus stop
             offering the same content twice. */}
         {(screen === "performance" || screen === "cockpit" || screen === "volume" || screen === "trends") && (
-          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} setScreen={setScreen} onOpenExercise={openExercisePage} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} setScreen={setScreen} onOpenExercise={openExercisePage} onOpenSport={openSportPage} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
         {screen === "onboarding" && (
@@ -849,7 +898,7 @@ export default function AppShell() {
 
         {screen === "velocity" && <AuroraVelocity sessions={sessions} />}
 
-        {screen === "endurance" && <AuroraEndurance sessions={sessions} />}
+        {screen === "endurance" && <AuroraEndurance sessions={sessions} onOpenSport={openSportPage} />}
 
         {screen === "exercises" && <AuroraExercises sessions={sessions} onOpen={openExercisePage} />}
 
@@ -890,8 +939,15 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "sport" && (
-          <AuroraSport onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }} />
+        {screen === "sport" && <AuroraSport onOpen={openSportPage} />}
+
+        {screen === "sportpage" && sportFocus && (
+          <AuroraSportPage
+            name={sportFocus}
+            onBack={() => setScreen(sportReturn)}
+            onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }}
+            onOpenSession={openSession}
+          />
         )}
 
         {screen === "runtrack" && <AuroraRunTrack onSaved={refresh} />}

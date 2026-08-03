@@ -1,5 +1,7 @@
 "use client";
 
+import { sportSlug } from "@hybrid/core";
+
 /**
  * Deep links for the app shell.
  *
@@ -40,9 +42,11 @@ export type DeepLinkParams = {
   food?: string;
   /** a verified source's id (nutrition) */
   source?: string;
+  /** which sport's page is open, as its slug (see core `sportSlug`) */
+  sport?: string;
 };
 
-const KEYS: (keyof DeepLinkParams)[] = ["s", "food", "source"];
+const KEYS: (keyof DeepLinkParams)[] = ["s", "food", "source", "sport"];
 
 // ── The pure half ──────────────────────────────────────────────────────────
 // Parsing and serialising are plain string functions so they can be tested
@@ -157,6 +161,13 @@ export function onDeepLinkChange(fn: (p: DeepLinkParams, idx: number) => void): 
 export function verifiedFoodUrl(id: string, origin?: string): string {
   const base = origin ?? (typeof window !== "undefined" ? window.location.origin : "");
   return `${base}/app?s=nutrition&food=${encodeURIComponent(id)}`;
+}
+
+/** An absolute, shareable link to one sport's page. Takes the display name and
+ *  writes the slug, so a caller never has to know the URL shape. */
+export function sportPageUrl(name: string, origin?: string): string {
+  const base = origin ?? (typeof window !== "undefined" ? window.location.origin : "");
+  return `${base}/app?s=sportpage&sport=${encodeURIComponent(sportSlug(name))}`;
 }
 
 /** An absolute, shareable link to a verified source page. */

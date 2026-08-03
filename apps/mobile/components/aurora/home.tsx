@@ -61,6 +61,7 @@ import {
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
+import { sportForDiscipline } from "@hybrid/core";
 import { fetchAssignments, createCheckin, fetchRoutines, favouriteRoutine, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
@@ -1062,7 +1063,13 @@ export default function AuroraHome() {
             day you happen to be scrubbed to. Renders nothing until there's
             endurance to show. Mirrors web
             aurora/endurance-lanes.tsx. ───── */}
-        {isAthlete && <AuroraEnduranceLanes sessions={sessions} onOpen={() => router.push("/endurance")} />}
+        {isAthlete && (
+          <AuroraEnduranceLanes
+            sessions={sessions}
+            canOpen={(d) => !!sportForDiscipline(d)}
+            onOpen={(d) => { const sport = sportForDiscipline(d); if (sport) router.push({ pathname: "/sport-page", params: { name: sport } }); }}
+          />
+        )}
 
         {/* ───── OTHER SPORTS — tennis, squash, five-a-side: everything logged
             as `discipline: "sport"`, the bucket ENDURANCE_DISCIPLINES
@@ -1073,7 +1080,7 @@ export default function AuroraHome() {
             spends its width on the NUMBER of sports, not the depth of each.
             Renders nothing until a sport is logged. Mirrors web
             aurora/other-sports.tsx. ───── */}
-        <AuroraOtherSports sessions={sessions} onOpen={() => router.push("/sport")} />
+        <AuroraOtherSports sessions={sessions} onOpen={(sport) => router.push({ pathname: "/sport-page", params: { name: sport } })} />
 
         {/* THE CLUSTER'S EXIT (wave 3) — the doors past this week, moved here
             from under the This-week card: summary → breakdowns → ONE exit

@@ -3,7 +3,7 @@ import { Animated, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, S
 import { StatusBar } from "expo-status-bar";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Defs, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -210,6 +210,7 @@ export function HeroBackground({
   backdrop,
   accent,
   glyph,
+  artPaths,
   emblem,
   colourArt,
   artOpacity,
@@ -220,6 +221,7 @@ export function HeroBackground({
   backdrop: HeroBackdropKind;
   accent: string;
   glyph?: string;
+  artPaths?: string[];
   emblem?: boolean;
   colourArt?: boolean;
   artOpacity: Animated.AnimatedInterpolation<number> | number;
@@ -267,8 +269,28 @@ export function HeroBackground({
           </Svg>
         </>
       )}
-      {/* the art — parallax drift against the frame, retiring on the track */}
-      {!!glyph && (
+      {/* the art — parallax drift against the frame, retiring on the track.
+          DRAWN art wins over a glyph: a stroke mark holds its shape at 150dp
+          and survives into the collapsed bar as texture, which a desaturated
+          emoji does not. Same box, same parallax, same opacity floor. */}
+      {!!artPaths?.length ? (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: safeTop - (emblem ? 4 : 18),
+            right: emblem ? -30 : -22,
+            opacity: artOpacity as never,
+            transform: [{ translateY: artShift as never }],
+          }}
+        >
+          <Svg width={emblem ? 228 : 174} height={emblem ? 228 : 174} viewBox="0 0 72 72" fill="none">
+            {artPaths.map((d, i) => (
+              <Path key={i} d={d} stroke={`rgba(255,255,255,${emblem ? 0.1 : 0.085})`} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+            ))}
+          </Svg>
+        </Animated.View>
+      ) : !!glyph && (
         <Animated.Text
           pointerEvents="none"
           style={{
@@ -330,6 +352,9 @@ export interface HeroSpec {
   accent?: string;
   /** The subject's mark, drawn as cover art. `cover` rank only. */
   glyph?: string;
+  /** DRAWN cover art — stroke paths in a 72-unit box (core `sportMarkPaths`).
+   *  Takes precedence over `glyph`, which stays for subjects with no drawing. */
+  artPaths?: string[];
   /** Emblem-scale art (a category/goal) rather than poster-scale (an item).
    *  Also decides the light source: containers are lit from the left. */
   emblem?: boolean;
@@ -408,7 +433,7 @@ export function HeroScreen({
   const mode = hero.mode ?? "page";
   const accent = hero.accent ?? C.lime;
   const geom = heroGeometry(hero.rank, insets.top, mode);
-  const backdrop = heroBackdrop(hero.rank, mode, !!hero.glyph);
+  const backdrop = heroBackdrop(hero.rank, mode, !!hero.glyph || !!hero.artPaths?.length);
   const onDark = backdrop !== "field" || scheme === "dark";
   const dark = backdrop !== "field";
 
@@ -591,6 +616,7 @@ export function HeroScreen({
               backdrop={backdrop}
               accent={accent}
               glyph={hero.glyph}
+              artPaths={hero.artPaths}
               emblem={hero.emblem}
               colourArt={hero.colourArt}
               artOpacity={artOpacity}

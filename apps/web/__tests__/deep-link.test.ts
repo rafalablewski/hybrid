@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseDeepLink, applyDeepLink, verifiedFoodUrl, verifiedSourceUrl } from "../lib/deep-link";
+import { parseDeepLink, applyDeepLink, sportPageUrl, verifiedFoodUrl, verifiedSourceUrl } from "../lib/deep-link";
+import { sportFromSlug, sportSlug } from "@hybrid/core";
 
 /**
  * Deep links are the ONE place in the app where an attacker-controlled string —
@@ -126,5 +127,38 @@ describe("browser history contract", () => {
     expect(fn).not.toMatch(/\blet last\b/);
     expect(fn).toMatch(/fn\(readDeepLink\(\), typeof s\?\.hybridIdx/);
     expect(read("../components/app-shell.tsx")).toMatch(/const back = idx < navIdx\.current/);
+  });
+});
+
+describe("a sport page has an address", () => {
+  it("carries the sport as a slug, which the parser already accepts", () => {
+    expect(parseDeepLink("?s=sportpage&sport=open-water-swimming"))
+      .toEqual({ s: "sportpage", sport: "open-water-swimming" });
+  });
+
+  it("builds a shareable link from the display name, and reads back to it", () => {
+    const url = sportPageUrl("Track & Field", "https://app.hybrid.app");
+    expect(url).toBe("https://app.hybrid.app/app?s=sportpage&sport=track-and-field");
+    const parsed = parseDeepLink(url.slice(url.indexOf("?")));
+    expect(parsed.s).toBe("sportpage");
+    expect(sportFromSlug(parsed.sport!)).toBe("Track & Field");
+  });
+
+  it("every catalog sport survives the round trip through a URL", () => {
+    for (const name of ["Running", "Swimming", "Open Water Swimming", "Table Tennis", "Track & Field"]) {
+      const parsed = parseDeepLink(`?s=sportpage&sport=${sportSlug(name)}`);
+      expect(parsed.sport, name).toBeDefined();
+      expect(sportFromSlug(parsed.sport!)).toBe(name);
+    }
+  });
+
+  it("drops a mangled sport param rather than passing it to a lookup", () => {
+    expect(parseDeepLink("?s=sportpage&sport=../../etc/passwd").sport).toBeUndefined();
+    expect(sportFromSlug("../../etc/passwd")).toBeNull();
+  });
+
+  it("leaving the page drops the slug, so a stale address can't point at it", () => {
+    const open = applyDeepLink("", { s: "sportpage", sport: "swimming" });
+    expect(parseDeepLink(applyDeepLink(open, { s: "today", sport: undefined }))).toEqual({ s: "today" });
   });
 });
