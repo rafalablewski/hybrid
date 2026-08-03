@@ -1,212 +1,102 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fs, space, SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, cardioDiscipline, type SessionBlock } from "@hybrid/core";
+import { useMemo, useState } from "react";
+import { ago, fs, searchSports, space, sportIndex, sportIndexMeta, type SportIndexEntry } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
-import { SPORT_STORE_KEY, readSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
-import { CtaLabel } from "./cta-label";
 import { HeroScreen } from "./hero";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
+const mono = (size: number, color = C("ash")) => ({ fontFamily: "var(--font-mono)", fontSize: size, color }) as const;
+const label = (color = C("ash")) => ({ ...mono(fs.micro, color), letterSpacing: ".12em", textTransform: "uppercase" as const });
 
-/** AURORA Sport (web) — sport + level picker driving the shared
- *  prescribeForSport engine; working loads tuned to the athlete's logged lifts. */
-export default function AuroraSport({ onLogSession }: { onLogSession?: (blocks: SessionBlock[]) => void }) {
+/**
+ * AURORA Sport — the INDEX.
+ *
+ * This screen used to BE the sport experience: a chip picker over one shared
+ * body, so a sport was a filter rather than a place. Now every sport has its own
+ * page (sport-page.tsx) and this is the list that lifts into it — the sports the
+ * athlete actually trains first, then the ones the app can prescribe strength
+ * for, with the rest of the catalog behind the search field so all 65 have an
+ * address without 65 rows on one screen.
+ *
+ * The mobile twin is apps/mobile/components/aurora/sport.tsx.
+ */
+export default function AuroraSport({ onOpen }: { onOpen?: (sport: string) => void }) {
   const { t } = useLang();
-  const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
-  const [levelIdx, setLevelIdx] = useState(0);
-  const [markers, setMarkers] = useState<Record<string, string>>({});
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    const s = readSportSelection();
-    if (s) {
-      if (s.sport && SPORTS[s.sport]) setSport(s.sport);
-      if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-      if (s.markers && typeof s.markers === "object") setMarkers(s.markers);
-    }
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(SPORT_STORE_KEY, JSON.stringify({ sport, levelIdx, markers }));
-    } catch {
-      /* ignore */
-    }
-  }, [sport, levelIdx, markers, hydrated]);
-
   const { sessions } = useSessions();
-  const meta = SPORTS[sport]!;
-  const rx = prescribeForSport(sport, levelIdx, { sessions });
+  const [query, setQuery] = useState("");
+
+  const { yours, prescribable } = useMemo(() => sportIndex(sessions), [sessions]);
+  const results = useMemo(() => (query.trim() ? searchSports(query) : []), [query]);
+
+  const Row = ({ e, last, showTransfer = true }: { e: SportIndexEntry; last: boolean; showTransfer?: boolean }) => (
+    <button
+      className="pressable"
+      onClick={() => onOpen?.(e.name)}
+      aria-label={t("w.train.sportPage.openSport").replace("{sport}", e.name)}
+      style={{
+        display: "flex", alignItems: "center", gap: space.md, width: "100%", textAlign: "left",
+        padding: `${space.md}px 0`, background: "none", border: "none",
+        borderBottom: last ? "none" : `1px solid ${C("line")}`, color: C("chalk"), cursor: "pointer",
+      }}
+    >
+      <span aria-hidden style={{ fontSize: 24, lineHeight: 1 }}>{e.icon}</span>
+      <span style={{ flex: 1 }}>
+        <span style={{ display: "block", fontSize: fs.bodyLg, fontWeight: 700, letterSpacing: "-.01em" }}>{e.name}</span>
+        <span style={{ ...mono(fs.micro), display: "block", marginTop: 3 }}>
+          {e.efforts > 0
+            ? `${t("w.train.sportPage.effortsMeta").replace("{n}", String(e.efforts))}${e.lastAt ? ` – ${ago(e.lastAt)}` : ""}`
+            : sportIndexMeta(e)}
+        </span>
+      </span>
+      {e.hasTransfer && showTransfer && <span style={{ ...label(C("lime")), fontSize: fs.nano, whiteSpace: "nowrap" }}>{t("w.train.sportPage.transfer")}</span>}
+      <span aria-hidden style={{ ...mono(fs.body), marginLeft: space.xs }}>→</span>
+    </button>
+  );
+
+  const Group = ({ title, meta, list, showTransfer = true }: { title: string; meta?: string; list: SportIndexEntry[]; showTransfer?: boolean }) =>
+    list.length === 0 ? null : (
+      <div style={{ marginTop: space.xxl }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.md, marginBottom: space.xs }}>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, letterSpacing: "-.01em", margin: 0 }}>{title}</h2>
+          {!!meta && <span style={{ ...label(), whiteSpace: "nowrap" }}>{meta}</span>}
+        </div>
+        {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} showTransfer={showTransfer} />)}
+      </div>
+    );
 
   return (
     <HeroScreen hero={{ rank: "title", title: t("w.train.sport.title") }}>
-    <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginBottom: 16 }}>
-        {t("w.train.sport.intro")}
-      </p>
+      <div style={{ maxWidth: 620, margin: "0 auto", color: C("chalk") }}>
+        <p style={{ ...mono(fs.body), lineHeight: 1.6, margin: "4px 0 0" }}>{t("w.train.sportPage.indexIntro")}</p>
 
-      <div style={{ display: "flex", gap: space.sm, flexWrap: "wrap", marginBottom: 16 }}>
-        {SPORT_NAMES.map((s) => {
-          const on = s === sport;
-          return (
-            <button className="pressable"
-              key={s}
-              onClick={() => setSport(s)}
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: fs.bodyLg,
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                gap: space.xs,
-                padding: "8px 16px",
-                borderRadius: 999,
-                cursor: "pointer",
-                border: `1px solid ${on ? C("lime") : C("line")}`,
-                background: on ? `color-mix(in srgb, ${C("lime")} 14%, transparent)` : C("ink2"),
-                color: on ? C("chalk") : C("ash"),
-              }}
-            >
-              <span style={{ fontSize: fs.subtitle }}>{SPORTS[s]!.icon}</span>
-              {s}
-            </button>
-          );
-        })}
-      </div>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("w.train.sportPage.searchSports")}
+          aria-label={t("w.train.sportPage.searchSports")}
+          style={{
+            width: "100%", marginTop: space.lg, fontFamily: "var(--font-mono)", fontSize: fs.bodyLg,
+            padding: "12px 16px", borderRadius: 16, background: C("ink2"), color: C("chalk"),
+            border: `1px solid ${C("line")}`, outline: "none",
+          }}
+        />
 
-      <div style={{ display: "flex", gap: space.sm, marginBottom: 16 }}>
-        {LEVELS.map((l, i) => {
-          const on = i === levelIdx;
-          return (
-            <button className="pressable"
-              key={l}
-              onClick={() => setLevelIdx(i)}
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: fs.body,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: ".08em",
-                padding: "8px 16px",
-                borderRadius: 999,
-                cursor: "pointer",
-                border: `1px solid ${on ? C("lime") : C("line")}`,
-                background: on ? C("lime") : C("ink2"),
-                color: on ? C("ink") : C("ash"),
-              }}
-            >
-              {l}
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: space.md }}>
-          <span style={{ fontSize: 28 }}>{meta.icon}</span>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: fs.heading }}>{sport}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{meta.family} – {LEVELS[levelIdx]}</div>
-          </div>
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{meta.marker.label}</div>
-          <input
-            value={markers[sport] ?? ""}
-            onChange={(e) => setMarkers((m) => ({ ...m, [sport]: e.target.value }))}
-            placeholder={meta.marker.ph}
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: fs.bodyLg,
-              width: "100%",
-              marginTop: 6,
-              padding: "12px 16px",
-              borderRadius: 16,
-              background: C("ink"),
-              color: C("chalk"),
-              border: `1px solid ${C("line")}`,
-              outline: "none",
-            }}
-          />
-        </div>
-        {/* Log the sport itself by hand — opens the logger pre-loaded with this
-            sport as an activity (no wearable needed). */}
-        {onLogSession && (
-          <button className="pressable"
-            onClick={() => onLogSession([{ kind: "cardio", name: sport, discipline: cardioDiscipline(sport) }])}
-            style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: fs.note,
-              marginTop: 16,
-              width: "100%",
-              background: C("lime"),
-              color: "var(--on-accent)",
-              border: "none",
-              borderRadius: 999,
-              padding: "12px 16px",
-              cursor: "pointer",
-            }}
-          >
-            <CtaLabel size={14}>{`+ ${t("w.train.sport.logSession").replace("{sport}", sport)} →`}</CtaLabel>
-          </button>
+        {query.trim() ? (
+          results.length === 0 ? (
+            <p style={{ ...mono(fs.body), marginTop: space.xxl }}>{t("w.train.sportPage.noMatch")}</p>
+          ) : (
+            <Group title={t("w.train.sport.title")} meta={String(results.length)} list={results} />
+          )
+        ) : (
+          <>
+            <Group title={t("w.train.sportPage.yourSports")} meta={yours.length ? String(yours.length) : undefined} list={yours} />
+            {/* every row in this group has a pool — the tag would be noise. */}
+            <Group title={t("w.train.sportPage.wePrescribe")} list={prescribable} showTransfer={false} />
+          </>
         )}
       </div>
-
-      <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>
-          {t("w.train.sport.todaysSC")}
-        </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 3, color: C("ash") }}>
-          {rx.personalized
-            ? t("w.train.sport.personalized")
-            : t("w.train.sport.notPersonalized")}
-        </div>
-        <div style={{ marginTop: 12 }}>
-          {rx.blocks.map((b, i) => (
-            <div
-              key={b.name}
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}
-            >
-              <div>
-                <div style={{ fontWeight: 700, fontSize: fs.note }}>{b.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{b.demand}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: C("lime"), borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{b.scheme}</span>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 4, color: C("ash") }}>
-                  {b.loadBasis ?? (b.bodyweight ? t("w.train.sport.bodyweightTempo") : "")}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
-          {t("w.train.sport.exercisePool")}
-        </div>
-        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: space.md }}>
-          {rx.ranked.map((e) => (
-            <div key={e.name}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div style={{ fontWeight: 600, fontSize: fs.bodyLg }}>{e.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{e.demand}</div>
-              </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.5, marginTop: 3, color: C("chalk") }}>
-                {e.why}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
     </HeroScreen>
   );
 }

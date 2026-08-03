@@ -38,6 +38,7 @@ export * from "./today-tabs";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";
+export * from "./sport-page";
 export * from "./endurance";
 export * from "./endurance-lanes";
 export * from "./bodyweight";

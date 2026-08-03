@@ -53,6 +53,7 @@ export function AuroraScreen({
   backLabel,
   accessory,
   rail,
+  dock,
   scroller,
   scroll = true,
   center = false,
@@ -89,6 +90,8 @@ export function AuroraScreen({
   accessory?: ReactNode;
   /** A sub-rail that docks beneath the collapsed bar (a segmented control). */
   rail?: ReactNode;
+  /** A CTA that surfaces above the tab bar as the hero finishes collapsing. */
+  dock?: ReactNode;
   /** Render your own scroller (a FlatList) under the hero — see HeroScreen. */
   scroller?: HeroScrollerFn;
   scroll?: boolean;
@@ -119,7 +122,7 @@ export function AuroraScreen({
   // two paths never need to compose.)
   if (hero) {
     return (
-      <HeroScreen hero={hero} back={back} backLabel={backLabel} accessory={accessory} rail={rail} scroller={scroller} refreshing={refreshing} onRefresh={onRefresh} center={center} scroll={scroll}>
+      <HeroScreen hero={hero} back={back} backLabel={backLabel} accessory={accessory} rail={rail} dock={dock} scroller={scroller} refreshing={refreshing} onRefresh={onRefresh} center={center} scroll={scroll}>
         {children}
       </HeroScreen>
     );

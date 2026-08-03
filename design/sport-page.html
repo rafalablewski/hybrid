@@ -293,11 +293,14 @@ section{margin-top:76px}
   <header class="masthead">
     <p class="kick">HYBRID — design study</p>
     <h1>A page for every sport.</h1>
-    <p class="stand">One hundred and four sports live in the catalog and none of them has a home — they are chips
+    <p class="stand">Sixty-five sports live in the catalog and none of them has a home — they are chips
       in a picker on a shared screen. This gives each one its own page, built from a single template that
       <b>configures itself from the sport's own data</b>: what it measures decides what the page shows.
       Running gets kilometres and a per-kilometre pace. Swimming gets metres and a per-hundred pace.
       A sport that only records time gets neither, and is not given a fabricated one.</p>
+    <p class="stand" style="margin-top:14px"><b>Shipped.</b> Both clients render this from one self-configuring
+      model in <span class="mono">@hybrid/core</span> — <span class="mono">sportPageModel()</span>. The Sport screen
+      is now the index that lifts into it, and Today's sport tiles open a sport's page directly.</p>
     <div class="controls">
       <div class="seg" role="group" aria-label="App theme">
         <button type="button" data-app-theme="dark" aria-pressed="true">Aurora</button>
@@ -374,7 +377,7 @@ section{margin-top:76px}
 
   <section>
     <div class="sechead"><h2>When the sport measures less</h2><span class="kick">Tennis — timed only</span></div>
-    <p class="stand" style="margin-bottom:30px">Ninety-seven of the catalog's sports record nothing but duration, and
+    <p class="stand" style="margin-bottom:30px">Fifty of the catalog's sixty-five sports record nothing but duration, and
       seven carry a strength pool. The template answers by subtraction: no distance, so no volume in kilometres and no
       bests in distance; no pace, so no trend and no effort split; no transfer pool, so no strength block. The marker
       slot does not go empty — it falls back to the truest number the sport does have, which is time on court.</p>
@@ -390,22 +393,25 @@ section{margin-top:76px}
   </section>
 
   <section>
-    <div class="sechead"><h2>What this needs next</h2><span class="kick">Open</span></div>
+    <div class="sechead"><h2>What shipped, and what it left open</h2><span class="kick">Status</span></div>
     <div class="notes">
-      <div class="note"><span class="n">→</span><div><h3>A route per sport</h3><p>The page needs an address —
-        <span class="mono">/sport/[name]</span> on web and a pushed route on mobile — with the existing sport screen
-        becoming the index that lifts into it. The lift is already in the transition vocabulary: the card in the index
-        is the hero, seen small.</p></div></div>
-      <div class="note"><span class="n">→</span><div><h3>Ninety-seven quiet sports</h3><p>Only seven sports carry a
-        transfer pool. The other pages are honest but thin. Either the pool grows, or the timed page earns a second
-        section of its own — frequency and a season rhythm are real for a Tuesday-night tennis habit.</p></div></div>
-      <div class="note"><span class="n">→</span><div><h3>A hold is not six reps</h3><p>The engine doses every
+      <div class="note"><span class="n">✓</span><div><h3>A page per sport, both clients</h3><p>One model in
+        <span class="mono">@hybrid/core</span> decides what a sport shows; web and mobile render it and nothing else.
+        The Sport screen became the index — your sports first, then the ones we prescribe for, the whole catalog
+        behind a search — and Today's sport tiles open the page directly.</p></div></div>
+      <div class="note"><span class="n">✓</span><div><h3>The marker keeps a history</h3><p>A marker is typed, not
+        derived, so the delta and the sparkline appear only from the SECOND typing. Up to 24 are kept, under the one
+        store shape both clients write.</p></div></div>
+      <div class="note"><span class="n">→</span><div><h3>A hold is not six reps</h3><p>The engine still doses every
         bodyweight movement as sets × reps, so Swimming's Hollow Body Hold prescribes <span class="mono">4 × 6</span>
-        where it means seconds. Visible here because the page renders the engine's real output. Worth a fix in
-        the pool data before this page ships.</p></div></div>
-      <div class="note"><span class="n">→</span><div><h3>A drawn sport mark</h3><p>The emblem is the catalog emoji,
-        desaturated to a ghost. It holds at 260 pt but a drawn monochrome mark per sport would hold better, and
-        would let the ghost survive into the collapsed bar as texture the way the system allows.</p></div></div>
+        where it means seconds. Visible here because the page renders the engine's real output. Tracked as
+        <span class="mono">sport-page-followups</span>.</p></div></div>
+      <div class="note"><span class="n">→</span><div><h3>Two doors to one run</h3><p>A Running effort now has the
+        Endurance hub's lane AND Running's own page, answering overlapping questions with different chrome. One of
+        them should own per-discipline analytics and the other should link to it.</p></div></div>
+      <div class="note"><span class="n">→</span><div><h3>A drawn sport mark</h3><p>The cover art is the catalog emoji
+        as the Hero System's ghost glyph. A drawn monochrome mark per sport would hold better at 152 pt, and could
+        survive into the collapsed bar as texture the way the system already allows.</p></div></div>
     </div>
   </section>
 

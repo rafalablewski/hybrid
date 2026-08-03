@@ -39,6 +39,7 @@ import { useIsMobile } from "@/lib/use-media-query";
 const AuroraHistory = dynamic(() => import("./aurora/history"), { ssr: false });
 const AuroraPlans = dynamic(() => import("./aurora/plans"), { ssr: false });
 const AuroraSport = dynamic(() => import("./aurora/sport"), { ssr: false });
+const AuroraSportPage = dynamic(() => import("./aurora/sport-page"), { ssr: false });
 const AuroraCompetition = dynamic(() => import("./aurora/competition"), { ssr: false });
 const AuroraPeriodize = dynamic(() => import("./aurora/periodize"), { ssr: false });
 const AuroraBuilder = dynamic(() => import("./aurora/builder"), { ssr: false });
@@ -239,6 +240,17 @@ export default function AppShell() {
     if (screen !== "exercise") setExerciseReturn(screen);
     setExerciseFocus(name);
     setScreen("exercise");
+  };
+
+  // The same shape for a SPORT: one canonical page per catalog sport, reached
+  // from the Sport index (and, in time, from Today's sport blocks); back returns
+  // to wherever you came from.
+  const [sportFocus, setSportFocus] = useState("");
+  const [sportReturn, setSportReturn] = useState("sport");
+  const openSportPage = (name: string) => {
+    if (screen !== "sportpage") setSportReturn(screen);
+    setSportFocus(name);
+    setScreen("sportpage");
   };
 
   // The upgrade paywall is a slide-up sheet OVERLAY (not a screen), so it appears
@@ -819,7 +831,7 @@ export default function AppShell() {
         {screen === "aicoach" && <AuroraAskCoach />}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onOpenSport={openSportPage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
         )}
 
         {screen === "profile" && (
@@ -890,8 +902,15 @@ export default function AppShell() {
           />
         )}
 
-        {screen === "sport" && (
-          <AuroraSport onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }} />
+        {screen === "sport" && <AuroraSport onOpen={openSportPage} />}
+
+        {screen === "sportpage" && sportFocus && (
+          <AuroraSportPage
+            name={sportFocus}
+            onBack={() => setScreen(sportReturn)}
+            onLogSession={(blocks) => { setPendingBlocks(blocks); setScreen("log"); }}
+            onOpenSession={openSession}
+          />
         )}
 
         {screen === "runtrack" && <AuroraRunTrack onSaved={refresh} />}

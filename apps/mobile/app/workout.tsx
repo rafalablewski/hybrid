@@ -510,6 +510,24 @@ export default function Workout() {
         await clearDraft();
         setTitle(sport);
         setExercises([newExercise(sport, "cardio")]);
+      } else if (source === "sport-transfer") {
+        // The sport page's prescribed S&C session — the same blocks web hands
+        // its logger (core's transferSessionBlocks), handed off through storage
+        // exactly as "plan-day" does.
+        await clearDraft();
+        try {
+          const raw = await AsyncStorage.getItem("hybrid.pendingSportSession");
+          if (raw) {
+            const p = JSON.parse(raw) as { title?: string; blocks?: SessionBlock[] };
+            if (p.blocks?.length) {
+              if (p.title) setTitle(p.title);
+              setExercises(blocksToExercises(p.blocks));
+            }
+            await AsyncStorage.removeItem("hybrid.pendingSportSession");
+          }
+        } catch {
+          /* fall back to an empty session */
+        }
       } else if (source === "new") {
         // Deliberate fresh start — drop any interrupted draft.
         await clearDraft();

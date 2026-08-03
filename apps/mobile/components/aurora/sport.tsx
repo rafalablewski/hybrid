@@ -1,166 +1,111 @@
-import { useCallback, useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { View, Text, TextInput } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SPORTS, SPORT_NAMES, LEVELS, prescribeForSport, type LoggedSession } from "@hybrid/core";
+import { ago, searchSports, sportIndex, sportIndexMeta, type LoggedSession, type SportIndexEntry } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, RADIUS } from "./kit";
+import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { AuroraScreen, RADIUS } from "./kit";
 
-const STORE_KEY = "hybrid.sport";
-
-/** AURORA Sport — sport + level picker driving the shared prescribeForSport
- *  engine, with working loads tuned to the athlete's logged lifts. */
+/**
+ * AURORA Sport — the INDEX (mobile twin of apps/web/components/aurora/sport.tsx).
+ *
+ * This screen used to BE the sport experience: a chip picker over one shared
+ * body, so a sport was a filter rather than a place. Now every sport has its own
+ * page (sport-page.tsx) and this is the list that pushes into it — the sports
+ * the athlete actually trains first, then the ones the app can prescribe
+ * strength for, with the rest of the catalog behind the search field so all 65
+ * have an address without 65 rows on one screen.
+ */
 export default function AuroraSport() {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const [sport, setSport] = useState<string>(SPORT_NAMES[0]!);
-  const [levelIdx, setLevelIdx] = useState(0);
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [query, setQuery] = useState("");
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      fetchSessions().then((d) => {
-        if (active) setSessions(d);
-      });
-      return () => {
-        active = false;
-      };
+      fetchSessions().then((d) => { if (active) setSessions(d); }).catch(() => {});
+      return () => { active = false; };
     }, []),
   );
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORE_KEY)
-      .then((raw) => {
-        if (!raw) return;
-        const s = JSON.parse(raw) as { sport?: string; levelIdx?: number } | null;
-        if (s && typeof s === "object") {
-          if (s.sport && SPORTS[s.sport]) setSport(s.sport);
-          if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setHydrated(true));
-  }, []);
+  const { yours, prescribable } = useMemo(() => sportIndex(sessions), [sessions]);
+  const results = useMemo(() => (query.trim() ? searchSports(query) : []), [query]);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    AsyncStorage.setItem(STORE_KEY, JSON.stringify({ sport, levelIdx })).catch(() => {});
-  }, [sport, levelIdx, hydrated]);
+  const open = (name: string) => router.push({ pathname: "/sport-page", params: { name } });
+  const mono = (size: number, color = C.ash) => ({ fontFamily: F.mono, fontSize: size, color });
 
-  const meta = SPORTS[sport]!;
-  const rx = prescribeForSport(sport, levelIdx, { sessions });
+  const Row = ({ e, last, showTransfer = true }: { e: SportIndexEntry; last: boolean; showTransfer?: boolean }) => (
+    <Pressable
+      onPress={() => open(e.name)}
+      accessibilityRole="button"
+      accessibilityLabel={t("w.train.sportPage.openSport").replace("{sport}", e.name)}
+      style={{
+        flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: space.md,
+        borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line,
+      }}
+    >
+      <Text style={{ fontSize: 24 }}>{e.icon}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
+        <Text style={{ ...mono(fs.micro), marginTop: 3 }}>
+          {e.efforts > 0
+            ? `${t("w.train.sportPage.effortsMeta").replace("{n}", String(e.efforts))}${e.lastAt ? ` – ${ago(e.lastAt)}` : ""}`
+            : sportIndexMeta(e)}
+        </Text>
+      </View>
+      {e.hasTransfer && showTransfer && (
+        <Text style={{ ...mono(fs.nano, txt(C, C.lime)), textTransform: "uppercase", letterSpacing: 1 }}>{t("w.train.sportPage.transfer")}</Text>
+      )}
+      <Text style={mono(fs.body)}>→</Text>
+    </Pressable>
+  );
+
+  const Group = ({ title, meta, list, showTransfer = true }: { title: string; meta?: string; list: SportIndexEntry[]; showTransfer?: boolean }) =>
+    list.length === 0 ? null : (
+      <View style={{ marginTop: space.xxl }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md, marginBottom: space.xs }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
+          {!!meta && <Text style={{ ...mono(fs.micro), textTransform: "uppercase", letterSpacing: 1.2 }}>{meta}</Text>}
+        </View>
+        {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} showTransfer={showTransfer} />)}
+      </View>
+    );
 
   return (
-    <AuroraScreen hero={{ rank: "title", title: "Sport" }}>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: leading(fs.bodyLg) }}>{t("sport.intro")}</Text>
+    <AuroraScreen hero={{ rank: "title", title: t("w.train.sport.title") }}>
+      <Text style={{ ...mono(fs.body), marginTop: 4, lineHeight: leading(fs.body) }}>{t("w.train.sportPage.indexIntro")}</Text>
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 12 }}>
-        {SPORT_NAMES.map((s) => {
-          const on = s === sport;
-          return (
-            <Pressable
-              key={s}
-              onPress={() => setSport(s)}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: space.xs,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                borderRadius: RADIUS.pill,
-                borderWidth: 1,
-                borderColor: on ? C.lime : C.line,
-                backgroundColor: on ? `${C.lime}1f` : C.ink2,
-              }}
-            >
-              <Text style={{ fontSize: fs.note }}>{SPORTS[s]!.icon}</Text>
-              <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: on ? C.chalk : C.ash }}>{s}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <TextInput
+        value={query}
+        onChangeText={setQuery}
+        placeholder={t("w.train.sportPage.searchSports")}
+        placeholderTextColor={C.ash}
+        accessibilityLabel={t("w.train.sportPage.searchSports")}
+        style={{
+          marginTop: space.lg, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk,
+          backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
+          paddingHorizontal: 16, paddingVertical: 12,
+        }}
+      />
 
-      <View style={{ flexDirection: "row", gap: space.sm, marginBottom: 16 }}>
-        {LEVELS.map((l, i) => {
-          const on = i === levelIdx;
-          return (
-            <Pressable
-              key={l}
-              onPress={() => setLevelIdx(i)}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                paddingVertical: 12,
-                borderRadius: RADIUS.pill,
-                borderWidth: 1,
-                borderColor: on ? C.lime : C.line,
-                backgroundColor: on ? C.lime : C.ink2,
-              }}
-            >
-              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.onAccent : C.ash }}>{l}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <ACard style={{ marginBottom: 12 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-          <Text style={{ fontSize: 28 }}>{meta.icon}</Text>
-          <View>
-            <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{sport}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{meta.family} – {LEVELS[levelIdx]}</Text>
-          </View>
-        </View>
-      </ACard>
-
-      {/* Log the sport itself by hand — opens the logger seeded with this sport
-          as an activity (no wearable needed). */}
-      <Pressable
-        onPress={() => router.push(`/workout?source=sport&sport=${encodeURIComponent(sport)}`)}
-        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginBottom: 12 }}
-      >
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>＋ {t("w.train.sport.logSession").replace("{sport}", sport)}</Text>
-      </Pressable>
-
-      <ACard style={{ marginBottom: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.sport.todaysSC")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>
-          {rx.personalized ? t("sport.loadsFromLogs") : t("sport.loadsLogPrompt")}
-        </Text>
-        {rx.blocks.map((b, i) => (
-          <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line, marginTop: i ? 0 : 8 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{b.demand}</Text>
-            </View>
-            <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
-              <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{b.scheme}</Text>
-              </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{b.loadBasis ?? (b.bodyweight ? "bodyweight / tempo" : "")}</Text>
-            </View>
-          </View>
-        ))}
-      </ACard>
-
-      <ACard>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("sport.why")}</Text>
-        {rx.ranked.map((e) => (
-          <View key={e.name} style={{ marginTop: 12 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{e.demand}</Text>
-            </View>
-            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 3, lineHeight: leading(fs.body) }}>{e.why}</Text>
-          </View>
-        ))}
-      </ACard>
+      {query.trim() ? (
+        results.length === 0 ? (
+          <Text style={{ ...mono(fs.body), marginTop: space.xxl }}>{t("w.train.sportPage.noMatch")}</Text>
+        ) : (
+          <Group title={t("w.train.sport.title")} meta={String(results.length)} list={results} />
+        )
+      ) : (
+        <>
+          <Group title={t("w.train.sportPage.yourSports")} meta={yours.length ? String(yours.length) : undefined} list={yours} />
+          {/* every row in this group has a pool — the tag would be noise. */}
+          <Group title={t("w.train.sportPage.wePrescribe")} list={prescribable} showTransfer={false} />
+        </>
+      )}
     </AuroraScreen>
   );
 }
