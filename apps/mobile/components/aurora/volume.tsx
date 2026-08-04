@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Animated, Easing, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
+import { View, Text, Animated, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
 import {
-  springs, springToRN, durations,
+  springs, springToRN,
   volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
@@ -22,7 +22,7 @@ import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, ASection, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, ADrawer, AHeading, ASection, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
 import { HeroAccessory } from "./hero";
 import Sheet from "./sheet";
@@ -50,10 +50,10 @@ const pct = (v: number): DimensionValue => `${v * 100}%` as DimensionValue;
  * then PUSH A SCREEN for the block ramp, the prescription and the muscle rails
  * — a full navigation to read the detail of the card you were already looking
  * at, with the shape you had just read left behind. The detail now EASES OPEN
- * UNDERNEATH the shape instead (a measured height on the sheet spring, the same
- * drawer the Activity card's figures pull out — see week-verdict.tsx), so "ease
- * off" and "by muscle" arrive in place, under the columns that raised the
- * question, and closing puts them back.
+ * UNDERNEATH the shape instead (kit's `ADrawer` — a measured height on the sheet
+ * spring, the same drawer the Activity card's figures pull out), so "ease off"
+ * and "by muscle" arrive in place, under the columns that raised the question,
+ * and closing puts them back.
  *
  * The landmarks come from ONE core call (`athleteLandmarks`), which layers
  * population table → profile estimate → what the log observed → the athlete's
@@ -280,7 +280,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
 
             {/* THE DRAWER — the block, the prescription and the rails slide out
                 from under the shape that raised the question. */}
-            <Drawer open={drawer}>{everOpen ? detail(true) : null}</Drawer>
+            <ADrawer open={drawer}>{everOpen ? detail(true) : null}</ADrawer>
           </>
         )}
         {sourceSheet}
@@ -413,90 +413,6 @@ function Panel({ flat, lead = false, children, style }: {
     <View style={[{ marginTop: lead ? 18 : 20, paddingTop: lead ? 0 : 20, borderTopWidth: lead ? 0 : 1, borderTopColor: C.line }, style]}>
       {children}
     </View>
-  );
-}
-
-/**
- * A DISCLOSURE THAT MOVES — the one way anything on this screen opens.
- *
- * Every fold on the Volume surface runs this: the compact card's detail, "Show
- * the working" inside the provenance sheet, a muscle row's floor and history,
- * and the band definition under a spotlight. They were three `{open && …}`
- * conditionals that POPPED inside a card that eases, which reads as three
- * different mechanisms rather than one idea at different scales.
- *
- * The web twin gets the movement from a 0fr → 1fr grid row (globals.css
- * `.motion-drawer`); RN has no such thing, so the panel is MEASURED and its
- * height interpolated on the SAME sheet spring, and once the opening has
- * settled the height goes back to `auto` — otherwise content that grows inside
- * an already-open drawer (a muscle row expanding inside the open detail) would
- * be clipped to a height measured before it grew, which is exactly the bug a
- * fixed measured height invites.
- *
- * The content MOUNTS on first open and stays: a collapse needs something to
- * collapse, and a fold nobody has opened should not pay to lay out — seven
- * muscle rows each carrying an eight-week chart is not free on a phone.
- */
-function Drawer({ open, children }: { open: boolean; children: ReactNode }) {
-  const reduced = useReducedMotion();
-  const [panelH, setPanelH] = useState(0);
-  const [settled, setSettled] = useState(false);
-  const grow = useRef(new Animated.Value(0)).current;
-  // Latched in RENDER, not in an effect. An effect commits one frame too late:
-  // the content would not be laid out yet, `panelH` would still be 0, and the
-  // animation below would bail — so every open would wait for a second layout
-  // pass before it started moving.
-  const mounted = useRef(open);
-  if (open) mounted.current = true;
-
-  // `settled` mirrored into a ref so the guard below can read it WITHOUT making
-  // it a dependency. As a dep it would re-run this effect the moment a close
-  // clears it — restarting the closing timing halfway through its own run.
-  const settledRef = useRef(false);
-
-  useEffect(() => {
-    if (!open) { settledRef.current = false; setSettled(false); }
-    // Already open and settled: the height is `auto`, so a re-measure (a muscle
-    // row expanding INSIDE this drawer) has nothing to animate. Left unguarded
-    // this restarts the spring on every layout pass of the content.
-    if (open && settledRef.current) return undefined;
-    // Reduce Motion SUBSTITUTES a cross-dissolve for the travel: the drawer
-    // takes its height at once and fades in. Never an instant cut — the user
-    // still has to perceive that something opened.
-    if (reduced) {
-      Animated.timing(grow, { toValue: open ? 1 : 0, duration: durations.reduced, easing: Easing.linear, useNativeDriver: false }).start();
-      return undefined;
-    }
-    // Nothing to animate to until the content has been measured once.
-    if (open && panelH <= 0) return undefined;
-    const anim = open
-      ? Animated.spring(grow, { toValue: 1, useNativeDriver: false, ...springToRN(springs.sheet) })
-      : Animated.timing(grow, { toValue: 0, duration: durations.fast, easing: Easing.in(Easing.cubic), useNativeDriver: false });
-    anim.start(({ finished }) => { if (finished && open) { settledRef.current = true; setSettled(true); } });
-    return () => anim.stop();
-  }, [open, panelH, reduced, grow]);
-
-  const sized = reduced
-    ? { height: open ? undefined : 0 }
-    : settled
-      ? null
-      : { height: grow.interpolate({ inputRange: [0, 1], outputRange: [0, panelH], extrapolate: "clamp" as const }) };
-
-  return (
-    <Animated.View
-      style={[{ overflow: "hidden", opacity: settled ? 1 : grow }, sized]}
-      pointerEvents={open ? "auto" : "none"}
-      /* Staying mounted is what buys the collapse — but a clipped panel is
-         still in the accessibility tree, so a closed drawer would hand
-         VoiceOver a section that isn't on screen. The web twin reaches this
-         with one `inert` attribute; RN needs both platforms named. */
-      accessibilityElementsHidden={!open}
-      importantForAccessibility={open ? "auto" : "no-hide-descendants"}
-    >
-      {/* Measured on EVERY layout, not just the first — the interpolation's
-          target has to follow content that changed while the drawer was open. */}
-      <View onLayout={(e) => setPanelH(Math.round(e.nativeEvent.layout.height))}>{mounted.current ? children : null}</View>
-    </Animated.View>
   );
 }
 
@@ -860,7 +776,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
         </Pressable>
       </View>
 
-      <Drawer open={work}>
+      <ADrawer open={work}>
         <>
           {/* YOUR LEVEL, FROM YOUR LIFTS. */}
           <View style={{ marginTop: 16 }}>
@@ -984,7 +900,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
             </View>
           )}
         </>
-      </Drawer>
+      </ADrawer>
 
     </View>
   );
@@ -1091,13 +1007,13 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
           REMEMBERED through the collapse — reading `zone` straight would empty
           the line the instant the spotlight is dismissed, and the drawer would
           shut on nothing. */}
-      <Drawer open={!!zone && showGloss}>
+      <ADrawer open={!!zone && showGloss}>
         <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(GLOSS_KEY[lastZone])}</Text>
-      </Drawer>
+      </ADrawer>
 
       {/* Expanding adds only what the scale above does NOT already say: the
           maintenance floor and the prescription. */}
-      <Drawer open={expanded}>
+      <ADrawer open={expanded}>
         <View style={{ marginTop: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>MV {s.landmark.mv}</Text>
           {target && verdict && (
@@ -1110,7 +1026,7 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
           <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{rowAdvice(s, t)}</Text>
           <MuscleHistory sets={history} />
         </View>
-      </Drawer>
+      </ADrawer>
     </View>
   );
 }

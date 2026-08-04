@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Animated, Easing } from "react-native";
+import { View, Text, Animated, Easing, ScrollView, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type LayoutChangeEvent } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
-  fmtWeight, strengthPrDelta,
+  fmtWeight, splitFigure, strengthPrProof,
   resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage, durations,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
-  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type WeightUnit,
+  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
+import { ADrawer } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
+// The drawer's own motion moved into ADrawer; this is here for the records
+// rail's edge dissolve, which eases in and out on its own.
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 /**
@@ -58,8 +62,6 @@ const STORE_KEY = "hybrid.today.range";
 /** Set once the athlete has opened any column — see the hint below. */
 const HINT_KEY = "hybrid.today.actHinted";
 const ROWS_SHOWN = 5;
-/** PR rows before the head starts saying how many were held back. */
-const PRS_SHOWN = 4;
 
 /** The segment labels are SHORTER than the card's own title for the same
  *  period ("7 days" under a card headed "Last 7 days") — a segmented control
@@ -67,6 +69,23 @@ const PRS_SHOWN = 4;
 const SHORT_KEY: Record<string, string> = {
   week: "w.home.act.sWeek", d7: "w.home.act.sD7", d30: "w.home.act.sD30", ytd: "w.home.act.sYtd",
 };
+
+/** The records block names the WINDOW, not just "New PRs" — the card is
+ *  period-aware and a month's records must not read as this week's news. */
+const PRS_HEAD_KEY: Record<string, string> = {
+  week: "w.home.act.prsWeek", d7: "w.home.act.prsD7", d30: "w.home.act.prsD30", ytd: "w.home.act.prsYtd",
+};
+
+/** Records shown before the rail offers "Show all" — a year can hold forty,
+ *  and an endless drag is not a celebration. */
+const PRS_RAIL_CAP = 8;
+/** The width of the edge dissolve, in dp. Mirrors web's .pr-rail. */
+const PRS_FADE = 24;
+/** The gap between record cells, in dp. Mirrors web. */
+const PRS_GAP = 14;
+/** AuroraScreen's gutter — what the rail bleeds by, so cards slide under the
+ *  physical screen edge. Mirrors web's --page-pad-x. */
+const PRS_BLEED = 16;
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -116,6 +135,66 @@ export function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: st
   );
 }
 
+/**
+ * ONE RECORD, set as a FIGURE — the TWIN of PrCell on web.
+ *
+ * The block used to be four hairlines around two 12dp rows: a section rule, a
+ * rule under the header and one above every record, fencing content that was
+ * already fenced. Whitespace separates two items perfectly well, so the rules
+ * went and the budget was spent on the two things a record actually needs —
+ * SCALE (the load at fs.display, the largest figure in the card, because a
+ * personal best is the only thing on Today worth celebrating) and PROOF (the
+ * load it beat, which is what makes 90 kg an achievement rather than a fact).
+ *
+ * The proof's three shapes come from core's strengthPrProof, so this and the
+ * session summary can't drift, and it arrives SPLIT — "from 82.5" reads in ash
+ * and only the gain takes the accent. The value is bare because the unit is on
+ * the figure above it.
+ */
+function PrCell({ pr, units, t, width, onOpen }: {
+  pr: PrHit;
+  units: WeightUnit;
+  t: (k: string) => string;
+  /** Fixed cell width inside the rail; unset in the two-up grid, which flexes. */
+  width?: number;
+  onOpen?: () => void;
+}) {
+  const { palette: C } = useTheme();
+  const [value, unit] = splitFigure(fmtWeight(pr.topLoad, units));
+  const proof = strengthPrProof(pr, units);
+  const body = (
+    <>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+        {pr.lift}
+      </Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.display, fontWeight: "800", letterSpacing: -0.8, marginTop: 7, color: txt(C, C.lime) }}>
+        {value}
+        <Text style={{ fontSize: fs.caption, fontWeight: "600", letterSpacing: 0.4 }}> {unit}</Text>
+      </Text>
+      <Text numberOfLines={1} style={{ marginTop: 6, fontFamily: F.reg, fontSize: fs.micro, color: C.ash }}>
+        {proof.kind === "climb" ? (
+          <>
+            {t("w.home.act.prFrom").replace("{v}", proof.from ?? "")}{" "}
+            <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>{proof.delta}</Text>
+          </>
+        ) : t(proof.kind === "first" ? "w.home.act.prFirst" : "w.home.act.prReps")}
+      </Text>
+    </>
+  );
+
+  if (!onOpen) return <View style={{ width, flex: width == null ? 1 : undefined }}>{body}</View>;
+  return (
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={`${pr.lift} – ${fmtWeight(pr.topLoad, units)} – ${t("w.home.act.prOpen")}`}
+      style={{ width, flex: width == null ? 1 : undefined }}
+    >
+      {body}
+    </Pressable>
+  );
+}
+
 export default function AuroraWeekVerdict({
   sessions,
   units,
@@ -145,6 +224,42 @@ export default function AuroraWeekVerdict({
   // opened. Starts true so it can only ever disappear, never flash in.
   const [hinted, setHinted] = useState(true);
 
+  // ── THE RECORDS RAIL (three records and up) — the twin of web's .pr-rail.
+  // Web masks the edges; here two gradient overlays stand in, which is the
+  // idiom coach-rail already ships and needs no MaskedView dependency. The
+  // dissolve is a STATUS either way: an edge fades only while records are
+  // hidden behind it.
+  const win = useWindowDimensions();
+  const [allPrs, setAllPrs] = useState(false);
+  const [railW, setRailW] = useState(0);
+  const fadeL = useRef(new Animated.Value(0)).current;
+  const fadeR = useRef(new Animated.Value(0)).current;
+  /** offset / viewport / content, written by whichever handler last measured. */
+  const railGeom = useRef({ x: 0, w: 0, c: 0 });
+  const fadeOn = useRef({ l: false, r: false });
+
+  const paintFade = () => {
+    const { x, w, c } = railGeom.current;
+    const max = Math.max(0, c - w);
+    const next = { l: x > 4, r: max - x > 4 };
+    for (const side of ["l", "r"] as const) {
+      if (fadeOn.current[side] === next[side]) continue;
+      fadeOn.current[side] = next[side];
+      Animated.timing(side === "l" ? fadeL : fadeR, {
+        toValue: next[side] ? 1 : 0,
+        duration: reduced ? durations.reduced : 220,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
+  const onRailScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    railGeom.current = { x: contentOffset.x, w: layoutMeasurement.width, c: contentSize.width };
+    paintFade();
+  };
+
   useEffect(() => {
     AsyncStorage.getItem(STORE_KEY).then((v) => { if (v) setRangeId(v); }).catch(() => {});
     AsyncStorage.getItem(HINT_KEY).then((v) => setHinted(v === "1")).catch(() => {});
@@ -168,7 +283,19 @@ export default function AuroraWeekVerdict({
   // reporting different numbers. A PR belongs to the period it happened in, so
   // it belongs to whatever window this card is showing. Mirrors web.
   const prs = useMemo(() => prsBetween(sessions, range.from, range.through + 1, bw), [sessions, range, bw]);
+  const shownPrs = allPrs ? prs : prs.slice(0, PRS_RAIL_CAP);
   const months = useMemo(() => activityMonths(sessions, Date.now()), [sessions, today]);
+
+  // A new period is a new set of records — an expanded rail must not carry over.
+  useEffect(() => { setAllPrs(false); }, [range.id]);
+
+  // A cell is HALF THE CONTENT COLUMN — the same width the two-up grid gives
+  // it — so going from two records to three doesn't resize anything: the third
+  // simply appears past the right edge. The rail bleeds by the screen gutter,
+  // so its own width is the whole screen; the window width is that value before
+  // the first layout lands, which keeps the cells from popping.
+  const railWidth = railW || win.width;
+  const prCellW = Math.max(120, Math.round((railWidth - PRS_BLEED * 2 - PRS_GAP) / 2));
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
   // minutes read as hours to one decimal, distance to one decimal km.
@@ -198,6 +325,12 @@ export default function AuroraWeekVerdict({
     cap(dateFmt(Date.parse(`${id.slice(2)}-01T12:00:00`), long ? { month: "long", year: "numeric" } : { month: "short" }));
 
   const title = range.kind === "month" ? monthLabel(range.id) : t(range.labelKey ?? "w.home.act.rWeek");
+  // The records kicker names the window too. The month case interpolates the
+  // localized month name rather than an inflected phrase — "in July" declines
+  // in Polish (w lipcu) and a nominative month in that slot would be wrong.
+  const prsHead = range.kind === "month"
+    ? t("w.home.act.prsMonth").replace("{m}", monthLabel(range.id))
+    : t(PRS_HEAD_KEY[range.id] ?? "w.home.act.prsWeek");
   // A year-to-date span ends TODAY; a week or a month shows its whole frame, so
   // "27 Jul – 2 Aug" says which seven days the card means even on Tuesday.
   const spanEnd = (range.kind === "ytd" ? range.through : range.to) - 1;
@@ -254,19 +387,6 @@ export default function AuroraWeekVerdict({
     { id: "month", label: range.kind === "month" ? monthLabel(range.id, false) : t("w.home.act.sMonth") },
   ];
   const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
-
-  // ── The drawer. Height is measured off the panel and animated, so the detail
-  // SLIDES out of the figure row instead of appearing under it.
-  const [panelH, setPanelH] = useState(0);
-  const grow = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(grow, {
-      toValue: open ? 1 : 0,
-      duration: reduced ? durations.reduced : 320,
-      easing: reduced ? Easing.linear : Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [open, reduced, grow]);
 
   // The caret travels in MEASURED pixels — a percentage string can't be
   // animated on the native driver, and the caret has to arrive with the panel.
@@ -392,40 +512,37 @@ export default function AuroraWeekVerdict({
           )}
         </View>
 
-        {/* ── THE DRAWER ──────────────────────────────────────────────────── */}
-        <Animated.View
-          style={{
-            overflow: "hidden",
-            opacity: grow,
-            height: grow.interpolate({ inputRange: [0, 1], outputRange: [0, panelH] }),
-          }}
-        >
-          <View onLayout={(e) => setPanelH(e.nativeEvent.layout.height)}>
-            {detail && (
-              <View style={{
-                backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-                paddingHorizontal: 16, paddingVertical: 12,
-              }}>
-                <MetricDetail
-                  detail={detail}
-                  rows={rows}
-                  shownCount={shown.length}
-                  all={all}
-                  group={group}
-                  onGroup={(id) => { setGroup(id); setAll(false); }}
-                  onAll={() => setAll((x) => !x)}
-                  onSession={onSession}
-                  t={t}
-                  fmtValue={fmtValue}
-                  fmtMinutes={fmtMinutes}
-                  groupName={groupName}
-                  dateFmt={dateFmt}
-                  units={units}
-                />
-              </View>
-            )}
-          </View>
-        </Animated.View>
+        {/* ── THE DRAWER — the detail SLIDES out of the figure row instead of
+            appearing under it. The measured height, the mount-on-first-open and
+            the a11y clipping are the kit's `ADrawer`, the same one Volume's
+            compact card opens on: this card had its own copy, which measured
+            its panel IN FLOW inside a box clipped to zero and so could only
+            ever measure zero. ─────────────────────────────────────────────── */}
+        <ADrawer open={!!detail}>
+          {detail && (
+            <View style={{
+              backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
+              paddingHorizontal: 16, paddingVertical: 12,
+            }}>
+              <MetricDetail
+                detail={detail}
+                rows={rows}
+                shownCount={shown.length}
+                all={all}
+                group={group}
+                onGroup={(id) => { setGroup(id); setAll(false); }}
+                onAll={() => setAll((x) => !x)}
+                onSession={onSession}
+                t={t}
+                fmtValue={fmtValue}
+                fmtMinutes={fmtMinutes}
+                groupName={groupName}
+                dateFmt={dateFmt}
+                units={units}
+              />
+            </View>
+          )}
+        </ADrawer>
 
         {!open && !hinted && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
@@ -440,32 +557,88 @@ export default function AuroraWeekVerdict({
           PRs rather than the last seven days'. Silent when there are none. */}
       {prs.length > 0 && (
         <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
-          {/* The count is a fact only when the list is TRUNCATED. Printing
-              "2" above two visible rows restates something the reader can
-              already count; printing "6" above four rows was worse, since
-              nothing said the other two existed. Below the cap the rows speak
-              for themselves. */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.cockpit.newPrs")}</Text>
-            {prs.length > PRS_SHOWN && (
-              <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>
-                {t("w.home.act.ofTotal").replace("{a}", String(PRS_SHOWN)).replace("{b}", String(prs.length))}
-              </Text>
+          {/* The one rule that stays is this section divider — it separates the
+              figures from what follows and is load-bearing. The three that used
+              to sit inside the block were decoration. */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{prsHead}</Text>
+            {/* A6: the count is a fact only when the reader cannot do the
+                counting. With one or two records both cells sit side by side on
+                one row, so a "2" beside them restates what is already in view.
+                From three up they are a RAIL — you cannot count what you have
+                to scroll — so the total earns its place, and past
+                PRS_RAIL_CAP the trailing "Show all {n}" cell carries it too. */}
+            {prs.length > 2 && (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{prs.length}</Text>
             )}
           </View>
-          {prs.slice(0, PRS_SHOWN).map((pr) => (
-            <View key={pr.lift} style={{ flexDirection: "row", justifyContent: "space-between", gap: 12, paddingVertical: 7, borderTopWidth: 1, borderTopColor: `${C.line}99` }}>
-              <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{pr.lift}</Text>
-              {/* The weight actually lifted (#231) — this row and the session
-                  summary describe the same PR, so they must agree. Formatted
-                  through the shared helper: topLoad is 0.1-rounded, so a raw
-                  subtraction would print +4.799999999999997. */}
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>
-                {fmtWeight(pr.topLoad, units)}
-                {pr.previousTopLoad == null || pr.topLoad <= pr.previousTopLoad ? "" : ` – ${strengthPrDelta(pr, { first: "", moreReps: "" })}`}
-              </Text>
+
+          {prs.length < 3 ? (
+            /* ONE OR TWO — the figures sit still. No rail, no fade, nothing to
+               drag: a rail that cannot move is worse than no rail. A single
+               record takes the full width rather than leaving half a row empty. */
+            <View style={{ flexDirection: "row", gap: PRS_GAP, marginTop: 12 }}>
+              {prs.map((pr) => (
+                <PrCell key={pr.lift} pr={pr} units={units} t={t}
+                  onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
+              ))}
             </View>
-          ))}
+          ) : (
+            /* THREE AND UP — the same cells become a rail.
+             *
+             * This block sits DIRECTLY ON THE SCREEN (it is a sibling of the
+             * card above, not a child of it), so the rail is full-bleed:
+             * marginHorizontal of the screen gutter with matching content
+             * padding, exactly as the exercise-widget rail does it. Cards slide
+             * under the physical screen edge instead of clipping at the content
+             * column with the gutter showing beside a cut cell.
+             *
+             * The third cell peeking past the edge is the whole affordance,
+             * which is why there are no arrows, no dot row and no "swipe"
+             * label. Deceleration is "fast" with no snapToInterval — the mobile
+             * twin of web's proximity snap, and the feel every other rail in
+             * the app already has. */
+            <View
+              style={{ marginTop: 12, marginHorizontal: -PRS_BLEED }}
+              onLayout={(e: LayoutChangeEvent) => setRailW(e.nativeEvent.layout.width)}
+            >
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                scrollEventThrottle={16}
+                onScroll={onRailScroll}
+                onContentSizeChange={(w) => { railGeom.current = { ...railGeom.current, c: w }; paintFade(); }}
+                contentContainerStyle={{ paddingHorizontal: PRS_BLEED, gap: PRS_GAP }}
+              >
+                {shownPrs.map((pr) => (
+                  <PrCell key={pr.lift} pr={pr} units={units} t={t} width={prCellW}
+                    onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
+                ))}
+                {!allPrs && prs.length > PRS_RAIL_CAP && (
+                  <Pressable
+                    onPress={() => setAllPrs(true)}
+                    accessibilityRole="button"
+                    style={{ width: prCellW, justifyContent: "center" }}
+                  >
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
+                      {t("w.home.act.showAll").replace("{n}", String(prs.length))}
+                    </Text>
+                  </Pressable>
+                )}
+              </ScrollView>
+
+              {/* THE DISSOLVE — screen-coloured, since this block sits on the
+                  screen rather than on a card. Opacity is animated (not the
+                  gradient), so it runs on the native driver. */}
+              <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeL }}>
+                <LinearGradient colors={[C.ink, `${C.ink}00`]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
+              </Animated.View>
+              <Animated.View pointerEvents="none" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeR }}>
+                <LinearGradient colors={[`${C.ink}00`, C.ink]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
+              </Animated.View>
+            </View>
+          )}
         </View>
       )}
 
