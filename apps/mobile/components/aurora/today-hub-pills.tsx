@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import {
   HUB_DOCK_REST,
+  HUB_DOCK_SPRINGS,
   HUB_PILL,
   TODAY_TABS,
-  hubActiveWidth,
   hubDockState,
   hubDockVisible,
   hubMotion,
-  hubSplitDelay,
+  hubPillWidths,
+  springToRN,
   type HubDockState,
+  type HubMotion,
   type TodayTabId,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -18,12 +20,11 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useTheme, txt } from "../../lib/theme";
 // PressScale, not the raw Pressable: every tap target in the app answers a
 // touch (guarded by apps/web/__tests__/press-feedback.test.ts). `noScale` —
-// the pill already lives inside an animating parent that scales it on arrival
-// and animates its width on selection; a second scale on the same node fights
-// both.
+// the pill already lives inside a parent that animates its width on selection,
+// and a second scale on the same node fights it.
 import { F, PressScale } from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
-import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { GlassPillRow, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { withAlpha } from "./kit";
 import { HubGlyph } from "./today-tabs";
 
@@ -42,6 +43,22 @@ import { HubGlyph } from "./today-tabs";
 // first flick up brings it back. Both rules live in @hybrid/core
 // (today-hub-dock.ts) so web detaches, hides and returns at identical points;
 // this file owns only the pixels. Mirrors web (aurora/today-hub-pills.tsx).
+//
+// ── THE GLASS IS REAL (iOS) ─────────────────────────────────────────────────
+// The row used to wear a static glass tile per pill and tween the widths in JS,
+// which gave three separate panes that changed size — glass as a MATERIAL. It
+// is now a single native SwiftUI GlassEffectContainer (swiftui.tsx,
+// GlassPillRow) whose capsules share a Namespace, so the system treats them as
+// one body of glass: touching capsules FUSE, and a frame that changes makes the
+// glass flow between the shapes instead of resizing a blur. That is what turns
+// SPLIT from a metaphor into the actual transition — the row arrives as ONE
+// lozenge and separates, and on the way out it merges back.
+//
+// The marks and the words stay RN on top (same vector glyphs as the in-flow
+// switcher, same type, same i18n), and so do the taps. Both layers are laid out
+// from the same shared widths and animate on the same shared springs, so the
+// glyph rides its capsule exactly. Off iOS — and under Reduce Motion — the RN
+// treatment below is the whole control, unchanged.
 //
 // Under REDUCED MOTION the row renders DOCK instead: one capsule, glyph-only,
 // permanently on screen while detached. RETURN's whole value is the motion, and
@@ -87,6 +104,20 @@ function useHubDock(reduced: boolean, resetKey: string) {
   return phase;
 }
 
+/** Run an Animated.Value on one of the dock's shared transitions — the spring
+ *  if it has one, otherwise its curve. The SwiftUI layer is handed the same
+ *  token, so the two integrate identical physics rather than similar curves. */
+function runMotion(v: Animated.Value, to: number, m: HubMotion, useNativeDriver: boolean) {
+  return m.spring
+    ? Animated.spring(v, { toValue: to, useNativeDriver, ...springToRN(m.spring) })
+    : Animated.timing(v, {
+        toValue: to,
+        duration: m.ms,
+        easing: m.bezier ? Easing.bezier(...m.bezier) : Easing.linear,
+        useNativeDriver,
+      });
+}
+
 export function TodayHubPills({
   value,
   onChange,
@@ -102,6 +133,10 @@ export function TodayHubPills({
   const reduced = useReducedMotion();
   const phase = useHubDock(reduced, value);
   const shown = hubDockVisible(phase);
+  // Reduce Motion keeps DOCK — the RN capsule — even on iOS: a row of glass
+  // that fuses and separates is exactly the motion the setting asks us not to
+  // run, and the material without the behaviour is just a lighter pill.
+  const nativeGlass = LIQUID_GLASS_SUPPORTED && !reduced;
 
   const reveal = hubMotion("reveal", reduced);
   const conceal = hubMotion("conceal", reduced);
@@ -110,36 +145,36 @@ export function TodayHubPills({
   // ── The row's arrival and departure ───────────────────────────────────────
   const vis = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    const m = shown ? reveal : conceal;
-    Animated.timing(vis, {
-      toValue: shown ? 1 : 0,
-      duration: m.ms,
-      easing: reduced ? Easing.linear : Easing.bezier(...m.bezier),
-      useNativeDriver: true,
-    }).start();
-  }, [shown, reduced, vis, reveal, conceal]);
+    runMotion(vis, shown ? 1 : 0, shown ? reveal : conceal, true).start();
+  }, [shown, vis, reveal, conceal]);
 
   // ── The exchange ──────────────────────────────────────────────────────────
   // A pill's width IS its label's, and RN cannot animate to `auto`, so the
   // three labels are measured once in an invisible row and each pill animates
   // between its glyph-only width and its own measured one. Selecting a sibling
   // is then a real exchange — one inflating to its word as the other contracts
-  // — which is the physics the lens used to carry inside the track.
+  // — which is the physics the lens used to carry inside the track. The SAME
+  // widths go to the glass beneath (hubPillWidths is the one source).
   const [labelW, setLabelW] = useState<Record<string, number>>({});
+  const targets = useMemo(() => hubPillWidths(value, labelW, TODAY_TABS), [value, labelW]);
   const widths = useRef(TODAY_TABS.map(() => new Animated.Value(HUB_PILL.siblingWidth))).current;
   useEffect(() => {
-    const anims = TODAY_TABS.map((tab, i) => {
-      const measured = labelW[tab.id];
-      const target = tab.id === value && measured ? hubActiveWidth(measured) : HUB_PILL.siblingWidth;
-      return Animated.timing(widths[i]!, {
-        toValue: target,
-        duration: exchange.ms,
-        easing: reduced ? Easing.linear : Easing.bezier(...exchange.bezier),
-        useNativeDriver: false,
-      });
-    });
-    Animated.parallel(anims).start();
-  }, [value, labelW, widths, exchange, reduced]);
+    Animated.parallel(targets.map((w, i) => runMotion(widths[i]!, w, exchange, false))).start();
+  }, [targets, widths, exchange]);
+
+  // ── SPLIT and MERGE ───────────────────────────────────────────────────────
+  // One number: the gap. At zero the capsules touch, and touching Liquid Glass
+  // is ONE lozenge — so springing the gap open is the track becoming three
+  // pills, and shutting it on the way out is them merging back. Under reduced
+  // motion the gap stays shut and the DOCK capsule holds the three together.
+  const gap = reduced ? 0 : HUB_PILL.gap;
+  const split = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduced) { split.setValue(0); return; }
+    // Leaving rides the SPLIT spring too, not the conceal curve: the merge is
+    // positional, and the row is still on screen while it runs.
+    runMotion(split, shown ? gap : 0, reveal, false).start();
+  }, [shown, reduced, gap, split, reveal]);
 
   const activeIndex = Math.max(0, TODAY_TABS.findIndex((tab) => tab.id === value));
 
@@ -166,7 +201,7 @@ export function TodayHubPills({
         alignItems: "flex-start",
         paddingLeft: HUB_PILL.inset,
         paddingRight: HUB_PILL.inset,
-        opacity: vis,
+        opacity: vis.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: "clamp" }),
         transform: [
           {
             translateY: vis.interpolate({
@@ -197,9 +232,9 @@ export function TodayHubPills({
 
       <View
         style={{
+          position: "relative",
           flexDirection: "row",
           alignItems: "center",
-          gap: reduced ? 0 : HUB_PILL.gap,
           // DOCK (reduced motion): the three pills sit inside one capsule
           // instead of floating free, so the fallback is a shipped shape rather
           // than a degraded one.
@@ -208,79 +243,80 @@ export function TodayHubPills({
             : null),
         }}
       >
+        {/* THE GLASS, underneath: one native container, three capsules that fuse
+            and flow. It draws no content and takes no touches — if it never
+            renders (iOS < 26, a failed native mount) the RN row above is still
+            the whole working control. */}
+        {nativeGlass && (
+          <GlassPillRow
+            widths={targets}
+            activeIndex={activeIndex}
+            gap={gap}
+            open={shown}
+            height={HUB_PILL.height}
+            tintColor={withAlpha(C.lime, 0.34)}
+            // Straight from the shared tokens rather than off the resolved
+            // transitions above: the native layer only ever runs when motion is
+            // NOT reduced, and these are the two springs `hubMotion` hands the
+            // RN layer in that case.
+            spring={HUB_DOCK_SPRINGS.exchange}
+            splitSpring={HUB_DOCK_SPRINGS.reveal}
+          />
+        )}
+
         {TODAY_TABS.map((tab, i) => {
           const on = tab.id === value;
           const label = t(tab.labelKey);
           return (
-            // Two layers, because the pill runs two independent motions: the
-            // wrapper carries the ARRIVAL (the staggered split, outward from
-            // the active pill), the pill inside carries the EXCHANGE. Sharing
-            // one node would make every selection inherit the split's delay.
-            <SplitStagger key={tab.id} shown={shown} reduced={reduced} delay={hubSplitDelay(i, activeIndex)}>
-              <Animated.View style={{ width: reduced ? HUB_PILL.siblingWidth : widths[i], height: HUB_PILL.height }}>
-                <PressScale
-                  noScale
-                  onPress={() => select(tab.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel={label}
-                  accessibilityState={{ selected: on }}
-                  style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: HUB_PILL.height / 2 }}
-                >
-                  {/* Liquid Glass on iOS, a translucent RN floor everywhere
-                      else — the same material the app's other floating chrome
-                      wears, so the dock reads as one family with it. */}
-                  {!reduced && <GlassSurface radius={HUB_PILL.height / 2} />}
+            <Animated.View
+              key={tab.id}
+              style={{
+                width: widths[i],
+                height: HUB_PILL.height,
+                // The gap is animated, not styled: it IS the split. Matching
+                // `padding(leading:)` on the glass beneath.
+                marginLeft: i === 0 ? 0 : split,
+              }}
+            >
+              <PressScale
+                noScale
+                onPress={() => select(tab.id)}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+                accessibilityState={{ selected: on }}
+                style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: HUB_PILL.height / 2 }}
+              >
+                {/* Off iOS (and under Reduce Motion) the pill still needs a
+                    body of its own: a translucent ink floor, and the accent as
+                    a film. On iOS both are IN the glass — a tinted pane rather
+                    than a coloured sheet behind one — so nothing is drawn here
+                    and the native material is what you see. */}
+                {!nativeGlass && (
                   <View
                     style={[
                       StyleSheet.absoluteFill,
                       {
                         borderRadius: HUB_PILL.height / 2,
-                        backgroundColor: on
-                          ? withAlpha(C.lime, reduced ? 0.14 : 0.13)
-                          : reduced || LIQUID_GLASS_SUPPORTED
-                            ? "transparent"
-                            : withAlpha(C.ink2, 0.86),
+                        backgroundColor: on ? withAlpha(C.lime, reduced ? 0.14 : 0.13) : reduced ? "transparent" : withAlpha(C.ink2, 0.86),
                         borderWidth: reduced ? 0 : 1,
                         borderColor: on ? withAlpha(C.lime, 0.46) : C.line,
                       },
                     ]}
                   />
-                  <HubGlyph name={tab.glyph} color={on ? txt(C, C.lime) : C.ash} size={HUB_PILL.glyph} />
-                  {on && (
-                    <Text numberOfLines={1} style={[LABEL, { color: txt(C, C.lime), marginLeft: HUB_PILL.labelGap }]}>
-                      {label}
-                    </Text>
-                  )}
-                </PressScale>
-              </Animated.View>
-            </SplitStagger>
+                )}
+                <HubGlyph name={tab.glyph} color={on ? txt(C, C.lime) : C.ash} size={HUB_PILL.glyph} />
+                {on && (
+                  <Text numberOfLines={1} style={[LABEL, { color: txt(C, C.lime), marginLeft: HUB_PILL.labelGap }]}>
+                    {label}
+                  </Text>
+                )}
+              </PressScale>
+            </Animated.View>
           );
         })}
       </View>
     </Animated.View>
   );
-}
-
-/**
- * One pill's arrival. Siblings land a beat after the pill you are IN, outward
- * from it (hubSplitDelay), so the split reads as one object opening rather
- * than three appearing. Under reduced motion there is no scale and no stagger — the row
- * is simply there.
- */
-function SplitStagger({ shown, reduced, delay, children }: { shown: boolean; reduced: boolean; delay: number; children: React.ReactNode }) {
-  const scale = useRef(new Animated.Value(shown || reduced ? 1 : 0.86)).current;
-  useEffect(() => {
-    if (reduced) { scale.setValue(1); return; }
-    const m = hubMotion(shown ? "split" : "conceal", reduced);
-    Animated.timing(scale, {
-      toValue: shown ? 1 : 0.86,
-      duration: m.ms,
-      delay: shown ? delay : 0,
-      easing: Easing.bezier(...m.bezier),
-      useNativeDriver: true,
-    }).start();
-  }, [shown, reduced, delay, scale]);
-  return <Animated.View style={{ transform: [{ scale }] }}>{children}</Animated.View>;
 }
 
 export default TodayHubPills;
