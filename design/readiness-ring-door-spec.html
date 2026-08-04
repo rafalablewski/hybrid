@@ -1,0 +1,413 @@
+<title>Readiness — the deficit ring and the door (01 + 07)</title>
+<style>
+  :root {
+    /* HYBRID brand tokens — packages/core/src/theme/tokens.ts */
+    --ink: #0c0d0c; --ink2: #141614; --line: #2a2d2a; --line2: #22251f;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime: #c6f84f; --blue: #6cb6bd; --amber: #d0cd94; --red: #e58a5c;
+
+    --pg: #101210; --pg2: #171a17; --pg-line: #262a26;
+    --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-warn: #e58a5c;
+
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: Archivo, "Helvetica Neue", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-warn: #a8501f; }
+  }
+  :root[data-theme="dark"] { --pg: #101210; --pg2: #171a17; --pg-line: #262a26; --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-warn: #e58a5c; }
+  :root[data-theme="light"] { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-warn: #a8501f; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--pg); color: var(--pg-text); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 36px) clamp(56px, 9vw, 96px); }
+
+  h1 { margin: 14px 0 0; font-size: clamp(30px, 4.4vw, 46px); font-weight: 800; letter-spacing: -.03em; line-height: 1.03; text-wrap: balance; max-width: 21ch; }
+  h2.sec { margin: 0; font-size: clamp(20px, 2.2vw, 26px); font-weight: 800; letter-spacing: -.024em; }
+  .kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--pg-mute); }
+  .lede { margin: 18px 0 0; max-width: 68ch; color: var(--pg-mute); font-size: clamp(15px, 1.4vw, 17px); }
+  .lede b { color: var(--pg-text); font-weight: 600; }
+  p.note { margin: 12px 0 0; max-width: 66ch; color: var(--pg-mute); font-size: 14px; }
+  p.note b { color: var(--pg-text); font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; color: var(--pg-text); }
+
+  .band { margin-top: clamp(34px, 5vw, 58px); border-top: 1px solid var(--pg-line); padding-top: 18px; }
+
+  /* ── the live composite ── */
+  .stage { margin-top: 22px; display: grid; grid-template-columns: minmax(320px, 400px) minmax(280px, 1fr); gap: clamp(20px, 3vw, 44px); align-items: start; }
+  @media (max-width: 780px) { .stage { grid-template-columns: 1fr; } }
+
+  .phone { background: var(--ink); border: 1px solid var(--pg-line); border-radius: 30px; padding: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 28px; padding: 18px; background: var(--ink2); color: var(--chalk); }
+  .lbl { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); }
+  .hr { height: 1px; background: var(--line); margin: 14px 0; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .col { display: flex; flex-direction: column; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .verdictline { font-size: 17px; font-weight: 700; letter-spacing: -.015em; color: var(--chalk); text-wrap: balance; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .05em;
+          background: color-mix(in srgb, var(--red) 12%, transparent); border: 1px solid color-mix(in srgb, var(--red) 34%, transparent); color: var(--red); }
+
+  .door { width: 100%; margin-top: 15px; padding: 12px 2px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ash);
+          display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;
+          font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
+  .door:hover { color: var(--chalk); }
+  .door:focus-visible { outline: 2px solid var(--lime); outline-offset: 4px; border-radius: 8px; }
+  .door b { color: var(--chalk); font-weight: 600; display: inline-flex; align-items: center; gap: 7px; }
+  .door .chev { transition: transform .22s ease; display: inline-block; }
+  .door[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+  .drawer { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+  .drawer > div { overflow: hidden; }
+  .door[aria-expanded="true"] + .drawer { grid-template-rows: 1fr; }
+  @media (prefers-reduced-motion: reduce) { .drawer, .door .chev { transition: none; } }
+
+  .ledger { display: grid; grid-template-columns: auto 1fr auto; gap: 9px 12px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--ash); padding-top: 15px; }
+  .ledger .v { text-align: right; font-variant-numeric: tabular-nums; }
+  .ledger .sw { width: 9px; height: 9px; border-radius: 2px; display: block; }
+  .ledger .sep { grid-column: 1 / -1; height: 1px; background: var(--line); }
+  .ledger .tot { color: var(--chalk); font-weight: 700; }
+  .prose { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.55; color: var(--ash); }
+  .prov { margin-top: 12px; font-family: var(--mono); font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ash); opacity: .75; }
+
+  /* ── anatomy callouts ── */
+  .anat { display: flex; flex-direction: column; gap: 0; }
+  .anat li { list-style: none; display: grid; grid-template-columns: 26px 1fr; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--pg-line); }
+  .anat li:first-child { border-top: 1px solid var(--pg-line); }
+  .anat .k { font-family: var(--mono); font-size: 11px; color: var(--pg-accent); padding-top: 2px; }
+  .anat h4 { margin: 0 0 4px; font-size: 14.5px; font-weight: 700; letter-spacing: -.01em; }
+  .anat p { margin: 0; font-size: 13.5px; color: var(--pg-mute); }
+
+  /* ── states row ── */
+  .states { margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px; align-items: start; }
+  .state .cap { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--pg-mute); margin-bottom: 10px; }
+  .state .why { margin-top: 10px; font-size: 13px; color: var(--pg-mute); }
+  .state .why b { color: var(--pg-text); font-weight: 600; }
+  .mini { background: var(--ink); border: 1px solid var(--pg-line); border-radius: 24px; padding: 11px; }
+  .mini .card { padding: 15px; border-radius: 22px; }
+  .mini .verdictline { font-size: 14.5px; }
+  .mini .pill { font-size: 10px; padding: 4px 10px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; color: var(--ash); }
+  .legend i { display: block; width: 8px; height: 8px; border-radius: 2px; flex: none; }
+
+  /* ── spec table ── */
+  .tablewrap { overflow-x: auto; margin-top: 20px; }
+  table { border-collapse: collapse; width: 100%; min-width: 660px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 11px 16px 11px 0; border-bottom: 1px solid var(--pg-line); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--pg-mute); font-weight: 400; }
+  td.m { font-family: var(--mono); font-size: 12px; color: var(--pg-mute); }
+  td b { font-weight: 600; }
+
+  ul.plain { margin: 14px 0 0; padding-left: 18px; max-width: 68ch; color: var(--pg-mute); font-size: 14.5px; }
+  ul.plain li { margin-bottom: 8px; }
+  ul.plain li b { color: var(--pg-text); font-weight: 600; }
+
+  .cols2 { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 26px 40px; }
+  .cols2 section { border-top: 1px solid var(--pg-line); padding-top: 13px; }
+  .cols2 h3 { margin: 0 0 7px; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  .cols2 p { margin: 0 0 9px; font-size: 13.5px; color: var(--pg-mute); }
+  .cols2 p:last-child { margin-bottom: 0; }
+  .cols2 code { font-size: 12.5px; }
+</style>
+
+<div class="wrap">
+  <div class="kicker">HYBRID — design spec — performance tab, readiness</div>
+  <h1>The deficit ring, and the door behind it</h1>
+  <p class="lede">Concept <b>01</b> and concept <b>07</b> aren't alternatives — they're the front and the back of one card. The ring stops being a gauge and becomes an <b>account of the missing 33</b>, so the explanation and the number are the same object. The door keeps every honest sentence <code>readinessWhy()</code> writes today, one tap below.</p>
+  <p class="lede">At rest: <b>one arc, six words, one pill</b>. Opened: the full derivation, unedited. Nothing is deleted from the product — only from the default view.</p>
+
+  <div class="band">
+    <h2 class="sec">The card</h2>
+    <p class="note">Tap the door. This is the real interaction, at phone width, in the product's own skin.</p>
+
+    <div class="stage">
+      <div class="phone">
+        <div class="card">
+          <div class="lbl">Today — readiness</div>
+
+          <div class="row" style="gap: 18px; margin-top: 14px; align-items: center;">
+            <svg width="118" height="118" viewBox="0 0 100 100" role="img"
+                 aria-label="Readiness 67 of 100. Missing 33 points: back fatigue 22, conditioning 8, short sleep 3.">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="10"></circle>
+              <g transform="rotate(-90 50 50)" fill="none">
+                <circle cx="50" cy="50" r="40" stroke="#c6f84f" stroke-width="10" stroke-dasharray="166.4 251.3" stroke-dashoffset="0"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-width="7" stroke-dasharray="53.3 251.3" stroke-dashoffset="-168.4"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#6cb6bd" stroke-width="7" stroke-dasharray="18.1 251.3" stroke-dashoffset="-223.7"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#d0cd94" stroke-width="7" stroke-dasharray="5.5 251.3" stroke-dashoffset="-243.8"></circle>
+              </g>
+              <text x="50" y="52" text-anchor="middle" font-family="ui-monospace, monospace" font-size="30" font-weight="700" fill="#f3f4ef">67</text>
+              <text x="50" y="66" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7.5" letter-spacing="1.4" fill="#8b8f86">READY</text>
+            </svg>
+            <div class="col" style="gap: 9px; flex: 1; min-width: 0;">
+              <span class="verdictline">Back's the limiter today.</span>
+              <span class="pill" style="align-self: flex-start;">Deloaded to 85%, −1 set</span>
+            </div>
+          </div>
+
+          <button class="door" type="button" aria-expanded="false" aria-controls="drawer-main" id="door-main">
+            <span>Where the 33 went</span>
+            <b>3 reasons <span class="chev">⌄</span></b>
+          </button>
+          <div class="drawer" id="drawer-main" role="region" aria-labelledby="door-main">
+            <div>
+              <div class="ledger">
+                <i class="sw" style="background:#e58a5c"></i><span>Back fatigue <span class="num" style="color:#e58a5c">81/100</span></span><span class="v" style="color:#e58a5c">−22</span>
+                <i class="sw" style="background:#6cb6bd"></i><span>Conditioning load <span class="num" style="color:#6cb6bd">39/100</span></span><span class="v" style="color:#6cb6bd">−8</span>
+                <i class="sw" style="background:#d0cd94"></i><span>HRV down, sleep short</span><span class="v" style="color:#d0cd94">−3</span>
+                <div class="sep"></div>
+                <i></i><span class="tot">Readiness</span><span class="v tot">67</span>
+              </div>
+              <div class="prose">
+                <span>Computed from your logged training: back fatigue (81/100) is the main drag today.</span>
+                <span>Energy-system load from recent conditioning sits at 39/100.</span>
+                <span>Your wearable nudged readiness −3 today — HRV dipped and sleep ran short.</span>
+              </div>
+              <div class="prov">From your last 14 days of logged training</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="kicker" style="margin-bottom: 14px;">Anatomy</div>
+        <ul class="anat" style="margin: 0; padding: 0;">
+          <li>
+            <span class="k">A</span>
+            <div>
+              <h4>The kept arc</h4>
+              <p>67 points, in the readiness role colour from <code>readinessRole()</code> — lime at 80+, blue 60–79, amber 40–59, red below. It's the same ring the athlete already knows from Today, so nothing has to be re-learned.</p>
+            </div>
+          </li>
+          <li>
+            <span class="k">B</span>
+            <div>
+              <h4>The deficit arcs</h4>
+              <p>One per cause, sized by points cost, drawn clockwise <b>largest first</b>. Tissue is always the red, the engine always the blue, the wearable always the amber — so a cause keeps its colour across every surface that names it.</p>
+            </div>
+          </li>
+          <li>
+            <span class="k">C</span>
+            <div>
+              <h4>The verdict</h4>
+              <p>Six words, naming the top cause only. It is the one sentence that survives, because it's the one an athlete would say out loud.</p>
+            </div>
+          </li>
+          <li>
+            <span class="k">D</span>
+            <div>
+              <h4>The consequence</h4>
+              <p>The existing nudge pill, unchanged, in the feeling's own accent. Kept because it's the only element that tells you what to <em>do</em>.</p>
+            </div>
+          </li>
+          <li>
+            <span class="k">E</span>
+            <div>
+              <h4>The door</h4>
+              <p>Counts what's actually behind it — "3 reasons", never a fixed number. Opening it reveals the ledger the ring just drew, then the engine's sentences verbatim, then the provenance line.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <h2 class="sec">The states that decide whether it's a real design</h2>
+    <p class="note">A ring that only works at 67 with a wearable connected isn't a design, it's a screenshot. Four cases, each with its own honest shape.</p>
+
+    <div class="states">
+      <div class="state">
+        <div class="cap">Fresh — nothing to subtract</div>
+        <div class="mini">
+          <div class="card">
+            <div class="lbl">Today — readiness</div>
+            <div class="row" style="gap: 14px; margin-top: 12px;">
+              <svg width="86" height="86" viewBox="0 0 100 100" role="img" aria-label="Readiness 91 of 100, nothing meaningful subtracted">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="10"></circle>
+                <g transform="rotate(-90 50 50)" fill="none">
+                  <circle cx="50" cy="50" r="40" stroke="#c6f84f" stroke-width="10" stroke-dasharray="226.2 251.3"></circle>
+                  <circle cx="50" cy="50" r="40" stroke="#6cb6bd" stroke-width="7" stroke-dasharray="20.6 251.3" stroke-dashoffset="-228.7"></circle>
+                </g>
+                <text x="50" y="52" text-anchor="middle" font-family="ui-monospace, monospace" font-size="28" font-weight="700" fill="#f3f4ef">91</text>
+                <text x="50" y="66" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7" letter-spacing="1.3" fill="#8b8f86">READY</text>
+              </svg>
+              <div class="col" style="gap: 8px; flex: 1;">
+                <span class="verdictline">Nothing's holding you back.</span>
+                <span class="pill" style="align-self: flex-start; background: color-mix(in srgb, var(--lime) 12%, transparent); border-color: color-mix(in srgb, var(--lime) 34%, transparent); color: var(--lime);">Full load</span>
+              </div>
+            </div>
+            <div class="door" style="cursor: default;"><span>Where the 9 went</span><b>1 reason ⌄</b></div>
+          </div>
+        </div>
+        <p class="why">The ring is <b>almost whole and says so</b>. The verdict flips positive rather than hunting for a complaint — today's block manages this well and the redesign must not lose it.</p>
+      </div>
+
+      <div class="state">
+        <div class="cap">No wearable connected</div>
+        <div class="mini">
+          <div class="card">
+            <div class="lbl">Today — readiness</div>
+            <div class="row" style="gap: 14px; margin-top: 12px;">
+              <svg width="86" height="86" viewBox="0 0 100 100" role="img" aria-label="Readiness 72 of 100 from logged training only">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="10"></circle>
+                <g transform="rotate(-90 50 50)" fill="none">
+                  <circle cx="50" cy="50" r="40" stroke="#6cb6bd" stroke-width="10" stroke-dasharray="178.5 251.3"></circle>
+                  <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-width="7" stroke-dasharray="47.8 251.3" stroke-dashoffset="-181"></circle>
+                  <circle cx="50" cy="50" r="40" stroke="#6cb6bd" stroke-width="7" stroke-dasharray="17.6 251.3" stroke-dashoffset="-231.2" opacity=".6"></circle>
+                </g>
+                <text x="50" y="52" text-anchor="middle" font-family="ui-monospace, monospace" font-size="28" font-weight="700" fill="#f3f4ef">72</text>
+                <text x="50" y="66" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7" letter-spacing="1.3" fill="#8b8f86">READY</text>
+              </svg>
+              <div class="col" style="gap: 8px; flex: 1;">
+                <span class="verdictline">Quads are the limiter.</span>
+                <span class="pill" style="align-self: flex-start; background: color-mix(in srgb, var(--amber) 12%, transparent); border-color: color-mix(in srgb, var(--amber) 34%, transparent); color: var(--amber);">Deloaded to 92%</span>
+              </div>
+            </div>
+            <div class="door" style="cursor: default;"><span>Where the 28 went</span><b>2 reasons ⌄</b></div>
+          </div>
+        </div>
+        <p class="why">Two arcs, not three, and <b>no empty slot where the wearable would be</b>. The drawer's last line becomes the connect prompt, which is the only place a sales line belongs.</p>
+      </div>
+
+      <div class="state">
+        <div class="cap">Empty log — the honest zero</div>
+        <div class="mini">
+          <div class="card">
+            <div class="lbl">Today — readiness</div>
+            <div class="row" style="gap: 14px; margin-top: 12px;">
+              <svg width="86" height="86" viewBox="0 0 100 100" role="img" aria-label="Resting baseline, nothing logged yet">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#2a2d2a" stroke-width="10" stroke-dasharray="4 7" stroke-linecap="round"></circle>
+                <text x="50" y="53" text-anchor="middle" font-family="ui-monospace, monospace" font-size="24" font-weight="700" fill="#8b8f86">—</text>
+                <text x="50" y="67" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7" letter-spacing="1.3" fill="#8b8f86">BASELINE</text>
+              </svg>
+              <div class="col" style="gap: 8px; flex: 1;">
+                <span class="verdictline" style="color: var(--ash); font-size: 13.5px; font-weight: 500;">Nothing logged yet, so there's nothing to subtract. Log a session and this comes from your own training.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="why">A dashed, unfilled ring, no figure, <b>no door</b> — because there are no reasons behind it. This is the block's best existing quality and it survives intact.</p>
+      </div>
+
+      <div class="state">
+        <div class="cap">Wrecked — the deficit dominates</div>
+        <div class="mini">
+          <div class="card">
+            <div class="lbl">Today — readiness</div>
+            <div class="row" style="gap: 14px; margin-top: 12px;">
+              <svg width="86" height="86" viewBox="0 0 100 100" role="img" aria-label="Readiness 34 of 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="10"></circle>
+                <g transform="rotate(-90 50 50)" fill="none">
+                  <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-width="10" stroke-dasharray="83 251.3"></circle>
+                  <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-width="7" stroke-dasharray="95.5 251.3" stroke-dashoffset="-85.5" opacity=".6"></circle>
+                  <circle cx="50" cy="50" r="40" stroke="#6cb6bd" stroke-width="7" stroke-dasharray="42.5 251.3" stroke-dashoffset="-186"></circle>
+                  <circle cx="50" cy="50" r="40" stroke="#d0cd94" stroke-width="7" stroke-dasharray="15.5 251.3" stroke-dashoffset="-233.5"></circle>
+                </g>
+                <text x="50" y="52" text-anchor="middle" font-family="ui-monospace, monospace" font-size="28" font-weight="700" fill="#f3f4ef">34</text>
+                <text x="50" y="66" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7" letter-spacing="1.3" fill="#8b8f86">READY</text>
+              </svg>
+              <div class="col" style="gap: 8px; flex: 1;">
+                <span class="verdictline">Hamstrings are cooked.</span>
+                <span class="pill" style="align-self: flex-start;">Deloaded to 70%, −2 sets</span>
+              </div>
+            </div>
+            <div class="door" style="cursor: default;"><span>Where the 66 went</span><b>3 reasons ⌄</b></div>
+          </div>
+        </div>
+        <p class="why">The kept arc is now the <em>minority</em> of the ring and reads as red via <code>readinessRole()</code>. <b>Severity is carried by shape</b>, before any number is read.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <h2 class="sec">What has to be built</h2>
+    <p class="note">The card is the easy half. The honest half is the engine: today <code>computeReadiness</code> returns a score, and no function in <code>packages/core</code> can say what the missing 33 was spent on.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Piece</th><th>Where</th><th>What it is</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>readinessDeficit()</b></td>
+            <td class="m">packages/core/src/engines/readiness.ts</td>
+            <td>Returns <code>{ kept, costs: [{ key, label, points, role, detail }] }</code>. Unit-tested on one law: <b>kept plus every cost sums to 100, exactly</b>. If it can't be attributed it goes to a single "other" cost rather than being silently dropped.</td>
+          </tr>
+          <tr>
+            <td><b>readinessRingArcs()</b></td>
+            <td class="m">packages/core/src/engines/readiness.ts</td>
+            <td>Deficit → dash arrays and offsets, the way <code>trajectoryPlot</code> already hands both clients one shape. Enforces the minimum visible arc and the gap.</td>
+          </tr>
+          <tr>
+            <td><b>readinessVerdict()</b></td>
+            <td class="m">packages/core/src/engines/readiness.ts</td>
+            <td>The six-word line, as an i18n key plus its substitution — never a pre-baked English string. Positive form when nothing is subtracted.</td>
+          </tr>
+          <tr>
+            <td><b>The card</b></td>
+            <td class="m">aurora/performance.tsx, both clients</td>
+            <td>Replaces lines 308–333 on web and its mobile mirror. Web draws SVG, mobile draws the same arcs with the kit's <code>Ring</code>.</td>
+          </tr>
+          <tr>
+            <td><b>The drawer</b></td>
+            <td class="m">both clients</td>
+            <td>Ledger, then <code>readinessWhy()</code> verbatim, then provenance. The existing lines move here unedited — the door is the only thing between them and the athlete.</td>
+          </tr>
+          <tr>
+            <td><b>Copy</b></td>
+            <td class="m">packages/core/src/i18n-*/home.ts</td>
+            <td>New keys for the verdict, the door and the cost labels, in all shipped languages. The pill's keys are untouched.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cols2">
+      <section>
+        <h3>Rules the arcs obey</h3>
+        <p><b>Minimum arc.</b> Anything under 3 points still renders at a 3-point width, and the shortfall is taken off the largest arc — so a −1 wearable nudge is visible without ever being mistaken for a big one.</p>
+        <p><b>Four arcs maximum.</b> Beyond that the smallest merge into one neutral "other" arc, and the drawer itemises them. A ring with six slices is a pie chart, and a pie chart is not an instrument.</p>
+        <p><b>The kept arc is the only full-width one</b> (10 against 7). It has to be, because the kept arc takes the readiness role colour and the tissue cost takes red — on a bad day both are red. Weight, not hue, is what says which part of the ring is still yours.</p>
+        <p><b>Order is fixed, not sorted by value.</b> Kept, then tissue, then engine, then wearable — always. If the order changed with the numbers, the card would stop being learnable, which is the whole reason we're moving off prose.</p>
+      </section>
+      <section>
+        <h3>Motion, and the amount of it</h3>
+        <p>The kept arc sweeps once on entry (about 420ms, ease-out), the deficits draw after it in one 180ms beat. That is the entire budget. The sweep is doing work — it shows the deficit being taken off a whole — so it earns itself; anything more would be decoration.</p>
+        <p>Under <code>prefers-reduced-motion</code> the ring renders complete, no sweep. The drawer's open is a height transition on both clients, matching the sheet motion already used elsewhere.</p>
+      </section>
+      <section>
+        <h3>What gets deleted</h3>
+        <p>Three of the four sentences leave the default view. The fourth becomes the verdict. Roughly <b>110 vertical pixels</b> come back on a phone, which is most of a card.</p>
+        <p>Nothing leaves the <em>product</em>: every sentence the engine writes is still reachable in one tap, still computed the same way, still refusing to invent a session on an empty log.</p>
+      </section>
+      <section>
+        <h3>The risk worth naming</h3>
+        <p>An attribution split can be wrong in a way prose never was. "Back fatigue is the main drag" is safe; "back fatigue cost you 22 points" is a claim the engine must be able to defend.</p>
+        <p>That's the price of the design, and it's the right price — a number that shows its work is worth more than a sentence that doesn't. But it means <code>readinessDeficit()</code> ships with its own tests before a pixel of the card does.</p>
+      </section>
+    </div>
+  </div>
+
+  <div class="band">
+    <h2 class="sec">Order of work</h2>
+    <ul class="plain">
+      <li><b>The door first, alone.</b> Concept 07 needs no engine change — move the existing lines behind a disclosure, ship it on both clients, and the block drops from 38 words to 10 this week.</li>
+      <li><b>Then <code>readinessDeficit()</code> plus its tests</b>, with nothing rendering it. The sum law is the gate.</li>
+      <li><b>Then the ring</b>, replacing the disclosure's static ledger with the drawn one. The layout doesn't move; the ring simply starts carrying what the ledger was saying.</li>
+      <li><b>Then <code>capabilities.ts</code></b>, in the same change that ships each step — as the rule requires.</li>
+    </ul>
+    <p class="note">Sequenced this way, every step is independently shippable and the athlete never sees a half-built card.</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll(".door[aria-controls]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") === "true" ? "false" : "true");
+    });
+  });
+</script>
