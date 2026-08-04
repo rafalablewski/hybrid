@@ -181,7 +181,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
               {rows.map((r) => (
                 <View key={r.muscle} style={{ flex: 1 }}>
                   <ShapeColumn s={r} color={zoneColor(r.zone)} dim={false} />
-                  <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.7, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
                 </View>
               ))}
             </View>

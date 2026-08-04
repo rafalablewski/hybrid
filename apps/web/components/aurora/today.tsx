@@ -564,8 +564,21 @@ export default function AuroraToday({
     // is lifted into its own view-transition group and held perfectly still —
     // only the content BELOW it dissolves. See globals.css THE TODAY HUB.
     <div className="motion-hub-chrome">
-      {/* HEADER — profile, HYBRID wordmark, bell */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      {/* HEADER — profile, the HYBRID LOCKUP, bell.
+          THREE COLUMNS, FIXED FLANKS. The row used to be `space-between`,
+          which centres its middle child only when both flanks weigh the
+          same — and they never did: one 44px tile on the left against a
+          streak pill plus the bell on the right, so the brand sat ~69px
+          left of the screen's centre and slid further with every extra
+          digit. `44px 1fr 44px` centres the wordmark BY CONSTRUCTION,
+          whatever the flanks carry.
+          THE STREAK LEFT THE ROW and became the lockup's second line — a
+          hairline mono caption under the wordmark. It survives on all three
+          hub tabs (they render this same header), it can never push the
+          brand off centre again, and it costs NO height: wordmark (19) +
+          caption (~17) still sits inside the 44px the tiles already set.
+          Mirrors mobile home.tsx. */}
+      <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center", height: 44 }}>
         <button className="pressable"
           onClick={() => (onNavigate ? onNavigate("profile") : router.push("/profile"))}
           aria-label={t("w.home.today.profileAria")}
@@ -573,29 +586,28 @@ export default function AuroraToday({
         >
           {initials}
         </button>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifySelf: "center" }}>
           <div style={{ fontWeight: 900, fontSize: 19, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
             HYBRID<span style={{ color: "var(--lime-text)" }}>.</span>
           </div>
-        </div>
-        {/* right group — the day-streak pill + the notifications bell */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {acc.streak.current > 0 && (
             // SPECTRUM: the streak wears the warm terracotta accent (Connect),
-            // pairing with the flame and keeping chartreuse for the primary action.
-            <button className="pressable" onClick={() => setDoneOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 44, background: `color-mix(in srgb, ${C("red")} 14%, transparent)`, color: "var(--red-text)", border: `1px solid color-mix(in srgb, ${C("red")} 40%, transparent)`, borderRadius: 999, padding: "0 12px", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>
-              <AuroraIcon name="flame" size={13} color="var(--red-text)" /> {acc.streak.current}{t("w.home.today.dayStreak")}
+            // pairing with the flame and keeping chartreuse for the primary
+            // action. Same destination as the retired pill — the done sheet.
+            <button className="pressable" onClick={() => setDoneOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 3, padding: "2px 8px", background: "none", border: "none", color: "var(--red-text)", fontFamily: "var(--font-mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: ".13em", textTransform: "uppercase", whiteSpace: "nowrap", cursor: "pointer" }}>
+              <AuroraIcon name="flame" size={11} color="var(--red-text)" />
+              {acc.streak.current}{t("w.home.today.dayStreak")}
             </button>
           )}
-          <button className="pressable" onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
-            <AuroraIcon name="bell" size={20} color={C("ash")} />
-            {notifCount > 0 && (
-              <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 999, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
-                {notifCount > 9 ? "9+" : notifCount}
-              </span>
-            )}
-          </button>
         </div>
+        <button className="pressable" onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
+          <AuroraIcon name="bell" size={20} color={C("ash")} />
+          {notifCount > 0 && (
+            <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 999, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
+              {notifCount > 9 ? "9+" : notifCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the

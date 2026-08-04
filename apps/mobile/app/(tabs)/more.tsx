@@ -45,6 +45,10 @@ const HREF: Record<string, Href> = {
   analytics: "/analytics",
   statistics: "/statistics",
   volume: "/volume",
+  // The one hyphenated nav id. Its route has existed since Volume gained its
+  // own model screen; the springboard entry was missed because the parity
+  // guard's scan couldn't see a hyphen (see apps/web/__tests__/parity.test.ts).
+  "volume-model": "/volume-model",
   exercises: "/exercises",
   trends: "/trends",
   velocity: "/velocity",

@@ -4,7 +4,8 @@ import { performanceTrajectory, stateVerdict } from "./performance-state";
 import { computeHpi } from "./hpi";
 import { computeFatigue } from "./fatigue";
 import { prsBetween } from "./recap";
-import type { Biometrics, LoggedSession } from "./types";
+import type { Biometrics } from "./types";
+import type { LoggedSession } from "./session";
 
 const DAY = 86_400_000;
 const NOW = Date.parse("2026-08-04T12:00:00.000Z");
