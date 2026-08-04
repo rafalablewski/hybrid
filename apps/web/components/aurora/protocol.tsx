@@ -91,7 +91,12 @@ export function useRtpProtocols() {
 
 export type AreaTone = { fill: string; stroke: string; fillOpacity: number };
 
-const PICK_TONE: AreaTone = { fill: "var(--color-ash)", stroke: "var(--color-line)", fillOpacity: 0.22 };
+// A pickable area has to read as MORE than silhouette or the affordance is
+// invisible — the first render of this figure had both at a whisper of ash and
+// the seven live regions disappeared into the body. The tracked areas carry a
+// real stroke and roughly three times the fill of the outline beneath them.
+const PICK_TONE: AreaTone = { fill: "var(--color-ash)", stroke: "color-mix(in srgb, var(--color-ash) 62%, transparent)", fillOpacity: 0.3 };
+const HOVER_TONE: AreaTone = { fill: "var(--color-chalk)", stroke: "var(--color-chalk)", fillOpacity: 0.42 };
 const PICKED_TONE: AreaTone = { fill: "var(--color-chalk)", stroke: "var(--color-chalk)", fillOpacity: 0.9 };
 
 export function InjuryBody({
@@ -137,6 +142,7 @@ function Figure({
 }) {
   const { x, y, w, h } = INJURY_VIEWBOX;
   const live = !!onSelect;
+  const [hover, setHover] = useState<MuscleGroup | null>(null);
 
   // A touch anywhere on the figure resolves to the NEAREST tracked area, so a
   // thumb never has to find a 5-unit-wide triceps. A touch near nothing
@@ -164,10 +170,12 @@ function Figure({
       <circle cx={fig.head.cx} cy={fig.head.cy} r={fig.head.r} fill={C("ash")} opacity={0.12} stroke={C("line")} strokeWidth={0.5} />
       {fig.areas.map((area) => {
         const on = selected === area.group;
-        const tone = on ? PICKED_TONE : toneOf?.(area.group) ?? PICK_TONE;
+        const tone = on ? PICKED_TONE : live && hover === area.group ? HOVER_TONE : toneOf?.(area.group) ?? PICK_TONE;
         return (
           <g
             key={area.group}
+            onMouseEnter={live ? () => setHover(area.group) : undefined}
+            onMouseLeave={live ? () => setHover(null) : undefined}
             role={live ? "radio" : undefined}
             aria-checked={live ? on : undefined}
             aria-label={live ? labelOf(area.group) : undefined}
@@ -184,8 +192,8 @@ function Figure({
                 fill={tone.fill}
                 fillOpacity={tone.fillOpacity}
                 stroke={tone.stroke}
-                strokeWidth={on ? 1 : 0.6}
-                style={{ transition: "fill-opacity .18s ease, stroke .18s ease" }}
+                strokeWidth={on ? 1.1 : 0.8}
+                style={{ transition: "fill .18s ease, fill-opacity .18s ease, stroke .18s ease" }}
               />
             ))}
           </g>
@@ -200,7 +208,7 @@ export function RiskBody({ byTissue, onPick }: { byTissue: Record<string, Tissue
   const { t } = useLang();
   const toneOf = (g: MuscleGroup): AreaTone => {
     const ti = byTissue[g];
-    if (!ti || ti.risk <= 0) return { fill: C("ash"), stroke: C("line"), fillOpacity: 0.16 };
+    if (!ti || ti.risk <= 0) return { fill: C("ash"), stroke: `color-mix(in srgb, ${C("ash")} 45%, transparent)`, fillOpacity: 0.2 };
     const hex = roleVarOf(ti.band);
     return { fill: hex, stroke: hex, fillOpacity: 0.22 + 0.5 * Math.min(1, ti.risk / 100) };
   };

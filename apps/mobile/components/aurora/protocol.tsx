@@ -67,7 +67,11 @@ export function InjuryBody({
   );
 }
 
-const PICK_TONE = (C: Palette): AreaTone => ({ fill: C.ash, stroke: C.line, fillOpacity: 0.22 });
+// A pickable area has to read as MORE than silhouette or the affordance is
+// invisible — the first render of this figure had both at a whisper of ash and
+// the seven live regions disappeared into the body. The tracked areas carry a
+// real stroke and roughly three times the fill of the outline beneath them.
+const PICK_TONE = (C: Palette): AreaTone => ({ fill: C.ash, stroke: `${C.ash}9e`, fillOpacity: 0.3 });
 const PICKED_TONE = (C: Palette): AreaTone => ({ fill: C.chalk, stroke: C.chalk, fillOpacity: 0.9 });
 
 function Figure({
@@ -123,7 +127,7 @@ function Figure({
                 fill={tone.fill}
                 fillOpacity={tone.fillOpacity}
                 stroke={tone.stroke}
-                strokeWidth={on ? 1 : 0.6}
+                strokeWidth={on ? 1.1 : 0.8}
               />
             ))}
           </G>
@@ -151,7 +155,7 @@ export function RiskBody({ byTissue, onPick }: { byTissue: Record<string, Tissue
   const { t } = useLang();
   const toneOf = (g: MuscleGroup): AreaTone => {
     const ti = byTissue[g];
-    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: C.line, fillOpacity: 0.16 };
+    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: `${C.ash}73`, fillOpacity: 0.2 };
     const hex = roleColor(C, riskRole(ti.band));
     return { fill: hex, stroke: hex, fillOpacity: 0.22 + 0.5 * Math.min(1, ti.risk / 100) };
   };
