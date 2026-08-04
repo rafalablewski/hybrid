@@ -1,6 +1,7 @@
 import type { CardioBlock, CardioDiscipline, LoggedSession } from "./engines/session";
 import { topLoadSeries, paceSeries, type PacePoint } from "./engines/session";
 import { blockDiscipline } from "./engines/running";
+import { activeDisciplines } from "./endurance";
 import { exerciseHistory } from "./engines/records";
 import {
   exerciseDashboard,
@@ -258,27 +259,50 @@ export function movementsTrained(sessions: LoggedSession[], now = Date.now()): n
  * in order), then auto-fill so DIFFERENT purposes lead — the most-trained
  * strength lift, cardio move and conditioning move of the last 8 weeks (falling
  * back to all-time), then overall frequency up to `max`.
+ *
+ * ONE DISCIPLINE, ONE HOME (`deferToLanes`). This rail is about MOVEMENTS; the
+ * Endurance block beneath it is about DISCIPLINES. When both render, a swim was
+ * appearing in each — as a card reading "38:36 /km" (the window's best) and as
+ * a lane reading "3:52 /100m" (the latest week's mean), 250dp apart, with
+ * nothing on either saying which was which. Where a discipline already has a
+ * lane carrying five tiles of its own depth, the rail hands it over and spends
+ * the slot on the next real movement.
+ *
+ * The exclusion applies to AUTO-FILL only: an explicitly favourited movement is
+ * a choice the athlete made, and a de-duplication rule does not get to overrule
+ * it. The caller decides whether to defer, because it knows whether the lanes
+ * are on screen (Today gates them on the athlete persona; the exercises SCREEN
+ * has no lanes at all) — but the lane SET is derived here, from the same
+ * `activeDisciplines` the lanes themselves are built from, so the two can't
+ * disagree about which disciplines have a home.
  */
 export function exerciseWidgetCards(
   sessions: LoggedSession[],
-  opts: { max?: number; favourites?: string[]; now?: number; bw?: BodyweightInput } = {},
+  opts: { max?: number; favourites?: string[]; now?: number; bw?: BodyweightInput; deferToLanes?: boolean } = {},
 ): ExerciseWidgetCard[] {
-  const { max = 3, favourites = [], now = Date.now(), bw } = opts;
+  const { max = 3, favourites = [], now = Date.now(), bw, deferToLanes = false } = opts;
   const history = exerciseHistory(sessions);
   if (history.length === 0) return [];
   const recent = new Map(history.map((e) => [e.name, sessionCount(sessions, e.name, now, WIDGET_WINDOW_DAYS)]));
   // most-trained first: 8-week count, then all-time count
   const ranked = [...history].sort((a, b) => (recent.get(b.name)! - recent.get(a.name)!) || (b.count - a.count));
 
+  const owned = deferToLanes ? new Set(activeDisciplines(sessions).map((d) => d.discipline)) : null;
+  const hasLane = (e: { name: string; kind: string }): boolean => {
+    if (!owned || e.kind !== "cardio") return false;
+    const d = moveDiscipline(sessions, e.name);
+    return d != null && owned.has(d);
+  };
+
   const picked: string[] = favourites.filter((f) => history.some((e) => e.name === f)).slice(0, max);
   for (const kind of ["strength", "cardio", "conditioning"] as const) {
     if (picked.length >= max) break;
-    const top = ranked.find((e) => e.kind === kind && !picked.includes(e.name));
+    const top = ranked.find((e) => e.kind === kind && !picked.includes(e.name) && !hasLane(e));
     if (top) picked.push(top.name);
   }
   for (const e of ranked) {
     if (picked.length >= max) break;
-    if (!picked.includes(e.name)) picked.push(e.name);
+    if (!picked.includes(e.name) && !hasLane(e)) picked.push(e.name);
   }
 
   const cards: ExerciseWidgetCard[] = [];

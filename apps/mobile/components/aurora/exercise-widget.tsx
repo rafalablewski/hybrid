@@ -75,16 +75,23 @@ export default function ExerciseWidgetRail({
   sessions,
   onOpen,
   onAll,
+  /** True when the Endurance lanes render on this screen. A discipline that
+   *  already has a lane keeps its five tiles of depth there and is left out of
+   *  this rail's auto-fill, so a swim is not a card AND a lane reading two
+   *  different figures in two different units. An explicit favourite still
+   *  appears — see core exerciseWidgetCards. */
+  deferToLanes = false,
 }: {
   sessions: LoggedSession[];
   onOpen: (name: string) => void;
   onAll: () => void;
+  deferToLanes?: boolean;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
-  const cards = useMemo(() => exerciseWidgetCards(sessions, { bw }), [sessions, bw]);
+  const cards = useMemo(() => exerciseWidgetCards(sessions, { bw, deferToLanes }), [sessions, bw, deferToLanes]);
   // The head's coverage denominator — movements trained inside the rail's OWN
   // 8-week window, so the fraction is a fraction of the same thing the cards
   // are rather than two scopes in one sentence.

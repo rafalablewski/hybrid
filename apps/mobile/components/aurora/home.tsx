@@ -1053,6 +1053,7 @@ export default function AuroraHome() {
         {sessions.length > 0 && (
           <ExerciseWidgetRail
             sessions={sessions}
+            deferToLanes={isAthlete}
             onOpen={(name) => router.push(`/exercise?name=${encodeURIComponent(name)}`)}
             onAll={() => router.push("/exercises")}
           />
