@@ -1779,7 +1779,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <View key={i} style={{ flexDirection: "row", gap: 12, paddingVertical: 16, borderTopWidth: 1, borderTopColor: C.line }}>
             {/* The number is the STEP ORDER — method is genuinely a sequence, so
                 this encodes something true rather than decorating the list. */}
-            <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 22 }}>{i + 1}</Text>
+            {/* The number shares the STEP BODY's leading (not its own), so the
+                digit sits on the first line of the text beside it. */}
+            <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.note) }}>{i + 1}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: leading(fs.note), color: C.chalk }}>{s.text}</Text>
               {s.timerSec != null ? (

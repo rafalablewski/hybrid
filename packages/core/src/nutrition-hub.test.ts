@@ -30,7 +30,7 @@ const session = (dayAgo: number, mins: number): LoggedSession => ({
   title: "Run",
   startedAt: new Date(addLocalDays(localMidnightMs(NOW), -dayAgo) + 17 * 3_600_000).toISOString(),
   completedAt: null,
-  blocks: [{ kind: "cardio", name: "Run", discipline: "run", minutes: mins, distance: mins / 5 }],
+  blocks: [{ kind: "cardio", name: "Run", discipline: "running", minutes: mins, distance: mins / 5 }],
 });
 
 const baseSignals = () => [
