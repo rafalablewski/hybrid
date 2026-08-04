@@ -1,25 +1,22 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { View, Text, TextInput, type DimensionValue } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { View, Text, Animated, Easing, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
 import {
+  springs, springToRN, durations,
   volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
-  measuredProfile, withMeasured, measuredFields,
   volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY, LEVEL_BASIS_KEY,
   formatPace, paceClock,
   VOLUME_PROFILE_FIELD_KEY, fmtWeight,
   sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   provenanceLadder, rungMeta, factorAffectsKey,
-  readReports, placeReads, QUICK_CHECKIN_METRIC,
-  type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
-  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type Experience,
-  type RecoveryReport, type LandmarkFactor, type LandmarkSource, type WeightUnit,
+  type MuscleVolumeStatus, type VolumeZone, type MuscleGroup, type VolumeBandKey,
+  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
+  type LandmarkFactor, type LandmarkSource, type WeightUnit,
 } from "@hybrid/core";
-import { useSessionsQuery, useCheckinsQuery } from "../../lib/queries";
+import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
-import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "../../lib/use-bodyweight";
 import { setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
@@ -28,7 +25,9 @@ import { leading, fs, space, F, serifIf, FIXED_FONT_SCALE, PressScale as Pressab
 import { AuroraScreen, ACard, AHeading, ASection, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
 import { HeroAccessory } from "./hero";
+import Sheet from "./sheet";
 import { haptic } from "../../lib/haptics";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
@@ -42,33 +41,42 @@ const pct = (v: number): DimensionValue => `${v * 100}%` as DimensionValue;
  * The redesign leads with ONE hero: how many muscles are in range, drawn as a
  * seven-column week-shape you read before you read a word. Everything below it
  * is the same fact at increasing resolution — the week's prescription, then the
- * per-muscle rails, then (only if you ask) the landmark numbers and the
- * glossary. The rail geometry is normalised in @hybrid/core (`railX`) so every
- * muscle's band lands at the same x and the rows stack into one picture.
- * Mirrored by apps/web/components/aurora/volume.tsx.
+ * per-muscle rails, then (only if you ask) whose numbers these are. The rail
+ * geometry is normalised in @hybrid/core (`railX`) so every muscle's band lands
+ * at the same x and the rows stack into one picture.
+ * Mirrors apps/web/components/aurora/volume.tsx.
+ *
+ * TWO DEPTHS, ONE SURFACE. The compact block used to answer "5/7 in range" and
+ * then PUSH A SCREEN for the block ramp, the prescription and the muscle rails
+ * — a full navigation to read the detail of the card you were already looking
+ * at, with the shape you had just read left behind. The detail now EASES OPEN
+ * UNDERNEATH the shape instead (a measured height on the sheet spring, the same
+ * drawer the Activity card's figures pull out — see week-verdict.tsx), so "ease
+ * off" and "by muscle" arrive in place, under the columns that raised the
+ * question, and closing puts them back.
  *
  * The landmarks come from ONE core call (`athleteLandmarks`), which layers
  * population table → profile estimate → what the log observed → the athlete's
  * own edits, and hands back the provenance so this screen never presents a
- * population average as a personal fact.
+ * population average as a personal fact. That provenance — and the working
+ * behind it — is a DIFFERENT KIND of question from "what should I do this
+ * week", so it is dispatched as a Sheet rather than stacked as a seventh card
+ * at the foot of the reading.
  */
-export default function AuroraVolume({ top, unified = false, compact = false, onOpen, onOpenModel }: {
+export default function AuroraVolume({ top, unified = false, compact = false, onOpenModel }: {
   top?: ReactNode;
   /** True when these sections render INSIDE another page rather than as their
    *  own screen: no AuroraScreen wrapper (the page owns the scroller) and the
    *  page title demotes to a section head. Every section, control and number is
    *  otherwise identical. */
   unified?: boolean;
-  /** COMPACT — the hero week-shape and a door, nothing else. This is what the
-   *  Performance page carries: "5/7 in range", the seven columns, the verdict
-   *  naming names, and the way in. Everything else in this file is a
-   *  programming tool with a chart grammar of its own and belongs behind that
-   *  door, entered on purpose. The landmarks are resolved by the SAME code
-   *  either way, so the summary and the screen can never disagree.
-   *  Mirrors apps/web/components/aurora/volume.tsx. */
+  /** COMPACT — the hero week-shape, and the rest of the screen folded into a
+   *  drawer under it. This is what the Performance page carries: "5/7 in
+   *  range", the seven columns, the verdict naming names, and — on request, in
+   *  place — the block, the prescription and the rails. The landmarks are
+   *  resolved by the SAME code either way, so the card and the screen can never
+   *  disagree. Mirrors apps/web/components/aurora/volume.tsx. */
   compact?: boolean;
-  /** Where the compact block's door goes. */
-  onOpen?: () => void;
   /** Where the "edit the model" door goes — the settings route that owns the
    *  landmark fields, the profile form and the model switches. They used to be
    *  ~50 controls revealed inside this read surface by an edit toggle. */
@@ -83,17 +91,28 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
   // ONE resolution, shared with the settings route that edits this model
   // (lib/use-volume-model.ts) — so an edit and its effect can never be computed
   // two different ways.
-  const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved, setProfile } = useVolumeModel(sessions);
+  const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved } = useVolumeModel(sessions);
   const lm = resolved.landmarks;
+
+  // THE DRAWER, and the sheet the provenance is dispatched to. `deep` is the
+  // one flag the expensive passes read: a Performance page that only wants the
+  // week's shape pays for the week's shape, and everything heavier is bought
+  // the moment the athlete opens the detail. Once opened the detail STAYS
+  // MOUNTED — unmounting it on close would give the collapse nothing to
+  // collapse, and the passes are already paid for.
+  const [drawer, setDrawer] = useState(false);
+  const [everOpen, setEverOpen] = useState(false);
+  const [source, setSource] = useState(false);
+  const deep = !compact || everOpen;
 
   // HAS THE CEILING SETTLED? The same resolver re-run at every week of the
   // athlete's own history — a screen-level computation, deliberately memoised
   // apart from `resolved` because it costs one resolve per replayed week.
   const replay = useMemo(
     () =>
-      // Never in compact mode: one landmark resolve per week of the athlete's
-      // history, for rows the compact block never renders.
-      prefs.adaptiveLandmarks && !compact
+      // Not until the detail is open: one landmark resolve per week of the
+      // athlete's history, for rows a closed drawer never renders.
+      prefs.adaptiveLandmarks && deep
         ? testedMuscles(
             replayLandmarks(sessions, recovery, {
               profile,
@@ -103,7 +122,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
             }),
           )
         : [],
-    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery, deep],
   );
 
   const block = useMemo(() => resolveBlock(prefs.volumeBlock), [prefs.volumeBlock]);
@@ -128,11 +147,11 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
   // thought, and the athlete no longer picks a muscle in two places.
   const history = useMemo(() => {
     const out = {} as Record<MuscleGroup, number[]>;
-    // Seven eight-week passes for rows the compact block never renders.
-    if (compact) return out;
+    // Seven eight-week passes for rows a closed drawer never renders.
+    if (!deep) return out;
     for (const r of rows) out[r.muscle] = weeklyMuscleSets(sessions, r.muscle, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
     return out;
-  }, [rows, sessions, compact, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
+  }, [rows, sessions, deep, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
 
   const [open, setOpen] = useState<MuscleGroup | null>(null);
   const [picked, setPicked] = useState<MuscleGroup | null>(null);
@@ -157,7 +176,57 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
     return `${parts.join(t("w.analyze.vol.verdictJoin"))}.`;
   })();
 
-  // COMPACT — the hero shape and a door. The verdict NAMES NAMES here: the
+  // ── THE DETAIL ────────────────────────────────────────────────────────────
+  // Everything behind the week-shape, authored ONCE and rendered at two
+  // weights: `flat` sections divided by hairlines inside the compact card's
+  // drawer, or the screen's own stack of cards. Same components, same numbers —
+  // the drawer is not a summary of the screen, it IS the screen.
+  const detail = (flat: boolean) => (
+    <>
+      {/* ── WHERE THIS WEEK SITS IN THE BLOCK ───────────────────────────────── */}
+      <BlockCard flat={flat} lead={flat} block={block} ramp={blockRamp(block, lm)} on={prefs.periodizeVolume} />
+
+      {/* ── THE WEEK'S PRESCRIPTION — verb + magnitude, said once ───────────── */}
+      <Prescription
+        flat={flat} title={t("w.analyze.vol.easeOff")} why={t("w.analyze.vol.easeOffWhy")}
+        items={summary.over} color={C.red} ml={ml} unit={t("w.analyze.vol.perWeek")}
+      />
+      <Prescription
+        flat={flat} title={t("w.analyze.vol.addVolume")} why={t("w.analyze.vol.addVolumeWhy")}
+        items={summary.under} color={C.amber} ml={ml} unit={t("w.analyze.vol.perWeek")}
+      />
+
+      {/* ── BY MUSCLE — one legend, then the stack of comparable rails ──────── */}
+      {!summary.empty && (
+        <ByMuscle
+          flat={flat} rows={ranked} ml={ml} zoneColor={zoneColor} targetFor={targetFor} history={history}
+          open={open} setOpen={setOpen} zone={zone} pickZone={pickZone}
+        />
+      )}
+
+      {/* ── WHOSE NUMBERS THESE ARE — a door, not a seventh card ────────────── */}
+      <SourceDoor flat={flat} onOpen={() => { haptic.selection(); setSource(true); }} />
+    </>
+  );
+
+  // The provenance and the working, dispatched. They answer "where did these
+  // come from", which is a different question from "what do I do this week" —
+  // stacked under the prescription they were read as more of the prescription.
+  // Leaving for the model editor from INSIDE the sheet has to close it on the
+  // way out. The sheet is a Modal in its own native window, so pushing a route
+  // underneath leaves the panel sitting over the screen it just sent you to.
+  const openModelFromSheet = onOpenModel ? () => { setSource(false); onOpenModel(); } : undefined;
+  const sourceSheet = (
+    <Sheet visible={source} onClose={() => setSource(false)} title={t("w.analyze.vol.whose")} detents={["medium", "large"]}>
+      <SourceBody
+        resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys}
+        adaptive={prefs.adaptiveLandmarks} onOpenModel={openModelFromSheet} ml={ml}
+        level={levelEstimate} experience={experience} units={prefs.units}
+      />
+    </Sheet>
+  );
+
+  // COMPACT — the hero shape and the drawer. The verdict NAMES NAMES here: the
   // shape above it already says that something is out of range, so the sentence
   // has to say what and by how much, which is the one thing the columns can't.
   if (compact) {
@@ -191,12 +260,30 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
             </Text>
           </>
         )}
-        {onOpen && (
-          <Pressable onPress={onOpen} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.cockpit.volumeDoor")}</Text>
-            <CtaLabel label={`${t("w.analyze.vol.title")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} style={{ marginLeft: "auto" }} />
-          </Pressable>
+        {!summary.empty && (
+          <>
+            <Pressable
+              onPress={() => { haptic.selection(); setEverOpen(true); setDrawer((v) => !v); }}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: drawer }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.cockpit.volumeDoor")}</Text>
+              <CtaLabel
+                label={drawer ? t("w.analyze.vol.hideDetail") : t("w.analyze.vol.title")}
+                color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} style={{ marginLeft: "auto" }}
+              />
+              {/* The chevron ROTATES rather than swapping glyph, so the control
+                  reads as the same object in two states. */}
+              <Chevron open={drawer} />
+            </Pressable>
+
+            {/* THE DRAWER — the block, the prescription and the rails slide out
+                from under the shape that raised the question. */}
+            <Drawer open={drawer}>{everOpen ? detail(true) : null}</Drawer>
+          </>
         )}
+        {sourceSheet}
       </ACard>
     );
   }
@@ -281,49 +368,15 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         )}
       </ACard>
 
-      {/* ── WHERE THIS WEEK SITS IN THE BLOCK ─────────────────────────────── */}
-      <BlockCard block={block} ramp={blockRamp(block, lm)} on={prefs.periodizeVolume} />
-
-      {/* ── THE WEEK'S PRESCRIPTION — verb + magnitude, said once ─────────── */}
-      <Prescription
-        title={t("w.analyze.vol.easeOff")} why={t("w.analyze.vol.easeOffWhy")}
-        items={summary.over} color={C.red} ml={ml} unit={t("w.analyze.vol.perWeek")}
-      />
-      <Prescription
-        title={t("w.analyze.vol.addVolume")} why={t("w.analyze.vol.addVolumeWhy")}
-        items={summary.under} color={C.amber} ml={ml} unit={t("w.analyze.vol.perWeek")}
-      />
-
-      {/* ── BY MUSCLE — one legend, then the stack of comparable rails ────── */}
-      {!summary.empty && (
-        <ACard solid style={{ marginTop: 16 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-            <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
-          </View>
-
-          <View style={{ marginTop: 4 }}>
-            {ranked.map((r) => (
-              <MuscleRow
-                key={r.muscle} s={r} label={ml(r.muscle)} color={zoneColor(r.zone)}
-                target={targetFor(r.muscle)} history={history[r.muscle] ?? []}
-                expanded={open === r.muscle}
-                zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
-                onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
-                onZone={(k) => pickZone(k, r.muscle)}
-              />
-            ))}
-          </View>
-        </ACard>
-      )}
-
-      {/* ── WHOSE NUMBERS THESE ARE — provenance, then the profile behind it ─ */}
-      <SourceCard resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} onOpenModel={onOpenModel} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
+      {/* The block, the prescription, the rails and the provenance door — the
+          SAME nodes the compact card's drawer carries, at card weight. */}
+      {detail(false)}
 
       {/* THE GLOSSARY IS GONE — every band value on every muscle row already
           spotlights that band across the list and prints its definition beside
           the pointer. Mirrors web. */}
 
+      {sourceSheet}
     </>
   );
 
@@ -340,6 +393,196 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
     >
       {body}
     </AuroraScreen>
+  );
+}
+
+/**
+ * One section of the detail, at whichever weight its host wants.
+ *
+ * On the screen each section is its own CARD; inside the compact card's drawer
+ * they are FLAT — divided by a hairline, because a card inside a card reads as
+ * a bug. Nothing else differs, so a section can never drift between the two
+ * places it appears. Mirrors apps/web/components/aurora/volume.tsx.
+ */
+function Panel({ flat, lead = false, children, style }: {
+  flat: boolean; lead?: boolean; children: ReactNode; style?: StyleProp<ViewStyle>;
+}) {
+  const { palette: C } = useTheme();
+  if (!flat) return <ACard solid style={[{ marginTop: 16 }, style]}>{children}</ACard>;
+  return (
+    <View style={[{ marginTop: lead ? 18 : 20, paddingTop: lead ? 0 : 20, borderTopWidth: lead ? 0 : 1, borderTopColor: C.line }, style]}>
+      {children}
+    </View>
+  );
+}
+
+/**
+ * A DISCLOSURE THAT MOVES — the one way anything on this screen opens.
+ *
+ * Every fold on the Volume surface runs this: the compact card's detail, "Show
+ * the working" inside the provenance sheet, a muscle row's floor and history,
+ * and the band definition under a spotlight. They were three `{open && …}`
+ * conditionals that POPPED inside a card that eases, which reads as three
+ * different mechanisms rather than one idea at different scales.
+ *
+ * The web twin gets the movement from a 0fr → 1fr grid row (globals.css
+ * `.motion-drawer`); RN has no such thing, so the panel is MEASURED and its
+ * height interpolated on the SAME sheet spring, and once the opening has
+ * settled the height goes back to `auto` — otherwise content that grows inside
+ * an already-open drawer (a muscle row expanding inside the open detail) would
+ * be clipped to a height measured before it grew, which is exactly the bug a
+ * fixed measured height invites.
+ *
+ * The content MOUNTS on first open and stays: a collapse needs something to
+ * collapse, and a fold nobody has opened should not pay to lay out — seven
+ * muscle rows each carrying an eight-week chart is not free on a phone.
+ */
+function Drawer({ open, children }: { open: boolean; children: ReactNode }) {
+  const reduced = useReducedMotion();
+  const [panelH, setPanelH] = useState(0);
+  const [settled, setSettled] = useState(false);
+  const grow = useRef(new Animated.Value(0)).current;
+  // Latched in RENDER, not in an effect. An effect commits one frame too late:
+  // the content would not be laid out yet, `panelH` would still be 0, and the
+  // animation below would bail — so every open would wait for a second layout
+  // pass before it started moving.
+  const mounted = useRef(open);
+  if (open) mounted.current = true;
+
+  // `settled` mirrored into a ref so the guard below can read it WITHOUT making
+  // it a dependency. As a dep it would re-run this effect the moment a close
+  // clears it — restarting the closing timing halfway through its own run.
+  const settledRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) { settledRef.current = false; setSettled(false); }
+    // Already open and settled: the height is `auto`, so a re-measure (a muscle
+    // row expanding INSIDE this drawer) has nothing to animate. Left unguarded
+    // this restarts the spring on every layout pass of the content.
+    if (open && settledRef.current) return undefined;
+    // Reduce Motion SUBSTITUTES a cross-dissolve for the travel: the drawer
+    // takes its height at once and fades in. Never an instant cut — the user
+    // still has to perceive that something opened.
+    if (reduced) {
+      Animated.timing(grow, { toValue: open ? 1 : 0, duration: durations.reduced, easing: Easing.linear, useNativeDriver: false }).start();
+      return undefined;
+    }
+    // Nothing to animate to until the content has been measured once.
+    if (open && panelH <= 0) return undefined;
+    const anim = open
+      ? Animated.spring(grow, { toValue: 1, useNativeDriver: false, ...springToRN(springs.sheet) })
+      : Animated.timing(grow, { toValue: 0, duration: durations.fast, easing: Easing.in(Easing.cubic), useNativeDriver: false });
+    anim.start(({ finished }) => { if (finished && open) { settledRef.current = true; setSettled(true); } });
+    return () => anim.stop();
+  }, [open, panelH, reduced, grow]);
+
+  const sized = reduced
+    ? { height: open ? undefined : 0 }
+    : settled
+      ? null
+      : { height: grow.interpolate({ inputRange: [0, 1], outputRange: [0, panelH], extrapolate: "clamp" as const }) };
+
+  return (
+    <Animated.View
+      style={[{ overflow: "hidden", opacity: settled ? 1 : grow }, sized]}
+      pointerEvents={open ? "auto" : "none"}
+      /* Staying mounted is what buys the collapse — but a clipped panel is
+         still in the accessibility tree, so a closed drawer would hand
+         VoiceOver a section that isn't on screen. The web twin reaches this
+         with one `inert` attribute; RN needs both platforms named. */
+      accessibilityElementsHidden={!open}
+      importantForAccessibility={open ? "auto" : "no-hide-descendants"}
+    >
+      {/* Measured on EVERY layout, not just the first — the interpolation's
+          target has to follow content that changed while the drawer was open. */}
+      <View onLayout={(e) => setPanelH(Math.round(e.nativeEvent.layout.height))}>{mounted.current ? children : null}</View>
+    </Animated.View>
+  );
+}
+
+/** The drawer's chevron. It ROTATES rather than swapping glyph, so the control
+ *  reads as the same object in two states — and it turns on the same spring the
+ *  drawer opens on, so the two are one movement. */
+function Chevron({ open }: { open: boolean }) {
+  const { palette: C } = useTheme();
+  const reduced = useReducedMotion();
+  const spin = useRef(new Animated.Value(open ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduced) { spin.setValue(open ? 1 : 0); return; }
+    Animated.spring(spin, { toValue: open ? 1 : 0, useNativeDriver: true, ...springToRN(springs.sheet) }).start();
+  }, [open, reduced, spin]);
+  return (
+    <Animated.Text
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      style={{
+        fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginLeft: 6,
+        transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "-180deg"] }) }],
+      }}
+    >
+      ↓
+    </Animated.Text>
+  );
+}
+
+/** BY MUSCLE — the legend, then the stack of comparable rails. */
+function ByMuscle({ flat, rows, ml, zoneColor, targetFor, history, open, setOpen, zone, pickZone }: {
+  flat: boolean;
+  rows: MuscleVolumeStatus[];
+  ml: (m: string) => string;
+  zoneColor: (z: VolumeZone) => string;
+  targetFor: (m: MuscleGroup) => BlockMuscleTarget | null;
+  history: Record<MuscleGroup, number[]>;
+  open: MuscleGroup | null;
+  setOpen: (m: MuscleGroup | null) => void;
+  zone: { key: VolumeBandKey; muscle: MuscleGroup } | null;
+  pickZone: (k: VolumeBandKey, m: MuscleGroup) => void;
+}) {
+  const { palette: C, scheme } = useTheme();
+  const { t } = useLang();
+  return (
+    <Panel flat={flat}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+        <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
+      </View>
+
+      <View style={{ marginTop: 4 }}>
+        {rows.map((r) => (
+          <MuscleRow
+            key={r.muscle} s={r} label={ml(r.muscle)} color={zoneColor(r.zone)}
+            target={targetFor(r.muscle)} history={history[r.muscle] ?? []}
+            expanded={open === r.muscle}
+            zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
+            onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
+            onZone={(k) => pickZone(k, r.muscle)}
+          />
+        ))}
+      </View>
+    </Panel>
+  );
+}
+
+/** The way into the provenance sheet. A row, not a card: "where did these come
+ *  from" is a question the reading raises, not another part of the reading. */
+function SourceDoor({ flat, onOpen }: { flat: boolean; onOpen: () => void }) {
+  const { palette: C, scheme } = useTheme();
+  const { t } = useLang();
+  return (
+    <Panel flat={flat}>
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`${t("w.analyze.vol.whose")} – ${t("w.analyze.vol.showWork")}`}
+        style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
+          <Text style={{ marginTop: 4, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.showWork")}</Text>
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
+      </Pressable>
+    </Panel>
   );
 }
 
@@ -364,13 +607,13 @@ function ShapeColumn({ s, color, dim }: { s: MuscleVolumeStatus; color: string; 
 
 /** "Ease off" / "Add volume" — the prescription as chips, with the reason said
  *  ONCE underneath instead of repeated verbatim on every muscle. */
-function Prescription({ title, why, items, color, ml, unit }: {
-  title: string; why: string; items: MuscleVolumeStatus[]; color: string; ml: (m: string) => string; unit: string;
+function Prescription({ flat, title, why, items, color, ml, unit }: {
+  flat: boolean; title: string; why: string; items: MuscleVolumeStatus[]; color: string; ml: (m: string) => string; unit: string;
 }) {
   const { palette: C, scheme } = useTheme();
   if (!items.length) return null;
   return (
-    <ACard solid style={{ marginTop: 16 }}>
+    <Panel flat={flat}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{unit}</Text>
@@ -384,7 +627,7 @@ function Prescription({ title, why, items, color, ml, unit }: {
         ))}
       </View>
       <Text style={{ marginTop: 16, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{why}</Text>
-    </ACard>
+    </Panel>
   );
 }
 
@@ -403,28 +646,6 @@ function Toggle({ on, label, onPress }: { on: boolean; label: string; onPress: (
   );
 }
 
-/** A −/+ stepper for the small integer block settings. */
-function Stepper({ label, value, suffix, min, max, onChange }: {
-  label: string; value: number; suffix?: string; min: number; max: number; onChange: (v: number) => void;
-}) {
-  const { palette: C } = useTheme();
-  const btn = { width: 34, height: 34, borderRadius: 12, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line };
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-      <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{label}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${label} −`} onPress={() => onChange(Math.max(min, value - 1))} style={btn}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>−</Text>
-        </Pressable>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, minWidth: 52, textAlign: "center" }}>{value}{suffix ? ` ${suffix}` : ""}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${label} +`} onPress={() => onChange(Math.min(max, value + 1))} style={btn}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>+</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
 /**
  * THIS BLOCK — the week you're in, and the block drawn as a ramp.
  *
@@ -432,14 +653,14 @@ function Stepper({ label, value, suffix, min, max, onChange }: {
  * the step down of the deload. Switched off, the card is just the case for
  * turning it on, so the landmark view stays exactly as it was.
  */
-function BlockCard({ block, ramp, on }: {
-  block: VolumeBlock; ramp: RampColumn[]; on: boolean;
+function BlockCard({ flat, lead, block, ramp, on }: {
+  flat: boolean; lead: boolean; block: VolumeBlock; ramp: RampColumn[]; on: boolean;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const current = ramp.find((c) => c.current) ?? ramp[0];
   return (
-    <ACard solid style={{ marginTop: 16 }}>
+    <Panel flat={flat} lead={lead}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.thisBlock")}</Text>
         <Toggle on={on} label={t("w.analyze.vol.periodize")} onPress={() => setLoggerPref("periodizeVolume", !on)} />
@@ -469,7 +690,7 @@ function BlockCard({ block, ramp, on }: {
 
         </>
       )}
-    </ACard>
+    </Panel>
   );
 }
 
@@ -488,9 +709,16 @@ const FACTOR_FIELD: Partial<Record<LandmarkFactor["key"], keyof AthleteVolumePro
 const RUNG_H = 38;
 
 /**
- * WHOSE NUMBERS ARE THESE.
+ * WHOSE NUMBERS ARE THESE — the body of the provenance SHEET.
  *
- * The card answers three questions, in the order an athlete actually asks them,
+ * It used to be the seventh card at the foot of the Volume screen, where it
+ * read as more of the prescription. It is dispatched as a sheet now: the
+ * question is asked ABOUT the reading, from anywhere the reading appears (the
+ * screen, or the compact card's drawer on Performance), and it is answered
+ * without the athlete losing their place. The sheet's own header carries the
+ * title, so this body starts straight at the ladder.
+ *
+ * The body answers three questions, in the order an athlete actually asks them,
  * and gives each one a different weight rather than stacking six paragraphs at
  * the same size:
  *
@@ -510,7 +738,7 @@ const RUNG_H = 38;
  *
  * Mirrored by apps/web/components/aurora/volume.tsx.
  */
-function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenModel, ml, level, experience, units }: {
+function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenModel, ml, level, experience, units }: {
   resolved: ReturnType<typeof athleteLandmarks>;
   /** The ceiling's own history, muscles the log has actually tested. */
   tested: LandmarkReplay[];
@@ -539,21 +767,17 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
   // opens on the spot — its own state, so reaching for it here doesn't expand
   // every landmark field on the muscle rows above.
   const [work, setWork] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const field = { textAlign: "center" as const, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 8 };
   const subhead = { fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk } as const;
   const prose = { fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash } as const;
 
   return (
-    <ACard solid style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
-
+    <View>
       {/* ── THE LADDER ──────────────────────────────────────────────────────
           Four rungs in the order the engine applies them, lit as far as the
           evidence reaches. The lit spine is the whole answer: a column that
           stops at rung one says "textbook averages" far more plainly than the
           caption that used to sit up here fighting the title for the same row. */}
-      <View style={{ marginTop: 14 }} accessibilityRole="radiogroup">
+      <View accessibilityRole="radiogroup">
         {ladder.map((r) => {
           const on = r.source === shown;
           const meta = rungMeta(r);
@@ -598,8 +822,12 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
 
         {done.next ? (
           <>
+            {/* This row used to set an `aboutOpen` flag that NOTHING rendered —
+                the single most valuable thing the athlete could do next was a
+                control that did nothing when pressed, while its web twin opened
+                the model editor. It goes where web goes. */}
             <Pressable
-              onPress={() => { haptic.selection(); setAboutOpen(true); }}
+              onPress={() => { haptic.selection(); onOpenModel?.(); }}
               accessibilityRole="button"
               accessibilityLabel={`${t("w.analyze.vol.nextUp")}: ${t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}`}
               style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14 }}
@@ -632,7 +860,7 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
         </Pressable>
       </View>
 
-      {work && (
+      <Drawer open={work}>
         <>
           {/* YOUR LEVEL, FROM YOUR LIFTS. */}
           <View style={{ marginTop: 16 }}>
@@ -756,9 +984,9 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
             </View>
           )}
         </>
-      )}
+      </Drawer>
 
-    </ACard>
+    </View>
   );
 }
 
@@ -781,6 +1009,14 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
   const g = railGeometry(s);
   const sc = railScale(s.landmark);
   const region = zone ? bandRegion(zone, s.landmark) : null;
+  // The last band THIS ROW explained, held so its definition survives the
+  // collapse that dismissing the spotlight starts. Guarded on `showGloss` and
+  // not on `zone` alone: every row sees the spotlighted band, so the looser
+  // test would rewrite a closing row's line to a definition it was never
+  // showing the moment another row was tapped.
+  const held = useRef<VolumeBandKey>("mev");
+  if (zone && showGloss) held.current = zone;
+  const lastZone = held.current;
   // The block target sits on the SAME normalised rail as everything else, so
   // "where I am" and "where the plan wants me" are one glance, not two.
   const targetX = target ? railX(target.target, s.landmark) : null;
@@ -851,14 +1087,17 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
         })}
       </View>
 
-      {zone && showGloss && (
-        <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(GLOSS_KEY[zone])}</Text>
-      )}
+      {/* The definition of the spotlighted band, beside the finger. The band is
+          REMEMBERED through the collapse — reading `zone` straight would empty
+          the line the instant the spotlight is dismissed, and the drawer would
+          shut on nothing. */}
+      <Drawer open={!!zone && showGloss}>
+        <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(GLOSS_KEY[lastZone])}</Text>
+      </Drawer>
 
       {/* Expanding adds only what the scale above does NOT already say: the
-          maintenance floor and the prescription. Editing swaps in all five
-          fields, since all five are editable. */}
-      {expanded && (
+          maintenance floor and the prescription. */}
+      <Drawer open={expanded}>
         <View style={{ marginTop: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>MV {s.landmark.mv}</Text>
           {target && verdict && (
@@ -871,7 +1110,7 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
           <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{rowAdvice(s, t)}</Text>
           <MuscleHistory sets={history} />
         </View>
-      )}
+      </Drawer>
     </View>
   );
 }
