@@ -156,6 +156,24 @@ describe("prsBetween", () => {
     expect(prsBetween(sessions, NOW - 1 * DAY, NOW + DAY)).toEqual([]);
   });
 
+  it("carries the session that set it, so a record can open what's behind it", () => {
+    // The Activity card's promise is that a figure opens the sessions behind
+    // it; a record is a property of a session, so the hit names it.
+    const out = prsBetween(sessions, NOW - 7 * DAY, NOW + DAY);
+    expect(out[0]!.sessionId).toBe("s-Back Squat-2");
+    expect(out[0]!.at).toBe(Date.parse(at(2)));
+  });
+
+  it("names the session the KEPT record came from when a lift PRs twice", () => {
+    // Two records for one lift in one window collapse to the heaviest — the
+    // session id must follow that hit, not the one it replaced.
+    const twice = [lift(40, "Deadlift", 100), lift(5, "Deadlift", 110), lift(2, "Deadlift", 120)];
+    const out = prsBetween(twice, NOW - 7 * DAY, NOW + DAY);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.topLoad).toBe(120);
+    expect(out[0]!.sessionId).toBe("s-Deadlift-2");
+  });
+
   it("does not treat an older session as a PR just because the window starts there", () => {
     // The 20-day-old 110 kg WAS a PR at the time, so it reports in its window.
     const out = prsBetween(sessions, NOW - 25 * DAY, NOW - 10 * DAY);

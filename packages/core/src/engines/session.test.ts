@@ -20,6 +20,7 @@ import {
   paceClock,
   formatStrengthPr,
   strengthPrDelta,
+  strengthPrProof,
   migrateBlocks,
   canonicalizeBlockNames,
   inferBlockKind,
@@ -415,6 +416,52 @@ describe("strengthPrDelta", () => {
     expect(strengthPrDelta({ topLoad: 90, previousTopLoad: null }, labels)).toBe("first!");
     expect(strengthPrDelta({ topLoad: 90, previousTopLoad: 80 }, labels)).toBe("+10 kg");
     expect(strengthPrDelta({ topLoad: 90, previousTopLoad: 90 }, labels)).toBe("more reps");
+  });
+});
+
+describe("strengthPrProof", () => {
+  it("splits the climb so only the GAIN can take the accent", () => {
+    // The Activity card prints "from 82.5" in ash and "+7.5" in lime. A single
+    // joined string can't carry that split, which is why this exists next to
+    // strengthPrDelta rather than replacing it.
+    expect(strengthPrProof({ topLoad: 90, previousTopLoad: 82.5 }))
+      .toEqual({ kind: "climb", from: "82.5", delta: "+7.5" });
+  });
+
+  it("returns values BARE — the unit is on the figure above the caption", () => {
+    const p = strengthPrProof({ topLoad: 90, previousTopLoad: 82.5 });
+    expect(p.from).not.toContain("kg");
+    expect(p.delta).not.toContain("kg");
+  });
+
+  it("agrees with strengthPrDelta on which branch a hit is", () => {
+    const labels = { first: "first!", moreReps: "more reps" };
+    const cases = [
+      { topLoad: 90, previousTopLoad: null },
+      { topLoad: 90, previousTopLoad: 80 },
+      { topLoad: 90, previousTopLoad: 90 },
+    ];
+    const kinds = cases.map((c) => strengthPrProof(c).kind);
+    expect(kinds).toEqual(["first", "climb", "reps"]);
+    // Same three-way split, so the card and the summary can't disagree.
+    expect(cases.map((c) => strengthPrDelta(c, labels)))
+      .toEqual(["first!", "+10 kg", "more reps"]);
+  });
+
+  it("rounds the gain instead of leaking binary float noise", () => {
+    expect(strengthPrProof({ topLoad: 100.1, previousTopLoad: 95.3 }).delta).toBe("+4.8");
+  });
+
+  it("converts to the athlete's unit", () => {
+    expect(strengthPrProof({ topLoad: 100, previousTopLoad: 90 }, "lb"))
+      .toEqual({ kind: "climb", from: "198", delta: "+22" });
+  });
+
+  it("carries no from/delta on the shapes that have none", () => {
+    expect(strengthPrProof({ topLoad: 90, previousTopLoad: null }))
+      .toEqual({ kind: "first", from: null, delta: null });
+    expect(strengthPrProof({ topLoad: 90, previousTopLoad: 95 }))
+      .toEqual({ kind: "reps", from: null, delta: null });
   });
 });
 

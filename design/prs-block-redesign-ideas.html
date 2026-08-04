@@ -338,7 +338,7 @@
         </p>
         <ul class="facts">
           <li><span>Lines</span><b>4 → 1</b> (the section rule only)</li>
-          <li><span>Scale</span>13 px → <b>32 px</b>, tabular</li>
+          <li><span>Scale</span>13 px → <b>fs.display</b>, tabular</li>
           <li><span>Grammar</span>same as the tonnage / hours columns</li>
         </ul>
         <div class="demo">
@@ -669,7 +669,7 @@
         </div>
         <div class="tally">
           <span><b>1</b> hairline</span>
-          <span><b>32 px</b> the record</span>
+          <span><b>fs.display</b> the record</span>
           <span><b>0</b> new data</span>
         </div>
 
@@ -706,7 +706,7 @@
         </div>
         <div class="tally">
           <span><b>0</b> hairlines added</span>
-          <span><b>46 %</b> cell width — the third peeks</span>
+          <span><b>half the column</b> per cell</span>
           <span><b>24 px</b> dissolve at a live edge</span>
         </div>
       </div>
@@ -714,29 +714,30 @@
       <div>
         <ol class="steps">
           <li><span>01</span><span>Every hairline inside the block goes. The one rule that stays is the card's own section divider, which already separates the figures from what follows — that rule is load-bearing, the other three were decoration.</span></li>
-          <li><span>02</span><span>The record is set as a <b>figure</b>: mono, 32 px, 800, tabular, in the lime text token — the same treatment the tonnage and hours columns get, so the block reads as part of the card rather than an appendix.</span></li>
+          <li><span>02</span><span>The record is set as a <b>figure</b>: mono, <code>fs.display</code>, 800, tabular, in the lime text token — the same treatment the tonnage and hours columns get, so the block reads as part of the card rather than an appendix.</span></li>
           <li><span>03</span><span>Under each figure, the proof in ash: <b>from 82.5</b> with the delta in lime, <b>first time</b>, or <b>more reps</b>. All three shapes already come out of <code>strengthPrDelta</code>, so the wording can't drift from the session summary.</span></li>
           <li><span>04</span><span>At one or two records the cells sit still — <b>no rail, no fade, nothing to drag</b>. A single record takes the full width rather than leaving half the row empty; two split it. At three the same cells become a horizontal rail. One component, one cell, a switch on <code>prs.length</code>; a rail that can't move is worse than no rail.</span></li>
-          <li><span>05</span><span>Cells stay <b>46 %</b> wide in the rail, so two sit square in view and the third shows an edge. The peek is the affordance — nothing needs an arrow, a dot row or a "swipe" label to say it moves.</span></li>
+          <li><span>05</span><span>A cell is <b>half the content column</b> — the width the two-up grid gives it — so going from two records to three resizes nothing: the third simply appears past the right edge. The peek is the affordance — nothing needs an arrow, a dot row or a "swipe" label to say it moves.</span></li>
           <li><span>06</span><span>The edges <b>dissolve, and only where something is hidden</b>: 24 px of fade on the right while records remain, on the left once you've scrolled past the first, and none at all on an edge that has nothing behind it. A permanent fade on both sides is decoration; a conditional one is a status.</span></li>
           <li><span>07</span><span>Snap is <b>proximity, not mandatory</b> — a flick lands cleanly, a small drag is left where it was put. Same feel as the exercise-widget rail the athlete already knows.</span></li>
           <li><span>08</span><span>The kicker names the window ("Records this week", "Records in July") and each cell presses through to its session. Silence at zero is kept exactly as it is.</span></li>
         </ol>
 
         <p class="body">
-          <strong>The rail respects the card's padding — it does not bleed.</strong> The full-bleed rule is for
-          rails sitting directly on a screen, against the screen gutter; this one lives inside the Activity card,
-          and the rule's own exception says a rail inside a card keeps its container's padding. So the dissolve
-          happens at the content column, with the card's 16 px of quiet left intact between the fade and the
-          card's border.
+          <strong>The rail is full-bleed.</strong> Reading the component settled a question the mock couldn't:
+          this block is a <em>sibling</em> of the Activity card, not a child of it — it sits directly on the
+          screen, under the card, with only the screen gutter beside it. So the house rule applies in its
+          normal form: negative margins the width of the gutter with matching internal padding, and cards slide
+          under the physical screen edge. Resting cells still line up with the content column, and the dissolve
+          now happens at the true edge rather than mid-content, which is where a fade belongs.
         </p>
         <p class="body">
-          <strong>Per client.</strong> Web: <code>overflowX: "auto"</code>, <code>scrollSnapType: "x proximity"</code>,
-          <code>scrollbarWidth: "none"</code>, and the fade as a <code>maskImage</code> — the same dissolve idiom
-          already used on Today. Mobile: a horizontal <code>ScrollView</code> with
-          <code>decelerationRate="fast"</code> and <code>snapToInterval</code>, the fade as two
-          <code>LinearGradient</code> overlays from <code>C.card</code> to transparent, animated on the scroll
-          offset — the idiom <code>coach-rail.tsx</code> already ships. Both clients cap the rail at <b>eight</b>
+          <strong>Per client.</strong> Web: <code>overflowX: "auto"</code>, <code>scrollSnapType: "x proximity"</code> and the fade as a
+          <code>maskImage</code> driven by two <code>@property</code> lengths, so it eases rather than snaps
+          (<code>.pr-rail</code> in globals.css). Mobile: a horizontal <code>ScrollView</code> at
+          <code>decelerationRate="fast"</code> — the mobile twin of proximity snap, and the feel every other
+          rail in the app has — with the fade as two <code>LinearGradient</code> overlays in the SCREEN colour,
+          their opacity animated on the native driver; the idiom <code>coach-rail.tsx</code> already ships. Both clients cap the rail at <b>eight</b>
           records with a final <b>See all 23</b> cell into the drawer, so a year view can't become an endless drag.
         </p>
         <p class="body">
