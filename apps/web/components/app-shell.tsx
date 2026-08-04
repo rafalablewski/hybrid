@@ -62,6 +62,8 @@ const AuroraPerformance = dynamic(() => import("./aurora/performance"), { ssr: f
 const AuroraVideo = dynamic(() => import("./aurora/video"), { ssr: false });
 const AuroraLongevity = dynamic(() => import("./aurora/longevity"), { ssr: false });
 const AuroraVelocity = dynamic(() => import("./aurora/velocity"), { ssr: false });
+const AuroraVolume = dynamic(() => import("./aurora/volume"), { ssr: false });
+const AuroraTrends = dynamic(() => import("./aurora/trends"), { ssr: false });
 const AuroraExercises = dynamic(() => import("./aurora/exercises"), { ssr: false });
 const AuroraExercisePage = dynamic(() => import("./aurora/exercise-page"), { ssr: false });
 import { FIRST_RUN_TOUR } from "./tour";
@@ -881,16 +883,21 @@ export default function AppShell() {
           />
         )}
 
-        {/* The unified Performance page — ex-Cockpit, the analyze Performance
-            screen, and now Volume + Trends folded in as sections of it (see the
-            `performance-unified` capability). ALL FOUR ids resolve here so ⌘K
-            entries, saved deep links and every existing setScreen("cockpit") /
-            ("volume") / ("trends") caller keeps working; the nav entries for
-            volume + trends are promotedTo "performance", so the menus stop
-            offering the same content twice. */}
-        {(screen === "performance" || screen === "cockpit" || screen === "volume" || screen === "trends") && (
-          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} setScreen={setScreen} onOpenExercise={openExercisePage} onOpenSport={openSportPage} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
+        {/* The Performance page — ex-Cockpit and the analyze Performance
+            screen, merged. `cockpit` still resolves here so ⌘K entries and
+            saved deep links keep working.
+
+            Volume and Trends NO LONGER resolve here. They were folded in as
+            sections of this page and between them took roughly two thirds of
+            its scroll; they are their own destinations again, reached from the
+            page's volume block and its exit rows. See the audit at
+            audit/10-performance-tab-element-audit-2026-08.md. */}
+        {(screen === "performance" || screen === "cockpit") && (
+          <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} sessionsReady={sessionsReady} macroSettled={macroSettled} setScreen={setScreen} onOpenSport={openSportPage} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
+
+        {screen === "volume" && <AuroraVolume sessions={sessions} />}
+        {screen === "trends" && <AuroraTrends sessions={sessions} onOpenExercise={openExercisePage} />}
 
         {screen === "onboarding" && (
           <AuroraOnboarding onEnrolled={finishOnboarding} />

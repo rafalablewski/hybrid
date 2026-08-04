@@ -10,6 +10,7 @@ export * from "./reconcile";
 export * from "./signals";
 export * from "./hpi";
 export * from "./performance-state";
+export * from "./capability";
 export * from "./injury";
 export * from "./rtp";
 export * from "./video";

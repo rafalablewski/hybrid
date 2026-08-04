@@ -54,13 +54,23 @@ const sectionTitle: CSSProperties = { fontFamily: "var(--font-heading)", fontWei
  * athlete's own edits, and hands back the provenance so this screen never
  * presents a population average as a personal fact.
  */
-export default function AuroraVolume({ sessions, unified = false }: {
+export default function AuroraVolume({ sessions, unified = false, compact = false, onOpen }: {
   sessions: LoggedSession[];
-  /** True when these sections render INSIDE the unified Performance page
-   *  (aurora/performance.tsx) rather than as their own screen: the page title
-   *  demotes to a section head, since the page already has one masthead. Every
-   *  section, control and number is otherwise identical. */
+  /** True when these sections render INSIDE another page rather than as their
+   *  own screen: the page title demotes to a section head, since the page
+   *  already has one masthead. Every section, control and number is otherwise
+   *  identical. */
   unified?: boolean;
+  /** COMPACT — the hero week-shape and a door, nothing else. This is what the
+   *  Performance page carries: "5/7 in range", the seven columns, the verdict
+   *  naming names, and the way in. Everything else in this file is a
+   *  programming tool with a chart grammar of its own (bands, notches,
+   *  calipers, carets) and belongs behind that door, entered on purpose.
+   *  The landmarks are resolved by the SAME code either way, so the summary
+   *  and the screen can never disagree. */
+  compact?: boolean;
+  /** Where the compact block's door goes. */
+  onOpen?: () => void;
 }) {
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
@@ -155,7 +165,10 @@ export default function AuroraVolume({ sessions, unified = false }: {
   // apart from `resolved` because it costs one resolve per replayed week.
   const replay = useMemo(
     () =>
-      prefs.adaptiveLandmarks
+      // Never in compact mode: one landmark resolve per week of the athlete's
+      // history, to draw four rows behind a disclosure the compact block has no
+      // room for, is pure cost on a page that only wants the week's shape.
+      prefs.adaptiveLandmarks && !compact
         ? testedMuscles(
             replayLandmarks(sessions, recovery, {
               profile,
@@ -165,7 +178,7 @@ export default function AuroraVolume({ sessions, unified = false }: {
             }),
           )
         : [],
-    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery, compact],
   );
 
   const block = useMemo(() => resolveBlock(prefs.volumeBlock), [prefs.volumeBlock]);
@@ -190,9 +203,11 @@ export default function AuroraVolume({ sessions, unified = false }: {
   // thought, and the athlete no longer picks a muscle in two places.
   const history = useMemo(() => {
     const out = {} as Record<MuscleGroup, number[]>;
+    // Seven eight-week passes for rows the compact block never renders.
+    if (compact) return out;
     for (const r of rows) out[r.muscle] = weeklyMuscleSets(sessions, r.muscle, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
     return out;
-  }, [rows, sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
+  }, [rows, sessions, compact, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
 
   const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState<MuscleGroup | null>(null);
@@ -229,6 +244,56 @@ export default function AuroraVolume({ sessions, unified = false }: {
     if (summary.under.length) parts.push(`${summary.under.length}${t("w.analyze.vol.verdictUnderTail")}`);
     return `${parts.join(t("w.analyze.vol.verdictJoin"))}.`;
   })();
+
+  // COMPACT — the hero shape and a door. The verdict NAMES NAMES here: the
+  // shape above it already says that something is out of range, so the sentence
+  // has to say what and by how much, which is the one thing the columns can't.
+  if (compact) {
+    const named = [...summary.over, ...summary.under]
+      .slice(0, 2)
+      .map((s) => `${ml(s.muscle)} ${deltaLabel(s)}`)
+      .join(", ");
+    return (
+      <section style={card}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 12px", marginBottom: 12 }}>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em" }}>{t("w.home.cockpit.weekVolume")}</span>
+          <span style={eyebrow}>{t("w.home.cockpit.last7")}</span>
+        </div>
+        {summary.empty ? (
+          <p style={{ margin: 0, fontSize: fs.note, lineHeight: 1.55, color: C("ash"), maxWidth: 460 }}>{t("w.analyze.vol.empty")}</p>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 46, lineHeight: 1.06, letterSpacing: "-.03em" }}>{summary.inRange}</span>
+              <span style={{ ...mono(fs.subtitle), color: C("ash") }}>/{summary.total}</span>
+              <span style={{ ...mono(fs.caption), color: C("ash"), marginLeft: 6 }}>{t("w.home.cockpit.inRange")}</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: 6, marginTop: 18, maxWidth: 520 }}>
+              {rows.map((r) => (
+                <div key={r.muscle}>
+                  <ShapeColumn s={r} token={ZONE_TOKEN[r.zone]} dim={false} />
+                  <div style={{ marginTop: 8, ...mono(9), letterSpacing: ".08em", color: C("ash"), textAlign: "center" }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ marginTop: 16, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5 }}>
+              {named ? <><b style={{ fontWeight: 700 }}>{named}</b><span style={{ color: C("ash") }}>. {verdict}</span></> : <span style={{ color: C("ash") }}>{verdict}</span>}
+            </p>
+          </>
+        )}
+        {onOpen && (
+          <button
+            className="pressable"
+            onClick={onOpen}
+            style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: 16, paddingTop: 14, border: 0, borderTop: `1px solid ${C("line")}`, background: "none", cursor: "pointer", color: C("chalk"), textAlign: "left" }}
+          >
+            <span style={eyebrow}>{t("w.home.cockpit.volumeDoor")}</span>
+            <span style={{ marginLeft: "auto", ...mono(fs.caption), fontWeight: 700, color: "var(--lime-text)" }}>{t("w.analyze.vol.title")} →</span>
+          </button>
+        )}
+      </section>
+    );
+  }
 
   const editToggle = (
     <HeroAccessory label={editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")} active={editing} onClick={() => { setEditing((v) => !v); setOpen(null); }} onDark={false} />

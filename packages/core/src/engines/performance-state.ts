@@ -166,21 +166,67 @@ export interface TrajectoryPoint {
 
 /**
  * Replay HPI + readiness over the last `days` by re-basing the log to each past
- * day — so a coach sees the trend, not just today's snapshot. Load-driven
- * (biometrics aren't replayed historically); returns oldest → newest.
+ * day — so a coach sees the trend, not just today's snapshot. Returns oldest →
+ * newest.
+ *
+ * WHY `bio` ONLY TOUCHES TODAY. There is no stored history of wearable
+ * readings — `Biometrics` carries today's value against a baseline, not a
+ * series — so past days genuinely cannot be replayed with the wearable in
+ * them, and this series is load-driven for every day but the last.
+ *
+ * Today is different, and it is not a modelling choice: the card that draws
+ * this series ALSO prints today's HPI and readiness as figures, computed WITH
+ * the wearable. Leaving the last point load-only put two different numbers for
+ * the same day inside one card — a sparkline whose final bar contradicted the
+ * 46pt figure beside it. Passing `bio` here makes the last point the number the
+ * athlete is reading. Callers that want the pure load-driven series (the admin
+ * Engine Room, which compares scenarios) simply omit it.
  */
-export function performanceTrajectory(log: TrainingLog, days = 14): TrajectoryPoint[] {
+export function performanceTrajectory(log: TrainingLog, days = 14, bio?: Biometrics): TrajectoryPoint[] {
   const out: TrajectoryPoint[] = [];
   for (let n = days - 1; n >= 0; n--) {
     const subLog = log
       .filter((s) => s.daysAgo >= n)
       .map((s) => ({ ...s, daysAgo: s.daysAgo - n }));
     const fatigue = computeFatigue(subLog);
+    const today = n === 0 ? bio : undefined;
     out.push({
       daysAgo: n,
-      hpi: computeHpi(fatigue).score,
-      readiness: computeReadiness(fatigue).score,
+      hpi: computeHpi(fatigue, today).score,
+      readiness: computeReadiness(fatigue, today).score,
     });
   }
   return out;
+}
+
+/**
+ * THE PAGE'S ONE-LINE VERDICT — the sentence the Performance masthead leads
+ * with, in place of a subtitle that described the page rather than the athlete.
+ *
+ * It is deliberately the two things the page's first two cards would each say
+ * alone: how fresh you are, and whether any tissue is on the worklist. It says
+ * nothing a card below it doesn't also say in full — which is the only licence
+ * a summary above the fold ever has.
+ *
+ * Returns KEYS, not prose: the clients resolve them through i18n, and the
+ * tissue clause carries the area so "{tissue}" can be substituted with the
+ * localized name (INJURY_AREA_KEY).
+ */
+export interface StateVerdict {
+  /** i18n key — the freshness clause */
+  headKey: string;
+  /** i18n key with a "{tissue}" placeholder, or null when nothing is flagged */
+  tissueKey: string | null;
+  /** the tissue the clause is about, highest risk first */
+  tissue: MuscleGroup | null;
+}
+
+export function stateVerdict(hpi: Hpi, risk?: { flagged: { tissue: MuscleGroup }[] }): StateVerdict {
+  const headKey = `w.home.cockpit.verdict.${hpi.band}`;
+  const flagged = risk?.flagged ?? [];
+  return {
+    headKey,
+    tissueKey: flagged.length === 0 ? null : flagged.length === 1 ? "w.home.cockpit.verdict.oneTissue" : "w.home.cockpit.verdict.manyTissues",
+    tissue: flagged[0]?.tissue ?? null,
+  };
 }

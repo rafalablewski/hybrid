@@ -12,7 +12,19 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ACard } from "./kit";
 import { AuroraIcon } from "./icons";
-import { InjurySheet, Protocol, RiskBody } from "./protocol";
+import { InjurySheet, RiskBody } from "./protocol";
+
+/** The protocol's full span, so the status line can say "day 9 of 21" without
+ *  the card needing the whole ladder. Matches engines/rtp.ts. */
+const RTP_TOTAL_DAYS = 21;
+/** Which day of the protocol today is — 1-based, from the injury date the
+ *  athlete gave when they opened it. */
+function protocolDay(p: { injuryDate?: string | null }): number | null {
+  if (!p.injuryDate) return null;
+  const t = Date.parse(p.injuryDate);
+  if (!Number.isFinite(t)) return null;
+  return Math.max(1, Math.floor((Date.now() - t) / 86_400_000) + 1);
+}
 
 /**
  * TISSUE — one card for injury risk AND return-to-play. The mobile twin of
@@ -39,9 +51,16 @@ export default function TissueCard({
   risk,
   load,
   hasData,
+  onOpenToday,
 }: {
   risk: ReturnType<typeof computeInjuryRisk>;
   load: ReturnType<typeof computeLoad>;
+  /** Where the running protocol lives now. An injured athlete's protocol is a
+   *  DAILY object — steps, dates, checkboxes — so it belongs on Today, where
+   *  they meet it on the morning they have to do it, not several screens deep
+   *  in an analytics tab. This card keeps the status and the door, so the flag
+   *  and the protocol stay one object. Mirrors web. */
+  onOpenToday?: () => void;
   /** Whether there is any logged training to read. With none, the card states
    *  NO risk — an axis of zeroes would say "you're clear to train", which is
    *  a claim about data we don't have — but it still offers the way in to a
@@ -56,6 +75,9 @@ export default function TissueCard({
   // The rows are a disclosure only while everything is calm — a flagged
   // tissue opens them itself, since a worklist you have to find is not one.
   const [rowsOpen, setRowsOpen] = useState(false);
+  // The calibration disclosure — closed by default, because it qualifies the
+  // figures rather than announcing itself.
+  const [howOpen, setHowOpen] = useState(false);
   // The area the athlete pointed at on the card's own body, if that is how
   // they got to the sheet — the flag and the protocol are one object.
   const [picking, setPicking] = useState<MuscleGroup | null | false>(false);
@@ -147,11 +169,29 @@ export default function TissueCard({
         </>
       )}
 
-      {/* AN OPEN PROTOCOL IS THIS CARD'S DEEP END — not a card of its own. */}
+      {/* AN OPEN PROTOCOL IS A STATUS LINE HERE, AND A DOOR.
+          The protocol itself renders on Today, in the Recover cluster. It used
+          to live inside this card, which meant the one surface an injured
+          athlete needs every morning could only be reached by opening an
+          analytics tab and scrolling. The risk that prompted it and the
+          protocol that answers it stay one object because this row points
+          straight at it. Mirrors web. */}
       {active.length > 0 && (
-        <View style={{ marginTop: 16, gap: space.md }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.rtp.protocol")}</Text>
-          {active.map((p) => <Protocol key={p.id} p={p} onChange={refresh} />)}
+        <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+          {active.map((p) => {
+            const day = protocolDay(p);
+            return (
+              <Pressable key={p.id} onPress={onOpenToday} disabled={!onOpenToday} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.injury.protocolRunning")}</Text>
+                <Text style={{ marginLeft: "auto", fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>
+                  {t(INJURY_AREA_KEY[p.tissue as MuscleGroup])}
+                  {day != null ? ` – ${t("w.injury.protocolDay").replace("{n}", String(day)).replace("{total}", String(RTP_TOTAL_DAYS))}` : ""}
+                  {onOpenToday ? " →" : ""}
+                </Text>
+              </Pressable>
+            );
+          })}
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: leading(fs.caption) }}>{t("w.injury.protocolWhere")}</Text>
         </View>
       )}
 
@@ -191,12 +231,29 @@ export default function TissueCard({
             </Text>
           </Pressable>
         </View>
-        {/* The calibration behind every number above — a qualifier, not a
-            heading. It qualifies figures, so it goes when there are none. */}
+        {/* THE CALIBRATION, BEHIND A DISCLOSURE. It used to print on the card
+            face, where it read as team-facing metadata nobody outside the
+            building can act on — and lent the numbers an air of precision they
+            do not have. It now answers the question an athlete is already
+            asking when they open it. */}
         {hasData && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 9 }}>
-            {t("w.analyze.perf.model")} {axis.modelVersion}
-          </Text>
+          <View style={{ marginTop: 10 }}>
+            <Pressable
+              onPress={() => setHowOpen((v) => !v)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: howOpen }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-end" }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.injury.howCalculated")}</Text>
+              <AuroraIcon name="chevron-down" size={12} color={C.ash} style={howOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
+            </Pressable>
+            {howOpen && (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 7, lineHeight: leading(fs.nano) }}>
+                {t("w.analyze.perf.model")} {axis.modelVersion}
+              </Text>
+            )}
+          </View>
         )}
       </View>
     </ACard>

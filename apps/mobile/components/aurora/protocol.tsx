@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, type LayoutChangeEvent } from "react-native";
 import Svg, { Polygon, Circle, Rect, G } from "react-native-svg";
 import {
@@ -12,7 +12,7 @@ import { fs, space, leading, F, PressScale as Pressable, FIXED_FONT_SCALE } from
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
-import { createRtpProtocol, mutateRtpProtocol, type RtpProtocol as RtpProtocolRow } from "../../lib/api";
+import { createRtpProtocol, mutateRtpProtocol, fetchRtpProtocols, type RtpProtocol as RtpProtocolRow } from "../../lib/api";
 
 /**
  * THE PROTOCOL (mobile) — declaring an injury, and living with one. The twin of
@@ -269,6 +269,35 @@ export function InjurySheet({
 }
 
 /* ── the path ──────────────────────────────────────────────────────────── */
+
+/**
+ * THE RUNNING PROTOCOL, WHERE IT IS ACTUALLY USED.
+ *
+ * A return-to-play protocol is a DAILY object — stages, gates, dates, an action
+ * you take this morning. It used to render only inside the Performance tab's
+ * Tissue card, several screens from where an injured athlete decides what to do
+ * today. It now renders in Today's RECOVER cluster, beside the check-in; the
+ * Tissue card keeps the status line and the door, so the flag and the protocol
+ * remain one object seen from two places. Mirrors web.
+ *
+ * Renders nothing at all when no protocol is open — an athlete with nothing to
+ * rehab should never be shown a rehab surface.
+ */
+export function RtpPanel() {
+  const { t } = useLang();
+  const { palette: C } = useTheme();
+  const [protocols, setProtocols] = useState<RtpProtocolRow[]>([]);
+  const refresh = useCallback(() => { fetchRtpProtocols().then(setProtocols).catch(() => {}); }, []);
+  useEffect(() => { refresh(); }, [refresh]);
+  const active = protocols.filter((p) => p.status !== "abandoned");
+  if (active.length === 0) return null;
+  return (
+    <View style={{ gap: 12, marginTop: 16 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.rtp.protocol")}</Text>
+      {active.map((p) => <Protocol key={p.id} p={p} onChange={refresh} />)}
+    </View>
+  );
+}
 
 export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => void }) {
   const { palette: C } = useTheme();

@@ -24,6 +24,7 @@ export * from "./day-stamp";
 export * from "./masthead";
 export * from "./motion";
 export * from "./spark";
+export * from "./trajectory-plot";
 export * from "./engines";
 export * from "./tissue-axis";
 export * from "./volume-view";

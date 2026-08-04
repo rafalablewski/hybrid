@@ -99,6 +99,7 @@ import DoneFloor from "./done-floor";
 import GroupMark from "./group-mark";
 import AuroraTodayRail, { type TodayRailBottoms } from "./today-rail";
 import { TodayTabs } from "./today-tabs";
+import { RtpPanel } from "./protocol";
 // THE HUB's other two tabs — the same full screens their own routes render,
 // handed Today's header + pills through the `top` slot so the chrome above
 // them never changes as the athlete switches tab.
@@ -1038,6 +1039,16 @@ export default function AuroraHome() {
             onPicked={checkinsRead.retry}
           />
         </View>
+
+        {/* RETURN TO PLAY — the running protocol, on the day it has to be done.
+            It used to render inside the Performance tab's Tissue card, several
+            screens from where an injured athlete decides what to do this
+            morning. A protocol is a DAILY object — stages, gates, dates — so it
+            belongs in the Recover cluster beside the check-in. The Tissue card
+            keeps the status line and the door, so the flag and the protocol
+            stay one object. Renders nothing when no protocol is open. Mirrors
+            web today.tsx. */}
+        <RtpPanel />
 
         {/* ═════ GROUP: PROGRESS — where the training is going. The week's
             verdict, the favourite movements' deltas, then each sport's own

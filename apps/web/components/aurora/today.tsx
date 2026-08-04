@@ -89,6 +89,7 @@ import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
+import { RtpPanel } from "./protocol";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
 const AuroraCheckins = dynamic(() => import("./checkins"), { ssr: false });
@@ -624,10 +625,9 @@ export default function AuroraToday({
             macro={macro}
             currentWeek={currentWeek}
             sessionsReady={sessionsReady}
-            macroReady={macroReady}
             macroSettled={macroSettled}
             setScreen={(s) => (onNavigate ? onNavigate(s) : router.push(`/${s}`))}
-            onOpenExercise={onOpenExercise}
+            onOpenSport={onOpenSport}
             onEnrolled={() => { onEnrolled?.(); runHubTransition(() => setTab("dashboard")); }}
           />
         </div>
@@ -963,6 +963,15 @@ export default function AuroraToday({
           onPicked={loadFeeling}
         />
       </div>
+
+      {/* RETURN TO PLAY — the running protocol, on the day it has to be done.
+          It used to render inside the Performance tab's Tissue card, several
+          screens from where an injured athlete decides what to do this morning.
+          A protocol is a DAILY object — stages, gates, dates — so it belongs in
+          the Recover cluster beside the check-in. The Tissue card keeps the
+          status line and the door, so the flag and the protocol stay one
+          object. Renders nothing when no protocol is open. */}
+      <RtpPanel />
 
       {/* ═════ GROUP: PROGRESS — where the training is going. The week's
           verdict, the favourite movements' deltas, then each sport's own read:

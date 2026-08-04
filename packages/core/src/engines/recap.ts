@@ -174,3 +174,40 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: Bo
     volumeDelta: volume - prevVolume,
   };
 }
+
+/**
+ * PRs set inside an ARBITRARY window, best per lift, heaviest first.
+ *
+ * `weeklyRecap` can only ever answer for a rolling seven days, which is why the
+ * Performance page and the Today activity card were reporting two different
+ * weeks under two labels a reader treats as synonyms. The activity card owns a
+ * real window — a calendar week, 30 days, a named month — so it needs the PRs
+ * for THAT window rather than for a seven-day span that happens to overlap it.
+ *
+ * Each session is still compared against ALL prior history, not just history
+ * inside the window: a record is a record against everything before it.
+ */
+export function prsBetween(
+  sessions: LoggedSession[],
+  from: number,
+  to: number,
+  bw?: BodyweightInput,
+): PrHit[] {
+  const measured = deviceTrueSessions(sessions);
+  const inWindow = measured
+    .filter((s) => {
+      const t = ms(s.startedAt);
+      return Number.isFinite(t) && t >= from && t < to;
+    })
+    .sort((a, b) => ms(a.startedAt) - ms(b.startedAt));
+
+  const best = new Map<string, PrHit>();
+  for (const s of inWindow) {
+    const prior = sessions.filter((x) => ms(x.startedAt) < ms(s.startedAt));
+    for (const h of newPrsInSession(s, prior, bw)) {
+      const cur = best.get(h.lift);
+      if (!cur || h.topLoad > cur.topLoad) best.set(h.lift, h);
+    }
+  }
+  return [...best.values()].sort((a, b) => b.topLoad - a.topLoad);
+}

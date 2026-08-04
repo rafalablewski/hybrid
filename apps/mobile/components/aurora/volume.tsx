@@ -24,7 +24,8 @@ import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, AHeading, ASection, RADIUS, withAlpha } from "./kit";
+import { CtaLabel } from "./cta-label";
 import { HeroAccessory } from "./hero";
 import { haptic } from "../../lib/haptics";
 
@@ -50,13 +51,23 @@ const pct = (v: number): DimensionValue => `${v * 100}%` as DimensionValue;
  * own edits, and hands back the provenance so this screen never presents a
  * population average as a personal fact.
  */
-export default function AuroraVolume({ top, unified = false }: {
+export default function AuroraVolume({ top, unified = false, compact = false, onOpen }: {
   top?: ReactNode;
-  /** True when these sections render INSIDE the unified Performance page
-   *  (aurora/performance.tsx) rather than as their own screen: no AuroraScreen
-   *  wrapper (the page owns the scroller) and the page title demotes to a
-   *  section head. Every section, control and number is otherwise identical. */
+  /** True when these sections render INSIDE another page rather than as their
+   *  own screen: no AuroraScreen wrapper (the page owns the scroller) and the
+   *  page title demotes to a section head. Every section, control and number is
+   *  otherwise identical. */
   unified?: boolean;
+  /** COMPACT — the hero week-shape and a door, nothing else. This is what the
+   *  Performance page carries: "5/7 in range", the seven columns, the verdict
+   *  naming names, and the way in. Everything else in this file is a
+   *  programming tool with a chart grammar of its own and belongs behind that
+   *  door, entered on purpose. The landmarks are resolved by the SAME code
+   *  either way, so the summary and the screen can never disagree.
+   *  Mirrors apps/web/components/aurora/volume.tsx. */
+  compact?: boolean;
+  /** Where the compact block's door goes. */
+  onOpen?: () => void;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -159,7 +170,7 @@ export default function AuroraVolume({ top, unified = false }: {
       includeWarmups: prefs.countWarmupsInVolume,
       fractional: prefs.fractionalVolume,
     }),
-    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery, compact],
   );
   const lm = resolved.landmarks;
 
@@ -168,7 +179,9 @@ export default function AuroraVolume({ top, unified = false }: {
   // apart from `resolved` because it costs one resolve per replayed week.
   const replay = useMemo(
     () =>
-      prefs.adaptiveLandmarks
+      // Never in compact mode: one landmark resolve per week of the athlete's
+      // history, for rows the compact block never renders.
+      prefs.adaptiveLandmarks && !compact
         ? testedMuscles(
             replayLandmarks(sessions, recovery, {
               profile,
@@ -203,9 +216,11 @@ export default function AuroraVolume({ top, unified = false }: {
   // thought, and the athlete no longer picks a muscle in two places.
   const history = useMemo(() => {
     const out = {} as Record<MuscleGroup, number[]>;
+    // Seven eight-week passes for rows the compact block never renders.
+    if (compact) return out;
     for (const r of rows) out[r.muscle] = weeklyMuscleSets(sessions, r.muscle, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
     return out;
-  }, [rows, sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
+  }, [rows, sessions, compact, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
 
   const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState<MuscleGroup | null>(null);
@@ -256,6 +271,50 @@ export default function AuroraVolume({ top, unified = false }: {
     if (summary.under.length) parts.push(`${summary.under.length}${t("w.analyze.vol.verdictUnderTail")}`);
     return `${parts.join(t("w.analyze.vol.verdictJoin"))}.`;
   })();
+
+  // COMPACT — the hero shape and a door. The verdict NAMES NAMES here: the
+  // shape above it already says that something is out of range, so the sentence
+  // has to say what and by how much, which is the one thing the columns can't.
+  if (compact) {
+    const named = [...summary.over, ...summary.under]
+      .slice(0, 2)
+      .map((r) => `${ml(r.muscle)} ${deltaLabel(r)}`)
+      .join(", ");
+    return (
+      <ACard solid>
+        <ASection title={t("w.home.cockpit.weekVolume")} meta={t("w.home.cockpit.last7")} />
+        {summary.empty ? (
+          <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: leading(fs.note), color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
+        ) : (
+          <>
+            <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 46, lineHeight: 50, letterSpacing: -1.6, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
+            </View>
+            <View style={{ flexDirection: "row", gap: 5, marginTop: 16 }}>
+              {rows.map((r) => (
+                <View key={r.muscle} style={{ flex: 1 }}>
+                  <ShapeColumn s={r} color={zoneColor(r.zone)} dim={false} />
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginTop: 16 }}>
+              {named ? <Text style={{ fontFamily: F.bold, color: C.chalk }}>{named}</Text> : null}
+              {named ? `. ${verdict}` : verdict}
+            </Text>
+          </>
+        )}
+        {onOpen && (
+          <Pressable onPress={onOpen} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.cockpit.volumeDoor")}</Text>
+            <CtaLabel label={`${t("w.analyze.vol.title")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} style={{ marginLeft: "auto" }} />
+          </Pressable>
+        )}
+      </ACard>
+    );
+  }
 
   const body = (
     <>
