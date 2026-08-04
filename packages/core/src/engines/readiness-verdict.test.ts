@@ -20,9 +20,9 @@ const LOADED: TrainingLog = [
 const RESTED: TrainingLog = [{ daysAgo: 13, items: [{ move: "Back Squat", topRpe: 6, hardSets: 1 }] }];
 
 const TIRED_BIO: Biometrics = {
-  hrv: { today: 42, baseline: 60, better: "high" },
-  restingHr: { today: 58, baseline: 52, better: "low" },
-  sleep: { today: 5.4, baseline: 7.6, better: "high" },
+  hrv: { today: 42, baseline: 60, unit: "ms", better: "high" },
+  restingHr: { today: 58, baseline: 52, unit: "bpm", better: "low" },
+  sleep: { today: 5.4, baseline: 7.6, unit: "h", better: "high" },
 };
 
 describe("readinessReasons — the lines behind the door", () => {
@@ -124,7 +124,7 @@ describe("readinessVerdict — one line, and what the door may promise", () => {
 
   it("states the deficit as arithmetic: 100 minus the score the ring draws", () => {
     const v = readinessVerdict(LOADED, TIRED_BIO);
-    expect(v.deficit).toBe(100 - Number(readinessWhy(LOADED, TIRED_BIO)[0].match(/(\d+)\/100/)![1]));
+    expect(v.deficit).toBe(100 - Number(readinessWhy(LOADED, TIRED_BIO)[0]!.match(/(\d+)\/100/)![1]));
     expect(v.deficit).toBeGreaterThanOrEqual(0);
   });
 });

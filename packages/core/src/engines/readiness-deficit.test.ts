@@ -32,15 +32,15 @@ const WRECKING: TrainingLog = Array.from({ length: 8 }, (_, i) => ({
 }));
 
 const TIRED_BIO: Biometrics = {
-  hrv: { today: 38, baseline: 62, better: "high" },
-  restingHr: { today: 61, baseline: 51, better: "low" },
-  sleep: { today: 5.0, baseline: 7.8, better: "high" },
+  hrv: { today: 38, baseline: 62, unit: "ms", better: "high" },
+  restingHr: { today: 61, baseline: 51, unit: "bpm", better: "low" },
+  sleep: { today: 5.0, baseline: 7.8, unit: "h", better: "high" },
 };
 
 const FRESH_BIO: Biometrics = {
-  hrv: { today: 74, baseline: 62, better: "high" },
-  restingHr: { today: 47, baseline: 51, better: "low" },
-  sleep: { today: 8.6, baseline: 7.8, better: "high" },
+  hrv: { today: 74, baseline: 62, unit: "ms", better: "high" },
+  restingHr: { today: 47, baseline: 51, unit: "bpm", better: "low" },
+  sleep: { today: 8.6, baseline: 7.8, unit: "h", better: "high" },
 };
 
 /** The ring's fixed drawing order — never re-sorted by value. */
@@ -95,8 +95,8 @@ describe("readinessDeficit — the parts must add up to the whole", () => {
     // the card's face calls the limiter, so the two can't tell different stories.
     const f = computeFatigue(HEAVY).muscles;
     const heaviest = (Object.keys(f) as (keyof typeof f)[]).reduce((a, b) => (f[b] > f[a] ? b : a));
-    expect(d.costs[0].kind).toBe("tissue");
-    expect(d.costs[0].muscle).toBe(heaviest);
+    expect(d.costs[0]!.kind).toBe("tissue");
+    expect(d.costs[0]!.muscle).toBe(heaviest);
   });
 
   it("never lets an anonymous cost outweigh a named one", () => {
@@ -128,8 +128,8 @@ describe("readinessDeficit — the parts must add up to the whole", () => {
     const d = readinessDeficit([], FRESH_BIO);
     expect(d.kept).toBe(98);
     expect(d.costs).toHaveLength(1);
-    expect(d.costs[0].kind).toBe("ceiling");
-    expect(d.costs[0].points).toBe(2);
+    expect(d.costs[0]!.kind).toBe("ceiling");
+    expect(d.costs[0]!.points).toBe(2);
   });
 
   it("records the floor when the engine refuses to go lower", () => {
@@ -194,7 +194,7 @@ describe("readinessRingSegments — the ring covers itself exactly once", () => 
 
   it("leads with what was KEPT, then the costs in the order the engine fixed", () => {
     const segs = readinessRingSegments(readinessDeficit(HEAVY, TIRED_BIO));
-    expect(segs[0].kind).toBe("kept");
+    expect(segs[0]!.kind).toBe("kept");
     const kinds = segs.slice(1).map((s) => s.kind);
     // Tissue before the wearable, always — never re-sorted by size, or the card
     // would rearrange itself on the day the wearable happens to cost more.
@@ -203,7 +203,7 @@ describe("readinessRingSegments — the ring covers itself exactly once", () => 
   });
 
   it("gives a tiny cost at least one tick — a −1 nudge must be visible", () => {
-    const d = readinessDeficit(LIGHT, { ...FRESH_BIO, hrv: { today: 60, baseline: 62, better: "high" } });
+    const d = readinessDeficit(LIGHT, { ...FRESH_BIO, hrv: { today: 60, baseline: 62, unit: "ms", better: "high" } });
     for (const ticks of TICKS) {
       for (const s of readinessRingSegments(d, ticks)) expect(s.count).toBeGreaterThanOrEqual(1);
     }
@@ -212,7 +212,7 @@ describe("readinessRingSegments — the ring covers itself exactly once", () => 
   it("carries the points beside each run, so an arc and a legend can't disagree", () => {
     const d = readinessDeficit(HEAVY, TIRED_BIO);
     const segs = readinessRingSegments(d);
-    expect(segs[0].points).toBe(d.kept);
+    expect(segs[0]!.points).toBe(d.kept);
     expect(segs.slice(1).reduce((a, s) => a + s.points, 0)).toBe(d.deficit);
   });
 });
