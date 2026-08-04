@@ -1,0 +1,477 @@
+<title>Readiness — seven ways to say it without a paragraph</title>
+<style>
+  :root {
+    /* HYBRID brand tokens — packages/core/src/theme/tokens.ts */
+    --ink: #0c0d0c; --ink2: #141614; --line: #2a2d2a;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime: #c6f84f; --blue: #6cb6bd; --amber: #d0cd94; --red: #e58a5c;
+
+    /* the page's own skin — a neutral biased toward the lime accent */
+    --pg: #101210; --pg2: #171a17; --pg-line: #262a26;
+    --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-warn: #e58a5c;
+
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: Archivo, "Helvetica Neue", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-warn: #a8501f; }
+  }
+  :root[data-theme="dark"] { --pg: #101210; --pg2: #171a17; --pg-line: #262a26; --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-warn: #e58a5c; }
+  :root[data-theme="light"] { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-warn: #a8501f; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--pg); color: var(--pg-text); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: clamp(28px, 5vw, 56px) clamp(16px, 4vw, 36px) clamp(56px, 9vw, 96px); }
+
+  h1 { margin: 14px 0 0; font-size: clamp(30px, 4.4vw, 48px); font-weight: 800; letter-spacing: -.03em; line-height: 1.02; text-wrap: balance; max-width: 20ch; }
+  .kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--pg-mute); }
+  .lede { margin: 18px 0 0; max-width: 68ch; color: var(--pg-mute); font-size: clamp(15px, 1.4vw, 17.5px); }
+  .lede b, .lede strong { color: var(--pg-text); font-weight: 600; }
+  .lede + .lede { margin-top: 12px; }
+  code { font-family: var(--mono); font-size: .88em; color: var(--pg-text); }
+
+  .rule { height: 1px; background: var(--pg-line); margin: clamp(30px, 5vw, 52px) 0 0; }
+
+  /* ── principles ── */
+  .prin { margin-top: 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 22px 34px; }
+  .prin section { border-top: 1px solid var(--pg-line); padding-top: 12px; }
+  .prin h3 { margin: 0 0 6px; font-size: 14.5px; font-weight: 700; letter-spacing: -.01em; }
+  .prin p { margin: 0; font-size: 13.5px; color: var(--pg-mute); }
+
+  /* ── the before block ── */
+  .before { margin-top: 22px; display: grid; grid-template-columns: minmax(300px, 420px) minmax(260px, 1fr); gap: clamp(20px, 3vw, 40px); align-items: start; }
+  .tally { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .tally div { display: flex; align-items: baseline; gap: 12px; font-family: var(--mono); font-size: 12px; color: var(--pg-mute); }
+  .tally b { font-size: 22px; font-weight: 700; color: var(--pg-text); font-variant-numeric: tabular-nums; min-width: 3.4ch; }
+
+  /* ── concept grid ── */
+  .grid { margin-top: clamp(26px, 4vw, 44px); display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: clamp(26px, 3vw, 44px); align-items: start; }
+  .concept > .ch { display: flex; align-items: baseline; gap: 10px; border-top: 1px solid var(--pg-line); padding-top: 14px; }
+  .concept .no { font-family: var(--mono); font-size: 11px; color: var(--pg-mute); font-variant-numeric: tabular-nums; }
+  .concept h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.022em; }
+  .concept .thesis { margin: 9px 0 0; font-size: 14.5px; color: var(--pg-mute); max-width: 46ch; }
+  .concept .thesis b { color: var(--pg-text); font-weight: 600; }
+
+  .verdict { margin-top: 13px; display: flex; flex-direction: column; gap: 6px; }
+  .verdict div { font-family: var(--mono); font-size: 11.5px; line-height: 1.5; color: var(--pg-mute); display: flex; gap: 10px; }
+  .verdict i { font-style: normal; flex-shrink: 0; width: 42px; letter-spacing: .09em; text-transform: uppercase; font-size: 9.5px; padding-top: 2px; }
+  .verdict .for i { color: var(--pg-accent); }
+  .verdict .cost i { color: var(--pg-warn); }
+  .verdict .cnt i { color: var(--pg-mute); }
+
+  /* ── the mocks: always the product's own dark Aurora skin ── */
+  .mock { margin-top: 16px; background: var(--ink); border: 1px solid var(--pg-line); border-radius: 26px; padding: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 22px; padding: 17px; background: var(--ink2); color: var(--chalk); }
+  .lbl { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); }
+  .body { font-size: 13.5px; line-height: 1.6; color: var(--ash); }
+  .hr { height: 1px; background: var(--line); margin: 14px 0; }
+  .num { font-variant-numeric: tabular-nums; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .col { display: flex; flex-direction: column; }
+
+  .big { font-size: 46px; font-weight: 800; letter-spacing: -.04em; line-height: .92; color: var(--chalk); font-variant-numeric: tabular-nums; }
+  .huge { font-size: 60px; font-weight: 800; letter-spacing: -.045em; line-height: .9; color: var(--lime); font-variant-numeric: tabular-nums; }
+
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .05em;
+          background: color-mix(in srgb, var(--red) 12%, transparent); border: 1px solid color-mix(in srgb, var(--red) 34%, transparent); color: var(--red); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; color: var(--ash); }
+  .sw { display: block; width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
+  /* ledger */
+  .ledger { display: grid; grid-template-columns: 1fr auto; gap: 7px 16px; font-family: var(--mono); font-size: 12.5px; color: var(--ash); }
+  .ledger .v { font-variant-numeric: tabular-nums; text-align: right; }
+  .ledger .tot { color: var(--chalk); font-weight: 700; font-size: 15px; }
+  .ledger .sep { grid-column: 1 / -1; height: 1px; background: var(--line); margin: 4px 0 2px; }
+
+  /* drag bar */
+  .bar { display: flex; height: 26px; border-radius: 8px; overflow: hidden; gap: 2px; background: var(--ink); }
+  .bar span { display: block; }
+  .ticks { display: flex; justify-content: space-between; margin-top: 7px; font-family: var(--mono); font-size: 9.5px; color: var(--ash); }
+
+  /* dials */
+  .dials { display: flex; gap: 10px; }
+  .dial { flex: 1; border: 1px solid var(--line); border-radius: 16px; padding: 11px 10px 10px; display: flex; flex-direction: column; align-items: center; gap: 7px; background: color-mix(in srgb, var(--chalk) 2%, transparent); }
+  .dial .n { font-family: var(--mono); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .dial .k { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); text-align: center; }
+
+  .door { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
+          font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); }
+  .door b { color: var(--chalk); font-weight: 600; }
+
+  .stamp { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--ash); }
+  .stamp b { font-size: 14px; color: var(--chalk); font-variant-numeric: tabular-nums; }
+
+  /* closing table */
+  .tablewrap { overflow-x: auto; margin-top: 20px; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--pg-line); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--pg-mute); font-weight: 400; }
+  td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--pg-mute); white-space: nowrap; }
+  td b { font-weight: 600; }
+
+  .close { margin-top: clamp(30px, 5vw, 52px); border-top: 1px solid var(--pg-line); padding-top: 22px; }
+  .close h2 { margin: 0 0 10px; font-size: 22px; font-weight: 800; letter-spacing: -.022em; }
+  .close p { margin: 0 0 12px; max-width: 68ch; color: var(--pg-mute); font-size: 14.5px; }
+  .close p b { color: var(--pg-text); font-weight: 600; }
+  .close ul { margin: 0; padding-left: 18px; max-width: 68ch; color: var(--pg-mute); font-size: 14.5px; }
+  .close li { margin-bottom: 7px; }
+  .close li b { color: var(--pg-text); font-weight: 600; }
+
+  @media (max-width: 720px) { .before { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <div class="kicker">HYBRID — design study — performance tab, readiness explanation</div>
+  <h1>Seven ways to say it without a paragraph</h1>
+  <p class="lede">The block reads <b>38 words of prose</b> before the pill, and every word is a number wearing a sentence around it. <code>readinessWhy()</code> already returns lines rather than a wall, which was the right first move — but the fix for a wall of text is not a stack of text. It is to stop asking prose to do a chart's job.</p>
+  <p class="lede">Nothing here proposes hiding the truth. The engine's honesty is the product; the athlete gets the same four facts in each concept. What changes is the <b>material</b> they are made of — arc, bar, ledger, silhouette — and how much of the reading the eye can finish before the brain starts.</p>
+
+  <div class="rule"></div>
+
+  <div class="prin">
+    <section>
+      <h3>Simplicity isn't subtraction</h3>
+      <p>Ive's line: simplicity is understanding the thing deeply enough that the form falls out of it. Deleting two sentences here just makes a shorter paragraph. Understanding that "81/100 back fatigue" is a <em>magnitude</em> gives you an arc.</p>
+    </section>
+    <section>
+      <h3>The number should show its work</h3>
+      <p>Honesty of material. Readiness 67 is 100 minus what's been spent. If the deficit is drawn, the explanation is not a caption on the number — it <em>is</em> the number.</p>
+    </section>
+    <section>
+      <h3>One voice per surface</h3>
+      <p>Right now the ring speaks, then a narrator explains the ring, then a pill re-states the consequence. Three voices, one fact. Pick the one that carries and let the others go quiet.</p>
+    </section>
+    <section>
+      <h3>House rules that bind</h3>
+      <p>No middot separators, no decorative dot before a label, mono uppercase for meta, and whatever ships here ships on both clients in the same change. Geometry lives in <code>packages/core</code> so web and mobile draw the identical shape.</p>
+    </section>
+  </div>
+
+  <div class="rule"></div>
+
+  <div class="before">
+    <div>
+      <div class="kicker" style="margin-bottom: 12px;">Today — the block as built</div>
+      <div class="mock">
+        <div class="card">
+          <div class="row" style="align-items: flex-start; gap: 14px;">
+            <svg width="66" height="66" viewBox="0 0 100 100" role="img" aria-label="Readiness 67 of 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#2a2d2a" stroke-width="9"></circle>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#6cb6bd" stroke-width="9" stroke-linecap="round"
+                      stroke-dasharray="168.4 251.3" transform="rotate(-90 50 50)"></circle>
+              <text x="50" y="57" text-anchor="middle" font-family="ui-monospace, monospace" font-size="26" font-weight="700" fill="#f3f4ef">67</text>
+            </svg>
+            <div class="col" style="gap: 7px; flex: 1; min-width: 0;">
+              <div class="lbl">Today — readiness</div>
+              <div style="font-size: 13.5px; color: var(--chalk);">Readiness 67/100.</div>
+              <div class="body">Computed from your logged training: back fatigue (81/100) is the main drag today.</div>
+              <div class="body">Energy-system load from recent conditioning sits at 39/100.</div>
+              <div class="body">Your wearable nudged readiness −3 today — HRV dipped and sleep ran short.</div>
+              <div style="margin-top: 4px;"><span class="pill">Deloaded to 85%, −1 set — you're wrecked today</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="kicker" style="margin-bottom: 12px;">What it costs</div>
+      <div class="tally">
+        <div><b>38</b> words of prose, 47 with the pill</div>
+        <div><b>4</b> figures, each embedded mid-sentence</div>
+        <div><b>~11 s</b> to read, on a screen scanned in two</div>
+        <div><b>3</b> voices stating one state: ring, narrator, pill</div>
+        <div><b>0</b> of it is scannable — no figure sits in a fixed position, so the eye cannot learn where to look tomorrow</div>
+      </div>
+      <p class="lede" style="font-size: 14px; margin-top: 18px;">The deeper fault is <b>positional</b>. Because the numbers live inside sentences, they move every day: with no conditioning load the third line vanishes and the wearable line jumps up. An athlete opening this daily never builds a habit of where to look — which is the entire value of a daily metric.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- 01 -->
+    <article class="concept">
+      <div class="ch"><span class="no">01</span><h2>The deficit ring</h2></div>
+      <p class="thesis">The ring stops being a progress bar and becomes <b>an account of the missing 33</b>. One arc per cause, sized by its cost, read clockwise. The sentences become a legend.</p>
+      <div class="mock">
+        <div class="card">
+          <div class="lbl">Today — readiness</div>
+          <div class="row" style="gap: 16px; margin-top: 12px;">
+            <svg width="124" height="124" viewBox="0 0 100 100" role="img" aria-label="Readiness 67 of 100. Back fatigue costs 22, conditioning 8, short sleep 3.">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="10"></circle>
+              <g transform="rotate(-90 50 50)" fill="none" stroke-width="10">
+                <circle cx="50" cy="50" r="40" stroke="#c6f84f" stroke-dasharray="166 251.3" stroke-dashoffset="0"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-dasharray="53 251.3" stroke-dashoffset="-168.4"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#6cb6bd" stroke-dasharray="18 251.3" stroke-dashoffset="-223.7"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#d0cd94" stroke-dasharray="5.5 251.3" stroke-dashoffset="-243.8"></circle>
+              </g>
+              <text x="50" y="52" text-anchor="middle" font-family="ui-monospace, monospace" font-size="30" font-weight="700" fill="#f3f4ef">67</text>
+              <text x="50" y="66" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="1.2" fill="#8b8f86">READY</text>
+            </svg>
+            <div class="col" style="gap: 9px; flex: 1;">
+              <div class="legend" style="flex-direction: column; gap: 9px; margin: 0;">
+                <span><i class="sw" style="background:#e58a5c"></i>BACK FATIGUE <b style="color:var(--chalk); margin-left:auto;">−22</b></span>
+                <span><i class="sw" style="background:#6cb6bd"></i>CONDITIONING <b style="color:var(--chalk); margin-left:auto;">−8</b></span>
+                <span><i class="sw" style="background:#d0cd94"></i>SHORT SLEEP <b style="color:var(--chalk); margin-left:auto;">−3</b></span>
+              </div>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <div class="row" style="justify-content: space-between;">
+            <span class="pill">Deloaded to 85%, −1 set</span>
+          </div>
+        </div>
+      </div>
+      <div class="verdict">
+        <div class="for"><i>For</i><span>The explanation and the number are one object. Nothing to read before you know today's shape, and the arcs sit in fixed order so the eye learns the card.</span></div>
+        <div class="cost"><i>Cost</i><span>Needs a real attribution split out of <code>computeReadiness</code> — today the engine returns a score, not per-cause point costs. Four arcs is the ceiling before it turns into a pie chart.</span></div>
+        <div class="cnt"><i>Words</i><span>6 (from 38)</span></div>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="concept">
+      <div class="ch"><span class="no">02</span><h2>The ledger</h2></div>
+      <p class="thesis">Readiness as arithmetic you can audit. <b>100, minus what you spent, equals 67.</b> A receipt, right-aligned, tabular. The most literal possible honesty about a computed number.</p>
+      <div class="mock">
+        <div class="card">
+          <div class="row" style="justify-content: space-between; align-items: baseline;">
+            <span class="lbl">Today — readiness</span>
+            <span class="lbl">from your logged training</span>
+          </div>
+          <div class="ledger" style="margin-top: 14px;">
+            <div>Baseline</div><div class="v">100</div>
+            <div>Back fatigue <span style="color:#e58a5c">81/100</span></div><div class="v" style="color:#e58a5c">−22</div>
+            <div>Conditioning load <span style="color:#6cb6bd">39/100</span></div><div class="v" style="color:#6cb6bd">−8</div>
+            <div>HRV down, sleep short</div><div class="v" style="color:#d0cd94">−3</div>
+            <div class="sep"></div>
+            <div class="tot">Readiness</div><div class="v tot">67</div>
+          </div>
+          <div class="hr"></div>
+          <div class="row" style="gap: 10px;">
+            <span class="pill">Deloaded to 85%, −1 set</span>
+          </div>
+        </div>
+      </div>
+      <div class="verdict">
+        <div class="for"><i>For</i><span>Fixed rows, fixed positions — the one layout an athlete can read in a glance on day 40. Reads as instrument, not narrator, and makes the engine falsifiable to the user.</span></div>
+        <div class="cost"><i>Cost</i><span>Same attribution dependency as 01, and stricter: the rows must sum exactly or the card is a lie. Colder in tone than the rest of Today.</span></div>
+        <div class="cnt"><i>Words</i><span>9 (from 38)</span></div>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="concept">
+      <div class="ch"><span class="no">03</span><h2>The drag bar</h2></div>
+      <p class="thesis">One bar, 100 points wide, cut into what you keep and what each cause took. <b>The sentence becomes a length.</b> The flattest, cheapest version of the same idea as 01.</p>
+      <div class="mock">
+        <div class="card">
+          <div class="row" style="justify-content: space-between; align-items: flex-end;">
+            <div class="col">
+              <span class="lbl">Today — readiness</span>
+              <span class="big" style="margin-top: 4px;">67</span>
+            </div>
+            <span class="lbl">of 100</span>
+          </div>
+          <div class="bar" style="margin-top: 14px;">
+            <span style="width: 67%; background: #c6f84f;"></span>
+            <span style="width: 22%; background: #e58a5c;"></span>
+            <span style="width: 8%; background: #6cb6bd;"></span>
+            <span style="width: 3%; background: #d0cd94;"></span>
+          </div>
+          <div class="ticks">
+            <span>READY 67</span><span style="color:#e58a5c">BACK 22</span><span style="color:#6cb6bd">COND 8</span><span style="color:#d0cd94">SLEEP 3</span>
+          </div>
+          <div class="hr"></div>
+          <span class="pill">Deloaded to 85%, −1 set</span>
+        </div>
+      </div>
+      <div class="verdict">
+        <div class="for"><i>For</i><span>Cheapest to build and to port — one flex row, no SVG, identical on both clients. Compares magnitudes better than a ring because lengths beat angles.</span></div>
+        <div class="cost"><i>Cost</i><span>A 3-point segment is 4px wide on a phone and its label has nowhere to sit. Gives up the ring, which is the readiness signature everywhere else in the app.</span></div>
+        <div class="cnt"><i>Words</i><span>8 (from 38)</span></div>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="concept">
+      <div class="ch"><span class="no">04</span><h2>Three dials</h2></div>
+      <p class="thesis">Stop deriving one number and show the <b>three inputs as peers</b>, each in its own fixed slot with its own meter. The athlete reads the pattern, not the prose about the pattern.</p>
+      <div class="mock">
+        <div class="card">
+          <div class="row" style="justify-content: space-between; align-items: baseline;">
+            <span class="lbl">Today — readiness</span>
+            <span style="font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--lime);" class="num">67</span>
+          </div>
+          <div class="dials" style="margin-top: 14px;">
+            <div class="dial">
+              <svg width="46" height="46" viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="12"></circle>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#e58a5c" stroke-width="12" stroke-linecap="round" stroke-dasharray="203 251.3" transform="rotate(-90 50 50)"></circle>
+              </svg>
+              <span class="n" style="color:#e58a5c">81</span>
+              <span class="k">Back<br>fatigue</span>
+            </div>
+            <div class="dial">
+              <svg width="46" height="46" viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="12"></circle>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#6cb6bd" stroke-width="12" stroke-linecap="round" stroke-dasharray="98 251.3" transform="rotate(-90 50 50)"></circle>
+              </svg>
+              <span class="n" style="color:#6cb6bd">39</span>
+              <span class="k">Engine<br>load</span>
+            </div>
+            <div class="dial">
+              <svg width="46" height="46" viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="12"></circle>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#d0cd94" stroke-width="12" stroke-linecap="round" stroke-dasharray="25 251.3" transform="rotate(-90 50 50)"></circle>
+              </svg>
+              <span class="n" style="color:#d0cd94">−3</span>
+              <span class="k">Wearable<br>nudge</span>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <span class="pill">Deloaded to 85%, −1 set</span>
+        </div>
+      </div>
+      <div class="verdict">
+        <div class="for"><i>For</i><span>No attribution maths needed — these three figures already exist in the engine. Three fixed slots make it learnable, and every slot is tappable into its own detail.</span></div>
+        <div class="cost"><i>Cost</i><span>Repeats R4 from the tab audit: three identical dials on two different scales (0–100 index, ±15 adjustment). The sign is the only cue, which is exactly the fault we flagged.</span></div>
+        <div class="cnt"><i>Words</i><span>6 (from 38)</span></div>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="concept">
+      <div class="ch"><span class="no">05</span><h2>The body says it</h2></div>
+      <p class="thesis">"Back fatigue 81/100" is a sentence about <b>a place on your body</b>. Draw the place. The silhouette carries the location and the severity at once, and the caption drops to two words.</p>
+      <div class="mock">
+        <div class="card">
+          <div class="row" style="gap: 16px; align-items: center;">
+            <svg width="86" height="120" viewBox="0 0 86 120" role="img" aria-label="Lower back loaded, 81 of 100">
+              <g fill="#22251f">
+                <circle cx="43" cy="14" r="10"></circle>
+                <rect x="28" y="27" width="30" height="42" rx="11"></rect>
+                <rect x="14" y="30" width="11" height="38" rx="5.5"></rect>
+                <rect x="61" y="30" width="11" height="38" rx="5.5"></rect>
+                <rect x="30" y="71" width="11" height="42" rx="5.5"></rect>
+                <rect x="45" y="71" width="11" height="42" rx="5.5"></rect>
+              </g>
+              <rect x="28" y="50" width="30" height="19" rx="9" fill="#e58a5c" opacity=".85"></rect>
+              <rect x="28" y="50" width="30" height="19" rx="9" fill="none" stroke="#e58a5c" stroke-width="1.5" opacity=".5"></rect>
+            </svg>
+            <div class="col" style="gap: 8px; flex: 1;">
+              <span class="lbl">Today — readiness</span>
+              <span class="big">67</span>
+              <div style="font-size: 14px; color: var(--chalk); font-weight: 600;">Lower back is carrying it.</div>
+              <div class="legend" style="margin-top: 2px; gap: 4px 14px;">
+                <span><i class="sw" style="background:#e58a5c"></i>81/100 LOAD</span>
+                <span><i class="sw" style="background:#6cb6bd"></i>ENGINE 39</span>
+                <span><i class="sw" style="background:#d0cd94"></i>SLEEP −3</span>
+              </div>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <span class="pill">Deloaded to 85%, −1 set</span>
+        </div>
+      </div>
+      <div class="verdict">
+        <div class="for"><i>For</i><span>Instant, pre-verbal, and language-independent — it survives the Polish and German vocabulary sweep untranslated. Reuses the body map already in <code>packages/core</code>.</span></div>
+        <div class="cost"><i>Cost</i><span>Only speaks for the tissue term. Conditioning and sleep have no body location, so they fall back to chips and the card ends up bilingual — picture plus meta row.</span></div>
+        <div class="cnt"><i>Words</i><span>4 plus 3 chips (from 38)</span></div>
+      </div>
+    </article>
+
+    <!-- 06 -->
+    <article class="concept">
+      <div class="ch"><span class="no">06</span><h2>Consequence first</h2></div>
+      <p class="thesis">Invert the card. The athlete is not asking "why 67", they are asking <b>"what do I do today"</b> — which the pill answers in the smallest type on the card. Promote the prescription, demote the diagnosis to a stamp and a four-word tail.</p>
+      <div class="mock">
+        <div class="card">
+          <span class="lbl">Today's load</span>
+          <div class="row" style="align-items: baseline; gap: 14px; margin-top: 8px;">
+            <span class="huge">85<span style="font-size: 26px;">%</span></span>
+            <div class="col" style="gap: 2px;">
+              <span style="font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--red);">−1 SET</span>
+              <span class="lbl">on every lift</span>
+            </div>
+          </div>
+          <div style="font-size: 14px; color: var(--chalk); margin-top: 12px;">Back's cooked, sleep was short.</div>
+          <div class="door" style="text-transform: none; letter-spacing: 0; font-size: 12px;">
+            <span class="stamp">READINESS <b>67</b></span>
+            <span style="font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;">Why this number →</span>
+          </div>
+        </div>
+      </div>
+      <div class="verdict">
+        <div class="for"><i>For</i><span>Answers the actual question at the size of the actual question. Kills the three-voices problem outright — one statement, one consequence, one door.</span></div>
+        <div class="cost"><i>Cost</i><span>Demotes the metric the tab is named for, and only works where a prescription exists. On a rest day or an unenrolled athlete the card has no headline.</span></div>
+        <div class="cnt"><i>Words</i><span>11 (from 38), prose behind the door</span></div>
+      </div>
+    </article>
+
+    <!-- 07 -->
+    <article class="concept">
+      <div class="ch"><span class="no">07</span><h2>Verdict, then the door</h2></div>
+      <p class="thesis">Keep every honest sentence — just stop putting them in front of everyone. <b>Six words at rest, the full derivation one tap away.</b> The conservative option: no engine work, no data lost, ships this week.</p>
+      <div class="mock">
+        <div class="card">
+          <div class="row" style="gap: 14px; align-items: center;">
+            <svg width="58" height="58" viewBox="0 0 100 100" role="img" aria-label="Readiness 67 of 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="10"></circle>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#c6f84f" stroke-width="10" stroke-linecap="round" stroke-dasharray="168.4 251.3" transform="rotate(-90 50 50)"></circle>
+              <text x="50" y="58" text-anchor="middle" font-family="ui-monospace, monospace" font-size="28" font-weight="700" fill="#f3f4ef">67</text>
+            </svg>
+            <div class="col" style="gap: 5px; flex: 1;">
+              <span class="lbl">Today — readiness</span>
+              <span style="font-size: 17px; font-weight: 700; color: var(--chalk); letter-spacing: -.015em;">Back's the limiter today.</span>
+              <span class="pill" style="align-self: flex-start; margin-top: 4px;">Deloaded to 85%, −1 set</span>
+            </div>
+          </div>
+          <div class="door">
+            <span>Where the 33 went</span>
+            <b style="font-family: var(--mono);">3 reasons →</b>
+          </div>
+        </div>
+      </div>
+      <div class="verdict">
+        <div class="for"><i>For</i><span>Zero engine dependency and zero loss of honesty — the existing <code>readinessWhy()</code> lines move into the sheet verbatim. Lowest-risk way to cut the block by 80%.</span></div>
+        <div class="cost"><i>Cost</i><span>It relocates the wall rather than replacing it. The athlete who taps still gets four sentences, and the "3 reasons" count has to be real or the door lies.</span></div>
+        <div class="cnt"><i>Words</i><span>10 at rest (from 38)</span></div>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="close">
+    <h2>Reading the seven together</h2>
+    <p>Three families, and they are not equally cheap. <b>01, 02 and 03</b> all need the same new thing: <code>computeReadiness</code> returning per-cause point costs, not just a score. That is a real engine change with a real test burden — the parts must sum to the whole or the card is dishonest — but it is the change that turns the paragraph into an object.</p>
+    <p><b>04 and 05</b> need no new maths, only new form. <b>06 and 07</b> need neither, and are pure editing.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Concept</th><th>Words at rest</th><th>Engine work</th><th>Risk</th><th>Best at</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>01 Deficit ring</b></td><td class="n">6</td><td class="n">Attribution split</td><td class="n">Medium</td><td>Making the number self-explaining</td></tr>
+          <tr><td><b>02 Ledger</b></td><td class="n">9</td><td class="n">Attribution split</td><td class="n">Medium</td><td>Trust, and a fixed daily read</td></tr>
+          <tr><td><b>03 Drag bar</b></td><td class="n">8</td><td class="n">Attribution split</td><td class="n">Low</td><td>Cheapest port to both clients</td></tr>
+          <tr><td><b>04 Three dials</b></td><td class="n">6</td><td class="n">None</td><td class="n">Low</td><td>Inputs as peers</td></tr>
+          <tr><td><b>05 The body</b></td><td class="n">4 + chips</td><td class="n">None</td><td class="n">Low</td><td>Pre-verbal read, no translation</td></tr>
+          <tr><td><b>06 Consequence first</b></td><td class="n">11</td><td class="n">None</td><td class="n">Medium</td><td>Answering the real question</td></tr>
+          <tr><td><b>07 Verdict + door</b></td><td class="n">10</td><td class="n">None</td><td class="n">Lowest</td><td>Shipping the cut this week</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="margin-top: 30px;">If it were mine</h2>
+    <p><b>01 with 07's door.</b> The deficit ring makes the explanation and the metric the same object — which is the Ive move here, not a smaller font — and the door keeps every honest sentence for the athlete who wants the derivation. <b>07 alone</b> is the correct ship-now step if the attribution work can't be scheduled: it takes the block from 38 words to 10 with no engine risk, and 01 lands on top of it later without re-cutting the layout.</p>
+    <p>Whichever wins, three things travel with it:</p>
+    <ul>
+      <li><b>Geometry in <code>packages/core</code></b>, the way <code>trajectoryPlot</code> already works, so web and mobile draw one shape and the parity rule is satisfied in the same change.</li>
+      <li><b>The colours are semantic, not decorative</b> — a tissue cost is always the red, the engine always the blue, the wearable always the amber, matching <code>ROLE_COLOR</code> so the ring agrees with every other surface that names the same cause.</li>
+      <li><b>The empty and no-wearable states are designed first.</b> This block's best existing quality is that it refuses to invent a session on an empty log. A ring with nothing to subtract must say so as plainly as the sentence does today.</li>
+    </ul>
+  </div>
+</div>
