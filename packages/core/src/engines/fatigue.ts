@@ -45,3 +45,21 @@ export function computeFatigue(log: TrainingLog): Fatigue {
 
   return { muscles, systems: sys };
 }
+
+/**
+ * Map raw, unbounded energy-system load to a 0..100 endurance-fatigue figure
+ * with smooth saturation (a single hard session ≈ 45; a brutal week → ~85+).
+ * `scale` is the load at which fatigue reaches ~63%.
+ *
+ * Lives beside the fatigue it summarises rather than in hpi.ts, because BOTH
+ * readiness and HPI consume it and readiness.ts can't reach into hpi.ts
+ * without a cycle. `hpi.ts` re-exports it, so every existing import still
+ * resolves.
+ */
+export function enduranceFatigue(fatigue: Fatigue, scale = 90): number {
+  const total =
+    fatigue.systems.anaerobic +
+    fatigue.systems.threshold +
+    fatigue.systems.aerobic;
+  return Math.round(100 * (1 - Math.exp(-total / scale)));
+}

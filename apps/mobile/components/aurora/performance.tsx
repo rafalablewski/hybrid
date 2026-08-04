@@ -8,7 +8,8 @@ import {
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  velocityProfiles, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, SPORTS, LEVELS,
+  velocityProfiles, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
+  readinessReasons, readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks,
   localDayKey, INJURY_AREA_KEY,
   type CapabilityMovement,
 } from "@hybrid/core";
@@ -115,7 +116,16 @@ function Full({ top }: { top?: ReactNode }) {
   // ONE velocityProfiles pass, shared by the prescription and the exits.
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, profiles, todayFeeling]);
-  const whyLines = useMemo(() => readinessWhy(log, bio), [log, bio]);
+  // The block's face and what sits behind its door. `readinessReasons` is
+  // `readinessWhy` minus its score line — the ring draws that number already.
+  const whyLines = useMemo(() => readinessReasons(log, bio), [log, bio]);
+  const verdictReadiness = useMemo(() => readinessVerdict(log, bio), [log, bio]);
+  // The ring accounts for the whole 100: what today kept, and what each cause
+  // took. `kept` IS the score the figure prints, so the arcs and the number can
+  // never be two readings of the same day.
+  const deficit = useMemo(() => readinessDeficit(log, bio), [log, bio]);
+  const ringTicks = useMemo(() => readinessRingTicks(deficit), [deficit]);
+  const [whyOpen, setWhyOpen] = useState(false);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
@@ -255,16 +265,31 @@ function Full({ top }: { top?: ReactNode }) {
             </View>
 
             <View style={{ flexDirection: "row", alignItems: "flex-start", gap: space.md, marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Ring value={rx.readiness} size={48} color={readyColor(rx.readiness, C)} track={C.line}>
-                <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
+              {/* THE DEFICIT RING — the kept run in the readiness role's own
+                  colour, then one run per cause. The tick geometry is the one
+                  the athlete already knows; only what the unlit ticks MEAN has
+                  changed. Mirrors web. */}
+              <Ring
+                value={deficit.kept}
+                size={56}
+                color={readyColor(deficit.kept, C)}
+                track={C.line}
+                tickColors={ringTicks.map((s) => (s.kind === "kept" ? readyColor(deficit.kept, C) : roleColor(C, s.role)))}
+              >
+                <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{deficit.kept}</Text>
               </Ring>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
-                <View style={{ gap: 5, marginTop: 5 }}>
-                  {whyLines.map((line, i) => (
-                    <Text key={i} style={{ fontFamily: F.reg, fontSize: fs.body, color: i === 0 ? C.chalk : C.ash, lineHeight: leading(fs.body) }}>{line}</Text>
-                  ))}
-                </View>
+                {/* THE FACE — one line, naming the limiter and nothing else.
+                    This block used to open with ~38 words of prose restating
+                    figures the ring beside it already draws; the sentences now
+                    live behind the door below, unedited. Mirrors web. */}
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 5, lineHeight: leading(fs.subtitle) }}>
+                  {t(verdictReadiness.key).replace(
+                    "{tissue}",
+                    verdictReadiness.muscle ? t(`w.home.today.muscle.${verdictReadiness.muscle}`) : "",
+                  )}
+                </Text>
                 {/* READINESS NUDGE — the one-tap check-in moved today's load;
                     glanceable, tinted in the feeling's own accent. Mirrors web. */}
                 {rx.readinessAdjust && (() => {
@@ -279,6 +304,59 @@ function Full({ top }: { top?: ReactNode }) {
                     </View>
                   );
                 })()}
+                {/* THE DOOR — the derivation, one tap down. Nothing left the
+                    product, only the default view: these are the same lines the
+                    block used to lead with. It counts what is actually behind
+                    it, so it can't promise three reasons and open onto two. */}
+                {whyLines.length > 0 && verdictReadiness.kind !== "empty" && (
+                  <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
+                    <Pressable
+                      onPress={() => setWhyOpen((v) => !v)}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: whyOpen }}
+                      style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}
+                    >
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                        {t(verdictReadiness.doorKey).replace("{n}", String(verdictReadiness.deficit))}
+                      </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.chalk }}>
+                          {t(readinessReasonsKey(whyLines.length)).replace("{n}", String(whyLines.length))}
+                        </Text>
+                        <AuroraIcon name="chevron-down" size={12} color={C.ash} style={whyOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
+                      </View>
+                    </Pressable>
+                    {whyOpen && (
+                      <View style={{ marginTop: 11 }}>
+                        {/* THE LEDGER — the arcs, as arithmetic you can audit.
+                            Same points, same order, same colours as the ring
+                            above; the engine guarantees the rows sum to the
+                            figure inside it. */}
+                        <View style={{ gap: 7 }}>
+                          <LedgerRow C={C} label={t("w.home.readiness.baseline")} value="100" />
+                          {deficit.costs.map((c, i) => (
+                            <LedgerRow
+                              key={i}
+                              C={C}
+                              swatch={roleColor(C, c.role)}
+                              label={t(c.key).replace("{tissue}", c.muscle ? t(`w.home.today.muscle.${c.muscle}`) : "")}
+                              value={`−${c.points}`}
+                              tint={txt(C, roleColor(C, c.role))}
+                            />
+                          ))}
+                          <View style={{ height: 1, backgroundColor: C.line }} />
+                          <LedgerRow C={C} label={t("w.home.readiness.total")} value={String(deficit.kept)} strong />
+                        </View>
+                        <View style={{ gap: 5, marginTop: 12 }}>
+                          {whyLines.map((line, i) => (
+                            <Text key={i} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{line}</Text>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             </View>
           </>
@@ -410,6 +488,20 @@ function velocityValue(profiles: ReturnType<typeof velocityProfiles>): string | 
  */
 function Rule({ C, w, h, mt }: { C: Palette; w: number | `${number}%`; h: number; mt?: number }) {
   return <View style={{ width: w, height: h, borderRadius: h / 2, backgroundColor: C.line, opacity: 0.45, marginTop: mt }} />;
+}
+
+/** One row of the readiness ledger: the arc's own colour, what it is, what it
+ *  cost. Tabular by construction — every value sits on the same right edge. */
+function LedgerRow({
+  C, label, value, swatch, tint, strong,
+}: { C: Palette; label: string; value: string; swatch?: string; tint?: string; strong?: boolean }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: swatch ?? "transparent" }} />
+      <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: strong ? C.chalk : C.ash }} numberOfLines={2}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: strong ? "700" : "400", color: strong ? C.chalk : tint ?? C.ash }}>{value}</Text>
+    </View>
+  );
 }
 
 /** The state card's unknown state. Occupies roughly the shape of the real thing

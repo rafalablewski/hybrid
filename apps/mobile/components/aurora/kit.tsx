@@ -253,6 +253,7 @@ export function Ring({
   ticks = 32,
   color,
   track,
+  tickColors,
   children,
 }: {
   value: number;
@@ -260,21 +261,26 @@ export function Ring({
   ticks?: number;
   color: string;
   track: string;
+  /** One colour per tick. Turns the ring from a gauge of what's KEPT into an
+   *  account of the whole 100 — a run of ticks per cause. Without it, the plain
+   *  gauge every other caller still wants. Web's Ring takes the same prop. */
+  tickColors?: string[];
   children?: ReactNode;
 }) {
   const pct = Math.max(0, Math.min(100, value));
   const lit = Math.round((pct / 100) * ticks);
   const tickLen = Math.round(size * 0.16);
   const tickW = Math.max(2, Math.round(size * 0.045));
+  const count = tickColors?.length ?? ticks;
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      {Array.from({ length: ticks }).map((_, i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <View
           key={i}
           pointerEvents="none"
-          style={{ position: "absolute", width: size, height: size, alignItems: "center", transform: [{ rotate: `${(i / ticks) * 360}deg` }] }}
+          style={{ position: "absolute", width: size, height: size, alignItems: "center", transform: [{ rotate: `${(i / count) * 360}deg` }] }}
         >
-          <View style={{ width: tickW, height: tickLen, borderRadius: tickW, backgroundColor: i < lit ? color : track }} />
+          <View style={{ width: tickW, height: tickLen, borderRadius: tickW, backgroundColor: tickColors ? tickColors[i] : i < lit ? color : track }} />
         </View>
       ))}
       {children}

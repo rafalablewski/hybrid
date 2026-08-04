@@ -17,7 +17,8 @@
 
 import type { Biometrics, MuscleGroup, TrainingLog } from "./types";
 import { computeFatigue } from "./fatigue";
-import { biometricDeviations, computeReadiness } from "./readiness";
+import { biometricDeviations, computeReadiness, MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
+import { readinessDeficit, type ReadinessCostKind } from "./readiness-deficit";
 import { computeHpi, enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
 import {
   calibrateRisk,
@@ -68,7 +69,8 @@ export function deriveReadiness(log: TrainingLog, bio?: Biometrics): Derivation 
   const fatigue = computeFatigue(log);
   const vals = ALL_MUSCLES.map((m) => fatigue.muscles[m]);
   const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-  const base = 100 - avg * 0.7;
+  const endFat = enduranceFatigue(fatigue);
+  const base = 100 - avg * MUSCLE_SLOPE - endFat * ENDURANCE_SLOPE;
   const live = computeReadiness(fatigue, bio);
 
   const steps: DerivationStep[] = [
@@ -82,8 +84,14 @@ export function deriveReadiness(log: TrainingLog, bio?: Biometrics): Derivation 
       math: `(${vals.join(" + ")}) / ${vals.length} = ${f1(avg)}`,
     },
     {
+      label: "Energy-system load",
+      math: `100 × (1 − e^(−${f1(fatigue.systems.anaerobic + fatigue.systems.threshold + fatigue.systems.aerobic)} / 90)) = ${endFat}`,
+      note: "conditioning doses fatigue.systems, never fatigue.muscles — which is why readiness ignored a hard endurance week entirely until this term was added",
+    },
+    {
       label: "Base readiness",
-      math: `100 − 0.7 × ${f1(avg)} = ${f1(base)}`,
+      math: `100 − ${MUSCLE_SLOPE} × ${f1(avg)} − ${ENDURANCE_SLOPE} × ${endFat} = ${f1(base)}`,
+      note: `conditioning counts at half the tissue slope: it clears faster and limits the next session less`,
     },
   ];
 
@@ -110,11 +118,32 @@ export function deriveReadiness(log: TrainingLog, bio?: Biometrics): Derivation 
 
   steps.push({
     label: "Final score",
-    math: `clamp(round(${f1(base)} ${sign(live.bioAdj)}), 35, 98) = ${live.score}`,
+    math: `clamp(round(${f1(base)} ${sign(live.bioAdj)}), ${READINESS_FLOOR}, ${READINESS_CEILING}) = ${live.score}`,
   });
+
+  // WHERE THE MISSING POINTS WENT — the same split the athlete's ring draws,
+  // printed here so the console and the card can be checked against each other
+  // rather than trusted separately.
+  const split = readinessDeficit(log, bio);
+  if (split.costs.length) {
+    steps.push({
+      label: "Deficit attribution (the athlete's ring)",
+      math: `${split.kept} + ${split.costs.map((c) => `${c.points} ${COST_LABEL[c.kind]}`).join(" + ")} = 100`,
+      note: `apportioned by largest remainder${split.clamped ? `; the score hit the ${split.clamped}, which scales the causes rather than orphaning them` : ""}`,
+    });
+  }
 
   return { id: "readiness", title: "Readiness", result: `${live.score} / 100`, steps };
 }
+
+/** Plain-English names for the deficit's causes, for the console only — the
+ *  athlete's copy resolves through READINESS_COST_KEY / i18n. */
+const COST_LABEL: Record<ReadinessCostKind, string> = {
+  tissue: "tissue",
+  conditioning: "conditioning",
+  wearable: "wearable",
+  ceiling: "scale ceiling",
+};
 
 /** HPI, derived step by step (mirrors computeHpi's exact rounding order). */
 export function deriveHpi(

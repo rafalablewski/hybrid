@@ -11,6 +11,7 @@ import type { Biometrics, Fatigue, MuscleGroup, Readiness, TrainingLog } from ".
 import { computeFatigue } from "./fatigue";
 import { computeReadiness } from "./readiness";
 import { computeHpi, enduranceFatigue, HYBRID_WEIGHTS, type Hpi, type HpiWeights } from "./hpi";
+import { readinessDeficit } from "./readiness-deficit";
 
 /** One contributing factor to the current state, ranked by magnitude. */
 export interface StateDriver {
@@ -140,13 +141,24 @@ export function readinessWhy(log: TrainingLog, bio?: Biometrics): string[] {
     return lines;
   }
   const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
+  const endFatigue = enduranceFatigue(fatigue);
   lines.push(
-    top[1] >= 25
+    top[1] >= LIMITER_FATIGUE
       ? `Computed from your logged training: ${NICE[top[0]].toLowerCase()} fatigue (${top[1]}/100) is the main drag today.`
-      : "Computed from your logged training: no meaningful residual fatigue — you're cleared to train.",
+      : endFatigue >= CONDITIONING_VOICE
+        // "Cleared to train" is a claim about the WHOLE athlete, and this
+        // sentence only ever knew about tissue. Beside a conditioning cost of
+        // 25 points it read as an all-clear the score was actively refusing.
+        ? "Computed from your logged training: no meaningful residual fatigue in any tissue."
+        : "Computed from your logged training: no meaningful residual fatigue — you're cleared to train.",
   );
-  const endFat = enduranceFatigue(fatigue);
-  if (endFat >= 30) lines.push(`Energy-system load from recent conditioning sits at ${endFat}/100.`);
+  // The conditioning line appears whenever the load is big enough to have cost
+  // a point, not at some higher threshold of its own — it is a real term in the
+  // score now (readiness.ts, ENDURANCE_SLOPE), so a day where it took points
+  // and said nothing would be the block hiding its own arithmetic.
+  if (endFatigue >= CONDITIONING_VOICE) {
+    lines.push(`Energy-system load from recent conditioning sits at ${endFatigue}/100, and it counts against today's number.`);
+  }
   if (bio && bioAdj !== 0) {
     lines.push(
       `Your wearable nudged readiness ${bioAdj > 0 ? "+" : ""}${bioAdj} today — ${
@@ -155,6 +167,142 @@ export function readinessWhy(log: TrainingLog, bio?: Biometrics): string[] {
     );
   }
   return lines;
+}
+
+/**
+ * The fatigue at which a tissue stops being background load and becomes the
+ * thing holding today back. Shared by the narrative and the verdict so the
+ * card's one-line face can never name a limiter the derivation below it
+ * doesn't, or stay silent while the derivation names one.
+ */
+const LIMITER_FATIGUE = 25;
+
+/**
+ * The energy-system load at which conditioning gets a sentence of its own.
+ * Deliberately low, and tied to the arithmetic rather than to taste: at
+ * ENDURANCE_SLOPE (0.35) a load of 10 has already cost the athlete points, and
+ * a cost the ring draws must be a cost the prose is willing to name.
+ */
+const CONDITIONING_VOICE = 10;
+
+/** Points below which a cause isn't worth being the card's whole sentence. */
+const MEANINGFUL_COST = 3;
+
+/**
+ * THE LINES BEHIND THE DOOR — the derivation without its first line.
+ *
+ * `readinessWhy`'s line 0 restates the score ("Readiness 67/100."), which the
+ * ring beside it already draws at 30px. Behind a disclosure that line is pure
+ * duplication, so this is the same array minus it. Derived from `readinessWhy`
+ * rather than re-deriving the sentences, so the two can't drift apart.
+ */
+export function readinessReasons(log: TrainingLog, bio?: Biometrics): string[] {
+  return readinessWhy(log, bio).slice(1);
+}
+
+/** What shape today's readiness read takes. */
+export type ReadinessVerdictKind = "empty" | "clear" | "limiter" | "engine" | "recovery";
+
+/**
+ * The ONE line the readiness block wears on its face, plus what the door
+ * beside it may honestly promise.
+ */
+export interface ReadinessVerdict {
+  kind: ReadinessVerdictKind;
+  /**
+   * i18n key for the line. A KEY, not a sentence — unlike `readinessWhy`,
+   * which is English-only prose, this is the one line most athletes will ever
+   * read, so it has to speak Polish and German too.
+   */
+  key: string;
+  /** The tissue a `limiter` verdict names — resolve through `w.home.today.muscle.*`. */
+  muscle: MuscleGroup | null;
+  /**
+   * Points below 100. This is ARITHMETIC, not attribution: we can say how much
+   * is missing today without yet being able to say what each cause spent (that
+   * needs a deficit split out of `computeReadiness`, which doesn't exist yet).
+   */
+  deficit: number;
+  /**
+   * How many lines actually sit behind the door. The door labels itself from
+   * this, so it can never offer three reasons and open onto two.
+   */
+  reasons: number;
+  /**
+   * i18n key for the door's own label. "Where the 33 went" is the honest
+   * question while something IS missing; at a clean 100 nothing went anywhere,
+   * and the wearable can still have a line worth reading, so the door asks a
+   * different question rather than pointing at a zero.
+   */
+  doorKey: string;
+}
+
+/** The faces, as i18n keys. */
+export const READINESS_VERDICT_KEY: Record<ReadinessVerdictKind, string> = {
+  empty: "w.home.readiness.verdictEmpty",
+  clear: "w.home.readiness.verdictClear",
+  limiter: "w.home.readiness.verdictLimiter",
+  engine: "w.home.readiness.verdictEngine",
+  recovery: "w.home.readiness.verdictRecovery",
+};
+
+/**
+ * Today's readiness as ONE line, naming the top cause and nothing else.
+ *
+ * The block used to open with four sentences of prose — ~38 words restating
+ * figures the engine had already computed, with every number buried mid-
+ * sentence so none of them held a fixed position from one day to the next.
+ * This is what replaces them on the card face; the sentences themselves move
+ * behind the door (`readinessReasons`), unedited.
+ *
+ * Agreement with the derivation is structural, not editorial: the limiter
+ * threshold is the same constant, and the reason count is the length of the
+ * very array the door opens onto.
+ */
+export function readinessVerdict(log: TrainingLog, bio?: Biometrics): ReadinessVerdict {
+  const fatigue = computeFatigue(log);
+  const split = readinessDeficit(log, bio);
+  const deficit = split.deficit;
+  const reasons = readinessReasons(log, bio).length;
+  const doorKey = deficit > 0 ? "w.home.readiness.door" : "w.home.readiness.doorClear";
+  const base = { muscle: null as MuscleGroup | null, deficit, reasons, doorKey };
+
+  if (log.length === 0) return { ...base, kind: "empty", key: READINESS_VERDICT_KEY.empty };
+
+  // The face names whichever cause the RING draws biggest, so the sentence and
+  // the arcs can't tell two stories. A cause has to clear its own bar to speak:
+  // the tissue term needs a tissue actually fatigued (the same threshold the
+  // derivation uses), and the other two need to have cost more than a rounding
+  // point. When nothing qualifies, the honest face is the positive one.
+  const topMuscle = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
+  const ranked = [...split.costs].sort((a, b) => b.points - a.points);
+  for (const cost of ranked) {
+    if (cost.kind === "tissue" && topMuscle[1] >= LIMITER_FATIGUE) {
+      return { ...base, kind: "limiter", key: READINESS_VERDICT_KEY.limiter, muscle: topMuscle[0] };
+    }
+    if (cost.kind === "conditioning" && cost.points >= MEANINGFUL_COST) {
+      return { ...base, kind: "engine", key: READINESS_VERDICT_KEY.engine };
+    }
+    if (cost.kind === "wearable" && cost.points >= MEANINGFUL_COST) {
+      return { ...base, kind: "recovery", key: READINESS_VERDICT_KEY.recovery };
+    }
+  }
+  return { ...base, kind: "clear", key: READINESS_VERDICT_KEY.clear };
+}
+
+/**
+ * The door's count, pluralized where plurals are hard.
+ *
+ * English and German need two forms; Polish needs three (1 powód, 2–4 powody,
+ * 5+ powodów), and the rule is the engine's to own so the two clients can't
+ * pick differently for the same number.
+ */
+export function readinessReasonsKey(n: number): string {
+  if (n === 1) return "w.home.readiness.reasonsOne";
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "w.home.readiness.reasonsFew";
+  return "w.home.readiness.reasonsMany";
 }
 
 export interface TrajectoryPoint {

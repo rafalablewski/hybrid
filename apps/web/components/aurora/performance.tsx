@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, localDayKey,
+  ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, localDayKey,
+  readinessReasons, readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks,
   INJURY_AREA_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type CapabilityMovement,
 } from "@hybrid/core";
@@ -154,7 +155,16 @@ export default function AuroraPerformance({
   // used to be computed twice on every render of this page.
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, profiles, todayFeeling]);
-  const whyLines = useMemo(() => readinessWhy(log, bio), [log, bio]);
+  // The block's face and what sits behind its door. `readinessReasons` is
+  // `readinessWhy` minus its score line — the ring draws that number already.
+  const whyLines = useMemo(() => readinessReasons(log, bio), [log, bio]);
+  const verdictReadiness = useMemo(() => readinessVerdict(log, bio), [log, bio]);
+  // The ring accounts for the whole 100: what today kept, and what each cause
+  // took. `kept` IS the score the figure prints, so the arcs and the number can
+  // never be two readings of the same day.
+  const deficit = useMemo(() => readinessDeficit(log, bio), [log, bio]);
+  const ringTicks = useMemo(() => readinessRingTicks(deficit), [deficit]);
+  const [whyOpen, setWhyOpen] = useState(false);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
@@ -306,13 +316,27 @@ export default function AuroraPerformance({
               </div>
 
               <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C("line")}`, display: "flex", alignItems: "flex-start", gap: space.md }}>
-                <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
+                {/* THE DEFICIT RING — the kept run in the readiness role's own
+                    colour, then one run per cause. The tick geometry is the one
+                    the athlete already knows; only what the unlit ticks MEAN
+                    has changed. */}
+                <Ring
+                  value={deficit.kept}
+                  color={C(readyVar(deficit.kept))}
+                  size={56}
+                  tickColors={ringTicks.map((s) => (s.kind === "kept" ? C(readyVar(deficit.kept)) : C(ROLE_COLOR[s.role])))}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6, maxWidth: "62ch" }}>
-                    {whyLines.map((line, i) => (
-                      <div key={i} style={{ fontSize: fs.body, lineHeight: 1.6, color: i === 0 ? C("chalk") : C("ash") }}>{line}</div>
-                    ))}
+                  {/* THE FACE — one line, naming the limiter and nothing else.
+                      This block used to open with ~38 words of prose restating
+                      figures the ring beside it already draws; the sentences
+                      now live behind the door below, unedited. */}
+                  <div style={{ fontSize: fs.subtitle, fontWeight: 700, letterSpacing: "-.015em", color: C("chalk"), marginTop: 6, maxWidth: "36ch" }}>
+                    {t(verdictReadiness.key).replace(
+                      "{tissue}",
+                      verdictReadiness.muscle ? t(`w.home.today.muscle.${verdictReadiness.muscle}`) : "",
+                    )}
                   </div>
                   {/* READINESS NUDGE — the one-tap check-in moved today's load;
                       glanceable, tinted in the feeling's own accent. Absent on a
@@ -329,6 +353,57 @@ export default function AuroraPerformance({
                       </div>
                     );
                   })()}
+                  {/* THE DOOR — the derivation, one tap down. Nothing left the
+                      product, only the default view: `readinessReasons` is the
+                      same prose the block used to lead with. It counts what is
+                      actually behind it, so it can't promise three reasons and
+                      open onto two. */}
+                  {whyLines.length > 0 && verdictReadiness.kind !== "empty" && (
+                    <div style={{ marginTop: 12 }}>
+                      <button
+                        type="button"
+                        className="pressable"
+                        aria-expanded={whyOpen}
+                        onClick={() => setWhyOpen((v) => !v)}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, width: "100%", background: "none", border: 0, padding: "10px 0 0", borderTop: `1px solid ${C("line")}`, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}
+                      >
+                        <span>{t(verdictReadiness.doorKey).replace("{n}", String(verdictReadiness.deficit))}</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: C("chalk"), fontWeight: 600 }}>
+                          {t(readinessReasonsKey(whyLines.length)).replace("{n}", String(whyLines.length))}
+                          <span aria-hidden style={{ fontSize: 8 }}>{whyOpen ? "▲" : "▼"}</span>
+                        </span>
+                      </button>
+                      {whyOpen && (
+                        <div style={{ marginTop: 11 }}>
+                          {/* THE LEDGER — the arcs, as arithmetic you can audit.
+                              Same points, same order, same colours as the ring
+                              above; the engine guarantees the rows sum to the
+                              figure inside it. */}
+                          <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: "7px 10px", alignItems: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
+                            <span />
+                            <span>{t("w.home.readiness.baseline")}</span>
+                            <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>100</span>
+                            {deficit.costs.map((c, i) => (
+                              <Fragment key={i}>
+                                <span style={{ width: 8, height: 8, borderRadius: 2, background: C(ROLE_COLOR[c.role]) }} />
+                                <span>{t(c.key).replace("{tissue}", c.muscle ? t(`w.home.today.muscle.${c.muscle}`) : "")}</span>
+                                <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: C(ROLE_COLOR[c.role]) }}>−{c.points}</span>
+                              </Fragment>
+                            ))}
+                            <span style={{ gridColumn: "1 / -1", height: 1, background: C("line") }} />
+                            <span />
+                            <span style={{ color: C("chalk"), fontWeight: 700 }}>{t("w.home.readiness.total")}</span>
+                            <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: C("chalk"), fontWeight: 700 }}>{deficit.kept}</span>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12, maxWidth: "62ch" }}>
+                            {whyLines.map((line, i) => (
+                              <div key={i} style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("ash") }}>{line}</div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </>
@@ -512,16 +587,23 @@ function Mod({ label, value, onClick, last }: { label: string; value: string; on
 
 /** Readiness/score dial — a ring of TICK MARKS lit up to the value, matching the
  *  Today screen + the mobile kit Ring so the "number effect" reads the same. */
-function Ring({ value, color, size = 48, ticks = 32 }: { value: number; color: string; size?: number; ticks?: number }) {
+/**
+ * The readiness ring. `tickColors` turns it from a gauge of what's KEPT into an
+ * account of the whole 100 — one run of ticks per cause, so the number explains
+ * itself instead of carrying a paragraph beside it. Without that prop it is the
+ * plain gauge every other caller still wants.
+ */
+function Ring({ value, color, size = 48, ticks = 32, tickColors }: { value: number; color: string; size?: number; ticks?: number; tickColors?: string[] }) {
   const pct = Math.max(0, Math.min(100, value));
   const lit = Math.round((pct / 100) * ticks);
   const tickLen = Math.max(4, Math.round(size * 0.16));
   const tickW = Math.max(2, Math.round(size * 0.045));
+  const count = tickColors?.length ?? ticks;
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0, display: "grid", placeItems: "center" }}>
-      {Array.from({ length: ticks }).map((_, i) => (
-        <span key={i} style={{ position: "absolute", top: 0, left: "50%", width: tickW, height: size / 2, transformOrigin: "bottom center", transform: `translateX(-50%) rotate(${(i / ticks) * 360}deg)` }}>
-          <span style={{ display: "block", width: tickW, height: tickLen, borderRadius: tickW, background: i < lit ? color : C("line") }} />
+      {Array.from({ length: count }).map((_, i) => (
+        <span key={i} style={{ position: "absolute", top: 0, left: "50%", width: tickW, height: size / 2, transformOrigin: "bottom center", transform: `translateX(-50%) rotate(${(i / count) * 360}deg)` }}>
+          <span style={{ display: "block", width: tickW, height: tickLen, borderRadius: tickW, background: tickColors ? tickColors[i] : i < lit ? color : C("line") }} />
         </span>
       ))}
       <span style={{ position: "relative", fontWeight: 800, fontSize: fs.body, color: C("chalk") }}>{Math.round(value)}</span>

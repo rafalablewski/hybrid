@@ -62,7 +62,8 @@ import {
 import { calibrateRisk, computeInjuryRisk, PRIOR_COEFFS } from "./injury";
 import { EFFORT_BIAS_MAX, EFFORT_BIAS_PRIOR_WEIGHT, EFFORT_TREND_MIN_DAYS, EFFORT_TREND_MIN_SAMPLES } from "./effort";
 import { computeFatigue } from "./fatigue";
-import { computeReadiness } from "./readiness";
+import { computeReadiness, MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
+import { readinessDeficit } from "./readiness-deficit";
 import { enduranceFatigue } from "./hpi";
 import { SAMPLE_BIOMETRICS, SAMPLE_TRAINING_LOG } from "./sample-data";
 import { ALL_MUSCLES } from "./movements";
@@ -153,8 +154,29 @@ describe("ENGINE_FORMULAS", () => {
     const fatigue = computeFatigue(SAMPLE_TRAINING_LOG);
     const vals = Object.values(fatigue.muscles);
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const formula = Math.max(35, Math.min(98, Math.round(100 - avg * 0.7)));
+    // Both terms — the conditioning one is the whole point: readiness used to
+    // ignore energy-system load, so an athlete could run themselves into the
+    // ground and this number wouldn't notice.
+    const formula = Math.max(
+      READINESS_FLOOR,
+      Math.min(READINESS_CEILING, Math.round(100 - avg * MUSCLE_SLOPE - enduranceFatigue(fatigue) * ENDURANCE_SLOPE)),
+    );
     expect(computeReadiness(fatigue).score).toBe(formula);
+  });
+
+  it("the readiness card in the console carries the live slopes (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "readiness")!;
+    expect(f.expression).toContain(String(MUSCLE_SLOPE));
+    expect(f.expression).toContain(String(ENDURANCE_SLOPE));
+    expect(f.expression).toContain(`${READINESS_FLOOR}, ${READINESS_CEILING}`);
+    expect(f.constants.find((c) => c.symbol === String(ENDURANCE_SLOPE))).toBeTruthy();
+  });
+
+  it("the deficit split in the console sums the way the engine does (drift guard)", () => {
+    const f = ENGINE_FORMULAS.find((x) => x.id === "readiness-deficit")!;
+    expect(f).toBeTruthy();
+    const d = readinessDeficit(SAMPLE_TRAINING_LOG);
+    expect(d.kept + d.costs.reduce((a, c) => a + c.points, 0)).toBe(100);
   });
 
   it("endurance formula reproduces the live engine (drift guard)", () => {

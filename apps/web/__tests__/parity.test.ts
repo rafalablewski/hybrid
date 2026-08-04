@@ -53,14 +53,11 @@ const mobileRoutes = new Set(
  */
 // squad, teamcompare and org used to sit here under `mobile-team-surfaces`;
 // they are built on mobile now, and this test's own "listed as an accepted gap
-// but now ships on both" assertion is what required removing them.
-const ACCEPTED_GAPS: Record<string, { missing: "web" | "mobile"; capability: string }> = {
-  // The volume MODEL — the athlete's own per-muscle landmark profile, edited
-  // set by set — ships as its own screen on mobile only. Web promotes the nav
-  // id into the Volume screen (NAV_ITEMS `promotedTo: "volume"`), so the model
-  // itself has no editor there yet. Tracked by `volume-model-web`.
-  "volume-model": { missing: "web", capability: "volume-model-web" },
-};
+// but now ships on both" assertion is what required removing them. `volume-model`
+// followed: the Performance rebuild gave web its own editor route
+// (components/aurora/volume-model.tsx) and neither this list nor the
+// `volume-model-web` capability was updated, so the guard had been red on main.
+const ACCEPTED_GAPS: Record<string, { missing: "web" | "mobile"; capability: string }> = {};
 
 describe("web ↔ mobile parity", () => {
   it("found both clients' surface maps (the scan itself isn't silently empty)", () => {
