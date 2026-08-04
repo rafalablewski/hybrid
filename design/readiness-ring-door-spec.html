@@ -130,12 +130,11 @@
 
           <div class="row" style="gap: 18px; margin-top: 14px; align-items: center;">
             <svg width="118" height="118" viewBox="0 0 100 100" role="img"
-                 aria-label="Readiness 67 of 100. Missing 33 points: back fatigue 22, conditioning 8, short sleep 3.">
+                 aria-label="Readiness 67 of 100. Missing 33 points: tissue load 30, wearable readings 3.">
               <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="10"></circle>
               <g transform="rotate(-90 50 50)" fill="none">
                 <circle cx="50" cy="50" r="40" stroke="#c6f84f" stroke-width="10" stroke-dasharray="166.4 251.3" stroke-dashoffset="0"></circle>
-                <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-width="7" stroke-dasharray="53.3 251.3" stroke-dashoffset="-168.4"></circle>
-                <circle cx="50" cy="50" r="40" stroke="#6cb6bd" stroke-width="7" stroke-dasharray="18.1 251.3" stroke-dashoffset="-223.7"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-width="7" stroke-dasharray="73.4 251.3" stroke-dashoffset="-168.4"></circle>
                 <circle cx="50" cy="50" r="40" stroke="#d0cd94" stroke-width="7" stroke-dasharray="5.5 251.3" stroke-dashoffset="-243.8"></circle>
               </g>
               <text x="50" y="52" text-anchor="middle" font-family="ui-monospace, monospace" font-size="30" font-weight="700" fill="#f3f4ef">67</text>
@@ -154,9 +153,9 @@
           <div class="drawer" id="drawer-main" role="region" aria-labelledby="door-main">
             <div>
               <div class="ledger">
-                <i class="sw" style="background:#e58a5c"></i><span>Back fatigue <span class="num" style="color:#e58a5c">81/100</span></span><span class="v" style="color:#e58a5c">−22</span>
-                <i class="sw" style="background:#6cb6bd"></i><span>Conditioning load <span class="num" style="color:#6cb6bd">39/100</span></span><span class="v" style="color:#6cb6bd">−8</span>
-                <i class="sw" style="background:#d0cd94"></i><span>HRV down, sleep short</span><span class="v" style="color:#d0cd94">−3</span>
+                <i></i><span>Baseline</span><span class="v">100</span>
+                <i class="sw" style="background:#e58a5c"></i><span>Tissue load, mostly <span class="num" style="color:#e58a5c">back</span></span><span class="v" style="color:#e58a5c">−30</span>
+                <i class="sw" style="background:#d0cd94"></i><span>Wearable readings (HRV, sleep)</span><span class="v" style="color:#d0cd94">−3</span>
                 <div class="sep"></div>
                 <i></i><span class="tot">Readiness</span><span class="v tot">67</span>
               </div>
@@ -185,7 +184,7 @@
             <span class="k">B</span>
             <div>
               <h4>The deficit arcs</h4>
-              <p>One per cause, sized by points cost, drawn clockwise <b>largest first</b>. Tissue is always the red, the engine always the blue, the wearable always the amber — so a cause keeps its colour across every surface that names it.</p>
+              <p>One per cause, sized by points cost, in a <b>fixed order</b> — tissue, then the wearable, then the scale's own ceiling. Tissue is always the red and the wearable always the amber, so a cause keeps its colour across every surface that names it. There are two causes and not three: see the findings below.</p>
             </div>
           </li>
           <li>
@@ -393,6 +392,32 @@
   </div>
 
   <div class="band">
+    <h2 class="sec">What building it changed — two findings the sum law forced out</h2>
+    <p class="note">Both were caught by the same rule, which is the argument for having it: a design that has to add up to 100 cannot quietly draw a cause the engine doesn't have. <b>This page has been corrected to what shipped</b>; the mock above is the real card.</p>
+
+    <div class="cols2">
+      <section>
+        <h3>Conditioning doesn't move readiness</h3>
+        <p>The score is <code>clamp(35..98, round(100 − avg(muscle fatigue) × 0.7 + wearable))</code>. That's the whole model: <b>two causes, plus two clamps</b>. The block's third sentence — "energy-system load from recent conditioning sits at 39/100" — is true and worth reading, but that figure feeds HPI. It moves this number by <b>zero</b>.</p>
+        <p>The first version of this page drew it as an 8-point arc. It kept its sentence in the drawer and takes no arc. Whether conditioning <em>should</em> move readiness is a modelling question, and a card is the wrong place to answer it.</p>
+      </section>
+      <section>
+        <h3>Per-muscle arcs read worse than one tissue arc</h3>
+        <p>Readiness averages all seven tissues, so splitting that term per muscle is arithmetically exact — and it looked wrong. On a normal week the fatigue spreads, so the biggest arc on the ring became an anonymous <b>"other tissue", larger than the tissue actually named</b> (measured: glutes 10, other 27).</p>
+        <p>The tissue term is now one cost, named by whichever tissue carries most of it — which is the same tissue the card's face calls the limiter, so the ring and the sentence above it can't tell two different stories.</p>
+      </section>
+      <section>
+        <h3>A positive nudge takes no arc</h3>
+        <p>When the wearable says you recovered it doesn't cost anything — it makes the whole deficit <em>smaller</em>. So a cost here means "this cause's share of <b>today's</b> deficit", which is the only reading under which the parts sum to the whole. The +3 still gets its sentence in the drawer.</p>
+      </section>
+      <section>
+        <h3>The risk was real, and it was paid</h3>
+        <p>"Back fatigue is the main drag" was a safe sentence; "tissue load cost you 30 points" is a claim. <code>readinessDeficit()</code> shipped with 52 tests, and the gate is one line: <b>kept plus every cost equals exactly 100</b>, across an empty log, a light week, a wrecking block, both clamps, and every wearable state.</p>
+      </section>
+    </div>
+  </div>
+
+  <div class="band">
     <h2 class="sec">Order of work</h2>
     <ul class="plain">
       <li><b>The door first, alone.</b> Concept 07 needs no engine change — move the existing lines behind a disclosure, ship it on both clients, and the block drops from 38 words to 10 this week.</li>
@@ -400,7 +425,7 @@
       <li><b>Then the ring</b>, replacing the disclosure's static ledger with the drawn one. The layout doesn't move; the ring simply starts carrying what the ledger was saying.</li>
       <li><b>Then <code>capabilities.ts</code></b>, in the same change that ships each step — as the rule requires.</li>
     </ul>
-    <p class="note">Sequenced this way, every step is independently shippable and the athlete never sees a half-built card.</p>
+    <p class="note">Sequenced this way, every step is independently shippable and the athlete never sees a half-built card. <b>All three steps are now shipped on both clients</b> — see the capabilities <code>readiness-face-door</code> and <code>readiness-deficit-ring</code>.</p>
   </div>
 </div>
 

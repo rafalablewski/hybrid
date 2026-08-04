@@ -52,3 +52,4 @@ export * from "./effort";
 export * from "./derivation";
 export * from "./composition";
 export * from "./segment";
+export * from "./readiness-deficit";
