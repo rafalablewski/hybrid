@@ -33,11 +33,15 @@ export interface PlotBox {
   pad?: number;
 }
 
-/** One plotted day, in both the forms the two clients need: screen
- *  coordinates for a path, and a 0..1 normal for a bar or a marker. Mobile
- *  deliberately ships no SVG renderer (see the body-map note in
- *  capabilities.ts), so it sizes native views from `hpiN` / `readyN` while web
- *  strokes the paths — same domain, same days, same marks. */
+/** One plotted day, in both the forms a client might need: screen coordinates
+ *  for a path, and a 0..1 normal for a bar or a marker.
+ *
+ *  BOTH CLIENTS STROKE THE PATHS TODAY — react-native-svg is already in the
+ *  mobile app for the injury mannequin, so the fourteen days have one shape
+ *  everywhere. The normals stay because they are what any renderer WITHOUT
+ *  paths would need (a widget, a watch face, a native SwiftUI kit), and
+ *  because deriving them a second time elsewhere is how two surfaces end up
+ *  disagreeing about the same domain. */
 export interface TrajectoryDay {
   daysAgo: number;
   x: number;
