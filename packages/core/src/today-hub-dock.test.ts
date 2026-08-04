@@ -2,20 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   HUB_DOCK_DEAD_ZONE,
   HUB_DOCK_FLOOR,
-  HUB_DOCK_MOTION,
-  HUB_DOCK_MOTION_REDUCED,
   HUB_DOCK_RELEASE,
   HUB_DOCK_REST,
-  HUB_DOCK_STAGGER,
+  HUB_DOCK_SPRINGS,
   HUB_PILL,
   hubActiveWidth,
-  hubCurve,
   hubDockState,
   hubDockVisible,
   hubMotion,
-  hubSplitDelay,
+  hubPillWidths,
   type HubDockState,
+  type HubMotionKey,
 } from "./today-hub-dock";
+import { durations, easings, springDurationMs, springs } from "./motion";
 
 /** Walk a scroll track the way a finger would, threading each frame's state
  *  into the next — the only way the direction run means anything. */
@@ -149,53 +148,77 @@ describe("geometry", () => {
   });
 });
 
-describe("hubSplitDelay", () => {
-  it("lands the pill you are in first, wherever it sits in the row", () => {
-    expect(hubSplitDelay(0, 0)).toBe(0);
-    expect(hubSplitDelay(2, 2)).toBe(0);
+describe("hubPillWidths", () => {
+  const TABS = [{ id: "dashboard" }, { id: "performance" }, { id: "feed" }];
+
+  it("gives exactly one pill its word and contracts the rest", () => {
+    const w = hubPillWidths("performance", { dashboard: 80, performance: 96, feed: 40 }, TABS);
+    expect(w).toEqual([HUB_PILL.siblingWidth, hubActiveWidth(96), HUB_PILL.siblingWidth]);
   });
 
-  it("staggers outward from the active pill in both directions", () => {
-    // Active in the middle: both neighbours land together, one beat later.
-    expect(hubSplitDelay(0, 1)).toBe(HUB_DOCK_STAGGER);
-    expect(hubSplitDelay(2, 1)).toBe(HUB_DOCK_STAGGER);
-    // Active at the end: the row unfolds away from it.
-    expect(hubSplitDelay(1, 0)).toBe(HUB_DOCK_STAGGER);
-    expect(hubSplitDelay(2, 0)).toBe(HUB_DOCK_STAGGER * 2);
+  it("holds an unmeasured label at its glyph width rather than guessing", () => {
+    // The active tab's label has not laid out yet: the row must not lay itself
+    // out against an estimate and then jump when the real width lands.
+    expect(hubPillWidths("feed", {}, TABS)).toEqual(TABS.map(() => HUB_PILL.siblingWidth));
   });
 
-  it("keeps the whole row inside one arrival", () => {
-    // Three tabs, worst case: the last pill must not land after the split has
-    // finished, or the row reads as two separate arrivals.
-    const worst = hubSplitDelay(2, 0);
-    expect(worst).toBeLessThan(HUB_DOCK_MOTION.split.ms);
+  it("is the SAME array the glass and the glyphs are laid out from", () => {
+    // On iOS these widths are consumed twice — RN draws the marks, SwiftUI
+    // draws the glass beneath them — so the two layers must read one source.
+    const labels = { dashboard: 88, performance: 96, feed: 40 };
+    expect(hubPillWidths("dashboard", labels, TABS)).toEqual(hubPillWidths("dashboard", labels, TABS));
   });
 });
 
 describe("motion", () => {
-  it("leaves faster than it arrives", () => {
-    expect(HUB_DOCK_MOTION.conceal.ms).toBeLessThan(HUB_DOCK_MOTION.reveal.ms);
-  });
-
-  it("gives only the arriving curves an overshoot", () => {
-    expect(HUB_DOCK_MOTION.split.bezier[3]).toBe(1);
-    expect(HUB_DOCK_MOTION.split.bezier[1]).toBeGreaterThan(1);
-    expect(HUB_DOCK_MOTION.conceal.bezier[1]).toBeLessThanOrEqual(1);
-    expect(HUB_DOCK_MOTION.merge.bezier[1]).toBeLessThanOrEqual(1);
-  });
-
-  it("stays inside the system's settle ceiling", () => {
-    for (const m of Object.values(HUB_DOCK_MOTION)) expect(m.ms).toBeLessThanOrEqual(450);
-  });
-
-  it("collapses every transition to one flat fade under reduced motion", () => {
-    for (const key of Object.keys(HUB_DOCK_MOTION) as (keyof typeof HUB_DOCK_MOTION)[]) {
-      expect(hubMotion(key, true)).toBe(HUB_DOCK_MOTION_REDUCED);
-      expect(hubMotion(key, false)).toBe(HUB_DOCK_MOTION[key]);
+  it("runs on the app's springs, not on curves of its own", () => {
+    // The point of the whole exercise: SwiftUI consumes response/damping
+    // directly, so the native glass and the RN marks integrate one physics.
+    expect(HUB_DOCK_SPRINGS.exchange).toBe(springs.lens);
+    expect(HUB_DOCK_SPRINGS.reveal).toBe(springs.sheet);
+    for (const key of ["reveal", "exchange"] as const) {
+      expect(hubMotion(key).spring).toBe(HUB_DOCK_SPRINGS[key]);
+      expect(hubMotion(key).ms).toBe(springDurationMs(HUB_DOCK_SPRINGS[key]));
     }
   });
 
-  it("prints a CSS curve web can hand straight to a transition", () => {
-    expect(hubCurve(HUB_DOCK_MOTION.reveal)).toBe("cubic-bezier(0.2,0.8,0.2,1)");
+  it("leaves faster than it arrives, and leaves on a curve", () => {
+    const conceal = hubMotion("conceal");
+    expect(conceal.ms).toBeLessThan(hubMotion("reveal").ms);
+    // Nothing positional to interrupt on the way out, so no spring.
+    expect(conceal.spring).toBeNull();
+  });
+
+  it("stays inside the system's settle ceiling", () => {
+    for (const key of ["reveal", "exchange", "conceal"] as HubMotionKey[]) {
+      expect(hubMotion(key).ms).toBeLessThanOrEqual(450);
+    }
+  });
+
+  it("collapses every transition to one flat fade under reduced motion", () => {
+    for (const key of ["reveal", "exchange", "conceal"] as HubMotionKey[]) {
+      const m = hubMotion(key, true);
+      expect(m).toEqual({ ms: durations.reduced, spring: null, css: "linear", bezier: null });
+    }
+  });
+
+  it("prints an easing web can hand straight to a transition", () => {
+    // A sampled spring, not an approximation of one.
+    expect(hubMotion("reveal").css.startsWith("linear(")).toBe(true);
+    expect(hubMotion("conceal").css.startsWith("cubic-bezier(")).toBe(true);
+  });
+
+  it("hands the same flat curve to CSS and to React Native", () => {
+    // Web takes the string, mobile takes the four numbers — one definition.
+    const conceal = hubMotion("conceal");
+    expect(conceal.bezier).toEqual(
+      easings.exit.replace(/^cubic-bezier\(|\)$/g, "").split(",").map(Number),
+    );
+    // A spring has nothing to approximate: it is integrated on both clients.
+    expect(hubMotion("exchange").bezier).toBeNull();
+  });
+
+  it("solves each transition once, however often it is asked for", () => {
+    expect(hubMotion("exchange")).toBe(hubMotion("exchange"));
   });
 });
