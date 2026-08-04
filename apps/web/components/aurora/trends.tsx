@@ -1,39 +1,43 @@
 "use client";
 
-import { createElement, useMemo, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { createElement, useMemo, useState, type CSSProperties } from "react";
 import {
-  weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, kgToUnit,
+  weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
   type LoggedSession, type ExercisePeriod, type TrendDir, type ExerciseTableRow,
 } from "@hybrid/core";
 import { HeroScreen } from "./hero";
-import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, BLUE, tip, mono } from "@/lib/ui";
+import { fs, space, LINE_HEX, LIME_HEX, BLUE } from "@/lib/ui";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 
-const fmtWeek = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const C = (v: string) => `var(--color-${v})`;
-const TREND_GLYPH: Record<TrendDir, { g: string; c: string }> = { up: { g: "▲", c: "lime" }, down: { g: "▼", c: "amber" }, flat: { g: "→", c: "ash" } };
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 
-/** AURORA Trends (web) — full bespoke analytics hub reusing the exact engines +
- *  recharts volume/tonnage/muscle bars. */
+// ONE SHEET — the three floating cards (sets, tonnage, exercise table) are a
+// single surface divided by hairlines, identical to mobile's. Three cards made
+// one screen look like three unrelated features, and each spent its height on a
+// chart to say a number it then set at 10px in the corner. Every band now leads
+// with its FIGURE; the eight-week line supports it at the size a supporting mark
+// deserves. See design/trend-cards-redesign-ideas.html (idea 7).
+const PAD_X = 20;
+// Wider than the phone's 112 because the band is wider — the SHAPE is identical,
+// because both clients get it from the same sparkline().
+const SPARK = { width: 160, height: 46 };
+
+const sheet: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", overflow: "hidden" };
+const bandLabel: CSSProperties = { fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.caption, color: C("ash") };
+const figure: CSSProperties = { fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.display, letterSpacing: "-.045em", color: C("chalk"), fontVariantNumeric: "tabular-nums" };
+const metaTxt: CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") };
+const colHead: CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".09em", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" };
+
+/** AURORA Trends (web) — the analytics sheet, reusing the exact engines. */
 /** The screen's own title. IDENTICAL styling on its own route and inside the
  *  unified Performance page — only the heading LEVEL changes, so the page
- *  doesn't carry three <h1>s. Nothing here may restyle: this section must look
- *  exactly as it did when it was its own screen. */
+ *  doesn't carry three <h1>s. */
 function Head({ unified, t }: { unified: boolean; t: (k: string) => string }) {
-  // Standing alone the title is the HERO's (the screen wraps itself in one);
-  // embedded in the unified Performance page the host owns the head, so the
-  // section keeps its h2 at the identical size it always had.
   if (!unified) return null;
-  return createElement(
-    "h2",
-    { style: { fontWeight: 900, fontSize: fs.display, margin: 0 } },
-    t("w.analyze.trends.title"),
-  );
+  return createElement("h2", { style: { fontWeight: 900, fontSize: fs.display, margin: 0 } }, t("w.analyze.trends.title"));
 }
 
 export default function AuroraTrends({ sessions, onOpenExercise, unified = false }: {
@@ -55,10 +59,59 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
   // actually draws, rather than of a second volumeStatus() pass whose only other
   // job (the muscle breakdown) now lives on the Volume rows.
   const trained = weeks.some((w) => w.sets > 0) || table.length > 0;
-  const sortedTable = useMemo(() => { const arr = [...table]; const { k, dir } = sort; arr.sort((a, b) => (k === "name" ? dir * a.name.localeCompare(b.name) : dir * ((a[k] as number) - (b[k] as number)))); return arr; }, [table, sort]);
+  const sortedTable = useMemo(() => {
+    const arr = [...table]; const { k, dir } = sort;
+    arr.sort((a, b) => (k === "name" ? dir * a.name.localeCompare(b.name) : dir * (((a[k] as number) ?? 0) - ((b[k] as number) ?? 0))));
+    return arr;
+  }, [table, sort]);
   const sortBy = (k: keyof ExerciseTableRow) => setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "name" ? 1 : -1 }));
-  const weekData = weeks.map((w) => ({ w: fmtWeek(w.weekStart), sets: w.sets, t: Number(((units === "kg" ? w.tonnage : kgToUnit(w.tonnage, "lb")) / 1000).toFixed(1)) }));
-  const frameHead = (color: string, kicker: string) => <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color), marginBottom: 10 }}>{kicker}</div>;
+
+  // One meaning per colour: chartreuse marks the CURRENT week and the live
+  // selection, teal is the second measure, and a change is signed text tinted by
+  // whether it was an improvement — never a bare arrow.
+  const TREND: Record<TrendDir, string> = { up: C("lime"), down: C("amber"), flat: C("ash") };
+  const setSeries = weeks.map((w) => w.sets);
+  const tonneSeries = weeks.map((w) => (units === "kg" ? w.tonnage : kgToUnit(w.tonnage, "lb")) / 1000);
+  const last = weeks[weeks.length - 1];
+  const avgSets = setSeries.reduce((a, b) => a + b, 0) / (setSeries.length || 1);
+  const avgTonnage = weeks.reduce((a, w) => a + w.tonnage, 0) / (weeks.length || 1);
+  const [tonnageValue, tonnageUnit] = splitFigure(fmtTonnage(last?.tonnage ?? 0, units));
+
+  const rowGrid: CSSProperties = { display: "grid", gridTemplateColumns: "minmax(0,1fr) 96px 78px", gap: space.md, alignItems: "start" };
+
+  /** A measure band: label, the week's figure, its eight-week average, and the
+   *  eight-week line — drawn on a TRUE zero baseline, so a week with nothing
+   *  logged sits on the line instead of being floored into a phantom bar. */
+  const Measure = ({ label, value, unit, avg, series, color }: {
+    label: string; value: string; unit?: string; avg: string; series: number[]; color: string;
+  }) => {
+    const s = sparkline(series, SPARK);
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: space.lg, padding: `17px ${PAD_X}px`, borderBottom: `1px solid ${C("line")}` }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={bandLabel}>{label}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 9 }}>
+            <span style={figure}>{value}</span>
+            {!!unit && <span style={{ ...bandLabel, fontSize: fs.caption }}>{unit}</span>}
+          </div>
+          <div style={{ ...metaTxt, marginTop: 8 }}>{avg}</div>
+        </div>
+        <svg width={SPARK.width} height={SPARK.height} aria-hidden="true" style={{ flex: "none" }}>
+          <line x1={0} y1={s.baselineY} x2={SPARK.width} y2={s.baselineY} stroke={LINE_HEX} strokeWidth={1} />
+          <path d={s.d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
+          <circle cx={s.last.x} cy={s.last.y} r={3.2} fill={color} />
+        </svg>
+      </div>
+    );
+  };
+
+  /** A sortable column label. The active key carries the arrow; nothing else is
+   *  tinted, so chartreuse keeps meaning "selected". */
+  const Col = ({ k, label, style }: { k: keyof ExerciseTableRow; label: string; style?: CSSProperties }) => (
+    <button type="button" className="pressable" onClick={() => sortBy(k)} style={{ ...colHead, color: sort.k === k ? C("lime") : C("ash"), ...style }}>
+      {label}{sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
+    </button>
+  );
 
   // Standing alone the screen wears the system's hero; embedded in the unified
   // Performance page the host owns the head, so it is just its sections.
@@ -69,7 +122,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
     return shell(
       <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <Head unified={unified} t={t} />
-        <div style={{ ...card, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.analyze.trends.empty")}</span></div>
+        <div style={{ ...sheet, textAlign: "center", padding: 40 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.analyze.trends.empty")}</span></div>
       </div>,
     );
   }
@@ -78,39 +131,79 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
     <div style={{ display: "flex", flexDirection: "column", gap: space.lg, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       <Head unified={unified} t={t} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: space.lg }}>
-        <div style={card}>{frameHead("lime", t("w.analyze.trends.weeklySets"))}
-          <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${t("w.analyze.vol.sets")}`} /><Bar dataKey="sets" fill={LIME_HEX} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
-        </div>
-        <div style={card}>{frameHead("blue", `${t("w.analyze.trends.weeklyTonnage")} – ${units === "kg" ? t("w.analyze.trends.tonnes") : t("w.analyze.trends.klb")}`)}
-          <ResponsiveContainer width="100%" height={200}><BarChart data={weekData}><CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" /><XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} /><YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} width={32} /><Tooltip contentStyle={tip} formatter={(v) => `${v} ${units === "kg" ? "t" : "k lb"}`} /><Bar dataKey="t" fill={BLUE} radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
-        </div>
-      </div>
+      <div style={sheet}>
+        <Measure
+          label={t("w.analyze.trends.setsMeasure")}
+          value={String(last?.sets ?? 0)}
+          avg={`${t("w.analyze.trends.avg8w")} ${Number(avgSets.toFixed(1))}`}
+          series={setSeries}
+          color={LIME_HEX}
+        />
+        <Measure
+          label={t("w.analyze.trends.tonnageMeasure")}
+          value={tonnageValue}
+          unit={tonnageUnit}
+          avg={`${t("w.analyze.trends.avg8w")} ${fmtTonnage(avgTonnage, units)}`}
+          series={tonneSeries}
+          color={BLUE}
+        />
 
-      <div style={card}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: space.ms }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.analyze.trends.exerciseAnalytics")}</span>
-          <div style={{ display: "flex", gap: space.xxs }}>
-            {PERIODS.map((p) => <button className="pressable" key={p.id} onClick={() => setPeriod(p.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, padding: "4px 12px", borderRadius: 999, cursor: "pointer", color: period === p.id ? C("ink") : C("ash"), background: period === p.id ? C("lime") : "transparent", border: `1px solid ${period === p.id ? C("lime") : C("line")}` }}>{t(p.key)}</button>)}
-          </div>
+        {/* The quiet band — the sheet's one recessive surface, carrying the
+            section's name and its period switch. The switch is an underline that
+            moves, not a filled pill: the fill was competing with the figures
+            above it for the same accent. */}
+        <div style={{ background: C("ink"), display: "flex", alignItems: "center", gap: space.sm, padding: `12px ${PAD_X}px`, borderBottom: `1px solid ${C("line")}`, flexWrap: "wrap" }}>
+          <span style={{ ...bandLabel, flex: 1, minWidth: 90 }}>{t("w.analyze.trends.perExercise")}</span>
+          {PERIODS.map((p) => { const on = period === p.id; return (
+            <button
+              type="button"
+              className="pressable"
+              key={p.id}
+              onClick={() => setPeriod(p.id)}
+              style={{ fontFamily: "var(--font-display)", fontWeight: on ? 700 : 600, fontSize: fs.caption, padding: "3px 4px", background: "none", border: "none", borderBottom: `2px solid ${on ? C("lime") : "transparent"}`, cursor: "pointer", color: on ? C("chalk") : C("ash") }}
+            >
+              {t(p.key)}
+            </button>
+          ); })}
         </div>
-        <div style={{ marginTop: 12, overflowX: "auto", maxWidth: "100%" }}>
-          <div style={{ minWidth: 420 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, paddingBottom: 6, borderBottom: `1px solid ${C("line")}` }}>
-              {([["w.analyze.trends.colExercise", "name"], ["w.analyze.trends.colFreq", "sessions"], ["w.analyze.trends.colHeaviest", "topWeight"], ["w.analyze.trends.colVolume", "volume"], ["w.analyze.trends.colTrend", null]] as const).map(([h, k]) => (
-                <button className="pressable" key={h} disabled={!k} onClick={() => k && sortBy(k)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", textAlign: "left", background: "none", border: "none", padding: 0, cursor: k ? "pointer" : "default", color: k && sort.k === k ? C("lime") : C("ash") }}>{t(h)}{k && sort.k === k ? (sort.dir === 1 ? " ↑" : " ↓") : ""}</button>
-              ))}
+
+        <div style={{ padding: `13px ${PAD_X}px 4px`, overflowX: "auto" }}>
+          <div style={{ ...rowGrid, paddingBottom: 9 }}>
+            <div style={{ minWidth: 0 }}>
+              <Col k="name" label={t("w.analyze.trends.colExercise")} />
+              {/* The header mirrors the ROW: what the row's second line shows,
+                  the header's second line sorts. */}
+              <div style={{ marginTop: 5, display: "flex", alignItems: "center", gap: 4 }}>
+                <Col k="sessions" label={t("w.analyze.trends.colFreq")} />
+                <span style={{ ...colHead, color: C("ash"), cursor: "default" }}>–</span>
+                <Col k="volume" label={t("w.analyze.trends.colVolume")} />
+              </div>
             </div>
-            {sortedTable.map((r) => { const tr = TREND_GLYPH[r.trend]; return (
-              <button className="pressable" key={r.name} onClick={() => onOpenExercise?.(r.name)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 0.6fr", gap: space.sm, padding: "8px 0", border: "none", borderTop: `1px solid ${C("line")}`, background: "none", cursor: onOpenExercise ? "pointer" : "default", textAlign: "left", width: "100%", fontFamily: "var(--font-mono)", fontSize: fs.body }}>
-                <span style={{ color: onOpenExercise ? C("lime") : C("chalk") }}>{r.name}</span>
-                <span>{r.sessions}×</span>
-                <span style={{ color: r.kind === "strength" ? C("chalk") : C("ash") }}>{r.kind === "strength" ? fmtWeight(r.topWeight, units) : "–"}</span>
-                <span>{r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}</span>
-                <span style={{ color: C(tr.c) }}>{tr.g}</span>
-              </button>
-            ); })}
+            <Col k="topWeight" label={t("w.analyze.trends.colHeaviest")} style={{ textAlign: "right" }} />
+            <Col k="change" label={t("w.analyze.trends.colChange")} style={{ textAlign: "right" }} />
           </div>
+          {sortedTable.map((r) => (
+            <button
+              type="button"
+              className="pressable"
+              key={r.name}
+              onClick={() => onOpenExercise?.(r.name)}
+              style={{ ...rowGrid, width: "100%", padding: "13px 0", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, cursor: onOpenExercise ? "pointer" : "default", textAlign: "left" }}
+            >
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.bodyLg, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                <span style={{ ...metaTxt, display: "block", marginTop: 5 }}>
+                  {`${r.sessions}× – ${r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}`}
+                </span>
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("chalk"), textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                {r.kind === "strength" ? fmtWeight(r.topWeight, units) : `${r.volume} km`}
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textAlign: "right", fontVariantNumeric: "tabular-nums", color: r.change ? TREND[r.trend] : C("ash") }}>
+                {fmtRowChange(r, units)}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
     </div>,

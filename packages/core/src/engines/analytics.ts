@@ -3,6 +3,7 @@ import type { MuscleGroup } from "./types";
 import { setsForVolume, effectiveSetLoadKg, topLoadSeries } from "./session";
 import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
+import { kgToUnit, type WeightUnit } from "../units";
 import { musclesFor } from "./movements";
 import { exerciseHistory } from "./records";
 import { exerciseDashboard, periodCutoff, type ExercisePeriod } from "./exercise";
@@ -112,7 +113,36 @@ export interface ExerciseTableRow {
   volume: number;
   /** improvement direction over the period (strength = heavier, cardio = faster) */
   trend: TrendDir;
+  /**
+   * The SIGNED change behind `trend`, in the row's own unit — strength: kg on
+   * the top working load (positive = heavier); cardio: seconds per km on pace
+   * (negative = faster). `undefined` when the window holds fewer than two
+   * sessions, i.e. there is nothing to compare against.
+   *
+   * The table used to render `trend` as a bare ▲/▼ glyph, which says a lift
+   * moved but never by how much — and a glyph can't be ranked. This carries the
+   * figure the arrow was standing in for. Read the DIRECTION off `trend`, never
+   * off this sign: a faster pace is a SMALLER number, so a negative cardio
+   * change is an improvement.
+   */
+  change?: number;
   lastPerformed?: string;
+}
+
+/**
+ * The exercise table's CHANGE cell — `row.change` as display text in the
+ * athlete's unit, with a true minus sign so the column stays tabular. Shared by
+ * both clients so web and mobile can't format the same delta two ways. Returns
+ * `dash` when there is nothing to compare (or the lift held exactly).
+ */
+export function fmtRowChange(row: ExerciseTableRow, unit: WeightUnit, dash = "—"): string {
+  const c = row.change;
+  if (c === undefined || c === 0) return dash;
+  const sign = c > 0 ? "+" : "−";
+  if (row.kind === "cardio") return `${sign}${Math.abs(Math.round(c))} s/km`;
+  const v = kgToUnit(Math.abs(c), unit);
+  const d = unit === "lb" ? 0 : v % 1 === 0 ? 0 : 1;
+  return `${sign}${Number(v.toFixed(d)).toLocaleString()} ${unit}`;
 }
 
 function paceTrend(pace: PacePoint[]): TrendDir {
@@ -147,6 +177,7 @@ export function exerciseTable(
           topWeight: 0,
           volume: d.distanceKm,
           trend: paceTrend(d.pace),
+          change: d.pace.length < 2 ? undefined : d.pace[d.pace.length - 1]!.secPerKm - d.pace[0]!.secPerKm,
           lastPerformed: d.lastPerformed,
         };
       }
@@ -164,6 +195,7 @@ export function exerciseTable(
         topWeight: d.heaviestLoad,
         volume: d.volume,
         trend,
+        change: pts.length < 2 ? undefined : pts[pts.length - 1]!.weightKg - pts[0]!.weightKg,
         lastPerformed: d.lastPerformed,
       };
     })
