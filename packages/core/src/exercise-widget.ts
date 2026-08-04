@@ -228,6 +228,32 @@ export function exerciseWidgetCard(
 }
 
 /**
+ * How many distinct movements the athlete trained inside the rail's own window
+ * — the denominator for the Exercises head's coverage meta ("3 of 11
+ * movements").
+ *
+ * It counts over WIDGET_WINDOW_DAYS, not all time, because the fraction has to
+ * be a fraction of the same thing the cards are: a numerator drawn from the
+ * last eight weeks over an all-time denominator would be two scopes in one
+ * sentence, which is the fault the meta was introduced to fix.
+ *
+ * The head used to quote this week's tonnage — the same figure the This-week
+ * card printed 400dp above, through the same formatter. A quote of the whole
+ * parent is indistinguishable from a repeat of it; it also spent the rail's one
+ * slot on a fact the reader already had, leaving no room for the one they did
+ * not: that the rail is a SELECTION (`max`, default 3), not their whole log.
+ */
+export function movementsTrained(sessions: LoggedSession[], now = Date.now()): number {
+  const names = new Set<string>();
+  for (const s of sessions) {
+    const t = ts(s.startedAt);
+    if (!Number.isFinite(t) || t > now || t <= now - WIDGET_WINDOW_DAYS * DAY) continue;
+    for (const b of s.blocks) names.add(b.name);
+  }
+  return names.size;
+}
+
+/**
  * Pick the favourites for the Today widget: explicit `favourites` first (kept
  * in order), then auto-fill so DIFFERENT purposes lead — the most-trained
  * strength lift, cardio move and conditioning move of the last 8 weeks (falling

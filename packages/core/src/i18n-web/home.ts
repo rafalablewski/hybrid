@@ -156,11 +156,15 @@ export const web_home = {
     "w.home.group.recover": "Recover",
     "w.home.group.progress": "Progress",
     "w.home.group.explore": "Explore",
-    // Wave-3 parentage: the fact a Progress rail head quotes from the This-week
-    // card's columns ({v} pre-formatted with its unit), and the sports' share
-    // of the hours column ({a} of {b}, both one-decimal hours).
-    "w.home.group.metaWeek": "{v} this week",
+    // A Progress rail head's ONE right-slot fact. Both are FRACTIONS, and that
+    // is the whole rule: wave 3 had the exercises and endurance heads quote
+    // their parent column WHOLE ("7.2 t this week" under a card already saying
+    // 7.2 t), which is a restatement, not a lineage. A share is information —
+    // metaOf carries the sports' slice of the hours column ({a} of {b},
+    // one-decimal hours), metaMoves the rail's coverage of the movements
+    // trained in its own 8-week window. The retired key was `metaWeek`.
     "w.home.group.metaOf": "{a} of {b} h this week",
+    "w.home.group.metaMoves": "{a} of {b} movements",
     // The Performance page's clusters (State / Training / Season, plus the
     // shared Explore label above) — same headline-tier GroupMark, same grammar.
     "w.home.group.state": "State",
@@ -1066,8 +1070,8 @@ export const web_home = {
     "w.home.group.recover": "Regeneracja",
     "w.home.group.progress": "Postępy",
     "w.home.group.explore": "Odkrywaj",
-    "w.home.group.metaWeek": "{v} w tym tygodniu",
     "w.home.group.metaOf": "{a} z {b} h w tym tygodniu",
+    "w.home.group.metaMoves": "{a} z {b} ćwiczeń",
     "w.home.group.state": "Stan",
     "w.home.group.training": "Trening",
     "w.home.group.season": "Sezon",
@@ -1931,8 +1935,8 @@ export const web_home = {
     "w.home.group.recover": "Erholung",
     "w.home.group.progress": "Fortschritt",
     "w.home.group.explore": "Entdecken",
-    "w.home.group.metaWeek": "{v} diese Woche",
     "w.home.group.metaOf": "{a} von {b} h diese Woche",
+    "w.home.group.metaMoves": "{a} von {b} Übungen",
     "w.home.group.state": "Zustand",
     "w.home.group.training": "Training",
     "w.home.group.season": "Saison",

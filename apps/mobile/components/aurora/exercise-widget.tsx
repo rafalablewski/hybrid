@@ -7,8 +7,8 @@ import {
   fmtWeight,
   fmtTonnage,
   formatDisciplinePace,
+  movementsTrained,
   paceClock,
-  progressParentage,
   type ExerciseWidgetCard,
   type LoggedSession,
   type WeightUnit,
@@ -91,10 +91,10 @@ export default function ExerciseWidgetRail({
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
   const cards = useMemo(() => exerciseWidgetCards(sessions, { bw }), [sessions, bw]);
-  // WAVE-3 PARENTAGE: the head quotes the This-week card's VOLUME column —
-  // the figure this rail breaks down per movement. Same activitySummary, same
-  // week range (core progress-parentage.ts), so the two can never disagree.
-  const parentage = useMemo(() => progressParentage(sessions, { bw }), [sessions, bw]);
+  // The head's coverage denominator — movements trained inside the rail's OWN
+  // 8-week window, so the fraction is a fraction of the same thing the cards
+  // are rather than two scopes in one sentence.
+  const trained = useMemo(() => movementsTrained(sessions), [sessions]);
   // One ref per card's headline figure — only the tapped card is ever measured.
   const heroRefs = useRef<Record<string, Text | null>>({});
   const armHero = useSharedElementSource();
@@ -103,14 +103,18 @@ export default function ExerciseWidgetRail({
   return (
     <View style={{ marginTop: 24 }}>
       {/* Explore-standard head — one head tier across the PROGRESS cluster,
-          and the right slot carries ONE item: the FACT this rail decomposes
-          (wave-3 parentage — the This-week card's volume column, quoted from
-          the same core summary). The "All ›" action lives in the rail's
-          trailing ghost tile, per the one-exit rule. Mirrors web. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, marginHorizontal: 2 }}>
+          and the right slot carries ONE item: the rail's COVERAGE of the
+          movements trained in its own window. It used to quote the This-week
+          card's volume column whole, which restated a figure 400dp above it
+          and spent the slot on a fact the reader already had — while the one
+          they did NOT have, that this rail is a selection rather than their
+          whole log, had nowhere to go. A quote must add a fraction. The
+          "All ›" action lives in the rail's trailing ghost tile, per the
+          one-exit rule. Mirrors web. */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-          {t("w.home.group.metaWeek").replace("{v}", fmtTonnage(parentage.tonnageKg, units))}
+          {t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
         </Text>
       </View>
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 16dp

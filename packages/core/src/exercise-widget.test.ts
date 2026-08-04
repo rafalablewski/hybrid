@@ -3,6 +3,7 @@ import {
   pctChange,
   exerciseWidgetCard,
   exerciseWidgetCards,
+  movementsTrained,
   exercisePageModel,
   weeklySessionCounts,
 } from "./exercise-widget";
@@ -224,5 +225,27 @@ describe("exerciseWidgetCard — discipline (A2: one rate, one unit)", () => {
     const card = exerciseWidgetCard([swim(3, 0.5, 19), swim(10, 0.5, 20)], "Swimming", now);
     expect(card?.value).toBe(2280);
     expect(formatDisciplinePace(card!.value, card!.discipline!)).toBe("3:48 /100m");
+  });
+});
+
+describe("movementsTrained — the Exercises head's coverage denominator (M1)", () => {
+  it("counts distinct movements inside the rail's OWN window, not all time", () => {
+    const sessions = [
+      lift(3, [{ load: "100" }], "Deadlift"),
+      lift(10, [{ load: "60" }], "Bench"),
+      run(20, 5, 25, "Run"),
+      cond(30, 12, "Assault Bike"),
+      // Outside the 56-day window: trained, but not by this rail's measure.
+      lift(80, [{ load: "80" }], "Front Squat"),
+    ];
+    expect(movementsTrained(sessions, now)).toBe(4);
+  });
+
+  it("counts a movement once however often it was trained", () => {
+    expect(movementsTrained([lift(1, [{}]), lift(8, [{}]), lift(15, [{}])], now)).toBe(1);
+  });
+
+  it("is zero with nothing in the window, so the head reads 0 of 0 rather than lying", () => {
+    expect(movementsTrained([lift(90, [{}])], now)).toBe(0);
   });
 });
