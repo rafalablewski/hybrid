@@ -127,9 +127,21 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "statistics", label: "Statistics", group: "analyze", promotedTo: "history" },
   { id: "performance", label: "Performance", group: "analyze", minPersona: "athlete" },
   { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete", promotedTo: "today" },
-  { id: "volume", label: "Volume", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
+  // Volume and Trends are DESTINATIONS again. They were promoted onto the
+  // Performance page in the merge, which appended two whole screens to its
+  // scroll — roughly two thirds of the tab's height — behind a page that opens
+  // with a single number. Performance keeps Volume's hero week-shape and a
+  // Trends door; everything behind those two doors lives here.
+  { id: "volume", label: "Volume", group: "analyze", minPersona: "athlete" },
+  // The model behind the volume bands — the landmark fields, the profile form
+  // and the two model switches. They were ~50 controls hidden inside the Volume
+  // SCREEN behind an edit toggle, where a mistyped number silently rewrote
+  // every band and verdict above it. Promoted to Volume so the menus don't
+  // offer a settings surface beside the screen it configures; reached from
+  // Volume's own header and its provenance card.
+  { id: "volume-model", label: "Volume model", group: "analyze", minPersona: "athlete", promotedTo: "volume" },
   { id: "exercises", label: "Exercises", group: "analyze" }, // free for ALL — per-exercise progress is a universal hook, not paid depth
-  { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
+  { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete" },
   { id: "velocity", label: "Velocity (VBT)", group: "analyze", minPersona: "athlete" },
   // Promoted onto Today as the sport lanes (endurance-lanes.ts) — still routable
   // from a lane's "See all", just no longer its own entry in More.

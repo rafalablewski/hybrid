@@ -44,6 +44,21 @@ export const web_analyze = {
 
     // volume
     "w.analyze.vol.title": "Volume",
+    // THE MODEL, on its own route. The landmark fields, the profile form and
+    // the model switches used to live inside the Volume screen behind an edit
+    // toggle — around fifty controls inside a read surface, where a mistyped
+    // number silently rewrote every band and verdict above it with no
+    // confirmation and no way to see what changed.
+    "w.analyze.model.title": "Volume model",
+    "w.analyze.model.sub": "The numbers your bands are built from — and what your edits changed.",
+    "w.analyze.model.open": "Edit the model",
+    "w.analyze.model.changed": "What your edits changed",
+    "w.analyze.model.noChanges": "You haven't overridden anything yet. Every band is the model's own estimate.",
+    "w.analyze.model.landmarks": "Landmarks",
+    "w.analyze.model.landmarksSub": "Five numbers per muscle. Leave one blank to use the estimate.",
+    "w.analyze.model.behaviour": "How the model behaves",
+    "w.analyze.model.estimate": "estimate",
+    "w.analyze.model.yours": "yours",
     "w.analyze.vol.subtitle": "Weekly working sets against your own landmarks.",
     "w.analyze.vol.range7d": "Last 7 days",
     "w.analyze.vol.heroCaption": "muscles in their productive range",
@@ -535,6 +550,16 @@ export const web_analyze = {
 
     // volume
     "w.analyze.vol.title": "Objętość",
+    "w.analyze.model.title": "Model objętości",
+    "w.analyze.model.sub": "Liczby, na których stoją Twoje zakresy — i co zmieniły Twoje edycje.",
+    "w.analyze.model.open": "Edytuj model",
+    "w.analyze.model.changed": "Co zmieniły Twoje edycje",
+    "w.analyze.model.noChanges": "Nic jeszcze nie nadpisałeś. Każdy zakres to własne oszacowanie modelu.",
+    "w.analyze.model.landmarks": "Progi",
+    "w.analyze.model.landmarksSub": "Pięć liczb na partię. Zostaw puste, aby użyć oszacowania.",
+    "w.analyze.model.behaviour": "Jak działa model",
+    "w.analyze.model.estimate": "oszacowanie",
+    "w.analyze.model.yours": "Twoje",
     "w.analyze.vol.subtitle": "Tygodniowe serie robocze względem Twoich punktów odniesienia.",
     "w.analyze.vol.range7d": "Ostatnie 7 dni",
     "w.analyze.vol.heroCaption": "mięśni w zakresie produktywnym",
@@ -1024,6 +1049,16 @@ export const web_analyze = {
 
     // volume
     "w.analyze.vol.title": "Volumen",
+    "w.analyze.model.title": "Volumen-Modell",
+    "w.analyze.model.sub": "Die Zahlen hinter deinen Bändern — und was deine Änderungen bewirkt haben.",
+    "w.analyze.model.open": "Modell bearbeiten",
+    "w.analyze.model.changed": "Was deine Änderungen bewirkt haben",
+    "w.analyze.model.noChanges": "Du hast noch nichts überschrieben. Jedes Band ist die Schätzung des Modells.",
+    "w.analyze.model.landmarks": "Landmarken",
+    "w.analyze.model.landmarksSub": "Fünf Zahlen pro Muskel. Leer lassen, um die Schätzung zu nutzen.",
+    "w.analyze.model.behaviour": "Wie das Modell arbeitet",
+    "w.analyze.model.estimate": "Schätzung",
+    "w.analyze.model.yours": "deins",
     "w.analyze.vol.subtitle": "Wöchentliche Arbeitssätze gegenüber deinen eigenen Richtwerten.",
     "w.analyze.vol.range7d": "Letzte 7 Tage",
     "w.analyze.vol.heroCaption": "Muskeln im produktiven Bereich",

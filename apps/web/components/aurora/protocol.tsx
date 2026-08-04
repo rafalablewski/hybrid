@@ -83,6 +83,32 @@ export function useRtpProtocols() {
   return { active: protocols.filter((p) => p.status !== "abandoned"), create, mutate };
 }
 
+/**
+ * THE RUNNING PROTOCOL, WHERE IT IS ACTUALLY USED.
+ *
+ * A return-to-play protocol is a DAILY object — stages, gates, dates, an action
+ * you take this morning. It used to render only inside the Performance tab's
+ * Tissue card, several screens from where an injured athlete decides what to do
+ * today. It now renders in Today's RECOVER cluster, beside the check-in; the
+ * Tissue card keeps the status line and the door, so the flag and the protocol
+ * remain one object seen from two places.
+ *
+ * Renders nothing at all when no protocol is open — a block that comes and goes
+ * is right here, because an athlete with nothing to rehab should never be shown
+ * a rehab surface.
+ */
+export function RtpPanel() {
+  const { t } = useLang();
+  const { active, mutate } = useRtpProtocols();
+  if (active.length === 0) return null;
+  return (
+    <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--red-text)" }}>{t("w.rtp.protocol")}</div>
+      {active.map((p) => <RtpProtocol key={p.id} p={p} mutate={mutate} />)}
+    </div>
+  );
+}
+
 /* ── the body ──────────────────────────────────────────────────────────────
    One drawing, two jobs: the picker (touch an area) and the risk read-out on
    the Tissue card (each area tinted by its own band). The card used to draw

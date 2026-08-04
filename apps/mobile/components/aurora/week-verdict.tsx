@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, Easing } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  activityVerdict, activitySummary, activityDetailKey, activityMonths,
+  activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
+  fmtWeight, strengthPrDelta,
   resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, fmtTonnage, durations,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
@@ -150,6 +151,12 @@ export default function AuroraWeekVerdict({
   const range: ActivityRange = useMemo(() => resolveActivityRange(rangeId, Date.now()), [rangeId, today]);
   const v: ActivityVerdict = useMemo(() => activityVerdict(sessions, range, bw), [sessions, range, bw]);
   const summary = useMemo(() => activitySummary(sessions, range, bw), [sessions, range, bw]);
+  // THE PERIOD'S RECORDS. These used to sit on the Performance tab's "Your
+  // week" card, computed over a ROLLING seven days while this card counted a
+  // real calendar week — two cards one tab apart, both labelled as the week,
+  // reporting different numbers. A PR belongs to the period it happened in, so
+  // it belongs to whatever window this card is showing. Mirrors web.
+  const prs = useMemo(() => prsBetween(sessions, range.from, range.through + 1, bw), [sessions, range, bw]);
   const months = useMemo(() => activityMonths(sessions, Date.now()), [sessions, today]);
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
@@ -394,6 +401,32 @@ export default function AuroraWeekVerdict({
           </Text>
         )}
       </View>
+
+      {/* RECORDS SET IN THIS PERIOD — the one part of the old Performance
+          "Your week" card that was not already said better here. It reads the
+          window the athlete actually picked, so a month view lists the month's
+          PRs rather than the last seven days'. Silent when there are none. */}
+      {prs.length > 0 && (
+        <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.cockpit.newPrs")}</Text>
+            <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{prs.length}</Text>
+          </View>
+          {prs.slice(0, 4).map((pr) => (
+            <View key={pr.lift} style={{ flexDirection: "row", justifyContent: "space-between", gap: 12, paddingVertical: 7, borderTopWidth: 1, borderTopColor: `${C.line}99` }}>
+              <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{pr.lift}</Text>
+              {/* The weight actually lifted (#231) — this row and the session
+                  summary describe the same PR, so they must agree. Formatted
+                  through the shared helper: topLoad is 0.1-rounded, so a raw
+                  subtraction would print +4.799999999999997. */}
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, C.lime) }}>
+                {fmtWeight(pr.topLoad, units)}
+                {pr.previousTopLoad == null || pr.topLoad <= pr.previousTopLoad ? "" : ` – ${strengthPrDelta(pr, { first: "", moreReps: "" })}`}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* The doors moved OUT of this card (wave 3): they are the whole
           PROGRESS cluster's single exit now, rendered at the cluster's end in

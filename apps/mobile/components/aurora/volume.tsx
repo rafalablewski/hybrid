@@ -20,11 +20,13 @@ import {
 import { useSessionsQuery, useCheckinsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "../../lib/use-bodyweight";
-import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
+import { setLoggerPref } from "../../lib/logger-prefs";
+import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, AHeading, ASection, RADIUS, withAlpha } from "./kit";
+import { CtaLabel } from "./cta-label";
 import { HeroAccessory } from "./hero";
 import { haptic } from "../../lib/haptics";
 
@@ -50,13 +52,27 @@ const pct = (v: number): DimensionValue => `${v * 100}%` as DimensionValue;
  * own edits, and hands back the provenance so this screen never presents a
  * population average as a personal fact.
  */
-export default function AuroraVolume({ top, unified = false }: {
+export default function AuroraVolume({ top, unified = false, compact = false, onOpen, onOpenModel }: {
   top?: ReactNode;
-  /** True when these sections render INSIDE the unified Performance page
-   *  (aurora/performance.tsx) rather than as their own screen: no AuroraScreen
-   *  wrapper (the page owns the scroller) and the page title demotes to a
-   *  section head. Every section, control and number is otherwise identical. */
+  /** True when these sections render INSIDE another page rather than as their
+   *  own screen: no AuroraScreen wrapper (the page owns the scroller) and the
+   *  page title demotes to a section head. Every section, control and number is
+   *  otherwise identical. */
   unified?: boolean;
+  /** COMPACT — the hero week-shape and a door, nothing else. This is what the
+   *  Performance page carries: "5/7 in range", the seven columns, the verdict
+   *  naming names, and the way in. Everything else in this file is a
+   *  programming tool with a chart grammar of its own and belongs behind that
+   *  door, entered on purpose. The landmarks are resolved by the SAME code
+   *  either way, so the summary and the screen can never disagree.
+   *  Mirrors apps/web/components/aurora/volume.tsx. */
+  compact?: boolean;
+  /** Where the compact block's door goes. */
+  onOpen?: () => void;
+  /** Where the "edit the model" door goes — the settings route that owns the
+   *  landmark fields, the profile form and the model switches. They used to be
+   *  ~50 controls revealed inside this read surface by an edit toggle. */
+  onOpenModel?: () => void;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -64,103 +80,10 @@ export default function AuroraVolume({ top, unified = false }: {
   const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   useRefreshOnFocus(refetch);
 
-  const prefs = useLoggerPrefs();
-
-  // What we already know about the athlete elsewhere in the app fills the gaps
-  // the volume profile leaves — nobody should have to type their bodyweight
-  // twice, and sleep and energy availability are MEASURED here, not guessed.
-  // Anything stored on the profile itself wins over all of it.
-  const bodyweight = useBodyweight();
-  const bodyweightPoints = useBodyweightPoints();
-  // Height comes from the body log the athlete already filled in (Profile →
-  // Body & progress) rather than being asked for a second time here.
-  const loggedHeightCm = useAthleteHeight();
-  const { data: checkins = [] } = useCheckinsQuery();
-  const [intake, setIntake] = useState<{ experience?: Experience; daysPerWeek?: number }>({});
-  useEffect(() => {
-    let alive = true;
-    Promise.all([AsyncStorage.getItem("hybrid.experience"), AsyncStorage.getItem("hybrid.daysPerWeek")])
-      .then(([exp, rawDays]) => {
-        if (!alive) return;
-        const days = Number(rawDays);
-        setIntake({
-          experience: exp === "beginner" || exp === "intermediate" || exp === "advanced" ? exp : undefined,
-          daysPerWeek: Number.isFinite(days) && days > 0 ? days : undefined,
-        });
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
-  // The daily check-in on the engine's own terms: same 1–5 scales, no reinterpretation.
-  //
-  // …and a day is EVERY READ it carries, not one value. The card asks again once
-  // a session has drained, so a day can hold "wrecked at 09:30" and "good at
-  // 22:00" — which is precisely the pair `athleteClearance` needs to measure how
-  // fast this athlete drains a session, and which one stored value could never
-  // express. `readReports` gives the day the DECISIVE read (freshness, sleep and
-  // mood travel with it, answered once) and emits the others as timed reads of
-  // their own; the estimator then weights each DAY to 1 regardless of how many
-  // reads it holds. See core/readiness-reads.ts.
-  const sessionEnds = useMemo(
-    () => sessions.map((s) => Date.parse(s.completedAt ?? s.startedAt ?? "")).filter((t) => Number.isFinite(t)),
-    [sessions],
-  );
-  const recovery = useMemo<RecoveryReport[]>(
-    () =>
-      checkins.flatMap((c) => {
-        const day: RecoveryReport = { date: c.weekOf, soreness: c.soreness, sleep: c.sleep, energy: c.energy, mood: c.mood, loggedAt: c.createdAt ?? null };
-        const rows = (c.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
-        if (rows.length < 2) return [day];
-        return readReports(day, placeReads(rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) })), sessionEnds)) as RecoveryReport[];
-      }),
-    [checkins, sessionEnds],
-  );
-  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm }), [recovery, bodyweightPoints, loggedHeightCm]);
-  const measuredKeys = useMemo(() => {
-    const keys = measuredFields(prefs.volumeProfile, measured);
-    // Body mass is measured too — it comes from the bodyweight log, not this form.
-    if (prefs.volumeProfile.bodyweightKg === undefined && bodyweight != null) keys.add("bodyweightKg");
-    return keys;
-  }, [prefs.volumeProfile, measured, bodyweight]);
-
-  // WHAT LEVEL THE BAR SAYS. Training age is the strongest input to the whole
-  // model and it used to come from one onboarding tap. Relative strength on the
-  // benchmark lifts is a better read, it is already in the log, and the
-  // athlete's own answer still wins — the estimate only fills a gap, and any
-  // disagreement is shown rather than silently applied.
-  const levelEstimate = useMemo(
-    () => estimateFitnessLevel(sessions, {
-      bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight,
-      ageYears: prefs.volumeProfile.ageYears ?? null,
-    }),
-    [sessions, prefs.volumeProfile.bodyweightKg, prefs.volumeProfile.ageYears, bodyweight],
-  );
-  const statedExperience = prefs.volumeProfile.experience ?? intake.experience;
-  const experience = useMemo(
-    () => resolveExperience(statedExperience, levelEstimate),
-    [statedExperience, levelEstimate],
-  );
-
-  const profile = useMemo<AthleteVolumeProfile>(() => ({
-    ...withMeasured(prefs.volumeProfile, measured),
-    experience: experience.experience,
-    daysPerWeek: prefs.volumeProfile.daysPerWeek ?? intake.daysPerWeek,
-    bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight ?? undefined,
-  }), [prefs.volumeProfile, measured, intake, bodyweight, experience.experience]);
-
-  const resolved = useMemo(
-    () => athleteLandmarks({
-      profile,
-      overrides: prefs.landmarkOverrides,
-      sessions,
-      recovery,
-      adaptive: prefs.adaptiveLandmarks,
-      includeWarmups: prefs.countWarmupsInVolume,
-      fractional: prefs.fractionalVolume,
-    }),
-    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
-  );
+  // ONE resolution, shared with the settings route that edits this model
+  // (lib/use-volume-model.ts) — so an edit and its effect can never be computed
+  // two different ways.
+  const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved, setProfile } = useVolumeModel(sessions);
   const lm = resolved.landmarks;
 
   // HAS THE CEILING SETTLED? The same resolver re-run at every week of the
@@ -168,7 +91,9 @@ export default function AuroraVolume({ top, unified = false }: {
   // apart from `resolved` because it costs one resolve per replayed week.
   const replay = useMemo(
     () =>
-      prefs.adaptiveLandmarks
+      // Never in compact mode: one landmark resolve per week of the athlete's
+      // history, for rows the compact block never renders.
+      prefs.adaptiveLandmarks && !compact
         ? testedMuscles(
             replayLandmarks(sessions, recovery, {
               profile,
@@ -203,14 +128,14 @@ export default function AuroraVolume({ top, unified = false }: {
   // thought, and the athlete no longer picks a muscle in two places.
   const history = useMemo(() => {
     const out = {} as Record<MuscleGroup, number[]>;
+    // Seven eight-week passes for rows the compact block never renders.
+    if (compact) return out;
     for (const r of rows) out[r.muscle] = weeklyMuscleSets(sessions, r.muscle, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
     return out;
-  }, [rows, sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
+  }, [rows, sessions, compact, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
 
-  const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState<MuscleGroup | null>(null);
   const [picked, setPicked] = useState<MuscleGroup | null>(null);
-  const [gloss, setGloss] = useState(false);
   // Which landmark band is spotlighted across the list, and the row whose scale
   // was tapped (that row carries the definition, next to the finger).
   const [zone, setZone] = useState<{ key: VolumeBandKey; muscle: MuscleGroup } | null>(null);
@@ -220,33 +145,8 @@ export default function AuroraVolume({ top, unified = false }: {
   };
   const customized = Object.keys(prefs.landmarkOverrides).length > 0;
 
-  const editField = (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => {
-    const next = { ...prefs.landmarkOverrides, [m]: { ...prefs.landmarkOverrides[m] } };
-    if (raw.trim() === "") delete next[m]![k];
-    else next[m]![k] = Math.max(0, Math.round(Number(raw) || 0));
-    if (!Object.keys(next[m]!).length) delete next[m];
-    setLoggerPref("landmarkOverrides", next);
-  };
-
-  const setBlock = (patch: Partial<VolumeBlock>) => {
-    haptic.selection();
-    setLoggerPref("volumeBlock", resolveBlock({ ...block, ...patch }));
-  };
-  const setProfile = (patch: Partial<AthleteVolumeProfile>) => {
-    const next = { ...prefs.volumeProfile, ...patch };
-    for (const k of Object.keys(next) as (keyof AthleteVolumeProfile)[]) if (next[k] === undefined) delete next[k];
-    setLoggerPref("volumeProfile", next);
-  };
-  const toggleEditing = () => {
-    // Turning editing ON opens every row, so the fields are where the athlete
-    // is already looking rather than in a separate table of unlabelled numbers.
-    setEditing((v) => !v);
-    setOpen(null);
-  };
-
   const zoneColor = (z: VolumeZone) => (z === "overreaching" ? C.red : z === "under" ? C.amber : z === "peak" ? C.blue : C.lime);
 
-  // The hero's one line: either the tapped muscle, or the week's verdict.
   const pickedRow = picked ? rows.find((r) => r.muscle === picked) : undefined;
   const verdict = (() => {
     if (summary.verdict === "none") return t("w.analyze.vol.verdictNone");
@@ -256,6 +156,50 @@ export default function AuroraVolume({ top, unified = false }: {
     if (summary.under.length) parts.push(`${summary.under.length}${t("w.analyze.vol.verdictUnderTail")}`);
     return `${parts.join(t("w.analyze.vol.verdictJoin"))}.`;
   })();
+
+  // COMPACT — the hero shape and a door. The verdict NAMES NAMES here: the
+  // shape above it already says that something is out of range, so the sentence
+  // has to say what and by how much, which is the one thing the columns can't.
+  if (compact) {
+    const named = [...summary.over, ...summary.under]
+      .slice(0, 2)
+      .map((r) => `${ml(r.muscle)} ${deltaLabel(r)}`)
+      .join(", ");
+    return (
+      <ACard solid>
+        <ASection title={t("w.home.cockpit.weekVolume")} meta={t("w.home.cockpit.last7")} />
+        {summary.empty ? (
+          <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: leading(fs.note), color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
+        ) : (
+          <>
+            <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 46, lineHeight: 50, letterSpacing: -1.6, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
+            </View>
+            <View style={{ flexDirection: "row", gap: 5, marginTop: 16 }}>
+              {rows.map((r) => (
+                <View key={r.muscle} style={{ flex: 1 }}>
+                  <ShapeColumn s={r} color={zoneColor(r.zone)} dim={false} />
+                  <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginTop: 16 }}>
+              {named ? <Text style={{ fontFamily: F.bold, color: C.chalk }}>{named}</Text> : null}
+              {named ? `. ${verdict}` : verdict}
+            </Text>
+          </>
+        )}
+        {onOpen && (
+          <Pressable onPress={onOpen} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.cockpit.volumeDoor")}</Text>
+            <CtaLabel label={`${t("w.analyze.vol.title")} →`} color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} style={{ marginLeft: "auto" }} />
+          </Pressable>
+        )}
+      </ACard>
+    );
+  }
 
   const body = (
     <>
@@ -267,15 +211,15 @@ export default function AuroraVolume({ top, unified = false }: {
       {(top || unified) && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
           <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
-          <Pressable
-            onPress={toggleEditing}
-            accessibilityRole="button"
-            style={{ marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: editing ? C.lime : C.line, backgroundColor: editing ? withAlpha(C.lime, 0.12) : "transparent" }}
-          >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: editing ? txt(C, C.lime) : C.ash }}>
-              {editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")}
-            </Text>
-          </Pressable>
+          {onOpenModel && (
+            <Pressable
+              onPress={onOpenModel}
+              accessibilityRole="button"
+              style={{ marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.model.open")}</Text>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -338,7 +282,7 @@ export default function AuroraVolume({ top, unified = false }: {
       </ACard>
 
       {/* ── WHERE THIS WEEK SITS IN THE BLOCK ─────────────────────────────── */}
-      <BlockCard block={block} ramp={blockRamp(block, lm)} on={prefs.periodizeVolume} editing={editing} setBlock={setBlock} />
+      <BlockCard block={block} ramp={blockRamp(block, lm)} on={prefs.periodizeVolume} />
 
       {/* ── THE WEEK'S PRESCRIPTION — verb + magnitude, said once ─────────── */}
       <Prescription
@@ -363,11 +307,10 @@ export default function AuroraVolume({ top, unified = false }: {
               <MuscleRow
                 key={r.muscle} s={r} label={ml(r.muscle)} color={zoneColor(r.zone)}
                 target={targetFor(r.muscle)} history={history[r.muscle] ?? []}
-                expanded={editing || open === r.muscle} editing={editing}
+                expanded={open === r.muscle}
                 zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
                 onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
                 onZone={(k) => pickZone(k, r.muscle)}
-                onEdit={editField}
               />
             ))}
           </View>
@@ -375,31 +318,12 @@ export default function AuroraVolume({ top, unified = false }: {
       )}
 
       {/* ── WHOSE NUMBERS THESE ARE — provenance, then the profile behind it ─ */}
-      <SourceCard resolved={resolved} tested={replay} profile={profile} stored={prefs.volumeProfile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} editing={editing} setProfile={setProfile} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
+      <SourceCard resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} onOpenModel={onOpenModel} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
 
-      {/* ── The glossary that used to be a wall of acronyms in the header ─── */}
-      <ACard solid style={{ marginTop: 16 }}>
-        <Pressable onPress={() => setGloss((v) => !v)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whatBands")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{gloss ? "–" : "+"}</Text>
-        </Pressable>
-        {gloss && (
-          <View style={{ marginTop: 16, gap: 12 }}>
-            {([["MV", "w.analyze.vol.glossMv"], ["MEV", "w.analyze.vol.glossMev"], ["MAV", "w.analyze.vol.glossMav"], ["MRV", "w.analyze.vol.glossMrv"]] as const).map(([k, key]) => (
-              <View key={k} style={{ flexDirection: "row", gap: space.md }}>
-                <Text style={{ width: 42, fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime) }}>{k}</Text>
-                <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(key)}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </ACard>
+      {/* THE GLOSSARY IS GONE — every band value on every muscle row already
+          spotlights that band across the list and prints its definition beside
+          the pointer. Mirrors web. */}
 
-      {editing && customized && (
-        <Pressable onPress={() => setLoggerPref("landmarkOverrides", {})} style={{ alignSelf: "center", marginTop: 16, paddingVertical: 10, paddingHorizontal: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.resetDefaults")}</Text>
-        </Pressable>
-      )}
     </>
   );
 
@@ -412,7 +336,7 @@ export default function AuroraVolume({ top, unified = false }: {
       onRefresh={refetch}
       top={top}
       hero={top ? undefined : { rank: "title", title: t("w.analyze.vol.title") }}
-      accessory={top ? undefined : <HeroAccessory label={editing ? t("w.analyze.vol.done") : t("w.analyze.vol.editLandmarks")} active={editing} onPress={toggleEditing} onDark={false} />}
+      accessory={top || !onOpenModel ? undefined : <HeroAccessory label={t("w.analyze.model.open")} active={false} onPress={onOpenModel} onDark={false} />}
     >
       {body}
     </AuroraScreen>
@@ -508,8 +432,8 @@ function Stepper({ label, value, suffix, min, max, onChange }: {
  * the step down of the deload. Switched off, the card is just the case for
  * turning it on, so the landmark view stays exactly as it was.
  */
-function BlockCard({ block, ramp, on, editing, setBlock }: {
-  block: VolumeBlock; ramp: RampColumn[]; on: boolean; editing: boolean; setBlock: (p: Partial<VolumeBlock>) => void;
+function BlockCard({ block, ramp, on }: {
+  block: VolumeBlock; ramp: RampColumn[]; on: boolean;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -543,24 +467,6 @@ function BlockCard({ block, ramp, on, editing, setBlock }: {
           </View>
           <Text style={{ marginTop: 12, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.rampCaption")}</Text>
 
-          {editing && (
-            <View style={{ gap: 10, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Stepper label={t("w.analyze.vol.currentWeek")} value={block.week} min={1} max={block.weeks} onChange={(v) => setBlock({ week: v })} />
-              <Stepper label={t("w.analyze.vol.blockLength")} value={block.weeks} suffix={t("w.analyze.vol.weeksShort")} min={1} max={16} onChange={(v) => setBlock({ weeks: v })} />
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vol.lastLoadWeek")}</Text>
-                <View style={{ flexDirection: "row", gap: 6 }}>
-                  {(["mav", "overreach"] as const).map((k) => (
-                    <Toggle key={k} on={block.peakAt === k} label={t(k === "mav" ? "w.analyze.vol.peakMav" : "w.analyze.vol.peakOverreach")} onPress={() => setBlock({ peakAt: k })} />
-                  ))}
-                </View>
-              </View>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-                <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vol.deloadLast")}</Text>
-                <Toggle on={!!block.deloadLast} label={t(block.deloadLast ? "w.analyze.vol.done" : "w.analyze.vol.deloadLast")} onPress={() => setBlock({ deloadLast: !block.deloadLast })} />
-              </View>
-            </View>
-          )}
         </>
       )}
     </ACard>
@@ -604,18 +510,17 @@ const RUNG_H = 38;
  *
  * Mirrored by apps/web/components/aurora/volume.tsx.
  */
-function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive, editing, setProfile, ml, level, experience, units }: {
+function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenModel, ml, level, experience, units }: {
   resolved: ReturnType<typeof athleteLandmarks>;
   /** The ceiling's own history, muscles the log has actually tested. */
   tested: LandmarkReplay[];
   profile: AthleteVolumeProfile;
-  stored: AthleteVolumeProfile;
   /** Profile fields filled in from measurement rather than typed — marked, so a
    *  derived number never reads as something the athlete claimed. */
   measuredKeys: Set<keyof AthleteVolumeProfile>;
   adaptive: boolean;
-  editing: boolean;
-  setProfile: (p: Partial<AthleteVolumeProfile>) => void;
+  /** The settings route that owns the form these figures come from. */
+  onOpenModel?: () => void;
   ml: (m: string) => string;
   level: ReturnType<typeof estimateFitnessLevel>;
   experience: ReturnType<typeof resolveExperience>;
@@ -635,7 +540,6 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
   // every landmark field on the muscle rows above.
   const [work, setWork] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const about = editing || aboutOpen;
   const field = { textAlign: "center" as const, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 8 };
   const subhead = { fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk } as const;
   const prose = { fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash } as const;
@@ -766,7 +670,7 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
                 {experience.disagrees ? (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
                     <Text style={{ flex: 1, minWidth: 180, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: txt(C, C.amber) }}>{t("w.analyze.vol.levelDisagrees")}</Text>
-                    <Toggle on={false} label={t("w.analyze.vol.levelUse")} onPress={() => setProfile({ experience: level.experience })} />
+                    {onOpenModel && <Toggle on={false} label={t("w.analyze.model.open")} onPress={onOpenModel} />}
                   </View>
                 ) : null}
               </>
@@ -854,65 +758,14 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
         </>
       )}
 
-      {about && (
-        <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-          <Text style={subhead}>{t("w.analyze.vol.aboutYou")}</Text>
-          {measuredKeys.size > 0 && (
-            <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.measuredWhy")}</Text>
-          )}
-
-          <View style={{ flexDirection: "row", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
-            {(["beginner", "intermediate", "advanced"] as const).map((e) => (
-              <Toggle key={e} on={profile.experience === e} label={t(EXP_KEY[e])} onPress={() => setProfile({ experience: profile.experience === e ? undefined : e })} />
-            ))}
-          </View>
-
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-            {([
-              ["ageYears", t("w.analyze.vol.fieldAge")],
-              ["bodyweightKg", t("w.analyze.vol.fieldBodyweight")],
-              ["heightCm", t("w.analyze.vol.fieldHeight")],
-              ["sleep", t("w.analyze.vol.fieldSleep")],
-              ["stress", t("w.analyze.vol.fieldStress")],
-              ["daysPerWeek", t("w.analyze.vol.fieldDays")],
-            ] as const).map(([key, label]) => {
-              const isMeasured = measuredKeys.has(key);
-              return (
-                <View key={key} style={{ width: "31%" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: isMeasured ? txt(C, C.lime) : C.ash, textAlign: "center", marginBottom: 5 }}>{label}</Text>
-                  <TextInput
-                    defaultValue={profile[key] !== undefined ? String(profile[key]) : ""}
-                    onEndEditing={(e) => setProfile({ [key]: e.nativeEvent.text.trim() === "" ? undefined : Number(e.nativeEvent.text) } as Partial<AthleteVolumeProfile>)}
-                    keyboardType="number-pad"
-                    accessibilityLabel={label}
-                    style={{ ...field, color: isMeasured ? C.ash : C.chalk, borderColor: isMeasured ? withAlpha(C.lime, 0.35) : C.line }}
-                  />
-                </View>
-              );
-            })}
-          </View>
-
-          <View style={{ flexDirection: "row", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
-            {(["deficit", "maintenance", "surplus"] as const).map((n) => (
-              <Toggle key={n} on={profile.nutrition === n} label={t(NUTRITION_KEY[n])} onPress={() => setProfile({ nutrition: profile.nutrition === n ? undefined : n })} />
-            ))}
-          </View>
-
-          {Object.keys(stored).length > 0 && (
-            <Pressable onPress={() => setLoggerPref("volumeProfile", {})} style={{ marginTop: 16, paddingVertical: 8 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.clearProfile")}</Text>
-            </Pressable>
-          )}
-        </View>
-      )}
     </ACard>
   );
 }
 
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
-function MuscleRow({ s, label, color, target, history, expanded, editing, zone, showGloss, onToggle, onZone, onEdit }: {
-  s: MuscleVolumeStatus; label: string; color: string; expanded: boolean; editing: boolean;
+function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss, onToggle, onZone }: {
+  s: MuscleVolumeStatus; label: string; color: string; expanded: boolean;
   /** This week's block target, when volume is being periodized. */
   target: BlockMuscleTarget | null;
   /** Weekly hard sets for THIS muscle over the last eight weeks, oldest first. */
@@ -922,7 +775,6 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
   /** True on the row whose scale was tapped — it carries the definition. */
   showGloss: boolean;
   onToggle: () => void; onZone: (k: VolumeBandKey) => void;
-  onEdit: (m: MuscleGroup, k: keyof VolumeLandmark, raw: string) => void;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -1006,7 +858,7 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
       {/* Expanding adds only what the scale above does NOT already say: the
           maintenance floor and the prescription. Editing swaps in all five
           fields, since all five are editable. */}
-      {expanded && !editing && (
+      {expanded && (
         <View style={{ marginTop: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>MV {s.landmark.mv}</Text>
           {target && verdict && (
@@ -1018,24 +870,6 @@ function MuscleRow({ s, label, color, target, history, expanded, editing, zone, 
           )}
           <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{rowAdvice(s, t)}</Text>
           <MuscleHistory sets={history} />
-        </View>
-      )}
-      {expanded && editing && (
-        <View style={{ flexDirection: "row", gap: 6, marginTop: 12 }}>
-          {(["mv", "mev", "mavLow", "mavHigh", "mrv"] as const).map((k, i) => (
-            <View key={k} style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, textAlign: "center", marginBottom: 5 }}>
-                {["MV", "MEV", "MAV LO", "MAV HI", "MRV"][i]}
-              </Text>
-              <TextInput
-                defaultValue={String(s.landmark[k])}
-                onEndEditing={(e) => onEdit(s.muscle, k, e.nativeEvent.text)}
-                keyboardType="number-pad"
-                accessibilityLabel={`${label} ${k}`}
-                style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 8 }}
-              />
-            </View>
-          ))}
         </View>
       )}
     </View>
