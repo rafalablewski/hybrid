@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import {
   HUB_DOCK_REST,
   HUB_PILL,
@@ -16,7 +16,12 @@ import { useLang } from "../../lib/i18n";
 import { useNavScroll } from "../../lib/nav-scroll";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useTheme, txt } from "../../lib/theme";
-import { F } from "../../lib/ui";
+// PressScale, not the raw Pressable: every tap target in the app answers a
+// touch (guarded by apps/web/__tests__/press-feedback.test.ts). `noScale` —
+// the pill already lives inside an animating parent that scales it on arrival
+// and animates its width on selection; a second scale on the same node fights
+// both.
+import { F, PressScale } from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { withAlpha } from "./kit";
@@ -213,7 +218,8 @@ export function TodayHubPills({
             // one node would make every selection inherit the split's delay.
             <SplitStagger key={tab.id} shown={shown} reduced={reduced} delay={hubSplitDelay(i, activeIndex)}>
               <Animated.View style={{ width: reduced ? HUB_PILL.siblingWidth : widths[i], height: HUB_PILL.height }}>
-                <Pressable
+                <PressScale
+                  noScale
                   onPress={() => select(tab.id)}
                   accessibilityRole="button"
                   accessibilityLabel={label}
@@ -245,7 +251,7 @@ export function TodayHubPills({
                       {label}
                     </Text>
                   )}
-                </Pressable>
+                </PressScale>
               </Animated.View>
             </SplitStagger>
           );
