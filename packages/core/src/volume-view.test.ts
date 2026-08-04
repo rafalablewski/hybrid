@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   RAIL, BAND_KEYS, bandRegion, railX, railGeometry, railScale, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   sourceLabelKey, sourceWhyKey, factorLabelKey, blockKindKey, factorPercent, blockRamp, targetVerdict, TARGET_VERDICT_KEY,
+  provenanceLadder, rungMeta, factorAffectsKey,
 } from "./volume-view";
 import { muscleVolumeStatus, VOLUME_LANDMARKS } from "./engines/landmarks";
 import type { MuscleGroup } from "./engines/types";
@@ -159,6 +160,45 @@ describe("landmark provenance + the block ramp", () => {
     expect(sourceWhyKey("observed")).toBe("w.analyze.vol.sourceWhyObserved");
     expect(factorLabelKey("bodyweight")).toBe("w.analyze.vol.factorBodyweight");
     expect(blockKindKey("deload")).toBe("w.analyze.vol.kindDeload");
+  });
+
+  it("draws the provenance as four rungs, lit as far as the evidence reaches", () => {
+    const rungs = provenanceLadder({
+      layers: ["population", "profile"],
+      source: "profile",
+      profileConfidence: 0.62,
+      observedConfidence: 0,
+    });
+    expect(rungs.map((r) => r.source)).toEqual(["population", "profile", "observed", "manual"]);
+    expect(rungs.map((r) => r.lit)).toEqual([true, true, false, false]);
+    // Exactly one rung names the numbers, and it is the deepest lit one.
+    expect(rungs.filter((r) => r.active).map((r) => r.source)).toEqual(["profile"]);
+    // Each rung carries only the confidence its own layer can claim.
+    expect(rungMeta(rungs[0]!)).toBe("");
+    expect(rungMeta(rungs[1]!)).toBe("62%");
+    expect(rungMeta(rungs[2]!)).toBe("—");
+    expect(rungs[1]!.whyKey).toBe("w.analyze.vol.sourceWhyProfile");
+  });
+
+  it("lights a skipped layer's rung only when it contributed", () => {
+    // The athlete typed their own numbers without ever filling in a profile:
+    // manual is active, profile stays dark, and the ladder says so.
+    const rungs = provenanceLadder({
+      layers: ["population", "manual"],
+      source: "manual",
+      profileConfidence: 0,
+      observedConfidence: 0,
+    });
+    expect(rungs.map((r) => r.lit)).toEqual([true, false, false, true]);
+    expect(rungs[3]!.active).toBe(true);
+    // A number the athlete typed is not an estimate to be confident about.
+    expect(rungMeta(rungs[3]!)).toBe("");
+  });
+
+  it("names the i18n key for which end of the band a factor moved", () => {
+    expect(factorAffectsKey("stimulus")).toBe("w.analyze.vol.affectsStimulus");
+    expect(factorAffectsKey("recovery")).toBe("w.analyze.vol.affectsRecovery");
+    expect(factorAffectsKey("both")).toBe("w.analyze.vol.affectsBoth");
   });
 
   it("states a factor's effect as a signed percentage, with a real minus sign", () => {

@@ -10,11 +10,12 @@ import {
   volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY, LEVEL_BASIS_KEY,
   formatPace, paceClock,
   VOLUME_PROFILE_FIELD_KEY, fmtWeight,
-  sourceLabelKey, sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
+  sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
+  provenanceLadder, rungMeta, factorAffectsKey,
   readReports, placeReads, QUICK_CHECKIN_METRIC,
   type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type Experience,
-  type RecoveryReport, type LandmarkFactor, type WeightUnit,
+  type RecoveryReport, type LandmarkFactor, type LandmarkSource, type WeightUnit,
 } from "@hybrid/core";
 import { useSessionsQuery, useCheckinsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -576,10 +577,32 @@ const FACTOR_FIELD: Partial<Record<LandmarkFactor["key"], keyof AthleteVolumePro
   sleep: "sleep", stress: "stress", nutrition: "nutrition", frequency: "daysPerWeek",
 };
 
+/** Height of one rung of the provenance ladder. Fixed, so the four spine
+ *  segments read as one column of evidence rather than four unrelated marks. */
+const RUNG_H = 38;
+
 /**
- * WHOSE NUMBERS ARE THESE — the honest label on the landmarks, the factors that
- * moved them, and the profile you can correct. Without this the screen quietly
- * passes off a textbook average as a personal measurement.
+ * WHOSE NUMBERS ARE THESE.
+ *
+ * The card answers three questions, in the order an athlete actually asks them,
+ * and gives each one a different weight rather than stacking six paragraphs at
+ * the same size:
+ *
+ *   1. ARE THESE MINE OR A TEXTBOOK'S? — the provenance LADDER. `athleteLandmarks`
+ *      layers population → profile → observed → manual; that is a four-rung
+ *      climb, not a caption, so it is drawn as one: a column of segments lit as
+ *      far as the evidence reaches, each carrying the confidence its layer can
+ *      honestly claim. You see how personal the numbers are before you read a
+ *      word. Tapping a rung reads what that layer did.
+ *   2. WHAT WOULD MAKE THEM MORE MINE? — one meter and ONE thing to do, and the
+ *      thing to do is a control: tapping the next gap opens the form on the spot
+ *      instead of naming a field and leaving the athlete to find it.
+ *   3. SHOW ME THE WORKING. — the level read from the bar, the factors that
+ *      moved the bands, the log's correction and the ceiling's own history, all
+ *      folded behind one disclosure. Depth for whoever wants it; silence for
+ *      everyone else.
+ *
+ * Mirrored by apps/web/components/aurora/volume.tsx.
  */
 function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive, editing, setProfile, ml, level, experience, units }: {
   resolved: ReturnType<typeof athleteLandmarks>;
@@ -601,130 +624,217 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
-  const confidence = Math.round(Math.max(resolved.profileConfidence, resolved.observedConfidence) * 100);
   const done = volumeProfileCompleteness(profile, measuredKeys);
+  const ladder = useMemo(() => provenanceLadder(resolved), [resolved]);
+  // Which layer's sentence is on screen. Defaults to the layer that actually
+  // named the numbers; tapping a rung reads that one instead.
+  const [layer, setLayer] = useState<LandmarkSource | null>(null);
+  const shown = layer ?? resolved.source;
+  // The working, folded away. And the profile form, which the "next gap" row
+  // opens on the spot — its own state, so reaching for it here doesn't expand
+  // every landmark field on the muscle rows above.
+  const [work, setWork] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const about = editing || aboutOpen;
   const field = { textAlign: "center" as const, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 8 };
+  const subhead = { fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk } as const;
+  const prose = { fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash } as const;
 
   return (
     <ACard solid style={{ marginTop: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-        <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: resolved.source === "population" ? C.ash : txt(C, C.lime) }}>{t(sourceLabelKey(resolved.source))}</Text>
-      </View>
-      <Text style={{ marginTop: 10, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(sourceWhyKey(resolved.source))}</Text>
+      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
 
-      {/* HOW COMPLETE THE PROFILE IS, weighted by influence rather than by
-          counting boxes — and what the single most valuable missing answer
-          would buy. "Estimated for you" should be able to say how well. */}
-      <View style={{ marginTop: 16 }}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{Math.round(done.score * 100)}% {t("w.analyze.vol.knownAbout")}</Text>
-          {done.next ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.analyze.vol.nextUp")}: {t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</Text> : null}
+      {/* ── THE LADDER ──────────────────────────────────────────────────────
+          Four rungs in the order the engine applies them, lit as far as the
+          evidence reaches. The lit spine is the whole answer: a column that
+          stops at rung one says "textbook averages" far more plainly than the
+          caption that used to sit up here fighting the title for the same row. */}
+      <View style={{ marginTop: 14 }} accessibilityRole="radiogroup">
+        {ladder.map((r) => {
+          const on = r.source === shown;
+          const meta = rungMeta(r);
+          return (
+            <Pressable
+              key={r.source}
+              onPress={() => { haptic.selection(); setLayer(r.source === resolved.source ? null : r.source); }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={`${t(r.labelKey)}${meta ? `, ${meta}` : ""}`}
+              style={{ flexDirection: "row", alignItems: "center", gap: space.ms, height: RUNG_H, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: 10, backgroundColor: on ? withAlpha(C.chalk, 0.05) : "transparent" }}
+            >
+              {/* One segment of the spine. Lit means the layer contributed; full
+                  strength means it is the layer that named the numbers. */}
+              <View style={{ width: 3, height: RUNG_H - 12, borderRadius: 2, backgroundColor: r.lit ? C.lime : C.ink, opacity: r.lit ? (r.active ? 1 : 0.4) : 1 }} />
+              <Text
+                numberOfLines={1}
+                style={{ flex: 1, fontFamily: r.active ? F.semi : F.reg, fontSize: fs.body, color: r.lit ? C.chalk : C.ash }}
+              >
+                {t(r.labelKey)}
+              </Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: r.lit ? txt(C, C.lime) : C.ash }}>{meta}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={{ marginTop: 12, ...prose }}>{t(sourceWhyKey(shown))}</Text>
+
+      {/* ── THE ONE THING TO DO NEXT ────────────────────────────────────────
+          How complete the profile is, weighted by how much each input actually
+          moves the estimate — and the single most valuable gap as a CONTROL.
+          Naming the field and leaving the athlete to hunt for the form was a
+          step we were making them take for no reason. */}
+      <View style={{ marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk }}>{Math.round(done.score * 100)}%</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.knownAbout")}</Text>
         </View>
-        <View style={{ height: 5, borderRadius: 999, backgroundColor: C.ink, marginTop: 8, overflow: "hidden" }}>
+        <View style={{ height: 3, borderRadius: 999, backgroundColor: C.ink, marginTop: 10, overflow: "hidden" }}>
           <View style={{ width: pct(done.score), height: "100%", backgroundColor: C.lime }} />
         </View>
-        {done.next ? (
-          <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(done.next.unlocksKey)}</Text>
-        ) : null}
-      </View>
 
-      {/* YOUR LEVEL, FROM YOUR LIFTS. */}
-      <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
-          <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.levelTitle")}</Text>
-          {level.basis !== "none" ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t(LEVEL_KEY[level.level])}</Text>
-          ) : null}
-        </View>
-        {level.basis === "none" ? (
-          <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.levelNoData")}</Text>
-        ) : (
+        {done.next ? (
           <>
-            <View style={{ gap: 6, marginTop: 12 }}>
-              {/* Two kinds of evidence, two units. A lift is kg and a multiple
-                  of body mass; a run is a distance and a pace. They share a row
-                  shape but never a number — see core/engines/fitness-level.ts. */}
-              {level.evidence.slice(0, 3).map((e) => (
-                <View key={e.kind + e.lift} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
-                  <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{e.lift}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
-                    {e.kind === "strength" ? fmtWeight(e.e1rm!, units) : `${paceClock(Math.round(e.equivSec! / 5))} ${t("w.analyze.vol.levelEquiv")}`}
-                  </Text>
-                  <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk, minWidth: 78, textAlign: "right" }}>
-                    {e.kind === "strength"
-                      ? `${e.ratio.toFixed(2)} ${t("w.analyze.vol.ofBodyweight")}`
-                      : `${formatPace(e.ratio)} ${t("w.analyze.vol.levelPace")}`}
-                  </Text>
-                </View>
-              ))}
-            </View>
-            <Text style={{ marginTop: 10, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>
-              {t(LEVEL_BASIS_KEY[level.basis])} {Math.round(level.confidence * 100)}% {t("w.analyze.vol.confidence")}
-            </Text>
-            {experience.disagrees ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-                <Text style={{ flex: 1, minWidth: 180, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: txt(C, C.amber) }}>{t("w.analyze.vol.levelDisagrees")}</Text>
-                <Toggle on={false} label={t("w.analyze.vol.levelUse")} onPress={() => setProfile({ experience: level.experience })} />
-              </View>
-            ) : null}
+            <Pressable
+              onPress={() => { haptic.selection(); setAboutOpen(true); }}
+              accessibilityRole="button"
+              accessibilityLabel={`${t("w.analyze.vol.nextUp")}: ${t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}`}
+              style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14 }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.nextUp")}</Text>
+              <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
+            </Pressable>
+            <Text style={{ marginTop: 6, ...prose }}>{t(done.next.unlocksKey)}</Text>
           </>
+        ) : (
+          <Text style={{ marginTop: 12, ...prose }}>{t("w.analyze.vol.profileComplete")}</Text>
         )}
       </View>
 
-      {resolved.factors.length > 0 && (
-        <View style={{ gap: 8, marginTop: 16 }}>
-          {resolved.factors.map((f) => (
-            <View key={f.key} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
-              <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>
-                {t(factorLabelKey(f.key))}
-                {!!FACTOR_FIELD[f.key] && measuredKeys.has(FACTOR_FIELD[f.key]!) && (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{"  "}{t("w.analyze.vol.measured")}</Text>
-                )}
-              </Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
-                {f.key === "experience" ? t(EXP_KEY[f.value as keyof typeof EXP_KEY] ?? "w.analyze.vol.expBeginner") : f.key === "nutrition" ? t(NUTRITION_KEY[f.value as keyof typeof NUTRITION_KEY]) : f.value}
-              </Text>
-              <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, minWidth: 46, textAlign: "right", color: txt(C, f.multiplier >= 1 ? C.lime : C.amber) }}>{factorPercent(f.multiplier)}</Text>
-            </View>
-          ))}
-          {confidence > 0 && (
-            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{confidence}% {t("w.analyze.vol.confidence")}</Text>
-          )}
-        </View>
-      )}
-
-      {/* The log's correction — what your own training proved. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-        <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.adaptive")}</Text>
-        <Toggle on={adaptive} label={adaptive ? t("w.analyze.vol.done") : t("w.analyze.vol.adaptive")} onPress={() => setLoggerPref("adaptiveLandmarks", !adaptive)} />
+      {/* ── SHOW THE WORKING ────────────────────────────────────────────────
+          Everything below is evidence for the ladder above: the level read off
+          the bar, the factors that moved the bands, the log's correction and
+          the ceiling's own history. Four sub-sections that used to sit open,
+          at one size, stacked into a wall nobody read. */}
+      <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
+        <Pressable
+          onPress={() => { haptic.selection(); setWork((v) => !v); }}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: work }}
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}
+        >
+          <Text style={subhead}>{t("w.analyze.vol.showWork")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{work ? "–" : "+"}</Text>
+        </Pressable>
       </View>
-      {adaptive && (
-        <Text style={{ marginTop: 10, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>
-          {resolved.adapted.length
-            ? `${resolved.adapted.map((m) => {
-                // The estimate never ships without its stated interval — a
-                // ceiling shown as a bare number reads as a measurement.
-                const e = resolved.estimates[m];
-                return e ? `${ml(m)} ${e.mrv} (${e.lo}–${e.hi})` : ml(m);
-              }).join(", ")} — ${resolved.adapted.length} ${t("w.analyze.vol.adaptedCount")}`
-            : t("w.analyze.vol.notEnoughEvidence")}
-        </Text>
-      )}
 
-      {/* HAS IT SETTLED? A ceiling is a claim, and the only evidence for it the
-          app can offer is the shape of its own history: the same estimator, run
-          at every week, with only the data that existed then. A number that
-          stopped moving is worth training against; one that is still jumping
-          says so. See core/engines/landmark-replay.ts. */}
-      {adaptive ? (
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.replayTitle")}</Text>
-          {tested.length === 0 ? (
-            <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.replayNone")}</Text>
-          ) : (
-            <>
-              <View style={{ gap: 8, marginTop: 10 }}>
+      {work && (
+        <>
+          {/* YOUR LEVEL, FROM YOUR LIFTS. */}
+          <View style={{ marginTop: 16 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
+              <Text style={{ flex: 1, ...subhead }}>{t("w.analyze.vol.levelTitle")}</Text>
+              {level.basis !== "none" ? (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t(LEVEL_KEY[level.level])}</Text>
+              ) : null}
+            </View>
+            {level.basis === "none" ? (
+              <Text style={{ marginTop: 8, ...prose }}>{t("w.analyze.vol.levelNoData")}</Text>
+            ) : (
+              <>
+                <View style={{ gap: 6, marginTop: 12 }}>
+                  {/* Two kinds of evidence, two units. A lift is kg and a multiple
+                      of body mass; a run is a distance and a pace. They share a row
+                      shape but never a number — see core/engines/fitness-level.ts. */}
+                  {level.evidence.slice(0, 3).map((e) => (
+                    <View key={e.kind + e.lift} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
+                      <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{e.lift}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
+                        {e.kind === "strength" ? fmtWeight(e.e1rm!, units) : `${paceClock(Math.round(e.equivSec! / 5))} ${t("w.analyze.vol.levelEquiv")}`}
+                      </Text>
+                      <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk, minWidth: 78, textAlign: "right" }}>
+                        {e.kind === "strength"
+                          ? `${e.ratio.toFixed(2)} ${t("w.analyze.vol.ofBodyweight")}`
+                          : `${formatPace(e.ratio)} ${t("w.analyze.vol.levelPace")}`}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={{ marginTop: 10, ...prose }}>
+                  {t(LEVEL_BASIS_KEY[level.basis])} {Math.round(level.confidence * 100)}% {t("w.analyze.vol.confidence")}
+                </Text>
+                {experience.disagrees ? (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
+                    <Text style={{ flex: 1, minWidth: 180, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: txt(C, C.amber) }}>{t("w.analyze.vol.levelDisagrees")}</Text>
+                    <Toggle on={false} label={t("w.analyze.vol.levelUse")} onPress={() => setProfile({ experience: level.experience })} />
+                  </View>
+                ) : null}
+              </>
+            )}
+          </View>
+
+          {/* WHAT MOVED YOUR BANDS. These rows used to render headless, directly
+              under the level block, so "Sleep 3/5 −6%" read as evidence of how
+              strong you are. They are their own subject and now say so — and
+              each one names WHICH END of the band it moved, which the engine has
+              always known (`affects`) and the screen used to throw away. */}
+          {resolved.factors.length > 0 && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={subhead}>{t("w.analyze.vol.factorsTitle")}</Text>
+              <View style={{ gap: 12, marginTop: 12 }}>
+                {resolved.factors.map((f) => {
+                  const value = f.key === "experience"
+                    ? t(EXP_KEY[f.value as keyof typeof EXP_KEY] ?? "w.analyze.vol.expBeginner")
+                    : f.key === "nutrition" ? t(NUTRITION_KEY[f.value as keyof typeof NUTRITION_KEY]) : f.value;
+                  const measured = !!FACTOR_FIELD[f.key] && measuredKeys.has(FACTOR_FIELD[f.key]!);
+                  const meta = [value, measured ? t("w.analyze.vol.measured") : null, t(factorAffectsKey(f.affects))].filter(Boolean).join(" – ");
+                  return (
+                    <View key={f.key}>
+                      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
+                        <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{t(factorLabelKey(f.key))}</Text>
+                        <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, minWidth: 46, textAlign: "right", color: txt(C, f.multiplier >= 1 ? C.lime : C.amber) }}>{factorPercent(f.multiplier)}</Text>
+                      </View>
+                      <Text style={{ marginTop: 2, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{meta}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* THE LOG'S CORRECTION — what your own training proved. */}
+          <View style={{ marginTop: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+              <Text style={{ flex: 1, ...subhead }}>{t("w.analyze.vol.adaptive")}</Text>
+              <Toggle on={adaptive} label={t(adaptive ? "common.on" : "common.off")} onPress={() => setLoggerPref("adaptiveLandmarks", !adaptive)} />
+            </View>
+            {!adaptive ? (
+              <Text style={{ marginTop: 10, ...prose }}>{t("w.analyze.vol.adaptiveWhy")}</Text>
+            ) : resolved.adapted.length ? (
+              <Text style={{ marginTop: 10, ...prose }}>
+                {`${resolved.adapted.map((m) => {
+                  // The estimate never ships without its stated interval — a
+                  // ceiling shown as a bare number reads as a measurement.
+                  const e = resolved.estimates[m];
+                  return e ? `${ml(m)} ${e.mrv} (${e.lo}–${e.hi})` : ml(m);
+                }).join(", ")} — ${resolved.adapted.length} ${t("w.analyze.vol.adaptedCount")}`}
+              </Text>
+            ) : (
+              <Text style={{ marginTop: 10, ...prose }}>{t("w.analyze.vol.notEnoughEvidence")}</Text>
+            )}
+          </View>
+
+          {/* HAS IT SETTLED? A ceiling is a claim, and the only evidence for it
+              the app can offer is the shape of its own history: the same
+              estimator, run at every week, with only the data that existed then.
+              A number that stopped moving is worth training against; one that is
+              still jumping says so. See core/engines/landmark-replay.ts.
+              Silent until a week has been tested — with nothing to plot it said
+              the same "not enough yet" the line above had just said. */}
+          {adaptive && tested.length > 0 && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={subhead}>{t("w.analyze.vol.replayTitle")}</Text>
+              <View style={{ gap: 8, marginTop: 12 }}>
                 {tested.slice(0, 4).map((r) => (
                   <View key={r.muscle} style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
                     <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{ml(r.muscle)}</Text>
@@ -738,15 +848,15 @@ function SourceCard({ resolved, tested, profile, stored, measuredKeys, adaptive,
                   </View>
                 ))}
               </View>
-              <Text style={{ marginTop: 10, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.replayWhy")}</Text>
-            </>
+              <Text style={{ marginTop: 10, ...prose }}>{t("w.analyze.vol.replayWhy")}</Text>
+            </View>
           )}
-        </View>
-      ) : null}
+        </>
+      )}
 
-      {editing && (
+      {about && (
         <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk }}>{t("w.analyze.vol.aboutYou")}</Text>
+          <Text style={subhead}>{t("w.analyze.vol.aboutYou")}</Text>
           {measuredKeys.size > 0 && (
             <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.measuredWhy")}</Text>
           )}
