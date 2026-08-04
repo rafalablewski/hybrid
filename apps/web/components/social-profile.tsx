@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
 import type { PublicProfileResponse, OwnProfileResponse, CompareResponse, CompareResult, SharedLift, MutationResult } from "@hybrid/core";
@@ -97,7 +98,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
                 {data.stats.topLifts.map((l) => (
                   <div key={l.lift} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                     <span style={{ color: C("chalk") }}>{l.lift}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", color: C("lime") }}>{l.topLoad} kg</span>
+                    <span style={{ fontFamily: "var(--font-mono)", color: accentText("lime") }}>{l.topLoad} kg</span>
                   </div>
                 ))}
               </div>
@@ -106,7 +107,7 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
             {relation !== "self" && (
               <div style={{ display: "flex", gap: 16, marginTop: 18, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
                 <button className="pressable" onClick={doReport} disabled={busy.is("r")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 12, fontFamily: "var(--font-display)" }}>⚐ {t("w.social.report")}</button>
-                <button className="pressable" onClick={doBlock} disabled={busy.is("b")} style={{ background: "none", border: "none", cursor: "pointer", color: C("red"), fontSize: 12, fontFamily: "var(--font-display)" }}>⊘ {t("w.social.block")}</button>
+                <button className="pressable" onClick={doBlock} disabled={busy.is("b")} style={{ background: "none", border: "none", cursor: "pointer", color: accentText("red"), fontSize: 12, fontFamily: "var(--font-display)" }}>⊘ {t("w.social.block")}</button>
               </div>
             )}
 
@@ -221,24 +222,24 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ color: C("ash"), fontFamily: "var(--font-mono)" }}>@</span><input autoFocus style={inputStyle} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} placeholder={t("w.profile.handlePlaceholder")} /></div>
           {form.handle.length > 0 && (
             <div aria-live="polite" style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11 }}>
-              {!fmtValid ? <span style={{ color: C("red") }}>✕ {t("w.profile.handleRule")}</span>
-                : avail === "taken" ? <span style={{ color: C("red") }}>✕ {t("w.profile.handleTaken").replace("{h}", hNorm)}</span>
+              {!fmtValid ? <span style={{ color: accentText("red") }}>✕ {t("w.profile.handleRule")}</span>
+                : avail === "taken" ? <span style={{ color: accentText("red") }}>✕ {t("w.profile.handleTaken").replace("{h}", hNorm)}</span>
                 : avail === "checking" ? <span style={{ color: C("ash") }}>{t("w.profile.checking")}</span>
                 : <span style={{ color: "var(--lime-text)" }}>✓ {isMine ? t("w.profile.yourHandle") : t("w.profile.handleAvailable").replace("{h}", hNorm)}</span>}
             </div>
           )}
-          {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
+          {err && <div role="alert" style={{ color: accentText("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
           <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : claimed ? t("common.save") : t("w.profile.claimHandle")}</Btn></div>
         </>)}
         {editing === "displayName" && (<>
           <input autoFocus style={inputStyle} value={form.displayName ?? ""} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder={t("w.profile.optional")} />
-          {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
+          {err && <div role="alert" style={{ color: accentText("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
           <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : t("common.save")}</Btn></div>
         </>)}
         {editing === "bio" && (<>
           <textarea autoFocus style={{ ...inputStyle, minHeight: 96, resize: "vertical" }} value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={280} placeholder={t("w.profile.bioPlaceholder")} />
           <div style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 10, color: bioLen >= 280 ? C("red") : C("ash"), marginTop: 6 }}>{bioLen}/280</div>
-          {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 4 }}>{err}</div>}
+          {err && <div role="alert" style={{ color: accentText("red"), fontSize: 13, marginTop: 4 }}>{err}</div>}
           <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : t("common.save")}</Btn></div>
         </>)}
         {editing === "visibility" && (<>
@@ -247,7 +248,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
               <Pill key={v} active={form.visibility === v} onClick={() => setForm({ ...form, visibility: v })}>{v === "public" ? t("w.profile.visPublic") : v === "followers" ? t("w.profile.visFollowers") : t("w.profile.visPrivate")}</Pill>
             ))}
           </div>
-          {err && <div role="alert" style={{ color: C("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
+          {err && <div role="alert" style={{ color: accentText("red"), fontSize: 13, marginTop: 8 }}>{err}</div>}
           <div style={{ marginTop: 12 }}><Btn onClick={fieldSaveSocial} disabled={saving}>{saving ? t("w.profile.saving") : t("common.save")}</Btn></div>
         </>)}
       </div>
@@ -330,7 +331,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
       </div>
 
       {onDone && <div style={{ marginTop: 18 }}><Btn ghost onClick={onDone}>{t("common.done")}</Btn></div>}
-      {err && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: 12, textAlign: "center", marginTop: 10, color: C("red") }}>{err}</div>}
+      {err && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: 12, textAlign: "center", marginTop: 10, color: accentText("red") }}>{err}</div>}
       {account?.msg && <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, textAlign: "center", marginTop: 10, color: account.msg.startsWith("✓") ? "var(--lime-text)" : C("ash") }}>{account.msg}</div>}
     </>
   );

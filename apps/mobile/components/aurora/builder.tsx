@@ -215,9 +215,9 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
   const { t } = useLang();
   const sig = sessionSignal(items, { bodyweightKg });
   const segs = [
-    { pct: sig.split.strength, color: C.lime, label: t("w.train.signal.str") },
-    { pct: sig.split.conditioning, color: C.violet, label: t("w.train.signal.cond") },
-    { pct: sig.split.endurance, color: C.blue, label: t("w.train.signal.end") },
+    { pct: sig.split.strength, fill: C.lime, label: t("w.train.signal.str") },
+    { pct: sig.split.conditioning, fill: C.violet, label: t("w.train.signal.cond") },
+    { pct: sig.split.endurance, fill: C.blue, label: t("w.train.signal.end") },
   ];
   return (
     <View style={{ marginTop: 4, marginBottom: 16, marginHorizontal: 2 }} accessible accessibilityLabel={`${sig.minutes} min`}>
@@ -231,11 +231,11 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
         />
       </View>
       <View style={{ flexDirection: "row", height: 4, borderRadius: RADIUS.pill, overflow: "hidden", backgroundColor: C.ink2, marginTop: 12 }}>
-        {segs.map((s, i) => s.pct > 0 && <View key={i} style={{ width: `${s.pct}%`, backgroundColor: s.color }} />)}
+        {segs.map((s, i) => s.pct > 0 && <View key={i} style={{ width: `${s.pct}%`, backgroundColor: s.fill }} />)}
       </View>
       <View style={{ flexDirection: "row", gap: 12, marginTop: 6 }}>
         {segs.filter((s) => s.pct > 0).map((s, i) => (
-          <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, s.color) }}>{s.pct}% {s.label}</Text>
+          <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, s.fill) }}>{s.pct}% {s.label}</Text>
         ))}
       </View>
     </View>

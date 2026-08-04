@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { canSaveRoutine, isFullAccess, FUNNEL, MOODS, SUGGESTED_TAGS, MAX_TAGS, tagLabelKey, type SessionBlock } from "@hybrid/core";
-import { fs, space } from "@/lib/ui";
+import { fs, space, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
@@ -67,7 +67,7 @@ export default function SaveRoutineCard({
 
   if (state === "saved")
     return (
-      <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime") }}>
+      <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: accentText("lime") }}>
         {t("w.train.logger.savedRoutine")}
       </div>
     );
@@ -97,7 +97,7 @@ export default function SaveRoutineCard({
     return (
       <button className="pressable"
         onClick={() => setOpen(true)}
-        style={{ width: "100%", marginTop: 18, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 45%, transparent)`, borderRadius: 999, padding: "14px", cursor: "pointer" }}
+        style={{ width: "100%", marginTop: 18, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, color: accentText("lime"), background: `color-mix(in srgb, ${C("lime")} 12%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 45%, transparent)`, borderRadius: 999, padding: "14px", cursor: "pointer" }}
       >
         {t("w.train.logger.saveAsRoutine")}
       </button>
@@ -128,7 +128,7 @@ export default function SaveRoutineCard({
 
   return (
     <div style={{ marginTop: 18, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, background: `color-mix(in srgb, ${C("lime")} 8%, transparent)`, borderRadius: 16, padding: 16 }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("lime") }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: accentText("lime") }}>
         {t("w.train.logger.saveAsRoutine").replace(/^★\s*/, "")}
       </div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 4, lineHeight: 1.5 }}>

@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { fs, space, prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit } from "@hybrid/core";
 
@@ -43,7 +44,7 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
   const mono: CSSProperties = { fontFamily: "var(--font-mono)", fontSize: fs.caption };
   return (
     <div style={{ background: C("ink2"), border: `1px solid ${C("lime")}`, borderRadius: 18, padding: 16, marginBottom: 16 }}>
-      <div style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>Co-sign requests</div>
+      <div style={{ ...mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: accentText("lime") }}>Co-sign requests</div>
       {inbox.map((i) => (
         <div key={i.id} style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: fs.body, color: C("chalk"), flex: 1, minWidth: 180 }}>
@@ -152,7 +153,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, canReq
                 {canRequest && tier < 2 && !pending && !unavailable && (
                   <button className="pressable"
                     onClick={() => { setAsking(asking === lift ? null : lift); setHandle(""); setErrorMsg(null); }}
-                    style={{ ...mono, background: "none", border: "none", cursor: "pointer", color: C("lime"), padding: 0 }}
+                    style={{ ...mono, background: "none", border: "none", cursor: "pointer", color: accentText("lime"), padding: 0 }}
                   >
                     Ask a witness
                   </button>
@@ -174,7 +175,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, canReq
                   >
                     {state === "busy" ? "Sending" : "Send"}
                   </button>
-                  {errorMsg && <span style={{ ...mono, color: C("red") }} role="alert">{errorMsg}</span>}
+                  {errorMsg && <span style={{ ...mono, color: accentText("red") }} role="alert">{errorMsg}</span>}
                 </div>
               )}
             </div>

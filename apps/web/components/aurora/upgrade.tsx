@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import { fs, FUNNEL } from "@hybrid/core";
 import { useSession } from "@/lib/session";
@@ -78,7 +79,7 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--lime-text)", marginTop: 3, letterSpacing: ".08em" }}>{t("w.account.upgrade.trial-note")}</div>
       </div>
 
-      {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 16, textAlign: "center", lineHeight: 1.5 }}>{msg}</div>}
+      {msg && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: accentText("red"), marginTop: 16, textAlign: "center", lineHeight: 1.5 }}>{msg}</div>}
 
       {/* CTA */}
       <button className="pressable"

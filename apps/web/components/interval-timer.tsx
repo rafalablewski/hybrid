@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space, buildIntervalPlan, intervalTotalSeconds, locateInterval, formatClock } from "@hybrid/core";
@@ -140,7 +141,7 @@ export default function IntervalTimerScreen({ embedded = false }: { embedded?: b
 function Stepper({ label, value, onMinus, onPlus }: { label: string; value: string; onMinus: () => void; onPlus: () => void }) {
   const C = (v: string) => `var(--color-${v})`;
   const btn = (t: string, fn: () => void) => (
-    <button className="pressable" onClick={fn} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("lime"), cursor: "pointer", fontWeight: 900, fontSize: fs.heading }}>{t}</button>
+    <button className="pressable" onClick={fn} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${C("line")}`, background: C("ink2"), color: accentText("lime"), cursor: "pointer", fontWeight: 900, fontSize: fs.heading }}>{t}</button>
   );
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

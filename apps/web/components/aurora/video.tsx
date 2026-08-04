@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import { fs, space } from "@hybrid/core";
 import { HeroScreen } from "./hero";
@@ -41,7 +42,7 @@ export default function AuroraVideo() {
               {a.metrics.minKneeAngle != null && chip(C("ash"), `${t("w.analyze.vid.depth")} ${Math.round(a.metrics.minKneeAngle)}°`)}
               {a.metrics.kneeAsymmetryPct != null && chip(a.metrics.kneeAsymmetryPct > 10 ? C("amber") : C("lime"), `${t("w.analyze.vid.asym")} ${a.metrics.kneeAsymmetryPct.toFixed(0)}%`)}
             </div>
-            {a.metrics.flags.length > 0 && <div style={{ marginTop: 10 }}>{a.metrics.flags.map((f) => <div key={f} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("amber") }}>⚠ {f}</div>)}</div>}
+            {a.metrics.flags.length > 0 && <div style={{ marginTop: 10 }}>{a.metrics.flags.map((f) => <div key={f} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: accentText("amber") }}>⚠ {f}</div>)}</div>}
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, marginTop: 10, color: C("ash") }}>{new Date(a.createdAt).toLocaleString()}</div>
           </div>
         ))}

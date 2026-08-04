@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useCallback, useEffect, useState } from "react";
 import { fs } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
@@ -75,7 +76,7 @@ export default function AuroraConnectionPage({ id, onBack }: { id: string; onBac
           ) : p?.auth === "team" ? (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{t("w.account.connections.team")}</span>
           ) : p && !p.configured ? (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("amber") }}>{t("w.account.connections.awaiting-creds")}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: accentText("amber") }}>{t("w.account.connections.awaiting-creds")}</span>
           ) : p && conn ? (
             <button className="pressable" onClick={sync} disabled={busy} style={pill(C("lime"), false)}>
               {busy ? t("w.account.connections.syncing") : t("w.account.connections.sync-now")}

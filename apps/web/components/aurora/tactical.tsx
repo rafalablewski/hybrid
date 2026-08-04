@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import { fs, space, deploymentReadiness, unitReadiness, type DutyStatus, type UnitMember } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -66,7 +67,7 @@ export default function AuroraTactical() {
           {dr && chip(statusColor[dr.status], dr.status.replace("-", " "))}
           {dr && dr.limiters.length > 0 && (
             <div style={{ marginTop: 10 }}>
-              {dr.limiters.map((l) => <div key={l} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("amber") }}>⚠ {l}</div>)}
+              {dr.limiters.map((l) => <div key={l} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: accentText("amber") }}>⚠ {l}</div>)}
             </div>
           )}
           {hasData ? (

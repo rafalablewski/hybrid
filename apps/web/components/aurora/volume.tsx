@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { createElement, useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, weeklyMuscleSets, athleteLandmarks,
@@ -244,7 +245,7 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
       <section style={{ ...card, paddingBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={eyebrow}>{t("w.analyze.vol.range7d")}</span>
-          {customized && <span style={{ ...eyebrow, color: C("lime") }}>{t("w.analyze.vol.customised")}</span>}
+          {customized && <span style={{ ...eyebrow, color: accentText("lime") }}>{t("w.analyze.vol.customised")}</span>}
         </div>
 
         {summary.empty ? (
@@ -587,7 +588,7 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
             >
               <span style={{ ...mono(fs.nano), textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.vol.nextUp")}</span>
               <span style={{ flex: 1, fontSize: fs.bodyLg, fontWeight: 600, color: C("chalk") }}>{t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</span>
-              <span aria-hidden style={{ ...mono(fs.body), color: C("lime") }}>→</span>
+              <span aria-hidden style={{ ...mono(fs.body), color: accentText("lime") }}>→</span>
             </button>
             <p style={{ ...prose, marginTop: 6 }}>{t(done.next.unlocksKey)}</p>
           </>
@@ -621,7 +622,7 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
               <h3 style={subhead}>{t("w.analyze.vol.levelTitle")}</h3>
               {level.basis !== "none" && (
-                <span style={{ ...mono(fs.caption), color: C("lime") }}>{t(LEVEL_KEY[level.level])}</span>
+                <span style={{ ...mono(fs.caption), color: accentText("lime") }}>{t(LEVEL_KEY[level.level])}</span>
               )}
             </div>
             {level.basis === "none" ? (
@@ -651,7 +652,7 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
                 </p>
                 {experience.disagrees && (
                   <div style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-                    <p style={{ flex: 1, minWidth: 200, margin: 0, fontSize: fs.body, lineHeight: 1.5, color: C("amber") }}>{t("w.analyze.vol.levelDisagrees")}</p>
+                    <p style={{ flex: 1, minWidth: 200, margin: 0, fontSize: fs.body, lineHeight: 1.5, color: accentText("amber") }}>{t("w.analyze.vol.levelDisagrees")}</p>
                     {onOpenModel && <Toggle on={false} label={t("w.analyze.model.open")} onClick={onOpenModel} />}
                   </div>
                 )}

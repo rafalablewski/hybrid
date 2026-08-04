@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import { fs, space, athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
@@ -168,7 +169,7 @@ export default function AuroraTeamMonitor() {
                 <td style={tdC}>{a.acute || "—"}</td>
                 <td style={tdC}>
                   <span style={{ color: C(riskColor(a.riskOverall)) }}>{a.riskOverall}</span>
-                  {a.flagged && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, display: "block", color: C("red") }}>{a.flagged}</span>}
+                  {a.flagged && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, display: "block", color: accentText("red") }}>{a.flagged}</span>}
                 </td>
                 <td style={tdC}>{a.hpi}</td>
                 <td style={tdR}>{fmtDate(a.lastSession)}</td>

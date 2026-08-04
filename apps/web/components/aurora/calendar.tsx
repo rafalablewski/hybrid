@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useMemo, useState } from "react";
 import { fs, space, sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, localDayKey, localTodayKey, type LoggedSession } from "@hybrid/core";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -73,17 +74,17 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
             );
           })}
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>{t("w.analyze.cal.legendPre")} <span style={{ color: C("violet") }}>●</span> {t("w.analyze.cal.legendAssigned")} <span style={{ color: C("amber") }}>●</span> {t("w.analyze.cal.legendEvent")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>{t("w.analyze.cal.legendPre")} <span style={{ color: accentText("violet") }}>●</span> {t("w.analyze.cal.legendAssigned")} <span style={{ color: accentText("amber") }}>●</span> {t("w.analyze.cal.legendEvent")}</div>
       </div>
 
       <div style={card}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: accentText("lime") }}>{new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}</div>
         {selEvents.map((e) => <div key={e.id} style={{ marginTop: 10 }}>{chip(C("amber"), t("w.analyze.cal.event"))}<div style={{ fontWeight: 700, fontSize: fs.note, marginTop: 4 }}>{e.name}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{e.sport}</div></div>)}
         {selAssignments.map((a) => (
           <div key={a.id} style={{ marginTop: 10 }}>{chip(C("violet"), t("w.analyze.cal.assigned"))}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
               <div style={{ fontWeight: 700, fontSize: fs.note }}>{a.name}</div>
-              {a.status === "completed" ? chip(C("lime"), t("w.analyze.cal.done")) : <button className="pressable" onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, textTransform: "uppercase", color: C("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>{t("w.analyze.cal.markDone")}</button>}
+              {a.status === "completed" ? chip(C("lime"), t("w.analyze.cal.done")) : <button className="pressable" onClick={() => markDone(a.id)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, fontWeight: 700, textTransform: "uppercase", color: accentText("lime"), background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`, borderRadius: 999, padding: "5px 12px", cursor: "pointer" }}>{t("w.analyze.cal.markDone")}</button>}
             </div>
           </div>
         ))}

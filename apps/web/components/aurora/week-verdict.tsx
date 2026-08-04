@@ -11,7 +11,7 @@ import {
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
-import { fs } from "@/lib/ui";
+import { fs, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { useToday } from "@/lib/use-today";
 
@@ -397,7 +397,7 @@ export default function AuroraWeekVerdict({
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <span style={{ ...kicker, color: C("ash") }}>{t("w.home.cockpit.newPrs")}</span>
-            <span style={{ ...num, fontSize: fs.micro, color: C("lime"), marginLeft: "auto" }}>{prs.length}</span>
+            <span style={{ ...num, fontSize: fs.micro, color: accentText("lime"), marginLeft: "auto" }}>{prs.length}</span>
           </div>
           {prs.slice(0, 4).map((pr) => (
             <div key={pr.lift} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)` }}>
@@ -406,7 +406,7 @@ export default function AuroraWeekVerdict({
                   summary describe the same PR, so they must agree. Formatted
                   through the shared helper: topLoad is 0.1-rounded, so a raw
                   subtraction would print +4.799999999999997. */}
-              <span style={{ ...num, fontSize: fs.caption, fontWeight: 700, color: C("lime"), whiteSpace: "nowrap" }}>
+              <span style={{ ...num, fontSize: fs.caption, fontWeight: 700, color: accentText("lime"), whiteSpace: "nowrap" }}>
                 {fmtWeight(pr.topLoad, units)}
                 {pr.previousTopLoad == null || pr.topLoad <= pr.previousTopLoad ? "" : ` – ${strengthPrDelta(pr, { first: "", moreReps: "" })}`}
               </span>

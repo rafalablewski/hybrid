@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
-import { colors, ROLE_COLOR, type SemanticRole, fs, space } from "@hybrid/core";
+import { colors, ROLE_COLOR, type AccentKey, type SemanticRole, fs, space } from "@hybrid/core";
 
 // Re-export the shared scale so screens import sizing from one place:
 //   import { fs, space } from "@/lib/ui"  →  fontSize: fs.body, gap: space.lg
@@ -60,6 +60,21 @@ export const roleText = (role: SemanticRole): string => {
   const accent = ROLE_COLOR[role];
   return accent === "ash" ? "var(--color-ash)" : `var(--${accent}-text)`;
 };
+
+/**
+ * An accent BY NAME as a colour to draw with — the same channel `roleText` uses,
+ * for the many call sites that reference an accent directly rather than through
+ * a semantic role (an error message is red because it is an error, not because
+ * something computed `danger`).
+ *
+ * Every one of those said `color: C("red")` — the FILL — and the type scale here
+ * tops out at 14px, so the WCAG large-text exemption covers none of them:
+ * on Kyoto Hour that error text was 3.26:1 against the card, sand was 1.57:1 and
+ * steel 2.83:1, all under AA. The `-text` variants are the AA-guarded tone for
+ * each theme (palette.test.ts), which is what a glyph must be drawn in.
+ */
+export const accentText = (accent: AccentKey | "ash"): string =>
+  accent === "ash" ? "var(--color-ash)" : `var(--${accent}-text)`;
 
 /** A colour held back to `pct`% opacity, composited on whatever is behind it. */
 export const tint = (color: string, pct: number): string =>

@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useRef, useState } from "react";
 import { fs, space, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
@@ -229,7 +230,7 @@ function EnrolledCard() {
   const started = planStartedAt ? new Date(planStartedAt) : null;
   return (
     <div style={{ ...card, marginBottom: 24 }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.train.plans.currentPlan")}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: accentText("lime") }}>{t("w.train.plans.currentPlan")}</div>
       <div style={{ fontWeight: 800, fontSize: fs.title, marginTop: 4 }}>{planName}</div>
       {started && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</div>}
     </div>
@@ -312,7 +313,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.train.plans.weeklySplit")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: accentText("lime") }}>{t("w.train.plans.weeklySplit")}</div>
         <div style={{ display: "flex", gap: space.xs, marginTop: 10, flexWrap: "wrap" }}>
           {d.split.map((day, i) => <div key={i} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: day.toLowerCase() === "rest" ? C("ash") : C("chalk"), background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 12, padding: "8px 12px" }}>{day}</div>)}
         </div>
@@ -339,7 +340,7 @@ function Detail({ goal, plan, back, onEnrolled }: { goal: GoalNode; plan: GoalPl
 
       <Info label={t("w.train.plans.progression")} value={d.progression} />
       <MeasuredOutcome planId={plan.id} />
-      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }} role="alert">{t("w.train.plans.enrollError")}</div>}
+      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: accentText("red") }} role="alert">{t("w.train.plans.enrollError")}</div>}
       <LeavePlanSection forPlanId={plan.id} />
       <PlanDock docked={docked} state={displayState} idleLabel={`${t("w.train.plans.enrollIn")} ${plan.name}`} busyLabel={t("w.train.plans.enrolling")} doneLabel={t("w.train.plans.enrolledSee")} onClick={enroll} />
     </div>
@@ -525,7 +526,7 @@ function PercentDetail({ goal, plan, program, back, onEnrolled }: { goal: GoalNo
 
       <Info label={t("w.train.plans.progression")} value={view.progression} />
       <MeasuredOutcome planId={plan.id} />
-      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }} role="alert">{t("w.train.plans.enrollError")}</div>}
+      {state === "error" && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: accentText("red") }} role="alert">{t("w.train.plans.enrollError")}</div>}
       <LeavePlanSection forPlanId={plan.id} />
       <PlanDock docked={docked} state={displayState} idleLabel={`${t("w.train.plans.enrollIn")} ${plan.name}`} busyLabel={t("w.train.plans.enrolling")} doneLabel={t("w.train.plans.enrolledSee")} onClick={enroll} />
     </div>

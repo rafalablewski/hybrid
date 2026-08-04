@@ -7,7 +7,7 @@ import {
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES, type LoggedSession,
 } from "@hybrid/core";
 import { HeroScreen } from "./hero";
-import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, tip, mono } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, ASH, tip, mono, accentText } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
 
@@ -94,7 +94,7 @@ export default function AuroraVelocity({ sessions }: { sessions: LoggedSession[]
               <Scatter data={points} dataKey="velocity" fill={LIME_HEX} line={false} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: C("lime") }}>●</span> {t("w.analyze.vel.measured")} – <span style={{ color: C("ash") }}>—</span> {t("w.analyze.vel.fit")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("ash") }}><span style={{ color: accentText("lime") }}>●</span> {t("w.analyze.vel.measured")} – <span style={{ color: C("ash") }}>—</span> {t("w.analyze.vel.fit")}</div>
         </div>
       </div>
 

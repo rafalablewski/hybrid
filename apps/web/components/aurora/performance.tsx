@@ -13,7 +13,7 @@ import { fs, space,
   type Biometrics, type LoggedSession, type Macrocycle, type CapabilityMovement,
   type ReadinessFact, type RingSegment, type SemanticRole,
 } from "@hybrid/core";
-import { LINE_HEX, LIME_HEX, BLUE, roleText, tint } from "@/lib/ui";
+import { LINE_HEX, LIME_HEX, BLUE, roleText, tint, accentText } from "@/lib/ui";
 import { readSportSelection } from "@/lib/sport-store";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useCheckins } from "@/lib/use-checkins";
@@ -705,7 +705,7 @@ function Teaser({ paid, onUnlock, state }: {
           </div>
         </div>
       )}
-      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, color: C("ash") }}>{t("w.home.cockpit.teaseSub1")}<b style={{ color: C("lime") }}>{t("w.home.cockpit.teaseSub2")}</b>{t("w.home.cockpit.teaseSub3")}</p>
+      <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, color: C("ash") }}>{t("w.home.cockpit.teaseSub1")}<b style={{ color: accentText("lime") }}>{t("w.home.cockpit.teaseSub2")}</b>{t("w.home.cockpit.teaseSub3")}</p>
       <div style={{ display: "grid", gap: space.ms, marginTop: 16 }}>
         {TEASE.map((s) => (
           /* No leading marker: a dot in front of a label is decoration, and the
