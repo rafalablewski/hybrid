@@ -677,7 +677,10 @@ export default function AuroraHome() {
               style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}
             >
               <AuroraIcon name="flame" size={11} color={txt(C, C.red)} />
-              <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.red) }}>{acc.streak.current}{t("w.home.today.dayStreak")}</Text>
+              {/* one line, always: PL/DE carry longer words ("-dniowa seria",
+                  "-Tage-Serie") and a wrapped caption would push the lockup
+                  taller than the tiles beside it. */}
+              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.red) }}>{acc.streak.current}{t("w.home.today.dayStreak")}</Text>
             </Pressable>
           )}
         </View>
