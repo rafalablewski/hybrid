@@ -1,27 +1,22 @@
 "use client";
 
-import { createElement, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createElement, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
-  measuredProfile, withMeasured, measuredFields,
   volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY, LEVEL_BASIS_KEY,
   formatPace, paceClock,
   VOLUME_PROFILE_FIELD_KEY, fmtWeight,
   sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   provenanceLadder, rungMeta, factorAffectsKey,
-  readReports, placeReads, QUICK_CHECKIN_METRIC,
-  type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
-  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type RecoveryReport,
+  type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type MuscleGroup, type VolumeBandKey,
+  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
   type LandmarkFactor, type LandmarkSource, type WeightUnit,
 } from "@hybrid/core";
 import { setLoggerPref } from "@/lib/logger-prefs";
 import { useVolumeModel } from "@/lib/use-volume-model";
-import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "@/lib/use-bodyweight";
-import { useCheckins } from "@/lib/use-checkins";
-import { readIntake } from "@/lib/intake";
 import { useLang } from "@/lib/i18n";
 import { HeroScreen, HeroAccessory } from "./hero";
 import Sheet from "./sheet";
@@ -92,7 +87,7 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
   // ONE resolution, shared with the settings route that edits this model
   // (lib/use-volume-model.ts) — so an edit and its effect can never be computed
   // two different ways.
-  const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved, setProfile } = useVolumeModel(sessions);
+  const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved } = useVolumeModel(sessions);
   const lm = resolved.landmarks;
 
   // THE DRAWER, and the sheet the provenance is dispatched to. `deep` is the
@@ -205,11 +200,16 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
   // The provenance and the working, dispatched. They answer "where did these
   // come from", which is a different question from "what do I do this week" —
   // stacked under the prescription they were read as more of the prescription.
+  // Leaving for the model editor from INSIDE the sheet has to close it on the
+  // way out. The sheet is a modal over the shell, so a route change underneath
+  // it just swaps the screen it is covering — the athlete taps "Training age",
+  // the app navigates, and they still see the panel they tapped from.
+  const openModelFromSheet = onOpenModel ? () => { setSource(false); onOpenModel(); } : undefined;
   const sourceSheet = (
     <Sheet open={source} onClose={() => setSource(false)} title={t("w.analyze.vol.whose")} detents={["medium", "large"]}>
       <SourceBody
         resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys}
-        adaptive={prefs.adaptiveLandmarks} onOpenModel={onOpenModel} ml={ml}
+        adaptive={prefs.adaptiveLandmarks} onOpenModel={openModelFromSheet} ml={ml}
         level={levelEstimate} experience={experience} units={prefs.units}
       />
     </Sheet>
@@ -399,8 +399,11 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
  * Mirrored on mobile by the measured-height `Drawer` in aurora/volume.tsx.
  */
 function Drawer({ open, children }: { open: boolean; children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(open);
-  useEffect(() => { if (open) setMounted(true); }, [open]);
+  // Latched in RENDER, not in an effect. An effect commits one frame too late:
+  // the drawer would start its transition with an empty child, so the first
+  // frame of every open animates toward a height of nothing.
+  const mounted = useRef(open);
+  if (open) mounted.current = true;
   return (
     <div className="motion-drawer" data-open={open ? "" : undefined}>
       {/* Staying mounted is what buys the collapse — but a clipped panel is
@@ -408,7 +411,7 @@ function Drawer({ open, children }: { open: boolean; children: React.ReactNode }
           drawer would hand a screen reader (and the Tab key) a section that
           isn't on screen. `inert` is the whole fix: it takes the subtree out of
           focus order AND out of the a11y tree, in one attribute. */}
-      <div inert={!open}>{mounted ? children : null}</div>
+      <div inert={!open}>{mounted.current ? children : null}</div>
     </div>
   );
 }
@@ -539,23 +542,6 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
     >
       {label}
     </button>
-  );
-}
-
-/** A −/+ stepper for the small integer block settings. */
-function Stepper({ label, value, suffix, min, max, onChange }: {
-  label: string; value: number; suffix?: string; min: number; max: number; onChange: (v: number) => void;
-}) {
-  const btn: CSSProperties = { ...mono(fs.body), width: 30, height: 30, borderRadius: 12, cursor: "pointer", background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}` };
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-      <span style={{ fontSize: fs.body, color: C("ash") }}>{label}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button className="pressable" style={btn} aria-label={`${label} −`} onClick={() => onChange(Math.max(min, value - 1))}>−</button>
-        <span style={{ ...mono(fs.body), minWidth: 46, textAlign: "center" }}>{value}{suffix ? ` ${suffix}` : ""}</span>
-        <button className="pressable" style={btn} aria-label={`${label} +`} onClick={() => onChange(Math.min(max, value + 1))}>+</button>
-      </div>
-    </div>
   );
 }
 
@@ -921,10 +907,13 @@ function MuscleRow({ s, label, token, target, history, expanded, zone, showGloss
   const g = railGeometry(s);
   const sc = railScale(s.landmark);
   const region = zone ? bandRegion(zone, s.landmark) : null;
-  // The last band this row explained, held so its definition survives the
-  // collapse that dismissing the spotlight starts.
+  // The last band THIS ROW explained, held so its definition survives the
+  // collapse that dismissing the spotlight starts. Guarded on `showGloss` and
+  // not on `zone` alone: every row sees the spotlighted band, so the looser
+  // test would rewrite a closing row's paragraph to a definition it was never
+  // showing the moment another row was tapped.
   const held = useRef<VolumeBandKey>("mev");
-  if (zone) held.current = zone;
+  if (zone && showGloss) held.current = zone;
   const lastZone = held.current;
   // The block target sits on the SAME normalised rail as everything else, so
   // "where I am" and "where the plan wants me" are one glance, not two.

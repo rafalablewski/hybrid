@@ -1,26 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, Animated, Easing, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View, Text, Animated, Easing, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
 import {
   springs, springToRN, durations,
   volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
   blockVolumePlan, blockRamp, blockKindKey, resolveBlock,
-  measuredProfile, withMeasured, measuredFields,
   volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY, LEVEL_BASIS_KEY,
   formatPace, paceClock,
   VOLUME_PROFILE_FIELD_KEY, fmtWeight,
   sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   provenanceLadder, rungMeta, factorAffectsKey,
-  readReports, placeReads, QUICK_CHECKIN_METRIC,
-  type MuscleVolumeStatus, type VolumeZone, type VolumeLandmark, type MuscleGroup, type VolumeBandKey,
-  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget, type Experience,
-  type RecoveryReport, type LandmarkFactor, type LandmarkSource, type WeightUnit,
+  type MuscleVolumeStatus, type VolumeZone, type MuscleGroup, type VolumeBandKey,
+  type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
+  type LandmarkFactor, type LandmarkSource, type WeightUnit,
 } from "@hybrid/core";
-import { useSessionsQuery, useCheckinsQuery } from "../../lib/queries";
+import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
-import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "../../lib/use-bodyweight";
 import { setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
@@ -95,7 +91,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
   // ONE resolution, shared with the settings route that edits this model
   // (lib/use-volume-model.ts) — so an edit and its effect can never be computed
   // two different ways.
-  const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved, setProfile } = useVolumeModel(sessions);
+  const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved } = useVolumeModel(sessions);
   const lm = resolved.landmarks;
 
   // THE DRAWER, and the sheet the provenance is dispatched to. `deep` is the
@@ -216,11 +212,15 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
   // The provenance and the working, dispatched. They answer "where did these
   // come from", which is a different question from "what do I do this week" —
   // stacked under the prescription they were read as more of the prescription.
+  // Leaving for the model editor from INSIDE the sheet has to close it on the
+  // way out. The sheet is a Modal in its own native window, so pushing a route
+  // underneath leaves the panel sitting over the screen it just sent you to.
+  const openModelFromSheet = onOpenModel ? () => { setSource(false); onOpenModel(); } : undefined;
   const sourceSheet = (
     <Sheet visible={source} onClose={() => setSource(false)} title={t("w.analyze.vol.whose")} detents={["medium", "large"]}>
       <SourceBody
         resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys}
-        adaptive={prefs.adaptiveLandmarks} onOpenModel={onOpenModel} ml={ml}
+        adaptive={prefs.adaptiveLandmarks} onOpenModel={openModelFromSheet} ml={ml}
         level={levelEstimate} experience={experience} units={prefs.units}
       />
     </Sheet>
@@ -441,13 +441,25 @@ function Drawer({ open, children }: { open: boolean; children: ReactNode }) {
   const reduced = useReducedMotion();
   const [panelH, setPanelH] = useState(0);
   const [settled, setSettled] = useState(false);
-  const [mounted, setMounted] = useState(open);
   const grow = useRef(new Animated.Value(0)).current;
+  // Latched in RENDER, not in an effect. An effect commits one frame too late:
+  // the content would not be laid out yet, `panelH` would still be 0, and the
+  // animation below would bail — so every open would wait for a second layout
+  // pass before it started moving.
+  const mounted = useRef(open);
+  if (open) mounted.current = true;
 
-  useEffect(() => { if (open) setMounted(true); }, [open]);
+  // `settled` mirrored into a ref so the guard below can read it WITHOUT making
+  // it a dependency. As a dep it would re-run this effect the moment a close
+  // clears it — restarting the closing timing halfway through its own run.
+  const settledRef = useRef(false);
 
   useEffect(() => {
-    if (!open) setSettled(false);
+    if (!open) { settledRef.current = false; setSettled(false); }
+    // Already open and settled: the height is `auto`, so a re-measure (a muscle
+    // row expanding INSIDE this drawer) has nothing to animate. Left unguarded
+    // this restarts the spring on every layout pass of the content.
+    if (open && settledRef.current) return undefined;
     // Reduce Motion SUBSTITUTES a cross-dissolve for the travel: the drawer
     // takes its height at once and fades in. Never an instant cut — the user
     // still has to perceive that something opened.
@@ -460,7 +472,7 @@ function Drawer({ open, children }: { open: boolean; children: ReactNode }) {
     const anim = open
       ? Animated.spring(grow, { toValue: 1, useNativeDriver: false, ...springToRN(springs.sheet) })
       : Animated.timing(grow, { toValue: 0, duration: durations.fast, easing: Easing.in(Easing.cubic), useNativeDriver: false });
-    anim.start(({ finished }) => { if (finished && open) setSettled(true); });
+    anim.start(({ finished }) => { if (finished && open) { settledRef.current = true; setSettled(true); } });
     return () => anim.stop();
   }, [open, panelH, reduced, grow]);
 
@@ -483,7 +495,7 @@ function Drawer({ open, children }: { open: boolean; children: ReactNode }) {
     >
       {/* Measured on EVERY layout, not just the first — the interpolation's
           target has to follow content that changed while the drawer was open. */}
-      <View onLayout={(e) => setPanelH(Math.round(e.nativeEvent.layout.height))}>{mounted ? children : null}</View>
+      <View onLayout={(e) => setPanelH(Math.round(e.nativeEvent.layout.height))}>{mounted.current ? children : null}</View>
     </Animated.View>
   );
 }
@@ -634,28 +646,6 @@ function Toggle({ on, label, onPress }: { on: boolean; label: string; onPress: (
   );
 }
 
-/** A −/+ stepper for the small integer block settings. */
-function Stepper({ label, value, suffix, min, max, onChange }: {
-  label: string; value: number; suffix?: string; min: number; max: number; onChange: (v: number) => void;
-}) {
-  const { palette: C } = useTheme();
-  const btn = { width: 34, height: 34, borderRadius: 12, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line };
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-      <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{label}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${label} −`} onPress={() => onChange(Math.max(min, value - 1))} style={btn}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>−</Text>
-        </Pressable>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, minWidth: 52, textAlign: "center" }}>{value}{suffix ? ` ${suffix}` : ""}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${label} +`} onPress={() => onChange(Math.min(max, value + 1))} style={btn}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>+</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
 /**
  * THIS BLOCK — the week you're in, and the block drawn as a ramp.
  *
@@ -777,8 +767,6 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
   // opens on the spot — its own state, so reaching for it here doesn't expand
   // every landmark field on the muscle rows above.
   const [work, setWork] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const field = { textAlign: "center" as const, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 8 };
   const subhead = { fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk } as const;
   const prose = { fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash } as const;
 
@@ -834,8 +822,12 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
 
         {done.next ? (
           <>
+            {/* This row used to set an `aboutOpen` flag that NOTHING rendered —
+                the single most valuable thing the athlete could do next was a
+                control that did nothing when pressed, while its web twin opened
+                the model editor. It goes where web goes. */}
             <Pressable
-              onPress={() => { haptic.selection(); setAboutOpen(true); }}
+              onPress={() => { haptic.selection(); onOpenModel?.(); }}
               accessibilityRole="button"
               accessibilityLabel={`${t("w.analyze.vol.nextUp")}: ${t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}`}
               style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14 }}
@@ -1017,10 +1009,13 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
   const g = railGeometry(s);
   const sc = railScale(s.landmark);
   const region = zone ? bandRegion(zone, s.landmark) : null;
-  // The last band this row explained, held so its definition survives the
-  // collapse that dismissing the spotlight starts.
+  // The last band THIS ROW explained, held so its definition survives the
+  // collapse that dismissing the spotlight starts. Guarded on `showGloss` and
+  // not on `zone` alone: every row sees the spotlighted band, so the looser
+  // test would rewrite a closing row's line to a definition it was never
+  // showing the moment another row was tapped.
   const held = useRef<VolumeBandKey>("mev");
-  if (zone) held.current = zone;
+  if (zone && showGloss) held.current = zone;
   const lastZone = held.current;
   // The block target sits on the SAME normalised rail as everything else, so
   // "where I am" and "where the plan wants me" are one glance, not two.
