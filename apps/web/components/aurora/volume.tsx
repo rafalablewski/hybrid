@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { createElement, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
@@ -271,9 +271,7 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
             {/* THE DRAWER — a 0fr → 1fr grid row: a real height animation with
                 nothing measured, so the block, the prescription and the rails
                 slide out from under the shape that raised the question. */}
-            <div className="motion-drawer" data-open={drawer ? "" : undefined}>
-              <div>{everOpen && detail(true)}</div>
-            </div>
+            <Drawer open={drawer}>{everOpen ? detail(true) : null}</Drawer>
           </>
         )}
         {sourceSheet}
@@ -381,6 +379,36 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
           place. (GLOSS_KEY still backs the row spotlight.) */}
 
       {sourceSheet}
+    </div>
+  );
+}
+
+/**
+ * A DISCLOSURE THAT MOVES — the one way anything on this screen opens.
+ *
+ * Every fold on the Volume surface now runs the same 0fr → 1fr grid row
+ * (globals.css `.motion-drawer`, on the sheet spring): the compact card's
+ * detail, "Show the working" inside the provenance sheet, a muscle row's floor
+ * and history, and the band definition under a spotlight. They were three
+ * `{open && …}` conditionals that POPPED inside a card that eases, which reads
+ * as three different mechanisms rather than one idea at different scales.
+ *
+ * The content MOUNTS on first open and stays: a collapse needs something to
+ * collapse, and a fold nobody has opened should not pay to render — seven
+ * muscle rows each carrying an eight-week chart is not free.
+ * Mirrored on mobile by the measured-height `Drawer` in aurora/volume.tsx.
+ */
+function Drawer({ open, children }: { open: boolean; children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(open);
+  useEffect(() => { if (open) setMounted(true); }, [open]);
+  return (
+    <div className="motion-drawer" data-open={open ? "" : undefined}>
+      {/* Staying mounted is what buys the collapse — but a clipped panel is
+          still in the accessibility tree and still focusable, so a closed
+          drawer would hand a screen reader (and the Tab key) a section that
+          isn't on screen. `inert` is the whole fix: it takes the subtree out of
+          focus order AND out of the a11y tree, in one attribute. */}
+      <div inert={!open}>{mounted ? children : null}</div>
     </div>
   );
 }
@@ -745,7 +773,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
         </button>
       </div>
 
-      {work && (
+      <Drawer open={work}>
         <>
           {/* YOUR LEVEL, FROM YOUR LIFTS. */}
           <div style={{ marginTop: 16 }}>
@@ -869,7 +897,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
             </div>
           )}
         </>
-      )}
+      </Drawer>
 
     </div>
   );
@@ -893,6 +921,11 @@ function MuscleRow({ s, label, token, target, history, expanded, zone, showGloss
   const g = railGeometry(s);
   const sc = railScale(s.landmark);
   const region = zone ? bandRegion(zone, s.landmark) : null;
+  // The last band this row explained, held so its definition survives the
+  // collapse that dismissing the spotlight starts.
+  const held = useRef<VolumeBandKey>("mev");
+  if (zone) held.current = zone;
+  const lastZone = held.current;
   // The block target sits on the SAME normalised rail as everything else, so
   // "where I am" and "where the plan wants me" are one glance, not two.
   const targetX = target ? railX(target.target, s.landmark) : null;
@@ -956,14 +989,17 @@ function MuscleRow({ s, label, token, target, history, expanded, zone, showGloss
         })}
       </div>
 
-      {zone && showGloss && (
-        <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t(GLOSS_KEY[zone])}</p>
-      )}
+      {/* The definition of the spotlighted band, beside the pointer. The band
+          is REMEMBERED through the collapse — reading `zone` straight would
+          empty the paragraph the instant the spotlight is dismissed, and the
+          drawer would shut on nothing. */}
+      <Drawer open={!!zone && showGloss}>
+        <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t(GLOSS_KEY[lastZone])}</p>
+      </Drawer>
 
       {/* Expanding adds only what the scale above does NOT already say: the
-          maintenance floor and the prescription. Editing swaps in all five
-          fields, since all five are editable. */}
-      {expanded && (
+          maintenance floor and the prescription. */}
+      <Drawer open={expanded}>
         <div style={{ marginTop: 12 }}>
           <div style={{ ...mono(fs.caption), color: C("ash") }}>MV {s.landmark.mv}</div>
           {target && verdict && (
@@ -976,7 +1012,7 @@ function MuscleRow({ s, label, token, target, history, expanded, zone, showGloss
           <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{rowAdvice(s, t)}</p>
           <MuscleHistory sets={history} />
         </div>
-      )}
+      </Drawer>
     </div>
   );
 }

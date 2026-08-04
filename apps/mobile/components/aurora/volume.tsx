@@ -417,21 +417,34 @@ function Panel({ flat, lead = false, children, style }: {
 }
 
 /**
- * THE DRAWER — the detail easing open underneath the control that opened it.
+ * A DISCLOSURE THAT MOVES — the one way anything on this screen opens.
  *
- * The web twin gets this from a 0fr → 1fr grid row (globals.css
+ * Every fold on the Volume surface runs this: the compact card's detail, "Show
+ * the working" inside the provenance sheet, a muscle row's floor and history,
+ * and the band definition under a spotlight. They were three `{open && …}`
+ * conditionals that POPPED inside a card that eases, which reads as three
+ * different mechanisms rather than one idea at different scales.
+ *
+ * The web twin gets the movement from a 0fr → 1fr grid row (globals.css
  * `.motion-drawer`); RN has no such thing, so the panel is MEASURED and its
  * height interpolated on the SAME sheet spring, and once the opening has
  * settled the height goes back to `auto` — otherwise content that grows inside
- * an already-open drawer (a muscle row expanding, a band spotlight printing its
- * definition) would be clipped to a height measured before it grew, which is
- * exactly the bug a fixed measured height invites.
+ * an already-open drawer (a muscle row expanding inside the open detail) would
+ * be clipped to a height measured before it grew, which is exactly the bug a
+ * fixed measured height invites.
+ *
+ * The content MOUNTS on first open and stays: a collapse needs something to
+ * collapse, and a fold nobody has opened should not pay to lay out — seven
+ * muscle rows each carrying an eight-week chart is not free on a phone.
  */
 function Drawer({ open, children }: { open: boolean; children: ReactNode }) {
   const reduced = useReducedMotion();
   const [panelH, setPanelH] = useState(0);
   const [settled, setSettled] = useState(false);
+  const [mounted, setMounted] = useState(open);
   const grow = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => { if (open) setMounted(true); }, [open]);
 
   useEffect(() => {
     if (!open) setSettled(false);
@@ -458,10 +471,19 @@ function Drawer({ open, children }: { open: boolean; children: ReactNode }) {
       : { height: grow.interpolate({ inputRange: [0, 1], outputRange: [0, panelH], extrapolate: "clamp" as const }) };
 
   return (
-    <Animated.View style={[{ overflow: "hidden", opacity: settled ? 1 : grow }, sized]}>
+    <Animated.View
+      style={[{ overflow: "hidden", opacity: settled ? 1 : grow }, sized]}
+      pointerEvents={open ? "auto" : "none"}
+      /* Staying mounted is what buys the collapse — but a clipped panel is
+         still in the accessibility tree, so a closed drawer would hand
+         VoiceOver a section that isn't on screen. The web twin reaches this
+         with one `inert` attribute; RN needs both platforms named. */
+      accessibilityElementsHidden={!open}
+      importantForAccessibility={open ? "auto" : "no-hide-descendants"}
+    >
       {/* Measured on EVERY layout, not just the first — the interpolation's
           target has to follow content that changed while the drawer was open. */}
-      <View onLayout={(e) => setPanelH(Math.round(e.nativeEvent.layout.height))}>{children}</View>
+      <View onLayout={(e) => setPanelH(Math.round(e.nativeEvent.layout.height))}>{mounted ? children : null}</View>
     </Animated.View>
   );
 }
@@ -846,7 +868,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
         </Pressable>
       </View>
 
-      {work && (
+      <Drawer open={work}>
         <>
           {/* YOUR LEVEL, FROM YOUR LIFTS. */}
           <View style={{ marginTop: 16 }}>
@@ -970,7 +992,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
             </View>
           )}
         </>
-      )}
+      </Drawer>
 
     </View>
   );
@@ -995,6 +1017,11 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
   const g = railGeometry(s);
   const sc = railScale(s.landmark);
   const region = zone ? bandRegion(zone, s.landmark) : null;
+  // The last band this row explained, held so its definition survives the
+  // collapse that dismissing the spotlight starts.
+  const held = useRef<VolumeBandKey>("mev");
+  if (zone) held.current = zone;
+  const lastZone = held.current;
   // The block target sits on the SAME normalised rail as everything else, so
   // "where I am" and "where the plan wants me" are one glance, not two.
   const targetX = target ? railX(target.target, s.landmark) : null;
@@ -1065,14 +1092,17 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
         })}
       </View>
 
-      {zone && showGloss && (
-        <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(GLOSS_KEY[zone])}</Text>
-      )}
+      {/* The definition of the spotlighted band, beside the finger. The band is
+          REMEMBERED through the collapse — reading `zone` straight would empty
+          the line the instant the spotlight is dismissed, and the drawer would
+          shut on nothing. */}
+      <Drawer open={!!zone && showGloss}>
+        <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(GLOSS_KEY[lastZone])}</Text>
+      </Drawer>
 
       {/* Expanding adds only what the scale above does NOT already say: the
-          maintenance floor and the prescription. Editing swaps in all five
-          fields, since all five are editable. */}
-      {expanded && (
+          maintenance floor and the prescription. */}
+      <Drawer open={expanded}>
         <View style={{ marginTop: 12 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>MV {s.landmark.mv}</Text>
           {target && verdict && (
@@ -1085,7 +1115,7 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
           <Text style={{ marginTop: 8, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{rowAdvice(s, t)}</Text>
           <MuscleHistory sets={history} />
         </View>
-      )}
+      </Drawer>
     </View>
   );
 }
