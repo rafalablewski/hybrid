@@ -196,7 +196,9 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
  */
 export type NutritionGlyphName =
   | "sunrise" | "sun" | "moon" | "cup" | "bowl"
-  | "water" | "scan" | "mic" | "spark" | "target" | "chevron";
+  | "water" | "scan" | "mic" | "spark" | "target" | "chevron"
+  // the Nutrition hub bento's five destinations (nutrition-hub.ts)
+  | "diary" | "chart" | "scale" | "box";
 
 export const NUTRITION_GLYPHS: Record<NutritionGlyphName, string[]> = {
   // morning — sun over a horizon with three short rays
@@ -228,6 +230,23 @@ export const NUTRITION_GLYPHS: Record<NutritionGlyphName, string[]> = {
   target: ["M9 36 a27 27 0 1 0 54 0 a27 27 0 1 0 -54 0", "M25 36 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0"],
   // right chevron
   chevron: ["M28 20 L44 36 L28 52"],
+  // DIARY — a bound book: spine on the left, three ruled lines. Distinct from
+  // the kit's `list-check`, which means "a checklist", not "the day's record".
+  diary: [
+    "M14 18 a4 4 0 0 1 4 -4 L54 14 a4 4 0 0 1 4 4 L58 54 a4 4 0 0 1 -4 4 L18 58 a4 4 0 0 1 -4 -4 Z",
+    "M25 14 L25 58", "M33 26 L49 26", "M33 36 L49 36", "M33 46 L43 46",
+  ],
+  // INSIGHTS — an axis with a rising trend line. The kit has no chart mark, and
+  // `arrow-up` reads as "upload" once it sits in a row of nouns.
+  chart: ["M13 13 L13 59 L59 59", "M22 47 L33 35 L42 42 L58 23"],
+  // BODY & WEIGHT — a bathroom scale: the platform, the dial arc and its needle.
+  scale: [
+    "M13 20 a6 6 0 0 1 6 -6 L53 14 a6 6 0 0 1 6 6 L59 52 a6 6 0 0 1 -6 6 L19 58 a6 6 0 0 1 -6 -6 Z",
+    "M25 46 a11 11 0 0 1 22 0", "M36 46 L36 33",
+  ],
+  // YOUR PRODUCTS — a carton seen in three-quarter, the universal "packaged
+  // food" mark, and the one shape that can't be confused with a saved meal.
+  box: ["M36 11 L61 24 L61 48 L36 61 L11 48 L11 24 Z", "M11 24 L36 37 L61 24", "M36 37 L36 61"],
 };
 
 /**

@@ -8,6 +8,7 @@ import {
   todayNutrition, adaptiveTargets, estimateMaintenance, dailyNutrition, weightTrend,
   isFullAccess, canUseRecipes, MEAL_PRESETS, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
+  nutritionHubSeries,
   fuelToday,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, recipeCoverView, localDayKey, localTodayKey,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
@@ -28,6 +29,7 @@ import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
 import { CoverHero, useHeroCollapse } from "./cover-hero";
+import { NutritionHubBento } from "./nutrition-hub";
 
 // The Create Food form's blank state — one constant, so the reset paths can
 // never fall out of step with the fields the form actually has.
@@ -898,6 +900,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Summary dashboard window toggle + rolling summary; today's nudge.
   const [summaryWindow, setSummaryWindow] = useState<7 | 30>(30);
   const summary = useMemo(() => nutritionSummary(signals, { targets, windowDays: summaryWindow }), [signals, targets, summaryWindow]);
+  // The hub bento's Diary chart: seven days of target-vs-logged. The target is
+  // per-day training-aware (the same composition `targets` uses for today), so
+  // today's point on the chart and the hero ring above it agree by construction.
+  const hubSeries = useMemo(() => nutritionHubSeries(signals, sessions, { goal, bodyMassKg }), [signals, sessions, goal, bodyMassKg]);
+  // The Insights tile shows a fixed SEVEN-day average, never the dashboard's
+  // 7/30 toggle — a tile whose number silently changes with a control on
+  // another screen is a tile you can't trust.
+  const weekSummary = useMemo(() => nutritionSummary(signals, { targets, windowDays: 7 }), [signals, targets]);
   const nudge = useMemo(() => nutritionNudge(today, targets), [today, targets]);
   // Mount count-up for the hero's kcal number (0 → target, rAF ease-out).
   // core's statCountUp is the wrapped-slides string formatter, not a hook —
@@ -2091,22 +2101,24 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </button>
           )}
 
-          {/* Menu — one compact link row into every deeper feature, so the
-              daily essentials above aren't followed by five more full-width
-              rows. Recipes and the verified tier are NOT here: both are
+          {/* The five deep destinations, as a BENTO — Diary leads with a real
+              chart (its target vs what was logged, seven days), the other four
+              follow as stat tiles. This replaced a wrapping row of bare
+              mono-uppercase words that had no surface, no glyph, no arrow and
+              no data: five links dressed as a caption, with the destination
+              opened daily sitting at the same weight as the one opened
+              monthly. Recipes and the verified tier are NOT here: both are
               libraries you browse, so they ride their own rails at the very
               bottom of this screen. */}
-          <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 8, margin: "24px 2px 0" }}>
-            {([
-              ["diary", t("w.recovery.nutrition.menuDiary")],
-              ["insights", t("w.recovery.nutrition.menuInsights")],
-              ["body", t("w.recovery.nutrition.menuBody")],
-              ["meals", t("w.recovery.nutrition.yourMeals")],
-              ["foods", t("w.recovery.nutrition.yourProducts")],
-            ] as [NutView, string][]).map(([key, label]) => (
-              <button key={key} onClick={() => setView(key)} className="pressable" style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{label}</button>
-            ))}
-          </div>
+          <NutritionHubBento
+            series={hubSeries}
+            avgKcal={weekSummary.avgKcal}
+            weightKg={weight.smoothedLatest ?? weight.latest}
+            ratePerWeek={weight.ratePerWeek}
+            mealCount={meals.length}
+            productCount={products.length}
+            onOpen={setView}
+          />
 
           {/* ── The two libraries, at the very bottom, as left/right rails —
               the "Train your way" idiom. A list of recipes and a list of the
