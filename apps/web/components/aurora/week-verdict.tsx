@@ -5,7 +5,7 @@ import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
   fmtWeight, splitFigure, strengthPrProof,
   resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
-  verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, fmtTonnage,
+  verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
   type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit, type WeightUnit,
 } from "@hybrid/core";
@@ -54,6 +54,8 @@ import { useToday } from "@/lib/use-today";
 
 const C = (v: string) => `var(--color-${v})`;
 const STORE_KEY = "hybrid.today.range";
+/** Set once the athlete has opened any column — see the hint below. */
+const HINT_KEY = "hybrid.today.actHinted";
 const ROWS_SHOWN = 5;
 
 /** The segment labels are SHORTER than the card's own title for the same
@@ -216,6 +218,13 @@ export default function AuroraWeekVerdict({
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [all, setAll] = useState(false);
+  // THE HINT, ONCE. "Open a figure for the sessions behind it" is the only
+  // sentence on this screen written about the interface rather than about the
+  // athlete's training, and it held a row of the card forever — including on
+  // the ten-thousandth visit. It now retires the first time any column is
+  // opened. Starts true so it can only ever disappear, never flash in (and so
+  // the server paint and the first client paint agree). Mirrors mobile.
+  const [hinted, setHinted] = useState(true);
   // The records rail (three records and up) — see .pr-rail in globals.css.
   const rail = useRef<HTMLDivElement>(null);
   const [fade, setFade] = useState({ l: 0, r: 0 });
@@ -225,6 +234,7 @@ export default function AuroraWeekVerdict({
     try {
       const saved = localStorage.getItem(STORE_KEY);
       if (saved) setRangeId(saved);
+      setHinted(localStorage.getItem(HINT_KEY) === "1");
     } catch { /* storage disabled — the week is a fine default */ }
   }, []);
 
@@ -309,11 +319,17 @@ export default function AuroraWeekVerdict({
 
   const tone = v.direction === "down" ? "var(--red-text)" : v.direction === "up" ? "var(--lime-text)" : C("ash");
   const named = v.figures.find((f) => f.metric === v.metric) ?? null;
+  const step = verdictShowsStep(v);
 
+  // The working-out carries the BASELINE alone. It used to open with the
+  // period's own value as well ("6.8 against a 0.1 four-week average"), which
+  // reprinted the figure the column two rows below was already showing — and
+  // for the named metric, the one the sentence had just made its subject. The
+  // comparison divides cleanly without it: the sentence names the metric and
+  // the direction, the figure on the right carries the magnitude, this line
+  // carries what it was measured against.
   const why = v.metric && named
-    ? t(verdictWhyKey(v))
-        .replace("{v}", fmt(named.metric, named.value))
-        .replace("{b}", fmt(named.metric, named.baseline))
+    ? t(verdictWhyKey(v)).replace("{b}", fmt(named.metric, named.baseline))
     : t(verdictWhyKey(v));
 
   // Four columns only ever appear for a hybrid athlete (tonnage + distance);
@@ -338,6 +354,10 @@ export default function AuroraWeekVerdict({
     setGroup(null);
     setAll(false);
     setOpen((cur) => (cur === m ? null : m));
+    if (!hinted) {
+      setHinted(true);
+      try { localStorage.setItem(HINT_KEY, "1"); } catch { /* ignore */ }
+    }
   };
 
   // ── The segmented control. Five equal segments and one thumb that TRAVELS —
@@ -401,8 +421,15 @@ export default function AuroraWeekVerdict({
             </p>
             <p style={{ margin: "5px 0 0", ...kicker, textTransform: "none", letterSpacing: 0, fontSize: fs.micro, lineHeight: 1.45, color: C("ash"), whiteSpace: "normal" }}>{why}</p>
           </div>
-          <span style={{ ...num, fontSize: 23, letterSpacing: "-.02em", color: tone, whiteSpace: "nowrap" }}>
-            {v.metric ? `${v.deltaPct > 0 ? "+" : "−"}${Math.abs(v.deltaPct)}%` : "—"}
+          {/* Past the ceiling the percentage stops being a measurement — a
+              0.1 km four-week mean yielded "+7849%", which reads as a bug and
+              takes every figure beside it down with it. The STEP says the same
+              thing honestly, and shorter. Both clients ask core, so neither
+              can invent its own ceiling. Mirrors mobile. */}
+          <span style={{ ...num, fontSize: step ? 15 : 23, letterSpacing: step ? 0 : "-.02em", color: tone, whiteSpace: "nowrap" }}>
+            {!v.metric ? "—"
+              : step && named ? `${fmt(named.metric, named.baseline)} → ${fmt(named.metric, named.value)}`
+                : `${v.deltaPct > 0 ? "+" : "−"}${Math.abs(v.deltaPct)}%`}
           </span>
         </div>
 
@@ -493,7 +520,7 @@ export default function AuroraWeekVerdict({
           </div>
         </div>
 
-        {!open && (
+        {!open && !hinted && (
           <p style={{ margin: "10px 0 0", ...kicker, fontSize: 9, color: C("ash"), opacity: .75, textAlign: "center" }}>
             {t("w.home.act.hint")}
           </p>
@@ -511,7 +538,15 @@ export default function AuroraWeekVerdict({
               to sit inside the block were decoration. */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ ...kicker, color: C("ash"), overflow: "hidden", textOverflow: "ellipsis" }}>{prsHead}</span>
-            <span style={{ ...num, fontSize: fs.micro, color: accentText("lime"), marginLeft: "auto" }}>{prs.length}</span>
+            {/* A6: the count is a fact only when the reader cannot do the
+                counting. With one or two records both cells sit side by side on
+                one row, so a "2" beside them restates what is already in view.
+                From three up they are a RAIL — you cannot count what you have
+                to scroll — so the total earns its place, and past
+                PRS_RAIL_CAP the trailing "Show all {n}" cell carries it too. */}
+            {prs.length > 2 && (
+              <span style={{ ...num, fontSize: fs.micro, color: accentText("lime"), marginLeft: "auto" }}>{prs.length}</span>
+            )}
           </div>
 
           {prs.length < 3 ? (

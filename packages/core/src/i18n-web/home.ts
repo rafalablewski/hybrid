@@ -156,19 +156,27 @@ export const web_home = {
     "w.home.group.recover": "Recover",
     "w.home.group.progress": "Progress",
     "w.home.group.explore": "Explore",
-    // Wave-3 parentage: the fact a Progress rail head quotes from the This-week
-    // card's columns ({v} pre-formatted with its unit), and the sports' share
-    // of the hours column ({a} of {b}, both one-decimal hours).
-    "w.home.group.metaWeek": "{v} this week",
+    // A Progress rail head's ONE right-slot fact. Both are FRACTIONS, and that
+    // is the whole rule: wave 3 had the exercises and endurance heads quote
+    // their parent column WHOLE ("7.2 t this week" under a card already saying
+    // 7.2 t), which is a restatement, not a lineage. A share is information —
+    // metaOf carries the sports' slice of the hours column ({a} of {b},
+    // one-decimal hours), metaMoves the rail's coverage of the movements
+    // trained in its own 8-week window. The retired key was `metaWeek`.
     "w.home.group.metaOf": "{a} of {b} h this week",
+    "w.home.group.metaMoves": "{a} of {b} movements",
     // The Performance page's clusters (State / Training / Season, plus the
     // shared Explore label above) — same headline-tier GroupMark, same grammar.
     "w.home.group.state": "State",
     "w.home.group.training": "Training",
     "w.home.group.season": "Season",
     // ── This week — the verdict card (Statistics + Analytics, merged onto Today).
-    // The lead sentences take {m} = the metric name below; vsAvg takes {v} = this
-    // week's value and {b} = the four-week average, both already unit-formatted.
+    // The lead sentences take {m} = the metric name below; the vs* lines take
+    // {b} = the BASELINE alone, unit-formatted. They used to open with {v} = the
+    // period's own value too, which reprinted the figure the column two rows
+    // down was already showing. The comparison divides cleanly without it: the
+    // sentence names the metric and the direction, the figure on the right
+    // carries the magnitude, and this line carries what it was measured against.
     "w.home.week.title": "This week",
     // ── Other sports — the racket/team/combat block under Endurance. These
     // sports are TIMED, so a tile carries efforts, hours and when it was last
@@ -186,7 +194,7 @@ export const web_home = {
     "w.home.week.upLead": "Your {m} is the highest it's been in four weeks.",
     "w.home.week.flatLead": "Tracking with your four-week average.",
     "w.home.week.coldLead": "Not enough history to compare yet.",
-    "w.home.week.vsAvg": "{v} against a {b} four-week average",
+    "w.home.week.vsAvg": "Four-week average {b}",
     "w.home.week.flatWhy": "nothing outside its usual range",
     "w.home.week.coldWhy": "comparisons start after a few weeks of training",
     "w.home.week.mTonnage": "tonnage",
@@ -236,9 +244,9 @@ export const web_home = {
     "w.home.act.allGroups": "All",
     "w.home.act.showAll": "Show all {n}",
     "w.home.act.showFewer": "Show fewer",
-    "w.home.act.vsMonths": "{v} against a {b} three-month average",
-    "w.home.act.vsD30": "{v} against a {b} 30-day average",
-    "w.home.act.vsYears": "{v} against {b} at this point in past years",
+    "w.home.act.vsMonths": "Three-month average {b}",
+    "w.home.act.vsD30": "30-day average {b}",
+    "w.home.act.vsYears": "{b} at this point in past years",
     "w.home.act.upLeadP": "Your {m} is running ahead of the stretches before it.",
     "w.home.act.downLeadP": "Your {m} is what's holding this stretch back.",
     "w.home.act.flatLeadP": "Tracking with your recent average.",
@@ -282,14 +290,22 @@ export const web_home = {
     "w.home.exw.bestPace": "Best pace – 8 weeks",
     "w.home.exw.volume": "Volume – 8 weeks",
     "w.home.exw.time": "Time – 8 weeks",
-    "w.home.exw.kindStrength": "Strength",
-    "w.home.exw.kindCardio": "Cardio",
-    "w.home.exw.kindConditioning": "Conditioning",
     "w.home.today.alsoDayEmpty": "nothing logged this day",
     "w.home.end.thisWeek": "This week",
     "w.home.end.orderTrained": "Most trained",
     "w.home.end.orderRecent": "Most recent",
     "w.home.end.orderLongest": "Longest",
+    // A lane tile's LABEL names the metric and the scope of the FIGURE it
+    // prints; its footer names the window of the CHART. Scope is stated once,
+    // in a fixed slot, because the tiles of one rail genuinely differ —
+    // whole-history totals sit beside this week's volume and the latest week's
+    // pace, and the block's head cannot be true of all three at once. The old
+    // labels named the chart ("Pace trend") or repeated the footer ("Volume –
+    // 8 weeks" over "8 weeks"), and the figure's own scope went unsaid.
+    "w.home.end.scopeAll": "All time",
+    "w.home.end.volumeWeek": "Volume – this week",
+    "w.home.end.paceLatest": "Pace – latest week",
+    "w.home.end.zonesAll": "Zones – all time",
     "w.home.end.zones": "Pace zones",
     "w.home.end.last": "Last effort",
     "w.home.end.allSports": "All sports",
@@ -1082,8 +1098,8 @@ export const web_home = {
     "w.home.group.recover": "Regeneracja",
     "w.home.group.progress": "Postępy",
     "w.home.group.explore": "Odkrywaj",
-    "w.home.group.metaWeek": "{v} w tym tygodniu",
     "w.home.group.metaOf": "{a} z {b} h w tym tygodniu",
+    "w.home.group.metaMoves": "{a} z {b} ćwiczeń",
     "w.home.group.state": "Stan",
     "w.home.group.training": "Trening",
     "w.home.group.season": "Sezon",
@@ -1101,7 +1117,7 @@ export const web_home = {
     "w.home.week.upLead": "Twoje {m} jest najwyższe od czterech tygodni.",
     "w.home.week.flatLead": "Trzymasz się swojej czterotygodniowej średniej.",
     "w.home.week.coldLead": "Za mało historii, żeby porównać.",
-    "w.home.week.vsAvg": "{v} wobec średniej {b} z czterech tygodni",
+    "w.home.week.vsAvg": "Średnia z czterech tygodni: {b}",
     "w.home.week.flatWhy": "nic poza zwykłym zakresem",
     "w.home.week.coldWhy": "porównania ruszają po kilku tygodniach treningu",
     "w.home.week.mTonnage": "tonaż",
@@ -1145,9 +1161,9 @@ export const web_home = {
     "w.home.act.allGroups": "Wszystko",
     "w.home.act.showAll": "Pokaż wszystkie ({n})",
     "w.home.act.showFewer": "Pokaż mniej",
-    "w.home.act.vsMonths": "{v} wobec średniej {b} z trzech miesięcy",
-    "w.home.act.vsD30": "{v} wobec średniej {b} z 30 dni",
-    "w.home.act.vsYears": "{v} wobec {b} w tym samym momencie poprzednich lat",
+    "w.home.act.vsMonths": "Średnia z trzech miesięcy: {b}",
+    "w.home.act.vsD30": "Średnia z 30 dni: {b}",
+    "w.home.act.vsYears": "{b} w tym samym momencie poprzednich lat",
     "w.home.act.upLeadP": "Twoje {m} wyprzedza wcześniejsze okresy.",
     "w.home.act.downLeadP": "To {m} ciągnie ten okres w dół.",
     "w.home.act.flatLeadP": "Trzymasz się swojej ostatniej średniej.",
@@ -1183,14 +1199,15 @@ export const web_home = {
     "w.home.exw.bestPace": "Najlepsze tempo – 8 tygodni",
     "w.home.exw.volume": "Objętość – 8 tygodni",
     "w.home.exw.time": "Czas – 8 tygodni",
-    "w.home.exw.kindStrength": "Siła",
-    "w.home.exw.kindCardio": "Cardio",
-    "w.home.exw.kindConditioning": "Kondycja",
     "w.home.today.alsoDayEmpty": "tego dnia nic nie zapisano",
     "w.home.end.thisWeek": "W tym tygodniu",
     "w.home.end.orderTrained": "Najczęstsze",
     "w.home.end.orderRecent": "Najnowsze",
     "w.home.end.orderLongest": "Najdłuższe",
+    "w.home.end.scopeAll": "Cała historia",
+    "w.home.end.volumeWeek": "Objętość – ten tydzień",
+    "w.home.end.paceLatest": "Tempo – ostatni tydzień",
+    "w.home.end.zonesAll": "Strefy – cała historia",
     "w.home.end.zones": "Strefy tempa",
     "w.home.end.last": "Ostatni wysiłek",
     "w.home.end.allSports": "Wszystkie sporty",
@@ -1956,8 +1973,8 @@ export const web_home = {
     "w.home.group.recover": "Erholung",
     "w.home.group.progress": "Fortschritt",
     "w.home.group.explore": "Entdecken",
-    "w.home.group.metaWeek": "{v} diese Woche",
     "w.home.group.metaOf": "{a} von {b} h diese Woche",
+    "w.home.group.metaMoves": "{a} von {b} Übungen",
     "w.home.group.state": "Zustand",
     "w.home.group.training": "Training",
     "w.home.group.season": "Saison",
@@ -1975,7 +1992,7 @@ export const web_home = {
     "w.home.week.upLead": "Dein {m} ist so hoch wie seit vier Wochen nicht.",
     "w.home.week.flatLead": "Du liegst auf deinem Vier-Wochen-Schnitt.",
     "w.home.week.coldLead": "Noch zu wenig Historie zum Vergleichen.",
-    "w.home.week.vsAvg": "{v} gegen einen Vier-Wochen-Schnitt von {b}",
+    "w.home.week.vsAvg": "Vier-Wochen-Schnitt {b}",
     "w.home.week.flatWhy": "nichts außerhalb des üblichen Bereichs",
     "w.home.week.coldWhy": "Vergleiche starten nach ein paar Trainingswochen",
     "w.home.week.mTonnage": "Tonnage",
@@ -2019,9 +2036,9 @@ export const web_home = {
     "w.home.act.allGroups": "Alle",
     "w.home.act.showAll": "Alle {n} zeigen",
     "w.home.act.showFewer": "Weniger zeigen",
-    "w.home.act.vsMonths": "{v} gegen einen Drei-Monats-Schnitt von {b}",
-    "w.home.act.vsD30": "{v} gegen einen 30-Tage-Schnitt von {b}",
-    "w.home.act.vsYears": "{v} gegen {b} zum selben Zeitpunkt der Vorjahre",
+    "w.home.act.vsMonths": "Drei-Monats-Schnitt {b}",
+    "w.home.act.vsD30": "30-Tage-Schnitt {b}",
+    "w.home.act.vsYears": "{b} zum selben Zeitpunkt der Vorjahre",
     "w.home.act.upLeadP": "Dein {m} liegt über den Zeiträumen davor.",
     "w.home.act.downLeadP": "Dein {m} bremst diesen Zeitraum aus.",
     "w.home.act.flatLeadP": "Du liegst auf deinem jüngsten Schnitt.",
@@ -2057,14 +2074,15 @@ export const web_home = {
     "w.home.exw.bestPace": "Bestes Tempo – 8 Wochen",
     "w.home.exw.volume": "Volumen – 8 Wochen",
     "w.home.exw.time": "Zeit – 8 Wochen",
-    "w.home.exw.kindStrength": "Kraft",
-    "w.home.exw.kindCardio": "Cardio",
-    "w.home.exw.kindConditioning": "Conditioning",
     "w.home.today.alsoDayEmpty": "an diesem Tag nichts geloggt",
     "w.home.end.thisWeek": "Diese Woche",
     "w.home.end.orderTrained": "Meist trainiert",
     "w.home.end.orderRecent": "Zuletzt",
     "w.home.end.orderLongest": "Längste",
+    "w.home.end.scopeAll": "Gesamt",
+    "w.home.end.volumeWeek": "Umfang – diese Woche",
+    "w.home.end.paceLatest": "Tempo – letzte Woche",
+    "w.home.end.zonesAll": "Zonen – gesamt",
     "w.home.end.zones": "Tempozonen",
     "w.home.end.last": "Letzte Einheit",
     "w.home.end.allSports": "Alle Sportarten",

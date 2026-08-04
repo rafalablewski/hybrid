@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activityVerdict, weekVerdict, VERDICT_METRICS, verdictLeadKey, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
+import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
 import { resolveActivityRange } from "./activity-window";
 import { addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
@@ -218,5 +218,64 @@ describe("verdict i18n key helpers", () => {
     expect(verdictWhyKey({ ...base, cold: true })).toBe("w.home.week.coldWhy");
     expect(verdictWhyKey(base)).toBe("w.home.week.flatWhy");
     expect(verdictWhyKey({ ...base, metric: "hours", direction: "up" })).toBe("w.home.week.vsAvg");
+  });
+});
+
+describe("activityVerdict — a thin baseline can't hijack the sentence (A1)", () => {
+  // Every week here carries the SAME shape — one lift and one run — so session
+  // count and training time are flat and only tonnage and distance can move.
+  // Four prior weeks of real lifting beside a token 0.1 km jog: distance's
+  // four-week mean is 0.1 km, tonnage's is 5200 kg. Raw-ratio ranking handed
+  // the headline to distance at +6700% every single time.
+  const priors = [
+    ...[9, 16, 23, 30].map((d) => s(d, 5200)),
+    ...[9, 16, 23, 30].map((d) => run(d, 0.1)),
+  ];
+
+  it("ranks the measure with a real baseline, not the one with the smallest one", () => {
+    const v = activityVerdict([...priors, s(2, 7200), run(2, 6.8)], d7());
+    expect(v.metric).toBe("tonnage");
+    expect(v.deltaPct).toBe(38);
+  });
+
+  it("still names a thin-baseline measure when nothing else moved — as the FALLBACK", () => {
+    const v = activityVerdict([...priors, s(2, 5200), run(2, 6.8)], d7());
+    expect(v.metric).toBe("distance");
+  });
+
+  it("prints the fallback as a STEP, never as a four-digit percentage", () => {
+    const v = activityVerdict([...priors, s(2, 5200), run(2, 6.8)], d7());
+    expect(Math.abs(v.deltaPct)).toBeGreaterThan(VERDICT_PCT_CEILING);
+    expect(verdictShowsStep(v)).toBe(true);
+  });
+
+  it("keeps the percentage for an ordinary move", () => {
+    const v = activityVerdict([...priors, s(2, 7200), run(2, 0.1)], d7());
+    expect(v.metric).toBe("tonnage");
+    expect(verdictShowsStep(v)).toBe(false);
+    expect(v.deltaPct).toBe(38);
+  });
+
+  it("a measure trained in one of four prior windows can't outrank one trained in all four", () => {
+    // 8 km in a single prior week: the MEAN (2 km) clears the floor, but the
+    // metric was present in one window out of four, so coverage rejects it.
+    // The zero-distance runs keep session count and hours flat.
+    const sparse = [
+      ...[9, 16, 23, 30].map((d) => s(d, 5200)),
+      run(9, 0), run(16, 0), run(23, 0), run(30, 8),
+    ];
+    const v = activityVerdict([...sparse, s(2, 7200), run(2, 20)], d7());
+    expect(v.metric).toBe("tonnage");
+  });
+
+  it("distance wins outright once it has a baseline of its own", () => {
+    const trained = [
+      ...[9, 16, 23, 30].map((d) => s(d, 5200)),
+      ...[9, 16, 23, 30].map((d) => run(d, 10)),
+    ];
+    const v = activityVerdict([...trained, s(2, 5200), run(2, 30)], d7());
+    expect(v.metric).toBe("distance");
+    expect(v.deltaPct).toBe(200);
+    expect(verdictShowsStep(v)).toBe(false);
   });
 });

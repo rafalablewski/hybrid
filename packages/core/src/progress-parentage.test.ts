@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { activitySummary, resolveActivityRange } from "./activity-window";
 import { parentageHours, progressParentage } from "./progress-parentage";
+import { enduranceLanes } from "./endurance-lanes";
+import { exerciseWidgetCards, movementsTrained } from "./exercise-widget";
 import { addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 
@@ -63,5 +65,60 @@ describe("progressParentage", () => {
     expect(parentageHours(90)).toBe(1.5);
     expect(parentageHours(0)).toBe(0);
     expect(parentageHours(125)).toBe(2.1);
+  });
+});
+
+/**
+ * THE RECONCILIATION, AS AN ASSERTION.
+ *
+ * Wave 3 proved the rails and the This-week card agreed by PRINTING the card's
+ * figure in each rail's head. That is a guarantee the athlete is asked to audit
+ * — and, quoted whole, it was indistinguishable from a restatement, which is
+ * what the exercises and endurance heads were retired for. The guarantee itself
+ * is worth keeping; it just belongs in CI rather than in a label.
+ *
+ * So these tests assert directly what the labels used to claim: the lanes' own
+ * weekly distance sums to the card's KM column, and the movements the rail
+ * draws from are the ones behind its tonnage column. If a future change makes
+ * a rail and the card disagree, this fails instead of a user noticing.
+ */
+describe("the rails reconcile with the card — the parentage, asserted (R2)", () => {
+  it("the lanes' this-week distance sums to the verdict's KM column", () => {
+    const lanes = enduranceLanes(SESSIONS, { now: NOW });
+    const laneKm = lanes.reduce((n, l) => n + l.thisWeek.km, 0);
+    const p = progressParentage(SESSIONS, { now: NOW });
+    expect(laneKm).toBeCloseTo(p.distanceKm, 5);
+  });
+
+  it("a sport is never counted by BOTH the lanes and the sports' hours share", () => {
+    // ENDURANCE_DISCIPLINES excludes "sport", so the tennis match feeds the
+    // sports share and no lane. The two decompositions must not overlap.
+    const lanes = enduranceLanes(SESSIONS, { now: NOW });
+    expect(lanes.some((l) => l.discipline === "sport")).toBe(false);
+    const p = progressParentage(SESSIONS, { now: NOW });
+    expect(p.sportMinutes).toBe(90);
+  });
+
+  it("every movement the rail can draw was trained inside the rail's own window", () => {
+    const cards = exerciseWidgetCards(SESSIONS, { now: NOW });
+    expect(cards.length).toBeGreaterThan(0);
+    expect(cards.length).toBeLessThanOrEqual(movementsTrained(SESSIONS, NOW));
+  });
+
+  it("with the lanes on screen, no auto-filled card shares a discipline with one (A2)", () => {
+    const lanes = enduranceLanes(SESSIONS, { now: NOW });
+    const owned = new Set(lanes.map((l) => l.discipline));
+    expect(owned.size).toBeGreaterThan(0);
+    const cards = exerciseWidgetCards(SESSIONS, { now: NOW, deferToLanes: true });
+    for (const c of cards) expect(c.discipline == null || !owned.has(c.discipline)).toBe(true);
+    // Without deferring, the same log DOES surface the running card — which is
+    // the duplication, and why Today passes deferToLanes.
+    const undeferred = exerciseWidgetCards(SESSIONS, { now: NOW });
+    expect(undeferred.some((c) => c.discipline === "running")).toBe(true);
+  });
+
+  it("an explicit favourite outranks the de-duplication rule", () => {
+    const cards = exerciseWidgetCards(SESSIONS, { now: NOW, deferToLanes: true, favourites: ["Easy run"] });
+    expect(cards.some((c) => c.name === "Easy run")).toBe(true);
   });
 });

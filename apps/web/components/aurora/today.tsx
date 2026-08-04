@@ -993,7 +993,7 @@ export default function AuroraToday({
           This week, whose lifting columns these cards break down per movement. */}
       {onOpenExercise && sessions.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <ExerciseWidgetRail sessions={sessions} onOpen={onOpenExercise} onAll={() => (onNavigate ? onNavigate("exercises") : router.push("/analyze"))} />
+          <ExerciseWidgetRail sessions={sessions} deferToLanes={isAthlete} onOpen={onOpenExercise} onAll={() => (onNavigate ? onNavigate("exercises") : router.push("/analyze"))} />
         </div>
       )}
 

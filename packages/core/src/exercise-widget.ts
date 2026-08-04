@@ -1,5 +1,7 @@
-import type { LoggedSession } from "./engines/session";
+import type { CardioBlock, CardioDiscipline, LoggedSession } from "./engines/session";
 import { topLoadSeries, paceSeries, type PacePoint } from "./engines/session";
+import { blockDiscipline } from "./engines/running";
+import { activeDisciplines } from "./endurance";
 import { exerciseHistory } from "./engines/records";
 import {
   exerciseDashboard,
@@ -48,6 +50,19 @@ export type ExerciseWidgetMetric = "weight" | "pace" | "volume" | "time";
 export interface ExerciseWidgetCard {
   name: string;
   kind: "strength" | "cardio" | "conditioning";
+  /**
+   * The movement's cardio discipline, resolved through the SAME rule the lanes
+   * use (`blockDiscipline` — the stamped tag, falling back to the name). Set on
+   * every cardio card and undefined otherwise.
+   *
+   * It exists so a rate can be printed in its discipline's own convention. The
+   * card used to hand its `sec/km` value to a hard-coded "/km", which showed a
+   * swimmer "38:36 /km" — arithmetically right, conventionally meaningless, and
+   * contradicted by the Endurance lane 250dp below printing the same rate as
+   * "3:52 /100m" through `formatDisciplinePace`. One function knows what a
+   * discipline's pace reads as; every surface must go through it.
+   */
+  discipline?: CardioDiscipline;
   metric: ExerciseWidgetMetric;
   /** headline value — kg (weight = heaviest lift), sec/km (pace), total kg
    *  (volume) or total minutes (time), 8-week window */
@@ -70,6 +85,27 @@ export function pctChange(cur: number, prev: number): number | null {
 }
 
 const ts = (iso: string): number => new Date(iso).getTime();
+
+/**
+ * The discipline a cardio movement belongs to — the most recent stamp wins, so
+ * a move re-tagged at log time reads as what it is now. Resolved through the
+ * lanes' own `blockDiscipline`, never re-classified here: two definitions of
+ * "what sport is this" is how a swim ends up measured in kilometres.
+ */
+function moveDiscipline(sessions: LoggedSession[], name: string): CardioDiscipline | undefined {
+  let out: CardioDiscipline | undefined;
+  let at = -Infinity;
+  for (const s of sessions) {
+    const t = ts(s.startedAt);
+    if (!Number.isFinite(t) || t < at) continue;
+    for (const b of s.blocks) {
+      if (b.kind !== "cardio" || b.name !== name) continue;
+      out = blockDiscipline(b as CardioBlock);
+      at = t;
+    }
+  }
+  return out;
+}
 
 /** sessions that trained `name` in (now-days, now] */
 const sessionCount = (sessions: LoggedSession[], name: string, now: number, days: number): number =>
@@ -150,7 +186,10 @@ export function exerciseWidgetCard(
       // pace: sign of the raw change, improvement = got faster (negative change)
       const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
       const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.secPerKm);
-      return { name, kind, metric: "pace", value, deltaPct, improving: deltaPct == null ? null : deltaPct < 0, spark, sessions: count };
+      return {
+        name, kind, discipline: moveDiscipline(sessions, name), metric: "pace", value, deltaPct,
+        improving: deltaPct == null ? null : deltaPct < 0, spark, sessions: count,
+      };
     }
     // minutes-only cardio (a match, a swim without distance) → time metric
   }
@@ -183,7 +222,36 @@ export function exerciseWidgetCard(
   const value = sum(curW);
   if (value <= 0) return null;
   const deltaPct = pctChange(value, sum(prevW));
-  return { name, kind, metric: "time", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count };
+  return {
+    name, kind, discipline: kind === "cardio" ? moveDiscipline(sessions, name) : undefined,
+    metric: "time", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count,
+  };
+}
+
+/**
+ * How many distinct movements the athlete trained inside the rail's own window
+ * — the denominator for the Exercises head's coverage meta ("3 of 11
+ * movements").
+ *
+ * It counts over WIDGET_WINDOW_DAYS, not all time, because the fraction has to
+ * be a fraction of the same thing the cards are: a numerator drawn from the
+ * last eight weeks over an all-time denominator would be two scopes in one
+ * sentence, which is the fault the meta was introduced to fix.
+ *
+ * The head used to quote this week's tonnage — the same figure the This-week
+ * card printed 400dp above, through the same formatter. A quote of the whole
+ * parent is indistinguishable from a repeat of it; it also spent the rail's one
+ * slot on a fact the reader already had, leaving no room for the one they did
+ * not: that the rail is a SELECTION (`max`, default 3), not their whole log.
+ */
+export function movementsTrained(sessions: LoggedSession[], now = Date.now()): number {
+  const names = new Set<string>();
+  for (const s of sessions) {
+    const t = ts(s.startedAt);
+    if (!Number.isFinite(t) || t > now || t <= now - WIDGET_WINDOW_DAYS * DAY) continue;
+    for (const b of s.blocks) names.add(b.name);
+  }
+  return names.size;
 }
 
 /**
@@ -191,27 +259,50 @@ export function exerciseWidgetCard(
  * in order), then auto-fill so DIFFERENT purposes lead — the most-trained
  * strength lift, cardio move and conditioning move of the last 8 weeks (falling
  * back to all-time), then overall frequency up to `max`.
+ *
+ * ONE DISCIPLINE, ONE HOME (`deferToLanes`). This rail is about MOVEMENTS; the
+ * Endurance block beneath it is about DISCIPLINES. When both render, a swim was
+ * appearing in each — as a card reading "38:36 /km" (the window's best) and as
+ * a lane reading "3:52 /100m" (the latest week's mean), 250dp apart, with
+ * nothing on either saying which was which. Where a discipline already has a
+ * lane carrying five tiles of its own depth, the rail hands it over and spends
+ * the slot on the next real movement.
+ *
+ * The exclusion applies to AUTO-FILL only: an explicitly favourited movement is
+ * a choice the athlete made, and a de-duplication rule does not get to overrule
+ * it. The caller decides whether to defer, because it knows whether the lanes
+ * are on screen (Today gates them on the athlete persona; the exercises SCREEN
+ * has no lanes at all) — but the lane SET is derived here, from the same
+ * `activeDisciplines` the lanes themselves are built from, so the two can't
+ * disagree about which disciplines have a home.
  */
 export function exerciseWidgetCards(
   sessions: LoggedSession[],
-  opts: { max?: number; favourites?: string[]; now?: number; bw?: BodyweightInput } = {},
+  opts: { max?: number; favourites?: string[]; now?: number; bw?: BodyweightInput; deferToLanes?: boolean } = {},
 ): ExerciseWidgetCard[] {
-  const { max = 3, favourites = [], now = Date.now(), bw } = opts;
+  const { max = 3, favourites = [], now = Date.now(), bw, deferToLanes = false } = opts;
   const history = exerciseHistory(sessions);
   if (history.length === 0) return [];
   const recent = new Map(history.map((e) => [e.name, sessionCount(sessions, e.name, now, WIDGET_WINDOW_DAYS)]));
   // most-trained first: 8-week count, then all-time count
   const ranked = [...history].sort((a, b) => (recent.get(b.name)! - recent.get(a.name)!) || (b.count - a.count));
 
+  const owned = deferToLanes ? new Set(activeDisciplines(sessions).map((d) => d.discipline)) : null;
+  const hasLane = (e: { name: string; kind: string }): boolean => {
+    if (!owned || e.kind !== "cardio") return false;
+    const d = moveDiscipline(sessions, e.name);
+    return d != null && owned.has(d);
+  };
+
   const picked: string[] = favourites.filter((f) => history.some((e) => e.name === f)).slice(0, max);
   for (const kind of ["strength", "cardio", "conditioning"] as const) {
     if (picked.length >= max) break;
-    const top = ranked.find((e) => e.kind === kind && !picked.includes(e.name));
+    const top = ranked.find((e) => e.kind === kind && !picked.includes(e.name) && !hasLane(e));
     if (top) picked.push(top.name);
   }
   for (const e of ranked) {
     if (picked.length >= max) break;
-    if (!picked.includes(e.name)) picked.push(e.name);
+    if (!picked.includes(e.name) && !hasLane(e)) picked.push(e.name);
   }
 
   const cards: ExerciseWidgetCard[] = [];

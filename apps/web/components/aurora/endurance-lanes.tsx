@@ -4,7 +4,6 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
   enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
-  progressParentage,
   DISCIPLINE_META, LANE_CAP, ago,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
@@ -56,10 +55,24 @@ const kicker: CSSProperties = {
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
 
 /** One rail tile — the cluster's shared skeleton (name row → figure → chart →
- *  footer). Fixed width, shared minimum height so a rail's cards sit on one
- *  baseline however differently they're filled. `right` rides the name row
- *  (a delta, a qualifier) — the same slot the exercises tiles use. */
-function Tile({ w, label, right, children }: { w: number; label: string; right?: ReactNode; children: ReactNode }) {
+ *  footer), and the place the SCOPE RULE is enforced rather than merely
+ *  documented:
+ *
+ *    label  → the metric AND the scope of the FIGURE this tile prints
+ *    foot   → the window of the CHART, with `footRight` for a delta
+ *
+ *  Both slots are the Tile's own, so a caller cannot put the window in the
+ *  label (as VolumeTile did — "Volume – 8 weeks" over a footer reading
+ *  "8 weeks", twice in one 178px tile, while the figure between them was THIS
+ *  WEEK'S km and said so nowhere). The old free `right` slot on the name row is
+ *  gone with it; its only consumer was the pace delta, which is a fact about
+ *  the chart's window and belongs beside it.
+ *
+ *  Fixed width, shared minimum height so a rail's cards sit on one baseline
+ *  however differently they're filled. Mirrors mobile. */
+function Tile({ w, label, foot, footRight, children }: {
+  w: number; label: string; foot?: string; footRight?: ReactNode; children: ReactNode;
+}) {
   return (
     <div
       style={{
@@ -69,11 +82,14 @@ function Tile({ w, label, right, children }: { w: number; label: string; right?:
         boxShadow: "var(--shadow-card)", padding: "12px 12px 12px",
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <span style={kicker}>{label}</span>
-        {right}
-      </div>
+      <span style={{ ...kicker, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
       {children}
+      {(foot || footRight) && (
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+          <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{foot ?? ""}</span>
+          {footRight}
+        </div>
+      )}
     </div>
   );
 }
@@ -86,9 +102,13 @@ function SummaryTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => strin
     </div>
   );
   return (
-    <Tile w={126} label={t("endurance.efforts")}>
+    <Tile w={126} label={t("w.home.end.scopeAll")}>
+      {/* The figure carries "efforts" as its UNIT — the same shape the Other
+          sports tile uses — because the label is now saying the scope. The
+          header above the rail used to print this same count. */}
       <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
         {lane.efforts}
+        <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>{t("endurance.efforts").toLowerCase()}</span>
       </div>
       <div style={{ display: "grid", gap: 3, marginTop: "auto" }}>
         {row("KM", String(lane.distanceKm))}
@@ -103,7 +123,7 @@ function VolumeTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string
   // the shared HistoryStrip as the chart → the window as the footer. The old
   // 46px one-off bar block is retired for the cluster's one chart language.
   return (
-    <Tile w={178} label={t("w.home.exw.volume")}>
+    <Tile w={178} label={t("w.home.end.volumeWeek")} foot={t("w.home.end.window8")}>
       <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
         {lane.thisWeek.km}
         <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>km</span>
@@ -111,7 +131,6 @@ function VolumeTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string
       <div style={{ marginTop: "auto" }}>
         <HistoryStrip bars={volumeBars(lane.weeks)} color={C("blue")} />
       </div>
-      <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{t("w.home.end.window8")}</span>
     </Tile>
   );
 }
@@ -132,8 +151,9 @@ function TrendTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string 
   return (
     <Tile
       w={176}
-      label={t("session.paceTrend")}
-      right={delta ? (
+      label={t("w.home.end.paceLatest")}
+      foot={t("w.home.end.window8")}
+      footRight={delta ? (
         <span style={{ ...num, fontSize: 10, whiteSpace: "nowrap", color: delta.faster ? "var(--lime-text)" : "var(--red-text)" }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </span>
@@ -162,7 +182,6 @@ function TrendTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string 
           style={{ fill: C("blue"), stroke: C("ink2") }}
         />
       </svg>
-      <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{t("w.home.end.window8")}</span>
     </Tile>
   );
 }
@@ -180,7 +199,7 @@ function ZoneTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string }
     </div>
   );
   return (
-    <Tile w={152} label={t("w.home.end.zones")}>
+    <Tile w={152} label={t("w.home.end.zonesAll")}>
       <div style={{ display: "flex", gap: 2, height: 8, marginTop: "auto" }} aria-hidden>
         {([[z.easy, C("lime")], [z.moderate, C("amber")], [z.hard, C("red")]] as [number, string][]).map(
           ([pct, c]) => pct > 0 && <span key={c} style={{ flex: pct, display: "block", background: c, borderRadius: 2 }} />,
@@ -215,6 +234,27 @@ function LastTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string }
   );
 }
 
+/** The lane-order selector, in CONTROL form — a bordered chip in ash with a
+ *  chevron, not accent-coloured text. It cycles rather than opening a menu, so
+ *  the chip shows the order in force and the chevron says there are others.
+ *  Mirrors mobile. */
+function OrderChip({ order, onClick, t }: { order: LaneOrder; onClick: () => void; t: (k: string) => string }) {
+  return (
+    <button className="pressable"
+      onClick={onClick}
+      aria-label={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
+      style={{
+        display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
+        background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999,
+        padding: "4px 9px", color: C("ash"),
+      }}
+    >
+      <span style={{ ...kicker, fontSize: 10 }}>{t(ORDER_KEY[order])}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9 }} aria-hidden>⌄</span>
+    </button>
+  );
+}
+
 function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscipline) => void; canOpen: boolean }) {
   const { t } = useLang();
   return (
@@ -226,17 +266,19 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
           <span aria-hidden>{DISCIPLINE_META[lane.discipline].emoji}</span>
           {t(lane.labelKey)}
         </span>
-        <span style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-          <span style={{ ...kicker, fontSize: 10 }}>{lane.efforts} {t("endurance.efforts")}</span>
-          {onOpen && canOpen && (
-            <button className="pressable"
-              onClick={() => onOpen(lane.discipline)}
-              style={{ background: "none", border: 0, padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)" }}
-            >
-              {t("w.explore.seeAll")} ›
-            </button>
-          )}
-        </span>
+        {/* Identity on the left, the EXIT on the right — and nothing else. The
+            header used to carry "8 efforts" as well, which is `lane.efforts`
+            read twice 40dp apart: the summary tile directly below is the same
+            field under the same mono face. A header names the lane; the rail
+            owns the figures. Mirrors mobile. */}
+        {onOpen && canOpen && (
+          <button className="pressable"
+            onClick={() => onOpen(lane.discipline)}
+            style={{ background: "none", border: 0, padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)" }}
+          >
+            {t("w.explore.seeAll")} ›
+          </button>
+        )}
       </div>
       {/* Full-bleed rail — negative margins the width of the shell gutter pull
           the scroll clip to the true screen edge, with matching inner padding
@@ -280,10 +322,6 @@ export default function AuroraEnduranceLanes({
   const [expanded, setExpanded] = useState(false);
 
   const lanes = useMemo(() => enduranceLanes(sessions), [sessions]);
-  // WAVE-3 PARENTAGE: the head quotes the This-week card's DISTANCE column —
-  // the figure these lanes break down per discipline. Same activitySummary,
-  // same week range (core progress-parentage.ts), so they cannot disagree.
-  const parentage = useMemo(() => progressParentage(sessions), [sessions]);
   // No endurance logged → no block. A lane exists because something is in it,
   // which is why no lane needs an empty state of its own.
   if (lanes.length === 0) return null;
@@ -291,35 +329,36 @@ export default function AuroraEnduranceLanes({
   const stacked = orderLanes(lanes, order);
   const shown = expanded || !Number.isFinite(cap) ? stacked : stacked.slice(0, cap);
   const rest = Number.isFinite(cap) ? stacked.length - cap : 0;
-  const km = Math.round(parentage.distanceKm * 10) / 10;
 
   return (
     <div style={{ marginTop: 24 }}>
-      {/* One item in the head's right slot: the quoted FACT (ash). The sort
-          ACTION moved to its own quiet row below — a head carries at most one
-          right-slot item, and the fact is the one that names the block. */}
+      {/* ONE item in the head's right slot — and for THIS block it is the
+          CONTROL, not a fact.
+
+          The slot used to quote the This-week card's distance column whole
+          ("6.8 km this week"), which restated a figure the card had already
+          printed three times: as the sentence's subject, inside its
+          working-out line, and as the KM column itself. Worse, it was the
+          wrong label for what sits underneath — a lane's summary tile carries
+          WHOLE-HISTORY totals, its volume tile this week, its pace tile the
+          latest week. No single head-level scope can be true of that, so scope
+          moved onto the tile labels (see Tile below) and the slot went to the
+          block's only interactive thing.
+
+          The toggle also stops being a lime label on an orphan row: it is a
+          state selector, not an action, so it wears the chip form in ash and
+          chartreuse stays reserved for "go". Mirrors mobile. */}
       {head && (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("endurance.title")}</span>
-        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".08em", color: C("ash") }}>
-          {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
-        </span>
+        {stacked.length > 1 && <OrderChip order={order} onClick={() => setOrder(nextLaneOrder(order))} t={t} />}
       </div>
       )}
-      {/* The lane-order toggle — only when there is an order to change. */}
-      {stacked.length > 1 && (
-        <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 2px" }}>
-          <button className="pressable"
-            onClick={() => setOrder(nextLaneOrder(order))}
-            aria-label={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
-            style={{
-              background: "none", border: 0, padding: "2px 0", cursor: "pointer",
-              fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em",
-              textTransform: "uppercase", color: "var(--lime-text)",
-            }}
-          >
-            {t(ORDER_KEY[order])} ↓
-          </button>
+      {/* Headless (the Endurance SCREEN, whose hero says the title) still needs
+          the control, so it keeps its own row there and nowhere else. */}
+      {!head && stacked.length > 1 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 2px 8px" }}>
+          <OrderChip order={order} onClick={() => setOrder(nextLaneOrder(order))} t={t} />
         </div>
       )}
 

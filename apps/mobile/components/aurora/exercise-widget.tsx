@@ -6,8 +6,9 @@ import {
   exerciseWidgetCards,
   fmtWeight,
   fmtTonnage,
+  formatDisciplinePace,
+  movementsTrained,
   paceClock,
-  progressParentage,
   type ExerciseWidgetCard,
   type LoggedSession,
   type WeightUnit,
@@ -44,18 +45,25 @@ export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct
   );
 }
 
+/** A rate in ITS DISCIPLINE'S convention — "/km" running, "/100m" swimming,
+ *  "/500m" rowing, "km/h" cycling. `formatDisciplinePace` is the one function
+ *  that knows; the card used to print a hard-coded "/km" and showed a swimmer
+ *  "38:36 /km" while the Endurance lane below it printed the same rate as
+ *  "3:52 /100m". A card with no resolved discipline keeps the /km fallback,
+ *  which is what the canonical value already is. */
+function paceParts(card: ExerciseWidgetCard): { v: string; u: string } {
+  if (!card.discipline) return { v: paceClock(card.value), u: "/km" };
+  const s = formatDisciplinePace(card.value, card.discipline);
+  const i = s.lastIndexOf(" ");
+  return i < 0 ? { v: s, u: "" } : { v: s.slice(0, i), u: s.slice(i + 1) };
+}
+
 function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) => string): { v: string; u: string; label: string } {
-  if (card.metric === "pace") return { v: paceClock(card.value), u: "/km", label: t("w.home.exw.bestPace") };
+  if (card.metric === "pace") return { ...paceParts(card), label: t("w.home.exw.bestPace") };
   if (card.metric === "weight") return { ...splitVal(fmtWeight(card.value, units)), label: t("w.home.exw.heaviest") };
   if (card.metric === "time") return { v: String(card.value), u: "min", label: t("w.home.exw.time") };
   return { ...splitVal(fmtTonnage(card.value, units)), label: t("w.home.exw.volume") };
 }
-
-const KIND_KEY: Record<ExerciseWidgetCard["kind"], string> = {
-  strength: "w.home.exw.kindStrength",
-  cardio: "w.home.exw.kindCardio",
-  conditioning: "w.home.exw.kindConditioning",
-};
 
 /**
  * EXERCISES — the Today favourites rail (variant B, "the chart is the card").
@@ -67,20 +75,27 @@ export default function ExerciseWidgetRail({
   sessions,
   onOpen,
   onAll,
+  /** True when the Endurance lanes render on this screen. A discipline that
+   *  already has a lane keeps its five tiles of depth there and is left out of
+   *  this rail's auto-fill, so a swim is not a card AND a lane reading two
+   *  different figures in two different units. An explicit favourite still
+   *  appears — see core exerciseWidgetCards. */
+  deferToLanes = false,
 }: {
   sessions: LoggedSession[];
   onOpen: (name: string) => void;
   onAll: () => void;
+  deferToLanes?: boolean;
 }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
-  const cards = useMemo(() => exerciseWidgetCards(sessions, { bw }), [sessions, bw]);
-  // WAVE-3 PARENTAGE: the head quotes the This-week card's VOLUME column —
-  // the figure this rail breaks down per movement. Same activitySummary, same
-  // week range (core progress-parentage.ts), so the two can never disagree.
-  const parentage = useMemo(() => progressParentage(sessions, { bw }), [sessions, bw]);
+  const cards = useMemo(() => exerciseWidgetCards(sessions, { bw, deferToLanes }), [sessions, bw, deferToLanes]);
+  // The head's coverage denominator — movements trained inside the rail's OWN
+  // 8-week window, so the fraction is a fraction of the same thing the cards
+  // are rather than two scopes in one sentence.
+  const trained = useMemo(() => movementsTrained(sessions), [sessions]);
   // One ref per card's headline figure — only the tapped card is ever measured.
   const heroRefs = useRef<Record<string, Text | null>>({});
   const armHero = useSharedElementSource();
@@ -89,14 +104,18 @@ export default function ExerciseWidgetRail({
   return (
     <View style={{ marginTop: 24 }}>
       {/* Explore-standard head — one head tier across the PROGRESS cluster,
-          and the right slot carries ONE item: the FACT this rail decomposes
-          (wave-3 parentage — the This-week card's volume column, quoted from
-          the same core summary). The "All ›" action lives in the rail's
-          trailing ghost tile, per the one-exit rule. Mirrors web. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, marginHorizontal: 2 }}>
+          and the right slot carries ONE item: the rail's COVERAGE of the
+          movements trained in its own window. It used to quote the This-week
+          card's volume column whole, which restated a figure 400dp above it
+          and spent the slot on a fact the reader already had — while the one
+          they did NOT have, that this rail is a selection rather than their
+          whole log, had nowhere to go. A quote must add a fraction. The
+          "All ›" action lives in the rail's trailing ghost tile, per the
+          one-exit rule. Mirrors web. */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-          {t("w.home.group.metaWeek").replace("{v}", fmtTonnage(parentage.tonnageKg, units))}
+          {t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
         </Text>
       </View>
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 16dp
@@ -136,10 +155,11 @@ export default function ExerciseWidgetRail({
                 paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
               }}
             >
-              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
-                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
-              </View>
+              {/* The name gets the whole row. The delta used to sit beside it
+                  and cost "Standing Overhead Press" its last words on a narrow
+                  device; it reads as well from the footer, where the kind word
+                  used to be. */}
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
                 <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.u}</Text>
@@ -147,9 +167,18 @@ export default function ExerciseWidgetRail({
               <View style={{ marginTop: "auto" }}>
                 <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
               </View>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
+              {/* The footer says the metric and its window, then the delta.
+                  The KIND word ("Strength") is gone: the purpose was already
+                  encoded twice — the strip is drawn in kindStroke's chartreuse
+                  for a lift and teal for cardio, and the metric name entails it
+                  ("Heaviest" is only ever a lift, "Best pace" only ever
+                  cardio). Three channels for one fact is not reinforcement; it
+                  is the slot a real fact could have used. Colour keeps the
+                  visual channel and the metric name the text one, so nothing
+                  here is colour-only. */}
+              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.label}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{t(KIND_KEY[card.kind])}</Text>
+                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
               </View>
             </Pressable>
           );

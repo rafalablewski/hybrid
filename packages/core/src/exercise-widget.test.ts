@@ -3,10 +3,12 @@ import {
   pctChange,
   exerciseWidgetCard,
   exerciseWidgetCards,
+  movementsTrained,
   exercisePageModel,
   weeklySessionCounts,
 } from "./exercise-widget";
 import type { LoggedSession, StrengthSet } from "./engines/session";
+import { formatDisciplinePace } from "./endurance";
 
 const DAY = 86_400_000;
 // A fixed local Wednesday noon so week bucketing is deterministic in any TZ.
@@ -190,5 +192,60 @@ describe("exercisePageModel", () => {
     }];
     const m = exercisePageModel(sessions, "Tennis", "8w", { now });
     expect(m.slides.map((s) => s.kind)).toEqual(["weeklyMinutes", "consistency"]);
+  });
+});
+
+describe("exerciseWidgetCard — discipline (A2: one rate, one unit)", () => {
+  const swim = (daysAgo: number, km: number, minutes: number): LoggedSession => ({
+    id: `w${id++}`,
+    title: "W",
+    startedAt: new Date(now - daysAgo * DAY).toISOString(),
+    blocks: [{ kind: "cardio", name: "Swimming", discipline: "swimming", distance: km, minutes }],
+  });
+
+  it("carries the stamped discipline on a cardio card", () => {
+    const card = exerciseWidgetCard([swim(3, 0.5, 19), swim(10, 0.4, 16)], "Swimming", now);
+    expect(card?.metric).toBe("pace");
+    expect(card?.discipline).toBe("swimming");
+  });
+
+  it("falls back to the name when no tag was stamped", () => {
+    const card = exerciseWidgetCard([run(3, 5, 25), run(10, 5, 26)], "Run", now);
+    expect(card?.discipline).toBe("running");
+  });
+
+  it("leaves a strength card without one", () => {
+    const card = exerciseWidgetCard([lift(3, [{ load: "100" }])], "Deadlift", now);
+    expect(card?.discipline).toBeUndefined();
+  });
+
+  it("the value stays canonical sec/km — only the DISPLAY unit is the discipline's", () => {
+    // 0.5 km in 19 min = 2280 s/km, which formatDisciplinePace renders as
+    // 3:48 /100m. The old hard-coded "/km" printed 38:00 /km for the same swim.
+    const card = exerciseWidgetCard([swim(3, 0.5, 19), swim(10, 0.5, 20)], "Swimming", now);
+    expect(card?.value).toBe(2280);
+    expect(formatDisciplinePace(card!.value, card!.discipline!)).toBe("3:48 /100m");
+  });
+});
+
+describe("movementsTrained — the Exercises head's coverage denominator (M1)", () => {
+  it("counts distinct movements inside the rail's OWN window, not all time", () => {
+    const sessions = [
+      lift(3, [{ load: "100" }], "Deadlift"),
+      lift(10, [{ load: "60" }], "Bench"),
+      run(20, 5, 25, "Run"),
+      cond(30, 12, "Assault Bike"),
+      // Outside the 56-day window: trained, but not by this rail's measure.
+      lift(80, [{ load: "80" }], "Front Squat"),
+    ];
+    expect(movementsTrained(sessions, now)).toBe(4);
+  });
+
+  it("counts a movement once however often it was trained", () => {
+    expect(movementsTrained([lift(1, [{}]), lift(8, [{}]), lift(15, [{}])], now)).toBe(1);
+  });
+
+  it("is zero with nothing in the window, so the head reads 0 of 0 rather than lying", () => {
+    expect(movementsTrained([lift(90, [{}])], now)).toBe(0);
   });
 });

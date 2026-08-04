@@ -4,7 +4,6 @@ import Svg, { Polyline, Polygon, Circle, Defs, LinearGradient, Stop } from "reac
 import {
   enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
-  progressParentage,
   DISCIPLINE_META, LANE_CAP, ago,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
@@ -73,10 +72,6 @@ export default function AuroraEnduranceLanes({
   const [expanded, setExpanded] = useState(false);
 
   const lanes = useMemo(() => enduranceLanes(sessions), [sessions]);
-  // WAVE-3 PARENTAGE: the head quotes the This-week card's DISTANCE column —
-  // the figure these lanes break down per discipline. Same activitySummary,
-  // same week range (core progress-parentage.ts), so they cannot disagree.
-  const parentage = useMemo(() => progressParentage(sessions), [sessions]);
   // No endurance logged → no block. A lane exists because something is in it,
   // which is why no lane needs an empty state of its own.
   if (lanes.length === 0) return null;
@@ -84,35 +79,36 @@ export default function AuroraEnduranceLanes({
   const stacked = orderLanes(lanes, order);
   const shown = expanded || !Number.isFinite(cap) ? stacked : stacked.slice(0, cap);
   const rest = Number.isFinite(cap) ? stacked.length - cap : 0;
-  const km = Math.round(parentage.distanceKm * 10) / 10;
 
   return (
     <View style={{ marginTop: 24 }}>
-      {/* One item in the head's right slot: the quoted FACT (ash). The sort
-          ACTION moved to its own quiet row below — a head carries at most one
-          right-slot item, and the fact is the one that names the block.
-          Mirrors web endurance-lanes.tsx. */}
+      {/* ONE item in the head's right slot — and for THIS block it is the
+          CONTROL, not a fact.
+
+          The slot used to quote the This-week card's distance column whole
+          ("6.8 km this week"), which restated a figure the card had already
+          printed three times: as the sentence's subject, inside its
+          working-out line, and as the KM column itself. Worse, it was the
+          wrong label for what sits underneath — a lane's summary tile carries
+          WHOLE-HISTORY totals, its volume tile this week, its pace tile the
+          latest week. No single head-level scope can be true of that, so scope
+          moved onto the tile labels (see Tile below) and the slot went to the
+          block's only interactive thing.
+
+          The toggle also stops being a lime label on an orphan row: it is a
+          state selector, not an action, so it wears the chip form in ash and
+          chartreuse stays reserved for "go". Mirrors web endurance-lanes.tsx. */}
       {head && (
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-            {t("w.home.group.metaWeek").replace("{v}", `${km} km`)}
-          </Text>
+          {stacked.length > 1 && <OrderChip order={order} onPress={() => setOrder(nextLaneOrder(order))} />}
         </View>
       )}
-      {/* The lane-order toggle — only when there is an order to change. */}
-      {stacked.length > 1 && (
-        <View style={{ flexDirection: "row", justifyContent: "flex-end", marginHorizontal: 2 }}>
-          <Pressable
-            onPress={() => setOrder(nextLaneOrder(order))}
-            accessibilityRole="button"
-            accessibilityLabel={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
-            hitSlop={10}
-          >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>
-              {t(ORDER_KEY[order])} ↓
-            </Text>
-          </Pressable>
+      {/* Headless (the Endurance SCREEN, whose hero says the title) still needs
+          the control, so it keeps its own row there and nowhere else. */}
+      {!head && stacked.length > 1 && (
+        <View style={{ flexDirection: "row", justifyContent: "flex-end", marginHorizontal: 2, marginBottom: 8 }}>
+          <OrderChip order={order} onPress={() => setOrder(nextLaneOrder(order))} />
         </View>
       )}
 
@@ -146,6 +142,33 @@ export default function AuroraEnduranceLanes({
   );
 }
 
+/** The lane-order selector, in CONTROL form — a bordered chip in ash with a
+ *  chevron, not accent-coloured text. It cycles rather than opening a menu, so
+ *  the chip shows the order in force and the chevron says there are others.
+ *  Mirrors web. */
+function OrderChip({ order, onPress }: { order: LaneOrder; onPress: () => void }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${t("endurance.title")} – ${t(ORDER_KEY[order])}`}
+      hitSlop={8}
+      style={{
+        flexDirection: "row", alignItems: "center", gap: 5,
+        backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill,
+        paddingHorizontal: 9, paddingVertical: 4,
+      }}
+    >
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+        {t(ORDER_KEY[order])}
+      </Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>⌄</Text>
+    </Pressable>
+  );
+}
+
 function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscipline) => void; canOpen: boolean }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -156,16 +179,16 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.note, color: C.chalk }}>
           {DISCIPLINE_META[lane.discipline].emoji} {t(lane.labelKey)}
         </Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-            {lane.efforts} {t("endurance.efforts")}
-          </Text>
-          {onOpen && canOpen && (
-            <Pressable onPress={() => onOpen(lane.discipline)} accessibilityRole="button" hitSlop={10}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.explore.seeAll")} ›</Text>
-            </Pressable>
-          )}
-        </View>
+        {/* Identity on the left, the EXIT on the right — and nothing else. The
+            header used to carry "8 efforts" as well, which is `lane.efforts`
+            read twice 40dp apart: the summary tile directly below is the same
+            field under the same mono face. A header names the lane; the rail
+            owns the figures. Mirrors web. */}
+        {onOpen && canOpen && (
+          <Pressable onPress={() => onOpen(lane.discipline)} accessibilityRole="button" hitSlop={10}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.explore.seeAll")} ›</Text>
+          </Pressable>
+        )}
       </View>
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 16dp
           gutter pull the scroll clip to the true screen edge, with matching
@@ -187,11 +210,26 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
   );
 }
 
-/** One rail tile — the cluster's shared skeleton (name row → figure → chart →
- *  footer). Fixed width, shared minimum height so a rail's cards sit on one
- *  baseline however differently they're filled. `right` rides the name row
- *  (a delta, a qualifier) — the same slot the exercises tiles use. */
-function Tile({ w, label, right, children }: { w: number; label: string; right?: React.ReactNode; children: React.ReactNode }) {
+/**
+ * One rail tile — the cluster's shared skeleton, and the place the SCOPE RULE
+ * is enforced rather than merely documented:
+ *
+ *   label  → the metric AND the scope of the FIGURE this tile prints
+ *   foot   → the window of the CHART, with `footRight` for a delta
+ *
+ * Both slots are the Tile's own, so a caller cannot put the window in the label
+ * (as VolumeTile did — "Volume – 8 weeks" over a footer reading "8 weeks",
+ * twice in one 178dp tile, while the figure between them was THIS WEEK'S km and
+ * said so nowhere). The old free `right` slot on the name row is gone with it;
+ * its only consumer was the pace delta, which is a fact about the chart's
+ * window and belongs beside it.
+ *
+ * Fixed width, shared minimum height so a rail's cards sit on one baseline
+ * however differently they're filled.
+ */
+function Tile({ w, label, foot, footRight, children }: {
+  w: number; label: string; foot?: string; footRight?: React.ReactNode; children: React.ReactNode;
+}) {
   const { palette: C } = useTheme();
   return (
     <View
@@ -201,11 +239,20 @@ function Tile({ w, label, right, children }: { w: number; label: string; right?:
         paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-        {right}
-      </View>
+      <Text
+        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        numberOfLines={1}
+        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}
+      >
+        {label}
+      </Text>
       {children}
+      {(foot || footRight) && (
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{foot ?? ""}</Text>
+          {footRight}
+        </View>
+      )}
     </View>
   );
 }
@@ -224,8 +271,14 @@ function SummaryTile({ lane }: { lane: EnduranceLane }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <Tile w={126} label={t("endurance.efforts")}>
-      <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.efforts}</Text>
+    <Tile w={126} label={t("w.home.end.scopeAll")}>
+      {/* The figure carries "efforts" as its UNIT — the same shape the Other
+          sports tile uses — because the label is now saying the scope. The
+          header above the rail used to print this same count. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{t("endurance.efforts").toLowerCase()}</Text>
+      </View>
       <View style={{ gap: 3, marginTop: "auto" }}>
         <MetaRow l="KM" r={String(lane.distanceKm)} strong />
         <MetaRow l="H" r={String(Math.round(lane.minutes / 6) / 10)} strong />
@@ -241,7 +294,7 @@ function VolumeTile({ lane }: { lane: EnduranceLane }) {
   // the shared HistoryStrip as the chart → the window as the footer. The old
   // 46px one-off bar block is retired for the cluster's one chart language.
   return (
-    <Tile w={178} label={t("w.home.exw.volume")}>
+    <Tile w={178} label={t("w.home.end.volumeWeek")} foot={t("w.home.end.window8")}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.thisWeek.km}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>km</Text>
@@ -249,7 +302,6 @@ function VolumeTile({ lane }: { lane: EnduranceLane }) {
       <View style={{ marginTop: "auto" }}>
         <HistoryStrip bars={volumeBars(lane.weeks)} color={C.blue} />
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.end.window8")}</Text>
     </Tile>
   );
 }
@@ -272,8 +324,9 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
   return (
     <Tile
       w={176}
-      label={t("session.paceTrend")}
-      right={delta ? (
+      label={t("w.home.end.paceLatest")}
+      foot={t("w.home.end.window8")}
+      footRight={delta ? (
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, delta.faster ? C.lime : C.red) }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </Text>
@@ -295,7 +348,6 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
           <Circle cx={end[0]} cy={end[1]} r={2.4} fill={C.blue} stroke={C.ink2} strokeWidth={1.4} />
         </Svg>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.end.window8")}</Text>
     </Tile>
   );
 }
@@ -320,7 +372,7 @@ function ZoneTile({ lane }: { lane: EnduranceLane }) {
   // rail-width tile apart the moment "Steady" becomes "Stałe"/"Gleichmäßig".
   // Stacked, it survives any language and the percentages align in a column.
   return (
-    <Tile w={152} label={t("w.home.end.zones")}>
+    <Tile w={152} label={t("w.home.end.zonesAll")}>
       <View style={{ flexDirection: "row", gap: 2, height: 8, marginTop: "auto" }}>
         {([[z.easy, C.lime], [z.moderate, C.amber], [z.hard, C.red]] as [number, string][]).map(
           ([pct, c]) => pct > 0 && <View key={c} style={{ flex: pct, backgroundColor: c, borderRadius: 2 }} />,
