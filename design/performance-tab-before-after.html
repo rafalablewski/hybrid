@@ -1,0 +1,950 @@
+<title>Performance tab — before &amp; after</title>
+<style>
+  /* ============================================================
+     TOKENS — the product's own two palettes, verbatim.
+     The page chrome AND the device render both read these, so the
+     mockup themes exactly as HYBRID does.
+     ============================================================ */
+  :root {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86; --ash2: #6d716a;
+    --accent: #c6f84f; --on-accent: #0c0d0c;
+    --lime-t: #c6f84f; --blue-t: #6cb6bd; --violet-t: #8ba0cc; --amber-t: #d0cd94; --red-t: #e58a5c;
+    --shadow: 0 1px 0 rgba(255,255,255,.03), 0 18px 40px -30px rgba(0,0,0,.95);
+    --scrim: rgba(255,255,255,.045);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+      --chalk: #2b2a26; --ash: #6f6b5e; --ash2: #837e6f;
+      --accent: #44584c; --on-accent: #f2f5ef;
+      --lime-t: #3c4f43; --blue-t: #4f5c3a; --violet-t: #4c5a78; --amber-t: #875427; --red-t: #a3442f;
+      --shadow: 0 1px 0 rgba(255,255,255,.7), 0 14px 32px -28px rgba(70,58,34,.55);
+      --scrim: rgba(43,42,38,.04);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86; --ash2: #6d716a;
+    --accent: #c6f84f; --on-accent: #0c0d0c;
+    --lime-t: #c6f84f; --blue-t: #6cb6bd; --violet-t: #8ba0cc; --amber-t: #d0cd94; --red-t: #e58a5c;
+    --shadow: 0 1px 0 rgba(255,255,255,.03), 0 18px 40px -30px rgba(0,0,0,.95);
+    --scrim: rgba(255,255,255,.045);
+  }
+  :root[data-theme="light"] {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e; --ash2: #837e6f;
+    --accent: #44584c; --on-accent: #f2f5ef;
+    --lime-t: #3c4f43; --blue-t: #4f5c3a; --violet-t: #4c5a78; --amber-t: #875427; --red-t: #a3442f;
+    --shadow: 0 1px 0 rgba(255,255,255,.7), 0 14px 32px -28px rgba(70,58,34,.55);
+    --scrim: rgba(43,42,38,.04);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ink); color: var(--chalk);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-size: 16.5px; line-height: 1.62; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 110px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ash);
+  }
+  .display { font-weight: 800; letter-spacing: -.035em; line-height: 1.03; text-wrap: balance; margin: 0; }
+  p { margin: 0 0 1em; }
+
+  /* ---------- masthead ---------- */
+  header.top { padding: 74px 0 0; }
+  header.top h1 { font-size: clamp(38px, 7.2vw, 66px); margin-top: 15px; }
+  header.top .sub { max-width: 58ch; margin-top: 18px; font-size: 18.5px; color: var(--ash); }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 18px 30px; margin-top: 38px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .facts .v { display: block; font-size: 14.5px; margin-top: 5px; line-height: 1.45; }
+
+  /* ---------- headline metrics ---------- */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 34px; }
+  .metrics div { background: var(--ink2); padding: 17px 16px; }
+  .metrics .n { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 25px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+  .metrics .n small { font-size: 14px; font-weight: 400; color: var(--ash); letter-spacing: 0; }
+
+  /* ---------- tab bar ---------- */
+  .tabbar {
+    position: sticky; top: 0; z-index: 20; margin: 62px 0 0;
+    background: var(--ink); border-bottom: 1px solid var(--line);
+    display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 10px 0 0;
+  }
+  .tabbar::-webkit-scrollbar { display: none; }
+  .tabbar button {
+    flex: none; background: none; border: 0; cursor: pointer; color: var(--ash);
+    font-family: ui-monospace, monospace; font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase;
+    padding: 11px 13px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tabbar button:hover { color: var(--chalk); }
+  .tabbar button[aria-selected="true"] { color: var(--chalk); border-bottom-color: var(--accent); }
+  .tabbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 4px; }
+
+  .panel { padding-top: 42px; }
+  .panel[hidden] { display: none; }
+  .panel > h2 { font-size: clamp(25px, 4vw, 34px); }
+  .panel > .lede { max-width: 64ch; color: var(--ash); font-size: 17.5px; margin-top: 12px; }
+
+  /* ---------- delta strip ---------- */
+  .delta { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 20px 26px; margin: 30px 0 6px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .delta .n { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 19px; font-weight: 700; margin-top: 5px; }
+  .down { color: var(--red-t); }
+  .up { color: var(--lime-t); }
+  .flat { color: var(--ash); }
+
+  /* ---------- the two panes ---------- */
+  .pair { display: flex; gap: 34px; margin-top: 34px; align-items: flex-start; flex-wrap: wrap; }
+  .pane { flex: 1 1 390px; min-width: 300px; max-width: 460px; }
+  .pane > .cap { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .pane > .cap b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  .tag { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .13em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor; }
+  .t-now { color: var(--red-t); }
+  .t-new { color: var(--lime-t); }
+
+  /* ============================================================
+     DEVICE — a 390pt screen at the app's own 16dp gutter.
+     ============================================================ */
+  .device {
+    width: 100%; max-width: 390px; border: 1px solid var(--line); border-radius: 40px;
+    background: var(--ink); box-shadow: var(--shadow); overflow: hidden; padding: 0 0 14px;
+  }
+  .device .status { display: flex; justify-content: space-between; align-items: center; padding: 13px 26px 6px; }
+  .device .status span { font-family: ui-monospace, monospace; font-size: 10.5px; color: var(--ash); letter-spacing: .04em; }
+  .device .screen { padding: 6px 16px 0; }
+  .device .homebar { width: 116px; height: 4px; border-radius: 2px; background: var(--line); margin: 16px auto 0; }
+  .device.tall .screen { max-height: 720px; overflow: hidden; position: relative; }
+  .fade { position: relative; }
+  .fade::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 74px; background: linear-gradient(to bottom, transparent, var(--ink)); pointer-events: none; }
+
+  /* ---------- app primitives (mirror aurora/kit) ---------- */
+  .a-card { background: var(--ink2); border: 1px solid var(--line); border-radius: 28px; box-shadow: var(--shadow); padding: 18px; margin-top: 14px; }
+  .a-card.alert { border-color: color-mix(in srgb, var(--red-t) 45%, var(--line)); background-image: linear-gradient(180deg, color-mix(in srgb, var(--red-t) 7%, transparent), transparent); }
+  .a-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
+  .a-title { font-weight: 800; font-size: 16.5px; letter-spacing: -.015em; }
+  .a-meta { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .a-hair { height: 1px; background: var(--line); margin: 14px 0; }
+  .a-body { font-size: 13.5px; line-height: 1.55; }
+  .a-ash { color: var(--ash); }
+  .a-eyebrow { font-family: ui-monospace, monospace; font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+  .a-h1 { font-weight: 800; font-size: 30px; letter-spacing: -.035em; line-height: 1.05; margin-top: 3px; }
+
+  .a-rail { display: flex; gap: 7px; overflow: hidden; margin: 11px -16px 0; padding: 0 16px; }
+  .a-pill { flex: none; display: inline-flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; font-family: ui-monospace, monospace; font-size: 10.5px; white-space: nowrap; }
+  .a-dot { width: 7px; height: 7px; border-radius: 5px; flex: none; }
+
+  .a-figrow { display: flex; align-items: center; gap: 13px; }
+  .a-big { font-weight: 800; font-size: 44px; line-height: 1; letter-spacing: -.03em; }
+  .a-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .a-cols.two { grid-template-columns: repeat(2, 1fr); }
+  .a-col { text-align: center; }
+  .a-col .v { font-weight: 800; font-size: 23px; letter-spacing: -.02em; }
+  .a-col .k { font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); margin-top: 5px; }
+
+  .a-stats { display: flex; gap: 18px; }
+  .a-stat .v { font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
+  .a-stat .k { font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+
+  .a-spark { display: flex; align-items: flex-end; gap: 2px; height: 24px; }
+  .a-spark i { flex: 1; border-radius: 2px; background: color-mix(in srgb, var(--amber-t) 40%, transparent); }
+  .a-spark i.on { background: var(--amber-t); }
+
+  .a-ring { width: 46px; height: 46px; flex: none; border-radius: 50%; display: grid; place-items: center; position: relative;
+    background: conic-gradient(var(--blue-t) 0 64%, var(--line) 64% 100%); }
+  .a-ring::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--ink2); }
+  .a-ring b { position: relative; font-size: 14px; font-weight: 800; }
+
+  .a-nudge { display: inline-flex; align-items: center; gap: 6px; margin-top: 9px; padding: 4px 10px; border-radius: 999px;
+    background: color-mix(in srgb, var(--amber-t) 12%, transparent); border: 1px solid color-mix(in srgb, var(--amber-t) 34%, transparent);
+    font-family: ui-monospace, monospace; font-size: 10.5px; font-weight: 600; color: var(--amber-t); }
+
+  .a-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+  .a-row:last-child { border-bottom: 0; }
+  .a-row .k { font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); flex: none; }
+  .a-row .v { margin-left: auto; font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--ash); text-align: right; }
+  .a-row .v.strong { color: var(--chalk); font-family: inherit; font-weight: 700; font-size: 13.5px; }
+
+  .a-seg { display: flex; background: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+  .a-seg span { flex: 1; text-align: center; font-family: ui-monospace, monospace; font-size: 10.5px; font-weight: 700; padding: 6px 2px; border-radius: 999px; color: var(--ash); }
+  .a-seg span.on { background: var(--chalk); color: var(--ink2); }
+
+  .a-bar { height: 6px; border-radius: 999px; background: var(--ink); border: 1px solid var(--line); overflow: hidden; }
+  .a-bar i { display: block; height: 100%; background: var(--violet-t); }
+
+  .a-axis { position: relative; height: 9px; border-radius: 5px; overflow: hidden; display: flex; margin-top: 15px; }
+  .a-axis i { display: block; height: 100%; }
+  .a-ticks { position: relative; height: 0; }
+  .a-tick { position: absolute; width: 2px; height: 15px; top: -12px; border-radius: 2px; background: color-mix(in srgb, var(--chalk) 46%, transparent); }
+  .a-tick.top { width: 3px; height: 21px; top: -15px; background: var(--red-t); box-shadow: 0 0 0 2px var(--ink2); }
+  .a-scale { display: flex; justify-content: space-between; margin-top: 13px; font-family: ui-monospace, monospace; font-size: 9px; color: var(--ash); }
+
+  .a-shape { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 16px; }
+  .a-shapecol { position: relative; height: 58px; border-radius: 6px; background: var(--ink); overflow: hidden; }
+  .a-shapecol i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 6px 6px 0 0; }
+  .a-shapecol u { position: absolute; left: 0; right: 0; height: 2px; background: var(--ink2); }
+  .a-shapelab { font-family: ui-monospace, monospace; font-size: 8.5px; letter-spacing: .08em; color: var(--ash); text-align: center; margin-top: 6px; }
+
+  .a-door { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+  .a-door:last-child { border-bottom: 0; }
+  .a-door .k { font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .a-door .v { margin-left: auto; font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--ash); }
+
+  .a-group { font-family: ui-monospace, monospace; font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); margin: 22px 0 0; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+
+  .a-ghost { border: 1px dashed var(--line); border-radius: 20px; padding: 13px 15px; margin-top: 14px; color: var(--ash); font-size: 12.5px; line-height: 1.5; }
+  .a-ghost b { color: var(--chalk); font-weight: 700; }
+
+  /* defect markers */
+  .mark {
+    display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px;
+    border-radius: 50%; background: var(--red-t); color: var(--ink);
+    font-family: ui-monospace, monospace; font-size: 9.5px; font-weight: 700; vertical-align: middle; margin-left: 5px;
+  }
+
+  .notes { margin-top: 16px; padding-left: 0; list-style: none; }
+  .notes li { display: flex; gap: 9px; font-size: 13.5px; color: var(--ash); line-height: 1.5; margin-bottom: 8px; }
+  .notes .mark { margin-left: 0; flex: none; margin-top: 3px; }
+
+  /* ---------- scroll map (overview) ---------- */
+  .maps { display: flex; gap: 40px; flex-wrap: wrap; margin-top: 34px; }
+  .mapcol { flex: 1 1 300px; min-width: 260px; }
+  .mapgrid { display: grid; grid-template-columns: 1fr 44px; gap: 3px 10px; align-items: center; margin-top: 16px; }
+  .mapgrid .nm { font-size: 12.5px; }
+  .mapgrid .px { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 10.5px; color: var(--ash); text-align: right; }
+  .mapbar { height: 100%; border-radius: 3px; }
+  .maprow { display: grid; grid-template-columns: 6px 1fr; gap: 9px; align-items: stretch; }
+  .maprow .stripe { border-radius: 3px; }
+  .s-keep { background: var(--accent); }
+  .s-invest { background: var(--accent); }
+  .s-moved { background: var(--amber-t); }
+  .s-gone { background: var(--red-t); }
+  .s-chrome { background: var(--ash2); }
+  .mapitem { padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .maplegend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 22px; font-size: 13px; color: var(--ash); }
+  .maplegend span { display: inline-flex; align-items: center; gap: 7px; }
+  .sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* ---------- prose ---------- */
+  .why { margin-top: 34px; max-width: 66ch; }
+  .why h3 { font-size: 18px; font-weight: 700; letter-spacing: -.015em; margin: 0 0 10px; }
+  .why p { font-size: 16px; }
+  .why ul { padding-left: 20px; margin: 0 0 1em; }
+  .why li { margin-bottom: 8px; font-size: 16px; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: .88em; background: var(--scrim); padding: 1px 5px; border-radius: 4px; }
+
+  footer { margin-top: 88px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--ash); font-size: 14px; max-width: 66ch; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  @media (max-width: 760px) { .pair { gap: 40px; } }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="label">HYBRID — design proposal</div>
+  <h1 class="display">The Performance tab, rebuilt</h1>
+  <p class="sub">Six surfaces instead of twenty. The same athlete, the same engines, the same week — laid out so the page answers the question it is named after. Before and after, section by section.</p>
+
+  <div class="facts">
+    <div><span class="label">Follows</span><span class="v">The element audit at <span class="mono">af7ce62</span> — 26 elements judged.</span></div>
+    <div><span class="label">Athlete shown</span><span class="v">Hybrid Base, week 4 of 12, event in 8 weeks. Identical data in both panes.</span></div>
+    <div><span class="label">Fidelity</span><span class="v">390pt screen at the app's 16dp gutter, drawn in the product's own tokens.</span></div>
+    <div><span class="label">Theme</span><span class="v">The mockup follows your theme, exactly as the app does — Aurora dark, Kyoto Hour light.</span></div>
+  </div>
+
+  <div class="metrics">
+    <div><div class="label">Scroll height</div><div class="n">6,226 <small>→ 1,510 px</small></div></div>
+    <div><div class="label">Card surfaces</div><div class="n">20 <small>→ 6</small></div></div>
+    <div><div class="label">Controls on the page</div><div class="n">~70 <small>→ 12</small></div></div>
+    <div><div class="label">The state block</div><div class="n up">300 <small>→ 430 px</small></div></div>
+  </div>
+</header>
+
+<div class="tabbar" role="tablist" aria-label="Sections">
+  <button role="tab" id="t-overview" aria-controls="p-overview" aria-selected="true">Overview</button>
+  <button role="tab" id="t-masthead" aria-controls="p-masthead" aria-selected="false">Masthead</button>
+  <button role="tab" id="t-state" aria-controls="p-state" aria-selected="false">State</button>
+  <button role="tab" id="t-tissue" aria-controls="p-tissue" aria-selected="false">Tissue</button>
+  <button role="tab" id="t-training" aria-controls="p-training" aria-selected="false">Training</button>
+  <button role="tab" id="t-season" aria-controls="p-season" aria-selected="false">Season</button>
+  <button role="tab" id="t-exits" aria-controls="p-exits" aria-selected="false">Exits</button>
+</div>
+
+<!-- ================= OVERVIEW ================= -->
+<div class="panel" role="tabpanel" id="p-overview" aria-labelledby="t-overview">
+  <h2 class="display">The whole scroll</h2>
+  <p class="lede">Every block on the tab, at its share of the height. Left is what ships today. Right is the proposal. Nothing in the right column is new work invented for a mockup — five of the six blocks already exist and are kept, moved or merged.</p>
+
+  <div class="maps">
+    <div class="mapcol">
+      <div class="cap" style="display:flex;align-items:baseline;gap:10px"><span class="tag t-now">Now</span><b style="font-size:15px">20 surfaces — 6,226 px</b></div>
+      <div style="margin-top:16px">
+        <div class="maprow mapitem"><span class="stripe s-chrome"></span><div class="mapgrid" style="margin:0"><span class="nm">Masthead + 4 chips</span><span class="px">130</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-chrome"></span><div class="mapgrid" style="margin:0"><span class="nm">Group marker — State</span><span class="px">44</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-invest"></span><div class="mapgrid" style="margin:0"><span class="nm">Performance State</span><span class="px">300</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-moved"></span><div class="mapgrid" style="margin:0"><span class="nm">14-day trajectory</span><span class="px">280</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-keep"></span><div class="mapgrid" style="margin:0"><span class="nm">Tissue</span><span class="px">260</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-chrome"></span><div class="mapgrid" style="margin:0"><span class="nm">Group marker — Training</span><span class="px">44</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-gone"></span><div class="mapgrid" style="margin:0"><span class="nm">Your week + PRs</span><span class="px">260</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-gone"></span><div class="mapgrid" style="margin:0"><span class="nm">Breakdown tabs</span><span class="px">220</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-keep"></span><div class="mapgrid" style="margin:0"><span class="nm">Volume hero</span><span class="px">380</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-moved"></span><div class="mapgrid" style="margin:0"><span class="nm">Volume — block ramp</span><span class="px">300</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-moved"></span><div class="mapgrid" style="margin:0"><span class="nm">Volume — 2 prescriptions</span><span class="px">320</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-moved"></span><div class="mapgrid" style="margin:0"><span class="nm">Volume — 7 muscle rails</span><span class="px">770</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-moved"></span><div class="mapgrid" style="margin:0"><span class="nm">Volume — provenance</span><span class="px">420</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-gone"></span><div class="mapgrid" style="margin:0"><span class="nm">Volume — band glossary</span><span class="px">70</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-moved"></span><div class="mapgrid" style="margin:0"><span class="nm">Trends — 2 measures</span><span class="px">270</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-moved"></span><div class="mapgrid" style="margin:0"><span class="nm">Trends — exercise table</span><span class="px">1600</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-chrome"></span><div class="mapgrid" style="margin:0"><span class="nm">Group marker — Season</span><span class="px">44</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-invest"></span><div class="mapgrid" style="margin:0"><span class="nm">Goal + Season widgets</span><span class="px">160</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-chrome"></span><div class="mapgrid" style="margin:0"><span class="nm">Group marker — Explore</span><span class="px">44</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-keep"></span><div class="mapgrid" style="margin:0"><span class="nm">Horizon — 4 doors</span><span class="px">220</span></div></div>
+      </div>
+    </div>
+
+    <div class="mapcol">
+      <div class="cap" style="display:flex;align-items:baseline;gap:10px"><span class="tag t-new">Proposed</span><b style="font-size:15px">6 surfaces — 1,510 px</b></div>
+      <div style="margin-top:16px">
+        <div class="maprow mapitem"><span class="stripe s-keep"></span><div class="mapgrid" style="margin:0"><span class="nm">Masthead + verdict + 2 chips</span><span class="px">150</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-invest"></span><div class="mapgrid" style="margin:0"><span class="nm">State — freshness, capability, pulse, readiness</span><span class="px">430</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-keep"></span><div class="mapgrid" style="margin:0"><span class="nm">Tissue</span><span class="px">250</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-keep"></span><div class="mapgrid" style="margin:0"><span class="nm">Volume hero + door</span><span class="px">320</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-invest"></span><div class="mapgrid" style="margin:0"><span class="nm">Season</span><span class="px">130</span></div></div>
+        <div class="maprow mapitem"><span class="stripe s-keep"></span><div class="mapgrid" style="margin:0"><span class="nm">Exits — 5 doors</span><span class="px">230</span></div></div>
+      </div>
+      <div class="a-ghost" style="margin-top:24px">
+        <b>Where the rest went.</b> Volume's six inner sections and the Trends sheet become their own destinations again, entered from the volume hero and the exit rows. The week card's PRs join Today's activity card, which already owns the week. The landmark and profile editors become a settings route. Nothing is deleted from the product — five things are deleted from <em>this scroll</em>.
+      </div>
+    </div>
+  </div>
+
+  <div class="maplegend">
+    <span><i class="sw s-keep"></i> kept as built</span>
+    <span><i class="sw s-invest"></i> kept and invested in</span>
+    <span><i class="sw s-moved"></i> moved to its own destination</span>
+    <span><i class="sw s-gone"></i> cut — duplicated elsewhere</span>
+    <span><i class="sw s-chrome"></i> chrome</span>
+  </div>
+
+  <div class="why">
+    <h3>The one-sentence argument</h3>
+    <p>Today the four blocks that answer <em>how am I doing right now</em> take 16% of the scroll and the two absorbed screens take 68%. After, the state block is the largest thing on the page — it grows by 130px while the page shrinks by 76% — because that is the block the tab is named after.</p>
+  </div>
+</div>
+
+<!-- ================= MASTHEAD ================= -->
+<div class="panel" role="tabpanel" id="p-masthead" aria-labelledby="t-masthead" hidden>
+  <h2 class="display">Masthead</h2>
+  <p class="lede">The tab is reached from a glyph-only segmented control, so the page has to name itself. What it must not do is describe itself.</p>
+
+  <div class="delta">
+    <div><div class="label">Height</div><div class="n flat">130 → 150 px</div></div>
+    <div><div class="label">Chips</div><div class="n down">4 → 2</div></div>
+    <div><div class="label">Facts stated twice</div><div class="n down">3 → 0</div></div>
+    <div><div class="label">Live sentences</div><div class="n up">0 → 1</div></div>
+  </div>
+
+  <div class="pair">
+    <div class="pane">
+      <div class="cap"><span class="tag t-now">Now</span><b>Masthead + chip rail</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-eyebrow">HYBRID BASE – WEEK 4 OF 12</div>
+          <div class="a-h1">Performance</div>
+          <div class="a-body a-ash" style="margin-top:4px">Your state, your risk, your season — one read.<span class="mark">1</span></div>
+          <div class="a-rail">
+            <span class="a-pill"><i class="a-dot" style="background:var(--accent)"></i><b>Base build</b> phase</span>
+            <span class="a-pill"><b>8 wk</b> event in</span>
+            <span class="a-pill">ACWR 1.18<span class="mark">2</span></span>
+            <span class="a-pill"><i class="a-dot" style="background:var(--amber-t)"></i>HPI <b>68</b> – moderate<span class="mark">3</span></span>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <ul class="notes">
+        <li><span class="mark">1</span><span>Promises "one read" at the top of a twenty-card scroll. The page below falsifies it before the first thumb-flick.</span></li>
+        <li><span class="mark">2</span><span>ACWR is printed again inside the Tissue card's whole-body grid, in context, where it belongs.</span></li>
+        <li><span class="mark">3</span><span>The HPI card carrying this number at 46pt sits roughly 90px below the pill — on the same screen.</span></li>
+      </ul>
+    </div>
+
+    <div class="pane">
+      <div class="cap"><span class="tag t-new">Proposed</span><b>Masthead + verdict</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-eyebrow">HYBRID BASE – WEEK 4 OF 12</div>
+          <div class="a-h1">Performance</div>
+          <div class="a-body" style="margin-top:6px">Fresh enough to train hard today. The left Achilles is the one thing to watch.</div>
+          <div class="a-rail">
+            <span class="a-pill"><i class="a-dot" style="background:var(--accent)"></i><b>Base build</b> phase</span>
+            <span class="a-pill"><b>8 wk</b> to Hyrox Berlin</span>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <div class="why" style="margin-top:20px">
+        <h3>What changed</h3>
+        <ul>
+          <li>The static subtitle becomes the page's <b>verdict</b> — one computed sentence, the same one the state card and the tissue card would each say alone. It is the only line on the page that is allowed to be a summary, because it is the only line above the things it summarises.</li>
+          <li>Two chips survive: the phase, and the event countdown — the one fact with no full statement anywhere else. The HPI and ACWR chips go; both were previews of a card within reach.</li>
+          <li>The event chip names the event. "8 wk" was a number without a noun.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= STATE ================= -->
+<div class="panel" role="tabpanel" id="p-state" aria-labelledby="t-state" hidden>
+  <h2 class="display">State</h2>
+  <p class="lede">The block the tab is named after, and the only one I would spend more space on. It absorbs the trajectory card, resolves the two figures that disagree, and gains the one thing missing from a screen called Performance — a measure of what the athlete can actually do.</p>
+
+  <div class="delta">
+    <div><div class="label">Height</div><div class="n up">580 → 430 px</div></div>
+    <div><div class="label">Cards</div><div class="n down">2 → 1</div></div>
+    <div><div class="label">Contradictions</div><div class="n down">2 → 0</div></div>
+    <div><div class="label">Capability signal</div><div class="n up">none → present</div></div>
+  </div>
+
+  <div class="pair">
+    <div class="pane">
+      <div class="cap"><span class="tag t-now">Now</span><b>Performance State + trajectory</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-group">State</div>
+          <div class="a-card">
+            <div class="a-head"><span class="a-title">Performance State</span></div>
+            <div class="a-figrow">
+              <span class="a-big" style="color:var(--amber-t)">68</span>
+              <div style="flex:1;min-width:0">
+                <div class="a-meta" style="text-transform:none;letter-spacing:.02em">HPI – moderate – limiter strength<span class="mark">1</span></div>
+                <div class="a-spark" style="margin-top:6px">
+                  <i style="height:46%"></i><i style="height:38%"></i><i style="height:52%"></i><i style="height:61%"></i>
+                  <i style="height:55%"></i><i style="height:43%"></i><i style="height:35%"></i><i style="height:52%"></i>
+                  <i style="height:70%"></i><i style="height:64%"></i><i style="height:55%"></i><i style="height:67%"></i>
+                  <i style="height:74%"></i><i class="on" style="height:88%"></i>
+                </div>
+              </div>
+            </div>
+            <div class="a-hair"></div>
+            <div class="a-cols">
+              <div class="a-col"><div class="v">61</div><div class="k">Strength</div></div>
+              <div class="a-col"><div class="v">78</div><div class="k">Endurance</div></div>
+              <div class="a-col"><div class="v">+4</div><div class="k">Recovery<span class="mark">2</span></div></div>
+            </div>
+            <div class="a-hair"></div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div class="a-ring"><b>64</b></div>
+              <div style="flex:1">
+                <div class="a-eyebrow">TODAY'S READINESS</div>
+                <div class="a-body" style="margin-top:5px">Readiness 64/100.</div>
+                <div class="a-body a-ash">Computed from your logged training: quads fatigue (41/100) is the main drag today.</div>
+                <div class="a-body a-ash">Your wearable nudged readiness +4 today — HRV is above baseline and sleep was solid.</div>
+                <span class="a-nudge">Flat — load held at 90%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="a-card">
+            <div class="a-head"><span class="a-title">14-day trajectory</span><span class="a-meta">HPI — Readiness</span></div>
+            <svg viewBox="0 0 318 104" width="100%" height="104" aria-label="Two flat lines over fourteen days, unlabelled">
+              <line x1="0" y1="88" x2="318" y2="88" stroke="var(--line)" stroke-width="1"/>
+              <line x1="0" y1="20" x2="318" y2="20" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="0" y1="54" x2="318" y2="54" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>
+              <polyline fill="none" stroke="var(--amber-t)" stroke-width="2.5" stroke-linejoin="round"
+                points="6,54 29,60 53,50 76,44 100,48 123,56 147,62 170,50 194,38 217,42 241,48 264,40 288,36 311,34"/>
+              <polyline fill="none" stroke="var(--blue-t)" stroke-width="2" stroke-dasharray="5 4" stroke-linejoin="round"
+                points="6,46 29,54 53,42 76,38 100,46 123,60 147,66 170,54 194,34 217,40 241,50 264,44 288,38 311,42"/>
+            </svg>
+            <div style="display:flex;justify-content:space-between" class="a-eyebrow"><span>-13d</span><span>TODAY<span class="mark">3</span></span></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <ul class="notes">
+        <li><span class="mark">1</span><span>Three unexplained terms in mono at caption size, with the one actionable word — the limiter — last and smallest.</span></li>
+        <li><span class="mark">2</span><span>Two 0–100 indices and a ±15 additive, set as three peer figures.</span></li>
+        <li><span class="mark">3</span><span>The chart's "today" and the sparkline's last bar are computed <em>without</em> the wearable; the 68 beside them is computed <em>with</em> it. Two todays, one card apart. The chart also carries no session marks, so a dip cannot be attributed.</span></li>
+      </ul>
+    </div>
+
+    <div class="pane">
+      <div class="cap"><span class="tag t-new">Proposed</span><b>One state card</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-card" style="margin-top:0">
+            <div class="a-head"><span class="a-title">Your state</span><span class="a-meta">Updated 20 min ago</span></div>
+
+            <div class="a-figrow">
+              <span class="a-big" style="color:var(--amber-t)">68</span>
+              <div style="flex:1;min-width:0">
+                <div class="a-eyebrow">FRESHNESS — MODERATE</div>
+                <div class="a-body a-ash" style="margin-top:3px">Wearable <span style="color:var(--lime-t)">+4</span> of that</div>
+              </div>
+            </div>
+            <div class="a-body" style="margin-top:11px"><b>Strength is what's limiting you.</b> <span class="a-ash">Quads are still carrying Tuesday's squats.</span></div>
+
+            <div class="a-hair"></div>
+            <div class="a-cols two">
+              <div class="a-col"><div class="v">61</div><div class="k">Strength fresh</div></div>
+              <div class="a-col"><div class="v">78</div><div class="k">Endurance fresh</div></div>
+            </div>
+
+            <div class="a-hair"></div>
+            <div style="display:flex;align-items:baseline;gap:9px">
+              <span class="a-eyebrow">CAPABILITY — 8 WEEKS</span>
+              <span style="margin-left:auto;font-family:ui-monospace,monospace;font-size:16px;font-weight:700;color:var(--lime-t)">+3.4%</span>
+            </div>
+            <div class="a-body a-ash" style="margin-top:5px">Back Squat e1RM 138 → 142.5 kg. 5K pace 4:41 → 4:32 /km.</div>
+
+            <div class="a-hair"></div>
+            <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:8px">
+              <span class="a-eyebrow">LAST 14 DAYS</span>
+              <span class="a-meta" style="margin-left:auto">40–80 SHOWN</span>
+            </div>
+            <svg viewBox="0 0 318 104" width="100%" height="104" aria-label="Freshness and readiness over fourteen days, with logged sessions marked">
+              <line x1="0" y1="88" x2="318" y2="88" stroke="var(--line)" stroke-width="1"/>
+              <polyline fill="none" stroke="var(--amber-t)" stroke-width="2.5" stroke-linejoin="round"
+                points="6,54 29,60 53,50 76,44 100,48 123,56 147,62 170,50 194,38 217,42 241,48 264,40 288,36 311,38"/>
+              <polyline fill="none" stroke="var(--blue-t)" stroke-width="2" stroke-dasharray="5 4" stroke-linejoin="round"
+                points="6,46 29,54 53,42 76,38 100,46 123,60 147,66 170,54 194,34 217,40 241,50 264,44 288,38 311,42"/>
+              <circle cx="311" cy="38" r="3.4" fill="var(--amber-t)"/>
+              <g fill="var(--ash)">
+                <rect x="5" y="92" width="2" height="8" rx="1"/><rect x="52" y="92" width="2" height="8" rx="1"/>
+                <rect x="75" y="92" width="2" height="8" rx="1"/><rect x="146" y="92" width="2" height="8" rx="1"/>
+                <rect x="193" y="92" width="2" height="8" rx="1"/><rect x="216" y="92" width="2" height="8" rx="1"/>
+                <rect x="287" y="92" width="2" height="8" rx="1"/><rect x="310" y="92" width="2" height="8" rx="1"/>
+              </g>
+            </svg>
+            <div class="a-meta" style="text-transform:none;letter-spacing:.02em;margin-top:2px">Freshness — Readiness (dashed). Each mark below is a logged session.</div>
+
+            <div class="a-hair"></div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div class="a-ring"><b>64</b></div>
+              <div style="flex:1">
+                <div class="a-eyebrow">TODAY'S READINESS</div>
+                <div class="a-body" style="margin-top:5px">Readiness 64/100.</div>
+                <div class="a-body a-ash">Computed from your logged training: quads fatigue (41/100) is the main drag today.</div>
+                <div class="a-body a-ash">Your wearable nudged readiness +4 today — HRV is above baseline and sleep was solid.</div>
+                <span class="a-nudge">Flat — load held at 90%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+
+      <div class="why" style="margin-top:20px">
+        <h3>What changed, and why</h3>
+        <ul>
+          <li><b>The number is named for what it measures.</b> "HPI" is <code>100 − fatigue</code>: it rises on a deload and rises further on a layoff. Calling it <b>Freshness</b> costs nothing and stops the page telling a resting athlete they are peaking. The band words follow it.</li>
+          <li><b>Capability is the missing half.</b> One row — an eight-week trend of e1RM and pace, both already computed elsewhere in the app — is what makes the word <em>Performance</em> true. Freshness says whether you can train today; capability says whether any of it is working. A performance screen needs both, and today it has only the first.</li>
+          <li><b>Recovery stops being a third column.</b> It is a ±15 adjustment, so it rides the headline as "wearable +4" instead of impersonating a peer index.</li>
+          <li><b>The limiter is a sentence.</b> The one actionable word on the card gets the display face and plain language, not the tail of a mono caption.</li>
+          <li><b>The trajectory moves in and gets marked up.</b> One card, one computation feeding both the figure and the line — so the last point and the big number are the same number. Session marks under the baseline make a dip attributable, which is what a trend chart is for.</li>
+          <li><b>Readiness is untouched.</b> The ring, the computed "why" lines and the check-in nudge are the best-built things on the page. They ship exactly as they are.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TISSUE ================= -->
+<div class="panel" role="tabpanel" id="p-tissue" aria-labelledby="t-tissue" hidden>
+  <h2 class="display">Tissue</h2>
+  <p class="lede">The best-argued card in the product: two cards merged into one whose height tracks the severity of what it has to say. Two small things leave it, and nothing else is touched.</p>
+
+  <div class="delta">
+    <div><div class="label">Height, calm</div><div class="n flat">260 → 250 px</div></div>
+    <div><div class="label">Structure</div><div class="n flat">unchanged</div></div>
+    <div><div class="label">Team-facing text</div><div class="n down">1 → 0</div></div>
+    <div><div class="label">Protocol reachable from Today</div><div class="n up">no → yes</div></div>
+  </div>
+
+  <div class="pair">
+    <div class="pane">
+      <div class="cap"><span class="tag t-now">Now</span><b>Tissue, one flag</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-card alert">
+            <div class="a-head"><span class="a-title" style="color:var(--red-t)">Tissue</span><span class="a-meta" style="color:var(--red-t)">1/7 FLAGGED</span></div>
+            <div style="font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.3">Left Achilles is carrying more than it has been trained for.</div>
+            <div class="a-axis">
+              <i style="width:30%;background:color-mix(in srgb,var(--lime-t) 40%,transparent)"></i>
+              <i style="width:20%;background:color-mix(in srgb,var(--amber-t) 55%,transparent)"></i>
+              <i style="width:20%;background:color-mix(in srgb,var(--red-t) 52%,transparent)"></i>
+              <i style="width:30%;background:color-mix(in srgb,var(--red-t) 90%,transparent)"></i>
+            </div>
+            <div class="a-ticks">
+              <span class="a-tick" style="left:12%"></span><span class="a-tick" style="left:19%"></span>
+              <span class="a-tick" style="left:24%"></span><span class="a-tick" style="left:31%"></span>
+              <span class="a-tick" style="left:38%"></span><span class="a-tick" style="left:44%"></span>
+              <span class="a-tick top" style="left:54%"></span>
+            </div>
+            <div class="a-scale"><span>0</span><span>30 MOD</span><span>50 FLAG</span><span>70 HIGH</span><span>100</span></div>
+
+            <div class="a-hair"></div>
+            <div class="a-eyebrow">PROTOCOL</div>
+            <div class="a-body" style="margin-top:6px"><b>Left Achilles — return to play</b></div>
+            <div class="a-body a-ash">Phase 2 of 4. Isometric holds 5×45 s, calf raises 4×12. Day 9 of 21.<span class="mark">1</span></div>
+
+            <div class="a-hair"></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span class="a-eyebrow" style="color:var(--red-t)">OPEN PROTOCOL</span>
+            </div>
+            <div class="a-meta" style="text-align:right;margin-top:8px">MODEL V2.3<span class="mark">2</span></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <ul class="notes">
+        <li><span class="mark">1</span><span>An injured athlete's protocol is a <em>daily</em> object with steps and dates. Today it lives only inside an analytics tab, several screens from where they decide what to do this morning.</span></li>
+        <li><span class="mark">2</span><span>Model metadata on the card face. Nobody outside the team can act on it, and it lends the numbers an air of precision they do not have.</span></li>
+      </ul>
+    </div>
+
+    <div class="pane">
+      <div class="cap"><span class="tag t-new">Proposed</span><b>Tissue, unchanged but for two lines</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-card alert">
+            <div class="a-head"><span class="a-title" style="color:var(--red-t)">Tissue</span><span class="a-meta" style="color:var(--red-t)">1/7 FLAGGED</span></div>
+            <div style="font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.3">Left Achilles is carrying more than it has been trained for.</div>
+            <div class="a-axis">
+              <i style="width:30%;background:color-mix(in srgb,var(--lime-t) 40%,transparent)"></i>
+              <i style="width:20%;background:color-mix(in srgb,var(--amber-t) 55%,transparent)"></i>
+              <i style="width:20%;background:color-mix(in srgb,var(--red-t) 52%,transparent)"></i>
+              <i style="width:30%;background:color-mix(in srgb,var(--red-t) 90%,transparent)"></i>
+            </div>
+            <div class="a-ticks">
+              <span class="a-tick" style="left:12%"></span><span class="a-tick" style="left:19%"></span>
+              <span class="a-tick" style="left:24%"></span><span class="a-tick" style="left:31%"></span>
+              <span class="a-tick" style="left:38%"></span><span class="a-tick" style="left:44%"></span>
+              <span class="a-tick top" style="left:54%"></span>
+            </div>
+            <div class="a-scale"><span>0</span><span>30 MOD</span><span>50 FLAG</span><span>70 HIGH</span><span>100</span></div>
+
+            <div class="a-hair"></div>
+            <div class="a-row" style="padding-top:0">
+              <span class="k" style="color:var(--red-t)">PROTOCOL RUNNING</span>
+              <span class="v strong">Day 9 of 21 →</span>
+            </div>
+            <div class="a-body a-ash" style="margin-top:2px">Today's steps are on your Today screen.</div>
+
+            <div class="a-hair"></div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span class="a-eyebrow">ALL SEVEN TISSUES ▾</span>
+              <span class="a-eyebrow" style="color:var(--red-t)">LOG AN INJURY</span>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <div class="why" style="margin-top:20px">
+        <h3>What changed</h3>
+        <ul>
+          <li>The protocol becomes a <b>status line with a door</b>. The protocol itself moves to Today's Recover cluster, where an athlete meets it on the morning they have to do it. The risk card keeps the link, so the two stay one object.</li>
+          <li>The model version moves inside the "how is this calculated" disclosure, where a curious athlete is already asking the question it answers.</li>
+          <li>Everything else — the axis, the seven ticks, the flag line, the exception-driven height, the refusal to state an all-clear without data — ships as built. This card is the template the rest of the page was measured against.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TRAINING ================= -->
+<div class="panel" role="tabpanel" id="p-training" aria-labelledby="t-training" hidden>
+  <h2 class="display">Training</h2>
+  <p class="lede">The heaviest section by an order of magnitude, and the one where almost nothing is wrong with the work itself. Four thousand pixels become one block and a door.</p>
+
+  <div class="delta">
+    <div><div class="label">Height</div><div class="n up">4,700 → 320 px</div></div>
+    <div><div class="label">Cards</div><div class="n down">11 → 1</div></div>
+    <div><div class="label">Controls</div><div class="n down">~58 → 1</div></div>
+    <div><div class="label">Statements of weekly sets</div><div class="n down">3 → 1</div></div>
+  </div>
+
+  <div class="pair">
+    <div class="pane">
+      <div class="cap"><span class="tag t-now">Now</span><b>Week, breakdown, volume, trends</b></div>
+      <div class="device tall">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen fade">
+          <div class="a-group">Training</div>
+
+          <div class="a-card">
+            <div class="a-head"><span class="a-title">Your week</span><span class="a-meta" style="background:var(--accent);color:var(--on-accent);border-radius:999px;padding:3px 10px">2 NEW PRS</span></div>
+            <div class="a-stats">
+              <div class="a-stat"><div class="v">4</div><div class="k">Sessions<span class="mark">1</span></div></div>
+              <div class="a-stat"><div class="v">18,412</div><div class="k">Volume kg</div></div>
+              <div class="a-stat"><div class="v">63</div><div class="k">Sets</div></div>
+            </div>
+            <div style="margin-top:12px">
+              <div class="a-row" style="font-family:ui-monospace,monospace;font-size:11.5px"><span>Back Squat</span><span class="v" style="color:var(--lime-t);font-weight:700">142.5 kg – +2.5</span></div>
+              <div class="a-row" style="font-family:ui-monospace,monospace;font-size:11.5px"><span>Weighted Pull-up</span><span class="v" style="color:var(--lime-t);font-weight:700">32.5 kg – +2.5</span></div>
+            </div>
+          </div>
+
+          <div class="a-card">
+            <div class="a-head"><span class="a-title">Breakdown</span></div>
+            <div class="a-seg"><span class="on">STRENGTH</span><span>ENDURANCE</span><span>SPORT</span><span>VELOCITY</span></div>
+            <div class="a-stats" style="margin-top:14px">
+              <div class="a-stat"><div class="v">61</div><div class="k">Str index<span class="mark">2</span></div></div>
+              <div class="a-stat"><div class="v">9</div><div class="k">Lifts</div></div>
+              <div class="a-stat"><div class="v">Quads</div><div class="k">Top muscle</div></div>
+            </div>
+          </div>
+
+          <div class="a-card">
+            <div style="font-weight:900;font-size:22px;letter-spacing:-.02em">Volume</div>
+            <div class="a-body a-ash">Weekly working sets against your own landmarks.</div>
+            <div class="a-figrow" style="margin-top:12px;align-items:baseline"><span class="a-big">5</span><span class="a-meta" style="font-size:15px">/7</span></div>
+            <div class="a-shape">
+              <div><div class="a-shapecol"><i style="height:62%;background:var(--accent)"></i><u style="bottom:82%"></u></div><div class="a-shapelab">QUA</div></div>
+              <div><div class="a-shapecol"><i style="height:48%;background:var(--accent)"></i><u style="bottom:80%"></u></div><div class="a-shapelab">GLU</div></div>
+              <div><div class="a-shapecol"><i style="height:88%;background:var(--red-t)"></i><u style="bottom:78%"></u></div><div class="a-shapelab">POS</div></div>
+              <div><div class="a-shapecol"><i style="height:57%;background:var(--accent)"></i><u style="bottom:84%"></u></div><div class="a-shapelab">BAC</div></div>
+              <div><div class="a-shapecol"><i style="height:26%;background:var(--amber-t)"></i><u style="bottom:80%"></u></div><div class="a-shapelab">CHE</div></div>
+              <div><div class="a-shapecol"><i style="height:55%;background:var(--accent)"></i><u style="bottom:82%"></u></div><div class="a-shapelab">SHO</div></div>
+              <div><div class="a-shapecol"><i style="height:52%;background:var(--accent)"></i><u style="bottom:86%"></u></div><div class="a-shapelab">TRI</div></div>
+            </div>
+            <div class="a-body" style="margin-top:12px">1 over, 1 under.</div>
+          </div>
+
+          <div class="a-ghost">…then <b>This block</b> (ramp + 4 editors), <b>Ease off</b>, <b>Add volume</b>, <b>By muscle</b> (7 expandable rails), <b>Whose numbers are these</b> (ladder, meter, level, 7 factors, replay, profile form) and <b>What the bands mean</b><span class="mark">3</span> — then the whole <b>Trends</b> sheet and an uncapped exercise table<span class="mark">4</span>. About 4,100 more pixels.</div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <ul class="notes">
+        <li><span class="mark">1</span><span>Rolling seven days. The Today tab's "This week" is Monday to Sunday and says 3. Same hub, one tap apart.</span></li>
+        <li><span class="mark">2</span><span>Already a column on the state card. The other three tabs duplicate the Horizon doors further down this same page.</span></li>
+        <li><span class="mark">3</span><span>Roughly 58 controls live in here once the edit toggle is on — a settings screen inside a read surface, where a mistyped field silently rewrites every verdict above it.</span></li>
+        <li><span class="mark">4</span><span>Every exercise ever logged, unbounded and unvirtualised, terminating a hub tab.</span></li>
+      </ul>
+    </div>
+
+    <div class="pane">
+      <div class="cap"><span class="tag t-new">Proposed</span><b>One volume block</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-card" style="margin-top:0">
+            <div class="a-head"><span class="a-title">This week's volume</span><span class="a-meta">LAST 7 DAYS</span></div>
+            <div class="a-figrow" style="align-items:baseline">
+              <span class="a-big">5</span><span class="a-meta" style="font-size:15px">/7 in range</span>
+            </div>
+            <div class="a-shape">
+              <div><div class="a-shapecol"><i style="height:62%;background:var(--accent)"></i><u style="bottom:82%"></u></div><div class="a-shapelab">QUA</div></div>
+              <div><div class="a-shapecol"><i style="height:48%;background:var(--accent)"></i><u style="bottom:80%"></u></div><div class="a-shapelab">GLU</div></div>
+              <div><div class="a-shapecol"><i style="height:88%;background:var(--red-t)"></i><u style="bottom:78%"></u></div><div class="a-shapelab">POS</div></div>
+              <div><div class="a-shapecol"><i style="height:57%;background:var(--accent)"></i><u style="bottom:84%"></u></div><div class="a-shapelab">BAC</div></div>
+              <div><div class="a-shapecol"><i style="height:26%;background:var(--amber-t)"></i><u style="bottom:80%"></u></div><div class="a-shapelab">CHE</div></div>
+              <div><div class="a-shapecol"><i style="height:55%;background:var(--accent)"></i><u style="bottom:82%"></u></div><div class="a-shapelab">SHO</div></div>
+              <div><div class="a-shapecol"><i style="height:52%;background:var(--accent)"></i><u style="bottom:86%"></u></div><div class="a-shapelab">TRI</div></div>
+            </div>
+            <div class="a-body" style="margin-top:13px"><b>Posterior chain is over the ceiling</b> <span class="a-ash">by 4 sets. Chest is 3 short of the floor.</span></div>
+            <div class="a-hair"></div>
+            <div class="a-row" style="padding:0">
+              <span class="k">Landmarks, block and history</span>
+              <span class="v strong">Volume →</span>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+
+      <div class="why" style="margin-top:20px">
+        <h3>What changed, and where it went</h3>
+        <ul>
+          <li><b>The hero stays; the screen goes back to being a screen.</b> Seven columns, one figure, one verdict line and a door. The block ramp, the prescriptions, the seven muscle rails and the provenance ladder are excellent work — they are a programming tool with a chart grammar of their own, and they belong behind that door, entered on purpose.</li>
+          <li><b>The verdict line now names names.</b> "1 over, 1 under" becomes the two muscles and the two numbers. The shape above it already told you <em>that</em> something was out of range; the sentence should tell you <em>what</em>.</li>
+          <li><b>"Your week" is cut.</b> Today's activity card already owns the week — with real calendar weeks, a date filter and expandable columns. The two PR rows move there, where they belong to the week they happened in. That also retires the last thing keeping the demoted Statistics screen reachable.</li>
+          <li><b>"Breakdown" is cut.</b> Three of its four tabs duplicate the exit rows verbatim. Its one unique line — the top driver — moved up into the state card, beside the limiter it explains.</li>
+          <li><b>Trends becomes a destination</b>, reached from the exit rows, with a capped default and a virtualised table.</li>
+          <li><b>The editors become a settings route</b> where an athlete can see what their edit did to the numbers.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SEASON ================= -->
+<div class="panel" role="tabpanel" id="p-season" aria-labelledby="t-season" hidden>
+  <h2 class="display">Season</h2>
+  <p class="lede">Two widgets that state the same fact three ways, and one control that behaves differently on each client.</p>
+
+  <div class="delta">
+    <div><div class="label">Height</div><div class="n up">160 → 130 px</div></div>
+    <div><div class="label">Cards</div><div class="n down">2 → 1</div></div>
+    <div><div class="label">"Week 4 of 12" printed</div><div class="n down">3× → 1×</div></div>
+    <div><div class="label">Web/mobile parity</div><div class="n up">broken → matched</div></div>
+  </div>
+
+  <div class="pair">
+    <div class="pane">
+      <div class="cap"><span class="tag t-now">Now</span><b>Goal + Season duo</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-group">Season</div>
+          <div style="display:flex;gap:11px">
+            <div class="a-card" style="flex:1">
+              <div class="a-head"><span class="a-title" style="font-size:14px">Goal</span></div>
+              <div style="font-weight:800;font-size:15px">Hybrid Base</div>
+              <div class="a-meta" style="color:var(--violet-t);text-transform:none;letter-spacing:.02em;margin-top:5px">Base build – week 4/12<span class="mark">1</span></div>
+            </div>
+            <div class="a-card" style="flex:1">
+              <div class="a-head"><span class="a-title" style="font-size:14px">Season</span><span class="a-meta">33%<span class="mark">2</span></span></div>
+              <div class="a-bar" style="margin:2px 0 11px"><i style="width:33%"></i></div>
+              <div class="a-meta" style="color:var(--lime-t);text-transform:none;letter-spacing:.02em">Periodize →</div>
+              <div class="a-meta" style="color:var(--lime-t);text-transform:none;letter-spacing:.02em;margin-top:7px">Open setup<span class="mark">3</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <ul class="notes">
+        <li><span class="mark">1</span><span>Third printing of week 4 of 12 — the masthead caption and the phase chip already said it, above the fold.</span></li>
+        <li><span class="mark">2</span><span>The percentage is the same fraction again, in a fourth form, directly above a bar that already draws it.</span></li>
+        <li><span class="mark">3</span><span>On web this expands the whole enrolment flow inline, mid-scroll, with the old season's analytics still rendered beneath it. On mobile it pushes a route. Two clients, two answers, on the control that rewrites the athlete's year.</span></li>
+      </ul>
+    </div>
+
+    <div class="pane">
+      <div class="cap"><span class="tag t-new">Proposed</span><b>One season block</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-card" style="margin-top:0">
+            <div class="a-head"><span class="a-title">Hybrid Base</span><span class="a-meta">BASE BUILD</span></div>
+            <div class="a-bar" style="margin:2px 0 9px"><i style="width:33%"></i></div>
+            <div class="a-body a-ash">Week 4 of 12. Peak block starts in 3 weeks.</div>
+            <div class="a-hair"></div>
+            <div style="display:flex;justify-content:space-between">
+              <span class="a-eyebrow" style="color:var(--lime-t)">PERIODIZE →</span>
+              <span class="a-eyebrow" style="color:var(--lime-t)">CHANGE SEASON →</span>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <div class="why" style="margin-top:20px">
+        <h3>What changed</h3>
+        <ul>
+          <li><b>One card, one statement of where you are.</b> The bar draws the fraction; the line names the week once and adds the only thing neither was saying — <em>what happens next</em>.</li>
+          <li><b>"Open setup" becomes "Change season", and it routes</b> on both clients. Enrolment is a destination, not a disclosure that unfolds under an athlete mid-scroll.</li>
+          <li>The careful enrolment-state handling underneath — holding the heading until enrolment is known, so nobody is briefly told to set up a season they already have — is kept exactly.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EXITS ================= -->
+<div class="panel" role="tabpanel" id="p-exits" aria-labelledby="t-exits" hidden>
+  <h2 class="display">Exits</h2>
+  <p class="lede">The right pattern already — a door whose value tells you whether it is worth opening. It now carries the two screens the page handed back, and every row earns its value.</p>
+
+  <div class="delta">
+    <div><div class="label">Height</div><div class="n flat">220 → 230 px</div></div>
+    <div><div class="label">Doors</div><div class="n up">4 → 5</div></div>
+    <div><div class="label">Doors with a live value</div><div class="n up">2 → 5</div></div>
+    <div><div class="label">Group markers on the page</div><div class="n down">4 → 0</div></div>
+  </div>
+
+  <div class="pair">
+    <div class="pane">
+      <div class="cap"><span class="tag t-now">Now</span><b>Horizon</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-group">Explore<span class="mark">1</span></div>
+          <div class="a-card">
+            <div class="a-head"><span class="a-title">Horizon</span></div>
+            <div class="a-door"><span class="k">SPORT S&amp;C</span><span class="v strong">Hyrox – Intermediate →</span></div>
+            <div class="a-door"><span class="k">VELOCITY</span><span class="v">Bar-speed &amp; quality →<span class="mark">2</span></span></div>
+            <div class="a-door"><span class="k">ENDURANCE</span><span class="v">12 – 84 km – 512 min →<span class="mark">3</span></span></div>
+            <div class="a-door"><span class="k">AI COACH</span><span class="v">Ask about today →<span class="mark">2</span></span></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <ul class="notes">
+        <li><span class="mark">1</span><span>One of four group markers dividing twenty cards. Two of the four clusters contain a single block, so the marker is a heading for a heading.</span></li>
+        <li><span class="mark">2</span><span>Static strings where the pattern promises a value. Neither row can be glanced.</span></li>
+        <li><span class="mark">3</span><span>The same three totals the Breakdown card's endurance tab prints, from the same call, on the same page.</span></li>
+      </ul>
+    </div>
+
+    <div class="pane">
+      <div class="cap"><span class="tag t-new">Proposed</span><b>Five doors, five values</b></div>
+      <div class="device">
+        <div class="status"><span>9:41</span><span>HYBRID</span></div>
+        <div class="screen">
+          <div class="a-card" style="margin-top:0">
+            <div class="a-head"><span class="a-title">Go deeper</span></div>
+            <div class="a-door"><span class="k">TRENDS</span><span class="v strong">63 sets, 18.4 t this week →</span></div>
+            <div class="a-door"><span class="k">ENDURANCE</span><span class="v strong">12 efforts, 84 km, 8:32 h →</span></div>
+            <div class="a-door"><span class="k">VELOCITY</span><span class="v strong">Back Squat e1RM 142.5, R² 0.94 →</span></div>
+            <div class="a-door"><span class="k">SPORT S&amp;C</span><span class="v strong">Hyrox – Intermediate →</span></div>
+            <div class="a-door"><span class="k">ASK THE COACH</span><span class="v strong">Why did my push volume drop? →</span></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <div class="why" style="margin-top:20px">
+        <h3>What changed</h3>
+        <ul>
+          <li><b>Trends joins the rail</b> as a door with the week's two figures on it — which is exactly the information the whole Trends sheet led with, at a fiftieth of the height.</li>
+          <li><b>Every row carries a live value.</b> Velocity shows the profile it would open with. The coach row shows the question it would ask <em>now</em>, generated from the same data the page is already holding — a door that demonstrates instead of advertising.</li>
+          <li><b>The endurance row is the only endurance statement on the page</b>, since the Breakdown card that duplicated it is gone.</li>
+          <li><b>No group markers.</b> Six blocks in a deliberate order do not need signposting. If they did, the cuts were not deep enough.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="why" style="margin-top:52px;max-width:70ch">
+    <h3>What this is not</h3>
+    <p>It is not a smaller version of the same page. Four things were <em>added</em>: a computed verdict in the masthead, a capability trend in the state card, session marks on the trajectory, and a real value on every exit. The page gets shorter because eleven cards were saying what another card had already said, or saying something that belongs on a screen of its own — not because analysis was traded away for whitespace.</p>
+    <p>The two corrections that matter most are invisible in a mockup and should ship first regardless of the layout: one computation behind the headline figure and its own chart, and one definition of "this week" across the hub.</p>
+  </div>
+</div>
+
+<footer>
+  <p>Mockups drawn in HYBRID's own tokens at 390pt with the app's 16dp gutter — indicative of layout, hierarchy and copy, not pixel-exact renders of shipped components. Data is one consistent fictional athlete, identical across every before/after pair, so the comparison is about form. Heights are estimates from layout constants; the ratios are the argument. Follows the element audit at <span class="mono">af7ce62</span>.</p>
+</footer>
+
+</div>
+
+<script>
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabbar button'));
+    function select(btn) {
+      tabs.forEach(function (t) {
+        var on = t === btn;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+      });
+      btn.focus();
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { select(t); });
+      t.addEventListener('keydown', function (e) {
+        var next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : -1;
+        if (next < 0 || next >= tabs.length) return;
+        e.preventDefault();
+        select(tabs[next]);
+      });
+    });
+  })();
+</script>
