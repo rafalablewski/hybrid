@@ -278,6 +278,17 @@ export const web_home = {
     "w.home.end.orderTrained": "Most trained",
     "w.home.end.orderRecent": "Most recent",
     "w.home.end.orderLongest": "Longest",
+    // A lane tile's LABEL names the metric and the scope of the FIGURE it
+    // prints; its footer names the window of the CHART. Scope is stated once,
+    // in a fixed slot, because the tiles of one rail genuinely differ —
+    // whole-history totals sit beside this week's volume and the latest week's
+    // pace, and the block's head cannot be true of all three at once. The old
+    // labels named the chart ("Pace trend") or repeated the footer ("Volume –
+    // 8 weeks" over "8 weeks"), and the figure's own scope went unsaid.
+    "w.home.end.scopeAll": "All time",
+    "w.home.end.volumeWeek": "Volume – this week",
+    "w.home.end.paceLatest": "Pace – latest week",
+    "w.home.end.zonesAll": "Zones – all time",
     "w.home.end.zones": "Pace zones",
     "w.home.end.last": "Last effort",
     "w.home.end.allSports": "All sports",
@@ -1170,6 +1181,10 @@ export const web_home = {
     "w.home.end.orderTrained": "Najczęstsze",
     "w.home.end.orderRecent": "Najnowsze",
     "w.home.end.orderLongest": "Najdłuższe",
+    "w.home.end.scopeAll": "Cała historia",
+    "w.home.end.volumeWeek": "Objętość – ten tydzień",
+    "w.home.end.paceLatest": "Tempo – ostatni tydzień",
+    "w.home.end.zonesAll": "Strefy – cała historia",
     "w.home.end.zones": "Strefy tempa",
     "w.home.end.last": "Ostatni wysiłek",
     "w.home.end.allSports": "Wszystkie sporty",
@@ -2035,6 +2050,10 @@ export const web_home = {
     "w.home.end.orderTrained": "Meist trainiert",
     "w.home.end.orderRecent": "Zuletzt",
     "w.home.end.orderLongest": "Längste",
+    "w.home.end.scopeAll": "Gesamt",
+    "w.home.end.volumeWeek": "Umfang – diese Woche",
+    "w.home.end.paceLatest": "Tempo – letzte Woche",
+    "w.home.end.zonesAll": "Zonen – gesamt",
     "w.home.end.zones": "Tempozonen",
     "w.home.end.last": "Letzte Einheit",
     "w.home.end.allSports": "Alle Sportarten",

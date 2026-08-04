@@ -55,10 +55,24 @@ const kicker: CSSProperties = {
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
 
 /** One rail tile — the cluster's shared skeleton (name row → figure → chart →
- *  footer). Fixed width, shared minimum height so a rail's cards sit on one
- *  baseline however differently they're filled. `right` rides the name row
- *  (a delta, a qualifier) — the same slot the exercises tiles use. */
-function Tile({ w, label, right, children }: { w: number; label: string; right?: ReactNode; children: ReactNode }) {
+ *  footer), and the place the SCOPE RULE is enforced rather than merely
+ *  documented:
+ *
+ *    label  → the metric AND the scope of the FIGURE this tile prints
+ *    foot   → the window of the CHART, with `footRight` for a delta
+ *
+ *  Both slots are the Tile's own, so a caller cannot put the window in the
+ *  label (as VolumeTile did — "Volume – 8 weeks" over a footer reading
+ *  "8 weeks", twice in one 178px tile, while the figure between them was THIS
+ *  WEEK'S km and said so nowhere). The old free `right` slot on the name row is
+ *  gone with it; its only consumer was the pace delta, which is a fact about
+ *  the chart's window and belongs beside it.
+ *
+ *  Fixed width, shared minimum height so a rail's cards sit on one baseline
+ *  however differently they're filled. Mirrors mobile. */
+function Tile({ w, label, foot, footRight, children }: {
+  w: number; label: string; foot?: string; footRight?: ReactNode; children: ReactNode;
+}) {
   return (
     <div
       style={{
@@ -68,11 +82,14 @@ function Tile({ w, label, right, children }: { w: number; label: string; right?:
         boxShadow: "var(--shadow-card)", padding: "12px 12px 12px",
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <span style={kicker}>{label}</span>
-        {right}
-      </div>
+      <span style={{ ...kicker, overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
       {children}
+      {(foot || footRight) && (
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+          <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{foot ?? ""}</span>
+          {footRight}
+        </div>
+      )}
     </div>
   );
 }
@@ -85,9 +102,13 @@ function SummaryTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => strin
     </div>
   );
   return (
-    <Tile w={126} label={t("endurance.efforts")}>
+    <Tile w={126} label={t("w.home.end.scopeAll")}>
+      {/* The figure carries "efforts" as its UNIT — the same shape the Other
+          sports tile uses — because the label is now saying the scope. The
+          header above the rail used to print this same count. */}
       <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
         {lane.efforts}
+        <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>{t("endurance.efforts").toLowerCase()}</span>
       </div>
       <div style={{ display: "grid", gap: 3, marginTop: "auto" }}>
         {row("KM", String(lane.distanceKm))}
@@ -102,7 +123,7 @@ function VolumeTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string
   // the shared HistoryStrip as the chart → the window as the footer. The old
   // 46px one-off bar block is retired for the cluster's one chart language.
   return (
-    <Tile w={178} label={t("w.home.exw.volume")}>
+    <Tile w={178} label={t("w.home.end.volumeWeek")} foot={t("w.home.end.window8")}>
       <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
         {lane.thisWeek.km}
         <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>km</span>
@@ -110,7 +131,6 @@ function VolumeTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string
       <div style={{ marginTop: "auto" }}>
         <HistoryStrip bars={volumeBars(lane.weeks)} color={C("blue")} />
       </div>
-      <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{t("w.home.end.window8")}</span>
     </Tile>
   );
 }
@@ -131,8 +151,9 @@ function TrendTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string 
   return (
     <Tile
       w={176}
-      label={t("session.paceTrend")}
-      right={delta ? (
+      label={t("w.home.end.paceLatest")}
+      foot={t("w.home.end.window8")}
+      footRight={delta ? (
         <span style={{ ...num, fontSize: 10, whiteSpace: "nowrap", color: delta.faster ? "var(--lime-text)" : "var(--red-text)" }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </span>
@@ -161,7 +182,6 @@ function TrendTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string 
           style={{ fill: C("blue"), stroke: C("ink2") }}
         />
       </svg>
-      <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{t("w.home.end.window8")}</span>
     </Tile>
   );
 }
@@ -179,7 +199,7 @@ function ZoneTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string }
     </div>
   );
   return (
-    <Tile w={152} label={t("w.home.end.zones")}>
+    <Tile w={152} label={t("w.home.end.zonesAll")}>
       <div style={{ display: "flex", gap: 2, height: 8, marginTop: "auto" }} aria-hidden>
         {([[z.easy, C("lime")], [z.moderate, C("amber")], [z.hard, C("red")]] as [number, string][]).map(
           ([pct, c]) => pct > 0 && <span key={c} style={{ flex: pct, display: "block", background: c, borderRadius: 2 }} />,

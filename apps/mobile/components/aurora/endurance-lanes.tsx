@@ -210,11 +210,26 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
   );
 }
 
-/** One rail tile — the cluster's shared skeleton (name row → figure → chart →
- *  footer). Fixed width, shared minimum height so a rail's cards sit on one
- *  baseline however differently they're filled. `right` rides the name row
- *  (a delta, a qualifier) — the same slot the exercises tiles use. */
-function Tile({ w, label, right, children }: { w: number; label: string; right?: React.ReactNode; children: React.ReactNode }) {
+/**
+ * One rail tile — the cluster's shared skeleton, and the place the SCOPE RULE
+ * is enforced rather than merely documented:
+ *
+ *   label  → the metric AND the scope of the FIGURE this tile prints
+ *   foot   → the window of the CHART, with `footRight` for a delta
+ *
+ * Both slots are the Tile's own, so a caller cannot put the window in the label
+ * (as VolumeTile did — "Volume – 8 weeks" over a footer reading "8 weeks",
+ * twice in one 178dp tile, while the figure between them was THIS WEEK'S km and
+ * said so nowhere). The old free `right` slot on the name row is gone with it;
+ * its only consumer was the pace delta, which is a fact about the chart's
+ * window and belongs beside it.
+ *
+ * Fixed width, shared minimum height so a rail's cards sit on one baseline
+ * however differently they're filled.
+ */
+function Tile({ w, label, foot, footRight, children }: {
+  w: number; label: string; foot?: string; footRight?: React.ReactNode; children: React.ReactNode;
+}) {
   const { palette: C } = useTheme();
   return (
     <View
@@ -224,11 +239,20 @@ function Tile({ w, label, right, children }: { w: number; label: string; right?:
         paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-        {right}
-      </View>
+      <Text
+        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        numberOfLines={1}
+        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}
+      >
+        {label}
+      </Text>
       {children}
+      {(foot || footRight) && (
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{foot ?? ""}</Text>
+          {footRight}
+        </View>
+      )}
     </View>
   );
 }
@@ -247,8 +271,14 @@ function SummaryTile({ lane }: { lane: EnduranceLane }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <Tile w={126} label={t("endurance.efforts")}>
-      <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.efforts}</Text>
+    <Tile w={126} label={t("w.home.end.scopeAll")}>
+      {/* The figure carries "efforts" as its UNIT — the same shape the Other
+          sports tile uses — because the label is now saying the scope. The
+          header above the rail used to print this same count. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{t("endurance.efforts").toLowerCase()}</Text>
+      </View>
       <View style={{ gap: 3, marginTop: "auto" }}>
         <MetaRow l="KM" r={String(lane.distanceKm)} strong />
         <MetaRow l="H" r={String(Math.round(lane.minutes / 6) / 10)} strong />
@@ -264,7 +294,7 @@ function VolumeTile({ lane }: { lane: EnduranceLane }) {
   // the shared HistoryStrip as the chart → the window as the footer. The old
   // 46px one-off bar block is retired for the cluster's one chart language.
   return (
-    <Tile w={178} label={t("w.home.exw.volume")}>
+    <Tile w={178} label={t("w.home.end.volumeWeek")} foot={t("w.home.end.window8")}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.thisWeek.km}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>km</Text>
@@ -272,7 +302,6 @@ function VolumeTile({ lane }: { lane: EnduranceLane }) {
       <View style={{ marginTop: "auto" }}>
         <HistoryStrip bars={volumeBars(lane.weeks)} color={C.blue} />
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.end.window8")}</Text>
     </Tile>
   );
 }
@@ -295,8 +324,9 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
   return (
     <Tile
       w={176}
-      label={t("session.paceTrend")}
-      right={delta ? (
+      label={t("w.home.end.paceLatest")}
+      foot={t("w.home.end.window8")}
+      footRight={delta ? (
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, delta.faster ? C.lime : C.red) }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </Text>
@@ -318,7 +348,6 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
           <Circle cx={end[0]} cy={end[1]} r={2.4} fill={C.blue} stroke={C.ink2} strokeWidth={1.4} />
         </Svg>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.end.window8")}</Text>
     </Tile>
   );
 }
@@ -343,7 +372,7 @@ function ZoneTile({ lane }: { lane: EnduranceLane }) {
   // rail-width tile apart the moment "Steady" becomes "Stałe"/"Gleichmäßig".
   // Stacked, it survives any language and the percentages align in a column.
   return (
-    <Tile w={152} label={t("w.home.end.zones")}>
+    <Tile w={152} label={t("w.home.end.zonesAll")}>
       <View style={{ flexDirection: "row", gap: 2, height: 8, marginTop: "auto" }}>
         {([[z.easy, C.lime], [z.moderate, C.amber], [z.hard, C.red]] as [number, string][]).map(
           ([pct, c]) => pct > 0 && <View key={c} style={{ flex: pct, backgroundColor: c, borderRadius: 2 }} />,
