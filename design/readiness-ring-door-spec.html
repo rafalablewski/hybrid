@@ -130,11 +130,12 @@
 
           <div class="row" style="gap: 18px; margin-top: 14px; align-items: center;">
             <svg width="118" height="118" viewBox="0 0 100 100" role="img"
-                 aria-label="Readiness 67 of 100. Missing 33 points: tissue load 30, wearable readings 3.">
+                 aria-label="Readiness 67 of 100. Missing 33 points: tissue load 22, conditioning load 8, wearable readings 3.">
               <circle cx="50" cy="50" r="40" fill="none" stroke="#22251f" stroke-width="10"></circle>
               <g transform="rotate(-90 50 50)" fill="none">
                 <circle cx="50" cy="50" r="40" stroke="#c6f84f" stroke-width="10" stroke-dasharray="166.4 251.3" stroke-dashoffset="0"></circle>
-                <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-width="7" stroke-dasharray="73.4 251.3" stroke-dashoffset="-168.4"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#e58a5c" stroke-width="7" stroke-dasharray="53.3 251.3" stroke-dashoffset="-168.4"></circle>
+                <circle cx="50" cy="50" r="40" stroke="#6cb6bd" stroke-width="7" stroke-dasharray="18.1 251.3" stroke-dashoffset="-223.7"></circle>
                 <circle cx="50" cy="50" r="40" stroke="#d0cd94" stroke-width="7" stroke-dasharray="5.5 251.3" stroke-dashoffset="-243.8"></circle>
               </g>
               <text x="50" y="52" text-anchor="middle" font-family="ui-monospace, monospace" font-size="30" font-weight="700" fill="#f3f4ef">67</text>
@@ -154,14 +155,15 @@
             <div>
               <div class="ledger">
                 <i></i><span>Baseline</span><span class="v">100</span>
-                <i class="sw" style="background:#e58a5c"></i><span>Tissue load, mostly <span class="num" style="color:#e58a5c">back</span></span><span class="v" style="color:#e58a5c">−30</span>
+                <i class="sw" style="background:#e58a5c"></i><span>Tissue load, mostly <span class="num" style="color:#e58a5c">back</span></span><span class="v" style="color:#e58a5c">−22</span>
+                <i class="sw" style="background:#6cb6bd"></i><span>Conditioning load</span><span class="v" style="color:#6cb6bd">−8</span>
                 <i class="sw" style="background:#d0cd94"></i><span>Wearable readings (HRV, sleep)</span><span class="v" style="color:#d0cd94">−3</span>
                 <div class="sep"></div>
                 <i></i><span class="tot">Readiness</span><span class="v tot">67</span>
               </div>
               <div class="prose">
                 <span>Computed from your logged training: back fatigue (81/100) is the main drag today.</span>
-                <span>Energy-system load from recent conditioning sits at 39/100.</span>
+                <span>Energy-system load from recent conditioning sits at 39/100, and it counts against today's number.</span>
                 <span>Your wearable nudged readiness −3 today — HRV dipped and sleep ran short.</span>
               </div>
               <div class="prov">From your last 14 days of logged training</div>
@@ -184,7 +186,7 @@
             <span class="k">B</span>
             <div>
               <h4>The deficit arcs</h4>
-              <p>One per cause, sized by points cost, in a <b>fixed order</b> — tissue, then the wearable, then the scale's own ceiling. Tissue is always the red and the wearable always the amber, so a cause keeps its colour across every surface that names it. There are two causes and not three: see the findings below.</p>
+              <p>One per cause, sized by points cost, in a <b>fixed order</b> — tissue, then conditioning, then the wearable, then the scale's own ceiling. Tissue is always the red, conditioning the blue, the wearable the amber — so a cause keeps its colour across every surface that names it.</p>
             </div>
           </li>
           <li>
@@ -334,7 +336,7 @@
           <tr>
             <td><b>readinessDeficit()</b></td>
             <td class="m">packages/core/src/engines/readiness.ts</td>
-            <td>Returns <code>{ kept, costs: [{ key, label, points, role, detail }] }</code>. Unit-tested on one law: <b>kept plus every cost sums to 100, exactly</b>. If it can't be attributed it goes to a single "other" cost rather than being silently dropped.</td>
+            <td>Returns <code>{ kept, deficit, costs: [{ kind, key, muscle, points, role }], bioAdj, clamped }</code>. Unit-tested on one law: <b>kept plus every cost sums to 100, exactly</b>. Anything it can't attribute lands in a named cost rather than being silently dropped.</td>
           </tr>
           <tr>
             <td><b>readinessRingArcs()</b></td>
@@ -397,9 +399,9 @@
 
     <div class="cols2">
       <section>
-        <h3>Conditioning doesn't move readiness</h3>
-        <p>The score is <code>clamp(35..98, round(100 − avg(muscle fatigue) × 0.7 + wearable))</code>. That's the whole model: <b>two causes, plus two clamps</b>. The block's third sentence — "energy-system load from recent conditioning sits at 39/100" — is true and worth reading, but that figure feeds HPI. It moves this number by <b>zero</b>.</p>
-        <p>The first version of this page drew it as an 8-point arc. It kept its sentence in the drawer and takes no arc. Whether conditioning <em>should</em> move readiness is a modelling question, and a card is the wrong place to answer it.</p>
+        <h3>Conditioning didn't move readiness — so we fixed the engine</h3>
+        <p>The score was <code>clamp(35..98, round(100 − avg(muscle fatigue) × 0.7 + wearable))</code>. Conditioning doses <code>fatigue.systems</code>, never <code>fatigue.muscles</code>, so a week of hard running left the muscle average near zero and readiness near its ceiling. <b>An athlete could run themselves into the ground and the number that prescribes their training wouldn't notice.</b></p>
+        <p>The ring found it by trying to draw the arc: the sum law refuses a cause the score doesn't have, and the arithmetic said its cost was zero. That's a modelling bug a card surfaced, not a layout question — so readiness now carries an <code>ENDURANCE_SLOPE</code> term at <b>half the tissue slope</b> (conditioning clears faster and limits the next session less), and conditioning takes a real arc in its own blue. A lifter with no conditioning in their log scores exactly what they did before.</p>
       </section>
       <section>
         <h3>Per-muscle arcs read worse than one tissue arc</h3>

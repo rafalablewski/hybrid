@@ -1,4 +1,5 @@
 import type { Biometrics, Fatigue, Readiness } from "./types";
+import { enduranceFatigue } from "./fatigue";
 
 /** One wearable metric's contribution to the readiness adjustment — exposed so
  *  the admin Engine Room can show the substituted arithmetic, not just the sum. */
@@ -43,8 +44,37 @@ export function biometricAdjustment(bio: Biometrics): number {
   return Math.max(-15, Math.min(15, Math.round(adj)));
 }
 
+/** How steeply local tissue fatigue pulls readiness down. */
+export const MUSCLE_SLOPE = 0.7;
+
 /**
- * Readiness = inverse of average current muscle fatigue, nudged by wearable
+ * How steeply energy-system (conditioning) load pulls readiness down.
+ *
+ * HALF the tissue slope, and the ratio is the argument: conditioning load is
+ * real but it clears faster than local tissue damage and limits the next
+ * session less, so it must count without drowning out the tissue that is
+ * actually sore. At the saturation ceiling it can take 35 points; one hard
+ * threshold session (≈45) costs about 16.
+ *
+ * WHY THIS TERM EXISTS AT ALL. Readiness used to be muscle fatigue plus the
+ * wearable, full stop — so an athlete could run themselves into the ground and
+ * this number would not notice. Conditioning work doses `fatigue.systems`, not
+ * `fatigue.muscles`, so a week of hard running left the muscle average near
+ * zero and readiness near 98. HPI had always counted it (that is its endurance
+ * pillar); readiness, the number that actually prescribes today's load, did
+ * not. The gap surfaced while building the deficit ring, where the sum law
+ * refuses to draw a cause the score does not have — the arc could not be drawn
+ * because the cost was not real. This makes it real.
+ */
+export const ENDURANCE_SLOPE = 0.35;
+
+/** Readiness never reads outside these bounds. */
+export const READINESS_FLOOR = 35;
+export const READINESS_CEILING = 98;
+
+/**
+ * Readiness = inverse of current training load — local tissue fatigue plus the
+ * energy-system load conditioning leaves behind — nudged by wearable
  * biometrics, clamped to 35..98.
  */
 export function computeReadiness(
@@ -55,10 +85,10 @@ export function computeReadiness(
   // Guard the empty-muscle-set edge: an empty average is NaN, which survives
   // Math.round/min/max and poisons the score. Mirrors computeHpi's `|| 1` guard.
   const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-  const base = 100 - avg * 0.7;
+  const base = 100 - avg * MUSCLE_SLOPE - enduranceFatigue(fatigue) * ENDURANCE_SLOPE;
   const bioAdj = bio ? biometricAdjustment(bio) : 0;
   return {
-    score: Math.max(35, Math.min(98, Math.round(base + bioAdj))),
+    score: Math.max(READINESS_FLOOR, Math.min(READINESS_CEILING, Math.round(base + bioAdj))),
     bioAdj,
   };
 }

@@ -66,6 +66,8 @@ import {
   type EngineTrace,
   type HpiWeights,
   type TrainingLog,
+  type ReadinessDeficit,
+  type ReadinessCost,
 } from "@hybrid/core";
 
 // ---------------------------------------------------------------------------
@@ -416,6 +418,14 @@ export default function EngineRoom() {
           c={roleVar(riskRole(t.injury.band))}
         />
       </div>
+
+      {/* ---- WHERE READINESS'S MISSING POINTS WENT ----
+           The same split the athlete's ring draws, from the same engine call,
+           so the console and the card can be checked against each other rather
+           than trusted separately. The row sums to 100 by law (readinessDeficit
+           apportions by largest remainder); if it ever doesn't, one of the two
+           surfaces is lying and this is where you'd see it. */}
+      <DeficitBar deficit={t.deficit} whatIfActive={whatIfActive} />
 
       {/* ---- why these numbers: step-by-step derivations ---- */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))", gap: space.lg }}>
@@ -1087,6 +1097,60 @@ function DerivationSteps({ derivation }: { derivation: Derivation }) {
 }
 
 /** A headline derivation as a collapsible card ("How is this calculated?"). */
+/**
+ * THE DEFICIT, AS ONE BAR. Readiness is 100 minus what today's training and
+ * recovery took, and this is that subtraction drawn: the kept run, then one run
+ * per cause, in the same fixed order and the same semantic colours the
+ * athlete's ring uses. Two surfaces, one `readinessDeficit` call — so a
+ * disagreement between the console and the card is impossible rather than
+ * merely unlikely.
+ */
+function DeficitBar({ deficit, whatIfActive }: { deficit: ReadinessDeficit; whatIfActive: boolean }) {
+  const runs = [
+    { label: "kept", points: deficit.kept, color: roleVar(readinessRole(deficit.kept)) },
+    ...deficit.costs.map((c) => ({ label: COST_LABEL[c.kind], points: c.points, color: roleVar(c.role) })),
+  ].filter((r) => r.points > 0);
+  const sums = deficit.kept + deficit.costs.reduce((a, c) => a + c.points, 0);
+  return (
+    <Card>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.sm, flexWrap: "wrap" }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={LIME}>
+          Readiness deficit – where the points went
+        </Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={sums === 100 ? ASH : RED}>
+          {sums === 100 ? "sums to 100" : `SUM LAW BROKEN: ${sums}`}
+          {whatIfActive ? " – simulated inputs" : ""}
+          {deficit.clamped ? ` – clamped at the ${deficit.clamped}` : ""}
+        </Mono>
+      </div>
+      <div style={{ display: "flex", gap: 2, height: 26, marginTop: space.sm, borderRadius: 8, overflow: "hidden" }}>
+        {runs.map((r, i) => (
+          <div key={i} style={{ flex: r.points, background: r.color }} title={`${r.label} ${r.points}`} />
+        ))}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: `4px ${space.md}px`, marginTop: space.sm }}>
+        {runs.map((r, i) => (
+          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+            <span style={{ width: 9, height: 9, borderRadius: 2, background: r.color }} />
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em" }}>
+              {r.label} {r.points}
+            </Mono>
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+/** Console-side names for the deficit's causes. The athlete's copy resolves
+ *  through READINESS_COST_KEY; this surface is operator-only and English. */
+const COST_LABEL: Record<ReadinessCost["kind"], string> = {
+  tissue: "tissue",
+  conditioning: "conditioning",
+  wearable: "wearable",
+  ceiling: "scale ceiling",
+};
+
 function DerivationPanel({ derivation, accent, whatIfActive }: { derivation: Derivation; accent: string; whatIfActive: boolean }) {
   return (
     <Card>

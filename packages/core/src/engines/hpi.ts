@@ -1,9 +1,12 @@
 /**
  * HPI — the Hybrid Performance Index.
  *
- * The single 0..100 number a coach checks first. Unlike readiness (which is
- * muscle freshness + wearable nudge), HPI fuses the three pillars the hybrid
- * athlete actually lives on:
+ * The single 0..100 number a coach checks first. Readiness answers "can you
+ * train hard TODAY" on one blended scale; HPI reports the three pillars the
+ * hybrid athlete lives on SEPARATELY, each with its own figure and a named
+ * limiter — which is what makes it the coach's number rather than the
+ * athlete's. (Both now count conditioning load: readiness did not until Aug
+ * 2026, and that gap is documented on ENDURANCE_SLOPE in readiness.ts.)
  *
  *   • strength readiness   — inverse of muscular fatigue
  *   • endurance readiness  — inverse of energy-system (conditioning) load
@@ -19,6 +22,7 @@
 
 import type { Biometrics, Fatigue } from "./types";
 import { biometricAdjustment } from "./readiness";
+import { enduranceFatigue } from "./fatigue";
 
 export interface HpiWeights {
   /** strength vs. endurance split; should sum to 1. */
@@ -56,17 +60,12 @@ export interface Hpi {
 }
 
 /**
- * Map raw, unbounded energy-system load to a 0..100 endurance-fatigue figure
- * with smooth saturation (a single hard session ≈ 45; a brutal week → ~85+).
- * `scale` is the load at which fatigue reaches ~63%.
+ * Energy-system saturation. It LIVES in fatigue.ts — readiness needs it too
+ * now that conditioning load counts against the score, and readiness.ts cannot
+ * import from here without a cycle (this module imports the wearable
+ * adjustment from it). Re-exported so every existing caller keeps working.
  */
-export function enduranceFatigue(fatigue: Fatigue, scale = 90): number {
-  const total =
-    fatigue.systems.anaerobic +
-    fatigue.systems.threshold +
-    fatigue.systems.aerobic;
-  return Math.round(100 * (1 - Math.exp(-total / scale)));
-}
+export { enduranceFatigue };
 
 function band(score: number): HpiBand {
   if (score >= 85) return "peak";

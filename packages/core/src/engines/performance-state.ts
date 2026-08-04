@@ -11,6 +11,7 @@ import type { Biometrics, Fatigue, MuscleGroup, Readiness, TrainingLog } from ".
 import { computeFatigue } from "./fatigue";
 import { computeReadiness } from "./readiness";
 import { computeHpi, enduranceFatigue, HYBRID_WEIGHTS, type Hpi, type HpiWeights } from "./hpi";
+import { readinessDeficit } from "./readiness-deficit";
 
 /** One contributing factor to the current state, ranked by magnitude. */
 export interface StateDriver {
@@ -140,13 +141,24 @@ export function readinessWhy(log: TrainingLog, bio?: Biometrics): string[] {
     return lines;
   }
   const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
+  const endFatigue = enduranceFatigue(fatigue);
   lines.push(
     top[1] >= LIMITER_FATIGUE
       ? `Computed from your logged training: ${NICE[top[0]].toLowerCase()} fatigue (${top[1]}/100) is the main drag today.`
-      : "Computed from your logged training: no meaningful residual fatigue — you're cleared to train.",
+      : endFatigue >= CONDITIONING_VOICE
+        // "Cleared to train" is a claim about the WHOLE athlete, and this
+        // sentence only ever knew about tissue. Beside a conditioning cost of
+        // 25 points it read as an all-clear the score was actively refusing.
+        ? "Computed from your logged training: no meaningful residual fatigue in any tissue."
+        : "Computed from your logged training: no meaningful residual fatigue — you're cleared to train.",
   );
-  const endFat = enduranceFatigue(fatigue);
-  if (endFat >= 30) lines.push(`Energy-system load from recent conditioning sits at ${endFat}/100.`);
+  // The conditioning line appears whenever the load is big enough to have cost
+  // a point, not at some higher threshold of its own — it is a real term in the
+  // score now (readiness.ts, ENDURANCE_SLOPE), so a day where it took points
+  // and said nothing would be the block hiding its own arithmetic.
+  if (endFatigue >= CONDITIONING_VOICE) {
+    lines.push(`Energy-system load from recent conditioning sits at ${endFatigue}/100, and it counts against today's number.`);
+  }
   if (bio && bioAdj !== 0) {
     lines.push(
       `Your wearable nudged readiness ${bioAdj > 0 ? "+" : ""}${bioAdj} today — ${
@@ -166,6 +178,17 @@ export function readinessWhy(log: TrainingLog, bio?: Biometrics): string[] {
 const LIMITER_FATIGUE = 25;
 
 /**
+ * The energy-system load at which conditioning gets a sentence of its own.
+ * Deliberately low, and tied to the arithmetic rather than to taste: at
+ * ENDURANCE_SLOPE (0.35) a load of 10 has already cost the athlete points, and
+ * a cost the ring draws must be a cost the prose is willing to name.
+ */
+const CONDITIONING_VOICE = 10;
+
+/** Points below which a cause isn't worth being the card's whole sentence. */
+const MEANINGFUL_COST = 3;
+
+/**
  * THE LINES BEHIND THE DOOR — the derivation without its first line.
  *
  * `readinessWhy`'s line 0 restates the score ("Readiness 67/100."), which the
@@ -178,7 +201,7 @@ export function readinessReasons(log: TrainingLog, bio?: Biometrics): string[] {
 }
 
 /** What shape today's readiness read takes. */
-export type ReadinessVerdictKind = "empty" | "clear" | "limiter";
+export type ReadinessVerdictKind = "empty" | "clear" | "limiter" | "engine" | "recovery";
 
 /**
  * The ONE line the readiness block wears on its face, plus what the door
@@ -214,11 +237,13 @@ export interface ReadinessVerdict {
   doorKey: string;
 }
 
-/** The three faces, as i18n keys. */
+/** The faces, as i18n keys. */
 export const READINESS_VERDICT_KEY: Record<ReadinessVerdictKind, string> = {
   empty: "w.home.readiness.verdictEmpty",
   clear: "w.home.readiness.verdictClear",
   limiter: "w.home.readiness.verdictLimiter",
+  engine: "w.home.readiness.verdictEngine",
+  recovery: "w.home.readiness.verdictRecovery",
 };
 
 /**
@@ -236,17 +261,33 @@ export const READINESS_VERDICT_KEY: Record<ReadinessVerdictKind, string> = {
  */
 export function readinessVerdict(log: TrainingLog, bio?: Biometrics): ReadinessVerdict {
   const fatigue = computeFatigue(log);
-  const { score } = computeReadiness(fatigue, bio);
-  const deficit = Math.max(0, 100 - score);
+  const split = readinessDeficit(log, bio);
+  const deficit = split.deficit;
   const reasons = readinessReasons(log, bio).length;
   const doorKey = deficit > 0 ? "w.home.readiness.door" : "w.home.readiness.doorClear";
   const base = { muscle: null as MuscleGroup | null, deficit, reasons, doorKey };
 
   if (log.length === 0) return { ...base, kind: "empty", key: READINESS_VERDICT_KEY.empty };
-  const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
-  return top[1] >= LIMITER_FATIGUE
-    ? { ...base, kind: "limiter", key: READINESS_VERDICT_KEY.limiter, muscle: top[0] }
-    : { ...base, kind: "clear", key: READINESS_VERDICT_KEY.clear };
+
+  // The face names whichever cause the RING draws biggest, so the sentence and
+  // the arcs can't tell two stories. A cause has to clear its own bar to speak:
+  // the tissue term needs a tissue actually fatigued (the same threshold the
+  // derivation uses), and the other two need to have cost more than a rounding
+  // point. When nothing qualifies, the honest face is the positive one.
+  const topMuscle = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
+  const ranked = [...split.costs].sort((a, b) => b.points - a.points);
+  for (const cost of ranked) {
+    if (cost.kind === "tissue" && topMuscle[1] >= LIMITER_FATIGUE) {
+      return { ...base, kind: "limiter", key: READINESS_VERDICT_KEY.limiter, muscle: topMuscle[0] };
+    }
+    if (cost.kind === "conditioning" && cost.points >= MEANINGFUL_COST) {
+      return { ...base, kind: "engine", key: READINESS_VERDICT_KEY.engine };
+    }
+    if (cost.kind === "wearable" && cost.points >= MEANINGFUL_COST) {
+      return { ...base, kind: "recovery", key: READINESS_VERDICT_KEY.recovery };
+    }
+  }
+  return { ...base, kind: "clear", key: READINESS_VERDICT_KEY.clear };
 }
 
 /**

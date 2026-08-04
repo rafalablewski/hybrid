@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readinessReasons, readinessVerdict, readinessReasonsKey, readinessWhy, READINESS_VERDICT_KEY } from "./performance-state";
+import { readinessDeficit } from "./readiness-deficit";
 import type { Biometrics, TrainingLog } from "./types";
 
 /**
@@ -46,6 +47,41 @@ describe("readinessVerdict — one line, and what the door may promise", () => {
     expect(v.kind).toBe("clear");
     expect(v.muscle).toBeNull();
     expect(readinessReasons(RESTED)[0]).toContain("no meaningful residual fatigue");
+    expect(readinessReasons(RESTED)[0]).toContain("cleared to train");
+  });
+
+  it("names the ENGINE when conditioning is what took the points", () => {
+    // A runner's log doses fatigue.systems, never fatigue.muscles, so the face
+    // used to have nothing to name and the block reported an all-clear on a
+    // day the athlete had run themselves into the ground.
+    const running: TrainingLog = [
+      { daysAgo: 0, items: [{ move: "Run", minutes: 65, rpe: 8, system: "threshold" }] },
+      { daysAgo: 1, items: [{ move: "Run", minutes: 95, rpe: 7, system: "aerobic" }] },
+      { daysAgo: 3, items: [{ move: "Run", minutes: 50, rpe: 9, system: "anaerobic" }] },
+    ];
+    const v = readinessVerdict(running);
+    expect(v.kind).toBe("engine");
+    expect(v.muscle).toBeNull();
+    expect(v.deficit).toBeGreaterThan(10);
+    // And the prose must not hand out an all-clear beside that cost.
+    const reasons = readinessReasons(running);
+    expect(reasons[0]).not.toContain("cleared to train");
+    expect(reasons.some((l) => l.includes("counts against today's number"))).toBe(true);
+  });
+
+  it("names RECOVERY when the wearable is the biggest cause", () => {
+    const v = readinessVerdict(RESTED, TIRED_BIO);
+    expect(v.kind).toBe("recovery");
+  });
+
+  it("never names a cause the ring doesn't draw biggest", () => {
+    for (const [log, bio] of [[LOADED, undefined], [LOADED, TIRED_BIO], [RESTED, TIRED_BIO]] as const) {
+      const v = readinessVerdict(log, bio);
+      if (v.kind === "clear" || v.kind === "empty") continue;
+      const top = [...readinessDeficit(log, bio).costs].sort((a, b) => b.points - a.points)[0]!;
+      const expected = { tissue: "limiter", conditioning: "engine", wearable: "recovery", ceiling: "clear" }[top.kind];
+      expect(v.kind).toBe(expected);
+    }
   });
 
   it("stays honest on an empty log — nothing logged, nothing to subtract", () => {

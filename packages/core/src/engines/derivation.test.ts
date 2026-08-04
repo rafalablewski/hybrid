@@ -7,8 +7,10 @@ import {
   FEELING_THRESHOLDS,
 } from "./derivation";
 import { computeReadiness } from "./readiness";
-import { computeFatigue } from "./fatigue";
+import { computeFatigue, enduranceFatigue } from "./fatigue";
 import { computeHpi } from "./hpi";
+import { MUSCLE_SLOPE, ENDURANCE_SLOPE } from "./readiness";
+import { readinessDeficit } from "./readiness-deficit";
 import { computeInjuryRisk } from "./injury";
 import { feelingFromRating, READINESS_LOAD_FACTOR } from "../readiness-feeling";
 import { SAMPLE_BIOMETRICS, SAMPLE_TRAINING_LOG } from "./sample-data";
@@ -19,7 +21,28 @@ describe("deriveReadiness", () => {
     const live = computeReadiness(computeFatigue(SAMPLE_TRAINING_LOG), SAMPLE_BIOMETRICS);
     const d = deriveReadiness(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
     expect(d.result).toBe(`${live.score} / 100`);
-    expect(d.steps[d.steps.length - 1]!.math).toContain(`= ${live.score}`);
+    expect(d.steps.find((s) => s.label === "Final score")!.math).toContain(`= ${live.score}`);
+  });
+
+  it("shows the arithmetic the console claims — both terms, not just the tissue one", () => {
+    // The console printed `100 − 0.7 × avg` long after readiness stopped being
+    // only that. A derivation whose steps don't reach its own result is worse
+    // than no derivation, because it is trusted.
+    const fatigue = computeFatigue(SAMPLE_TRAINING_LOG);
+    const d = deriveReadiness(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
+    const base = d.steps.find((s) => s.label === "Base readiness")!;
+    expect(base.math).toContain(String(MUSCLE_SLOPE));
+    expect(base.math).toContain(String(ENDURANCE_SLOPE));
+    expect(d.steps.some((s) => s.label === "Energy-system load" && s.math.includes(String(enduranceFatigue(fatigue))))).toBe(true);
+  });
+
+  it("prints the athlete's own deficit split, and it sums to 100", () => {
+    const d = deriveReadiness(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
+    const split = readinessDeficit(SAMPLE_TRAINING_LOG, SAMPLE_BIOMETRICS);
+    const step = d.steps.find((s) => s.label.startsWith("Deficit attribution"))!;
+    expect(step.math).toContain("= 100");
+    expect(step.math.startsWith(String(split.kept))).toBe(true);
+    for (const c of split.costs) expect(step.math).toContain(String(c.points));
   });
 
   it("shows one wearable step per metric and an honest no-bio path", () => {

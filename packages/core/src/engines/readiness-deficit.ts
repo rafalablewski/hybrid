@@ -1,7 +1,7 @@
 import type { Biometrics, MuscleGroup, TrainingLog } from "./types";
 import type { SemanticRole } from "../semantic";
-import { computeFatigue } from "./fatigue";
-import { computeReadiness } from "./readiness";
+import { computeFatigue, enduranceFatigue } from "./fatigue";
+import { computeReadiness, MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
 import { ALL_MUSCLES } from "./movements";
 
 /**
@@ -20,19 +20,21 @@ import { ALL_MUSCLES } from "./movements";
  * can't be attributed to a tissue or the wearable lands in a named cost of its
  * own rather than being silently dropped.
  *
- * WHAT READINESS IS MADE OF (engines/readiness.ts, and it is smaller than the
- * block's prose implies):
+ * WHAT READINESS IS MADE OF (engines/readiness.ts):
  *
- *     score = clamp(35..98, round(100 − avg(muscle fatigue) × 0.7 + wearable))
+ *     score = clamp(35..98, round(100 − avg(muscle fatigue) × MUSCLE_SLOPE
+ *                                     − enduranceFatigue × ENDURANCE_SLOPE
+ *                                     + wearable))
  *
- * So there are exactly TWO real causes — the seven tissues, averaged, and the
- * wearable's ±15 nudge — plus the two clamps. CONDITIONING IS NOT ONE OF THEM.
- * The block's third sentence ("energy-system load from recent conditioning sits
- * at 39/100") is true and worth reading, but that figure feeds HPI, not
- * readiness: it moves this number by zero. Drawing it as an arc would have
- * invented a cause, which is exactly what the sum law exists to catch. Whether
- * conditioning SHOULD move readiness is a modelling question, not a layout one
- * — see the `readiness-deficit-ring` capability.
+ * Three real causes — the seven tissues averaged, the energy-system load
+ * conditioning leaves behind, and the wearable's ±15 nudge — plus the two
+ * clamps. The conditioning term is here because THIS MODULE FOUND IT MISSING:
+ * the sum law refuses to draw a cause the score doesn't have, so when the ring
+ * tried to give conditioning an arc the arithmetic said its cost was zero. It
+ * was: readiness counted muscle fatigue and the wearable and nothing else, so
+ * an athlete could run themselves into the ground and this number would not
+ * notice. That is now fixed in the engine rather than papered over in the card
+ * (see readiness.ts, and the `readiness-conditioning` capability).
  *
  * A POSITIVE WEARABLE NUDGE takes no arc. It doesn't cost anything; it makes
  * the whole deficit smaller, so every tissue's share shrinks with it. A cost
@@ -45,6 +47,8 @@ import { ALL_MUSCLES } from "./movements";
 export type ReadinessCostKind =
   /** the tissue term, whole, named by whichever tissue carries the most of it */
   | "tissue"
+  /** energy-system load from conditioning */
+  | "conditioning"
   /** the wearable, when it took points off */
   | "wearable"
   /** the scale's own ceiling — readiness never reads above 98 */
@@ -77,6 +81,7 @@ export interface ReadinessDeficit {
 
 export const READINESS_COST_KEY: Record<ReadinessCostKind, string> = {
   tissue: "w.home.readiness.costTissue",
+  conditioning: "w.home.readiness.costConditioning",
   wearable: "w.home.readiness.costWearable",
   ceiling: "w.home.readiness.costCeiling",
 };
@@ -117,11 +122,13 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics): ReadinessD
   const deficit = 100 - kept;
 
   // The raw, unrounded weights — the same arithmetic computeReadiness does.
-  const rawMuscle = 0.7 * (ALL_MUSCLES.reduce((a, m) => a + fatigue.muscles[m], 0) / ALL_MUSCLES.length);
+  const rawMuscle = MUSCLE_SLOPE * (ALL_MUSCLES.reduce((a, m) => a + fatigue.muscles[m], 0) / ALL_MUSCLES.length);
+  const rawConditioning = ENDURANCE_SLOPE * enduranceFatigue(fatigue);
   const rawWearable = bioAdj < 0 ? -bioAdj : 0;
 
+  const unclamped = Math.round(100 - rawMuscle - rawConditioning + bioAdj);
   const clamped: ReadinessDeficit["clamped"] =
-    Math.round(100 - rawMuscle + bioAdj) < 35 ? "floor" : Math.round(100 - rawMuscle + bioAdj) > 98 ? "ceiling" : null;
+    unclamped < READINESS_FLOOR ? "floor" : unclamped > READINESS_CEILING ? "ceiling" : null;
 
   if (deficit <= 0) return { kept, deficit: 0, costs: [], bioAdj, clamped };
 
@@ -136,14 +143,15 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics): ReadinessD
   // which is also the limiter the card's face already names, so the ring and
   // the sentence above it can't tell two different stories.
   //
-  // Fixed slots — tissue, wearable, ceiling — are the point: a card whose parts
-  // move with the numbers can't be learned, and being learnable is the entire
-  // reason this block stopped being prose.
+  // Fixed slots — tissue, conditioning, wearable, ceiling — are the point: a
+  // card whose parts move with the numbers can't be learned, and being
+  // learnable is the entire reason this block stopped being prose.
   type Raw = { kind: ReadinessCostKind; muscle: MuscleGroup | null; weight: number; role: SemanticRole };
   let heaviest: MuscleGroup = "quads";
   for (const m of ALL_MUSCLES) if (fatigue.muscles[m] > fatigue.muscles[heaviest]) heaviest = m;
   const raw: Raw[] = [];
   if (rawMuscle > 0) raw.push({ kind: "tissue", muscle: heaviest, weight: rawMuscle, role: "danger" });
+  if (rawConditioning > 0) raw.push({ kind: "conditioning", muscle: null, weight: rawConditioning, role: "info" });
   if (rawWearable > 0) raw.push({ kind: "wearable", muscle: null, weight: rawWearable, role: "caution" });
 
   // Nothing measurable took the points — the only thing that can be true here

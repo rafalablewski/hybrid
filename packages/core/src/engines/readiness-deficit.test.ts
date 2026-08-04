@@ -43,7 +43,18 @@ const FRESH_BIO: Biometrics = {
   sleep: { today: 8.6, baseline: 7.8, better: "high" },
 };
 
+/** The ring's fixed drawing order — never re-sorted by value. */
+const ORDER = ["tissue", "conditioning", "wearable", "ceiling"];
+
+const ENDURANCE_WEEK: TrainingLog = [
+  { daysAgo: 0, items: [{ move: "Run", minutes: 65, rpe: 8, system: "threshold" }] },
+  { daysAgo: 1, items: [{ move: "Run", minutes: 95, rpe: 7, system: "aerobic" }] },
+  { daysAgo: 3, items: [{ move: "Run", minutes: 50, rpe: 9, system: "anaerobic" }] },
+];
+
 const CASES: [string, TrainingLog, Biometrics | undefined][] = [
+  ["endurance week", ENDURANCE_WEEK, undefined],
+  ["endurance week, tired wearable", ENDURANCE_WEEK, TIRED_BIO],
   ["empty log", [], undefined],
   ["empty log, tired wearable", [], TIRED_BIO],
   ["empty log, fresh wearable", [], FRESH_BIO],
@@ -129,15 +140,37 @@ describe("readinessDeficit — the parts must add up to the whole", () => {
     expect(d.kept + d.costs.reduce((a, c) => a + c.points, 0)).toBe(100);
   });
 
-  it("does NOT invent a conditioning cost — conditioning moves HPI, not readiness", () => {
+  it("charges conditioning load — an endurance week must not read as fully fresh", () => {
+    // THE BUG THIS PINS. Readiness counted muscle fatigue and the wearable and
+    // nothing else, so a runner's log — which doses fatigue.systems, never
+    // fatigue.muscles — left the average near zero and the score near the
+    // ceiling. An athlete could run themselves into the ground and the number
+    // that prescribes their training would not notice.
     const cardio: TrainingLog = [
       { daysAgo: 0, items: [{ move: "Run", minutes: 70, rpe: 8, system: "threshold" }] },
       { daysAgo: 1, items: [{ move: "Run", minutes: 60, rpe: 7, system: "aerobic" }] },
+      { daysAgo: 2, items: [{ move: "Run", minutes: 90, rpe: 7, system: "aerobic" }] },
     ];
     const d = readinessDeficit(cardio);
     expect(d.kept + d.costs.reduce((a, c) => a + c.points, 0)).toBe(100);
+    const conditioning = d.costs.find((c) => c.kind === "conditioning");
+    expect(conditioning).toBeTruthy();
+    expect(conditioning!.points).toBeGreaterThan(0);
+    expect(d.kept).toBeLessThan(90);
     // Whatever the arcs say, they never claim a cause the score doesn't have.
-    for (const c of d.costs) expect(["tissue", "tissues", "wearable", "ceiling"]).toContain(c.kind);
+    for (const c of d.costs) expect(["tissue", "conditioning", "wearable", "ceiling"]).toContain(c.kind);
+  });
+
+  it("keeps the arcs in the engine's fixed order: tissue, conditioning, wearable", () => {
+    const mixed: TrainingLog = [
+      { daysAgo: 0, items: [{ move: "Back Squat", topRpe: 9, hardSets: 6 }, { move: "Run", minutes: 50, rpe: 8, system: "threshold" }] },
+      { daysAgo: 1, items: [{ move: "Run", minutes: 70, rpe: 7, system: "aerobic" }] },
+    ];
+    const kinds = readinessDeficit(mixed, TIRED_BIO).costs.map((c) => c.kind);
+    expect(kinds).toEqual([...kinds].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)));
+    expect(kinds).toContain("tissue");
+    expect(kinds).toContain("conditioning");
+    expect(kinds).toContain("wearable");
   });
 });
 

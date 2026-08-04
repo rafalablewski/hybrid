@@ -36,6 +36,8 @@ import {
   type TrajectoryPoint,
 } from "./performance-state";
 import { enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
+import { MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
+import { readinessDeficit, type ReadinessDeficit } from "./readiness-deficit";
 import { COST_OK } from "./landmark-adapt";
 import {
   EXPERIENCE_STIMULUS,
@@ -107,7 +109,7 @@ export interface EngineFormula {
 export const ENGINE_FORMULA_GROUPS: { id: EngineFormulaGroup; label: string; source: string }[] = [
   { id: "fatigue", label: "Tissue fatigue", source: "engines/fatigue.ts" },
   { id: "endurance", label: "Endurance load", source: "engines/hpi.ts" },
-  { id: "readiness", label: "Readiness", source: "engines/readiness.ts" },
+  { id: "readiness", label: "Readiness", source: "engines/readiness.ts + engines/readiness-deficit.ts" },
   { id: "hpi", label: "HPI", source: "engines/hpi.ts" },
   { id: "load", label: "Session load & ACWR", source: "engines/load.ts + injury.ts" },
   { id: "injury", label: "Injury risk", source: "engines/injury.ts" },
@@ -170,12 +172,26 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     id: "readiness",
     engine: "readiness",
     name: "Readiness score",
-    expression: "readiness = clamp(100 − 0.7 × avgMuscleFatigue + bioAdj, 35, 98)",
+    expression: `readiness = clamp(100 − ${MUSCLE_SLOPE} × avgMuscleFatigue − ${ENDURANCE_SLOPE} × enduranceFatigue + bioAdj, ${READINESS_FLOOR}, ${READINESS_CEILING})`,
     constants: [
-      { symbol: "0.7", value: "0.7", meaning: "fatigue → readiness slope" },
-      { symbol: "35..98", value: "clamp", meaning: "score bounds" },
+      { symbol: String(MUSCLE_SLOPE), value: String(MUSCLE_SLOPE), meaning: "tissue fatigue → readiness slope" },
+      { symbol: String(ENDURANCE_SLOPE), value: String(ENDURANCE_SLOPE), meaning: "conditioning load → readiness slope (half the tissue slope)" },
+      { symbol: `${READINESS_FLOOR}..${READINESS_CEILING}`, value: "clamp", meaning: "score bounds" },
     ],
-    note: "Inverse of average muscle fatigue, nudged by the wearable signal.",
+    note: "Inverse of current training load — local tissue fatigue PLUS the energy-system load conditioning leaves behind — nudged by the wearable signal. The conditioning term was added in Aug 2026: readiness had been muscle fatigue plus the wearable alone, so an athlete could run themselves into the ground and this number would not notice (a run doses fatigue.systems, not fatigue.muscles, so a hard endurance week left the muscle average near zero and readiness near the ceiling). HPI had always counted it; readiness, the number that actually prescribes today's load, did not. Half the tissue slope because conditioning load clears faster and limits the next session less — at saturation it can take 35 points, one hard threshold session about 16.",
+  },
+  {
+    id: "readiness-deficit",
+    engine: "readiness",
+    name: "Deficit attribution (the ring)",
+    expression: "kept = readiness   •   costᵢ = deficit × weightᵢ / Σweight   •   kept + Σcost ≡ 100",
+    constants: [
+      { symbol: "tissue", value: `${MUSCLE_SLOPE} × avgMuscleFatigue`, meaning: "named by whichever tissue carries most of it" },
+      { symbol: "conditioning", value: `${ENDURANCE_SLOPE} × enduranceFatigue`, meaning: "energy-system load" },
+      { symbol: "wearable", value: "−bioAdj when negative", meaning: "a positive nudge is not a cost; it shrinks the whole deficit" },
+      { symbol: "ceiling", value: `100 − ${READINESS_CEILING}`, meaning: "the scale's own top, when nothing measurable explains the gap" },
+    ],
+    note: "What the readiness ring draws: one arc per cause, sized by what that cause actually took. Points are apportioned by largest remainder so whole numbers cannot miss their own total, and the sum is a LAW the unit tests gate on — kept plus every cost equals exactly 100, with anything unattributable landing in a named cost rather than falling off the edge. The drawing order is fixed (kept → tissue → conditioning → wearable → ceiling) and never re-sorted by value, because a card whose parts move with the numbers cannot be learned.",
   },
   {
     id: "hpi",
@@ -665,8 +681,12 @@ export interface EngineTrace {
   injury: InjuryRisk;
   /** oldest → newest, `days` points */
   trajectory: TrajectoryPoint[];
-  /** the 0..100 energy-system figure behind HPI's endurance component */
+  /** the 0..100 energy-system figure behind HPI's endurance component AND,
+   *  since Aug 2026, behind readiness's conditioning term */
   enduranceFatigue: number;
+  /** where readiness's missing points went — the same split the athlete's ring
+   *  draws, so the console and the card can be checked against each other */
+  deficit: ReadinessDeficit;
 }
 
 /**
@@ -687,5 +707,6 @@ export function computeEngineTrace(
     }),
     trajectory: performanceTrajectory(log, opts?.days ?? 14),
     enduranceFatigue: enduranceFatigue(state.fatigue),
+    deficit: readinessDeficit(log, bio),
   };
 }
