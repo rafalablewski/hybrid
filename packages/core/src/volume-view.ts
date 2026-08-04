@@ -212,6 +212,73 @@ export function sourceWhyKey(source: LandmarkSource): string {
   return `w.analyze.vol.sourceWhy${source.charAt(0).toUpperCase()}${source.slice(1)}`;
 }
 
+/** The four layers, in the order `athleteLandmarks` applies them. */
+export const LANDMARK_LAYERS: readonly LandmarkSource[] = ["population", "profile", "observed", "manual"] as const;
+
+/** One rung of the provenance ladder. */
+export interface ProvenanceRung {
+  source: LandmarkSource;
+  labelKey: string;
+  /** The sentence explaining this layer — shown when the rung is selected. */
+  whyKey: string;
+  /** True when this layer actually contributed to the numbers on screen. */
+  lit: boolean;
+  /** True for the DEEPEST lit layer — the one that names the landmarks. */
+  active: boolean;
+  /** 0…1 confidence this layer can claim, or null when it carries none of its
+   *  own: population is the floor everyone starts from, and a number the
+   *  athlete typed is not an estimate to be confident about. */
+  confidence: number | null;
+}
+
+/**
+ * WHOSE NUMBERS ARE THESE, drawn as a ladder rather than said as a word.
+ *
+ * `athleteLandmarks` layers population table → profile estimate → what the log
+ * observed → the athlete's own edits, and hands back `layers` (what actually
+ * contributed) and `source` (the deepest of them). Reduced to a single caption —
+ * "Learned from your training" — that provenance is a claim the athlete has to
+ * take on trust. As a ladder it is a picture: four rungs, lit as far as the
+ * evidence reaches, each carrying the confidence that layer can honestly claim.
+ * You read how personal the numbers are before you read a word, and you can see
+ * what is still unlit — which is the same thing as seeing what to do next.
+ *
+ * Shared by both clients so the rungs, their order and their confidences cannot
+ * drift apart.
+ */
+export function provenanceLadder(resolved: {
+  layers: LandmarkSource[];
+  source: LandmarkSource;
+  profileConfidence: number;
+  observedConfidence: number;
+}): ProvenanceRung[] {
+  const lit = new Set(resolved.layers);
+  return LANDMARK_LAYERS.map((source) => ({
+    source,
+    labelKey: sourceLabelKey(source),
+    whyKey: sourceWhyKey(source),
+    lit: lit.has(source),
+    active: source === resolved.source,
+    confidence:
+      source === "profile" ? resolved.profileConfidence
+      : source === "observed" ? resolved.observedConfidence
+      : null,
+  }));
+}
+
+/** A rung's trailing figure: its confidence when it has one, an em dash when the
+ *  layer has not been reached, and nothing when it is lit but carries no
+ *  estimate of its own. */
+export function rungMeta(rung: ProvenanceRung): string {
+  if (!rung.lit) return "—";
+  return rung.confidence != null ? `${Math.round(rung.confidence * 100)}%` : "";
+}
+
+/** i18n key naming which end of the band a factor moved. */
+export function factorAffectsKey(affects: LandmarkFactor["affects"]): string {
+  return `w.analyze.vol.affects${affects.charAt(0).toUpperCase()}${affects.slice(1)}`;
+}
+
 /** i18n key naming one personalization factor. */
 export function factorLabelKey(key: LandmarkFactor["key"]): string {
   return `w.analyze.vol.factor${key.charAt(0).toUpperCase()}${key.slice(1)}`;
