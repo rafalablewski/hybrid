@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { readinessDeficit, readinessRingSegments, readinessRingTicks, apportion } from "./readiness-deficit";
+import {
+  readinessDeficit, readinessRingSegments, readinessRingTicks, apportion,
+  KEPT_ARC_ALPHA, READINESS_COST_KEY, type ReadinessDeficit,
+} from "./readiness-deficit";
+import { readinessRole } from "../semantic";
 import { computeReadiness } from "./readiness";
 import { computeFatigue } from "./fatigue";
 import type { Biometrics, TrainingLog } from "./types";
@@ -214,6 +218,79 @@ describe("readinessRingSegments — the ring covers itself exactly once", () => 
     const segs = readinessRingSegments(d);
     expect(segs[0]!.points).toBe(d.kept);
     expect(segs.slice(1).reduce((a, s) => a + s.points, 0)).toBe(d.deficit);
+  });
+});
+
+/**
+ * THE PAINT LAW — no two runs may be drawn the same.
+ *
+ * The bug this exists to stop, in full: the kept run wore the readiness band's
+ * colour and the clients derived that colour themselves. The band's colour
+ * collides with a cause's in EVERY band but the top one — caution is both
+ * "score 40–59" and "the wearable" — so at a score of 53 the kept run and the
+ * wearable's run were the same sand. The ledger's swatch is the only bridge
+ * between a row and an arc, so a −3 worth one tick pointed at the seventeen the
+ * score kept. Arithmetic that sums to 100 drawn in colours that don't
+ * distinguish is still a lie.
+ *
+ * The paint now travels WITH the run — role plus `dim` — and this sweeps every
+ * band to prove no pair can repeat.
+ */
+describe("the ring's paint — every run distinguishable, in every band", () => {
+  /** A synthetic split at a given score, so all four bands are exercised. */
+  const at = (kept: number): ReadinessDeficit => ({
+    kept,
+    deficit: 100 - kept,
+    costs: [
+      { kind: "tissue", key: READINESS_COST_KEY.tissue, muscle: "back", points: Math.max(1, 100 - kept - 5), role: "danger" },
+      { kind: "conditioning", key: READINESS_COST_KEY.conditioning, muscle: null, points: 3, role: "info" },
+      { kind: "wearable", key: READINESS_COST_KEY.wearable, muscle: null, points: 2, role: "caution" },
+    ],
+    bioAdj: -2,
+    clamped: null,
+  });
+
+  it("holds the kept run back, and only the kept run", () => {
+    for (let kept = 10; kept <= 95; kept += 5) {
+      const segs = readinessRingSegments(at(kept));
+      expect(segs[0]!.dim).toBe(true);
+      for (const s of segs.slice(1)) expect(s.dim).toBe(false);
+    }
+  });
+
+  it("paints the kept run from the readiness BAND, not from a neutral", () => {
+    for (const kept of [31, 53, 72, 91]) {
+      expect(readinessRingSegments(at(kept))[0]!.role).toBe(readinessRole(kept));
+    }
+  });
+
+  it("never draws two runs identically — the collision that started this", () => {
+    for (let kept = 1; kept <= 98; kept++) {
+      const segs = readinessRingSegments(at(kept));
+      const paints = segs.map((s) => `${s.role}/${s.dim}`);
+      expect(new Set(paints).size).toBe(paints.length);
+      // and specifically: at 40–59 the kept run and the wearable's SHARE a role
+      // — which is exactly why the hold-back is not optional.
+      if (kept >= 40 && kept <= 59) {
+        const wearable = segs.find((s) => s.kind === "wearable");
+        if (wearable) expect(wearable.role).toBe(segs[0]!.role);
+      }
+    }
+  });
+
+  it("holds the kept run back far enough to read as a different weight", () => {
+    // A token this close to 1 would be a rounding difference, not a separation.
+    expect(KEPT_ARC_ALPHA).toBeGreaterThan(0);
+    expect(KEPT_ARC_ALPHA).toBeLessThanOrEqual(0.35);
+  });
+
+  it("gives every tick a paint, so the bar and the arcs can't diverge", () => {
+    const d = readinessDeficit(HEAVY, TIRED_BIO);
+    const ticks = readinessRingTicks(d);
+    const segs = readinessRingSegments(d);
+    for (const s of ticks) expect(typeof s.dim).toBe("boolean");
+    // The bar reads `points` off the same runs the arcs are built from.
+    expect(segs.reduce((a, s) => a + s.points, 0)).toBe(100);
   });
 });
 

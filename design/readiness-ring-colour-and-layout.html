@@ -145,8 +145,12 @@
     The readiness ledger is arithmetically sound: <b>100 &minus; 30 &minus; 14 &minus; 3 = 53</b>, and the engine
     guarantees it. What is wrong is the <b>paint</b>. The kept arc takes the readiness band's colour, the wearable cost
     takes caution's colour, and at a score of 53 those are <b>the same sand</b>. So the legend's little yellow square
-    &mdash; worth one tick &mdash; points at seventeen of them. This page proposes four ways to fix the colour, and one
-    new layout for the block.
+    &mdash; worth one tick &mdash; points at seventeen of them.
+  </p>
+  <p class="lede" style="margin-top:14px">
+    <b>Shipped: option B.</b> The kept run keeps its band colour and is held back to 30% while every cause draws at full
+    strength, so the causes sit in front of the run they were taken out of. The other three are kept below as the record
+    of what was weighed. All four layout changes shipped with it.
   </p>
 
   <!-- ─────────────────────────────────────────────────────────────────── -->
@@ -292,12 +296,12 @@
           <!-- THE LEDGER — full width, values flush to the card edge -->
           <div class="ledger" id="ledger-new" style="margin-top:14px"></div>
 
-          <div class="prov">Computed from your logged training &mdash; back fatigue 81/100, energy-system load 39/100</div>
+          <div class="prov">Computed from your logged training &ndash; back fatigue 81/100, energy-system load 39/100, wearable &minus;3</div>
         </div>
         <p class="body" style="font-size:13px">
           Ring and headline read as one masthead; the pill owns its line; the door, the bar and the rows all run the
           full width of the card with the values flush right. The prose is gone &mdash; the rows say the same thing in
-          a third of the space &mdash; leaving one provenance line for the two figures the ledger cannot show.
+          a third of the space &mdash; leaving one provenance line for the figures the ledger cannot show.
         </p>
       </div>
     </div>
@@ -307,21 +311,27 @@
   <section>
     <div class="sechead">
       <span class="num">04</span>
-      <h2>What it takes to build</h2>
+      <h2>What shipped</h2>
     </div>
     <ul class="plain">
-      <li><b>The colour rule moves into core.</b> The clients currently decide the kept arc's paint inline, in two
-        places, and both got it wrong the same way. A single <code>readinessRingTicks()</code> that already knows the
-        kept run should hand out the roles, so a client cannot re-introduce the collision.</li>
-      <li><b>Cutting the prose changes what the door counts.</b> Today the count is
-        <code>readinessReasons().length</code> &mdash; the sentences. With the sentences gone it has to become the
-        number of ledger rows, or the door promises three of something that no longer exists. Both happen to be 3
-        today, which is exactly how that bug would ship unnoticed.</li>
+      <li><b>The colour rule moved into core.</b> Both clients decided the kept arc's paint inline, and both derived
+        the same collision with it. A <code>RingSegment</code> now carries the role it is drawn from &mdash; the
+        readiness band's, not a neutral &mdash; plus a <code>dim</code> flag, and each client's <code>segPaint()</code>
+        is the only place a colour is resolved. The ring, the bar and the ledger's swatches all read it.</li>
+      <li><b>Cutting the prose changed what the door counts.</b> The count was
+        <code>readinessReasons().length</code> &mdash; the sentences. It is now the number of ledger rows. Both were 3
+        on a typical day, which is exactly how a door promising three of something no longer there would have shipped
+        unnoticed; the old test pinned the count to the prose and failed, which is how it should go.</li>
+      <li><b>The prose's real content survived as facts, not sentences.</b> <code>readinessFacts()</code> returns i18n
+        keys plus figures for what the rows can't show &mdash; the limiting tissue's own fatigue, the energy-system
+        load, and the wearable's signed nudge. That last one is the case that matters: a POSITIVE nudge takes no arc
+        and no row, so without it a wearable that was read and did move the score would show nothing at all. The
+        replaced sentences were English-only; these speak Polish and German.</li>
       <li><b>The bar is the ring's data, not new data.</b> It reads the same segments, so it cannot disagree with the
         arcs above it &mdash; and it inherits the minimum-arc rule, which is what keeps the &minus;3 visible.</li>
-      <li><b>Both clients, one change</b> (web <code>aurora/performance.tsx</code>, mobile
-        <code>aurora/performance.tsx</code>), plus a test that fails if the kept colour ever equals a cost colour in
-        any band, on either theme.</li>
+      <li><b>11 new tests.</b> The paint law sweeps every score 1&ndash;98 and asserts no two runs of one ring are ever
+        drawn with the same role-and-weight pair &mdash; including inside 40&ndash;59, where it asserts the kept run
+        and the wearable's DO share a role, which is precisely why the hold-back is not optional.</li>
     </ul>
   </section>
 </div>
@@ -542,7 +552,7 @@
     });
   }
 
-  let current = "A";
+  let current = "B"; /* what shipped */
   function render() {
     const now = document.getElementById("ring-now");
     now.innerHTML = "";

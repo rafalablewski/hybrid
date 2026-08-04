@@ -1,5 +1,5 @@
 import type { Biometrics, MuscleGroup, TrainingLog } from "./types";
-import type { SemanticRole } from "../semantic";
+import { readinessRole, type SemanticRole } from "../semantic";
 import { computeFatigue, enduranceFatigue } from "./fatigue";
 import { computeReadiness, MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
 import { ALL_MUSCLES } from "./movements";
@@ -183,6 +183,24 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics): ReadinessD
 
 /* ── THE RING ─────────────────────────────────────────────────────────────── */
 
+/**
+ * HOW FAR BACK THE KEPT RUN IS HELD.
+ *
+ * The kept run wears the readiness band's own colour — and the band's colour
+ * COLLIDES with a cause's in every band but the top one: caution is both "score
+ * 40–59" and "the wearable", info is both "60–79" and "conditioning", danger is
+ * both "under 40" and "tissue". Drawn at equal strength that is not a near-miss
+ * but a lie a legend can be read off: at a score of 53 the kept run and the
+ * wearable's run were the same sand, so a swatch worth ONE tick pointed at the
+ * seventeen the score kept.
+ *
+ * So the hue stays (severity is still readable before any number is) and the
+ * WEIGHT separates them: the kept run is drawn at this alpha, every cause at
+ * full strength. The causes therefore sit in front of the run they were taken
+ * out of, which is also the right depth ordering for what the ring now says.
+ */
+export const KEPT_ARC_ALPHA = 0.3;
+
 /** One run of ticks around the readiness ring. */
 export interface RingSegment {
   /** `kept` is the score itself; the rest are the costs that took the deficit. */
@@ -191,7 +209,21 @@ export interface RingSegment {
   from: number;
   /** How many ticks. Never 0 — a cost that can't be seen can't be read. */
   count: number;
+  /**
+   * The role the run is painted from. On `kept` this is the READINESS BAND's
+   * role (`readinessRole(kept)`) rather than a neutral: the clients used to
+   * derive that themselves, in two places, and both derived the collision
+   * above with it. It is the engine's call now, so a client can't reintroduce
+   * one half of the pair without the other.
+   */
   role: SemanticRole;
+  /**
+   * Whether this run is HELD BACK to `KEPT_ARC_ALPHA` (true on `kept`, false on
+   * every cause). It travels with the run rather than being inferred from
+   * `kind` so the rule reaches every surface that draws a segment — the ring,
+   * the proportional bar, and the ledger's swatches — identically.
+   */
+  dim: boolean;
   /** i18n key for the label; absent on `kept`, which the figure already names. */
   key: string | null;
   muscle: MuscleGroup | null;
@@ -215,11 +247,16 @@ export interface RingSegment {
  *                  mistaken for a big one.
  *   EXACT SUM      the runs cover the ring exactly once, with no gap and no
  *                  overlap, for any tick count.
+ *   ONE PAINT      every run carries the role it is drawn from AND whether it
+ *                  is held back (`dim`), so the ring, the bar and the ledger's
+ *                  swatches resolve the same colour from the same field. A
+ *                  client that paints a run from anything else is the bug this
+ *                  field exists to prevent.
  */
 export function readinessRingSegments(d: ReadinessDeficit, ticks = 32): RingSegment[] {
   const parts = [
-    { kind: "kept" as const, role: "neutral" as SemanticRole, key: null as string | null, muscle: null as MuscleGroup | null, points: d.kept },
-    ...d.costs.map((c) => ({ kind: c.kind, role: c.role, key: c.key as string | null, muscle: c.muscle, points: c.points })),
+    { kind: "kept" as const, role: readinessRole(d.kept), key: null as string | null, muscle: null as MuscleGroup | null, points: d.kept, dim: true },
+    ...d.costs.map((c) => ({ kind: c.kind, role: c.role, key: c.key as string | null, muscle: c.muscle, points: c.points, dim: false })),
   ].filter((p) => p.points > 0);
 
   const counts = apportion(parts.map((p) => p.points), ticks);
@@ -245,7 +282,7 @@ export function readinessRingSegments(d: ReadinessDeficit, ticks = 32): RingSegm
   parts.forEach((p, i) => {
     const count = at(i);
     if (count <= 0) return;
-    out.push({ kind: p.kind, from, count, role: p.role, key: p.key, muscle: p.muscle, points: p.points });
+    out.push({ kind: p.kind, from, count, role: p.role, dim: p.dim, key: p.key, muscle: p.muscle, points: p.points });
     from += count;
   });
   // Any tick left over by the starvation guard above belongs to the last run,
