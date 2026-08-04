@@ -3,7 +3,7 @@ import { movementFor, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
-import { fmtWeight, fmtTonnage, type WeightUnit } from "../units";
+import { fmtWeight, fmtTonnage, splitFigure, type WeightUnit } from "../units";
 import type { DeviceWorkout } from "../session-device";
 import { deviceTrueSession, deviceTrueSessions } from "../device-truth";
 
@@ -445,6 +445,40 @@ export function strengthPrDelta(
   if (p.previousTopLoad == null) return labels.first;
   if (p.topLoad > p.previousTopLoad) return `+${fmtWeight(p.topLoad - p.previousTopLoad, units)}`;
   return labels.moreReps;
+}
+
+/**
+ * The same three shapes as strengthPrDelta, but STRUCTURED rather than joined
+ * into one string — because a record set as a figure prints its proof in two
+ * colour channels ("from 82.5" in ash, "+7.5" in the accent), and a single
+ * string can't carry that split without each client re-parsing it.
+ *
+ * Values come back BARE (no unit): the unit is already on the record's own
+ * figure directly above the caption, and repeating it there reads as a form
+ * field rather than a proof. Formatted through fmtWeight/splitFigure so lb
+ * rounds the way lb rounds, and so the subtraction can't print a float
+ * artifact — the same reason strengthPrDelta exists.
+ */
+export interface StrengthPrProof {
+  /** climb — beat a previous best; first — never trained; reps — same load, more reps */
+  kind: "climb" | "first" | "reps";
+  /** the previous best, bare ("82.5") — climb only */
+  from: string | null;
+  /** the gain, bare and signed ("+7.5") — climb only; this is the ACCENT half */
+  delta: string | null;
+}
+
+export function strengthPrProof(
+  p: { topLoad: number; previousTopLoad: number | null },
+  units: WeightUnit = "kg",
+): StrengthPrProof {
+  if (p.previousTopLoad == null) return { kind: "first", from: null, delta: null };
+  if (p.topLoad <= p.previousTopLoad) return { kind: "reps", from: null, delta: null };
+  return {
+    kind: "climb",
+    from: splitFigure(fmtWeight(p.previousTopLoad, units))[0],
+    delta: `+${splitFigure(fmtWeight(p.topLoad - p.previousTopLoad, units))[0]}`,
+  };
 }
 
 /** Format seconds-per-km as a m:ss clock, e.g. 342 → "5:42". */

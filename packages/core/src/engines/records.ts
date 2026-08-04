@@ -32,6 +32,16 @@ export interface PrHit {
   topLoad: number;
   /** the prior heaviest actual load, or null if it's the first time trained */
   previousTopLoad: number | null;
+  /**
+   * The session that set it. Optional because a PrHit is also built by hand in
+   * tests and by callers that only have the numbers — but every hit that comes
+   * out of newPrsInSession/prsBetween carries it, which is what lets a record
+   * on the Activity card open the session behind it (the same promise the
+   * figures above it make).
+   */
+  sessionId?: string;
+  /** when it was set (ms), taken from that session's startedAt */
+  at?: number;
 }
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";
@@ -112,6 +122,8 @@ export function newPrsInSession(session: LoggedSession, prior: LoggedSession[], 
       previous: firstEver ? null : prevE1rm,
       topLoad,
       previousTopLoad: firstEver ? null : prevTopLoad,
+      sessionId: session.id,
+      at: Date.parse(session.startedAt),
     });
   }
   // Heaviest first — the same basis the reveal hero picks by, so prs[0] is the

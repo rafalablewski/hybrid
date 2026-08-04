@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
-  fmtWeight, strengthPrDelta,
+  fmtWeight, splitFigure, strengthPrProof,
   resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, fmtTonnage,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
-  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type WeightUnit,
+  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
@@ -63,6 +63,18 @@ const SHORT_KEY: Record<string, string> = {
   week: "w.home.act.sWeek", d7: "w.home.act.sD7", d30: "w.home.act.sD30", ytd: "w.home.act.sYtd",
 };
 
+/** The records block names the WINDOW, not just "New PRs" — the card is
+ *  period-aware and a month's records must not read as this week's news. */
+const PRS_HEAD_KEY: Record<string, string> = {
+  week: "w.home.act.prsWeek", d7: "w.home.act.prsD7", d30: "w.home.act.prsD30", ytd: "w.home.act.prsYtd",
+};
+
+/** Records shown before the rail offers "Show all" — a year can hold forty,
+ *  and an endless drag is not a celebration. */
+const PRS_RAIL_CAP = 8;
+/** The width of the edge dissolve, in px. Mirrored on mobile. */
+const PRS_FADE = 24;
+
 const kicker: CSSProperties = {
   fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
   textTransform: "uppercase", whiteSpace: "nowrap",
@@ -113,6 +125,75 @@ export function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: st
   );
 }
 
+/**
+ * ONE RECORD, set as a FIGURE — not the list row this used to be.
+ *
+ * The block used to be four hairlines around two 12px rows: a section rule, a
+ * rule under the header and one above every record, fencing content inside a
+ * card that already has a border. Whitespace separates two items perfectly
+ * well, so the rules went and the budget was spent on the two things a record
+ * actually needs — SCALE (the load at fs.display, the largest figure in the
+ * card, because a personal best is the only thing on Today worth celebrating)
+ * and PROOF (the load it beat, which is what makes 90 kg an achievement rather
+ * than a fact).
+ *
+ * The proof's three shapes come from core's strengthPrProof, so this and the
+ * session summary can't drift, and it arrives SPLIT — "from 82.5" reads in ash
+ * and only the gain takes the accent, which a single joined string could not
+ * express. The value is bare because the unit is on the figure above it.
+ *
+ * Pressable when the hit knows its session: the card's whole promise is that a
+ * figure opens what's behind it, and a record is no exception.
+ */
+function PrCell({ pr, units, t, onOpen }: {
+  pr: PrHit;
+  units: WeightUnit;
+  t: (k: string) => string;
+  onOpen?: () => void;
+}) {
+  const [value, unit] = splitFigure(fmtWeight(pr.topLoad, units));
+  const proof = strengthPrProof(pr, units);
+  const body = (
+    <>
+      <span style={{ display: "block", ...kicker, color: C("ash"), overflow: "hidden", textOverflow: "ellipsis" }}>{pr.lift}</span>
+      <span style={{
+        display: "block", ...num, fontSize: fs.display, fontWeight: 800,
+        letterSpacing: "-.03em", lineHeight: 1, marginTop: 7, color: accentText("lime"),
+      }}>
+        {value}
+        <i style={{ fontStyle: "normal", fontSize: ".46em", fontWeight: 600, letterSpacing: ".04em", marginLeft: 3 }}>{unit}</i>
+      </span>
+      <span style={{
+        display: "block", marginTop: 6, fontSize: fs.micro, color: C("ash"),
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {proof.kind === "climb" ? (
+          <>
+            {t("w.home.act.prFrom").replace("{v}", proof.from ?? "")}{" "}
+            <em style={{ fontStyle: "normal", color: accentText("lime") }}>{proof.delta}</em>
+          </>
+        ) : t(proof.kind === "first" ? "w.home.act.prFirst" : "w.home.act.prReps")}
+      </span>
+    </>
+  );
+
+  if (!onOpen) return <div style={{ minWidth: 0 }}>{body}</div>;
+  return (
+    <button
+      className="pressable"
+      onClick={onOpen}
+      aria-label={`${pr.lift} – ${fmtWeight(pr.topLoad, units)} – ${t("w.home.act.prOpen")}`}
+      style={{
+        display: "block", width: "100%", minWidth: 0, textAlign: "left",
+        background: "none", border: "none", padding: 0, margin: 0,
+        color: "inherit", cursor: "pointer",
+      }}
+    >
+      {body}
+    </button>
+  );
+}
+
 export default function AuroraWeekVerdict({
   sessions,
   units,
@@ -135,6 +216,10 @@ export default function AuroraWeekVerdict({
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [all, setAll] = useState(false);
+  // The records rail (three records and up) — see .pr-rail in globals.css.
+  const rail = useRef<HTMLDivElement>(null);
+  const [fade, setFade] = useState({ l: 0, r: 0 });
+  const [allPrs, setAllPrs] = useState(false);
 
   useEffect(() => {
     try {
@@ -161,7 +246,27 @@ export default function AuroraWeekVerdict({
   // reporting different numbers. A PR belongs to the period it happened in, so
   // it belongs to whatever window this card is showing.
   const prs = useMemo(() => prsBetween(sessions, range.from, range.through + 1, bw), [sessions, range, bw]);
+  const shownPrs = allPrs ? prs : prs.slice(0, PRS_RAIL_CAP);
   const months = useMemo(() => activityMonths(sessions, Date.now()), [sessions, today]);
+
+  // A new period is a new set of records — an expanded rail must not carry over.
+  useEffect(() => { setAllPrs(false); }, [range.id]);
+
+  // THE EDGE DISSOLVE, written from the scroll offset: an edge fades only while
+  // records are hidden behind it, and an edge with nothing past it stays crisp.
+  // A fade on both sides at all times would be decoration; this is a status.
+  useEffect(() => {
+    const el = rail.current;
+    if (!el) return;
+    const paint = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      setFade({ l: el.scrollLeft > 4 ? PRS_FADE : 0, r: max - el.scrollLeft > 4 ? PRS_FADE : 0 });
+    };
+    paint();
+    el.addEventListener("scroll", paint, { passive: true });
+    window.addEventListener("resize", paint);
+    return () => { el.removeEventListener("scroll", paint); window.removeEventListener("resize", paint); };
+  }, [shownPrs.length]);
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
   // minutes read as hours to one decimal, distance to one decimal km.
@@ -191,6 +296,12 @@ export default function AuroraWeekVerdict({
     cap(dateFmt(Date.parse(`${id.slice(2)}-01T12:00:00`), long ? { month: "long", year: "numeric" } : { month: "short" }));
 
   const title = range.kind === "month" ? monthLabel(range.id) : t(range.labelKey ?? "w.home.act.rWeek");
+  // The records kicker names the window too. The month case interpolates the
+  // localized month name rather than an inflected phrase — "in July" declines
+  // in Polish (w lipcu) and a nominative month in that slot would be wrong.
+  const prsHead = range.kind === "month"
+    ? t("w.home.act.prsMonth").replace("{m}", monthLabel(range.id))
+    : t(PRS_HEAD_KEY[range.id] ?? "w.home.act.prsWeek");
   // A year-to-date span ends TODAY; a week or a month shows its whole frame, so
   // "Mon 27 – Sun 2" says which seven days the card means even on Tuesday.
   const spanEnd = (range.kind === "ytd" ? range.through : range.to) - 1;
@@ -395,23 +506,82 @@ export default function AuroraWeekVerdict({
           PRs rather than the last seven days'. Silent when there are none. */}
       {prs.length > 0 && (
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <span style={{ ...kicker, color: C("ash") }}>{t("w.home.cockpit.newPrs")}</span>
+          {/* The one rule that stays is this section divider — it separates the
+              figures from what follows and is load-bearing. The three that used
+              to sit inside the block were decoration. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ ...kicker, color: C("ash"), overflow: "hidden", textOverflow: "ellipsis" }}>{prsHead}</span>
             <span style={{ ...num, fontSize: fs.micro, color: accentText("lime"), marginLeft: "auto" }}>{prs.length}</span>
           </div>
-          {prs.slice(0, 4).map((pr) => (
-            <div key={pr.lift} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)` }}>
-              <span style={{ fontSize: fs.caption, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pr.lift}</span>
-              {/* The weight actually lifted (#231) — this row and the session
-                  summary describe the same PR, so they must agree. Formatted
-                  through the shared helper: topLoad is 0.1-rounded, so a raw
-                  subtraction would print +4.799999999999997. */}
-              <span style={{ ...num, fontSize: fs.caption, fontWeight: 700, color: accentText("lime"), whiteSpace: "nowrap" }}>
-                {fmtWeight(pr.topLoad, units)}
-                {pr.previousTopLoad == null || pr.topLoad <= pr.previousTopLoad ? "" : ` – ${strengthPrDelta(pr, { first: "", moreReps: "" })}`}
-              </span>
+
+          {prs.length < 3 ? (
+            /* ONE OR TWO — the figures sit still. No rail, no fade, nothing to
+               drag: a rail that cannot move is worse than no rail. A single
+               record takes the full width rather than leaving half a row empty. */
+            <div style={{
+              display: "grid", gridTemplateColumns: prs.length === 1 ? "1fr" : "1fr 1fr",
+              gap: 14, marginTop: 12,
+            }}>
+              {prs.map((pr) => (
+                <PrCell key={pr.lift} pr={pr} units={units} t={t}
+                  onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
+              ))}
             </div>
-          ))}
+          ) : (
+            /* THREE AND UP — the same cells become a rail.
+             *
+             * This block sits DIRECTLY ON THE SCREEN (it is a sibling of the
+             * card above, not a child of it), so the rail is full-bleed: the
+             * negative margins are the width of the screen gutter and the
+             * padding matches, exactly as the exercise-widget rail does it.
+             * Cards slide under the physical screen edge instead of clipping at
+             * the content column with the gutter showing beside a cut cell.
+             *
+             * A cell is HALF THE CONTENT COLUMN — the same width the two-up
+             * grid gives it — so going from two records to three doesn't resize
+             * anything: the third simply appears past the right edge. That peek
+             * is the whole affordance, which is why there are no arrows, no dot
+             * row and no "swipe" label. Flex percentages resolve against the
+             * content box, which the matching padding makes exactly the column.
+             *
+             * Snap is PROXIMITY, not mandatory: a flick lands cleanly, a small
+             * drag is left where it was put. */
+            <div
+              ref={rail}
+              className="pr-rail"
+              tabIndex={0}
+              role="group"
+              aria-label={`${prsHead} – ${prs.length}`}
+              style={{
+                display: "flex", gap: 14, marginTop: 12, overflowX: "auto",
+                scrollSnapType: "x proximity",
+                margin: "12px calc(-1 * var(--page-pad-x, 16px)) 0",
+                padding: "0 var(--page-pad-x, 16px) 2px",
+                "--pr-fade-l": `${fade.l}px`, "--pr-fade-r": `${fade.r}px`,
+              } as CSSProperties}
+            >
+              {shownPrs.map((pr) => (
+                <div key={pr.lift} style={{ flex: "0 0 calc((100% - 14px) / 2)", minWidth: 0, scrollSnapAlign: "start" }}>
+                  <PrCell pr={pr} units={units} t={t}
+                    onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
+                </div>
+              ))}
+              {!allPrs && prs.length > PRS_RAIL_CAP && (
+                <button
+                  className="pressable"
+                  onClick={() => setAllPrs(true)}
+                  style={{
+                    flex: "0 0 calc((100% - 14px) / 2)", scrollSnapAlign: "start", textAlign: "left",
+                    background: "none", border: "none", padding: 0, cursor: "pointer",
+                    fontFamily: "var(--font-mono)", fontSize: fs.micro,
+                    color: C("ash"), whiteSpace: "normal",
+                  }}
+                >
+                  {t("w.home.act.showAll").replace("{n}", String(prs.length))}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 

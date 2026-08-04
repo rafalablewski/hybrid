@@ -840,6 +840,34 @@ html[data-sheet-open] body { background: #000; }
 .hl-tile.dragging .hl-wig { animation: none; }
 @media (prefers-reduced-motion: reduce) { .hl-tile.edit .hl-wig { animation: none; } }
 
+/* THE RECORDS RAIL — the Activity card's PRs at three records and up
+   (week-verdict.tsx, twinned on mobile with two LinearGradient overlays).
+
+   The edge dissolve is a STATUS, not decoration: --pr-fade-l / --pr-fade-r are
+   written from the scroll offset, so an edge only fades while records are
+   actually hidden behind it, and an edge with nothing past it stays crisp.
+   Declared as @property lengths so the fade EASES rather than snapping — a
+   plain custom property is not interpolable, and mask-image itself doesn't
+   transition. The global reduced-motion catch-all below neutralises the
+   easing, which is the right outcome: the fade still marks the hidden side,
+   it just arrives at once.
+
+   The rail keeps the CARD's padding rather than bleeding to the screen edge.
+   Full-bleed is for rails sitting directly on a screen (the exercise-widget
+   rail); a rail inside a card respects its container. */
+@property --pr-fade-l { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --pr-fade-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.pr-rail {
+  transition: --pr-fade-l .22s ease, --pr-fade-r .22s ease;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--pr-fade-l), #000 calc(100% - var(--pr-fade-r)), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--pr-fade-l), #000 calc(100% - var(--pr-fade-r)), transparent 100%);
+  scrollbar-width: none;
+}
+/* The global ::-webkit-scrollbar rule sizes the vertical bar and leaves the
+   horizontal one at its default height — it would sit exactly where the
+   dissolve is meant to be. */
+.pr-rail::-webkit-scrollbar { display: none; }
+
 /* ---- accessibility / fallbacks ---- */
 /* Comprehensive reduced-motion: a global catch-all (not just the glass/command
    selectors) so EVERY animation/transition is neutralised — the ambient blob

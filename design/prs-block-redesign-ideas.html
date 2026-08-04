@@ -1,0 +1,783 @@
+<title>New PRs — ten ways to say "you set a record"</title>
+<style>
+  /* ── HYBRID tokens, verbatim from packages/core/src/theme/palette.ts ──────
+     Dark = AURORA, light = KYOTO HOUR. Every colour on this page resolves
+     through these, so what you see is what the app would paint. */
+  :root {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e;
+    --lime-text: #3c4f43; --blue-text: #4f5c3a; --amber-text: #885c00; --red-text: #a3442f;
+    --sans: "Archivo", "Archivo Narrow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --pad: clamp(18px, 4vw, 40px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+      --chalk: #f3f4ef; --ash: #8b8f86;
+      --lime-text: #c6f84f; --blue-text: #6cb6bd; --amber-text: #d0cd94; --red-text: #e58a5c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime-text: #c6f84f; --blue-text: #6cb6bd; --amber-text: #d0cd94; --red-text: #e58a5c;
+  }
+  :root[data-theme="light"] {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e;
+    --lime-text: #3c4f43; --blue-text: #4f5c3a; --amber-text: #885c00; --red-text: #a3442f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ink); color: var(--chalk);
+    font-family: var(--sans); line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1220px; margin: 0 auto; padding: var(--pad) var(--pad) 96px; }
+
+  /* ── page furniture ──────────────────────────────────────────────────── */
+  .eyebrow { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ash); margin: 0; }
+  h1 { font-size: clamp(28px, 4.4vw, 46px); line-height: 1.05; letter-spacing: -.035em; font-weight: 800; margin: 14px 0 0; text-wrap: balance; max-width: 21ch; }
+  h1 em { font-style: normal; color: var(--lime-text); }
+  .lede { margin: 18px 0 0; max-width: 70ch; color: var(--ash); font-size: clamp(15px, 1.35vw, 17px); }
+  .lede strong { color: var(--chalk); font-weight: 600; }
+  h2 { font-size: clamp(20px, 2.2vw, 27px); letter-spacing: -.025em; font-weight: 800; margin: 0; text-wrap: balance; }
+  h3 { font-size: 15.5px; font-weight: 700; letter-spacing: -.012em; margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  section { margin-top: clamp(46px, 6vw, 78px); }
+  .sechead { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .sechead p { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .body { margin-top: 18px; max-width: 72ch; color: var(--ash); font-size: 14.5px; }
+  .body strong { color: var(--chalk); font-weight: 600; }
+  .body + .body { margin-top: 10px; }
+  code { font-family: var(--mono); font-size: .86em; color: var(--chalk); }
+
+  /* ── the app card, reproduced ────────────────────────────────────────── */
+  .app { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 16px; }
+  .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); }
+  .hint { font-family: var(--mono); font-size: 9px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); opacity: .75; text-align: center; margin-top: 10px; }
+  .figs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+  .figs .v { font-family: var(--mono); font-size: 19px; font-weight: 700; color: var(--chalk); font-variant-numeric: tabular-nums; }
+  .figs .u { display: block; margin-top: 3px; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .lime { color: var(--lime-text); }
+  .dim { color: var(--ash); }
+
+  /* the block header shared by most mocks */
+  .bhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+  /* ── was / is ────────────────────────────────────────────────────────── */
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: clamp(16px, 2.4vw, 28px); margin-top: 22px; align-items: start; }
+  .slotlab { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); margin-bottom: 10px; }
+  .note { margin-top: 12px; font-size: 13px; color: var(--ash); max-width: 46ch; }
+  .note b { color: var(--chalk); font-weight: 600; }
+
+  /* the shipping block, exactly as it renders today */
+  .was .sep { height: 1px; background: var(--line); margin: 14px 0 12px; }
+  .was .row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); font-size: 13px; }
+  .was .row .w { font-family: var(--mono); font-weight: 700; color: var(--lime-text); font-variant-numeric: tabular-nums; }
+  .tally { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .tally span { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); padding: 5px 9px; border-radius: 8px; background: var(--ink2); }
+  .tally b { color: var(--chalk); font-weight: 600; }
+
+  /* ── the idea grid ───────────────────────────────────────────────────── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(316px, 1fr)); gap: clamp(16px, 2vw, 24px); margin-top: 24px; }
+  .idea { display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 20px; background: var(--ink2); border: 1px solid var(--line); }
+  .idea.pick { border-color: color-mix(in srgb, var(--lime-text) 40%, var(--line)); }
+  .ihead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .rank { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--ash); font-variant-numeric: tabular-nums; }
+  .flag { margin-left: auto; font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--lime-text); }
+  .idea > p { font-size: 13.5px; color: var(--ash); }
+  .idea > p strong { color: var(--chalk); font-weight: 600; }
+  .facts { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; font-family: var(--mono); font-size: 10.5px; line-height: 1.5; color: var(--ash); }
+  .facts li { display: flex; gap: 10px; }
+  .facts li > span:first-child { flex: 0 0 62px; letter-spacing: .1em; text-transform: uppercase; opacity: .8; }
+  .facts b { color: var(--chalk); font-weight: 600; }
+  .demo { margin-top: auto; }
+
+  /* ── per-idea mock styles ────────────────────────────────────────────── */
+  /* 1 — unruled stack */
+  .m-stack .rows { display: flex; flex-direction: column; gap: 13px; margin-top: 11px; }
+  .m-stack .r { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13.5px; }
+  .m-stack .w { font-family: var(--mono); font-weight: 700; color: var(--lime-text); font-variant-numeric: tabular-nums; }
+
+  /* 2 — the record becomes a figure */
+  .m-fig .cells { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+  .m-fig .n { font-family: var(--mono); font-size: clamp(26px, 3.2vw, 32px); font-weight: 800; line-height: 1; letter-spacing: -.03em; color: var(--lime-text); font-variant-numeric: tabular-nums; margin-top: 7px; }
+  .m-fig .n i { font-style: normal; font-size: .46em; font-weight: 600; letter-spacing: .04em; margin-left: 3px; }
+  .m-fig .sub { display: block; margin-top: 6px; font-size: 11.5px; color: var(--ash); }
+
+  /* 3 — the climb */
+  .m-climb .rows { display: flex; flex-direction: column; gap: 12px; margin-top: 11px; }
+  .m-climb .r { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13.5px; }
+  .m-climb .pair2 { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .m-climb .old { color: var(--ash); font-size: 11.5px; }
+  .m-climb .arw { color: var(--lime-text); margin: 0 5px; }
+  .m-climb .new { color: var(--lime-text); font-weight: 700; }
+  .m-climb .first { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); margin-right: 6px; }
+
+  /* 4 — the delta leads */
+  .m-delta .rows { display: flex; flex-direction: column; gap: 15px; margin-top: 12px; }
+  .m-delta .r { display: flex; align-items: center; gap: 13px; }
+  .m-delta .d { font-family: var(--mono); font-size: 27px; font-weight: 800; line-height: 1; letter-spacing: -.03em; color: var(--lime-text); font-variant-numeric: tabular-nums; min-width: 74px; }
+  .m-delta .d.na { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+  .m-delta .cap { font-size: 13px; color: var(--chalk); }
+  .m-delta .cap span { display: block; font-size: 11.5px; color: var(--ash); }
+
+  /* 5 — the shelf */
+  .m-shelf .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .m-shelf .chip { display: inline-flex; align-items: baseline; gap: 8px; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--lime-text) 13%, transparent); font-size: 12.5px; color: var(--chalk); }
+  .m-shelf .chip b { font-family: var(--mono); font-weight: 700; color: var(--lime-text); font-variant-numeric: tabular-nums; }
+
+  /* 6 — the sentence */
+  .m-say .line { margin-top: 11px; font-size: 15px; line-height: 1.45; letter-spacing: -.01em; color: var(--chalk); text-wrap: balance; }
+  .m-say .line b { color: var(--lime-text); font-weight: 700; }
+  .m-say .sub { margin-top: 8px; font-size: 12.5px; color: var(--ash); }
+
+  /* 7 — the rail */
+  .m-rail .rows { display: flex; flex-direction: column; gap: 15px; margin-top: 13px; }
+  .m-rail .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; margin-bottom: 7px; }
+  .m-rail .top b { font-family: var(--mono); color: var(--lime-text); font-variant-numeric: tabular-nums; }
+  .m-rail .track { display: flex; height: 3px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--line) 70%, transparent); }
+  .m-rail .held { background: var(--ash); opacity: .55; }
+  .m-rail .gain { background: var(--lime-text); }
+
+  /* 8 — the plate */
+  .m-plate .rows { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .m-plate .r {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 14px; font-size: 13.5px;
+    background:
+      radial-gradient(130% 160% at 100% 50%, color-mix(in srgb, var(--lime-text) 12%, transparent), transparent 62%),
+      var(--card);
+  }
+  .m-plate .w { font-family: var(--mono); font-weight: 700; color: var(--lime-text); font-variant-numeric: tabular-nums; }
+
+  /* 9 — the stamp */
+  .m-stamp .rows { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; font-family: var(--mono); }
+  .m-stamp .r { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .m-stamp .w { font-size: 17px; font-weight: 700; color: var(--lime-text); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .m-stamp .lift { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--chalk); }
+  .m-stamp .when { margin-left: auto; font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); }
+
+  /* 10 — removal */
+  .m-gone .figs .v { position: relative; display: inline-block; }
+  .m-gone .figs .v sup { font-size: 10px; font-weight: 700; color: var(--lime-text); margin-left: 2px; vertical-align: super; }
+  .m-gone .hint b { color: var(--chalk); font-weight: 600; }
+
+  /* ── modifiers ───────────────────────────────────────────────────────── */
+  .mods { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: clamp(14px, 1.8vw, 20px); margin-top: 24px; }
+  .mod { padding: 18px; border-radius: 18px; background: var(--ink2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 9px; }
+  .mod p { font-size: 13px; color: var(--ash); }
+  .mod p strong { color: var(--chalk); font-weight: 600; }
+
+  /* ── the recommendation ──────────────────────────────────────────────── */
+  .final { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: clamp(20px, 3vw, 40px); margin-top: 24px; align-items: start; }
+  @media (max-width: 760px) { .final { grid-template-columns: 1fr; } }
+  .ship .sep { height: 1px; background: var(--line); margin: 14px 0 12px; }
+  .ship .cells { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ship .n { font-family: var(--mono); font-size: 32px; font-weight: 800; line-height: 1; letter-spacing: -.03em; color: var(--lime-text); font-variant-numeric: tabular-nums; margin-top: 8px; }
+  .ship .n i { font-style: normal; font-size: .44em; font-weight: 600; letter-spacing: .04em; margin-left: 3px; }
+  .ship .sub { display: block; margin-top: 7px; font-size: 11.5px; color: var(--ash); }
+  .ship .sub em { font-style: normal; color: var(--lime-text); }
+  /* the rail — three records and up */
+  @property --fl { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  @property --fr { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  .rail {
+    display: flex; gap: 14px; margin-top: 12px; overflow-x: auto; scroll-snap-type: x proximity;
+    scrollbar-width: none; padding-bottom: 2px;
+    --fl: 0px; --fr: 24px;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%);
+    transition: --fl .22s ease, --fr .22s ease;
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail > div { flex: 0 0 46%; scroll-snap-align: start; }
+  .rail:focus-visible { outline: 2px solid var(--lime-text); outline-offset: 5px; border-radius: 6px; }
+  @media (prefers-reduced-motion: reduce) { .rail { transition: none; } }
+  .stateslab { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); margin: 22px 0 8px; }
+  .stateslab b { color: var(--chalk); font-weight: 600; }
+
+  .steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .steps li { display: flex; gap: 12px; font-size: 13.5px; color: var(--ash); }
+  .steps li > span { flex: 0 0 22px; font-family: var(--mono); font-size: 11px; color: var(--ash); padding-top: 3px; font-variant-numeric: tabular-nums; }
+  .steps b { color: var(--chalk); font-weight: 600; }
+  .files { margin: 18px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font: 500 11.5px/1.5 var(--mono); color: var(--ash); }
+  .files b { color: var(--chalk); font-weight: 600; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .idea, .mod { animation: rise .5s cubic-bezier(.2,.7,.3,1) both; }
+    .idea:nth-child(2) { animation-delay: .03s; }
+    .idea:nth-child(3) { animation-delay: .06s; }
+    .idea:nth-child(4) { animation-delay: .09s; }
+    .idea:nth-child(5) { animation-delay: .12s; }
+    .idea:nth-child(6) { animation-delay: .15s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Today → the Activity card → New PRs</p>
+    <h1>Two records. Four hairlines. It reads like a <em>receipt</em>.</h1>
+    <p class="lede">
+      The block itself is right — records belong to the window the athlete picked, so a month view lists
+      the month's PRs. What's wrong is the <strong>treatment</strong>. A record is the most emotional figure
+      in the app and it is currently set at the same size, weight and rhythm as a settings row, fenced by
+      more rules than it has content. Ten ways to fix that, from pure subtraction to deleting the block
+      outright — then the one I'd ship.
+    </p>
+  </header>
+
+  <section>
+    <div class="sechead">
+      <h2>What's actually wrong</h2>
+      <p>web week-verdict.tsx:396 – mobile week-verdict.tsx:409</p>
+    </div>
+
+    <div class="pair">
+      <div>
+        <p class="slotlab">As it ships</p>
+        <div class="app was">
+          <p class="hint" style="margin: 0 0 2px;">Open a figure for the sessions behind it</p>
+          <div class="sep"></div>
+          <div class="bhead">
+            <span class="k">New PRs</span>
+            <span class="num lime" style="font-size: 11px;">2</span>
+          </div>
+          <div class="row" style="margin-top: 4px;">
+            <span>Trap-Bar Deadlift</span><span class="w">90 kg</span>
+          </div>
+          <div class="row">
+            <span>Pendlay Row</span><span class="w">50 kg</span>
+          </div>
+        </div>
+        <div class="tally">
+          <span><b>4</b> hairlines</span>
+          <span><b>2</b> records</span>
+          <span><b>13 px</b> the record's type size</span>
+          <span><b>0</b> proof</span>
+        </div>
+      </div>
+
+      <div>
+        <p class="slotlab">The three faults</p>
+        <p class="body" style="margin-top: 0;">
+          <strong>One — the rules outnumber the content.</strong> A section rule, then a hairline above every
+          row including the first. Four drawn lines to separate two items that whitespace would have separated
+          for free. The card already sits inside a border; everything inside it is a second fence.
+        </p>
+        <p class="body">
+          <strong>Two — a record is typed like a list item.</strong> 13 px, the same size as the label beside it.
+          Nothing on screen says this is the best that lift has ever been. Scale is the cheapest celebration
+          there is and the block spends none of it.
+        </p>
+        <p class="body">
+          <strong>Three — the number stands with no proof.</strong> "90 kg" is only an achievement against
+          the 82.5 it beat. <code>PrHit</code> already carries <code>previousTopLoad</code> and the block
+          already imports <code>strengthPrDelta</code> — the evidence is in hand and mostly goes unprinted.
+        </p>
+        <p class="body">
+          Everything below uses the same data the block reads today: <code>lift</code>, <code>topLoad</code>,
+          <code>previousTopLoad</code>, and the first-ever / more-reps shapes <code>strengthPrDelta</code> already
+          formats. No new engine, no new query.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>Ten ways to say "you set a record"</h2>
+      <p>Demo data — Trap-Bar Deadlift 90 kg (was 82.5), Pendlay Row 50 kg (first)</p>
+    </div>
+
+    <div class="grid">
+
+      <!-- 1 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">01</span>
+          <h3>Unruled — take the lines out and nothing breaks</h3>
+        </div>
+        <p>
+          The minimum-effort, maximum-return move: delete all four hairlines and let <strong>rhythm</strong>
+          do the separating. 13 px of gap reads as "different item" just as clearly as a 1 px rule, and the
+          block stops looking like a table someone forgot to finish.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 0</b> inside the block</li>
+          <li><span>Change</span>delete two <code>borderTop</code>s, add a gap</li>
+          <li><span>Risk</span>at four records it can drift — cap at three</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-stack">
+            <div class="bhead"><span class="k">New PRs</span><span class="num lime" style="font-size: 11px;">2</span></div>
+            <div class="rows">
+              <div class="r"><span>Trap-Bar Deadlift</span><span class="w">90 kg</span></div>
+              <div class="r"><span>Pendlay Row</span><span class="w">50 kg</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2 -->
+      <article class="idea pick">
+        <div class="ihead">
+          <span class="rank">02</span>
+          <h3>The record becomes a figure, like everything else in this card</h3>
+          <span class="flag">Recommended base</span>
+        </div>
+        <p>
+          The card above is built of <strong>figures that open</strong>. The PR block breaks that grammar and
+          becomes a list. Set each record the way the card sets its own numbers — big lime numeral, lift name
+          as a quiet kicker over it, the proof underneath — and the block joins the card instead of hanging
+          off the bottom of it.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 1</b> (the section rule only)</li>
+          <li><span>Scale</span>13 px → <b>fs.display</b>, tabular</li>
+          <li><span>Grammar</span>same as the tonnage / hours columns</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-fig">
+            <div class="bhead"><span class="k">New records</span><span class="num lime" style="font-size: 11px;">2</span></div>
+            <div class="cells">
+              <div>
+                <span class="k">Trap-Bar Deadlift</span>
+                <div class="n">90<i>kg</i></div>
+                <span class="sub">from 82.5</span>
+              </div>
+              <div>
+                <span class="k">Pendlay Row</span>
+                <div class="n">50<i>kg</i></div>
+                <span class="sub">first time</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">03</span>
+          <h3>The climb — print what it beat</h3>
+        </div>
+        <p>
+          One number is a fact. Two numbers are an <strong>achievement</strong>. Show the old best in ash and
+          the new one in lime with the arrow between them, and the row argues for itself with no badge, no
+          trophy and no extra rule. First-evers get the honest other shape.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 0</b></li>
+          <li><span>Data</span><code>previousTopLoad</code>, already loaded</li>
+          <li><span>Shapes</span>climb – first time – more reps</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-climb">
+            <div class="bhead"><span class="k">New PRs</span><span class="num lime" style="font-size: 11px;">2</span></div>
+            <div class="rows">
+              <div class="r">
+                <span>Trap-Bar Deadlift</span>
+                <span class="pair2"><span class="old">82.5</span><span class="arw">→</span><span class="new">90 kg</span></span>
+              </div>
+              <div class="r">
+                <span>Pendlay Row</span>
+                <span class="pair2"><span class="first">First</span><span class="new">50 kg</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">04</span>
+          <h3>The gain leads, the load follows</h3>
+        </div>
+        <p>
+          Headline what was <strong>added</strong>, not what was moved. "+7.5" is the whole story of a training
+          block compressed into one glyph, and it is the number an athlete repeats out loud. The absolute load
+          drops to the caption where it still settles any argument.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 0</b></li>
+          <li><span>Careful</span>first-evers and rep PRs have no delta</li>
+          <li><span>Fallback</span>the word <b>First</b> at caption size</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-delta">
+            <div class="bhead"><span class="k">New PRs</span><span class="num lime" style="font-size: 11px;">2</span></div>
+            <div class="rows">
+              <div class="r">
+                <span class="d">+7.5</span>
+                <span class="cap">kg on Trap-Bar Deadlift<span>to 90 kg, your heaviest</span></span>
+              </div>
+              <div class="r">
+                <span class="d na">First</span>
+                <span class="cap">Pendlay Row<span>50 kg, nothing to beat</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 5 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">05</span>
+          <h3>The shelf — records as objects, not rows</h3>
+        </div>
+        <p>
+          Stop laying records out in a column at all. Each one becomes a soft lime-tinted object that wraps
+          on the line, so two records read as <strong>two things you won</strong> rather than the first two
+          entries of a list that might continue. The tint carries the edge, so no chip needs a border.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 0</b>, and no borders on the chips</li>
+          <li><span>Count</span>implicit — you can see them</li>
+          <li><span>Risk</span>long lift names wrap badly at 3+</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-shelf">
+            <span class="k">New PRs</span>
+            <div class="chips">
+              <span class="chip">Trap-Bar Deadlift <b>90 kg</b></span>
+              <span class="chip">Pendlay Row <b>50 kg</b></span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 6 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">06</span>
+          <h3>Say it in a sentence, the way the card already does</h3>
+        </div>
+        <p>
+          This card's whole thesis is that it <strong>leads with a sentence</strong> and puts the figures under
+          a hairline. The PR block should speak the same way. A sentence can hold what a row can't — that this
+          is the heaviest ever, in the period the athlete chose — and it costs no rules at all.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 0</b></li>
+          <li><span>Voice</span>matches <code>activityVerdict()</code> above</li>
+          <li><span>i18n</span>needs plural + period-aware keys</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-say">
+            <span class="k">New PRs</span>
+            <p class="line">Two records this week. Your heaviest Trap-Bar Deadlift yet, at <b>90 kg</b>.</p>
+            <p class="sub">And a first at 50 kg on the Pendlay Row.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- 7 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">07</span>
+          <h3>Draw the gain — one line that earns its pixel</h3>
+        </div>
+        <p>
+          If a line must be drawn, let it <strong>mean something</strong>. A 3 px rail per record: ash for the
+          weight the athlete already held, lime for the part added this period. The decorative hairlines go and
+          a measured one arrives — a trade Ive would take every time.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 decorative → 2 measured</b></li>
+          <li><span>Scale</span>rail spans 0 → new best, per lift</li>
+          <li><span>Risk</span>a first-ever is all lime, no contrast</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-rail">
+            <div class="bhead"><span class="k">New PRs</span><span class="num lime" style="font-size: 11px;">2</span></div>
+            <div class="rows">
+              <div>
+                <div class="top"><span>Trap-Bar Deadlift</span><b>90 kg <span class="dim">+7.5</span></b></div>
+                <div class="track"><span class="held" style="flex: 0 0 82%;"></span><span class="gain" style="flex: 1;"></span></div>
+              </div>
+              <div>
+                <div class="top"><span>Pendlay Row</span><b>50 kg <span class="dim">first</span></b></div>
+                <div class="track"><span class="gain" style="flex: 1;"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 8 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">08</span>
+          <h3>Let material separate them, not ink</h3>
+        </div>
+        <p>
+          Every record sits on its own raised surface — card over ink, 14 px radius, no border — with a soft
+          lime wash bleeding in behind the number. Separation becomes a property of the <strong>material</strong>
+          rather than a line drawn on top of it, and the block gains the only warmth it has ever had.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 0</b>; surfaces instead</li>
+          <li><span>Light</span>radial wash, not an accent bar</li>
+          <li><span>Risk</span>reads heavier — keep to 2–3 records</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-plate">
+            <div class="bhead"><span class="k">New PRs</span><span class="num lime" style="font-size: 11px;">2</span></div>
+            <div class="rows">
+              <div class="r"><span>Trap-Bar Deadlift</span><span class="w">90 kg</span></div>
+              <div class="r"><span>Pendlay Row</span><span class="w">50 kg</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 9 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">09</span>
+          <h3>The record, stamped</h3>
+        </div>
+        <p>
+          Ceremony without ornament. The load leads in mono at record size, the lift is set as a
+          letter-spaced caption beneath it, and the date sits at the far right like a certification.
+          Cold, formal, and the natural home for the <strong>Verified Strength Record</strong> tiers when
+          witness co-signing ships.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 0</b></li>
+          <li><span>Extra</span>the date — one field, already on the hit</li>
+          <li><span>Future</span>tier mark slots after the load</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-stamp">
+            <span class="k">Records set</span>
+            <div class="rows">
+              <div class="r">
+                <span class="w">90.0 kg</span><span class="lift">Trap-Bar Deadlift</span><span class="when">2 Aug</span>
+              </div>
+              <div class="r">
+                <span class="w">50.0 kg</span><span class="lift">Pendlay Row</span><span class="when">31 Jul</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 10 -->
+      <article class="idea">
+        <div class="ihead">
+          <span class="rank">10</span>
+          <h3>Delete the block — the record belongs to the session</h3>
+        </div>
+        <p>
+          The honest extreme. The card's promise is "open a figure for the sessions behind it"; a record is a
+          <strong>property of a session</strong>, not a fifth column. Mark the count on Sessions, move the
+          records into the drawer beside the sessions that set them, and the card returns to one idea.
+        </p>
+        <ul class="facts">
+          <li><span>Lines</span><b>4 → 0</b>, and one section gone</li>
+          <li><span>Wins</span>the card stays a single thought</li>
+          <li><span>Loses</span>the trophy no longer greets you</li>
+        </ul>
+        <div class="demo">
+          <div class="app m-gone">
+            <div class="figs">
+              <div><span class="v">7.4</span><span class="k u">t</span></div>
+              <div><span class="v">4.2</span><span class="k u">h</span></div>
+              <div><span class="v">18</span><span class="k u">km</span></div>
+              <div><span class="v">5<sup>2</sup></span><span class="k u">sessions</span></div>
+            </div>
+            <p class="hint">Open a figure for the sessions behind it — <b>two set records</b></p>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>Three modifiers</h2>
+      <p>Each one composes with any base above</p>
+    </div>
+
+    <div class="mods">
+      <div class="mod">
+        <h3>It should arrive, not appear</h3>
+        <p>
+          A record is a <strong>moment</strong>. When the block first renders after a session that set one,
+          count the number up from the previous best to the new one over ~600 ms and let the caption fade in
+          behind it. Once per session, never on a re-render, and skipped entirely under
+          <code>useReducedMotion()</code> — where the final value is simply there.
+        </p>
+      </div>
+      <div class="mod">
+        <h3>Every record opens its session</h3>
+        <p>
+          The card already teaches that figures open. Make each record pressable to the session that set it,
+          reusing the caret-and-drawer the metrics use rather than a new sheet. Proof becomes one press away,
+          and the block inherits the interaction the athlete already learned two rows above.
+        </p>
+      </div>
+      <div class="mod">
+        <h3>Name the window, and stay silent when it's empty</h3>
+        <p>
+          "New PRs" is period-blind while the card underneath it is period-aware. Say <strong>records this
+          week</strong> / <strong>in July</strong> / <strong>this year</strong> so a month view can't be misread
+          as recent news. The existing silence at zero is right — never render an empty state that says
+          "no records".
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <h2>What I'd ship</h2>
+      <p>02 as the base, carrying 03's proof and 01's subtraction — and a rail past two</p>
+    </div>
+
+    <div class="final">
+      <div>
+        <p class="slotlab">One or two records — it sits still</p>
+        <div class="app ship">
+          <p class="hint" style="margin: 0 0 2px;">Open a figure for the sessions behind it</p>
+          <div class="sep"></div>
+          <div class="bhead">
+            <span class="k">Records this week</span>
+            <span class="num lime" style="font-size: 11px;">2</span>
+          </div>
+          <div class="cells" style="margin-top: 12px;">
+            <div>
+              <span class="k">Trap-Bar Deadlift</span>
+              <div class="n">90<i>kg</i></div>
+              <span class="sub">from 82.5 <em>+7.5</em></span>
+            </div>
+            <div>
+              <span class="k">Pendlay Row</span>
+              <div class="n">50<i>kg</i></div>
+              <span class="sub">first time</span>
+            </div>
+          </div>
+        </div>
+        <div class="tally">
+          <span><b>1</b> hairline</span>
+          <span><b>fs.display</b> the record</span>
+          <span><b>0</b> new data</span>
+        </div>
+
+        <p class="stateslab">Three and up — the same cells become a rail <b>(drag it)</b></p>
+        <div class="app ship">
+          <p class="hint" style="margin: 0 0 2px;">Open a figure for the sessions behind it</p>
+          <div class="sep"></div>
+          <div class="bhead">
+            <span class="k">Records in July</span>
+            <span class="num lime" style="font-size: 11px;">4</span>
+          </div>
+          <div class="rail" tabindex="0" role="group" aria-label="Records in July, 4 items, scrollable">
+            <div>
+              <span class="k">Trap-Bar Deadlift</span>
+              <div class="n">90<i>kg</i></div>
+              <span class="sub">from 82.5 <em>+7.5</em></span>
+            </div>
+            <div>
+              <span class="k">Pendlay Row</span>
+              <div class="n">50<i>kg</i></div>
+              <span class="sub">first time</span>
+            </div>
+            <div>
+              <span class="k">Back Squat</span>
+              <div class="n">130<i>kg</i></div>
+              <span class="sub">from 125 <em>+5</em></span>
+            </div>
+            <div>
+              <span class="k">Weighted Pull-up</span>
+              <div class="n">88<i>kg</i></div>
+              <span class="sub">more reps</span>
+            </div>
+          </div>
+        </div>
+        <div class="tally">
+          <span><b>0</b> hairlines added</span>
+          <span><b>half the column</b> per cell</span>
+          <span><b>24 px</b> dissolve at a live edge</span>
+        </div>
+      </div>
+
+      <div>
+        <ol class="steps">
+          <li><span>01</span><span>Every hairline inside the block goes. The one rule that stays is the card's own section divider, which already separates the figures from what follows — that rule is load-bearing, the other three were decoration.</span></li>
+          <li><span>02</span><span>The record is set as a <b>figure</b>: mono, <code>fs.display</code>, 800, tabular, in the lime text token — the same treatment the tonnage and hours columns get, so the block reads as part of the card rather than an appendix.</span></li>
+          <li><span>03</span><span>Under each figure, the proof in ash: <b>from 82.5</b> with the delta in lime, <b>first time</b>, or <b>more reps</b>. All three shapes already come out of <code>strengthPrDelta</code>, so the wording can't drift from the session summary.</span></li>
+          <li><span>04</span><span>At one or two records the cells sit still — <b>no rail, no fade, nothing to drag</b>. A single record takes the full width rather than leaving half the row empty; two split it. At three the same cells become a horizontal rail. One component, one cell, a switch on <code>prs.length</code>; a rail that can't move is worse than no rail.</span></li>
+          <li><span>05</span><span>A cell is <b>half the content column</b> — the width the two-up grid gives it — so going from two records to three resizes nothing: the third simply appears past the right edge. The peek is the affordance — nothing needs an arrow, a dot row or a "swipe" label to say it moves.</span></li>
+          <li><span>06</span><span>The edges <b>dissolve, and only where something is hidden</b>: 24 px of fade on the right while records remain, on the left once you've scrolled past the first, and none at all on an edge that has nothing behind it. A permanent fade on both sides is decoration; a conditional one is a status.</span></li>
+          <li><span>07</span><span>Snap is <b>proximity, not mandatory</b> — a flick lands cleanly, a small drag is left where it was put. Same feel as the exercise-widget rail the athlete already knows.</span></li>
+          <li><span>08</span><span>The kicker names the window ("Records this week", "Records in July") and each cell presses through to its session. Silence at zero is kept exactly as it is.</span></li>
+        </ol>
+
+        <p class="body">
+          <strong>The rail is full-bleed.</strong> Reading the component settled a question the mock couldn't:
+          this block is a <em>sibling</em> of the Activity card, not a child of it — it sits directly on the
+          screen, under the card, with only the screen gutter beside it. So the house rule applies in its
+          normal form: negative margins the width of the gutter with matching internal padding, and cards slide
+          under the physical screen edge. Resting cells still line up with the content column, and the dissolve
+          now happens at the true edge rather than mid-content, which is where a fade belongs.
+        </p>
+        <p class="body">
+          <strong>Per client.</strong> Web: <code>overflowX: "auto"</code>, <code>scrollSnapType: "x proximity"</code> and the fade as a
+          <code>maskImage</code> driven by two <code>@property</code> lengths, so it eases rather than snaps
+          (<code>.pr-rail</code> in globals.css). Mobile: a horizontal <code>ScrollView</code> at
+          <code>decelerationRate="fast"</code> — the mobile twin of proximity snap, and the feel every other
+          rail in the app has — with the fade as two <code>LinearGradient</code> overlays in the SCREEN colour,
+          their opacity animated on the native driver; the idiom <code>coach-rail.tsx</code> already ships. Both clients cap the rail at <b>eight</b>
+          records with a final <b>See all 23</b> cell into the drawer, so a year view can't become an endless drag.
+        </p>
+        <p class="body">
+          <strong>Reach.</strong> The rail is focusable and arrow-key scrollable on web with a visible focus ring,
+          and carries a group label naming the window and the count, so the records are readable without a drag.
+          Under <code>prefers-reduced-motion</code> / <code>useReducedMotion()</code> the fades switch instantly
+          instead of easing, and the count-up modifier stays off.
+        </p>
+        <p class="body">
+          Nothing here needs a new engine call, a new query or a new colour. It is the same
+          <code>prsBetween()</code> output the block already reads, spending its budget on
+          <strong>scale and evidence</strong> instead of on ink.
+        </p>
+        <ul class="files">
+          <li><b>apps/web/components/aurora/week-verdict.tsx</b> — the block at :396</li>
+          <li><b>apps/mobile/components/aurora/week-verdict.tsx</b> — the twin at :409</li>
+          <li><b>packages/core/src/i18n-web/home.ts</b> — period-aware kicker, EN / PL / DE</li>
+          <li><b>packages/core/src/capabilities.ts</b> — record the change in the same commit</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  /* The dissolve is a STATUS, not decoration: an edge fades only while records
+     are hidden behind it. Same rule both clients — web sets the mask stops,
+     mobile animates the two LinearGradient overlays on the scroll offset. */
+  (function () {
+    var FADE = 24;
+    document.querySelectorAll(".rail").forEach(function (rail) {
+      function paint() {
+        var max = rail.scrollWidth - rail.clientWidth;
+        rail.style.setProperty("--fl", (rail.scrollLeft > 4 ? FADE : 0) + "px");
+        rail.style.setProperty("--fr", (max - rail.scrollLeft > 4 ? FADE : 0) + "px");
+      }
+      rail.addEventListener("scroll", paint, { passive: true });
+      window.addEventListener("resize", paint);
+      paint();
+    });
+  })();
+</script>
