@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // ---------------------------------------------------------------------------
@@ -11,25 +11,59 @@ import { fileURLToPath } from "node:url";
 // interpolates a height. That measurement is taken while the drawer is clipped
 // — and a box clipped to EXACTLY 0 does not let an in-flow child overflow it:
 // Yoga reads a zero available main size as an at-most-0 constraint and lays the
-// child out at 0 as well. (Any height above zero overflows normally; 0 is the
-// one value that clamps.)
+// child out at 0 as well. (Any height ABOVE zero overflows normally; 0 is the
+// one value that clamps, which is why it reads as correct.)
 //
-// So a panel measured IN FLOW inside a closed drawer measures 0, the height it
-// would open to is 0, and the drawer never moves — while the chevron and the
+// So a panel measured IN FLOW inside a drawer pinned to 0 measures 0, the height
+// it would open to is 0, and the drawer never moves — while the chevron and the
 // label, which measure nothing, keep toggling over a card that never opens.
 // That shipped twice: Volume's compact card on Performance, and the Activity
 // card's figures on Today, each with its own copy of the same measured drawer.
 //
-// The fix is structural: the panel is taken OUT OF FLOW for every state that
-// pins a height on the drawer, so it is sized against the drawer's WIDTH alone.
-// This test holds that structure, and holds the drawer to ONE implementation —
-// a third copy is how the first two came to disagree with each other.
+// There are exactly two ways to be safe, and a measured collapse must pick one:
+//   • take the panel OUT OF FLOW while the drawer carries a height (ADrawer), or
+//   • never pin the drawer to 0 while the measurement is still 0 (fall back to
+//     `auto`, which is what percent-program's Collapse does).
+// Neither can be proven by a regex, so this test does what parity.test.ts does
+// with nav gaps: it finds EVERY measured collapse on mobile and makes each one
+// name, in writing, which of the two it relies on. A new hand-rolled copy fails
+// until someone has had to answer the question.
 // ---------------------------------------------------------------------------
 
 const APP_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const MOBILE_AURORA = join(APP_ROOT, "..", "..", "apps", "mobile", "components", "aurora");
+const MOBILE = join(APP_ROOT, "..", "..", "apps", "mobile");
+const AURORA = join(MOBILE, "components", "aurora");
 
-const kit = readFileSync(join(MOBILE_AURORA, "kit.tsx"), "utf8");
+const kit = readFileSync(join(AURORA, "kit.tsx"), "utf8");
+
+/**
+ * Every mobile file that measures a height with onLayout AND drives a height
+ * from an Animated value, with the reason it does not fall into the trap.
+ * Adding a file here is the point: you cannot ship a measured collapse without
+ * stating which of the two escapes it takes.
+ */
+const MEASURED: Record<string, string> = {
+  "components/aurora/kit.tsx":
+    "ADrawer — the shared drawer. Its panel is positioned ABSOLUTELY for every state that pins a height, so it measures its true height even fully closed.",
+  "components/percent-program.tsx":
+    "Collapse — the program accordion. Takes the other escape: while open and still unmeasured its height falls back to `undefined` (auto), so the box is never pinned to 0 with an unmeasured panel. TODO fold into ADrawer (capability drawer-collapse-merge).",
+  "components/aurora/sheet.tsx":
+    "The sheet panel measures itself under a positive `maxHeight`, never inside a box pinned to 0.",
+  "components/aurora/hero.tsx":
+    "Measures the hero rail's own height in an auto-height parent — a scroll offset, not a collapse. Nothing clips it to 0.",
+  "components/plan-hero.tsx":
+    "Same as hero.tsx — the plan screen's rail height for the collapse offset, measured in an auto-height parent.",
+};
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const name of readdirSync(dir)) {
+    if (name === "node_modules") continue;
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) walk(p, out);
+    else if (/\.tsx?$/.test(name)) out.push(p);
+  }
+  return out;
+}
 
 describe("mobile ADrawer — the measured disclosure", () => {
   it("is the kit's, exported once", () => {
@@ -52,13 +86,20 @@ describe("mobile ADrawer — the measured disclosure", () => {
     expect(panel).toMatch(/onLayout=\{\(e\) => setPanelH\(/);
   });
 
-  it("is the ONLY animated-height drawer on mobile", () => {
-    // A hand-rolled copy is how the trap spreads: both broken drawers were
-    // written from scratch, and both measured in flow. Anything that needs to
-    // ease open uses ADrawer.
-    const offenders = readdirSync(MOBILE_AURORA)
-      .filter((f) => f.endsWith(".tsx") && f !== "kit.tsx")
-      .filter((f) => /height:\s*[A-Za-z_$][\w$]*\.interpolate\(/.test(readFileSync(join(MOBILE_AURORA, f), "utf8")));
-    expect(offenders).toEqual([]);
+  it("every measured collapse on mobile has stated how it escapes the trap", () => {
+    // Deliberately broad: it flags anything that measures a height and animates
+    // one, not just something shaped like today's drawers — a copy written with
+    // the interpolation assigned to a variable first is exactly how the last one
+    // would have slipped past a narrower pattern.
+    const found = walk(MOBILE)
+      .filter((f) => {
+        const s = readFileSync(f, "utf8");
+        return /layout\.height/.test(s) && /\.interpolate\(/.test(s);
+      })
+      .map((f) => relative(MOBILE, f).split(/[\\/]/).join("/"));
+
+    expect(found.filter((f) => !(f in MEASURED))).toEqual([]);
+    // …and the registry may not rot: every entry must still be a real one.
+    expect(Object.keys(MEASURED).filter((f) => !found.includes(f))).toEqual([]);
   });
 });
