@@ -141,7 +141,7 @@ export function readinessWhy(log: TrainingLog, bio?: Biometrics): string[] {
   }
   const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
   lines.push(
-    top[1] >= 25
+    top[1] >= LIMITER_FATIGUE
       ? `Computed from your logged training: ${NICE[top[0]].toLowerCase()} fatigue (${top[1]}/100) is the main drag today.`
       : "Computed from your logged training: no meaningful residual fatigue — you're cleared to train.",
   );
@@ -155,6 +155,113 @@ export function readinessWhy(log: TrainingLog, bio?: Biometrics): string[] {
     );
   }
   return lines;
+}
+
+/**
+ * The fatigue at which a tissue stops being background load and becomes the
+ * thing holding today back. Shared by the narrative and the verdict so the
+ * card's one-line face can never name a limiter the derivation below it
+ * doesn't, or stay silent while the derivation names one.
+ */
+const LIMITER_FATIGUE = 25;
+
+/**
+ * THE LINES BEHIND THE DOOR — the derivation without its first line.
+ *
+ * `readinessWhy`'s line 0 restates the score ("Readiness 67/100."), which the
+ * ring beside it already draws at 30px. Behind a disclosure that line is pure
+ * duplication, so this is the same array minus it. Derived from `readinessWhy`
+ * rather than re-deriving the sentences, so the two can't drift apart.
+ */
+export function readinessReasons(log: TrainingLog, bio?: Biometrics): string[] {
+  return readinessWhy(log, bio).slice(1);
+}
+
+/** What shape today's readiness read takes. */
+export type ReadinessVerdictKind = "empty" | "clear" | "limiter";
+
+/**
+ * The ONE line the readiness block wears on its face, plus what the door
+ * beside it may honestly promise.
+ */
+export interface ReadinessVerdict {
+  kind: ReadinessVerdictKind;
+  /**
+   * i18n key for the line. A KEY, not a sentence — unlike `readinessWhy`,
+   * which is English-only prose, this is the one line most athletes will ever
+   * read, so it has to speak Polish and German too.
+   */
+  key: string;
+  /** The tissue a `limiter` verdict names — resolve through `w.home.today.muscle.*`. */
+  muscle: MuscleGroup | null;
+  /**
+   * Points below 100. This is ARITHMETIC, not attribution: we can say how much
+   * is missing today without yet being able to say what each cause spent (that
+   * needs a deficit split out of `computeReadiness`, which doesn't exist yet).
+   */
+  deficit: number;
+  /**
+   * How many lines actually sit behind the door. The door labels itself from
+   * this, so it can never offer three reasons and open onto two.
+   */
+  reasons: number;
+  /**
+   * i18n key for the door's own label. "Where the 33 went" is the honest
+   * question while something IS missing; at a clean 100 nothing went anywhere,
+   * and the wearable can still have a line worth reading, so the door asks a
+   * different question rather than pointing at a zero.
+   */
+  doorKey: string;
+}
+
+/** The three faces, as i18n keys. */
+export const READINESS_VERDICT_KEY: Record<ReadinessVerdictKind, string> = {
+  empty: "w.home.readiness.verdictEmpty",
+  clear: "w.home.readiness.verdictClear",
+  limiter: "w.home.readiness.verdictLimiter",
+};
+
+/**
+ * Today's readiness as ONE line, naming the top cause and nothing else.
+ *
+ * The block used to open with four sentences of prose — ~38 words restating
+ * figures the engine had already computed, with every number buried mid-
+ * sentence so none of them held a fixed position from one day to the next.
+ * This is what replaces them on the card face; the sentences themselves move
+ * behind the door (`readinessReasons`), unedited.
+ *
+ * Agreement with the derivation is structural, not editorial: the limiter
+ * threshold is the same constant, and the reason count is the length of the
+ * very array the door opens onto.
+ */
+export function readinessVerdict(log: TrainingLog, bio?: Biometrics): ReadinessVerdict {
+  const fatigue = computeFatigue(log);
+  const { score } = computeReadiness(fatigue, bio);
+  const deficit = Math.max(0, 100 - score);
+  const reasons = readinessReasons(log, bio).length;
+  const doorKey = deficit > 0 ? "w.home.readiness.door" : "w.home.readiness.doorClear";
+  const base = { muscle: null as MuscleGroup | null, deficit, reasons, doorKey };
+
+  if (log.length === 0) return { ...base, kind: "empty", key: READINESS_VERDICT_KEY.empty };
+  const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
+  return top[1] >= LIMITER_FATIGUE
+    ? { ...base, kind: "limiter", key: READINESS_VERDICT_KEY.limiter, muscle: top[0] }
+    : { ...base, kind: "clear", key: READINESS_VERDICT_KEY.clear };
+}
+
+/**
+ * The door's count, pluralized where plurals are hard.
+ *
+ * English and German need two forms; Polish needs three (1 powód, 2–4 powody,
+ * 5+ powodów), and the rule is the engine's to own so the two clients can't
+ * pick differently for the same number.
+ */
+export function readinessReasonsKey(n: number): string {
+  if (n === 1) return "w.home.readiness.reasonsOne";
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "w.home.readiness.reasonsFew";
+  return "w.home.readiness.reasonsMany";
 }
 
 export interface TrajectoryPoint {

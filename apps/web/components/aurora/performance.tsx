@@ -6,7 +6,8 @@ import { fs, space,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, localDayKey,
+  ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, localDayKey,
+  readinessReasons, readinessVerdict, readinessReasonsKey,
   INJURY_AREA_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type CapabilityMovement,
 } from "@hybrid/core";
@@ -154,7 +155,11 @@ export default function AuroraPerformance({
   // used to be computed twice on every render of this page.
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, profiles, todayFeeling]);
-  const whyLines = useMemo(() => readinessWhy(log, bio), [log, bio]);
+  // The block's face and what sits behind its door. `readinessReasons` is
+  // `readinessWhy` minus its score line — the ring draws that number already.
+  const whyLines = useMemo(() => readinessReasons(log, bio), [log, bio]);
+  const verdictReadiness = useMemo(() => readinessVerdict(log, bio), [log, bio]);
+  const [whyOpen, setWhyOpen] = useState(false);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
@@ -309,10 +314,15 @@ export default function AuroraPerformance({
                 <Ring value={rx.readiness} color={C(readyVar(rx.readiness))} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.home.cockpit.todayReadiness")}</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6, maxWidth: "62ch" }}>
-                    {whyLines.map((line, i) => (
-                      <div key={i} style={{ fontSize: fs.body, lineHeight: 1.6, color: i === 0 ? C("chalk") : C("ash") }}>{line}</div>
-                    ))}
+                  {/* THE FACE — one line, naming the limiter and nothing else.
+                      This block used to open with ~38 words of prose restating
+                      figures the ring beside it already draws; the sentences
+                      now live behind the door below, unedited. */}
+                  <div style={{ fontSize: fs.subtitle, fontWeight: 700, letterSpacing: "-.015em", color: C("chalk"), marginTop: 6, maxWidth: "36ch" }}>
+                    {t(verdictReadiness.key).replace(
+                      "{tissue}",
+                      verdictReadiness.muscle ? t(`w.home.today.muscle.${verdictReadiness.muscle}`) : "",
+                    )}
                   </div>
                   {/* READINESS NUDGE — the one-tap check-in moved today's load;
                       glanceable, tinted in the feeling's own accent. Absent on a
@@ -329,6 +339,35 @@ export default function AuroraPerformance({
                       </div>
                     );
                   })()}
+                  {/* THE DOOR — the derivation, one tap down. Nothing left the
+                      product, only the default view: `readinessReasons` is the
+                      same prose the block used to lead with. It counts what is
+                      actually behind it, so it can't promise three reasons and
+                      open onto two. */}
+                  {whyLines.length > 0 && verdictReadiness.kind !== "empty" && (
+                    <div style={{ marginTop: 12 }}>
+                      <button
+                        type="button"
+                        className="pressable"
+                        aria-expanded={whyOpen}
+                        onClick={() => setWhyOpen((v) => !v)}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, width: "100%", background: "none", border: 0, padding: "10px 0 0", borderTop: `1px solid ${C("line")}`, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em", color: C("ash") }}
+                      >
+                        <span>{t(verdictReadiness.doorKey).replace("{n}", String(verdictReadiness.deficit))}</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: C("chalk"), fontWeight: 600 }}>
+                          {t(readinessReasonsKey(whyLines.length)).replace("{n}", String(whyLines.length))}
+                          <span aria-hidden style={{ fontSize: 8 }}>{whyOpen ? "▲" : "▼"}</span>
+                        </span>
+                      </button>
+                      {whyOpen && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 9, maxWidth: "62ch" }}>
+                          {whyLines.map((line, i) => (
+                            <div key={i} style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("ash") }}>{line}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </>

@@ -8,7 +8,8 @@ import {
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  velocityProfiles, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, SPORTS, LEVELS,
+  velocityProfiles, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
+  readinessReasons, readinessVerdict, readinessReasonsKey,
   localDayKey, INJURY_AREA_KEY,
   type CapabilityMovement,
 } from "@hybrid/core";
@@ -115,7 +116,11 @@ function Full({ top }: { top?: ReactNode }) {
   // ONE velocityProfiles pass, shared by the prescription and the exits.
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
   const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, profiles, todayFeeling]);
-  const whyLines = useMemo(() => readinessWhy(log, bio), [log, bio]);
+  // The block's face and what sits behind its door. `readinessReasons` is
+  // `readinessWhy` minus its score line — the ring draws that number already.
+  const whyLines = useMemo(() => readinessReasons(log, bio), [log, bio]);
+  const verdictReadiness = useMemo(() => readinessVerdict(log, bio), [log, bio]);
+  const [whyOpen, setWhyOpen] = useState(false);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
@@ -260,11 +265,16 @@ function Full({ top }: { top?: ReactNode }) {
               </Ring>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
-                <View style={{ gap: 5, marginTop: 5 }}>
-                  {whyLines.map((line, i) => (
-                    <Text key={i} style={{ fontFamily: F.reg, fontSize: fs.body, color: i === 0 ? C.chalk : C.ash, lineHeight: leading(fs.body) }}>{line}</Text>
-                  ))}
-                </View>
+                {/* THE FACE — one line, naming the limiter and nothing else.
+                    This block used to open with ~38 words of prose restating
+                    figures the ring beside it already draws; the sentences now
+                    live behind the door below, unedited. Mirrors web. */}
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 5, lineHeight: leading(fs.subtitle) }}>
+                  {t(verdictReadiness.key).replace(
+                    "{tissue}",
+                    verdictReadiness.muscle ? t(`w.home.today.muscle.${verdictReadiness.muscle}`) : "",
+                  )}
+                </Text>
                 {/* READINESS NUDGE — the one-tap check-in moved today's load;
                     glanceable, tinted in the feeling's own accent. Mirrors web. */}
                 {rx.readinessAdjust && (() => {
@@ -279,6 +289,38 @@ function Full({ top }: { top?: ReactNode }) {
                     </View>
                   );
                 })()}
+                {/* THE DOOR — the derivation, one tap down. Nothing left the
+                    product, only the default view: these are the same lines the
+                    block used to lead with. It counts what is actually behind
+                    it, so it can't promise three reasons and open onto two. */}
+                {whyLines.length > 0 && verdictReadiness.kind !== "empty" && (
+                  <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
+                    <Pressable
+                      onPress={() => setWhyOpen((v) => !v)}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: whyOpen }}
+                      style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}
+                    >
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                        {t(verdictReadiness.doorKey).replace("{n}", String(verdictReadiness.deficit))}
+                      </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.chalk }}>
+                          {t(readinessReasonsKey(whyLines.length)).replace("{n}", String(whyLines.length))}
+                        </Text>
+                        <AuroraIcon name="chevron-down" size={12} color={C.ash} style={whyOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
+                      </View>
+                    </Pressable>
+                    {whyOpen && (
+                      <View style={{ gap: 5, marginTop: 9 }}>
+                        {whyLines.map((line, i) => (
+                          <Text key={i} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{line}</Text>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             </View>
           </>
