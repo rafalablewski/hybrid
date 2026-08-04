@@ -46,11 +46,16 @@ const mobileRoutes = new Set(
  * a surface from one client without building it on the other means adding an
  * entry here AND a planned/blocked capability, not silently deleting code.
  */
-// Empty on purpose: every canonical nav id now resolves on BOTH clients. squad,
-// teamcompare and org used to sit here under `mobile-team-surfaces`; they are
-// built on mobile now, and this test's own "listed as an accepted gap but now
-// ships on both" assertion is what required removing them.
-const ACCEPTED_GAPS: Record<string, { missing: "web" | "mobile"; capability: string }> = {};
+// squad, teamcompare and org used to sit here under `mobile-team-surfaces`;
+// they are built on mobile now, and this test's own "listed as an accepted gap
+// but now ships on both" assertion is what required removing them.
+const ACCEPTED_GAPS: Record<string, { missing: "web" | "mobile"; capability: string }> = {
+  // The volume MODEL — the athlete's own per-muscle landmark profile, edited
+  // set by set — ships as its own screen on mobile only. Web promotes the nav
+  // id into the Volume screen (NAV_ITEMS `promotedTo: "volume"`), so the model
+  // itself has no editor there yet. Tracked by `volume-model-web`.
+  "volume-model": { missing: "web", capability: "volume-model-web" },
+};
 
 describe("web ↔ mobile parity", () => {
   it("found both clients' surface maps (the scan itself isn't silently empty)", () => {

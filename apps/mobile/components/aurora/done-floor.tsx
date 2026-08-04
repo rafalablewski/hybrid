@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { alsoTodayCopy, sessionIcon, sessionMeta, type LoggedSession, type WeightUnit } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { withAlpha } from "./kit";
 import { ArrowGlyph } from "./cta-label";
 
@@ -85,7 +85,7 @@ export default function DoneFloor({
           <ArrowGlyph size={14} color={quiet} />
         </Pressable>
       ) : (
-        <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 16, color: quiet }}>{t(copy.subKey ?? "w.home.today.alsoTodaySubEmpty")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: quiet }}>{t(copy.subKey ?? "w.home.today.alsoTodaySubEmpty")}</Text>
       )}
 
       <View style={{ marginTop: rows.length > 0 ? 4 : 6, gap: 4 }}>
