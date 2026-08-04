@@ -55,6 +55,8 @@ export * from "./exercise-profile";
 export * from "./exercise-animation";
 export * from "./exercise-anatomy";
 export * from "./body-map";
+export * from "./injury-body";
+export * from "./rtp-view";
 export * from "./exercise-widget";
 export * from "./history-strip";
 export * from "./progress-parentage";

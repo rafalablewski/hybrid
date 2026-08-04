@@ -3,14 +3,12 @@
 import { useState } from "react";
 import {
   fs, space, tissueAxis, injuryHeadlineKey, computeLoad, computeInjuryRisk,
-  ROLE_COLOR, riskRole, RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY, colors,
+  ROLE_COLOR, riskRole, RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY, INJURY_AREA_KEY,
   type AcwrBand, type RiskBand, type RiskDriverKind, type TissueRow,
   type MuscleGroup, type TissueRisk,
 } from "@hybrid/core";
-import { LINE_HEX, roleHex } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
-import { useIsMobile } from "@/lib/use-media-query";
-import { useRtpProtocols, RtpProtocol, InjuryPicker } from "../rtp-panel";
+import { useRtpProtocols, RtpProtocol, InjurySheet, RiskBody } from "./protocol";
 
 /**
  * TISSUE — one card for injury risk AND return-to-play.
@@ -34,46 +32,17 @@ const C = (v: string) => `var(--color-${v})`;
 const riskVar = (b: RiskBand | string) => ROLE_COLOR[riskRole(b)];
 const acwrVar = (b: AcwrBand): string =>
   b === "sweet-spot" ? "lime" : b === "caution" ? "amber" : b === "danger" ? "red" : b === "detraining" ? "blue" : "ash";
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
 
 /** Zone tints for the axis — the band's own colour, weighted so the low end
  *  recedes and the high end reads as a wall. */
 const ZONE_ALPHA: Record<RiskBand, number> = { low: 40, moderate: 55, elevated: 52, high: 90 };
 
-/* ---------- tissue body map ----------
-   Web-only today (mobile has never carried it). It rides along under the rows
-   rather than being lost in the merge; promoting it to the card's subject —
-   with a real silhouette and 44px hit targets — is tracked as its own
-   capability (injury-body-map-primary). */
-const bandHex = (b: string) => roleHex(riskRole(b));
-const SVG_INK2 = colors.ink2;
-type Region = { tissue: MuscleGroup; x: number; y: number; w: number; h: number };
-const FRONT: Region[] = [
-  { tissue: "shoulders", x: 8, y: 30, w: 30, h: 14 }, { tissue: "shoulders", x: 82, y: 30, w: 30, h: 14 },
-  { tissue: "chest", x: 40, y: 32, w: 40, h: 28 }, { tissue: "triceps", x: 6, y: 46, w: 20, h: 40 },
-  { tissue: "triceps", x: 94, y: 46, w: 20, h: 40 }, { tissue: "quads", x: 40, y: 116, w: 18, h: 72 }, { tissue: "quads", x: 62, y: 116, w: 18, h: 72 },
-];
-const BACK: Region[] = [
-  { tissue: "back", x: 40, y: 32, w: 40, h: 46 }, { tissue: "glutes", x: 40, y: 82, w: 40, h: 24 },
-  { tissue: "posterior", x: 40, y: 110, w: 18, h: 78 }, { tissue: "posterior", x: 62, y: 110, w: 18, h: 78 },
-];
-
-function Figure({ regions, label, byTissue }: { regions: Region[]; label: string; byTissue: Record<string, TissueRisk> }) {
-  return (
-    <div style={{ textAlign: "center" }}>
-      <svg viewBox="0 0 120 200" style={{ width: 130, height: 216 }}>
-        <circle cx={60} cy={16} r={11} fill={SVG_INK2} stroke={LINE_HEX} />
-        {regions.map((r, i) => {
-          const t = byTissue[r.tissue];
-          const fill = t && t.risk > 0 ? `${bandHex(t.band)}55` : SVG_INK2;
-          const stroke = t && t.risk > 0 ? bandHex(t.band) : LINE_HEX;
-          return <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} rx={5} fill={fill} stroke={stroke} strokeWidth={1}><title>{r.tissue}: {t ? `${t.risk}/100 (${t.band})` : "—"}</title></rect>;
-        })}
-      </svg>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</div>
-    </div>
-  );
-}
+/* ---------- the body ----------
+   The card used to draw its own mannequin out of nine rounded rectangles, on
+   web only, while the app already owned a real schematic body. It now shares
+   ONE figure with the injury picker (aurora/protocol.tsx, geometry in
+   @hybrid/core injury-body.ts) — so the body you read your risk on is the body
+   you point at when something goes wrong, on both clients. */
 
 export default function TissueCard({
   risk,
@@ -89,7 +58,6 @@ export default function TissueCard({
   hasData: boolean;
 }) {
   const { t } = useLang();
-  const isMobile = useIsMobile();
   const axis = tissueAxis(risk);
   const byTissue = Object.fromEntries(risk.tissues.map((ti) => [ti.tissue, ti])) as Record<string, TissueRisk>;
   const { active, create, mutate } = useRtpProtocols();
@@ -97,7 +65,9 @@ export default function TissueCard({
   // tissue is flagged they open themselves — a worklist you have to go
   // looking for is not a worklist.
   const [rowsOpen, setRowsOpen] = useState(false);
-  const [picking, setPicking] = useState(false);
+  // The area the athlete pointed at on the card's own body, if that is how
+  // they got to the sheet — the flag and the protocol are one object.
+  const [picking, setPicking] = useState<MuscleGroup | null | false>(false);
   const alert = hasData && axis.flaggedCount > 0;
   const showRows = hasData && (rowsOpen || alert);
 
@@ -172,9 +142,8 @@ export default function TissueCard({
           )}
 
           {/* THE BODY — the same tissues again, anatomically. */}
-          <div style={{ display: "flex", gap: space.lg, justifyContent: isMobile ? "center" : "flex-start", marginTop: 18 }}>
-            <Figure regions={FRONT} label={t("w.analyze.perf.anterior")} byTissue={byTissue} />
-            <Figure regions={BACK} label={t("w.analyze.perf.posterior")} byTissue={byTissue} />
+          <div style={{ marginTop: 18 }}>
+            <RiskBody byTissue={byTissue} onPick={(g) => setPicking(g)} />
           </div>
 
           {/* WHAT'S RAISING THIS — plain language for every driver at play. */}
@@ -199,12 +168,15 @@ export default function TissueCard({
         </div>
       )}
 
-      {picking && (
-        <InjuryPicker
-          onPick={(tissue) => { create(tissue); setPicking(false); }}
-          onCancel={() => setPicking(false)}
-        />
-      )}
+      {/* THE QUESTION gets its own surface. It used to unfold inside the card,
+          pushing everything under it down — a form appearing mid-page for the
+          most consequential thing an athlete files here. */}
+      <InjurySheet
+        open={picking !== false}
+        initial={picking || null}
+        onClose={() => setPicking(false)}
+        onOpen={(tissue, injuryDate) => create(tissue, injuryDate)}
+      />
 
       {/* FOOTER RAIL — both ways in, at the same weight. Opening a protocol is
           not a "go" action, so it never takes the chartreuse fill. */}
@@ -218,11 +190,9 @@ export default function TissueCard({
               <span aria-hidden style={{ fontSize: 8, marginLeft: 5 }}>{showRows ? "▲" : "▼"}</span>
             </button>
           ) : <span />}
-          {!picking && (
-            <button type="button" className="pressable" onClick={() => setPicking(true)} style={{ ...railBtn, color: alert ? "var(--red-text)" : C("ash") }}>
-              {alert ? t("w.injury.openProtocol") : t("w.injury.logInjury")}
-            </button>
-          )}
+          <button type="button" className="pressable" onClick={() => setPicking(null)} style={{ ...railBtn, color: alert ? "var(--red-text)" : C("ash") }}>
+            {alert ? t("w.injury.openProtocol") : t("w.injury.logInjury")}
+          </button>
         </div>
         {/* The calibration behind every number above — a qualifier, not a
             heading. It qualifies figures, so it goes when there are none. */}
@@ -252,7 +222,7 @@ function Axis({ axis, t }: { axis: ReturnType<typeof tissueAxis>; t: (k: string)
         {axis.rows.map((r) => (
           <span
             key={r.tissue}
-            title={`${cap(r.tissue)}: ${r.risk}/100`}
+            title={`${t(INJURY_AREA_KEY[r.tissue])}: ${r.risk}/100`}
             style={{
               position: "absolute",
               left: `calc(${r.leftPct}% - ${r.top ? 1.5 : 1}px)`,
@@ -289,7 +259,7 @@ function Rows({ rows, t }: { rows: TissueRow[]; t: (k: string) => string }) {
       </div>
       {rows.map((r) => (
         <div key={r.tissue} style={{ display: "grid", gridTemplateColumns: cols, gap: 8, alignItems: "center", padding: "8px 0", borderBottom: `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)` }}>
-          <span style={{ fontSize: fs.caption, textTransform: "capitalize", fontWeight: r.flagged ? 800 : 400, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis" }}>{r.tissue}</span>
+          <span style={{ fontSize: fs.caption, fontWeight: r.flagged ? 800 : 400, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis" }}>{t(INJURY_AREA_KEY[r.tissue])}</span>
           {/* the row's own bar, on the axis scale, carrying the same flag line */}
           <span style={{ position: "relative", height: 5, borderRadius: 3, background: `color-mix(in srgb, ${C("ash")} 16%, transparent)` }}>
             <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${r.leftPct}%`, borderRadius: 3, background: r.risk > 0 ? C(riskVar(r.band)) : "transparent" }} />

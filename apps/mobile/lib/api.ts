@@ -1658,13 +1658,15 @@ export async function fetchRtpProtocols(): Promise<RtpProtocol[]> {
   }
 }
 
-/** Open a new protocol for a tissue (server starts it at the `acute` stage). */
-export async function createRtpProtocol(tissue: string): Promise<boolean> {
+/** Open a new protocol for a tissue (server starts it at the `acute` stage).
+ *  `injuryDate` is when it actually started — omitted, the server stamps now,
+ *  which is only right for an injury reported the day it happened. */
+export async function createRtpProtocol(tissue: string, injuryDate?: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/rtp`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ tissue }),
+      body: JSON.stringify({ tissue, injuryDate }),
     });
     return res.ok;
   } catch {
