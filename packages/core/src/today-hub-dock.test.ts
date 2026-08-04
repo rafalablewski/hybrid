@@ -6,12 +6,14 @@ import {
   HUB_DOCK_MOTION_REDUCED,
   HUB_DOCK_RELEASE,
   HUB_DOCK_REST,
+  HUB_DOCK_STAGGER,
   HUB_PILL,
   hubActiveWidth,
   hubCurve,
   hubDockState,
   hubDockVisible,
   hubMotion,
+  hubSplitDelay,
   type HubDockState,
 } from "./today-hub-dock";
 
@@ -140,6 +142,33 @@ describe("geometry", () => {
   it("never returns a width narrower than a sibling", () => {
     expect(hubActiveWidth(0)).toBeGreaterThan(HUB_PILL.siblingWidth);
     expect(hubActiveWidth(-40)).toBe(hubActiveWidth(0));
+  });
+
+  it("falls back to the screen gutter for the leading inset", () => {
+    expect(HUB_PILL.inset).toBe(16);
+  });
+});
+
+describe("hubSplitDelay", () => {
+  it("lands the pill you are in first, wherever it sits in the row", () => {
+    expect(hubSplitDelay(0, 0)).toBe(0);
+    expect(hubSplitDelay(2, 2)).toBe(0);
+  });
+
+  it("staggers outward from the active pill in both directions", () => {
+    // Active in the middle: both neighbours land together, one beat later.
+    expect(hubSplitDelay(0, 1)).toBe(HUB_DOCK_STAGGER);
+    expect(hubSplitDelay(2, 1)).toBe(HUB_DOCK_STAGGER);
+    // Active at the end: the row unfolds away from it.
+    expect(hubSplitDelay(1, 0)).toBe(HUB_DOCK_STAGGER);
+    expect(hubSplitDelay(2, 0)).toBe(HUB_DOCK_STAGGER * 2);
+  });
+
+  it("keeps the whole row inside one arrival", () => {
+    // Three tabs, worst case: the last pill must not land after the split has
+    // finished, or the row reads as two separate arrivals.
+    const worst = hubSplitDelay(2, 0);
+    expect(worst).toBeLessThan(HUB_DOCK_MOTION.split.ms);
   });
 });
 

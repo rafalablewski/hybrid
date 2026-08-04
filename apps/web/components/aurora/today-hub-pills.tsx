@@ -4,13 +4,13 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import {
   HUB_DOCK_REST,
-  HUB_DOCK_STAGGER,
   HUB_PILL,
   TODAY_TABS,
   hubCurve,
   hubDockState,
   hubDockVisible,
   hubMotion,
+  hubSplitDelay,
   type HubDockState,
   type TodayTabId,
 } from "@hybrid/core";
@@ -65,6 +65,12 @@ function useReducedMotion() {
  */
 function useHubDock(anchor: RefObject<HTMLElement | null>, reduced: boolean, resetKey: string) {
   const [phase, setPhase] = useState<HubDockState["phase"]>("attached");
+  // The content column's left edge, taken from the same rect as the threshold.
+  // The row is LEADING-anchored, and on web the column is not the viewport edge
+  // — the app shell keeps a sidebar — so the inset is measured rather than
+  // assumed. Lining up with the switcher's own left edge also means detaching
+  // reads as the control lifting straight up, with no sideways drift.
+  const [inset, setInset] = useState<number | null>(null);
   const held = useRef<HubDockState>(HUB_DOCK_REST);
 
   // A hub switch mounts a different view at the top of the page: the dock has
@@ -80,13 +86,16 @@ function useHubDock(anchor: RefObject<HTMLElement | null>, reduced: boolean, res
       frame = 0;
       const el = anchor.current;
       const y = window.scrollY;
+      const rect = el ? el.getBoundingClientRect() : null;
       const next = hubDockState(y, {
-        controlBottom: el ? el.getBoundingClientRect().bottom + y : null,
+        controlBottom: rect ? rect.bottom + y : null,
         reduced,
         prev: held.current,
       });
       held.current = next;
       setPhase((p) => (p === next.phase ? p : next.phase));
+      // Sub-pixel jitter must not re-render on every scrolled frame.
+      if (rect) setInset((v) => (v != null && Math.abs(v - rect.left) < 1 ? v : rect.left));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(measure); };
     measure();
@@ -99,7 +108,7 @@ function useHubDock(anchor: RefObject<HTMLElement | null>, reduced: boolean, res
     };
   }, [anchor, reduced]);
 
-  return phase;
+  return { phase, inset };
 }
 
 export function TodayHubPills({
@@ -114,7 +123,7 @@ export function TodayHubPills({
 }) {
   const { t } = useLang();
   const reduced = useReducedMotion();
-  const phase = useHubDock(anchor, reduced, value);
+  const { phase, inset } = useHubDock(anchor, reduced, value);
   const shown = hubDockVisible(phase);
 
   // PORTALLED TO THE BODY, for two reasons that happen to be the same reason.
@@ -132,6 +141,7 @@ export function TodayHubPills({
   const conceal = hubMotion("conceal", reduced);
   const exchange = hubMotion("exchange", reduced);
   const move = shown ? reveal : conceal;
+  const activeIndex = Math.max(0, TODAY_TABS.findIndex((tab) => tab.id === value));
 
   if (!mounted) return null;
 
@@ -145,8 +155,14 @@ export function TodayHubPills({
         right: 0,
         zIndex: 45,
         display: "flex",
-        justifyContent: "center",
-        padding: `${HUB_PILL.top}px 16px 0`,
+        justifyContent: "flex-start",
+        paddingTop: HUB_PILL.top,
+        // Anchored to the CONTENT COLUMN, not the viewport: on a wide screen
+        // the shell's sidebar owns the left edge, so a row flush to it would
+        // float over the nav. `inset` is the switcher's own measured left; the
+        // shared gutter stands in until the first measurement lands.
+        paddingLeft: inset ?? HUB_PILL.inset,
+        paddingRight: HUB_PILL.inset,
         pointerEvents: "none",
       }}
     >
@@ -187,7 +203,7 @@ export function TodayHubPills({
               display: "inline-flex",
               transformOrigin: "50% 0",
               transform: shown || reduced ? "none" : "scale(.86)",
-              transitionDelay: shown && i !== 0 && !reduced ? `${HUB_DOCK_STAGGER}ms` : "0ms",
+              transitionDelay: shown && !reduced ? `${hubSplitDelay(i, activeIndex)}ms` : "0ms",
               transition: `transform ${move.ms}ms ${hubCurve(move)}`,
             }}
             >

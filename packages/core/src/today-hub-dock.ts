@@ -161,7 +161,29 @@ export const HUB_PILL = {
   labelGap: 8,
   /** Below the safe area (mobile) or the viewport top (web). */
   top: 8,
+  /**
+   * The row is anchored to the LEADING edge, not centred, and it lines up with
+   * the CONTENT COLUMN rather than the raw screen edge — the pills sit where
+   * the in-flow switcher's own left edge was, so detaching reads as the control
+   * lifting straight up rather than sliding sideways on its way out.
+   *
+   * This is the fallback when a client cannot measure that column: the screen
+   * gutter, which is 16 on both clients. Web measures the switcher's real left
+   * edge instead (it has a sidebar, so the column is not at the viewport edge);
+   * mobile's gutter is the column.
+   */
+  inset: 16,
 } as const;
+
+/**
+ * How long one pill waits before it lands, measured OUTWARD from the pill you
+ * are in — so the row opens from where you ARE rather than from whichever end
+ * happens to be first in the registry. On the dashboard (the leading tab) that
+ * reads as the row unfolding from the anchored edge; from Feed it unfolds back
+ * toward it.
+ */
+export const hubSplitDelay = (index: number, activeIndex: number): number =>
+  Math.abs(index - activeIndex) * HUB_DOCK_STAGGER;
 
 /** The active pill's width for a measured label, so both clients round the
  *  same way. `labelWidth` is the text's own measured width. */

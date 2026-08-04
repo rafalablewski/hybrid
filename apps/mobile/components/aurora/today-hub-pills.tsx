@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   HUB_DOCK_REST,
-  HUB_DOCK_STAGGER,
   HUB_PILL,
   TODAY_TABS,
   hubActiveWidth,
   hubDockState,
   hubDockVisible,
   hubMotion,
+  hubSplitDelay,
   type HubDockState,
   type TodayTabId,
 } from "@hybrid/core";
@@ -136,6 +136,8 @@ export function TodayHubPills({
     Animated.parallel(anims).start();
   }, [value, labelW, widths, exchange, reduced]);
 
+  const activeIndex = Math.max(0, TODAY_TABS.findIndex((tab) => tab.id === value));
+
   const select = (id: TodayTabId) => {
     if (id !== value) haptic.selection();
     onChange(id);
@@ -151,7 +153,14 @@ export function TodayHubPills({
         top: topInset + HUB_PILL.top,
         left: 0,
         right: 0,
-        alignItems: "center",
+        // LEADING-anchored, not centred: the pills sit on the screen gutter,
+        // which is where the in-flow switcher's own left edge is, so detaching
+        // reads as the control lifting straight up rather than sliding
+        // sideways. Web measures the same edge (its column is inset by the
+        // shell's sidebar); here the gutter IS the column.
+        alignItems: "flex-start",
+        paddingLeft: HUB_PILL.inset,
+        paddingRight: HUB_PILL.inset,
         opacity: vis,
         transform: [
           {
@@ -202,7 +211,7 @@ export function TodayHubPills({
             // wrapper carries the ARRIVAL (the staggered split, outward from
             // the active pill), the pill inside carries the EXCHANGE. Sharing
             // one node would make every selection inherit the split's delay.
-            <SplitStagger key={tab.id} shown={shown} reduced={reduced} index={i}>
+            <SplitStagger key={tab.id} shown={shown} reduced={reduced} delay={hubSplitDelay(i, activeIndex)}>
               <Animated.View style={{ width: reduced ? HUB_PILL.siblingWidth : widths[i], height: HUB_PILL.height }}>
                 <Pressable
                   onPress={() => select(tab.id)}
@@ -247,12 +256,12 @@ export function TodayHubPills({
 }
 
 /**
- * One pill's arrival. The siblings land a beat after the active pill, outward
- * from it, so the split reads as one object opening rather than three
- * appearing. Under reduced motion there is no scale and no stagger — the row
+ * One pill's arrival. Siblings land a beat after the pill you are IN, outward
+ * from it (hubSplitDelay), so the split reads as one object opening rather
+ * than three appearing. Under reduced motion there is no scale and no stagger — the row
  * is simply there.
  */
-function SplitStagger({ shown, reduced, index, children }: { shown: boolean; reduced: boolean; index: number; children: React.ReactNode }) {
+function SplitStagger({ shown, reduced, delay, children }: { shown: boolean; reduced: boolean; delay: number; children: React.ReactNode }) {
   const scale = useRef(new Animated.Value(shown || reduced ? 1 : 0.86)).current;
   useEffect(() => {
     if (reduced) { scale.setValue(1); return; }
@@ -260,11 +269,11 @@ function SplitStagger({ shown, reduced, index, children }: { shown: boolean; red
     Animated.timing(scale, {
       toValue: shown ? 1 : 0.86,
       duration: m.ms,
-      delay: shown && index !== 0 ? HUB_DOCK_STAGGER : 0,
+      delay: shown ? delay : 0,
       easing: Easing.bezier(...m.bezier),
       useNativeDriver: true,
     }).start();
-  }, [shown, reduced, index, scale]);
+  }, [shown, reduced, delay, scale]);
   return <Animated.View style={{ transform: [{ scale }] }}>{children}</Animated.View>;
 }
 
