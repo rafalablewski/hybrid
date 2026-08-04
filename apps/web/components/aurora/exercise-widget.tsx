@@ -71,12 +71,6 @@ function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) =>
   return { ...splitVal(fmtTonnage(card.value, units)), label: t("w.home.exw.volume") };
 }
 
-const KIND_KEY: Record<ExerciseWidgetCard["kind"], string> = {
-  strength: "w.home.exw.kindStrength",
-  cardio: "w.home.exw.kindCardio",
-  conditioning: "w.home.exw.kindConditioning",
-};
-
 /**
  * EXERCISES — the Today favourites rail (variant B, "the chart is the card").
  * Swipeable full-bleed cards, one per purpose; tap opens the exercise page.
@@ -153,10 +147,11 @@ export default function ExerciseWidgetRail({
                 color: C("chalk"), fontFamily: "var(--font-display)",
               }}
             >
-              <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, width: "100%" }}>
-                <span style={{ fontWeight: 700, fontSize: fs.body, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{card.name}</span>
-                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
-              </span>
+              {/* The name gets the whole row. The delta used to sit beside it
+                  and cost "Standing Overhead Press" its last words in a 200px
+                  card; it reads as well from the footer, where the kind word
+                  used to be. Mirrors mobile. */}
+              <span style={{ display: "block", width: "100%", fontWeight: 700, fontSize: fs.body, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{card.name}</span>
               <span data-shared-hero style={{ fontFamily: "var(--font-mono)", fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, width: "fit-content" }}>
                 {h.v}
                 <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>{h.u}</span>
@@ -164,9 +159,18 @@ export default function ExerciseWidgetRail({
               <span style={{ display: "block", width: "100%", marginTop: "auto" }}>
                 <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
               </span>
-              <span style={{ display: "flex", justifyContent: "space-between", gap: 6, width: "100%", fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>
+              {/* The footer says the metric and its window, then the delta.
+                  The KIND word ("Strength") is gone: the purpose was already
+                  encoded twice — the strip is drawn in kindStroke's chartreuse
+                  for a lift and teal for cardio, and the metric name entails it
+                  ("Heaviest" is only ever a lift, "Best pace" only ever
+                  cardio). Three channels for one fact is not reinforcement; it
+                  is the slot a real fact could have used. Colour keeps the
+                  visual channel and the metric name the text one, so nothing
+                  here is colour-only. Mirrors mobile. */}
+              <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6, width: "100%", fontFamily: "var(--font-mono)", fontSize: 10, color: C("ash") }}>
                 <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.label}</span>
-                <span style={{ whiteSpace: "nowrap" }}>{t(KIND_KEY[card.kind])}</span>
+                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
               </span>
             </button>
           );

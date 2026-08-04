@@ -56,6 +56,8 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 const STORE_KEY = "hybrid.today.range";
 const ROWS_SHOWN = 5;
+/** PR rows before the head starts saying how many were held back. */
+const PRS_SHOWN = 4;
 
 /** The segment labels are SHORTER than the card's own title for the same
  *  period ("7 days" under a card headed "Last 7 days") — a segmented control
@@ -197,10 +199,15 @@ export default function AuroraWeekVerdict({
   const named = v.figures.find((f) => f.metric === v.metric) ?? null;
   const step = verdictShowsStep(v);
 
+  // The working-out carries the BASELINE alone. It used to open with the
+  // period's own value as well ("6.8 against a 0.1 four-week average"), which
+  // reprinted the figure the column two rows below was already showing — and
+  // for the named metric, the one the sentence had just made its subject. The
+  // comparison divides cleanly without it: the sentence names the metric and
+  // the direction, the figure on the right carries the magnitude, this line
+  // carries what it was measured against.
   const why = v.metric && named
-    ? t(verdictWhyKey(v))
-        .replace("{v}", fmt(named.metric, named.value))
-        .replace("{b}", fmt(named.metric, named.baseline))
+    ? t(verdictWhyKey(v)).replace("{b}", fmt(named.metric, named.baseline))
     : t(verdictWhyKey(v));
 
   // Four columns only ever appear for a hybrid athlete (tonnage + distance);
@@ -420,11 +427,20 @@ export default function AuroraWeekVerdict({
           PRs rather than the last seven days'. Silent when there are none. */}
       {prs.length > 0 && (
         <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+          {/* The count is a fact only when the list is TRUNCATED. Printing
+              "2" above two visible rows restates something the reader can
+              already count; printing "6" above four rows was worse, since
+              nothing said the other two existed. Below the cap the rows speak
+              for themselves. */}
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.cockpit.newPrs")}</Text>
-            <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{prs.length}</Text>
+            {prs.length > PRS_SHOWN && (
+              <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>
+                {t("w.home.act.ofTotal").replace("{a}", String(PRS_SHOWN)).replace("{b}", String(prs.length))}
+              </Text>
+            )}
           </View>
-          {prs.slice(0, 4).map((pr) => (
+          {prs.slice(0, PRS_SHOWN).map((pr) => (
             <View key={pr.lift} style={{ flexDirection: "row", justifyContent: "space-between", gap: 12, paddingVertical: 7, borderTopWidth: 1, borderTopColor: `${C.line}99` }}>
               <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{pr.lift}</Text>
               {/* The weight actually lifted (#231) — this row and the session

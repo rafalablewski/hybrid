@@ -55,6 +55,8 @@ import { useToday } from "@/lib/use-today";
 const C = (v: string) => `var(--color-${v})`;
 const STORE_KEY = "hybrid.today.range";
 const ROWS_SHOWN = 5;
+/** PR rows before the head starts saying how many were held back. */
+const PRS_SHOWN = 4;
 
 /** The segment labels are SHORTER than the card's own title for the same
  *  period ("7 days" under a card headed "Last 7 days") — a segmented control
@@ -200,10 +202,15 @@ export default function AuroraWeekVerdict({
   const named = v.figures.find((f) => f.metric === v.metric) ?? null;
   const step = verdictShowsStep(v);
 
+  // The working-out carries the BASELINE alone. It used to open with the
+  // period's own value as well ("6.8 against a 0.1 four-week average"), which
+  // reprinted the figure the column two rows below was already showing — and
+  // for the named metric, the one the sentence had just made its subject. The
+  // comparison divides cleanly without it: the sentence names the metric and
+  // the direction, the figure on the right carries the magnitude, this line
+  // carries what it was measured against.
   const why = v.metric && named
-    ? t(verdictWhyKey(v))
-        .replace("{v}", fmt(named.metric, named.value))
-        .replace("{b}", fmt(named.metric, named.baseline))
+    ? t(verdictWhyKey(v)).replace("{b}", fmt(named.metric, named.baseline))
     : t(verdictWhyKey(v));
 
   // Four columns only ever appear for a hybrid athlete (tonnage + distance);
@@ -405,9 +412,18 @@ export default function AuroraWeekVerdict({
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <span style={{ ...kicker, color: C("ash") }}>{t("w.home.cockpit.newPrs")}</span>
-            <span style={{ ...num, fontSize: fs.micro, color: accentText("lime"), marginLeft: "auto" }}>{prs.length}</span>
+            {/* The count is a fact only when the list is TRUNCATED. Printing
+                "2" above two visible rows restates something the reader can
+                already count; printing "6" above four rows was worse, since
+                nothing said the other two existed. Below the cap the rows
+                speak for themselves. Mirrors mobile. */}
+            {prs.length > PRS_SHOWN && (
+              <span style={{ ...num, fontSize: fs.micro, color: accentText("lime"), marginLeft: "auto" }}>
+                {t("w.home.act.ofTotal").replace("{a}", String(PRS_SHOWN)).replace("{b}", String(prs.length))}
+              </span>
+            )}
           </div>
-          {prs.slice(0, 4).map((pr) => (
+          {prs.slice(0, PRS_SHOWN).map((pr) => (
             <div key={pr.lift} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)` }}>
               <span style={{ fontSize: fs.caption, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pr.lift}</span>
               {/* The weight actually lifted (#231) — this row and the session

@@ -65,12 +65,6 @@ function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) =>
   return { ...splitVal(fmtTonnage(card.value, units)), label: t("w.home.exw.volume") };
 }
 
-const KIND_KEY: Record<ExerciseWidgetCard["kind"], string> = {
-  strength: "w.home.exw.kindStrength",
-  cardio: "w.home.exw.kindCardio",
-  conditioning: "w.home.exw.kindConditioning",
-};
-
 /**
  * EXERCISES — the Today favourites rail (variant B, "the chart is the card").
  * Swipeable full-bleed cards, one per purpose; tap opens the exercise page.
@@ -154,10 +148,11 @@ export default function ExerciseWidgetRail({
                 paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
               }}
             >
-              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
-                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
-              </View>
+              {/* The name gets the whole row. The delta used to sit beside it
+                  and cost "Standing Overhead Press" its last words on a narrow
+                  device; it reads as well from the footer, where the kind word
+                  used to be. */}
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
                 <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.u}</Text>
@@ -165,9 +160,18 @@ export default function ExerciseWidgetRail({
               <View style={{ marginTop: "auto" }}>
                 <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
               </View>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
+              {/* The footer says the metric and its window, then the delta.
+                  The KIND word ("Strength") is gone: the purpose was already
+                  encoded twice — the strip is drawn in kindStroke's chartreuse
+                  for a lift and teal for cardio, and the metric name entails it
+                  ("Heaviest" is only ever a lift, "Best pace" only ever
+                  cardio). Three channels for one fact is not reinforcement; it
+                  is the slot a real fact could have used. Colour keeps the
+                  visual channel and the metric name the text one, so nothing
+                  here is colour-only. */}
+              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.label}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{t(KIND_KEY[card.kind])}</Text>
+                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
               </View>
             </Pressable>
           );
