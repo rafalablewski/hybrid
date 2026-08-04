@@ -11,11 +11,14 @@ import {
   type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
+import { ADrawer } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
+// The drawer's own motion moved into ADrawer; this is here for the records
+// rail's edge dissolve, which eases in and out on its own.
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 /**
@@ -366,19 +369,6 @@ export default function AuroraWeekVerdict({
   ];
   const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
 
-  // ── The drawer. Height is measured off the panel and animated, so the detail
-  // SLIDES out of the figure row instead of appearing under it.
-  const [panelH, setPanelH] = useState(0);
-  const grow = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(grow, {
-      toValue: open ? 1 : 0,
-      duration: reduced ? durations.reduced : 320,
-      easing: reduced ? Easing.linear : Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [open, reduced, grow]);
-
   // The caret travels in MEASURED pixels — a percentage string can't be
   // animated on the native driver, and the caret has to arrive with the panel.
   const [rowW, setRowW] = useState(0);
@@ -492,40 +482,37 @@ export default function AuroraWeekVerdict({
           )}
         </View>
 
-        {/* ── THE DRAWER ──────────────────────────────────────────────────── */}
-        <Animated.View
-          style={{
-            overflow: "hidden",
-            opacity: grow,
-            height: grow.interpolate({ inputRange: [0, 1], outputRange: [0, panelH] }),
-          }}
-        >
-          <View onLayout={(e) => setPanelH(e.nativeEvent.layout.height)}>
-            {detail && (
-              <View style={{
-                backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-                paddingHorizontal: 16, paddingVertical: 12,
-              }}>
-                <MetricDetail
-                  detail={detail}
-                  rows={rows}
-                  shownCount={shown.length}
-                  all={all}
-                  group={group}
-                  onGroup={(id) => { setGroup(id); setAll(false); }}
-                  onAll={() => setAll((x) => !x)}
-                  onSession={onSession}
-                  t={t}
-                  fmtValue={fmtValue}
-                  fmtMinutes={fmtMinutes}
-                  groupName={groupName}
-                  dateFmt={dateFmt}
-                  units={units}
-                />
-              </View>
-            )}
-          </View>
-        </Animated.View>
+        {/* ── THE DRAWER — the detail SLIDES out of the figure row instead of
+            appearing under it. The measured height, the mount-on-first-open and
+            the a11y clipping are the kit's `ADrawer`, the same one Volume's
+            compact card opens on: this card had its own copy, which measured
+            its panel IN FLOW inside a box clipped to zero and so could only
+            ever measure zero. ─────────────────────────────────────────────── */}
+        <ADrawer open={!!detail}>
+          {detail && (
+            <View style={{
+              backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
+              paddingHorizontal: 16, paddingVertical: 12,
+            }}>
+              <MetricDetail
+                detail={detail}
+                rows={rows}
+                shownCount={shown.length}
+                all={all}
+                group={group}
+                onGroup={(id) => { setGroup(id); setAll(false); }}
+                onAll={() => setAll((x) => !x)}
+                onSession={onSession}
+                t={t}
+                fmtValue={fmtValue}
+                fmtMinutes={fmtMinutes}
+                groupName={groupName}
+                dateFmt={dateFmt}
+                units={units}
+              />
+            </View>
+          )}
+        </ADrawer>
 
         {!open && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
