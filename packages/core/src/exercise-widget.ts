@@ -1,5 +1,6 @@
-import type { LoggedSession } from "./engines/session";
+import type { CardioBlock, CardioDiscipline, LoggedSession } from "./engines/session";
 import { topLoadSeries, paceSeries, type PacePoint } from "./engines/session";
+import { blockDiscipline } from "./engines/running";
 import { exerciseHistory } from "./engines/records";
 import {
   exerciseDashboard,
@@ -48,6 +49,19 @@ export type ExerciseWidgetMetric = "weight" | "pace" | "volume" | "time";
 export interface ExerciseWidgetCard {
   name: string;
   kind: "strength" | "cardio" | "conditioning";
+  /**
+   * The movement's cardio discipline, resolved through the SAME rule the lanes
+   * use (`blockDiscipline` — the stamped tag, falling back to the name). Set on
+   * every cardio card and undefined otherwise.
+   *
+   * It exists so a rate can be printed in its discipline's own convention. The
+   * card used to hand its `sec/km` value to a hard-coded "/km", which showed a
+   * swimmer "38:36 /km" — arithmetically right, conventionally meaningless, and
+   * contradicted by the Endurance lane 250dp below printing the same rate as
+   * "3:52 /100m" through `formatDisciplinePace`. One function knows what a
+   * discipline's pace reads as; every surface must go through it.
+   */
+  discipline?: CardioDiscipline;
   metric: ExerciseWidgetMetric;
   /** headline value — kg (weight = heaviest lift), sec/km (pace), total kg
    *  (volume) or total minutes (time), 8-week window */
@@ -70,6 +84,27 @@ export function pctChange(cur: number, prev: number): number | null {
 }
 
 const ts = (iso: string): number => new Date(iso).getTime();
+
+/**
+ * The discipline a cardio movement belongs to — the most recent stamp wins, so
+ * a move re-tagged at log time reads as what it is now. Resolved through the
+ * lanes' own `blockDiscipline`, never re-classified here: two definitions of
+ * "what sport is this" is how a swim ends up measured in kilometres.
+ */
+function moveDiscipline(sessions: LoggedSession[], name: string): CardioDiscipline | undefined {
+  let out: CardioDiscipline | undefined;
+  let at = -Infinity;
+  for (const s of sessions) {
+    const t = ts(s.startedAt);
+    if (!Number.isFinite(t) || t < at) continue;
+    for (const b of s.blocks) {
+      if (b.kind !== "cardio" || b.name !== name) continue;
+      out = blockDiscipline(b as CardioBlock);
+      at = t;
+    }
+  }
+  return out;
+}
 
 /** sessions that trained `name` in (now-days, now] */
 const sessionCount = (sessions: LoggedSession[], name: string, now: number, days: number): number =>
@@ -150,7 +185,10 @@ export function exerciseWidgetCard(
       // pace: sign of the raw change, improvement = got faster (negative change)
       const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
       const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.secPerKm);
-      return { name, kind, metric: "pace", value, deltaPct, improving: deltaPct == null ? null : deltaPct < 0, spark, sessions: count };
+      return {
+        name, kind, discipline: moveDiscipline(sessions, name), metric: "pace", value, deltaPct,
+        improving: deltaPct == null ? null : deltaPct < 0, spark, sessions: count,
+      };
     }
     // minutes-only cardio (a match, a swim without distance) → time metric
   }
@@ -183,7 +221,10 @@ export function exerciseWidgetCard(
   const value = sum(curW);
   if (value <= 0) return null;
   const deltaPct = pctChange(value, sum(prevW));
-  return { name, kind, metric: "time", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count };
+  return {
+    name, kind, discipline: kind === "cardio" ? moveDiscipline(sessions, name) : undefined,
+    metric: "time", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count,
+  };
 }
 
 /**

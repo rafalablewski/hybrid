@@ -9,6 +9,7 @@ import {
   exerciseWidgetCards,
   fmtWeight,
   fmtTonnage,
+  formatDisciplinePace,
   paceClock,
   progressParentage,
   fs,
@@ -53,8 +54,18 @@ export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct
   );
 }
 
+/** A rate in ITS DISCIPLINE'S convention — "/km" running, "/100m" swimming,
+ *  "/500m" rowing, "km/h" cycling. `formatDisciplinePace` is the one function
+ *  that knows; the card used to print a hard-coded "/km" and showed a swimmer
+ *  "38:36 /km" while the Endurance lane below it printed the same rate as
+ *  "3:52 /100m". A card with no resolved discipline keeps the /km fallback,
+ *  which is what the canonical value already is. Parity: mobile paceParts. */
+function paceParts(card: ExerciseWidgetCard): { v: string; u: string } {
+  return card.discipline ? splitVal(formatDisciplinePace(card.value, card.discipline)) : { v: paceClock(card.value), u: "/km" };
+}
+
 function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) => string): { v: string; u: string; label: string } {
-  if (card.metric === "pace") return { v: paceClock(card.value), u: "/km", label: t("w.home.exw.bestPace") };
+  if (card.metric === "pace") return { ...paceParts(card), label: t("w.home.exw.bestPace") };
   if (card.metric === "weight") return { ...splitVal(fmtWeight(card.value, units)), label: t("w.home.exw.heaviest") };
   if (card.metric === "time") return { v: String(card.value), u: "min", label: t("w.home.exw.time") };
   return { ...splitVal(fmtTonnage(card.value, units)), label: t("w.home.exw.volume") };
