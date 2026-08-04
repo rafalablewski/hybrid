@@ -34,11 +34,11 @@ describe("risk zones", () => {
   it("tile the whole axis with no gap or overlap", () => {
     expect(RISK_ZONES.reduce((a, z) => a + z.widthPct, 0)).toBe(100);
     RISK_ZONES.forEach((z, i) => {
-      if (i > 0) expect(z.from).toBe(RISK_ZONES[i - 1].to);
+      if (i > 0) expect(z.from).toBe(RISK_ZONES[i - 1]!.to);
       expect(z.to - z.from).toBe(z.widthPct);
     });
-    expect(RISK_ZONES[0].from).toBe(0);
-    expect(RISK_ZONES[RISK_ZONES.length - 1].to).toBe(100);
+    expect(RISK_ZONES[0]!.from).toBe(0);
+    expect(RISK_ZONES[RISK_ZONES.length - 1]!.to).toBe(100);
   });
 
   it("puts the flag line exactly at the elevated band's floor", () => {
@@ -53,7 +53,7 @@ describe("risk zones", () => {
     for (const z of RISK_ZONES) {
       for (const score of [z.from, z.to - 1]) {
         const axis = tissueAxis(mk([tissue("quads", score)]));
-        expect(axis.rows[0].band).toBe(z.band);
+        expect(axis.rows[0]!.band).toBe(z.band);
       }
     }
   });
@@ -113,8 +113,8 @@ describe("tissueAxis", () => {
 
   it("reports probability as an unrounded percent of the engine's calibration", () => {
     const axis = tissueAxis(mk([tissue("posterior", 32)]));
-    expect(axis.rows[0].probPct).toBeCloseTo(calibrateRisk(32) * 100, 6);
-    expect(axis.rows[0].probPct).toBeCloseTo(4.1, 1);
+    expect(axis.rows[0]!.probPct).toBeCloseTo(calibrateRisk(32) * 100, 6);
+    expect(axis.rows[0]!.probPct).toBeCloseTo(4.1, 1);
   });
 
   it("nulls the ratio for a tissue with no trusted baseline, and keeps it otherwise", () => {
@@ -122,8 +122,8 @@ describe("tissueAxis", () => {
       tissue("posterior", 20, { acwr: 1.12 }),
       tissue("chest", 11, { acwr: 1, enoughHistory: false }),
     ]));
-    expect(axis.rows[0].acwr).toBe(1.12);
-    expect(axis.rows[1].acwr).toBeNull();
+    expect(axis.rows[0]!.acwr).toBe(1.12);
+    expect(axis.rows[1]!.acwr).toBeNull();
   });
 
   it("carries the heaviest driver through, and null when there is none", () => {
@@ -131,8 +131,8 @@ describe("tissueAxis", () => {
       tissue("posterior", 71, { drivers: [{ kind: "spike", label: "", contribution: 40 }] }),
       tissue("chest", 4),
     ]));
-    expect(axis.rows[0].driver).toBe("spike");
-    expect(axis.rows[1].driver).toBeNull();
+    expect(axis.rows[0]!.driver).toBe("spike");
+    expect(axis.rows[1]!.driver).toBeNull();
   });
 
   it("passes the model version and the awaiting-baseline list straight through", () => {
