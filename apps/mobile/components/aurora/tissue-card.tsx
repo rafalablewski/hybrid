@@ -9,7 +9,7 @@ import {
 import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ACard } from "./kit";
 import { AuroraIcon } from "./icons";
 import { InjurySheet, RiskBody } from "./protocol";

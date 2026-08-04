@@ -7,7 +7,7 @@ import {
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
-  fmtWeight, paceClock,
+  weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
   velocityProfiles, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, SPORTS, LEVELS,
   localDayKey, INJURY_AREA_KEY,
   type CapabilityMovement,
@@ -16,6 +16,7 @@ import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, co
 import { useToday } from "../../lib/use-today";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
@@ -130,6 +131,10 @@ function Full({ top }: { top?: ReactNode }) {
   const plot = useMemo(() => trajectoryPlot(traj, trained, PLOT), [traj, trained]);
   const verdict = useMemo(() => stateVerdict(state.hpi, risk), [state.hpi, risk]);
   const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
+  // The Trends door's value — this week's two figures, from the SAME engine the
+  // Trends screen leads with, so the door and what it opens agree.
+  const prefs = useLoggerPrefs();
+  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), prefs.countWarmupsInVolume, bw), [sessions, prefs.countWarmupsInVolume, bw]);
 
   const hasData = sessionsRead.ready && sessions.length > 0;
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
@@ -330,7 +335,7 @@ function Full({ top }: { top?: ReactNode }) {
           door that tells you what is behind it is the only kind worth a row. */}
       <ACard solid style={{ marginTop: 16 }}>
         <ASection title={t("w.home.cockpit.deeper")} />
-        <Mod C={C} label={t("w.home.cockpit.trends")} value={t("w.home.cockpit.last7")} onPress={() => router.push("/trends")} />
+        <Mod C={C} label={t("w.home.cockpit.trends")} value={trendsValue(weeks, prefs.units, t) ?? t("w.home.cockpit.last7")} onPress={() => router.push("/trends")} />
         <Mod
           C={C}
           label={t("w.home.cockpit.endurance")}
@@ -344,7 +349,7 @@ function Full({ top }: { top?: ReactNode }) {
           value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx]}` : t("w.home.cockpit.sport")}
           onPress={() => (sport ? router.push({ pathname: "/sport-page", params: { name: sport.sport } }) : router.push("/sport"))}
         />
-        <Mod C={C} label={t("w.home.cockpit.askCoach")} value={t("w.home.cockpit.aiCoachValue")} onPress={() => router.push("/ai-coach")} last />
+        <Mod C={C} label={t("w.home.cockpit.askCoach")} value={coachQuestion(t, hasData, verdict, capability, state.hpi.limiter)} onPress={() => router.push("/ai-coach")} last />
       </ACard>
     </AuroraScreen>
   );
@@ -359,6 +364,36 @@ function capabilityLine(strength: CapabilityMovement | null, endurance: Capabili
   if (strength) parts.push(`${strength.name} ${fmtWeight(strength.from, "kg")} → ${fmtWeight(strength.to, "kg")}`);
   if (endurance) parts.push(`${endurance.name} ${paceClock(endurance.from)} → ${paceClock(endurance.to)} /km`);
   return parts.join(". ");
+}
+
+/** The Trends door's value — the week's sets and tonnage, which is exactly what
+ *  the Trends sheet leads with. A door that tells you what is behind it. */
+function trendsValue(weeks: ReturnType<typeof weeklyVolumeTrend>, units: "kg" | "lb", t: (k: string) => string): string | null {
+  const last = weeks[weeks.length - 1];
+  if (!last || (last.sets === 0 && last.tonnage === 0)) return null;
+  return `${last.sets} ${t("w.home.cockpit.sets").toLowerCase()} – ${fmtTonnage(last.tonnage, units)}`;
+}
+
+/**
+ * THE COACH DOOR'S VALUE — the question it would ask now.
+ *
+ * "Ask about today" was a static string on a row whose whole pattern promises a
+ * value, so it was the one door that could not be glanced. Generated from what
+ * this page already holds, in priority order: a flagged tissue outranks a
+ * stalled lift, which outranks the day's limiter. Mirrors web.
+ */
+function coachQuestion(
+  t: (k: string) => string,
+  hasData: boolean,
+  verdict: ReturnType<typeof stateVerdict>,
+  capability: ReturnType<typeof capabilityTrend>,
+  limiter: string,
+): string {
+  if (!hasData) return t("w.home.cockpit.aiCoachValue");
+  if (verdict.tissue) return t("w.home.cockpit.ask.tissue").replace("{tissue}", t(INJURY_AREA_KEY[verdict.tissue]).toLowerCase());
+  const stalled = capability.movements.find((m) => m.pct < 0);
+  if (stalled) return t("w.home.cockpit.ask.stalled").replace("{lift}", stalled.name);
+  return t(`w.home.cockpit.ask.limiter.${limiter}`);
 }
 
 /** The velocity door's value — the profile it would actually open with. */

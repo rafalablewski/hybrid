@@ -5,7 +5,7 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
-  fmtWeight, paceClock,
+  weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
   ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, readinessWhy, localDayKey,
   INJURY_AREA_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type CapabilityMovement,
@@ -14,6 +14,7 @@ import { LINE_HEX, LIME_HEX, BLUE } from "@/lib/ui";
 import { readSportSelection } from "@/lib/sport-store";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useCheckins } from "@/lib/use-checkins";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useToday } from "@/lib/use-today";
 import { HeroScreen } from "./hero";
 import TissueCard from "./tissue-card";
@@ -170,6 +171,10 @@ export default function AuroraPerformance({
   const trained = useMemo(() => sessionDaysAgo(sessions.map((s) => s.startedAt), Date.now()), [sessions]);
   const plot = useMemo(() => trajectoryPlot(traj, trained, PLOT), [traj, trained]);
   const verdict = useMemo(() => stateVerdict(state.hpi, risk), [state.hpi, risk]);
+  // The Trends door's value — this week's two figures, from the SAME engine the
+  // Trends screen leads with, so the door and what it opens agree.
+  const prefs = useLoggerPrefs();
+  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), prefs.countWarmupsInVolume, bw), [sessions, prefs.countWarmupsInVolume, bw]);
 
   if (persona === "casual") {
     return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete", true) : setScreen("upgrade"))} />;
@@ -375,7 +380,7 @@ export default function AuroraPerformance({
           <SHead title={t("w.home.cockpit.deeper")} />
           <Mod
             label={t("w.home.cockpit.trends")}
-            value={t("w.home.cockpit.last7")}
+            value={trendsValue(weeks, prefs.units, t) ?? t("w.home.cockpit.last7")}
             onClick={() => setScreen("trends")}
           />
           <Mod
@@ -393,7 +398,7 @@ export default function AuroraPerformance({
             value={sport ? `${sport.sport} – ${LEVELS[sport.levelIdx] ?? LEVELS[0]}` : t("w.home.cockpit.sport")}
             onClick={() => (sport && onOpenSport ? onOpenSport(sport.sport) : setScreen("sport"))}
           />
-          <Mod label={t("w.home.cockpit.askCoach")} value={t("w.home.cockpit.aiCoachValue")} onClick={() => setScreen("aicoach")} last />
+          <Mod label={t("w.home.cockpit.askCoach")} value={coachQuestion(t, hasData, verdict, capability, state.hpi.limiter)} onClick={() => setScreen("aicoach")} last />
         </div>
       </div>
     </div>
@@ -409,6 +414,36 @@ function capabilityLine(strength: CapabilityMovement | null, endurance: Capabili
   if (strength) parts.push(`${strength.name} ${fmtWeight(strength.from, "kg")} → ${fmtWeight(strength.to, "kg")}`);
   if (endurance) parts.push(`${endurance.name} ${paceClock(endurance.from)} → ${paceClock(endurance.to)} /km`);
   return parts.join(". ");
+}
+
+/** The Trends door's value — the week's sets and tonnage, which is exactly what
+ *  the Trends sheet leads with. A door that tells you what is behind it. */
+function trendsValue(weeks: ReturnType<typeof weeklyVolumeTrend>, units: "kg" | "lb", t: (k: string) => string): string | null {
+  const last = weeks[weeks.length - 1];
+  if (!last || (last.sets === 0 && last.tonnage === 0)) return null;
+  return `${last.sets} ${t("w.home.cockpit.sets").toLowerCase()} – ${fmtTonnage(last.tonnage, units)}`;
+}
+
+/**
+ * THE COACH DOOR'S VALUE — the question it would ask now.
+ *
+ * "Ask about today" was a static string on a row whose whole pattern promises a
+ * value, so it was the one door that could not be glanced. The question is
+ * generated from what this page is already holding, in priority order: a
+ * flagged tissue outranks a stalled lift, which outranks the day's limiter.
+ */
+function coachQuestion(
+  t: (k: string) => string,
+  hasData: boolean,
+  verdict: ReturnType<typeof stateVerdict>,
+  capability: ReturnType<typeof capabilityTrend>,
+  limiter: string,
+): string {
+  if (!hasData) return t("w.home.cockpit.aiCoachValue");
+  if (verdict.tissue) return t("w.home.cockpit.ask.tissue").replace("{tissue}", t(INJURY_AREA_KEY[verdict.tissue]).toLowerCase());
+  const stalled = capability.movements.find((m) => m.pct < 0);
+  if (stalled) return t("w.home.cockpit.ask.stalled").replace("{lift}", stalled.name);
+  return t(`w.home.cockpit.ask.limiter.${limiter}`);
 }
 
 /** The velocity door's value — the profile it would actually open with. */

@@ -520,7 +520,6 @@ export const web_home = {
 
     // cockpit
     "w.home.cockpit.commandCenter": "Performance",
-    "w.home.cockpit.commandSub": "Your state, your risk, your season — one read.",
     "w.home.cockpit.goalSeason": "Goal & season",
     "w.home.cockpit.periodize": "Periodize",
     "w.home.cockpit.setUp": "Set up",
@@ -615,6 +614,14 @@ export const web_home = {
     "w.home.cockpit.deeper": "Go deeper",
     "w.home.cockpit.trends": "Trends",
     "w.home.cockpit.askCoach": "Ask the coach",
+    // The coach door shows the question it would ask NOW, generated from what
+    // the page is already holding — a door that demonstrates beats one that
+    // advertises. Falls back to the generic prompt only when nothing stands out.
+    "w.home.cockpit.ask.tissue": "Is my {tissue} safe to train?",
+    "w.home.cockpit.ask.stalled": "Why has my {lift} stalled?",
+    "w.home.cockpit.ask.limiter.strength": "How do I train around this fatigue?",
+    "w.home.cockpit.ask.limiter.endurance": "How do I train around this fatigue?",
+    "w.home.cockpit.ask.limiter.recovery": "Why is my recovery dragging?",
     // teaser
     "w.home.cockpit.teaseTitle": "Unlock your Cockpit",
     "w.home.cockpit.teaseSub1": "Season, Performance State, sport work, velocity and endurance — the whole read in one screen. It's part of ",
@@ -1378,7 +1385,6 @@ export const web_home = {
 
     // cockpit
     "w.home.cockpit.commandCenter": "Wydajność",
-    "w.home.cockpit.commandSub": "Twój stan, ryzyko i sezon — jeden odczyt.",
     "w.home.cockpit.goalSeason": "Cel i sezon",
     "w.home.cockpit.periodize": "Periodyzuj",
     "w.home.cockpit.setUp": "Skonfiguruj",
@@ -1468,6 +1474,11 @@ export const web_home = {
     "w.home.cockpit.deeper": "Wejdź głębiej",
     "w.home.cockpit.trends": "Trendy",
     "w.home.cockpit.askCoach": "Zapytaj trenera",
+    "w.home.cockpit.ask.tissue": "Czy mogę bezpiecznie trenować {tissue}?",
+    "w.home.cockpit.ask.stalled": "Dlaczego {lift} stanął w miejscu?",
+    "w.home.cockpit.ask.limiter.strength": "Jak trenować mimo tego zmęczenia?",
+    "w.home.cockpit.ask.limiter.endurance": "Jak trenować mimo tego zmęczenia?",
+    "w.home.cockpit.ask.limiter.recovery": "Dlaczego regeneracja się wlecze?",
     // teaser
     "w.home.cockpit.teaseTitle": "Odblokuj swój Kokpit",
     "w.home.cockpit.teaseSub1": "Sezon, stan formy, praca sportowa, prędkość i wytrzymałość — pełny obraz na jednym ekranie. To część ",
@@ -2227,7 +2238,6 @@ export const web_home = {
 
     // cockpit
     "w.home.cockpit.commandCenter": "Performance",
-    "w.home.cockpit.commandSub": "Dein Zustand, dein Risiko, deine Saison — ein Blick.",
     "w.home.cockpit.goalSeason": "Ziel & Saison",
     "w.home.cockpit.periodize": "Periodisieren",
     "w.home.cockpit.setUp": "Einrichten",
@@ -2317,6 +2327,11 @@ export const web_home = {
     "w.home.cockpit.deeper": "Tiefer gehen",
     "w.home.cockpit.trends": "Trends",
     "w.home.cockpit.askCoach": "Coach fragen",
+    "w.home.cockpit.ask.tissue": "Kann ich {tissue} sicher trainieren?",
+    "w.home.cockpit.ask.stalled": "Warum stagniert {lift}?",
+    "w.home.cockpit.ask.limiter.strength": "Wie trainiere ich trotz dieser Ermüdung?",
+    "w.home.cockpit.ask.limiter.endurance": "Wie trainiere ich trotz dieser Ermüdung?",
+    "w.home.cockpit.ask.limiter.recovery": "Warum hinkt meine Erholung hinterher?",
     // teaser
     "w.home.cockpit.teaseTitle": "Schalte dein Cockpit frei",
     "w.home.cockpit.teaseSub1": "Saison, Leistungszustand, Sportarbeit, Geschwindigkeit und Ausdauer — der ganze Überblick auf einem Bildschirm. Es ist Teil von ",
