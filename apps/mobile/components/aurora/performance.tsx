@@ -379,7 +379,10 @@ function Full({ top }: { top?: ReactNode }) {
           question rather than living on another screen; the provenance ladder
           and the working are dispatched from there as a sheet. */}
       <View style={{ marginTop: 16 }}>
-        <AuroraVolume compact />
+        {/* The model editor has to be reachable from HERE too: the drawer's
+            provenance sheet offers "Next — Training age →", and without a
+            destination that row renders its arrow and does nothing. */}
+        <AuroraVolume compact onOpenModel={() => router.push("/volume-model")} />
       </View>
 
       {/* 5 · SEASON — one card. The bar draws the fraction, so the line names

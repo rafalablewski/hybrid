@@ -425,7 +425,10 @@ export default function AuroraPerformance({
             columns that raised the question rather than living on another
             screen; the provenance ladder and the working are dispatched from
             there as a sheet. */}
-        <AuroraVolume sessions={sessions} compact />
+        {/* The model editor has to be reachable from HERE too: the drawer's
+            provenance sheet offers "Next — Training age →", and without a
+            destination that row renders its arrow and does nothing. */}
+        <AuroraVolume sessions={sessions} compact onOpenModel={() => setScreen("volume-model")} />
 
         {/* 5 · SEASON — one card. The bar draws the fraction, so the line names
             the week once instead of restating it as a percentage. */}
