@@ -40,6 +40,18 @@ export function fmtWeight(kg: number, u: WeightUnit, decimals?: number): string 
   return `${Number(v.toFixed(d)).toLocaleString()} ${u}`;
 }
 
+/**
+ * Split a formatted figure ("22.6 t", "1,240 lb") into its VALUE and its UNIT,
+ * so a card can set the number big and the unit small beside it. Both clients
+ * read the same split — a figure typeset two different ways on two screens is
+ * the same drift this scale exists to prevent. A string with no unit comes back
+ * with an empty one.
+ */
+export function splitFigure(s: string): [value: string, unit: string] {
+  const i = s.lastIndexOf(" ");
+  return i < 0 ? [s, ""] : [s.slice(0, i), s.slice(i + 1)];
+}
+
 /** Format big tonnage: metric tonnes in kg mode, total pounds in lb mode. */
 export function fmtTonnage(kg: number, u: WeightUnit): string {
   if (u === "kg") return `${(kg / 1000).toFixed(1)} t`;

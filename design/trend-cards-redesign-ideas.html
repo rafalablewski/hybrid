@@ -1,0 +1,478 @@
+<title>Trends — 7 card redesigns</title>
+<style>
+  :root{
+    --page:#080907;
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715;
+    --line:#242724; --line2:#33372f; --line3:#1b1e1b;
+    --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
+    --lime:#c6f84f; --on-accent:#0c0d0c;
+    --blue:#3c787e; --blue-text:#6cb6bd;
+    --amber:#d0cd94; --red-text:#e58a5c;
+    --sans:"SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  html,body{background:var(--page);color:var(--chalk);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:52px 20px 120px}
+  ::selection{background:var(--lime);color:var(--on-accent)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
+
+  .wrap{max-width:1240px;margin:0 auto}
+
+  /* ── page head ───────────────────────────────────────────── */
+  .kick{font:700 11.5px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--lime);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+  .kick::before{content:"";width:26px;height:2px;background:var(--lime);border-radius:2px}
+  h1{font-size:clamp(31px,5vw,47px);line-height:1.02;letter-spacing:-.038em;font-weight:800;margin-bottom:18px;max-width:17ch;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--ash)}
+  .lede{color:var(--ash);max-width:66ch;font-size:15.5px;line-height:1.65}
+  .lede + .lede{margin-top:13px}
+  .lede b{color:var(--chalk);font-weight:600}
+
+  /* ── diagnosis ───────────────────────────────────────────── */
+  .diag{margin-top:52px;display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:40px;align-items:start}
+  @media (max-width:820px){.diag{grid-template-columns:1fr}}
+  .sechead{font:700 10px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ash2);margin-bottom:16px}
+  .faults{display:flex;flex-direction:column;gap:15px;max-width:70ch}
+  .faults li{list-style:none;font-size:14.4px;line-height:1.62;color:var(--ash);padding-left:19px;position:relative}
+  .faults li::before{content:"";position:absolute;left:0;top:.62em;width:9px;height:1px;background:var(--line2)}
+  .faults b{color:var(--chalk);font-weight:600}
+  .faults code{font:500 12.5px var(--mono);color:var(--amber)}
+
+  /* ── gallery ─────────────────────────────────────────────── */
+  .gallery{margin-top:76px;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:60px 34px;align-items:start;justify-items:center}
+  .concept{width:100%;max-width:386px}
+  .cap{margin:0 2px 18px}
+  .cap .n{display:inline-flex;align-items:center;gap:10px;font:700 11.5px/1 var(--mono);letter-spacing:.14em;color:var(--lime);text-transform:uppercase;margin-bottom:12px}
+  .cap .n i{width:23px;height:23px;border-radius:8px;background:var(--lime);color:var(--on-accent);display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px;font-family:var(--sans)}
+  .cap .n u{text-decoration:none;margin-left:2px;padding:4px 8px;border-radius:999px;border:1px solid color-mix(in srgb,var(--lime) 40%,transparent);color:var(--lime);font:700 9.5px/1 var(--mono);letter-spacing:.16em}
+  .cap h2{font-size:21px;letter-spacing:-.022em;font-weight:800;margin-bottom:8px;line-height:1.2}
+  .cap p{color:var(--ash);font-size:13.4px;line-height:1.6}
+  .cap p b{color:var(--chalk);font-weight:600}
+  .cut{margin-top:11px;display:flex;flex-direction:column;gap:5px;font:500 11px/1.55 var(--mono)}
+  .cut span{color:var(--ash2)}
+  .cut span b{font-weight:700}
+  .cut .keep b{color:var(--lime)}
+  .cut .kill b{color:var(--red-text)}
+
+  .stack{display:flex;flex-direction:column;gap:14px}
+
+  /* ── app card primitives (AURORA) ────────────────────────── */
+  .card{border:1px solid var(--line);border-radius:24px;padding:18px;background:var(--card);box-shadow:0 8px 26px -16px rgba(0,0,0,.7)}
+  .kicker{font:400 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+  .kicker.b{color:var(--blue-text)}
+  .label{font:600 12.5px/1 var(--sans);letter-spacing:-.01em;color:var(--ash)}
+  .foot{display:flex;justify-content:space-between;margin-top:7px;font:400 10px/1 var(--mono);color:var(--ash)}
+
+  /* the number */
+  .fig{display:flex;align-items:baseline;gap:7px;font-variant-numeric:tabular-nums}
+  .fig .v{font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:.88}
+  .fig .u{font:600 13px/1 var(--sans);color:var(--ash);letter-spacing:-.01em}
+  .fig .d{margin-left:auto;font:600 11.5px/1 var(--mono);color:var(--ash2);align-self:center}
+  .fig .d b{font-weight:700}
+  .up b{color:var(--lime)} .dn b{color:var(--red-text)} .fl b{color:var(--ash)}
+
+  /* ── ORIGINAL (as shipped) ───────────────────────────────── */
+  .o-bars{display:flex;align-items:flex-end;gap:5px;height:80px;margin-top:12px}
+  .o-bars i{flex:1;border-radius:3px;background:color-mix(in srgb,var(--lime) 40%,transparent);height:6px}
+  .o-bars i.p{height:70px;background:color-mix(in srgb,var(--lime) 40%,transparent)}
+  .o-bars i.c{height:64px;background:var(--lime)}
+  .o-bars.blue i{background:color-mix(in srgb,var(--blue) 55%,transparent)}
+  .o-bars.blue i.c{background:var(--blue-text);opacity:.75}
+  .tag{display:inline-block;font:700 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash2);margin-bottom:10px}
+
+  /* ── 1 · figure leads, spark supports ────────────────────── */
+  .spark{margin-top:14px;display:block;width:100%;height:34px;overflow:visible}
+  .axis{display:flex;justify-content:space-between;margin-top:8px;font:400 10px/1 var(--mono);color:var(--ash2)}
+
+  /* ── 2 · merged ledger ───────────────────────────────────── */
+  .ledger .head{display:flex;gap:26px;padding-bottom:16px}
+  .ledger .m{flex:1}
+  .ledger .m .k{font:600 11.5px/1 var(--sans);color:var(--ash);margin-bottom:9px}
+  .ledger .m .v{font-size:30px;font-weight:800;letter-spacing:-.045em;line-height:.9;font-variant-numeric:tabular-nums}
+  .ledger .m .v s{text-decoration:none;font:600 12px/1 var(--sans);color:var(--ash);margin-left:4px;letter-spacing:-.01em}
+  .grid8{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;border-top:1px solid var(--line);padding-top:14px}
+  .grid8 .col{display:flex;flex-direction:column;gap:4px}
+  .grid8 .cell{height:26px;display:flex;align-items:flex-end}
+  .grid8 .cell b{display:block;width:100%;border-radius:2px;background:color-mix(in srgb,var(--lime) 28%,transparent)}
+  .grid8 .cell.t b{background:color-mix(in srgb,var(--blue) 50%,transparent)}
+  .grid8 .col.now .cell b{background:var(--lime)}
+  .grid8 .col.now .cell.t b{background:var(--blue-text)}
+  .grid8 .cell.zero{border-bottom:1px solid var(--line2)}
+  .legend{display:flex;gap:16px;margin-top:13px;font:400 10.5px/1 var(--mono);color:var(--ash2)}
+  .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  .legend .l{background:var(--lime)} .legend .b{background:var(--blue-text)}
+
+  /* ── 3 · true zero ───────────────────────────────────────── */
+  .tz{position:relative;height:84px;margin-top:16px;display:flex;align-items:flex-end;gap:6px}
+  .tz .base{position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line2)}
+  .tz .mean{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--line2)}
+  .tz .mean span{position:absolute;right:0;top:-15px;font:400 9.5px/1 var(--mono);color:var(--ash2)}
+  .tz i{flex:1;border-radius:2px 2px 0 0;background:color-mix(in srgb,var(--lime) 26%,transparent);position:relative;z-index:1}
+  .tz i.c{background:var(--lime)}
+  .tz i.z{height:0;border-radius:0}
+  .tz.blue i{background:color-mix(in srgb,var(--blue) 42%,transparent)}
+  .tz.blue i.c{background:var(--blue-text)}
+
+  /* ── 4 · the line ────────────────────────────────────────── */
+  .lineC{margin-top:16px}
+
+  /* ── 5 · against your average ────────────────────────────── */
+  .track{position:relative;height:10px;border-radius:5px;background:var(--ink);border:1px solid var(--line);margin-top:16px;overflow:visible}
+  .track .fill{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--lime)}
+  .track.blue .fill{background:var(--blue-text)}
+  .track .mark{position:absolute;top:-6px;bottom:-6px;width:1px;background:var(--ash)}
+  .marks{position:relative;height:19px;margin-top:8px}
+  .marks span{position:absolute;font:400 10px/1 var(--mono);color:var(--ash2);white-space:nowrap;transform:translateX(-50%)}
+  .marks span.r{transform:none;right:0}
+  .sent{margin-top:14px;font-size:13.4px;line-height:1.55;color:var(--ash)}
+  .sent b{color:var(--chalk);font-weight:650}
+
+  /* ── 6 · quiet table ─────────────────────────────────────── */
+  .seg{display:flex;gap:20px;border-bottom:1px solid var(--line);margin-top:2px}
+  .seg button{background:none;border:0;padding:0 0 11px;cursor:pointer;font:600 13px/1 var(--sans);color:var(--ash2);position:relative;letter-spacing:-.01em}
+  .seg button.on{color:var(--chalk)}
+  .seg button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--lime);border-radius:2px}
+  .seg button:focus-visible{outline:2px solid var(--lime);outline-offset:3px;border-radius:4px}
+  .trow{display:grid;grid-template-columns:1fr auto auto;align-items:baseline;gap:14px;padding:13px 0;border-bottom:1px solid var(--line3);cursor:pointer}
+  .trow:last-child{border-bottom:0;padding-bottom:2px}
+  .trow .nm{font-size:14.5px;font-weight:600;letter-spacing:-.012em;color:var(--chalk);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .trow .nm s{display:block;text-decoration:none;font:400 11px/1 var(--mono);color:var(--ash2);margin-top:6px;letter-spacing:0}
+  .trow .wt{font:600 14.5px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--chalk);text-align:right}
+  .trow .wt s{text-decoration:none;color:var(--ash);font-weight:400;font-size:11.5px;margin-left:3px}
+  .trow .dl{font:600 11.5px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:right;min-width:52px;color:var(--ash2)}
+  .trow .dl.up{color:var(--lime)}
+  .trow:hover .nm{color:#fff}
+  .thead{display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:14px 0 9px;font:400 10px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--ash2)}
+  .thead .r{text-align:right}
+  .thead .r3{text-align:right;min-width:52px}
+
+  /* ── 7 · one sheet ───────────────────────────────────────── */
+  .sheet{border:1px solid var(--line);border-radius:24px;background:var(--card);box-shadow:0 8px 26px -16px rgba(0,0,0,.7);overflow:hidden}
+  .sheet .band{padding:17px 18px;border-bottom:1px solid var(--line3)}
+  .sheet .band:last-child{border-bottom:0}
+  .sheet .band.q{background:var(--ink2)}
+  .measure{display:flex;align-items:center;gap:16px;cursor:pointer}
+  .measure .t{flex:1;min-width:0}
+  .measure .t .k{font:600 12.5px/1 var(--sans);color:var(--ash);letter-spacing:-.01em}
+  .measure .t .v{margin-top:9px;font-size:27px;font-weight:800;letter-spacing:-.045em;line-height:.9;font-variant-numeric:tabular-nums}
+  .measure .t .v s{text-decoration:none;font:600 12px/1 var(--sans);color:var(--ash);margin-left:4px;letter-spacing:-.01em}
+  .measure .t .d{margin-top:8px;font:500 11px/1 var(--mono);color:var(--ash2)}
+  .measure svg{flex:none}
+  .sheet .sub{font:400 10px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--ash2)}
+
+  /* footer */
+  .rules{margin-top:88px;border-top:1px solid var(--line);padding-top:34px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:30px}
+  .rules div h3{font-size:14px;font-weight:700;margin-bottom:9px;letter-spacing:-.015em}
+  .rules div p{color:var(--ash);font-size:13.2px;line-height:1.62}
+  .rules div p b{color:var(--chalk);font-weight:600}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kick">Trends — card system</div>
+    <h1>Seven ways to make the trend cards <em>say something</em>.</h1>
+    <p class="lede">Today all three cards are the same object: a mono capital kicker, a large empty rectangle, and the actual answer hidden in 10px grey at the bottom corner. The chart is the biggest thing on the card and the number is the smallest — which is exactly backwards. <b>What the athlete came for is the figure.</b></p>
+    <p class="lede">Ive's test is not "is it minimal" — it is <b>"does every element earn the space it takes"</b>. Ideas 1–5 treat the two chart cards, idea 6 treats the exercise table, idea 7 dissolves all three. A shipped design pairs one of 1–5 with idea 6; both clients get the same treatment in the same change.</p>
+  </header>
+
+  <section class="diag">
+    <div>
+      <div class="sechead">Shipping today</div>
+      <div class="stack">
+        <div class="card">
+          <div class="kicker">Weekly working sets — last 8 wk</div>
+          <div class="o-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i class="p"></i><i class="c"></i></div>
+          <div class="foot"><span>8 wk ago</span><span>56 sets – this wk</span></div>
+        </div>
+        <div class="card">
+          <div class="kicker b">Weekly tonnage — tonnes</div>
+          <div class="o-bars blue"><i></i><i></i><i></i><i></i><i></i><i></i><i class="p"></i><i class="c"></i></div>
+          <div class="foot"><span>8 wk ago</span><span>22.6 t</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sechead">What's wrong with it</div>
+      <ul class="faults">
+        <li><b>The subject is the smallest text on the card.</b> "56 sets" is set at 10px in the corner while 80px of height is spent drawing six bars that carry no information.</li>
+        <li><b>The chart lies.</b> Every empty week is floored at 6px, so a week with zero sets and a week with four look identical — and the floor reads as a deliberate baseline rather than as nothing. A measuring instrument that cannot show zero is not measuring.</li>
+        <li><b>Two cards, one form.</b> Sets and tonnage are the same eight weeks drawn the same way in two hues. Repeating the shape makes both weaker and hides the one comparison that matters: heavy weeks against busy weeks.</li>
+        <li><b>Colour has stopped meaning anything.</b> Chartreuse is the kicker, the bars, every exercise name and the active period pill. When the accent marks everything, it marks nothing.</li>
+        <li><b>Machine chrome.</b> Mono, all-caps, letterspaced titles on every card — plus <code>—</code> pressed into service as a spec separator — turn a headline into a part number.</li>
+        <li><b>The table doesn't rank or align.</b> The <code>↗</code> column names nothing, weights don't share a decimal column, and a glyph (▲) is used where a real figure (+5 kg) would fit.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="gallery">
+
+    <!-- 1 ───────────────────────────────────────────────── -->
+    <div class="concept">
+      <div class="cap">
+        <div class="n"><i>1</i>The figure is the card</div>
+        <h2>Number first, chart as footnote</h2>
+        <p>Invert the hierarchy. The week's figure is set at display size with its unit and its change; the eight-week history shrinks to a 34px sparkline that <b>supports</b> the number instead of standing in for it. The kicker drops its capitals and becomes a plain label.</p>
+        <div class="cut">
+          <span class="keep">keeps <b>the full 8-week history</b></span>
+          <span class="kill">kills <b>the mono kicker, the corner caption, 46px of dead air</b></span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="label">Working sets this week</div>
+          <div class="fig" style="margin-top:11px"><span class="v">56</span><span class="u">sets</span><span class="d dn">−4 <b>vs last wk</b></span></div>
+          <svg class="spark" viewBox="0 0 300 34" preserveAspectRatio="none" aria-label="Weekly sets, last 8 weeks">
+            <line x1="0" y1="33" x2="300" y2="33" stroke="#33372f" stroke-width="1"/>
+            <path d="M0,33 L42.9,33 L85.7,33 L128.6,33 L171.4,33 L214.3,33 L257.1,3 L300,5.1"
+                  fill="none" stroke="#c6f84f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".55"/>
+            <circle cx="300" cy="5.1" r="3.4" fill="#c6f84f"/>
+          </svg>
+          <div class="axis"><span>8 wk ago</span><span>this week</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Tonnage this week</div>
+          <div class="fig" style="margin-top:11px"><span class="v">22.6</span><span class="u">tonnes</span><span class="d dn">−1.5 <b>vs last wk</b></span></div>
+          <svg class="spark" viewBox="0 0 300 34" preserveAspectRatio="none" aria-label="Weekly tonnage, last 8 weeks">
+            <line x1="0" y1="33" x2="300" y2="33" stroke="#33372f" stroke-width="1"/>
+            <path d="M0,33 L42.9,33 L85.7,33 L128.6,33 L171.4,33 L214.3,33 L257.1,3 L300,6.8"
+                  fill="none" stroke="#6cb6bd" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".55"/>
+            <circle cx="300" cy="6.8" r="3.4" fill="#6cb6bd"/>
+          </svg>
+          <div class="axis"><span>8 wk ago</span><span>this week</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 ───────────────────────────────────────────────── -->
+    <div class="concept">
+      <div class="cap">
+        <div class="n"><i>2</i>The twins collapse</div>
+        <h2>One card, both measures, one axis</h2>
+        <p>Sets and tonnage are the same eight weeks — so they are one object, not two. Sharing a column grid finally makes the useful reading possible: <b>a week where tonnage climbed while sets fell is a heavier week</b>, which two separate cards can never show.</p>
+        <div class="cut">
+          <span class="keep">keeps <b>both series, full history, both figures</b></span>
+          <span class="kill">kills <b>an entire card and one scroll-length of repetition</b></span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card ledger">
+          <div class="head">
+            <div class="m"><div class="k">Working sets</div><div class="v">56</div></div>
+            <div class="m"><div class="k">Tonnage</div><div class="v">22.6<s>t</s></div></div>
+          </div>
+          <div class="grid8">
+            <div class="col"><div class="cell zero"></div><div class="cell t zero"></div></div>
+            <div class="col"><div class="cell zero"></div><div class="cell t zero"></div></div>
+            <div class="col"><div class="cell zero"></div><div class="cell t zero"></div></div>
+            <div class="col"><div class="cell zero"></div><div class="cell t zero"></div></div>
+            <div class="col"><div class="cell zero"></div><div class="cell t zero"></div></div>
+            <div class="col"><div class="cell zero"></div><div class="cell t zero"></div></div>
+            <div class="col"><div class="cell"><b style="height:26px"></b></div><div class="cell t"><b style="height:26px"></b></div></div>
+            <div class="col now"><div class="cell"><b style="height:24px"></b></div><div class="cell t"><b style="height:24px"></b></div></div>
+          </div>
+          <div class="legend"><span><i class="l"></i>sets</span><span><i class="b"></i>tonnes</span><span style="margin-left:auto">8 wk ago → now</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 ───────────────────────────────────────────────── -->
+    <div class="concept">
+      <div class="cap">
+        <div class="n"><i>3</i>True zero</div>
+        <h2>An honest instrument</h2>
+        <p>Keep the bars, fix their integrity. No minimum height — a week with nothing shows nothing, sitting on a real baseline rule. The current week is the only solid bar; the rest recede. A dashed mean line gives the eye something to measure against, which is what the empty upper half was always for.</p>
+        <div class="cut">
+          <span class="keep">keeps <b>the familiar form — smallest change to ship</b></span>
+          <span class="kill">kills <b>the 6px floor, the false baseline, the corner caption</b></span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="label">Working sets</div>
+          <div class="fig" style="margin-top:10px"><span class="v">56</span><span class="u">this week</span></div>
+          <div class="tz">
+            <div class="base"></div>
+            <div class="mean" style="bottom:21px"><span>8-wk avg 14.5</span></div>
+            <i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i>
+            <i style="height:84px"></i><i class="c" style="height:78px"></i>
+          </div>
+          <div class="axis"><span>8 wk ago</span><span>this week</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Tonnage</div>
+          <div class="fig" style="margin-top:10px"><span class="v">22.6</span><span class="u">tonnes this week</span></div>
+          <div class="tz blue">
+            <div class="base"></div>
+            <div class="mean" style="bottom:20px"><span>8-wk avg 5.8 t</span></div>
+            <i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i>
+            <i style="height:84px"></i><i class="c" style="height:79px"></i>
+          </div>
+          <div class="axis"><span>8 wk ago</span><span>this week</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 ───────────────────────────────────────────────── -->
+    <div class="concept">
+      <div class="cap">
+        <div class="n"><i>4</i>The line, not the bars</div>
+        <h2>Training is a continuum</h2>
+        <p>Bars imply eight discrete, comparable objects. A stroke with a soft fill says what is true — one continuous load that rose. The endpoint carries a dot and its own inline value, so the card's answer sits <b>where the eye already lands</b>, at the end of the line.</p>
+        <div class="cut">
+          <span class="keep">keeps <b>shape at a glance; reads well with sparse history</b></span>
+          <span class="kill">kills <b>per-week comparison — worse if you count individual weeks</b></span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="label">Working sets — last 8 weeks</div>
+          <div class="lineC">
+            <svg viewBox="0 0 300 76" width="100%" height="76" preserveAspectRatio="none" aria-label="Weekly sets: flat then rising to 56">
+              <defs><linearGradient id="gl" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#c6f84f" stop-opacity=".26"/><stop offset="1" stop-color="#c6f84f" stop-opacity="0"/>
+              </linearGradient></defs>
+              <line x1="0" y1="66" x2="300" y2="66" stroke="#242724" stroke-width="1"/>
+              <path d="M0,66 L42.9,66 L85.7,66 L128.6,66 L171.4,66 L214.3,66 L257.1,8 L300,12 L300,66 L0,66 Z" fill="url(#gl)"/>
+              <path d="M0,66 L42.9,66 L85.7,66 L128.6,66 L171.4,66 L214.3,66 L257.1,8 L300,12" fill="none" stroke="#c6f84f" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+              <circle cx="300" cy="12" r="4" fill="#c6f84f" stroke="#151715" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <div class="axis"><span>8 wk ago</span><span style="color:var(--chalk);font-weight:600">56 sets</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Tonnage — last 8 weeks</div>
+          <div class="lineC">
+            <svg viewBox="0 0 300 76" width="100%" height="76" preserveAspectRatio="none" aria-label="Weekly tonnage: flat then rising to 22.6 tonnes">
+              <defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6cb6bd" stop-opacity=".26"/><stop offset="1" stop-color="#6cb6bd" stop-opacity="0"/>
+              </linearGradient></defs>
+              <line x1="0" y1="66" x2="300" y2="66" stroke="#242724" stroke-width="1"/>
+              <path d="M0,66 L42.9,66 L85.7,66 L128.6,66 L171.4,66 L214.3,66 L257.1,8 L300,14 L300,66 L0,66 Z" fill="url(#gb)"/>
+              <path d="M0,66 L42.9,66 L85.7,66 L128.6,66 L171.4,66 L214.3,66 L257.1,8 L300,14" fill="none" stroke="#6cb6bd" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+              <circle cx="300" cy="14" r="4" fill="#6cb6bd" stroke="#151715" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <div class="axis"><span>8 wk ago</span><span style="color:var(--chalk);font-weight:600">22.6 t</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 ───────────────────────────────────────────────── -->
+    <div class="concept">
+      <div class="cap">
+        <div class="n"><i>5</i>Against your average</div>
+        <h2>Answer the question, don't plot it</h2>
+        <p>Nobody reads a bar chart to learn "am I training more than usual" — they read it and then do the arithmetic. So do the arithmetic. One track, one marker at the eight-week average, one sentence in plain English. <b>The history stays a tap away</b>, not a permanent tax on the screen.</p>
+        <div class="cut">
+          <span class="keep">keeps <b>the only judgement most weeks need</b></span>
+          <span class="kill">kills <b>week-by-week detail on the card — it moves behind the tap</b></span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="label">Working sets this week</div>
+          <div class="fig" style="margin-top:11px"><span class="v">56</span><span class="u">sets</span></div>
+          <div class="track"><div class="fill" style="right:0"></div><div class="mark" style="left:26%"></div></div>
+          <div class="marks"><span style="left:26%">avg 14.5</span><span class="r">56</span></div>
+          <p class="sent">Your heaviest week of the eight — <b>3.9× your average</b>. Two weeks in a row above it.</p>
+        </div>
+        <div class="card">
+          <div class="label">Tonnage this week</div>
+          <div class="fig" style="margin-top:11px"><span class="v">22.6</span><span class="u">tonnes</span></div>
+          <div class="track blue"><div class="fill" style="right:6%"></div><div class="mark" style="left:26%"></div></div>
+          <div class="marks"><span style="left:26%">avg 5.8 t</span><span class="r">24.1 t peak</span></div>
+          <p class="sent">Down <b>1.5 t on last week</b>, still well clear of your eight-week average.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 ───────────────────────────────────────────────── -->
+    <div class="concept">
+      <div class="cap">
+        <div class="n"><i>6</i>The table, quieted</div>
+        <h2>Rank, align, and say the change</h2>
+        <p>Names return to chalk so chartreuse can mean one thing again — the live selection. Weights share a tabular column and land on one right edge. The <code style="font:500 12px var(--mono);color:var(--amber)">▲</code> glyph becomes the figure it was standing in for: <b>+5 kg</b>. The period switch loses its filled pill for an underline that moves.</p>
+        <div class="cut">
+          <span class="keep">keeps <b>sort, tap-through, every column's data</b></span>
+          <span class="kill">kills <b>4 lime names, the filled pill, the unnamed ↗ column</b></span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div class="label" style="margin-bottom:15px">Per exercise</div>
+          <div class="seg">
+            <button type="button">8 wk</button><button type="button">6 mo</button><button type="button">1 yr</button><button type="button" class="on">All</button>
+          </div>
+          <div class="thead"><span>Exercise</span><span class="r">Heaviest</span><span class="r3">Change</span></div>
+          <div class="trow"><span class="nm">Chest Dip<s>3 sessions</s></span><span class="wt">75<s>kg</s></span><span class="dl">—</span></div>
+          <div class="trow"><span class="nm">Barbell Bench Press<s>3 sessions</s></span><span class="wt">70<s>kg</s></span><span class="dl up">+2.5</span></div>
+          <div class="trow"><span class="nm">Romanian Deadlift<s>2 sessions</s></span><span class="wt">70<s>kg</s></span><span class="dl up">+5.0</span></div>
+          <div class="trow"><span class="nm">Standing Overhead Press<s>4 sessions</s></span><span class="wt">40<s>kg</s></span><span class="dl up">+2.5</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7 ───────────────────────────────────────────────── -->
+    <div class="concept">
+      <div class="cap">
+        <div class="n"><i>7</i>One sheet<u>Shipped</u></div>
+        <h2>Fewer objects, not smaller ones</h2>
+        <p>Three floating cards make the screen look like three unrelated features. Dissolve them into one sheet divided by hairlines: each measure is a band with its figure and a small chart, the exercises follow in the same rhythm. <b>The most reductive of the seven</b> — and the biggest departure from the card system elsewhere in the app.</p>
+        <div class="cut">
+          <span class="keep">keeps <b>everything on screen, in half the height</b></span>
+          <span class="kill">kills <b>card-per-feature parity with Today and Nutrition</b></span>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="band">
+          <div class="measure">
+            <div class="t"><div class="k">Working sets</div><div class="v">56</div><div class="d">avg 14.5 over 8 weeks</div></div>
+            <svg width="112" height="46" viewBox="0 0 112 46" aria-label="Weekly sets sparkline">
+              <line x1="0" y1="44" x2="112" y2="44" stroke="#242724" stroke-width="1"/>
+              <path d="M0,44 L16,44 L32,44 L48,44 L64,44 L80,44 L96,6 L112,9" fill="none" stroke="#c6f84f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".6"/>
+              <circle cx="112" cy="9" r="3.2" fill="#c6f84f"/>
+            </svg>
+          </div>
+        </div>
+        <div class="band">
+          <div class="measure">
+            <div class="t"><div class="k">Tonnage</div><div class="v">22.6<s>t</s></div><div class="d">avg 5.8 t over 8 weeks</div></div>
+            <svg width="112" height="46" viewBox="0 0 112 46" aria-label="Weekly tonnage sparkline">
+              <line x1="0" y1="44" x2="112" y2="44" stroke="#242724" stroke-width="1"/>
+              <path d="M0,44 L16,44 L32,44 L48,44 L64,44 L80,44 L96,6 L112,11" fill="none" stroke="#6cb6bd" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".6"/>
+              <circle cx="112" cy="11" r="3.2" fill="#6cb6bd"/>
+            </svg>
+          </div>
+        </div>
+        <div class="band q"><div class="sub">Per exercise — all time</div></div>
+        <div class="band" style="padding-top:4px;padding-bottom:6px">
+          <div class="trow"><span class="nm">Chest Dip<s>3 sessions</s></span><span class="wt">75<s>kg</s></span><span class="dl">—</span></div>
+          <div class="trow"><span class="nm">Barbell Bench Press<s>3 sessions</s></span><span class="wt">70<s>kg</s></span><span class="dl up">+2.5</span></div>
+          <div class="trow"><span class="nm">Romanian Deadlift<s>2 sessions</s></span><span class="wt">70<s>kg</s></span><span class="dl up">+5.0</span></div>
+          <div class="trow"><span class="nm">Standing Overhead Press<s>4 sessions</s></span><span class="wt">40<s>kg</s></span><span class="dl up">+2.5</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <section class="rules">
+    <div>
+      <h3>Rules that hold across all seven</h3>
+      <p>Titles are sentence case in the display face, not letterspaced mono capitals — mono stays for <b>data</b>, where tabular figures earn it. No card title carries a separator; the unit belongs to the number.</p>
+    </div>
+    <div>
+      <h3>One meaning per colour</h3>
+      <p>Chartreuse marks <b>the current week and the live selection</b>. Teal is the second measure. Nothing else is tinted — a name in the table is chalk, and change is signed text, not a coloured arrow.</p>
+    </div>
+    <div>
+      <h3>Truth in the chart</h3>
+      <p>Zero draws as zero on a real baseline. Peaks and averages come from the same engines the rest of the app reads, so a figure on this screen can never disagree with the one beside it.</p>
+    </div>
+    <div>
+      <h3>Both clients, one change</h3>
+      <p>Whichever pair you pick ships to <b>web and mobile together</b>, from the same shared numbers — Recharts on web, the same layout in React Native views on the phone.</p>
+    </div>
+  </section>
+</div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { weeklyVolumeTrend, exerciseTable, weeklyMuscleSets } from "./analytics";
+import { weeklyVolumeTrend, exerciseTable, weeklyMuscleSets, fmtRowChange } from "./analytics";
 import type { LoggedSession } from "./session";
 
 const NOW = new Date("2026-06-16T12:00:00.000Z").getTime();
@@ -66,6 +66,24 @@ describe("training analytics hub", () => {
     expect(chest[0]).toBe(1); // last week: 1
     // warm-ups excluded by default, included when asked
     expect(weeklyMuscleSets(sessions, "chest", 2, NOW, true)[1]).toBe(3);
+  });
+
+  it("carries the SIGNED change behind the trend, in the row's own unit", () => {
+    const rows = exerciseTable(sessions, "all", NOW);
+    const bench = rows.find((r) => r.name === "Bench Press")!;
+    expect(bench.change).toBe(5); // 95 → 100 kg top load
+    expect(fmtRowChange(bench, "kg")).toBe("+5 kg");
+    // A single session in the window has nothing to compare against — no figure,
+    // rather than a fabricated zero.
+    const oneSession = exerciseTable(sessions, "all", NOW).find((r) => r.sessions === 1);
+    if (oneSession) expect(oneSession.change).toBeUndefined();
+  });
+
+  it("fmtRowChange formats cardio as pace seconds and holds as a dash", () => {
+    const row = { name: "Easy Run", kind: "cardio", sessions: 2, topWeight: 0, volume: 5, trend: "up", change: -12 } as const;
+    expect(fmtRowChange(row, "kg")).toBe("−12 s/km"); // faster = a smaller pace number
+    expect(fmtRowChange({ ...row, change: 0 }, "kg")).toBe("—");
+    expect(fmtRowChange({ ...row, change: undefined }, "kg")).toBe("—");
   });
 
   it("drops movements with no activity in the period", () => {
