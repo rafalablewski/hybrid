@@ -86,6 +86,7 @@ import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
+import { TodayHubPills } from "./today-hub-pills";
 import { RtpPanel } from "./protocol";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
@@ -187,10 +188,24 @@ export default function AuroraToday({
   // home and its job is "what do I do today?", so every visit opens on the
   // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
+  // The in-flow switcher's own box. THE DOCK (aurora/today-hub-pills.tsx)
+  // measures its bottom edge so the floating row appears the instant the real
+  // control leaves the viewport, never beside it.
+  const hubAnchor = useRef<HTMLDivElement | null>(null);
   // The switch runs as a hub transition (lib/use-screen-transition): the pills'
   // flying lens owns the motion and the content cross-dissolves beneath it,
   // instead of the old hard cut.
-  const selectTab = useCallback((id: TodayTabId) => { runHubTransition(() => setTab(id)); track("today_tab", { tab: id }); }, []);
+  // Switching hubs lands you at the TOP of the view you chose. The three views
+  // share one window scroll, and the dock made it possible to switch from deep
+  // inside a page for the first time — without this you arrive 2000px down
+  // someone else's screen. Instant, not smooth: the hub switch already owns the
+  // motion (the chrome holds still while the body dissolves), and a scroll
+  // animation racing that transition reads as two things moving at once.
+  const selectTab = useCallback((id: TodayTabId) => {
+    runHubTransition(() => setTab(id));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    track("today_tab", { tab: id });
+  }, []);
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
@@ -538,10 +553,11 @@ export default function AuroraToday({
   // Hoisted so the non-dashboard tabs render the SAME masthead chrome without
   // a second copy of it — they differ only in what hangs below the pills.
   const shell = { maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" } as const;
+  // `motion-hub-chrome`: during a hub switch (data-nav-kind="hub") this block
+  // is lifted into its own view-transition group and held perfectly still —
+  // only the content BELOW it dissolves. See globals.css THE TODAY HUB.
   const hubHeader = (
-    // `motion-hub-chrome`: during a hub switch (data-nav-kind="hub") this block
-    // is lifted into its own view-transition group and held perfectly still —
-    // only the content BELOW it dissolves. See globals.css THE TODAY HUB.
+    <>
     <div className="motion-hub-chrome">
       {/* HEADER — profile, the HYBRID LOCKUP, bell.
           THREE COLUMNS, FIXED FLANKS. The row used to be `space-between`,
@@ -594,8 +610,18 @@ export default function AuroraToday({
           these three are what a home holds: the day's plan, the numbers behind
           it, and the people around it. Registry shared with mobile
           (@hybrid/core today-tabs.ts). */}
-      <TodayTabs value={tab} onChange={selectTab} />
+      <div ref={hubAnchor}>
+        <TodayTabs value={tab} onChange={selectTab} />
+      </div>
     </div>
+
+      {/* THE DOCK — the same three destinations, floating, once the control
+          above has scrolled off. Rendered outside `motion-hub-chrome` because
+          it is position:fixed: a fixed element inside a view-transition group
+          is captured with the group and would fly with it. Every hub tab
+          mounts this, so Performance and Feed keep their exits too. */}
+      <TodayHubPills value={tab} onChange={selectTab} anchor={hubAnchor} />
+    </>
   );
 
   // ── THE OTHER TWO TABS ────────────────────────────────────────────────────

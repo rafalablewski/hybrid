@@ -38,6 +38,7 @@ export * from "./program-efficacy";
 export * from "./attestation";
 export * from "./logbook-week";
 export * from "./today-tabs";
+export * from "./today-hub-dock";
 export * from "./onboarding";
 export * from "./sports";
 export * from "./olympic-sports";

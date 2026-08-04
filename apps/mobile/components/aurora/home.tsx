@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, ScrollView, RefreshControl, Animated, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -97,6 +97,7 @@ import AuroraLogbookRail from "./logbook-rail";
 import DoneFloor from "./done-floor";
 import GroupMark from "./group-mark";
 import { TodayTabs } from "./today-tabs";
+import { TodayHubPills } from "./today-hub-pills";
 import { RtpPanel } from "./protocol";
 // THE HUB's other two tabs — the same full screens their own routes render,
 // handed Today's header + pills through the `top` slot so the chrome above
@@ -666,9 +667,23 @@ export default function AuroraHome() {
   // ONE page — the command centre, this week's volume and the eight-week trend
   // in a single scroll. AuroraPerformance owns that composition, so there is
   // nothing to switch between here.
-  if (tab === "performance") return <AuroraPerformance top={hubHeader} />;
+  // THE DOCK — the same three destinations, floating, once the control inside
+  // the header above has scrolled off. It rides OVER each view's scroller (a
+  // hub tab owns its own), never inside it, so every tab keeps its exits.
+  const hubDock = <TodayHubPills value={tab} onChange={selectTab} topInset={insets.top} />;
+  // Performance and Feed own their whole screen, so the dock is layered on top
+  // of them rather than handed through `top` (which lands inside their
+  // scrollers and would scroll away with the header).
+  const withDock = (screen: ReactNode) => (
+    <View style={{ flex: 1 }}>
+      {screen}
+      {hubDock}
+    </View>
+  );
 
-  if (tab === "feed") return <FeedView top={hubHeader} />;
+  if (tab === "performance") return withDock(<AuroraPerformance top={hubHeader} />);
+
+  if (tab === "feed") return withDock(<FeedView top={hubHeader} />);
 
   return (
     // Inset PADDING, not a SafeAreaView: this shell remounts in full view when
@@ -676,11 +691,18 @@ export default function AuroraHome() {
     // SafeAreaView applies its inset one frame late — the chrome would jump
     // under the status bar for a visible frame. The provider's insets are
     // already measured and correct on the very first render.
-    <View style={{ flex: 1, backgroundColor: C.ink, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: C.ink }}>
       {/* Ambient Aurora gradient backdrop — Today owns its own shell (custom
           entrance + horizontal pager) rather than AuroraScreen, so render the
           same field here so it isn't the one flat tab next to History/More/You. */}
       <AuroraField />
+      {/* The safe-area inset is a padded LAYER rather than the shell itself, so
+          the dock below mounts in the same coordinate space here as it does over
+          Performance and Feed (which own their own safe areas). An absolute
+          child is positioned against its parent's PADDING box, so a dock inside
+          the padded shell would sit one inset too low and, worse, would only
+          retract as far as the status bar instead of clear off the screen. */}
+      <View style={{ flex: 1, paddingTop: insets.top }}>
       {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: auroraScrollClearance(insets.bottom) }}
@@ -1126,6 +1148,9 @@ export default function AuroraHome() {
         </HubDissolve>
         </Animated.View>
       </ScrollView>
+      </View>
+
+      {hubDock}
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet visible={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
