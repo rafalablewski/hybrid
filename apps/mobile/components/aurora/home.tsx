@@ -642,40 +642,53 @@ export default function AuroraHome() {
   // the pills sit in exactly the same place on all three tabs.
   const hubHeader = (
     <>
-      {/* TODAY HEADER (step-1 redesign) — profile, HYBRID wordmark, bell.
-          Replaces the old greeting + search/bell row: the brand sits centre,
-          the avatar opens the profile, the bell carries a live activity
-          count. */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      {/* TODAY HEADER — profile, the HYBRID LOCKUP, bell.
+          THREE COLUMNS, FIXED FLANKS. The row used to be `space-between`,
+          which centres its middle child only when both flanks weigh the
+          same — and they never did: one 42dp tile on the left against a
+          streak pill plus the bell on the right, so the brand sat ~69dp
+          left of the screen's centre and slid further with every extra
+          digit. Fixed 42dp sides with a `flex: 1` centre column centres the
+          wordmark BY CONSTRUCTION, whatever the flanks carry.
+          THE STREAK LEFT THE ROW and became the lockup's second line — a
+          hairline mono caption under the wordmark. It survives on all three
+          hub tabs (they render this same header), it can never push the
+          brand off centre again, and it costs NO height: wordmark (19) +
+          caption (~16) still sits inside the 42dp the tiles already set.
+          Mirrors web today.tsx. */}
+      <View style={{ flexDirection: "row", alignItems: "center", height: 42 }}>
         {/* profile — avatar opens the You / account tab */}
         <Pressable onPress={() => router.push("/(tabs)/you")} accessibilityRole="button" accessibilityLabel={t("w.home.today.profileAria")} style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
         </Pressable>
-        {/* centred wordmark */}
-        <View style={{ alignItems: "center" }}>
+        {/* the lockup — the wordmark, and the day-streak on the line under it */}
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
             HYBRID<Text style={{ color: txt(C, C.lime) }}>.</Text>
           </Text>
-        </View>
-        {/* right group — the day-streak pill + the notifications bell */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           {acc.streak.current > 0 && (
             // SPECTRUM: the streak wears the warm terracotta accent (Connect),
-            // pairing with the flame and keeping chartreuse for the primary action.
-            <Pressable onPress={() => setDoneOpen(true)} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: `${C.red}24`, borderWidth: 1, borderColor: `${C.red}66`, borderRadius: RADIUS.pill, paddingHorizontal: 12, height: 42, justifyContent: "center" }}>
-              <AuroraIcon name="flame" size={13} color={txt(C, C.red)} />
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.red) }}>{acc.streak.current}{t("w.home.today.dayStreak")}</Text>
+            // pairing with the flame and keeping chartreuse for the primary
+            // action. Same destination as the retired pill — the done sheet.
+            <Pressable
+              onPress={() => setDoneOpen(true)}
+              hitSlop={{ top: 8, bottom: 10, left: 20, right: 20 }}
+              accessibilityRole="button"
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}
+            >
+              <AuroraIcon name="flame" size={11} color={txt(C, C.red)} />
+              <Text style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.red) }}>{acc.streak.current}{t("w.home.today.dayStreak")}</Text>
             </Pressable>
           )}
-          <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="bell" size={20} color={C.ash} />
-            {notifCount > 0 && (
-              <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: "#fff" }}>{notifCount > 9 ? "9+" : notifCount}</Text>
-              </View>
-            )}
-          </Pressable>
         </View>
+        <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          <AuroraIcon name="bell" size={20} color={C.ash} />
+          {notifCount > 0 && (
+            <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: 10, color: "#fff" }}>{notifCount > 9 ? "9+" : notifCount}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the
