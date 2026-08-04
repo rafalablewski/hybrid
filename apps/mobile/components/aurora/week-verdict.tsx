@@ -5,7 +5,7 @@ import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
   fmtWeight, strengthPrDelta,
   resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
-  verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, fmtTonnage, durations,
+  verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage, durations,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
   type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type WeightUnit,
 } from "@hybrid/core";
@@ -195,6 +195,7 @@ export default function AuroraWeekVerdict({
   const tone = v.direction === "down" ? C.red : v.direction === "up" ? C.lime : C.ash;
   const toneText = txt(C, tone);
   const named = v.figures.find((f) => f.metric === v.metric) ?? null;
+  const step = verdictShowsStep(v);
 
   const why = v.metric && named
     ? t(verdictWhyKey(v))
@@ -307,8 +308,19 @@ export default function AuroraWeekVerdict({
             />
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: C.ash, marginTop: 5 }}>{why}</Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: 23, letterSpacing: -0.5, color: toneText }}>
-            {v.metric ? `${v.deltaPct > 0 ? "+" : "−"}${Math.abs(v.deltaPct)}%` : "—"}
+          {/* Past the ceiling the percentage stops being a measurement — a
+              0.1 km four-week mean yielded "+7849%", which reads as a bug and
+              takes every figure beside it down with it. The STEP says the same
+              thing honestly, and shorter. Both clients ask core, so neither
+              can invent its own ceiling. */}
+          <Text
+            numberOfLines={1}
+            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            style={{ fontFamily: F.mono, fontSize: step ? 15 : 23, letterSpacing: step ? 0 : -0.5, color: toneText }}
+          >
+            {!v.metric ? "—"
+              : step && named ? `${fmt(named.metric, named.baseline)} → ${fmt(named.metric, named.value)}`
+                : `${v.deltaPct > 0 ? "+" : "−"}${Math.abs(v.deltaPct)}%`}
           </Text>
         </View>
 

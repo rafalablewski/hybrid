@@ -65,6 +65,39 @@ export const VERDICT_THRESHOLD_PCT = 15;
  *  which only has last year to look at — isn't permanently cold. */
 export const MIN_BASELINE_PERIODS = 2;
 
+/**
+ * The baseline a metric must reach before it may claim the SENTENCE, in that
+ * metric's canonical unit (tonnage kg, sessions count, hours MINUTES,
+ * distance km).
+ *
+ * Without this the only guard was `baseline <= 0`, and a four-week distance
+ * mean of 0.087 km survived it: dividing by it produced "+7849%". The absurd
+ * figure was the visible half of the problem. The other half was worse —
+ * ranking by raw ratio hands the headline to whichever metric has the SMALLEST
+ * denominator, so a lifter who jogs once a month had their sentence taken by
+ * distance every single week while the tonnage they actually moved never got
+ * it. A floor makes "did this measure have a real baseline to move from" a
+ * precondition for the claim rather than an afterthought.
+ */
+export const VERDICT_BASELINE_FLOOR: Record<VerdictMetric, number> = {
+  tonnage: 250,   // kg — roughly one working set
+  hours: 30,      // minutes
+  distance: 1,    // km
+  // No floor on the session COUNT: it has no negligible quantity to express,
+  // and the coverage gate below already says everything a floor would. A count
+  // is present in a window exactly when the window carried training, which is
+  // the same question `cold` asks of the card — so sessions rank exactly as
+  // they always did.
+  sessions: 0,
+};
+
+/**
+ * Above this, a percentage has stopped being a measurement. The card prints the
+ * STEP instead ("0.1 → 6.8 km") — the honest rendering of the same fact, and a
+ * shorter one. Clients ask through `verdictShowsStep`.
+ */
+export const VERDICT_PCT_CEILING = 300;
+
 export interface VerdictFigure {
   metric: VerdictMetric;
   /** Canonical unit: tonnage = kg, sessions = count, hours = MINUTES,
@@ -133,25 +166,60 @@ export function activityVerdict(
   const base = { range, figures, baselinePeriods, baselineOf: priors.length };
   if (cold) return { ...base, metric: null, direction: "flat", deltaPct: 0, cold: true };
 
-  // Largest absolute move wins. VERDICT_METRICS order breaks ties, so the same
-  // period never yields two different sentences on two clients.
-  let best: { metric: VerdictMetric; deltaPct: number } | null = null;
+  // Largest absolute move wins — among the metrics with a real baseline to move
+  // FROM. Two gates decide "real": the mean has to clear the metric's floor,
+  // and the metric has to have actually appeared in as many prior windows as
+  // the card itself needs. `cold` asks that second question of the whole card
+  // and never of the metric that ends up winning, which is how a measure
+  // trained once in four weeks could claim the sentence.
+  //
+  // A metric that fails either gate is not discarded: it becomes the FALLBACK,
+  // used only when nothing qualified. A 0.1 → 6.8 km week in an otherwise flat
+  // period genuinely is the week's story — it just has no business outranking a
+  // measure with four weeks of history behind it, and past the ceiling it
+  // prints as the step rather than as a four-digit percentage.
+  //
+  // Ranking stays on the raw percentage so a period that was already decided
+  // one way keeps its sentence: the gates change WHICH metrics compete, never
+  // how the ones that do are ordered. VERDICT_METRICS order still breaks ties
+  // (strict `>`), so the same period never yields two different sentences on
+  // two clients.
+  type Candidate = { metric: VerdictMetric; deltaPct: number };
+  let best: Candidate | null = null;
+  let fallback: Candidate | null = null;
   for (const f of figures) {
     if (f.baseline <= 0) continue;
     const deltaPct = Math.round(((f.value - f.baseline) / f.baseline) * 100);
     if (Math.abs(deltaPct) < VERDICT_THRESHOLD_PCT) continue;
-    if (!best || Math.abs(deltaPct) > Math.abs(best.deltaPct)) best = { metric: f.metric, deltaPct };
+    const cand: Candidate = { metric: f.metric, deltaPct };
+    const trained = priors.filter((p) => p[f.metric] > 0).length;
+    if (f.baseline >= VERDICT_BASELINE_FLOOR[f.metric] && trained >= needed) {
+      if (!best || Math.abs(deltaPct) > Math.abs(best.deltaPct)) best = cand;
+    } else if (!fallback || Math.abs(deltaPct) > Math.abs(fallback.deltaPct)) {
+      fallback = cand;
+    }
   }
 
-  if (!best) return { ...base, metric: null, direction: "flat", deltaPct: 0, cold: false };
+  const win = best ?? fallback;
+  if (!win) return { ...base, metric: null, direction: "flat", deltaPct: 0, cold: false };
   return {
     ...base,
-    metric: best.metric,
-    direction: best.deltaPct < 0 ? "down" : "up",
-    deltaPct: best.deltaPct,
+    metric: win.metric,
+    direction: win.deltaPct < 0 ? "down" : "up",
+    deltaPct: win.deltaPct,
     cold: false,
   };
 }
+
+/**
+ * Whether the card should print the STEP ("0.1 → 6.8 km") instead of the
+ * percentage. True past VERDICT_PCT_CEILING, where a ratio against a thin
+ * baseline stops being a measurement and starts reading as a bug — a four-digit
+ * percentage beside a 6.8 km week costs every figure around it its credibility.
+ * Both clients ask this, so neither can invent its own ceiling.
+ */
+export const verdictShowsStep = (v: ActivityVerdict): boolean =>
+  v.metric !== null && !v.cold && Math.abs(v.deltaPct) > VERDICT_PCT_CEILING;
 
 /** The rolling seven-day verdict — the card's original window, kept as the
  *  shorthand for callers that just want "the last week" without a range. */
