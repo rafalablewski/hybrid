@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Animated, Easing } from "react-native";
+import { View, Text, Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
   fmtWeight, strengthPrDelta,
   resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
-  verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, fmtTonnage, durations,
+  verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, fmtTonnage,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
   type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
+import { ADrawer } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
-import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 /**
  * THE ACTIVITY CARD — "This week" and everything the date filter turns it into,
@@ -127,7 +127,6 @@ export default function AuroraWeekVerdict({
   const { palette: C, scheme } = useTheme();
   const { t, lang } = useLang();
   const today = useToday();
-  const reduced = useReducedMotion();
 
   const [rangeId, setRangeId] = useState<string>(DEFAULT_ACTIVITY_RANGE);
   const [picker, setPicker] = useState(false);
@@ -233,19 +232,6 @@ export default function AuroraWeekVerdict({
     { id: "month", label: range.kind === "month" ? monthLabel(range.id, false) : t("w.home.act.sMonth") },
   ];
   const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
-
-  // ── The drawer. Height is measured off the panel and animated, so the detail
-  // SLIDES out of the figure row instead of appearing under it.
-  const [panelH, setPanelH] = useState(0);
-  const grow = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(grow, {
-      toValue: open ? 1 : 0,
-      duration: reduced ? durations.reduced : 320,
-      easing: reduced ? Easing.linear : Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [open, reduced, grow]);
 
   // The caret travels in MEASURED pixels — a percentage string can't be
   // animated on the native driver, and the caret has to arrive with the panel.
@@ -360,40 +346,37 @@ export default function AuroraWeekVerdict({
           )}
         </View>
 
-        {/* ── THE DRAWER ──────────────────────────────────────────────────── */}
-        <Animated.View
-          style={{
-            overflow: "hidden",
-            opacity: grow,
-            height: grow.interpolate({ inputRange: [0, 1], outputRange: [0, panelH] }),
-          }}
-        >
-          <View onLayout={(e) => setPanelH(e.nativeEvent.layout.height)}>
-            {detail && (
-              <View style={{
-                backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-                paddingHorizontal: 16, paddingVertical: 12,
-              }}>
-                <MetricDetail
-                  detail={detail}
-                  rows={rows}
-                  shownCount={shown.length}
-                  all={all}
-                  group={group}
-                  onGroup={(id) => { setGroup(id); setAll(false); }}
-                  onAll={() => setAll((x) => !x)}
-                  onSession={onSession}
-                  t={t}
-                  fmtValue={fmtValue}
-                  fmtMinutes={fmtMinutes}
-                  groupName={groupName}
-                  dateFmt={dateFmt}
-                  units={units}
-                />
-              </View>
-            )}
-          </View>
-        </Animated.View>
+        {/* ── THE DRAWER — the detail SLIDES out of the figure row instead of
+            appearing under it. The measured height, the mount-on-first-open and
+            the a11y clipping are the kit's `ADrawer`, the same one Volume's
+            compact card opens on: this card had its own copy, which measured
+            its panel IN FLOW inside a box clipped to zero and so could only
+            ever measure zero. ─────────────────────────────────────────────── */}
+        <ADrawer open={!!detail}>
+          {detail && (
+            <View style={{
+              backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
+              paddingHorizontal: 16, paddingVertical: 12,
+            }}>
+              <MetricDetail
+                detail={detail}
+                rows={rows}
+                shownCount={shown.length}
+                all={all}
+                group={group}
+                onGroup={(id) => { setGroup(id); setAll(false); }}
+                onAll={() => setAll((x) => !x)}
+                onSession={onSession}
+                t={t}
+                fmtValue={fmtValue}
+                fmtMinutes={fmtMinutes}
+                groupName={groupName}
+                dateFmt={dateFmt}
+                units={units}
+              />
+            </View>
+          )}
+        </ADrawer>
 
         {!open && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
