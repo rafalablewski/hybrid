@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput } from "react-native";
+import { View, Text } from "react-native";
 import {
-  tissueAxis, injuryHeadlineKey, evaluateRtp, STAGE_LABEL, ALL_MUSCLES,
+  tissueAxis, injuryHeadlineKey, INJURY_AREA_KEY,
   computeInjuryRisk, computeLoad, riskRole, RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type AcwrBand, type RiskBand, type RiskDriverKind, type TissueRow,
+  type MuscleGroup, type TissueRisk,
 } from "@hybrid/core";
-import { fetchRtpProtocols, createRtpProtocol, mutateRtpProtocol, type RtpProtocol, type RtpAuditEntry } from "../../lib/api";
+import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { ACard, RADIUS } from "./kit";
+import { ACard } from "./kit";
 import { AuroraIcon } from "./icons";
-import { ArrowGlyph } from "./cta-label";
+import { InjurySheet, Protocol, RiskBody } from "./protocol";
 
 /**
  * TISSUE — one card for injury risk AND return-to-play. The mobile twin of
@@ -29,7 +30,6 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 const riskColor = (b: RiskBand | string, C: Palette) => roleColor(C, riskRole(b));
 const acwrColor = (b: AcwrBand, C: Palette): string =>
   b === "sweet-spot" ? C.lime : b === "caution" ? C.amber : b === "danger" ? C.red : b === "detraining" ? C.blue : C.ash;
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace(/[-_]/g, " ");
 
 /** Zone tints for the axis, as hex alpha suffixes — low recedes, high reads
  *  as a wall. Mirrors ZONE_ALPHA on web. */
@@ -51,17 +51,17 @@ export default function TissueCard({
   const { palette: C } = useTheme();
   const { t } = useLang();
   const axis = tissueAxis(risk);
+  const byTissue = Object.fromEntries(risk.tissues.map((ti) => [ti.tissue, ti])) as Record<string, TissueRisk>;
   const [protocols, setProtocols] = useState<RtpProtocol[]>([]);
   // The rows are a disclosure only while everything is calm — a flagged
   // tissue opens them itself, since a worklist you have to find is not one.
   const [rowsOpen, setRowsOpen] = useState(false);
-  const [picking, setPicking] = useState(false);
-  const [pick, setPick] = useState<string>(ALL_MUSCLES[0] ?? "quads");
+  // The area the athlete pointed at on the card's own body, if that is how
+  // they got to the sheet — the flag and the protocol are one object.
+  const [picking, setPicking] = useState<MuscleGroup | null | false>(false);
 
   const refresh = () => { fetchRtpProtocols().then(setProtocols); };
   useEffect(() => { refresh(); }, []);
-  const mutate = async (id: string, body: object) => { if (await mutateRtpProtocol(id, body)) refresh(); };
-  const create = async (tissue: string) => { if (await createRtpProtocol(tissue)) refresh(); };
 
   const active = protocols.filter((p) => p.status !== "abandoned");
   const alert = hasData && axis.flaggedCount > 0;
@@ -126,6 +126,14 @@ export default function TissueCard({
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
           )}
 
+          {/* THE BODY — the same tissues again, anatomically. The mannequin is
+              shared with the injury picker, so risk is read on the body you
+              point at when something goes wrong (web parity: it drew its own
+              rectangle map here, and mobile drew nothing at all). */}
+          <View style={{ marginTop: 18 }}>
+            <RiskBody byTissue={byTissue} onPick={(g) => setPicking(g)} />
+          </View>
+
           {driverKinds.length > 0 && (
             <View style={{ marginTop: 16, gap: 10 }}>
               {driverKinds.map((k) => (
@@ -143,34 +151,19 @@ export default function TissueCard({
       {active.length > 0 && (
         <View style={{ marginTop: 16, gap: space.md }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.rtp.protocol")}</Text>
-          {active.map((p) => <Protocol key={p.id} p={p} C={C} t={t} mutate={mutate} />)}
+          {active.map((p) => <Protocol key={p.id} p={p} onChange={refresh} />)}
         </View>
       )}
 
-      {/* The chips exist only AFTER the athlete says something is hurt. */}
-      {picking && (
-        <View style={{ marginTop: 12, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 9 }}>{t("w.injury.pickArea")}</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {ALL_MUSCLES.map((tt) => {
-              const on = tt === pick;
-              return (
-                <Pressable key={tt} onPress={() => setPick(tt)} accessibilityRole="radio" accessibilityState={{ selected: on }} style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}1f` : "transparent", paddingHorizontal: 12, paddingVertical: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: on ? txt(C, C.lime) : C.ash, textTransform: "capitalize" }}>{tt}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 12 }}>
-            <Pressable onPress={() => { create(pick); setPicking(false); }} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.injury.openProtocol")}</Text>
-            </Pressable>
-            <Pressable onPress={() => setPicking(false)} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.ash }}>{t("w.injury.cancel")}</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+      {/* THE QUESTION gets its own surface. It used to unfold inside the card,
+          pushing everything under it down — a form appearing mid-card for the
+          most consequential thing an athlete files here. */}
+      <InjurySheet
+        visible={picking !== false}
+        initial={picking || null}
+        onClose={() => setPicking(false)}
+        onOpened={refresh}
+      />
 
       {/* FOOTER RAIL — both ways in, at the same weight. Opening a protocol is
           not a "go" action, so it never takes the chartreuse fill. */}
@@ -192,13 +185,11 @@ export default function TissueCard({
               <AuroraIcon name="chevron-down" size={12} color={C.ash} style={showRows ? { transform: [{ rotate: "180deg" }] } : undefined} />
             </Pressable>
           ) : <View />}
-          {!picking && (
-            <Pressable onPress={() => setPicking(true)} hitSlop={6} accessibilityRole="button">
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: alert ? txt(C, C.red) : C.ash }}>
-                {alert ? t("w.injury.openProtocol") : t("w.injury.logInjury")}
-              </Text>
-            </Pressable>
-          )}
+          <Pressable onPress={() => setPicking(null)} hitSlop={6} accessibilityRole="button">
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: alert ? txt(C, C.red) : C.ash }}>
+              {alert ? t("w.injury.openProtocol") : t("w.injury.logInjury")}
+            </Text>
+          </Pressable>
         </View>
         {/* The calibration behind every number above — a qualifier, not a
             heading. It qualifies figures, so it goes when there are none. */}
@@ -229,7 +220,7 @@ function Axis({ axis, C, t }: { axis: ReturnType<typeof tissueAxis>; C: Palette;
         {axis.rows.map((r) => (
           <View
             key={r.tissue}
-            accessibilityLabel={`${cap(r.tissue)} ${r.risk} of 100`}
+            accessibilityLabel={`${t(INJURY_AREA_KEY[r.tissue])} ${r.risk} of 100`}
             style={{
               position: "absolute",
               left: `${r.leftPct}%`,
@@ -271,7 +262,7 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
       {rows.map((r) => (
         <View key={r.tissue} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: `${C.line}99` }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text numberOfLines={1} style={{ fontFamily: r.flagged ? F.black : F.reg, fontSize: fs.caption, color: C.chalk, textTransform: "capitalize", width: 62 }}>{r.tissue}</Text>
+            <Text numberOfLines={1} style={{ fontFamily: r.flagged ? F.black : F.reg, fontSize: fs.caption, color: C.chalk, width: 62 }}>{t(INJURY_AREA_KEY[r.tissue])}</Text>
             {/* the row's own bar, on the axis scale, carrying the same flag line */}
             <View style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: `${C.ash}29` }}>
               <View style={{ position: "absolute", left: 0, top: 0, height: 5, width: `${r.leftPct}%`, borderRadius: 3, backgroundColor: r.risk > 0 ? riskColor(r.band, C) : "transparent" }} />
@@ -289,100 +280,6 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
       ))}
     </View>
   );
-}
-
-/** One open protocol — the gates, the audit trail and the override-reason
- *  field, unchanged; they simply live inside the Tissue card now. */
-function Protocol({ p, C, t, mutate }: { p: RtpProtocol; C: Palette; t: (k: string) => string; mutate: (id: string, body: object) => void }) {
-  const [overrideOpen, setOverrideOpen] = useState(false);
-  const [reason, setReason] = useState("");
-  const ev = evaluateRtp({ stage: p.stage, completed: p.completed });
-  const cleared = p.stage === "cleared";
-  const accent = cleared ? C.lime : C.blue;
-
-  const doOverride = () => {
-    if (!reason.trim()) return;
-    mutate(p.id, { action: "override", reason });
-    setOverrideOpen(false);
-    setReason("");
-  };
-
-  return (
-    <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, textTransform: "capitalize" }}>{p.tissue}</Text>
-        <View style={{ backgroundColor: `${accent}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, accent) }}>{STAGE_LABEL[p.stage]}</Text>
-        </View>
-      </View>
-      <View style={{ height: 6, borderRadius: 3, backgroundColor: C.ink, marginVertical: 10, overflow: "hidden" }}>
-        <View style={{ width: `${Math.round(ev.progress * 100)}%`, height: "100%", backgroundColor: accent }} />
-      </View>
-      {!cleared && (
-        <>
-          {ev.gates.map((g) => (
-            <Pressable key={g.key} onPress={() => mutate(p.id, { action: "toggleGate", gate: g.key })} accessibilityRole="checkbox" accessibilityState={{ checked: g.done }} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 5 }}>
-              {g.done
-                ? <AuroraIcon name="check-circle" size={18} color={C.lime} />
-                : <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: C.ash }} />}
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: g.done ? txt(C, C.lime) : C.ash }}>{g.label}</Text>
-            </Pressable>
-          ))}
-          <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: space.sm, marginTop: 10 }}>
-            <Pressable onPress={() => mutate(p.id, { action: "advance" })} disabled={!ev.canAdvance} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8, opacity: ev.canAdvance ? 1 : 0.4 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.rtp.advance")}</Text>
-              <ArrowGlyph size={13} color={C.onAccent} />
-              {ev.nextStage ? <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{STAGE_LABEL[ev.nextStage]}</Text> : null}
-            </Pressable>
-            {!ev.canAdvance && (
-              <>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.amber) }}>{ev.blockedBy.length} {t("w.rtp.gatesLeft")}</Text>
-                <Pressable onPress={() => setOverrideOpen((v) => !v)} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.red, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.red) }}>{t("w.rtp.override")}</Text>
-                </Pressable>
-              </>
-            )}
-          </View>
-          {overrideOpen && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 10 }}>
-              <TextInput
-                value={reason}
-                onChangeText={setReason}
-                placeholder={t("w.rtp.reason")}
-                placeholderTextColor={C.ash}
-                accessibilityLabel={t("w.rtp.reason")}
-                style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 8 }}
-              />
-              <Pressable onPress={doOverride} accessibilityRole="button" style={{ backgroundColor: C.red, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{t("w.rtp.force")}</Text>
-              </Pressable>
-            </View>
-          )}
-        </>
-      )}
-      {p.audit && p.audit.length > 0 && (
-        <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.rtp.audit")}</Text>
-          {p.audit.slice(-5).reverse().map((a, i) => (
-            <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.micro, color: a.action === "override" ? txt(C, C.red) : C.ash, marginTop: 4 }}>
-              {new Date(a.ts).toLocaleDateString()} – {a.by} ({a.role.toLowerCase()}) – {auditText(a)}
-            </Text>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
-
-function auditText(a: RtpAuditEntry): string {
-  switch (a.action) {
-    case "attest": return `attested "${a.gate}"`;
-    case "retract": return `retracted "${a.gate}"`;
-    case "advance": return `advanced ${a.from} → ${a.to}`;
-    case "override": return `OVERRODE ${a.from} → ${a.to}: ${a.reason}`;
-    case "abandon": return "abandoned protocol";
-    default: return a.action;
-  }
 }
 
 function Watch({ C, label, value, color }: { C: Palette; label: string; value: string; color?: string }) {

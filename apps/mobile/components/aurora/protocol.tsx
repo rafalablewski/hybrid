@@ -1,0 +1,470 @@
+import { useEffect, useMemo, useState } from "react";
+import { View, Text, TextInput, Pressable as RNPressable, type LayoutChangeEvent } from "react-native";
+import Svg, { Polygon, Circle, Rect, G } from "react-native-svg";
+import {
+  INJURY_FIGURES, INJURY_VIEWBOX, INJURY_AREA_KEY, INJURY_AREA_HINT_KEY,
+  INJURY_WHEN, INJURY_WHEN_KEY, nearestInjuryArea, injuryTouchPoint, injuryDateFor,
+  rtpView, riskRole, type InjuryWhen, type InjuryFigure, type MuscleGroup, type TissueRisk,
+} from "@hybrid/core";
+import { useLang } from "../../lib/i18n";
+import { useTheme, txt, roleColor, type Palette } from "../../lib/theme";
+import { fs, space, leading, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { RADIUS } from "./kit";
+import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
+import { createRtpProtocol, mutateRtpProtocol, type RtpProtocol as RtpProtocolRow } from "../../lib/api";
+
+/**
+ * THE PROTOCOL (mobile) — declaring an injury, and living with one. The twin of
+ * apps/web/components/aurora/protocol.tsx; the mannequin geometry, the touch
+ * resolution and the whole stage ladder come from @hybrid/core, so the two
+ * clients draw the same body and count the same days.
+ *
+ * The question is asked by SHOWING A BODY, not by a wrap of word-chips with one
+ * pre-selected; the answer is confirmed in words under the figure; and one more
+ * real question — when it started — replaces the old silent assumption that
+ * every injury happened at the moment the protocol was opened.
+ *
+ * An open protocol is a PATH: six stages on one spine, the rail through the
+ * marks doing the job the separate progress bar used to. Only the rung you are
+ * standing on has anything to do, and the action to leave it is drawn only when
+ * it can actually be taken.
+ */
+
+const poly = (pts: { x: number; y: number }[]) => pts.map((q) => `${q.x},${q.y}`).join(" ");
+
+export type AreaTone = { fill: string; stroke: string; fillOpacity: number };
+
+/* ── the body ────────────────────────────────────────────────────────────── */
+
+export function InjuryBody({
+  toneOf,
+  selected,
+  onSelect,
+  labelOf,
+  height = 260,
+}: {
+  toneOf?: (group: MuscleGroup) => AreaTone;
+  selected?: MuscleGroup | null;
+  /** present ⇒ the figure is a control; absent ⇒ it is a read-out. */
+  onSelect?: (group: MuscleGroup) => void;
+  labelOf: (group: MuscleGroup) => string;
+  height?: number;
+}) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  return (
+    <View style={{ flexDirection: "row", gap: space.md }}>
+      {INJURY_FIGURES.map((fig) => (
+        <View key={fig.side} style={{ flex: 1, alignItems: "center" }}>
+          <Figure fig={fig} C={C} toneOf={toneOf} selected={selected} onSelect={onSelect} labelOf={labelOf} height={height} />
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 2 }}>
+            {t(`w.analyze.exp.anatomy.map.${fig.side}`)}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const PICK_TONE = (C: Palette): AreaTone => ({ fill: C.ash, stroke: C.line, fillOpacity: 0.22 });
+const PICKED_TONE = (C: Palette): AreaTone => ({ fill: C.chalk, stroke: C.chalk, fillOpacity: 0.9 });
+
+function Figure({
+  fig, C, toneOf, selected, onSelect, labelOf, height,
+}: {
+  fig: InjuryFigure;
+  C: Palette;
+  toneOf?: (g: MuscleGroup) => AreaTone;
+  selected?: MuscleGroup | null;
+  onSelect?: (g: MuscleGroup) => void;
+  labelOf: (g: MuscleGroup) => string;
+  height: number;
+}) {
+  const { x, y, w, h } = INJURY_VIEWBOX;
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  const live = !!onSelect;
+  const onLayout = (e: LayoutChangeEvent) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
+
+  // A touch anywhere on the figure resolves to the NEAREST tracked area, so a
+  // thumb never has to find a 5-unit-wide triceps. A touch near nothing
+  // tracked resolves to nothing, and the selection simply stands.
+  const onPress = (px: number, py: number) => {
+    if (!onSelect) return;
+    const p = injuryTouchPoint(box.w, box.h, px, py);
+    const hit = p && nearestInjuryArea(fig.side, p.x, p.y);
+    if (hit) onSelect(hit);
+  };
+
+  const body = (
+    <Svg viewBox={`${x} ${y} ${w} ${h}`} width="100%" height={height}>
+      {live && <Rect x={x} y={y} width={w} height={h} fill="transparent" />}
+      {/* the untracked body: faint, and therefore honestly unavailable */}
+      {fig.outline.map((part, i) => (
+        <Polygon key={`o${i}`} points={poly(part)} fill={C.ash} fillOpacity={0.1} stroke={C.line} strokeWidth={0.5} />
+      ))}
+      <Circle cx={fig.head.cx} cy={fig.head.cy} r={fig.head.r} fill={C.ash} fillOpacity={0.12} stroke={C.line} strokeWidth={0.5} />
+      {fig.areas.map((area) => {
+        const on = selected === area.group;
+        const tone = on ? PICKED_TONE(C) : toneOf?.(area.group) ?? PICK_TONE(C);
+        return (
+          <G
+            key={area.group}
+            accessible={live}
+            accessibilityRole={live ? "radio" : undefined}
+            accessibilityLabel={live ? labelOf(area.group) : undefined}
+            accessibilityState={live ? { selected: on } : undefined}
+            onPress={live ? () => onSelect?.(area.group) : undefined}
+          >
+            {area.shapes.map((shape, j) => (
+              <Polygon
+                key={j}
+                points={poly(shape)}
+                fill={tone.fill}
+                fillOpacity={tone.fillOpacity}
+                stroke={tone.stroke}
+                strokeWidth={on ? 1 : 0.6}
+              />
+            ))}
+          </G>
+        );
+      })}
+    </Svg>
+  );
+
+  if (!live) return <View style={{ width: "100%" }}>{body}</View>;
+  return (
+    <RNPressable
+      onLayout={onLayout}
+      onPress={(e) => onPress(e.nativeEvent.locationX, e.nativeEvent.locationY)}
+      accessible={false}
+      style={{ width: "100%" }}
+    >
+      {body}
+    </RNPressable>
+  );
+}
+
+/** The Tissue card's read-out: the same body, each area carrying its own band. */
+export function RiskBody({ byTissue, onPick }: { byTissue: Record<string, TissueRisk>; onPick?: (group: MuscleGroup) => void }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const toneOf = (g: MuscleGroup): AreaTone => {
+    const ti = byTissue[g];
+    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: C.line, fillOpacity: 0.16 };
+    const hex = roleColor(C, riskRole(ti.band));
+    return { fill: hex, stroke: hex, fillOpacity: 0.22 + 0.5 * Math.min(1, ti.risk / 100) };
+  };
+  const labelOf = (g: MuscleGroup) => {
+    const ti = byTissue[g];
+    return `${t(INJURY_AREA_KEY[g])} ${ti ? `${ti.risk} of 100` : ""}`.trim();
+  };
+  return <InjuryBody toneOf={toneOf} labelOf={labelOf} onSelect={onPick} height={220} />;
+}
+
+/* ── the question ──────────────────────────────────────────────────────── */
+
+export function InjurySheet({
+  visible,
+  onClose,
+  onOpened,
+  initial = null,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  /** fired after the protocol is created, so the card can refresh. */
+  onOpened: () => void;
+  /** the area the athlete already pointed at to get here (touching it on the
+   *  card's own figure), or null when they came in through the footer rail. */
+  initial?: MuscleGroup | null;
+}) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  // Nothing is pre-selected unless the athlete already answered by touching
+  // the card's body. A pre-answered question is not a question.
+  const [area, setArea] = useState<MuscleGroup | null>(initial);
+  const [when, setWhen] = useState<InjuryWhen>("today");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (visible) { setArea(initial); setWhen("today"); setBusy(false); }
+  }, [visible, initial]);
+
+  const open = async () => {
+    if (!area || busy) return;
+    setBusy(true);
+    const ok = await createRtpProtocol(area, injuryDateFor(when));
+    setBusy(false);
+    if (ok) onOpened();
+    onClose();
+  };
+
+  return (
+    <Sheet visible={visible} onClose={onClose} title={t("w.injury.pickArea")} sub={t("w.injury.pickSub")}>
+      <InjuryBody selected={area} onSelect={setArea} labelOf={(g) => t(INJURY_AREA_KEY[g])} />
+
+      {/* THE READBACK — the choice said in words, so a highlight is never the
+          only confirmation. It holds its height so nothing jumps. */}
+      <View accessibilityLiveRegion="polite" style={{ minHeight: 54, marginTop: 14, alignItems: "center" }}>
+        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: area ? C.chalk : C.ash }}>
+          {area ? t(INJURY_AREA_KEY[area]) : t("w.injury.pickNone")}
+        </Text>
+        {area ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t(INJURY_AREA_HINT_KEY[area])}</Text> : null}
+      </View>
+
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18, marginBottom: 8 }}>
+        {t("w.injury.whenTitle")}
+      </Text>
+      <View style={{ flexDirection: "row", gap: 6 }}>
+        {INJURY_WHEN.map((wk) => {
+          const on = wk === when;
+          return (
+            <Pressable
+              key={wk}
+              onPress={() => setWhen(wk)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on }}
+              style={{
+                flex: 1, alignItems: "center", borderRadius: RADIUS.pill, paddingVertical: 10,
+                borderWidth: 1, borderColor: on ? C.chalk : C.line,
+                backgroundColor: on ? `${C.chalk}1a` : "transparent",
+              }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: on ? C.chalk : C.ash }}>{t(INJURY_WHEN_KEY[wk])}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* THE COMMITMENT — one primary, full width, inert until the question
+          above it has an answer. Never the accent fill: opening a protocol is
+          bad news, not a "go". */}
+      <Pressable
+        onPress={open}
+        disabled={!area || busy}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !area || busy }}
+        style={{
+          marginTop: 20, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center",
+          backgroundColor: area ? C.chalk : `${C.ash}38`,
+        }}
+      >
+        <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: area ? C.ink : C.ash }}>{t("w.injury.openProtocol")}</Text>
+      </Pressable>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 10, lineHeight: leading(fs.caption) }}>
+        {t("w.injury.protocolNote")}
+      </Text>
+      <Pressable onPress={onClose} accessibilityRole="button" style={{ alignSelf: "center", marginTop: 14, paddingVertical: 6, paddingHorizontal: 10 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.injury.cancel")}</Text>
+      </Pressable>
+    </Sheet>
+  );
+}
+
+/* ── the path ──────────────────────────────────────────────────────────── */
+
+export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => void }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [logOpen, setLogOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const v = useMemo(() => rtpView({ stage: p.stage, completed: p.completed, injuryDate: p.injuryDate, audit: p.audit }), [p]);
+  const accent = v.cleared ? C.lime : C.blue;
+  const mutate = async (body: object) => { if (await mutateRtpProtocol(p.id, body)) onChange(); };
+
+  const doOverride = () => {
+    if (!reason.trim()) return;
+    mutate({ action: "override", reason });
+    setOverrideOpen(false);
+    setReason("");
+  };
+
+  return (
+    <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
+      {/* WHAT AND HOW LONG — the two facts a protocol is about. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>
+          {t(INJURY_AREA_KEY[p.tissue as MuscleGroup] ?? p.tissue)}
+        </Text>
+        {v.days != null ? (
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
+            {t("w.rtp.day")} {v.days}
+          </Text>
+        ) : null}
+      </View>
+
+      {v.cleared ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
+          <AuroraIcon name="check-circle" size={20} color={C.lime} />
+          <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.lime), lineHeight: leading(fs.body) }}>{t("w.rtp.clearedNote")}</Text>
+        </View>
+      ) : (
+        <View style={{ marginTop: 14 }}>
+          {v.steps.map((s, i) => {
+            const first = i === 0;
+            const last = i === v.steps.length - 1;
+            const passed = s.state === "done";
+            const now = s.state === "now";
+            return (
+              <View key={s.stage} style={{ flexDirection: "row", gap: 10 }}>
+                {/* THE SPINE — the rail through the marks IS the progress bar. */}
+                <View style={{ width: 22 }}>
+                  {!first && <View style={{ position: "absolute", left: 10, top: 0, height: 11, width: 2, backgroundColor: passed || now ? accent : C.line }} />}
+                  {!last && <View style={{ position: "absolute", left: 10, top: 11, bottom: 0, width: 2, backgroundColor: passed ? accent : C.line }} />}
+                  <View
+                    style={{
+                      position: "absolute", left: now ? 4 : 6, top: now ? 5 : 7,
+                      width: now ? 14 : 10, height: now ? 14 : 10, borderRadius: 999,
+                      backgroundColor: passed ? accent : now ? C.ink2 : C.line,
+                      borderWidth: now ? 3 : 0, borderColor: accent,
+                    }}
+                  />
+                </View>
+                <View style={{ flex: 1, paddingBottom: now ? 12 : 14 }}>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                    <Text style={{
+                      flex: 1,
+                      fontFamily: now ? F.black : F.reg,
+                      fontSize: now ? fs.bodyLg : fs.body,
+                      color: now ? C.chalk : passed ? C.ash : `${C.ash}8c`,
+                    }}>
+                      {t(s.labelKey)}
+                    </Text>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: s.forced ? txt(C, C.red) : C.ash }}>
+                      {now ? `${v.stageNumber}/${v.stageCount}` : s.onISO ? `${s.forced ? `${t("w.rtp.forced")} ` : ""}${fmtDay(s.onISO)}` : ""}
+                    </Text>
+                  </View>
+
+                  {now ? (
+                    <>
+                      <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption), marginTop: 3 }}>{t(s.subKey)}</Text>
+                      <View style={{ marginTop: 8 }}>
+                        {v.gates.map((g) => (
+                          <Pressable
+                            key={g.key}
+                            onPress={() => mutate({ action: "toggleGate", gate: g.key })}
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: g.done }}
+                            style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}
+                          >
+                            <View style={{
+                              width: 19, height: 19, borderRadius: 999, alignItems: "center", justifyContent: "center",
+                              borderWidth: g.done ? 0 : 1.5, borderColor: `${C.ash}b3`,
+                              backgroundColor: g.done ? accent : "transparent",
+                            }}>
+                              {g.done ? <AuroraIcon name="check" size={12} color={C.ink} /> : null}
+                            </View>
+                            <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: g.done ? C.chalk : C.ash }}>{t(g.labelKey)}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+
+                      {/* THE ONE ACTION — drawn only when it can actually be
+                          taken. A disabled primary teaches nothing. */}
+                      {v.canAdvance ? (
+                        <Pressable
+                          onPress={() => mutate({ action: "advance" })}
+                          accessibilityRole="button"
+                          style={{ marginTop: 10, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", backgroundColor: C.lime }}
+                        >
+                          <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>
+                            {t("w.rtp.advanceTo")} {v.nextStageKey ? t(v.nextStageKey) : ""}
+                          </Text>
+                        </Pressable>
+                      ) : (
+                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 8 }}>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.amber) }}>
+                            {v.blockedCount === 1 ? t("w.rtp.gateToGo") : `${v.blockedCount} ${t("w.rtp.gatesToGo")}`}
+                          </Text>
+                          <Pressable onPress={() => setOverrideOpen((o) => !o)} hitSlop={8} accessibilityRole="button" accessibilityState={{ expanded: overrideOpen }}>
+                            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.rtp.override")}</Text>
+                          </Pressable>
+                        </View>
+                      )}
+
+                      {overrideOpen && !v.canAdvance ? (
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 10 }}>
+                          <TextInput
+                            value={reason}
+                            onChangeText={setReason}
+                            placeholder={t("w.rtp.reason")}
+                            placeholderTextColor={C.ash}
+                            accessibilityLabel={t("w.rtp.reason")}
+                            style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9 }}
+                          />
+                          <Pressable
+                            onPress={doOverride}
+                            disabled={!reason.trim()}
+                            accessibilityRole="button"
+                            style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.red, paddingHorizontal: 13, paddingVertical: 9, opacity: reason.trim() ? 1 : 0.4 }}
+                          >
+                            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: txt(C, C.red) }}>{t("w.rtp.force")}</Text>
+                          </Pressable>
+                        </View>
+                      ) : null}
+                    </>
+                  ) : null}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* THE RECORD, and the way out — both quiet, both always reachable. */}
+      <View style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 4, paddingTop: 10 }}>
+        {closing ? (
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.rtp.discardAsk")}</Text>
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 18 }}>
+              <Pressable onPress={() => setClosing(false)} hitSlop={8} accessibilityRole="button">
+                <Text style={{ ...quiet, color: C.chalk }}>{t("w.rtp.keep")}</Text>
+              </Pressable>
+              <Pressable onPress={() => { setClosing(false); mutate({ action: "abandon" }); }} hitSlop={8} accessibilityRole="button">
+                <Text style={{ ...quiet, color: txt(C, C.red) }}>{t("w.rtp.discardYes")}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            {v.log.length > 0 ? (
+              <Pressable onPress={() => setLogOpen((o) => !o)} hitSlop={8} accessibilityRole="button" accessibilityState={{ expanded: logOpen }} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                <Text style={{ ...quiet, color: C.ash }}>{t("w.rtp.audit")} ({v.log.length})</Text>
+                <AuroraIcon name="chevron-down" size={11} color={C.ash} style={logOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
+              </Pressable>
+            ) : <View />}
+            <Pressable onPress={() => setClosing(true)} hitSlop={8} accessibilityRole="button">
+              <Text style={{ ...quiet, color: C.ash }}>{t("w.rtp.discard")}</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {logOpen && !closing ? (
+          <View style={{ marginTop: 10, gap: 8 }}>
+            {v.log.slice().reverse().map((a, i) => (
+              <View key={i} style={{ flexDirection: "row", gap: 10 }}>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ width: 52, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{fmtDay(a.ts)}</Text>
+                <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: a.override ? txt(C, C.red) : C.ash }}>
+                  <Text style={{ fontFamily: F.bold, color: a.override ? txt(C, C.red) : C.chalk }}>{a.by}</Text>
+                  {` ${t(a.verbKey)}`}
+                  {a.gateKey ? ` ${t(a.gateKey)}` : ""}
+                  {a.toKey ? ` ${t(a.toKey)}` : ""}
+                  {a.reason ? ` — ${a.reason}` : ""}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+const fmtDay = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+};
+
+const quiet = { fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600" as const, textTransform: "uppercase" as const, letterSpacing: 0.9 };
