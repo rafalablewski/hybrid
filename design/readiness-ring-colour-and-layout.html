@@ -1,0 +1,580 @@
+<title>Readiness — the ring's colour, and the block's layout</title>
+<style>
+  /* ── HYBRID tokens, verbatim from packages/core/src/theme/palette.ts ──────
+     Dark = AURORA, light = KYOTO HOUR. Every colour on this page resolves
+     through these, so what you see is what the app would paint. */
+  :root {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e;
+    --lime-text: #3c4f43; --blue-text: #4f5c3a; --amber-text: #875427; --red-text: #a3442f;
+    --sans: "Archivo", "Archivo Narrow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --pad: clamp(18px, 4vw, 40px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+      --chalk: #f3f4ef; --ash: #8b8f86;
+      --lime-text: #c6f84f; --blue-text: #6cb6bd; --amber-text: #d0cd94; --red-text: #e58a5c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime-text: #c6f84f; --blue-text: #6cb6bd; --amber-text: #d0cd94; --red-text: #e58a5c;
+  }
+  :root[data-theme="light"] {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e;
+    --lime-text: #3c4f43; --blue-text: #4f5c3a; --amber-text: #875427; --red-text: #a3442f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ink); color: var(--chalk);
+    font-family: var(--sans); line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: var(--pad) var(--pad) 88px; }
+
+  /* ── page furniture ──────────────────────────────────────────────────── */
+  .kicker { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ash); }
+  h1 { font-size: clamp(28px, 4.4vw, 44px); line-height: 1.06; letter-spacing: -.035em; font-weight: 800; margin: 14px 0 0; text-wrap: balance; max-width: 20ch; }
+  .lede { margin: 16px 0 0; max-width: 68ch; color: var(--ash); font-size: clamp(15px, 1.35vw, 17px); }
+  .lede b { color: var(--chalk); font-weight: 600; }
+  h2 { font-size: clamp(20px, 2.2vw, 26px); letter-spacing: -.02em; font-weight: 800; margin: 0; text-wrap: balance; }
+  h3 { font-size: 15px; font-weight: 700; letter-spacing: -.01em; margin: 0; }
+  p { margin: 0; }
+  section { margin-top: clamp(44px, 6vw, 76px); }
+  .sechead { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .sechead .num { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--ash); }
+  .body { margin-top: 18px; max-width: 70ch; color: var(--ash); font-size: 14.5px; }
+  .body b { color: var(--chalk); font-weight: 600; }
+  .body + .body { margin-top: 10px; }
+  code { font-family: var(--mono); font-size: .87em; color: var(--chalk); }
+
+  /* ── the app card, reproduced ────────────────────────────────────────── */
+  .app { background: var(--card); border: 1px solid var(--line); border-radius: 26px; padding: 18px; }
+  .lbl { font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); }
+  .verdict { font-size: 17px; font-weight: 700; letter-spacing: -.015em; color: var(--chalk); margin-top: 6px; text-wrap: balance; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 10px;
+    padding: 5px 12px; border-radius: 999px; font-family: var(--mono); font-size: 11px; font-weight: 600;
+    background: color-mix(in srgb, var(--red-text) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--red-text) 34%, transparent);
+    color: var(--red-text);
+  }
+  .door {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+    margin-top: 14px; padding: 11px 0 0; border: 0; border-top: 1px solid var(--line); background: none;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash);
+  }
+  .door b { color: var(--chalk); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+
+  /* the ledger — the rows as they ship today */
+  .ledger { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 11px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--ash); margin-top: 12px; }
+  .ledger .sw { width: 8px; height: 8px; border-radius: 2px; }
+  .ledger .v { text-align: right; font-variant-numeric: tabular-nums; }
+  .ledger .rule { grid-column: 1 / -1; height: 1px; background: var(--line); }
+  .ledger .tot { color: var(--chalk); font-weight: 700; }
+  .prose { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; font-size: 12.5px; line-height: 1.55; color: var(--ash); }
+  .prov { margin-top: 12px; font-family: var(--mono); font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ash); opacity: .8; }
+
+  /* the proportional bar */
+  .bar { display: flex; gap: 2px; height: 10px; margin-top: 12px; }
+  .bar i { display: block; border-radius: 2px; }
+  .barkey { display: flex; justify-content: space-between; margin-top: 7px; font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); }
+
+  /* ── rings ───────────────────────────────────────────────────────────── */
+  .ring { position: relative; display: grid; place-items: center; flex: none; }
+  .ring .t { position: absolute; top: 0; left: 50%; transform-origin: bottom center; }
+  .ring .t i { display: block; border-radius: 99px; }
+  .ring .n { position: relative; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  /* ── comparison scaffolding ──────────────────────────────────────────── */
+  .grid { display: grid; gap: 16px; margin-top: 22px; }
+  .cols-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .cols-4 { grid-template-columns: repeat(auto-fit, minmax(238px, 1fr)); }
+  .opt { border: 1px solid var(--line); border-radius: 20px; padding: 16px; background: var(--ink2); display: flex; flex-direction: column; gap: 12px; }
+  .opt header { display: flex; align-items: baseline; gap: 9px; }
+  .opt header .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--ash); }
+  .opt .days { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0 2px; }
+  .opt .day { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .opt .day .cap { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); }
+  .opt .note { font-size: 12.5px; line-height: 1.5; color: var(--ash); }
+  .opt .note b { color: var(--chalk); font-weight: 600; }
+  .verdict-row { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+  .ok { color: var(--lime-text); }
+  .bad { color: var(--red-text); }
+
+  /* the collision table */
+  .tbl { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+  .tbl th { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); font-weight: 400; text-align: left; padding: 0 12px 9px 0; }
+  .tbl td { padding: 10px 12px 10px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+  .tbl td.m { font-family: var(--mono); font-size: 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; }
+  .chip i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .scroll { overflow-x: auto; }
+
+  /* the picker */
+  .picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .picker button {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase;
+    padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    background: transparent; border: 1px solid var(--line); color: var(--ash);
+    transition: color .16s ease, border-color .16s ease, background-color .16s ease;
+  }
+  .picker button:hover { color: var(--chalk); border-color: var(--ash); }
+  .picker button[aria-pressed="true"] { color: var(--chalk); border-color: var(--chalk); background: color-mix(in srgb, var(--chalk) 8%, transparent); }
+  .picker button:focus-visible { outline: 2px solid var(--lime-text); outline-offset: 2px; }
+
+  .mockcap { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); margin-bottom: 10px; }
+  .phone { max-width: 420px; }
+
+  ul.plain { margin: 16px 0 0; padding-left: 18px; max-width: 72ch; color: var(--ash); font-size: 14px; }
+  ul.plain li { margin-bottom: 8px; }
+  ul.plain li b { color: var(--chalk); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <div class="kicker">HYBRID — design study — Performance → Your state</div>
+  <h1>The ring says a &minus;3 is half your day.</h1>
+  <p class="lede">
+    The readiness ledger is arithmetically sound: <b>100 &minus; 30 &minus; 14 &minus; 3 = 53</b>, and the engine
+    guarantees it. What is wrong is the <b>paint</b>. The kept arc takes the readiness band's colour, the wearable cost
+    takes caution's colour, and at a score of 53 those are <b>the same sand</b>. So the legend's little yellow square
+    &mdash; worth one tick &mdash; points at seventeen of them. This page proposes four ways to fix the colour, and one
+    new layout for the block.
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <span class="num">01</span>
+      <h2>The collision is structural, not a one-off</h2>
+    </div>
+    <p class="body">
+      The kept arc is coloured by <code>readinessRole(score)</code> &mdash; chartreuse at 80+, teal 60&ndash;79, sand
+      40&ndash;59, terracotta below. The three causes are fixed at terracotta, teal and sand so a cause means the same
+      thing on every surface. Those two sets overlap in <b>every band</b>: there is no score at which the ring is
+      honest by luck.
+    </p>
+    <div class="scroll">
+      <table class="tbl">
+        <thead>
+          <tr><th>Score</th><th>Kept arc</th><th>Collides with</th><th>What the athlete reads</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="m">80&ndash;100</td>
+            <td><span class="chip"><i style="background:var(--lime-text)"></i>chartreuse</span></td>
+            <td><span class="chip" style="color:var(--ash)">&mdash; nothing</span></td>
+            <td>honest, by accident: no cause is chartreuse</td>
+          </tr>
+          <tr>
+            <td class="m">60&ndash;79</td>
+            <td><span class="chip"><i style="background:var(--blue-text)"></i>teal</span></td>
+            <td><span class="chip"><i style="background:var(--blue-text)"></i>Conditioning load</span></td>
+            <td>conditioning looks like most of the ring</td>
+          </tr>
+          <tr>
+            <td class="m">40&ndash;59</td>
+            <td><span class="chip"><i style="background:var(--amber-text)"></i>sand</span></td>
+            <td><span class="chip"><i style="background:var(--amber-text)"></i>Wearable readings</span></td>
+            <td><b style="color:var(--chalk)">today: a &minus;3 owning 17 ticks</b></td>
+          </tr>
+          <tr>
+            <td class="m">0&ndash;39</td>
+            <td><span class="chip"><i style="background:var(--red-text)"></i>terracotta</span></td>
+            <td><span class="chip"><i style="background:var(--red-text)"></i>Tissue load</span></td>
+            <td>the whole ring reads as one injury warning</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="body" style="margin-top:18px">
+      The spec anticipated this &mdash; <i>&ldquo;on a bad day both are red; weight, not hue, is what says which part of
+      the ring is still yours&rdquo;</i> &mdash; and that reasoning holds for a shape you stare at. It does not hold for a
+      <b>legend</b>, where a 8&times;8px swatch is the only bridge between a row and an arc. The moment the ledger
+      opened, hue stopped being decoration and became a lookup key.
+    </p>
+    <p class="body">
+      Worth noting for Kyoto Hour: in the light theme sand darkens to <code>#875427</code> and terracotta to
+      <code>#a3442f</code> &mdash; a brown and a vermilion, closer to each other than their dark-theme twins. Whatever
+      we pick has to survive both grounds; every ring below is rendered in the live theme, so flip your OS setting to
+      audit it.
+    </p>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <span class="num">02</span>
+      <h2>Four ways to make the ring tell the truth</h2>
+    </div>
+    <p class="body">
+      Same engine, same geometry: each ring below runs the real <code>apportion()</code> and the real minimum-arc rule
+      over 32 ticks. Only the paint differs. Each option is shown across three days &mdash; a <b>78</b> (teal band), the
+      <b>53</b> from your screenshot, and a <b>31</b> (terracotta band) &mdash; because an option that only works on a
+      good day is not an option.
+    </p>
+    <div class="grid cols-4" id="options"></div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <span class="num">03</span>
+      <h2>The block, before and after</h2>
+    </div>
+    <p class="body">
+      All four layout changes, applied together. Pick a ring option and both the mock and the ledger swatches update, so
+      you can judge the colour <b>in situ</b> rather than as a specimen.
+    </p>
+    <div class="picker" id="picker" role="group" aria-label="Ring colour option"></div>
+
+    <div class="grid cols-2">
+      <div>
+        <div class="mockcap">Now &mdash; shipped</div>
+        <div class="app phone">
+          <div style="display:flex;align-items:flex-start;gap:14px">
+            <div id="ring-now"></div>
+            <div style="flex:1;min-width:0">
+              <div class="lbl">Today &mdash; Readiness</div>
+              <div class="verdict">Back is the limiter today.</div>
+              <div class="pill"><span aria-hidden="true">&#9785;</span> Deloaded to 85%, &minus;1 set &mdash; you're wrecked today</div>
+              <button class="door" type="button" aria-expanded="true">
+                <span>Where the 47 went</span>
+                <b>3 reasons <span aria-hidden="true" style="font-size:8px">&#9650;</span></b>
+              </button>
+              <div class="ledger" id="ledger-now"></div>
+              <div class="prose">
+                <div>Computed from your logged training: back fatigue (81/100) is the main drag today.</div>
+                <div>Energy-system load from recent conditioning sits at 39/100, and it counts against today's number.</div>
+                <div>Your wearable nudged readiness &minus;3 today &mdash; HRV dipped and sleep ran short.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="body" style="font-size:13px">
+          The breakdown is trapped in a column that starts a third of the way across the card, so the numbers never
+          reach the right edge and the rows sit narrower than the prose beneath them. The pill breaks mid-sentence.
+          The three paragraphs restate the three rows.
+        </p>
+      </div>
+
+      <div>
+        <div class="mockcap">Proposed</div>
+        <div class="app phone">
+          <!-- MASTHEAD — ring, kicker and headline as one full-width row -->
+          <div style="display:flex;align-items:center;gap:14px">
+            <div id="ring-new"></div>
+            <div style="flex:1;min-width:0">
+              <div class="lbl">Today &mdash; Readiness</div>
+              <div class="verdict" style="margin-top:4px">Back is the limiter today.</div>
+            </div>
+          </div>
+          <!-- the nudge gets its own line instead of wrapping inside a column -->
+          <div class="pill" style="margin-top:12px"><span aria-hidden="true">&#9785;</span> Deloaded to 85%, &minus;1 set &mdash; you're wrecked today</div>
+
+          <!-- DOOR — full width, so the count lands on the card's right edge -->
+          <button class="door" type="button" aria-expanded="true">
+            <span>Where the 47 went</span>
+            <b>3 reasons <span aria-hidden="true" style="font-size:8px">&#9650;</span></b>
+          </button>
+
+          <!-- THE BAR — the ring's proportions, straightened out -->
+          <div class="bar" id="bar-new"></div>
+          <div class="barkey"><span>Kept 53</span><span>Spent 47</span></div>
+
+          <!-- THE LEDGER — full width, values flush to the card edge -->
+          <div class="ledger" id="ledger-new" style="margin-top:14px"></div>
+
+          <div class="prov">Computed from your logged training &mdash; back fatigue 81/100, energy-system load 39/100</div>
+        </div>
+        <p class="body" style="font-size:13px">
+          Ring and headline read as one masthead; the pill owns its line; the door, the bar and the rows all run the
+          full width of the card with the values flush right. The prose is gone &mdash; the rows say the same thing in
+          a third of the space &mdash; leaving one provenance line for the two figures the ledger cannot show.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <span class="num">04</span>
+      <h2>What it takes to build</h2>
+    </div>
+    <ul class="plain">
+      <li><b>The colour rule moves into core.</b> The clients currently decide the kept arc's paint inline, in two
+        places, and both got it wrong the same way. A single <code>readinessRingTicks()</code> that already knows the
+        kept run should hand out the roles, so a client cannot re-introduce the collision.</li>
+      <li><b>Cutting the prose changes what the door counts.</b> Today the count is
+        <code>readinessReasons().length</code> &mdash; the sentences. With the sentences gone it has to become the
+        number of ledger rows, or the door promises three of something that no longer exists. Both happen to be 3
+        today, which is exactly how that bug would ship unnoticed.</li>
+      <li><b>The bar is the ring's data, not new data.</b> It reads the same segments, so it cannot disagree with the
+        arcs above it &mdash; and it inherits the minimum-arc rule, which is what keeps the &minus;3 visible.</li>
+      <li><b>Both clients, one change</b> (web <code>aurora/performance.tsx</code>, mobile
+        <code>aurora/performance.tsx</code>), plus a test that fails if the kept colour ever equals a cost colour in
+        any band, on either theme.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+  /* ── the engine's own arithmetic, ported verbatim so the mock cannot lie ── */
+  function apportion(weights, total) {
+    const sum = weights.reduce((a, b) => a + b, 0);
+    if (sum <= 0 || total <= 0) return weights.map(() => 0);
+    const exact = weights.map((w) => (w / sum) * total);
+    const out = exact.map((e) => Math.floor(e));
+    let left = total - out.reduce((a, b) => a + b, 0);
+    const order = exact.map((e, i) => ({ i, rem: e - Math.floor(e) })).sort((a, b) => b.rem - a.rem || a.i - b.i);
+    for (let k = 0; left > 0 && order.length > 0; k++, left--) out[order[k % order.length].i] += 1;
+    return out;
+  }
+
+  /* parts = [{kind, points}] with kept first. Returns one entry per tick. */
+  function ringTicks(parts, ticks) {
+    const live = parts.filter((p) => p.points > 0);
+    const counts = apportion(live.map((p) => p.points), ticks);
+    for (let i = 1; i < counts.length; i++) {
+      if (counts[i] !== 0) continue;
+      let big = 0;
+      for (let j = 0; j < counts.length; j++) if (counts[j] > counts[big]) big = j;
+      if (counts[big] <= 1) break;
+      counts[big] -= 1; counts[i] += 1;
+    }
+    if (counts.length && counts[0] === 0 && live[0].points > 0) counts[0] = 1;
+    const covered = counts.reduce((a, b) => a + b, 0);
+    if (covered !== ticks) counts[counts.length - 1] += ticks - covered;
+    const out = [];
+    live.forEach((p, i) => { for (let k = 0; k < counts[i]; k++) out.push(p); });
+    return out;
+  }
+
+  const bandOf = (s) => (s >= 80 ? "lime" : s >= 60 ? "blue" : s >= 40 ? "amber" : "red");
+  const bandVar = (s) => "var(--" + bandOf(s) + "-text)";
+
+  /* the three causes, in the ring's fixed order */
+  const COSTS = [
+    { kind: "tissue", label: "Tissue load, mostly back", colour: "var(--red-text)" },
+    { kind: "conditioning", label: "Conditioning load", colour: "var(--blue-text)" },
+    { kind: "wearable", label: "Wearable readings (HRV, sleep)", colour: "var(--amber-text)" },
+  ];
+
+  const DAYS = [
+    { score: 78, points: [14, 6, 2] },
+    { score: 53, points: [30, 14, 3] },  /* the screenshot */
+    { score: 31, points: [44, 19, 6] },
+  ];
+
+  const OPTIONS = {
+    A: {
+      name: "Kept in chalk",
+      tag: "one neutral, three causes",
+      note: "The causes keep their fixed hues; the kept arc takes the page's own foreground and the band colour moves onto the <b>number</b>. Four parts, four colours, guaranteed in every band and on both themes.",
+      verdict: ["ok", "No collision possible"],
+      kept: () => "var(--chalk)",
+      num: (s) => bandVar(s),
+      rings: 1,
+    },
+    B: {
+      name: "Kept dimmed",
+      tag: "band hue, held back",
+      note: "The kept arc keeps its band colour but drops to 30% so the causes sit in front of it. Severity still reads as hue &mdash; but sand-at-30% beside sand-at-100% is a <b>brightness</b> difference, which is the first thing a small swatch loses.",
+      verdict: ["bad", "Same hue, softened"],
+      kept: (s) => "color-mix(in srgb, " + bandVar(s) + " 30%, transparent)",
+      num: () => "var(--chalk)",
+      rings: 1,
+    },
+    C: {
+      name: "Only the deficit lit",
+      tag: "answers the label",
+      note: "Lit ticks are literally &ldquo;where the 47 went&rdquo;; the kept 53 sits on the track. Nothing can collide because the score is no longer a colour &mdash; but the ring stops reading as a fill gauge, which is the shape the athlete already knows from Today.",
+      verdict: ["ok", "No collision — new shape"],
+      kept: () => "var(--line)",
+      num: (s) => bandVar(s),
+      rings: 1,
+    },
+    D: {
+      name: "Two rings",
+      tag: "geometry, not hue",
+      note: "Outer ring is the gauge you already have, in its band colour. Inner ring is the deficit alone, split by cause. Separation is <b>positional</b>, so the hues can stay exactly as they are &mdash; at the cost of a second ring inside 56px.",
+      verdict: ["ok", "No collision — denser"],
+      kept: (s) => bandVar(s),
+      num: (s) => bandVar(s),
+      rings: 2,
+    },
+  };
+
+  /* ── paint one ring ──────────────────────────────────────────────────── */
+  function drawRing(day, optKey, size) {
+    const opt = OPTIONS[optKey];
+    const el = document.createElement("div");
+    el.className = "ring";
+    el.style.width = size + "px";
+    el.style.height = size + "px";
+
+    const parts = [{ kind: "kept", points: day.score }].concat(
+      COSTS.map((c, i) => ({ kind: c.kind, points: day.points[i], colour: c.colour })),
+    );
+
+    const tickW = Math.max(2, Math.round(size * 0.045));
+    const tickLen = Math.max(4, Math.round(size * 0.16));
+
+    /* Every arm is exactly the radius tall so it pivots on the ring's CENTRE;
+       an inner run is inset by pushing its bar down the arm, never by
+       shortening the arm (which would swing it around the wrong point). */
+    const layer = (ticks, colourOf, len, w, inset) => {
+      ticks.forEach((p, i) => {
+        const arm = document.createElement("span");
+        arm.className = "t";
+        arm.style.width = w + "px";
+        arm.style.height = size / 2 + "px";
+        arm.style.transform = "translateX(-50%) rotate(" + (i / ticks.length) * 360 + "deg)";
+        const bar = document.createElement("i");
+        bar.style.width = w + "px";
+        bar.style.height = len + "px";
+        bar.style.marginTop = (inset || 0) + "px";
+        bar.style.background = colourOf(p);
+        arm.appendChild(bar);
+        el.appendChild(arm);
+      });
+    };
+
+    if (opt.rings === 2) {
+      /* outer: the plain gauge — lit ticks = the score */
+      const lit = Math.round((day.score / 100) * 32);
+      const outerLen = Math.max(3, Math.round(size * 0.12));
+      const gauge = Array.from({ length: 32 }, (_, i) => (i < lit ? "on" : "off"));
+      layer(gauge, (p) => (p === "on" ? opt.kept(day.score) : "var(--line)"), outerLen, tickW, 0);
+      /* inner: the deficit alone, split by cause */
+      const inner = ringTicks(parts.slice(1), 24);
+      layer(inner, (p) => p.colour, Math.max(3, Math.round(size * 0.1)), Math.max(2, tickW - 1), outerLen + 3);
+    } else {
+      const ticks = ringTicks(parts, 32);
+      layer(ticks, (p) => (p.kind === "kept" ? opt.kept(day.score) : p.colour), tickLen, tickW, 0);
+    }
+
+    const n = document.createElement("span");
+    n.className = "n";
+    n.style.fontSize = Math.round(size * 0.3) + "px";
+    n.style.color = opt.num(day.score);
+    n.textContent = day.score;
+    el.appendChild(n);
+    return el;
+  }
+
+  /* ── section 02: the four options, three days each ───────────────────── */
+  const optionsHost = document.getElementById("options");
+  Object.keys(OPTIONS).forEach((key) => {
+    const opt = OPTIONS[key];
+    const card = document.createElement("div");
+    card.className = "opt";
+    card.innerHTML =
+      '<header><h3><span style="font-family:var(--mono);font-weight:400;color:var(--ash)">' + key + '</span> ' + opt.name + "</h3></header>" +
+      '<div class="tag lbl">' + opt.tag + "</div>" +
+      '<div class="days"></div>' +
+      '<div class="verdict-row ' + opt.verdict[0] + '">' + (opt.verdict[0] === "ok" ? "&#10003;" : "&#10007;") + " " + opt.verdict[1] + "</div>" +
+      '<p class="note">' + opt.note + "</p>";
+    const days = card.querySelector(".days");
+    DAYS.forEach((d) => {
+      const cell = document.createElement("div");
+      cell.className = "day";
+      cell.appendChild(drawRing(d, key, 62));
+      const cap = document.createElement("span");
+      cap.className = "cap";
+      cap.textContent = { lime: "chartreuse", blue: "teal", amber: "sand", red: "terracotta" }[bandOf(d.score)];
+      cell.appendChild(cap);
+      days.appendChild(cell);
+    });
+    optionsHost.appendChild(card);
+  });
+
+  /* ── section 03: the two mocks, driven by the picker ─────────────────── */
+  const TODAY = DAYS[1];
+
+  function ledger(host, optKey, showKept) {
+    host.innerHTML = "";
+    const add = (sw, label, value, cls) => {
+      const i = document.createElement("span");
+      if (sw) { i.className = "sw"; i.style.background = sw; }
+      const l = document.createElement("span");
+      l.textContent = label;
+      if (cls) l.className = cls;
+      const v = document.createElement("span");
+      v.className = "v" + (cls ? " " + cls : "");
+      v.textContent = value;
+      if (sw) v.style.color = sw;
+      host.append(i, l, v);
+    };
+    add(null, "Baseline", "100");
+    COSTS.forEach((c, i) => add(c.colour, c.label, "−" + TODAY.points[i]));
+    const rule = document.createElement("span");
+    rule.className = "rule";
+    host.appendChild(rule);
+    add(null, "Readiness", String(TODAY.score), "tot");
+    /* the kept swatch, so the ring's biggest run is named in the ledger too */
+    if (showKept) {
+      const sw = host.children[host.children.length - 3];
+      sw.className = "sw";
+      sw.style.background = OPTIONS[optKey].kept(TODAY.score);
+    }
+  }
+
+  function bar(host, optKey) {
+    host.innerHTML = "";
+    const parts = [{ points: TODAY.score, colour: OPTIONS[optKey].kept(TODAY.score) }].concat(
+      COSTS.map((c, i) => ({ points: TODAY.points[i], colour: c.colour })),
+    );
+    parts.forEach((p) => {
+      const i = document.createElement("i");
+      i.style.flex = String(p.points);
+      i.style.minWidth = "6px";
+      i.style.background = p.colour;
+      host.appendChild(i);
+    });
+  }
+
+  let current = "A";
+  function render() {
+    const now = document.getElementById("ring-now");
+    now.innerHTML = "";
+    /* "Now" is always the shipped paint: kept in the band colour, full strength */
+    now.appendChild(drawRing(TODAY, "SHIPPED", 62));
+    const to = document.getElementById("ring-new");
+    to.innerHTML = "";
+    to.appendChild(drawRing(TODAY, current, 62));
+    ledger(document.getElementById("ledger-now"), "SHIPPED", false);
+    ledger(document.getElementById("ledger-new"), current, true);
+    bar(document.getElementById("bar-new"), current);
+  }
+
+  /* the shipped behaviour, as its own (unlisted) option so "Now" is exact */
+  OPTIONS.SHIPPED = {
+    name: "Shipped", tag: "", note: "", verdict: ["bad", ""],
+    kept: (s) => bandVar(s), num: () => "var(--chalk)", rings: 1,
+  };
+
+  const picker = document.getElementById("picker");
+  ["A", "B", "C", "D"].forEach((key) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = key + " — " + OPTIONS[key].name;
+    b.setAttribute("aria-pressed", String(key === current));
+    b.addEventListener("click", () => {
+      current = key;
+      picker.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      render();
+    });
+    picker.appendChild(b);
+  });
+
+  render();
+</script>
