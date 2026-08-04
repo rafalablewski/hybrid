@@ -54,6 +54,8 @@ import { useToday } from "@/lib/use-today";
 
 const C = (v: string) => `var(--color-${v})`;
 const STORE_KEY = "hybrid.today.range";
+/** Set once the athlete has opened any column — see the hint below. */
+const HINT_KEY = "hybrid.today.actHinted";
 const ROWS_SHOWN = 5;
 /** PR rows before the head starts saying how many were held back. */
 const PRS_SHOWN = 4;
@@ -137,11 +139,19 @@ export default function AuroraWeekVerdict({
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [all, setAll] = useState(false);
+  // THE HINT, ONCE. "Open a figure for the sessions behind it" is the only
+  // sentence on this screen written about the interface rather than about the
+  // athlete's training, and it held a row of the card forever — including on
+  // the ten-thousandth visit. It now retires the first time any column is
+  // opened. Starts true so it can only ever disappear, never flash in (and so
+  // the server paint and the first client paint agree). Mirrors mobile.
+  const [hinted, setHinted] = useState(true);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORE_KEY);
       if (saved) setRangeId(saved);
+      setHinted(localStorage.getItem(HINT_KEY) === "1");
     } catch { /* storage disabled — the week is a fine default */ }
   }, []);
 
@@ -235,6 +245,10 @@ export default function AuroraWeekVerdict({
     setGroup(null);
     setAll(false);
     setOpen((cur) => (cur === m ? null : m));
+    if (!hinted) {
+      setHinted(true);
+      try { localStorage.setItem(HINT_KEY, "1"); } catch { /* ignore */ }
+    }
   };
 
   // ── The segmented control. Five equal segments and one thumb that TRAVELS —
@@ -397,7 +411,7 @@ export default function AuroraWeekVerdict({
           </div>
         </div>
 
-        {!open && (
+        {!open && !hinted && (
           <p style={{ margin: "10px 0 0", ...kicker, fontSize: 9, color: C("ash"), opacity: .75, textAlign: "center" }}>
             {t("w.home.act.hint")}
           </p>

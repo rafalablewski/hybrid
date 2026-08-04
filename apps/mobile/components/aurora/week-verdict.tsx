@@ -55,6 +55,8 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
  */
 
 const STORE_KEY = "hybrid.today.range";
+/** Set once the athlete has opened any column — see the hint below. */
+const HINT_KEY = "hybrid.today.actHinted";
 const ROWS_SHOWN = 5;
 /** PR rows before the head starts saying how many were held back. */
 const PRS_SHOWN = 4;
@@ -136,9 +138,16 @@ export default function AuroraWeekVerdict({
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [all, setAll] = useState(false);
+  // THE HINT, ONCE. "Open a figure for the sessions behind it" is the only
+  // sentence on this screen written about the interface rather than about the
+  // athlete's training, and it held a row of the card forever — including on
+  // the ten-thousandth visit. It now retires the first time any column is
+  // opened. Starts true so it can only ever disappear, never flash in.
+  const [hinted, setHinted] = useState(true);
 
   useEffect(() => {
     AsyncStorage.getItem(STORE_KEY).then((v) => { if (v) setRangeId(v); }).catch(() => {});
+    AsyncStorage.getItem(HINT_KEY).then((v) => setHinted(v === "1")).catch(() => {});
   }, []);
 
   const pick = (id: string) => {
@@ -232,6 +241,10 @@ export default function AuroraWeekVerdict({
     setGroup(null);
     setAll(false);
     setOpen((cur) => (cur === m ? null : m));
+    if (!hinted) {
+      setHinted(true);
+      AsyncStorage.setItem(HINT_KEY, "1").catch(() => {});
+    }
   };
 
   // ── The segmented control. Five equal segments and one thumb that TRAVELS —
@@ -414,7 +427,7 @@ export default function AuroraWeekVerdict({
           </View>
         </Animated.View>
 
-        {!open && (
+        {!open && !hinted && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
             {t("w.home.act.hint")}
           </Text>
