@@ -31,14 +31,19 @@ const REPO_ROOT = join(APP_ROOT, "..", "..");
 const shell = readFileSync(join(APP_ROOT, "components", "app-shell.tsx"), "utf8");
 const more = readFileSync(join(REPO_ROOT, "apps", "mobile", "app", "(tabs)", "more.tsx"), "utf8");
 
-/** Nav ids the web app-shell renders a screen for. */
-const webScreens = new Set([...shell.matchAll(/screen === "([a-z]+)"/g)].map((m) => m[1]!));
+/** Nav ids the web app-shell renders a screen for.
+ *  The id class must include the HYPHEN: `volume-model` is a real nav id, and
+ *  with a bare [a-z]+ the scan silently skipped BOTH clients' surfaces for it —
+ *  a guard that cannot see an id cannot guard it, and the missing mobile
+ *  springboard entry it should have caught went unnoticed as a result. */
+const webScreens = new Set([...shell.matchAll(/screen === "([a-z-]+)"/g)].map((m) => m[1]!));
 
 /** Nav ids the mobile springboard has a route for. An id absent from this map is
  *  treated by More as "web-only" and OPENS THE BROWSER — which is precisely the
  *  dead-end this test exists to prevent. */
 const mobileRoutes = new Set(
-  [...more.slice(more.indexOf("const HREF"), more.indexOf("const GROUP_LABEL")).matchAll(/^\s*([a-z]+):\s*"/gm)].map((m) => m[1]!),
+  // Hyphenated ids must be QUOTED as object keys, so the quotes are optional here.
+  [...more.slice(more.indexOf("const HREF"), more.indexOf("const GROUP_LABEL")).matchAll(/^\s*"?([a-z-]+)"?:\s*"/gm)].map((m) => m[1]!),
 );
 
 /**

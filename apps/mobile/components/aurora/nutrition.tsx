@@ -27,6 +27,7 @@ import {
   localTodayKey,
   NUTRITION_GLYPHS,
   sumMealComponents, recipeToMeal,
+  nutritionHubSeries,
   RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, recipeCoverView,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   type NutritionMealPart, type MealPartDef,
@@ -67,6 +68,7 @@ import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { useConfirm } from "./confirm";
+import { NutritionHubBento } from "./nutrition-hub";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -766,6 +768,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const hasNutritionData = useMemo(() => sig.some((s) => s.kind === "energyIntake" || s.kind === "bodyMass"), [signals]);
   const [summaryWindow, setSummaryWindow] = useState<7 | 30>(30);
   const summary = useMemo(() => nutritionSummary(sig, { targets, windowDays: summaryWindow }), [signals, targets, summaryWindow]);
+  // The hub bento's Diary chart: seven days of target-vs-logged. The target is
+  // per-day training-aware (the same composition `targets` uses for today), so
+  // today's point on the chart and the hero ring above it agree by construction.
+  const hubSeries = useMemo(() => nutritionHubSeries(sig, sessions, { goal, bodyMassKg }), [signals, sessions, goal, bodyMassKg]);
+  // The Insights tile shows a fixed SEVEN-day average, never the dashboard's
+  // 7/30 toggle — a tile whose number silently changes with a control on
+  // another screen is a tile you can't trust.
+  const weekSummary = useMemo(() => nutritionSummary(sig, { targets, windowDays: 7 }), [signals, targets]);
   const nudge = useMemo(() => nutritionNudge(today, targets), [today, targets]);
 
   // The one number you came for is what's LEFT, and it used to exist only at
@@ -1769,7 +1779,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <View key={i} style={{ flexDirection: "row", gap: 12, paddingVertical: 16, borderTopWidth: 1, borderTopColor: C.line }}>
             {/* The number is the STEP ORDER — method is genuinely a sequence, so
                 this encodes something true rather than decorating the list. */}
-            <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: 22 }}>{i + 1}</Text>
+            {/* The number shares the STEP BODY's leading (not its own), so the
+                digit sits on the first line of the text beside it. */}
+            <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.note) }}>{i + 1}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: leading(fs.note), color: C.chalk }}>{s.text}</Text>
               {s.timerSec != null ? (
@@ -1927,24 +1939,24 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </PressScale>
           ) : null}
 
-          {/* Menu — one compact link row into every deeper feature, so the
-              daily essentials above aren't followed by five more full-width
-              rows. Recipes and the verified tier are NOT here: both are
+          {/* The five deep destinations, as a BENTO — Diary leads with a real
+              chart (its target vs what was logged, seven days), the other four
+              follow as stat tiles. This replaced a wrapping row of bare
+              mono-uppercase words that had no surface, no glyph, no arrow and
+              no data: five links dressed as a caption, with the destination
+              opened daily sitting at the same weight as the one opened
+              monthly. Recipes and the verified tier are NOT here: both are
               libraries you browse, so they ride their own rails at the very
               bottom of this screen. */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 16, rowGap: 8, marginTop: 24, marginHorizontal: 2 }}>
-            {([
-              ["diary", t("w.recovery.nutrition.menuDiary")],
-              ["insights", t("w.recovery.nutrition.menuInsights")],
-              ["body", t("w.recovery.nutrition.menuBody")],
-              ["meals", t("w.recovery.nutrition.yourMeals")],
-              ["foods", t("w.recovery.nutrition.yourProducts")],
-            ] as [NutView, string][]).map(([key, label]) => (
-              <Pressable key={key} onPress={() => setView(key)} accessibilityRole="button" hitSlop={8}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <NutritionHubBento
+            series={hubSeries}
+            avgKcal={weekSummary.avgKcal}
+            weightKg={weight.smoothedLatest ?? weight.latest}
+            ratePerWeek={weight.ratePerWeek}
+            mealCount={meals.length}
+            productCount={products.length}
+            onOpen={setView}
+          />
 
           {/* ── The two libraries, at the very bottom, as left/right rails —
               the "Train your way" idiom. A list of recipes and a list of the
