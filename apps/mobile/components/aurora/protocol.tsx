@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable as RNPressable, type LayoutChangeEvent } from "react-native";
+import { View, Text, TextInput, type LayoutChangeEvent } from "react-native";
 import Svg, { Polygon, Circle, Rect, G } from "react-native-svg";
 import {
   INJURY_FIGURES, INJURY_VIEWBOX, INJURY_AREA_KEY, INJURY_AREA_HINT_KEY,
@@ -102,7 +102,18 @@ function Figure({
 
   const body = (
     <Svg viewBox={`${x} ${y} ${w} ${h}`} width="100%" height={height}>
-      {live && <Rect x={x} y={y} width={w} height={h} fill="transparent" />}
+      {/* THE CANVAS CATCHES WHAT THE SHAPES MISS. A transparent rect over the
+          whole viewBox takes any touch that didn't land on an area, and
+          resolves it to the nearest one — the fallback that makes the whole
+          limb live. It is a hit SURFACE, not a button: the answer to a touch
+          is the region lighting up, so it must not scale or dim the figure,
+          which is why this is not a Pressable. */}
+      {live && (
+        <Rect
+          x={x} y={y} width={w} height={h} fill="transparent"
+          onPress={(e) => onPress(e.nativeEvent.locationX, e.nativeEvent.locationY)}
+        />
+      )}
       {/* the untracked body: faint, and therefore honestly unavailable */}
       {fig.outline.map((part, i) => (
         <Polygon key={`o${i}`} points={poly(part)} fill={C.ash} fillOpacity={0.1} stroke={C.line} strokeWidth={0.5} />
@@ -136,17 +147,9 @@ function Figure({
     </Svg>
   );
 
-  if (!live) return <View style={{ width: "100%" }}>{body}</View>;
-  return (
-    <RNPressable
-      onLayout={onLayout}
-      onPress={(e) => onPress(e.nativeEvent.locationX, e.nativeEvent.locationY)}
-      accessible={false}
-      style={{ width: "100%" }}
-    >
-      {body}
-    </RNPressable>
-  );
+  // The layout is measured, not assumed: the box→viewBox conversion needs the
+  // rendered size to undo the letterbox.
+  return <View style={{ width: "100%" }} onLayout={live ? onLayout : undefined}>{body}</View>;
 }
 
 /** The Tissue card's read-out: the same body, each area carrying its own band. */
