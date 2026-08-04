@@ -274,8 +274,24 @@ export function readinessRingSegments(d: ReadinessDeficit, ticks = 32): RingSegm
     counts[i] = at(i) + 1;
   }
   // The kept run can be starved to nothing by the rule above only if the score
-  // is already tiny — in which case it has genuinely lost the ring.
-  if (counts.length > 0 && at(0) === 0 && (parts[0]?.points ?? 0) > 0) counts[0] = 1;
+  // is already tiny — in which case it has genuinely lost the ring, but it has
+  // not lost its ENTIRE arc: a score is never nothing.
+  //
+  // It has to PAY for that tick from the longest run, exactly as the minimum-arc
+  // rule does. The first cut simply set it to 1 and left the total one over,
+  // which the coverage correction below then took off the LAST run — the
+  // smallest, the one that could least afford it. At kept 1 that drove the
+  // wearable's run to zero ticks and a `from` past the end of the ring: a legend
+  // row pointing at an arc that isn't drawn, which is the exact class of lie the
+  // minimum-arc rule exists to prevent.
+  if (counts.length > 0 && at(0) === 0 && (parts[0]?.points ?? 0) > 0) {
+    let biggest = 0;
+    for (let j = 0; j < counts.length; j++) if (at(j) > at(biggest)) biggest = j;
+    if (at(biggest) > 1) {
+      counts[biggest] = at(biggest) - 1;
+      counts[0] = 1;
+    }
+  }
 
   const out: RingSegment[] = [];
   let from = 0;
@@ -285,11 +301,20 @@ export function readinessRingSegments(d: ReadinessDeficit, ticks = 32): RingSegm
     out.push({ kind: p.kind, from, count, role: p.role, dim: p.dim, key: p.key, muscle: p.muscle, points: p.points });
     from += count;
   });
-  // Any tick left over by the starvation guard above belongs to the last run,
-  // because the ring must be covered exactly once.
+  // COVERAGE, as a safety net rather than a mechanism: the runs must cover the
+  // ring exactly once. Any remainder goes to the LONGEST run — never the last —
+  // and never at the price of taking a run below its one guaranteed tick, which
+  // is what turned a rounding correction into an undrawn cost.
   const covered = out.reduce((a, s) => a + s.count, 0);
-  const last = out[out.length - 1];
-  if (last && covered !== ticks) last.count += ticks - covered;
+  if (out.length > 0 && covered !== ticks) {
+    let biggest = 0;
+    for (let j = 0; j < out.length; j++) if (out[j]!.count > out[biggest]!.count) biggest = j;
+    out[biggest]!.count = Math.max(1, out[biggest]!.count + (ticks - covered));
+    // `from` is a promise about where a run starts; re-seat every run after the
+    // one that moved rather than leaving the tail pointing at stale indices.
+    let from = 0;
+    for (const s of out) { s.from = from; from += s.count; }
+  }
   return out;
 }
 

@@ -99,6 +99,12 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     accent: "#44584c", // pine — the primary action fill
     onAccent: "#f2f5ef", // ivory ink on the pine fill
     gold: "#b58a24", // deep antique gold — reads as gold on the washi card
-    accentText: { lime: "#3c4f43", blue: "#4f5c3a", violet: "#4c5a78", amber: "#875427", red: "#a3442f" },
+    // `amber` is a deep OCHRE (#885c00), not the brown it used to be (#875427).
+    // The brown sat ΔE 13 from the hanko vermilion beside it — both cleared AA
+    // against the paper and were still the same warm mark at an 8px swatch,
+    // which is what the readiness ledger's tissue and wearable rows are. Ochre
+    // moves it up the hue circle to ΔE 22 from vermilion and 22 from sage, in
+    // line with the dark set's own floor. Guarded by palette.test.ts.
+    accentText: { lime: "#3c4f43", blue: "#4f5c3a", violet: "#4c5a78", amber: "#885c00", red: "#a3442f" },
   },
 };

@@ -237,6 +237,7 @@ describe("readinessRingSegments — the ring covers itself exactly once", () => 
  * band to prove no pair can repeat.
  */
 describe("the ring's paint — every run distinguishable, in every band", () => {
+  const TICKS = [12, 24, 32, 60];
   /** A synthetic split at a given score, so all four bands are exercised. */
   const at = (kept: number): ReadinessDeficit => ({
     kept,
@@ -282,6 +283,28 @@ describe("the ring's paint — every run distinguishable, in every band", () => 
     // A token this close to 1 would be a rounding difference, not a separation.
     expect(KEPT_ARC_ALPHA).toBeGreaterThan(0);
     expect(KEPT_ARC_ALPHA).toBeLessThanOrEqual(0.35);
+  });
+
+  it("keeps every run on the ring even when the score is starved to one tick", () => {
+    // REGRESSION. The kept-starvation guard used to set its run to 1 without
+    // paying for it; the coverage correction then took the extra tick off the
+    // LAST run — the smallest — which at kept 1 drove the wearable to count 0
+    // and `from` 32, past the end of a 32-tick ring. A legend row pointing at an
+    // arc that is not drawn is precisely what the minimum-arc rule exists to
+    // stop, so it has to hold at the bottom of the scale too.
+    for (const kept of [1, 2, 3]) {
+      for (const ticks of TICKS) {
+        const segs = readinessRingSegments(at(kept), ticks);
+        let expected = 0;
+        for (const s of segs) {
+          expect(s.count).toBeGreaterThanOrEqual(1);
+          expect(s.from).toBe(expected);
+          expected += s.count;
+        }
+        expect(expected).toBe(ticks);
+        expect(readinessRingTicks(at(kept), ticks)).toHaveLength(ticks);
+      }
+    }
   });
 
   it("gives every tick a paint, so the bar and the arcs can't diverge", () => {

@@ -11,9 +11,9 @@ import { fs, space,
   readinessFacts, KEPT_ARC_ALPHA,
   INJURY_AREA_KEY,
   type Biometrics, type LoggedSession, type Macrocycle, type CapabilityMovement,
-  type ReadinessFact, type RingSegment,
+  type ReadinessFact, type RingSegment, type SemanticRole,
 } from "@hybrid/core";
-import { LINE_HEX, LIME_HEX, BLUE } from "@/lib/ui";
+import { LINE_HEX, LIME_HEX, BLUE, roleText, tint } from "@/lib/ui";
 import { readSportSelection } from "@/lib/sport-store";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useCheckins } from "@/lib/use-checkins";
@@ -29,9 +29,9 @@ import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 
-// State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts).
-const hpiVar = (b: string) => ROLE_COLOR[hpiRole(b)];
-const readyVar = (v: number) => ROLE_COLOR[readinessRole(v)];
+// State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts),
+// resolved through lib/ui's `roleText` — every state colour on this page is
+// DRAWN (a figure, a tick, a swatch), never a fill behind something.
 const C = (v: string) => `var(--color-${v})`;
 /**
  * One run of the readiness ring, painted. The role AND whether the run is held
@@ -40,10 +40,8 @@ const C = (v: string) => `var(--color-${v})`;
  * client can re-derive the kept arc's colour into a collision again. Mirrors
  * mobile's segPaint.
  */
-const segPaint = (s: RingSegment) =>
-  s.dim
-    ? `color-mix(in srgb, ${C(ROLE_COLOR[s.role])} ${Math.round(KEPT_ARC_ALPHA * 100)}%, transparent)`
-    : C(ROLE_COLOR[s.role]);
+const segPaint = (s: Pick<RingSegment, "role" | "dim">) =>
+  s.dim ? tint(roleText(s.role), Math.round(KEPT_ARC_ALPHA * 100)) : roleText(s.role);
 const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 const PLOT = { width: 318, height: 104, pad: 10 };
 
@@ -182,7 +180,7 @@ export default function AuroraPerformance({
   // The same runs the ticks are built from — the bar below the door draws these
   // directly, so it can't disagree with the arcs above it.
   const ringSegs = useMemo(() => readinessRingSegments(deficit), [deficit]);
-  const keptPaint = segPaint({ dim: true, role: readinessRole(deficit.kept) } as RingSegment);
+  const keptPaint = segPaint({ dim: true, role: readinessRole(deficit.kept) });
   const [whyOpen, setWhyOpen] = useState(false);
   // The provenance line, resolved. A positive wearable nudge has to keep its
   // sign — it's the one fact here that can read either way.
@@ -266,7 +264,7 @@ export default function AuroraPerformance({
           {hasData ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
+                <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: roleText(hpiRole(state.hpi.band)) }}>{state.hpi.score}</span>
                 <div style={{ minWidth: 120, flex: 1 }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
                     {t("w.home.cockpit.freshness")} — {state.hpi.band}
@@ -356,7 +354,7 @@ export default function AuroraPerformance({
                       with 17 ticks of kept score. */}
                   <Ring
                     value={deficit.kept}
-                    color={C(readyVar(deficit.kept))}
+                    color={roleText(readinessRole(deficit.kept))}
                     size={56}
                     tickColors={ringTicks.map(segPaint)}
                   />
@@ -435,9 +433,9 @@ export default function AuroraPerformance({
                           <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>100</span>
                           {deficit.costs.map((c, i) => (
                             <Fragment key={i}>
-                              <span style={{ width: 8, height: 8, borderRadius: 2, background: C(ROLE_COLOR[c.role]) }} />
+                              <span style={{ width: 8, height: 8, borderRadius: 2, background: roleText(c.role) }} />
                               <span>{t(c.key).replace("{tissue}", c.muscle ? t(`w.home.today.muscle.${c.muscle}`) : "")}</span>
-                              <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: C(ROLE_COLOR[c.role]) }}>−{c.points}</span>
+                              <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: roleText(c.role) }}>−{c.points}</span>
                             </Fragment>
                           ))}
                           <span style={{ gridColumn: "1 / -1", height: 1, background: C("line") }} />
@@ -694,7 +692,7 @@ function Teaser({ paid, onUnlock, state }: {
       {state && (
         <div style={{ ...CARD, marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: roleText(hpiRole(state.hpi.band)) }}>{state.hpi.score}</span>
             <div style={{ minWidth: 120, flex: 1 }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
                 {t("w.home.cockpit.freshness")} — {state.hpi.band}

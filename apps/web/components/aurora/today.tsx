@@ -57,6 +57,7 @@ import { fs, space,
   type LogbookDay,
 } from "@hybrid/core";
 import { sportForDiscipline } from "@hybrid/core";
+import { roleText } from "@/lib/ui";
 import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
@@ -99,7 +100,10 @@ const SocialFeed = dynamic(() => import("../social-feed"), { ssr: false });
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
 const roleColor = (role: SemanticRole) => C(ROLE_COLOR[role]);
-const readyColor = (v: number) => roleColor(readinessRole(v));
+// The ring's ticks are DRAWN marks, so they take the accent-text channel:
+// the `amber` FILL is pale sand, which on Kyoto Hour's washi paper is all but
+// invisible — and 40–59 is exactly the band an athlete needs to see.
+const readyColor = (v: number) => roleText(readinessRole(v));
 
 /**
  * AURORA Today (web) — the DAILY GUIDED LOOP. Today answers "what do I do, how do

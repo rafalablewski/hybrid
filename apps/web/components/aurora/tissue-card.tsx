@@ -7,6 +7,7 @@ import {
   type AcwrBand, type RiskBand, type RiskDriverKind, type TissueRow,
   type MuscleGroup, type TissueRisk,
 } from "@hybrid/core";
+import { roleText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { useRtpProtocols, InjurySheet, RiskBody } from "./protocol";
 
@@ -174,7 +175,7 @@ export default function TissueCard({
             <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
               {driverKinds.map((k) => (
                 <div key={k}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C(riskVar(risk.band)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: roleText(riskRole(risk.band)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</div>
                   <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("chalk") }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</div>
                 </div>
               ))}

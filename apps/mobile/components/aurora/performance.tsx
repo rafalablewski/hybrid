@@ -12,7 +12,7 @@ import {
   readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
   readinessFacts, KEPT_ARC_ALPHA,
   localDayKey, INJURY_AREA_KEY,
-  type CapabilityMovement, type ReadinessFact, type RingSegment,
+  type CapabilityMovement, type ReadinessFact, type RingSegment, type SemanticRole,
 } from "@hybrid/core";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -36,6 +36,13 @@ type Scheme = ReturnType<typeof useTheme>["scheme"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
 const readyColor = (v: number, C: Palette) => roleColor(C, readinessRole(v));
 /**
+ * A semantic role as a colour to DRAW WITH — the accent-TEXT tone, not the raw
+ * fill. `roleColor` returns the fill, which is tuned to sit under something: on
+ * Kyoto Hour the `amber` fill is sand #d0cd94, and an 8px sand swatch on washi
+ * paper is invisible. `txt()` maps a fill to the AA-guarded tone for that theme.
+ */
+const rolePaint = (C: Palette, role: SemanticRole) => txt(C, roleColor(C, role));
+/**
  * One run of the readiness ring, painted. The role AND whether the run is held
  * back both come from the segment, so the ring, the proportional bar and the
  * ledger's swatches resolve the same colour from the same field — and neither
@@ -43,7 +50,7 @@ const readyColor = (v: number, C: Palette) => roleColor(C, readinessRole(v));
  * web's segPaint.
  */
 const segPaint = (C: Palette, s: Pick<RingSegment, "role" | "dim">) =>
-  s.dim ? withAlpha(roleColor(C, s.role), KEPT_ARC_ALPHA) : roleColor(C, s.role);
+  s.dim ? withAlpha(rolePaint(C, s.role), KEPT_ARC_ALPHA) : rolePaint(C, s.role);
 /** The plot's box — the SAME box web uses, because both clients now stroke the
  *  same paths from the same shared geometry. react-native-svg is already in the
  *  app (the injury mannequin), so mobile no longer has to approximate the chart
@@ -388,10 +395,10 @@ function Full({ top }: { top?: ReactNode }) {
                           <LedgerRow
                             key={i}
                             C={C}
-                            swatch={roleColor(C, c.role)}
+                            swatch={rolePaint(C, c.role)}
                             label={t(c.key).replace("{tissue}", c.muscle ? t(`w.home.today.muscle.${c.muscle}`) : "")}
                             value={`−${c.points}`}
-                            tint={txt(C, roleColor(C, c.role))}
+                            tint={rolePaint(C, c.role)}
                           />
                         ))}
                         <View style={{ height: 1, backgroundColor: C.line }} />

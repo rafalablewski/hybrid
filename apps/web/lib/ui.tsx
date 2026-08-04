@@ -39,6 +39,32 @@ export const LIME = "var(--color-lime)",
 export const roleHex = (role: SemanticRole): string => colors[ROLE_COLOR[role]];
 export const roleVar = (role: SemanticRole): string => `var(--color-${ROLE_COLOR[role]})`;
 
+/**
+ * A role as a colour to DRAW WITH — the accent-TEXT channel. This is the web
+ * twin of mobile's `txt()`, and web went without it for too long: `roleVar`
+ * returns the FILL, which is tuned to sit under something, and Kyoto Hour
+ * deliberately leaves `--color-amber` as the pale sand #d0cd94. Used as a text
+ * colour on washi paper that is 1.57:1 — a quarter of AA — so every "caution"
+ * figure on the light theme (the readiness ledger's wearable row, an elevated
+ * tissue's driver label, a compromised HPI score at 46px) was printed in
+ * something close to invisible ink. The `-text` variants exist for exactly this
+ * and are AA-guarded on BOTH grounds in palette.test.ts.
+ *
+ * `ash` has no `-text` variant and needs none: the muted token is already a
+ * text colour.
+ *
+ * Rule of thumb: painting a background, a bar or a body-map area → `roleVar`.
+ * Painting glyphs, a legend swatch or a ring's ticks → `roleText`.
+ */
+export const roleText = (role: SemanticRole): string => {
+  const accent = ROLE_COLOR[role];
+  return accent === "ash" ? "var(--color-ash)" : `var(--${accent}-text)`;
+};
+
+/** A colour held back to `pct`% opacity, composited on whatever is behind it. */
+export const tint = (color: string, pct: number): string =>
+  `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+
 // Fixed near-black for text/icons placed ON a bright accent fill (lime/amber/…).
 // Text/icons ON a bright accent fill. Theme-aware: dark on Aurora's bright lime,
 // light on Kyoto Hour's deep pine (so it always clears contrast on the fill).
