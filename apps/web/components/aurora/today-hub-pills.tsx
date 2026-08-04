@@ -6,11 +6,9 @@ import {
   HUB_DOCK_REST,
   HUB_PILL,
   TODAY_TABS,
-  hubCurve,
   hubDockState,
   hubDockVisible,
   hubMotion,
-  hubSplitDelay,
   type HubDockState,
   type TodayTabId,
 } from "@hybrid/core";
@@ -33,6 +31,15 @@ import { HubGlyph } from "./today-tabs";
 // (today-hub-dock.ts) so mobile detaches, hides and returns at identical
 // points; this file owns only the pixels. Mirrored on mobile
 // (aurora/today-hub-pills.tsx).
+//
+// SPLIT IS THE GAP. The row arrives with the pills touching and springs them
+// apart; leaving, it runs backwards and they merge. One animated number, shared
+// with mobile — where, on iOS, touching pills are not three shapes at all: the
+// native GlassEffectContainer FUSES adjacent Liquid Glass into one lozenge and
+// flows it apart, which is the transition this gap describes and CSS can only
+// state. The physics is identical either way: every transition below is a
+// sampled spring from the app's own tokens (motion.ts), the same response and
+// damping SwiftUI integrates natively.
 //
 // Under REDUCED MOTION the row renders DOCK instead: one capsule, glyph-only,
 // permanently on screen while detached. RETURN's whole value is the motion, and
@@ -141,7 +148,6 @@ export function TodayHubPills({
   const conceal = hubMotion("conceal", reduced);
   const exchange = hubMotion("exchange", reduced);
   const move = shown ? reveal : conceal;
-  const activeIndex = Math.max(0, TODAY_TABS.findIndex((tab) => tab.id === value));
 
   if (!mounted) return null;
 
@@ -170,11 +176,19 @@ export function TodayHubPills({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: reduced ? 0 : HUB_PILL.gap,
+          // SPLIT / MERGE — the pills arrive touching and spring apart. The gap
+          // rides the ARRIVAL spring in both directions (it is positional, and
+          // the row is still on screen while it closes), not the flat conceal
+          // curve that carries the lift and the fade.
+          gap: reduced || !shown ? 0 : HUB_PILL.gap,
           pointerEvents: shown ? "auto" : "none",
           opacity: shown ? 1 : 0,
           transform: shown ? "none" : `translateY(calc(-100% - ${HUB_PILL.top}px))`,
-          transition: `transform ${move.ms}ms ${hubCurve(move)}, opacity ${Math.round(move.ms * 0.8)}ms ease`,
+          transition: [
+            `transform ${move.ms}ms ${move.css}`,
+            `opacity ${Math.round(move.ms * 0.8)}ms ease`,
+            `gap ${reveal.ms}ms ${reveal.css}`,
+          ].join(", "),
           // DOCK (reduced motion): the three pills sit inside one capsule
           // instead of floating free, so the fallback is a shipped shape rather
           // than a degraded one.
@@ -191,23 +205,25 @@ export function TodayHubPills({
         {TODAY_TABS.map((tab, i) => {
           const on = tab.id === value;
           const label = t(tab.labelKey);
+          // MERGED, the row is ONE lozenge, not three capsules in a chain: the
+          // abutting corners square off as the gap shuts and round again as it
+          // opens. This is what iOS gets for free — adjacent Liquid Glass fuses
+          // inside a GlassEffectContainer — approximated on web with the one
+          // property CSS can animate for it. Reduce Motion keeps every pill
+          // round: there the DOCK capsule is the container, and squared pills
+          // inside a track would just look broken.
+          const round = `${HUB_PILL.height / 2}px`;
+          const merged = !reduced && !shown;
+          const corners = !merged
+            ? round
+            : i === 0
+              ? `${round} 0 0 ${round}`
+              : i === TODAY_TABS.length - 1
+                ? `0 ${round} ${round} 0`
+                : "0";
           return (
-            // Two layers, because the pill runs two independent motions: this
-            // wrapper carries the ARRIVAL (the staggered split, outward from
-            // the active pill), the button inside carries the EXCHANGE (one
-            // pill inflating to its word as another contracts). Sharing one
-            // element would make every selection inherit the split's delay.
-            <span
-            key={tab.id}
-            style={{
-              display: "inline-flex",
-              transformOrigin: "50% 0",
-              transform: shown || reduced ? "none" : "scale(.86)",
-              transitionDelay: shown && !reduced ? `${hubSplitDelay(i, activeIndex)}ms` : "0ms",
-              transition: `transform ${move.ms}ms ${hubCurve(move)}`,
-            }}
-            >
             <button
+              key={tab.id}
               type="button"
               className={reduced ? "pressable" : "pressable aurora-navglass"}
               onClick={() => onChange(tab.id)}
@@ -227,7 +243,7 @@ export function TodayHubPills({
                 // an exchange — one pill inflating to its word as the other
                 // contracts — which is the physics the lens used to carry.
                 padding: on ? `0 ${HUB_PILL.labelPadX}px` : 0,
-                borderRadius: 999,
+                borderRadius: corners,
                 border: reduced ? "1px solid transparent" : `1px solid ${on ? `color-mix(in srgb, ${C("lime")} 46%, transparent)` : C("line")}`,
                 // The glass class alone is a 6% film — right for one wide
                 // capsule over a dark ground, too thin for a 44px pill with
@@ -247,10 +263,12 @@ export function TodayHubPills({
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 transition: [
-                  `padding ${exchange.ms}ms ${hubCurve(exchange)}`,
+                  `padding ${exchange.ms}ms ${exchange.css}`,
                   `background ${exchange.ms}ms ease`,
                   `border-color ${exchange.ms}ms ease`,
                   `color ${exchange.ms}ms ease`,
+                  // The un-merging rides the ARRIVAL spring, with the gap.
+                  `border-radius ${reveal.ms}ms ${reveal.css}`,
                 ].join(", "),
               }}
             >
@@ -267,8 +285,8 @@ export function TodayHubPills({
                   fontSize: 14,
                   letterSpacing: "-.01em",
                   transition: [
-                    `max-width ${exchange.ms}ms ${hubCurve(exchange)}`,
-                    `margin-left ${exchange.ms}ms ${hubCurve(exchange)}`,
+                    `max-width ${exchange.ms}ms ${exchange.css}`,
+                    `margin-left ${exchange.ms}ms ${exchange.css}`,
                     `opacity ${Math.round(exchange.ms * 0.6)}ms ease`,
                   ].join(", "),
                 }}
@@ -276,7 +294,6 @@ export function TodayHubPills({
                 {label}
               </span>
             </button>
-            </span>
           );
         })}
       </div>

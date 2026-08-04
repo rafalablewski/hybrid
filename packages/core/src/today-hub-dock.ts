@@ -29,6 +29,15 @@
 //  both clients).
 // ============================================================
 
+import {
+  durations,
+  easings,
+  springDurationMs,
+  springToCss,
+  springs,
+  type Spring,
+} from "./motion";
+
 /**
  * Where the switcher's own bottom edge sits when a client cannot measure it.
  *
@@ -153,7 +162,16 @@ export const HUB_PILL = {
   siblingWidth: 44,
   /** The mark itself, at the switcher's size. */
   glyph: 21,
-  /** Between pills, once they are free of the track. */
+  /**
+   * Between pills, once they are free of the track — and the whole of SPLIT.
+   *
+   * The row arrives at gap ZERO: three capsules touching, which under Liquid
+   * Glass is not three shapes at all but ONE lozenge, because adjacent glass
+   * inside a `GlassEffectContainer` fuses. Springing the gap open from there is
+   * the split — the track becoming three pills, rendered in the material rather
+   * than mimed by three views scaling in — and running it backwards on the way
+   * out is MERGE. Both clients animate this one number.
+   */
   gap: 10,
   /** The active pill's horizontal padding, and the space between its glyph and
    *  its word. */
@@ -175,56 +193,117 @@ export const HUB_PILL = {
   inset: 16,
 } as const;
 
-/**
- * How long one pill waits before it lands, measured OUTWARD from the pill you
- * are in — so the row opens from where you ARE rather than from whichever end
- * happens to be first in the registry. On the dashboard (the leading tab) that
- * reads as the row unfolding from the anchored edge; from Feed it unfolds back
- * toward it.
- */
-export const hubSplitDelay = (index: number, activeIndex: number): number =>
-  Math.abs(index - activeIndex) * HUB_DOCK_STAGGER;
-
 /** The active pill's width for a measured label, so both clients round the
  *  same way. `labelWidth` is the text's own measured width. */
 export const hubActiveWidth = (labelWidth: number): number =>
   Math.round(HUB_PILL.labelPadX * 2 + HUB_PILL.glyph + HUB_PILL.labelGap + Math.max(0, labelWidth));
 
+/**
+ * The three pills' target widths for a selection: the one you are IN carries
+ * its word, the two siblings contract to their glyph.
+ *
+ * Shared because these numbers are consumed TWICE on iOS — once by the RN layer
+ * that draws the marks and once by the SwiftUI layer that draws the glass under
+ * them — and a dock whose glyphs and glass disagreed by a pixel would be worse
+ * than one with no glass at all. `labelWidths` is keyed by tab id; a tab whose
+ * label has not been measured yet stays at its glyph width, so the row is
+ * never laid out against a guess.
+ */
+export function hubPillWidths(
+  activeId: string,
+  labelWidths: Readonly<Record<string, number>>,
+  tabs: ReadonlyArray<{ id: string }>,
+): number[] {
+  return tabs.map((tab) => {
+    const measured = tab.id === activeId ? labelWidths[tab.id] : undefined;
+    return measured ? hubActiveWidth(measured) : HUB_PILL.siblingWidth;
+  });
+}
+
 // ── Motion ───────────────────────────────────────────────────────────────────
-// Five named transitions and no others, in the shape the retired rail used
-// (that part of it was right): everything arriving shares one curve, everything
-// leaving is faster and flat, because a control going away should not ask to be
-// watched.
+// The dock runs on the app's SPRINGS (motion.ts), not on beziers of its own.
+//
+// This is not tidiness. On iOS the dock's glass is REAL SwiftUI — a
+// GlassEffectContainer whose capsules morph natively — and SwiftUI animates in
+// exactly this vocabulary (`.spring(response:dampingFraction:)`). Handing the
+// native side the same two numbers the RN marks and the CSS pills integrate
+// means the glass and the glyph riding on it are solving the SAME differential
+// equation, frame for frame, instead of two hand-tuned curves that look alike
+// at the endpoints and drift in the middle. A bezier could not be handed over
+// at all: it carries no velocity, so it cannot be interrupted, and a dock you
+// can flick back at any moment is nothing but interruptions.
+//
+// Three transitions, and no more:
+//  - SPLIT/MERGE (reveal): the row arrives fused and springs apart; leaving, it
+//    runs backwards. `springs.sheet` — arrival energy, no wobble.
+//  - EXCHANGE: the pill you select inflates to its word as its sibling
+//    contracts. `springs.lens` — the same spring the in-flow switcher's own
+//    selection flies on, because it is the same gesture one layer up.
+//  - CONCEAL: the row leaving is opacity and a short lift. Nothing positional
+//    to interrupt, so a bezier is right, and it is FASTER than the arrival —
+//    a control going away should not ask to be watched.
+
+export const HUB_DOCK_SPRINGS = {
+  /** SPLIT and MERGE — the gap opening and closing as the row comes and goes. */
+  reveal: springs.sheet,
+  /** EXCHANGE — one pill inflating to its word as another contracts. */
+  exchange: springs.lens,
+} as const satisfies Record<string, Spring>;
+
+export type HubSpringKey = keyof typeof HUB_DOCK_SPRINGS;
+export type HubMotionKey = HubSpringKey | "conceal";
 
 export type Bezier = readonly [number, number, number, number];
-export interface HubMotion { ms: number; bezier: Bezier }
 
-export const HUB_DOCK_MOTION = {
-  /** the track dissolves and the three segments spring apart. */
-  split: { ms: 300, bezier: [0.34, 1.42, 0.64, 1] },
-  /** the pills re-merge into the in-flow control at the top of the page. */
-  merge: { ms: 240, bezier: [0.4, 0, 0.2, 1] },
-  /** RETURN's answer to an upward flick: the row drops back in. */
-  reveal: { ms: 220, bezier: [0.2, 0.8, 0.2, 1] },
-  /** RETURN's answer to reading: the row leaves, flat and quick. */
-  conceal: { ms: 180, bezier: [0.4, 0, 1, 1] },
-  /** selection — the new pill inflates to its word as the old one contracts. */
-  exchange: { ms: 300, bezier: [0.34, 1.42, 0.64, 1] },
-} as const satisfies Record<string, HubMotion>;
+/** One resolved transition, in every form the three renderers need. */
+export interface HubMotion {
+  /** Duration in ms — for a spring, its visual settle time. */
+  ms: number;
+  /** The spring to integrate, or null where the motion is opacity-only.
+   *  Mobile feeds it to `springToRN`, iOS to `Animation.spring`. */
+  spring: Spring | null;
+  /** The same motion as a CSS easing — a sampled `linear()` for a spring. */
+  css: string;
+  /** The flat curves as control points, because React Native's `Easing` takes
+   *  numbers where CSS takes a string. Null for springs (nothing to
+   *  approximate) and for a linear ramp. */
+  bezier: Bezier | null;
+}
 
-export type HubDockMotionKey = keyof typeof HUB_DOCK_MOTION;
+/** Read the control points back out of a CSS curve, so the ONE definition in
+ *  motion.ts serves both clients rather than each keeping its own copy. */
+function bezierOf(css: string): Bezier | null {
+  const m = /^cubic-bezier\(([^)]+)\)$/.exec(css);
+  if (!m) return null;
+  const n = m[1]!.split(",").map((v) => Number(v.trim()));
+  return n.length === 4 && n.every((v) => Number.isFinite(v)) ? (n as unknown as Bezier) : null;
+}
 
-/** Under reduced motion every transition above collapses to this. */
-export const HUB_DOCK_MOTION_REDUCED: HubMotion = { ms: 120, bezier: [0, 0, 1, 1] };
+/** Deriving a `linear()` easing walks the spring at 1ms steps; the dock asks
+ *  for the same three on every render, so they are solved once. */
+const MOTION_CACHE = new Map<string, HubMotion>();
 
-/** Between the two siblings as they leave the track, outward from the active
- *  pill — so the split reads as one object opening, not three appearing. */
-export const HUB_DOCK_STAGGER = 40;
+/** One named transition, honouring reduced motion. */
+export function hubMotion(key: HubMotionKey, reduced = false): HubMotion {
+  const cacheKey = `${key}:${reduced}`;
+  const hit = MOTION_CACHE.get(cacheKey);
+  if (hit) return hit;
 
-/** `cubic-bezier(…)` for a CSS transition. */
-export const hubCurve = (m: HubMotion): string => `cubic-bezier(${m.bezier.join(",")})`;
-
-/** One named motion's timing, honouring reduced motion. */
-export function hubMotion(key: HubDockMotionKey, reduced = false): HubMotion {
-  return reduced ? HUB_DOCK_MOTION_REDUCED : HUB_DOCK_MOTION[key];
+  // Reduce Motion is a SUBSTITUTION, not a deletion (motion.ts): every
+  // transition becomes the same flat cross-dissolve. Clients additionally
+  // render DOCK — one capsule, permanently on screen — because RETURN's whole
+  // value is the motion, and a control that vanishes without one has simply
+  // disappeared.
+  const resolved: HubMotion = reduced
+    ? { ms: durations.reduced, spring: null, css: "linear", bezier: null }
+    : key === "conceal"
+      ? { ms: durations.fast, spring: null, css: easings.exit, bezier: bezierOf(easings.exit) }
+      : {
+          ms: springDurationMs(HUB_DOCK_SPRINGS[key]),
+          spring: HUB_DOCK_SPRINGS[key],
+          css: springToCss(HUB_DOCK_SPRINGS[key]),
+          bezier: null,
+        };
+  MOTION_CACHE.set(cacheKey, resolved);
+  return resolved;
 }
