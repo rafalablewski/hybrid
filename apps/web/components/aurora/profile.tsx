@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -256,7 +257,7 @@ export default function AuroraProfile({
             <span style={{ display: "block", fontWeight: 800, fontSize: 16 }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</span>
             <span style={{ display: "block", color: C("ash"), fontSize: 13, marginTop: 2, lineHeight: 1.4 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</span>
           </span>
-          <span style={{ color: C("lime"), display: "grid", placeItems: "center" }}><ArrowGlyph size={16} /></span>
+          <span style={{ color: accentText("lime"), display: "grid", placeItems: "center" }}><ArrowGlyph size={16} /></span>
         </button>
       )}
 

@@ -200,6 +200,54 @@ export function readinessReasons(log: TrainingLog, bio?: Biometrics): string[] {
   return readinessWhy(log, bio).slice(1);
 }
 
+/** One measured input behind today's number, as an i18n key and its figure. */
+export interface ReadinessFact {
+  key: string;
+  /** the tissue named, for the tissue fact */
+  muscle: MuscleGroup | null;
+  /** the figure to substitute for `{n}` — signed on the wearable fact */
+  value: number;
+}
+
+/**
+ * THE PROVENANCE LINE — what the ledger can't show.
+ *
+ * The block used to close with three sentences that restated the ledger's three
+ * rows in words ("back fatigue (81/100) is the main drag today"), so the card
+ * said everything twice and the second telling was English-only. The rows won;
+ * these are the figures they DON'T carry, and only those:
+ *
+ *   - the limiting tissue's own fatigue. The row says the tissue term cost 30
+ *     points; it can't say the tissue reads 81/100, and 81 is the number that
+ *     decides whether tomorrow is a deload.
+ *   - the energy-system load behind the conditioning row, for the same reason.
+ *   - the wearable's signed nudge — which is the one input that can be INVISIBLE
+ *     in the ledger: a positive nudge takes no arc and no row (it shrinks every
+ *     other share instead), so without this fact a +4 day would show nothing at
+ *     all for a wearable that was read and did move the number.
+ *
+ * Keys, not prose, so this speaks Polish and German — which the sentences it
+ * replaces never did.
+ */
+export function readinessFacts(log: TrainingLog, bio?: Biometrics): ReadinessFact[] {
+  if (log.length === 0) return [];
+  const fatigue = computeFatigue(log);
+  const { bioAdj } = computeReadiness(fatigue, bio);
+  const out: ReadinessFact[] = [];
+
+  const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
+  if (top[1] > 0) out.push({ key: "w.home.readiness.factTissue", muscle: top[0], value: top[1] });
+
+  const endFatigue = enduranceFatigue(fatigue);
+  // The same threshold the prose used, so the line appears on exactly the days
+  // the sentence used to — a cost the ring draws is a cost this will name.
+  if (endFatigue >= CONDITIONING_VOICE) out.push({ key: "w.home.readiness.factLoad", muscle: null, value: endFatigue });
+
+  if (bio && bioAdj !== 0) out.push({ key: "w.home.readiness.factWearable", muscle: null, value: bioAdj });
+
+  return out;
+}
+
 /** What shape today's readiness read takes. */
 export type ReadinessVerdictKind = "empty" | "clear" | "limiter" | "engine" | "recovery";
 
@@ -224,8 +272,9 @@ export interface ReadinessVerdict {
    */
   deficit: number;
   /**
-   * How many lines actually sit behind the door. The door labels itself from
-   * this, so it can never offer three reasons and open onto two.
+   * How many rows actually sit behind the door — the length of the deficit's
+   * own `costs`. The door labels itself from this, so it can never offer three
+   * reasons and open onto two.
    */
   reasons: number;
   /**
@@ -263,7 +312,12 @@ export function readinessVerdict(log: TrainingLog, bio?: Biometrics): ReadinessV
   const fatigue = computeFatigue(log);
   const split = readinessDeficit(log, bio);
   const deficit = split.deficit;
-  const reasons = readinessReasons(log, bio).length;
+  // The count is the number of LEDGER ROWS behind the door, not the number of
+  // English sentences: the door opens onto the split now, and the prose it used
+  // to open onto is gone from both cards. The two happened to agree at three on
+  // a typical day, which is exactly how the door would have started promising
+  // three of something no longer there.
+  const reasons = split.costs.length;
   const doorKey = deficit > 0 ? "w.home.readiness.door" : "w.home.readiness.doorClear";
   const base = { muscle: null as MuscleGroup | null, deficit, reasons, doorKey };
 

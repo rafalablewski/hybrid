@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readinessReasons, readinessVerdict, readinessReasonsKey, readinessWhy, READINESS_VERDICT_KEY } from "./performance-state";
+import { readinessReasons, readinessVerdict, readinessReasonsKey, readinessWhy, readinessFacts, READINESS_VERDICT_KEY } from "./performance-state";
 import { readinessDeficit } from "./readiness-deficit";
 import type { Biometrics, TrainingLog } from "./types";
 
@@ -25,10 +25,64 @@ const TIRED_BIO: Biometrics = {
   sleep: { today: 5.4, baseline: 7.6, unit: "h", better: "high" },
 };
 
+/** A wearable reading ABOVE this athlete's own baseline — it gives points back
+ *  rather than taking them, which is the case with no ledger row of its own. */
+const FRESH_BIO: Biometrics = {
+  hrv: { today: 78, baseline: 60, unit: "ms", better: "high" },
+  restingHr: { today: 47, baseline: 52, unit: "bpm", better: "low" },
+  sleep: { today: 8.6, baseline: 7.6, unit: "h", better: "high" },
+};
+
 describe("readinessReasons — the lines behind the door", () => {
   it("is readinessWhy without its score line, which the ring already draws", () => {
     expect(readinessReasons(LOADED)).toEqual(readinessWhy(LOADED).slice(1));
     expect(readinessReasons(LOADED).join(" ")).not.toMatch(/^Readiness \d+\/100\./);
+  });
+});
+
+/**
+ * THE PROVENANCE LINE.
+ *
+ * The block used to close with three sentences restating the ledger's three
+ * rows — the same figures, in words, in English only. They were cut. These are
+ * what the rows genuinely can't carry, and the rule is that each fact is an
+ * i18n KEY plus a number, never a baked sentence.
+ */
+describe("readinessFacts — the inputs the ledger's rows can't show", () => {
+  it("says nothing at all on an empty log — there is no provenance to state", () => {
+    expect(readinessFacts([])).toEqual([]);
+  });
+
+  it("returns keys and figures, never prose", () => {
+    for (const f of readinessFacts(LOADED, TIRED_BIO)) {
+      expect(f.key).toMatch(/^w\.home\.readiness\.fact/);
+      expect(Number.isFinite(f.value)).toBe(true);
+    }
+  });
+
+  it("names the tissue the face names, with the fatigue the row can't show", () => {
+    const v = readinessVerdict(LOADED);
+    const tissue = readinessFacts(LOADED).find((f) => f.key === "w.home.readiness.factTissue");
+    expect(tissue?.muscle).toBe(v.muscle);
+    // The row says the tissue term cost N points; this says the tissue reads
+    // 0..100 — a different number, and the one that decides tomorrow.
+    expect(tissue!.value).toBeGreaterThan(0);
+    expect(tissue!.value).toBeLessThanOrEqual(100);
+  });
+
+  it("keeps a POSITIVE wearable visible — the one input with no row of its own", () => {
+    // A positive nudge takes no arc and no ledger row (it shrinks every other
+    // share instead), so without this fact a wearable that was read and did
+    // move the score would show nothing anywhere on the card.
+    const d = readinessDeficit(LOADED, FRESH_BIO);
+    expect(d.bioAdj).toBeGreaterThan(0);
+    expect(d.costs.some((c) => c.kind === "wearable")).toBe(false);
+    const fact = readinessFacts(LOADED, FRESH_BIO).find((f) => f.key === "w.home.readiness.factWearable");
+    expect(fact?.value).toBe(d.bioAdj);
+  });
+
+  it("stays silent about a wearable that isn't there", () => {
+    expect(readinessFacts(LOADED).some((f) => f.key === "w.home.readiness.factWearable")).toBe(false);
   });
 });
 
@@ -96,10 +150,15 @@ describe("readinessVerdict — one line, and what the door may promise", () => {
     }
   });
 
-  it("counts exactly what opening the door reveals", () => {
+  // The door opens onto the LEDGER now, not onto prose: the three sentences
+  // that used to sit behind it restated the three rows above them, in English
+  // only, and were cut. The count has to follow what is actually revealed —
+  // both numbers were 3 on a typical day, which is exactly how a door that
+  // promises three of something no longer there would have shipped unnoticed.
+  it("counts exactly what opening the door reveals — the ledger's rows", () => {
     for (const log of [LOADED, RESTED]) {
-      expect(readinessVerdict(log).reasons).toBe(readinessReasons(log).length);
-      expect(readinessVerdict(log, TIRED_BIO).reasons).toBe(readinessReasons(log, TIRED_BIO).length);
+      expect(readinessVerdict(log).reasons).toBe(readinessDeficit(log).costs.length);
+      expect(readinessVerdict(log, TIRED_BIO).reasons).toBe(readinessDeficit(log, TIRED_BIO).costs.length);
     }
   });
 
@@ -107,7 +166,7 @@ describe("readinessVerdict — one line, and what the door may promise", () => {
     const withBio = readinessVerdict(LOADED, TIRED_BIO);
     const without = readinessVerdict(LOADED);
     expect(withBio.reasons).toBeGreaterThan(without.reasons);
-    expect(readinessReasons(LOADED, TIRED_BIO).some((l) => l.includes("wearable"))).toBe(true);
+    expect(readinessDeficit(LOADED, TIRED_BIO).costs.some((c) => c.kind === "wearable")).toBe(true);
   });
 
   it("asks a different question when nothing is missing — a door never points at a zero", () => {

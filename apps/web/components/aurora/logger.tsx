@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fs, space,
   brand,
@@ -578,8 +579,8 @@ export default function AuroraLogger({
           <LiveStat label={t("w.train.logger.liveVolume")} value={fmtTonnage(live.volume, prefs.units)} />
           {live.prs + live.cardioPrs > 0 && (
             <div style={{ flex: 1, textAlign: "center", borderRadius: 16, padding: "10px 8px", background: `color-mix(in srgb, ${C("lime")} 16%, transparent)`, border: `1px solid ${C("lime")}` }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("lime") }}><AuroraIcon name="trophy" size={20} /> {live.prs + live.cardioPrs}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: C("lime") }}>{live.prs + live.cardioPrs === 1 ? t("w.train.logger.livePr") : t("w.train.logger.livePrs")}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: accentText("lime") }}><AuroraIcon name="trophy" size={20} /> {live.prs + live.cardioPrs}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: accentText("lime") }}>{live.prs + live.cardioPrs === 1 ? t("w.train.logger.livePr") : t("w.train.logger.livePrs")}</div>
             </div>
           )}
         </div>
@@ -664,7 +665,7 @@ export default function AuroraLogger({
       />
 
       {error && (
-        <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: C("red") }}>
+        <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginBottom: 10, color: accentText("red") }}>
           {error}
         </div>
       )}
@@ -699,7 +700,7 @@ export default function AuroraLogger({
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")} detents={["medium"]}>
         <button className="pressable"
           onClick={() => { setMenuOpen(false); setDiscardOpen(true); }}
-          style={{ display: "flex", alignItems: "center", width: "100%", padding: "14px 0", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: C("red"), background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
+          style={{ display: "flex", alignItems: "center", width: "100%", padding: "14px 0", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: accentText("red"), background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
         >
           {t("workout.discardSession")}
         </button>
@@ -721,7 +722,7 @@ export default function AuroraLogger({
           </button>
           <button className="pressable"
             onClick={discard}
-            style={{ padding: "13px 0", borderRadius: 999, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: C("red"), background: "transparent", border: `1px solid ${C("red")}`, cursor: "pointer" }}
+            style={{ padding: "13px 0", borderRadius: 999, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: accentText("red"), background: "transparent", border: `1px solid ${C("red")}`, cursor: "pointer" }}
           >
             {t("train.discard")}
           </button>
@@ -733,7 +734,7 @@ export default function AuroraLogger({
       {countdown != null && (
         <div style={{ position: "fixed", inset: 0, zIndex: 60, background: C("ink"), display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, letterSpacing: ".12em", color: C("ash"), marginBottom: 12 }}>{t("workout.getReady").toUpperCase()}</div>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: countdown > 0 ? 132 : 96, color: C("lime"), lineHeight: 1 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: countdown > 0 ? 132 : 96, color: accentText("lime"), lineHeight: 1 }}>
             {countdown > 0 ? countdown : t("workout.go")}
           </div>
         </div>
@@ -939,7 +940,7 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
               fontWeight: 800,
               fontSize: fs.note,
               background: `color-mix(in srgb, ${C("lime")} 16%, transparent)`,
-              color: C("lime"),
+              color: accentText("lime"),
               border: `1px solid color-mix(in srgb, ${C("lime")} 40%, transparent)`,
               borderRadius: 999,
               padding: "16px 20px",
@@ -950,7 +951,7 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
           </button>
           <FinishOrb glyph={<ArrowGlyph size={18} />} label={t("summary.orbAnalysis")} a11y={t("summary.seeAnalysis")} onClick={onDone} />
         </div>
-        {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("lime"), marginTop: 8 }}>{shareMsg}</div>}
+        {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: accentText("lime"), marginTop: 8 }}>{shareMsg}</div>}
 
         {/* Save as routine — expands from the ★ satellite. */}
         {routineOpen && (
@@ -1080,7 +1081,7 @@ function BodyweightNudge({ units }: { units: WeightUnit }) {
           {state === "saving" ? t("w.train.logger.bwNudgeSaving") : state === "saved" ? t("w.train.logger.bwNudgeSaved") : t("w.train.logger.bwNudgeSave")}
         </button>
       </div>
-      {state === "error" && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{t("w.train.logger.bwNudgeError")}</div>}
+      {state === "error" && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: accentText("red"), marginTop: 8 }}>{t("w.train.logger.bwNudgeError")}</div>}
     </div>
   );
 }

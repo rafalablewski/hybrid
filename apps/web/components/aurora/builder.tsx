@@ -156,9 +156,9 @@ function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]
   const { t: tr } = useLang();
   const sig = sessionSignal(blocks, { bodyweightKg });
   const segs = [
-    { pct: sig.split.strength, color: C("lime"), label: tr("w.train.signal.str"), textColor: "var(--lime-text)" },
-    { pct: sig.split.conditioning, color: C("violet"), label: tr("w.train.signal.cond"), textColor: "var(--violet-text)" },
-    { pct: sig.split.endurance, color: C("blue"), label: tr("w.train.signal.end"), textColor: "var(--blue-text)" },
+    { pct: sig.split.strength, fill: C("lime"), label: tr("w.train.signal.str"), textColor: "var(--lime-text)" },
+    { pct: sig.split.conditioning, fill: C("violet"), label: tr("w.train.signal.cond"), textColor: "var(--violet-text)" },
+    { pct: sig.split.endurance, fill: C("blue"), label: tr("w.train.signal.end"), textColor: "var(--blue-text)" },
   ];
   return (
     <div style={{ margin: "10px 2px 20px" }}>
@@ -170,7 +170,7 @@ function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]
         style={{ display: "flex", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 10 }}
       />
       <div style={{ display: "flex", height: 4, borderRadius: 999, overflow: "hidden", background: C("ink2"), marginTop: 12 }}>
-        {segs.map((s, i) => s.pct > 0 && <span key={i} style={{ width: `${s.pct}%`, background: s.color }} />)}
+        {segs.map((s, i) => s.pct > 0 && <span key={i} style={{ width: `${s.pct}%`, background: s.fill }} />)}
       </div>
       <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
         {segs.filter((s) => s.pct > 0).map((s, i) => (

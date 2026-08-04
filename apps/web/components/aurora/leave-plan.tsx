@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useState } from "react";
 import { fs, space } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
@@ -79,7 +80,7 @@ export default function LeavePlanSection({ forPlanId }: { forPlanId: string | nu
 
       {open && (
         <div style={card}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("red"), marginBottom: 10 }}>{t("w.train.plans.leavePlan")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: accentText("red"), marginBottom: 10 }}>{t("w.train.plans.leavePlan")}</div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, lineHeight: 1.6, color: C("chalk"), margin: 0 }}>{t("w.train.plans.leaveExplain")}</p>
           <div style={{ display: "grid", gap: space.sm, marginTop: 16 }} role="radiogroup" aria-label={t("w.train.plans.leavePlan")}>
             {option(!wipe, C("lime"), t("w.train.plans.leaveKeep"), t("w.train.plans.leaveKeepSub"), () => setWipe(false))}
@@ -91,7 +92,7 @@ export default function LeavePlanSection({ forPlanId }: { forPlanId: string | nu
               <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="DELETE" autoCapitalize="characters" style={{ fontFamily: "var(--font-mono)", fontSize: fs.note, width: "100%", maxWidth: 240, padding: "10px 12px", borderRadius: 12, background: C("ink"), color: C("chalk"), border: `1px solid ${armed ? C("red") : C("line")}`, outline: "none" }} />
             </div>
           )}
-          {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: C("red") }}>{t("w.train.plans.leaveError")}</div>}
+          {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, marginTop: 10, color: accentText("red") }}>{t("w.train.plans.leaveError")}</div>}
           <div style={{ display: "flex", gap: space.ms, marginTop: 16, alignItems: "center" }}>
             <button className="pressable" onClick={leave} disabled={!armed || busy} style={{ fontWeight: 800, fontSize: fs.note, color: "#fff", background: armed && !busy ? C("red") : `color-mix(in srgb, ${C("red")} 33%, transparent)`, border: "none", borderRadius: 999, padding: "12px 20px", cursor: armed && !busy ? "pointer" : "not-allowed" }}>
               {busy ? t("w.train.plans.leaving") : wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}

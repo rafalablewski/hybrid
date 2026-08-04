@@ -42,7 +42,7 @@ describe("resolvePremiumAccent", () => {
     expect(dark.fill).toBe(colors.amber);
     expect(dark.text).toBe("#d0cd94"); // dark accentText.amber
     const light = resolvePremiumAccent("amber", "light");
-    expect(light.text).toBe("#875427"); // light accentText.amber
+    expect(light.text).toBe("#885c00"); // light accentText.amber (deep ochre)
   });
   it("resolves a custom hex to fill=text=hex with an auto ink", () => {
     const r = resolvePremiumAccent("#d0cd94");

@@ -25,6 +25,8 @@ import {
   txt,
   roleHex,
   roleVar,
+  roleText,
+  tint,
 } from "@/lib/ui";
 import {
   computeEngineTrace,
@@ -56,6 +58,8 @@ import {
   riskRole,
   hpiRole,
   readinessRole,
+  readinessRingSegments,
+  KEPT_ARC_ALPHA,
   type Derivation,
   type MuscleGroup,
   type Personalization,
@@ -1106,10 +1110,17 @@ function DerivationSteps({ derivation }: { derivation: Derivation }) {
  * merely unlikely.
  */
 function DeficitBar({ deficit, whatIfActive }: { deficit: ReadinessDeficit; whatIfActive: boolean }) {
-  const runs = [
-    { label: "kept", points: deficit.kept, color: roleVar(readinessRole(deficit.kept)) },
-    ...deficit.costs.map((c) => ({ label: COST_LABEL[c.kind], points: c.points, color: roleVar(c.role) })),
-  ].filter((r) => r.points > 0);
+  // Built from the SAME segments the athlete's ring draws, including the paint:
+  // the kept run in its band's hue held back to KEPT_ARC_ALPHA, every cause at
+  // full strength. Deriving the colours here instead is how the athlete's card
+  // ended up drawing a −3 wearable in the same sand as seventeen ticks of kept
+  // score, and an operator surface that claims to mirror the card has to mirror
+  // the thing that was wrong with it too.
+  const runs = readinessRingSegments(deficit).map((s) => ({
+    label: s.kind === "kept" ? "kept" : COST_LABEL[s.kind],
+    points: s.points,
+    color: s.dim ? tint(roleText(s.role), Math.round(KEPT_ARC_ALPHA * 100)) : roleText(s.role),
+  }));
   const sums = deficit.kept + deficit.costs.reduce((a, c) => a + c.points, 0);
   return (
     <Card>

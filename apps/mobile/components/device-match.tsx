@@ -133,7 +133,7 @@ export function DeviceMatchSheet({
           {phase === "loading" && <ActivityIndicator color={C.lime} style={{ marginVertical: 30 }} />}
           {phase === "error" && (
             <Pressable onPress={() => void load()} style={{ marginVertical: 24 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber }}>{t("session.device.error")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("session.device.error")}</Text>
             </Pressable>
           )}
           {phase === "list" && ranked.length === 0 && (

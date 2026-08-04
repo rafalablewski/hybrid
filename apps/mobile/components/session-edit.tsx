@@ -200,7 +200,7 @@ export function SessionEditSheet({
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: C.ash, marginTop: 16 }}>{t("session.edit.matched")}</Text>
               )}
               {error && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.amber, marginTop: 16 }}>{t("session.edit.error")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: 16 }}>{t("session.edit.error")}</Text>
               )}
             </ScrollView>
 

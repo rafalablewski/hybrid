@@ -269,7 +269,10 @@ html {
   --lime-text: #3c4f43;
   --blue-text: #4f5c3a;
   --violet-text: #4c5a78;
-  --amber-text: #875427;
+  /* Deep OCHRE, not the old brown #875427: that sat ΔE 13 from the vermilion
+     below it — AA-clean against the paper and still the same warm mark at an
+     8px legend swatch. MIRROR of THEMES.light.accentText.amber. */
+  --amber-text: #885c00;
   --red-text: #a3442f;
   --glass-glow-rgb: 68, 88, 76; /* pine — matches the primary accent fill */
   /* Soft warm card shadow — sumi-wash, not black (see :root --shadow-card). */

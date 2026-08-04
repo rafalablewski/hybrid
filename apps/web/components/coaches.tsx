@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import type {
   CoachCard,
@@ -67,13 +68,13 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                 <div style={{ marginTop: 4 }}><Stars rating={data.rating} /></div>
               </div>
             </div>
-            {c.headline && <div style={{ color: C("lime"), fontWeight: 600, marginTop: 12 }}>{c.headline}</div>}
+            {c.headline && <div style={{ color: accentText("lime"), fontWeight: 600, marginTop: 12 }}>{c.headline}</div>}
             {c.bio && <p style={{ color: C("chalk"), fontSize: 14, lineHeight: 1.6, marginTop: 8 }}>{c.bio}</p>}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
               {c.specialties?.map((s: string) => <span key={s} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 999, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}` }}>{s}</span>)}
             </div>
             {c.priceNote && <div style={{ color: C("ash"), fontSize: 13, marginTop: 10 }}>💳 {c.priceNote}</div>}
-            {data.isMyCoach && <div style={{ marginTop: 10, color: C("lime"), fontSize: 13 }}>✓ {t("w.coaches.isYourCoach")}</div>}
+            {data.isMyCoach && <div style={{ marginTop: 10, color: accentText("lime"), fontSize: 13 }}>✓ {t("w.coaches.isYourCoach")}</div>}
 
             {/* Programs */}
             <div style={{ marginTop: 22, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>{t("w.coaches.onlinePrograms")}</div>
@@ -95,7 +96,7 @@ function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void 
                 {p.summary && <p style={{ color: C("chalk"), fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>{p.summary}</p>}
                 {Array.isArray(p.preview) && p.preview.length > 0 && (
                   <>
-                    <button className="pressable" onClick={() => setPreview(preview === p.id ? null : p.id)} style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", color: C("lime"), fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 700, padding: 0 }}>
+                    <button className="pressable" onClick={() => setPreview(preview === p.id ? null : p.id)} style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", color: accentText("lime"), fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 700, padding: 0 }}>
                       {preview === p.id ? `${t("w.coaches.hidePreview")} ▲` : `${t("w.coaches.previewPlan")} ▼`}
                     </button>
                     {preview === p.id && (

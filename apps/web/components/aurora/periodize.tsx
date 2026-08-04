@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { fs, space, currentPhase, type Macrocycle, type LoggedSession, type Biometrics } from "@hybrid/core";
 import ReconciledWeek from "../reconciled-week";
 import LeavePlanSection from "./leave-plan";
@@ -28,7 +29,7 @@ export default function AuroraPeriodize({
       <div style={{ ...card, textAlign: "center", padding: 60, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
         <div style={{ fontWeight: 800, fontSize: fs.heading }}>{t("w.train.periodize.noActivePlan")}</div>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, marginTop: 10, maxWidth: 460, marginInline: "auto", lineHeight: 1.6, color: C("ash") }}>
-          {t("w.train.periodize.enrollBefore")} <b style={{ color: C("lime") }}>{t("w.train.periodize.plansTab")}</b> {t("w.train.periodize.enrollAfter")}
+          {t("w.train.periodize.enrollBefore")} <b style={{ color: accentText("lime") }}>{t("w.train.periodize.plansTab")}</b> {t("w.train.periodize.enrollAfter")}
         </p>
       </div>
     );
@@ -42,7 +43,7 @@ export default function AuroraPeriodize({
         <ReconciledWeek macro={macro} currentWeek={week} sessions={sessions} bio={bio ?? undefined} style={{ marginBottom: 16 }} />
       )}
       <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: accentText("lime") }}>
           {macro.goalOrSport}{macro.model ? ` – ${macro.model}` : ` – ${t("w.train.periodize.enrolledLabel")}`}
         </div>
         <div style={{ fontWeight: 800, fontSize: 22, margin: "6px 0 12px" }}>

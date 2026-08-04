@@ -38,3 +38,97 @@ export const WCAG = { AA: 4.5, AA_LARGE: 3, AAA: 7 } as const;
 export function meetsContrast(a: string, b: string, level: number = WCAG.AA): boolean {
   return contrastRatio(a, b) >= level;
 }
+
+/* ── PERCEPTUAL DISTANCE ───────────────────────────────────────────────────
+ *
+ * Contrast answers "can this be read against that background". It cannot answer
+ * "can these two be told apart from each other", and a legend needs the second:
+ * every swatch in it can clear AA against the card and still be useless if two
+ * of them are the same warm mark at 8px.
+ *
+ * That gap is not hypothetical — it shipped. In Kyoto Hour the readiness
+ * ledger's tissue and wearable rows resolved to #a3442f and #875427, a vermilion
+ * and a brown ΔE 13 apart, both comfortably AA. Nothing tested it, because
+ * nothing measured colours against EACH OTHER.
+ */
+
+/** CIE L*a*b* (D65) for an sRGB hex — the space perceptual distance is measured in. */
+export function labOf(hex: string): [number, number, number] {
+  const [r, g, b] = parseHex(hex).map((v) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  // sRGB → XYZ (D65), then normalized by the D65 white point.
+  const x = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047;
+  const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883;
+  const f = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  const [fx, fy, fz] = [f(x), f(y), f(z)];
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+
+/**
+ * CIEDE2000 colour difference. Roughly: under 2 is a match, ~10 is "clearly a
+ * different colour", and a set of legend swatches wants to sit well above that
+ * so the pairing survives small marks, cheap panels and colour-vision variance.
+ */
+export function deltaE2000(a: string, b: string): number {
+  const [L1, a1, b1] = labOf(a);
+  const [L2, a2, b2] = labOf(b);
+  const C1 = Math.hypot(a1, b1);
+  const C2 = Math.hypot(a2, b2);
+  const cBar = (C1 + C2) / 2;
+  const g = 0.5 * (1 - Math.sqrt(cBar ** 7 / (cBar ** 7 + 25 ** 7)));
+  const ap1 = (1 + g) * a1;
+  const ap2 = (1 + g) * a2;
+  const Cp1 = Math.hypot(ap1, b1);
+  const Cp2 = Math.hypot(ap2, b2);
+  const hue = (x: number, y: number) => {
+    if (x === 0 && y === 0) return 0;
+    const d = (Math.atan2(y, x) * 180) / Math.PI;
+    return d < 0 ? d + 360 : d;
+  };
+  const hp1 = hue(ap1, b1);
+  const hp2 = hue(ap2, b2);
+  const dL = L2 - L1;
+  const dC = Cp2 - Cp1;
+  let dh = 0;
+  if (Cp1 * Cp2 !== 0) {
+    dh = hp2 - hp1;
+    if (dh > 180) dh -= 360;
+    else if (dh < -180) dh += 360;
+  }
+  const dH = 2 * Math.sqrt(Cp1 * Cp2) * Math.sin((dh * Math.PI) / 360);
+  const lBar = (L1 + L2) / 2;
+  const cpBar = (Cp1 + Cp2) / 2;
+  let hBar: number;
+  if (Cp1 * Cp2 === 0) hBar = hp1 + hp2;
+  else {
+    hBar = (hp1 + hp2) / 2;
+    if (Math.abs(hp1 - hp2) > 180) hBar += hp1 + hp2 < 360 ? 180 : -180;
+  }
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const T =
+    1 - 0.17 * Math.cos(rad(hBar - 30)) + 0.24 * Math.cos(rad(2 * hBar))
+    + 0.32 * Math.cos(rad(3 * hBar + 6)) - 0.2 * Math.cos(rad(4 * hBar - 63));
+  const Sl = 1 + (0.015 * (lBar - 50) ** 2) / Math.sqrt(20 + (lBar - 50) ** 2);
+  const Sc = 1 + 0.045 * cpBar;
+  const Sh = 1 + 0.015 * cpBar * T;
+  const Rt =
+    -2 * Math.sqrt(cpBar ** 7 / (cpBar ** 7 + 25 ** 7))
+    * Math.sin(rad(60 * Math.exp(-(((hBar - 275) / 25) ** 2))));
+  return Math.sqrt((dL / Sl) ** 2 + (dC / Sc) ** 2 + (dH / Sh) ** 2 + Rt * (dC / Sc) * (dH / Sh));
+}
+
+/**
+ * The floor for two colours that carry DIFFERENT MEANINGS side by side.
+ *
+ * It applies to roles drawn at the SAME strength. Where a pair is separated by
+ * weight instead — the readiness ring's kept arc is its band's hue held back to
+ * 30% while every cause draws at full — the hue may repeat by design, and does.
+ *
+ * 18 is chosen against what already reads correctly rather than to be passable:
+ * the dark theme's three cost roles sit at 28.4 / 29.0 / 41.1, so the bar leaves
+ * room for a future retune while staying far above the 13.2 that shipped.
+ */
+export const DISTINCT_ROLE_DE = 18;

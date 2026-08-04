@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -280,7 +281,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
             {session && (
               <div style={{ display: "flex", alignItems: "center", gap: 12, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, marginBottom: 16 }}>
                 <button className="pressable" onClick={() => go("profile")} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
-                  <span style={{ width: 42, height: 42, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 13%, transparent)", border: `1px solid ${C("lime")}`, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.note, color: C("lime") }}>{initials}</span>
+                  <span style={{ width: 42, height: 42, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 13%, transparent)", border: `1px solid ${C("lime")}`, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.note, color: accentText("lime") }}>{initials}</span>
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session.name || t("nav.you")}</span>
                     <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{[session.role.toUpperCase(), session.entitlement === "paid" ? "FULL" : "FREE"].join(" – ")}</span>
@@ -448,7 +449,7 @@ function SessionAccessory({ draft, nowTs, reduced, onResume, resumeLabel }: { dr
       <span aria-hidden style={{ width: 7, height: 7, borderRadius: 999, flexShrink: 0, background: C("lime"), boxShadow: `0 0 8px ${C("lime")}` }} />
       <span style={{ minWidth: 0, flex: 1, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.note, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{draft.title}</span>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{formatSessionElapsed(draft.startedAt, nowTs)}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("lime"), flexShrink: 0 }}>{resumeLabel}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: accentText("lime"), flexShrink: 0 }}>{resumeLabel}</span>
     </button>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRevalidate } from "@/lib/use-invalidate";
 import {
@@ -443,7 +444,7 @@ export default function AuroraCheckins({ embedded = false, startStep = 0, sessio
               </span>
             </button>
 
-            {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 8 }}>{error}</div>}
+            {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: accentText("red"), marginTop: 8 }}>{error}</div>}
             {/* THE SUBMIT IS GONE WHEN THERE IS NOTHING TO SUBMIT. Leaving it
                 under a stored check-in was the whole confusion: a button that
                 says "Submit check-in" over answers that were already submitted

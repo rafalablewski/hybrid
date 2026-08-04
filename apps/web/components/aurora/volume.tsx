@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { createElement, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   fs, space, volumeStatus, weeklyMuscleSets, athleteLandmarks,
@@ -13,7 +14,7 @@ import {
   provenanceLadder, rungMeta, factorAffectsKey,
   type LoggedSession, type MuscleVolumeStatus, type VolumeZone, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
-  type LandmarkFactor, type LandmarkSource, type WeightUnit,
+  type LandmarkFactor, type LandmarkSource, type WeightUnit, type AccentKey,
 } from "@hybrid/core";
 import { setLoggerPref } from "@/lib/logger-prefs";
 import { useVolumeModel } from "@/lib/use-volume-model";
@@ -29,7 +30,7 @@ const pct = (v: number) => `${v * 100}%`;
 const BAND_LABEL: Record<VolumeBandKey, string> = { mev: "MEV", mav: "MAV", mrv: "MRV" };
 const GLOSS_KEY: Record<VolumeBandKey, string> = { mev: "w.analyze.vol.glossMev", mav: "w.analyze.vol.glossMav", mrv: "w.analyze.vol.glossMrv" };
 
-const ZONE_TOKEN: Record<VolumeZone, string> = { overreaching: "red", under: "amber", peak: "blue", productive: "lime" };
+const ZONE_TOKEN: Record<VolumeZone, AccentKey> = { overreaching: "red", under: "amber", peak: "blue", productive: "lime" };
 
 const card: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 };
 const mono = (size: number): CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: size });
@@ -319,7 +320,7 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
       <section style={{ ...card, paddingBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={eyebrow}>{t("w.analyze.vol.range7d")}</span>
-          {customized && <span style={{ ...eyebrow, color: C("lime") }}>{t("w.analyze.vol.customised")}</span>}
+          {customized && <span style={{ ...eyebrow, color: accentText("lime") }}>{t("w.analyze.vol.customised")}</span>}
         </div>
 
         {summary.empty ? (
@@ -355,7 +356,7 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
                 <>
                   {ml(pickedRow.muscle)}
                   <span style={{ color: C("ash") }}>{" — "}</span>
-                  <span style={{ ...mono(fs.bodyLg), color: C(ZONE_TOKEN[pickedRow.zone]) }}>{setsLabel(pickedRow.sets)} {t("w.analyze.vol.sets")}</span>
+                  <span style={{ ...mono(fs.bodyLg), color: accentText(ZONE_TOKEN[pickedRow.zone]) }}>{setsLabel(pickedRow.sets)} {t("w.analyze.vol.sets")}</span>
                   <span style={{ color: C("ash") }}>, {t(ZONE_KEY[pickedRow.zone])}</span>
                 </>
               ) : (
@@ -494,7 +495,7 @@ function SourceDoor({ flat, onOpen }: { flat: boolean; onOpen: () => void }) {
 }
 
 /** One column of the hero's week-shape — the same normalised rail, stood up. */
-function ShapeColumn({ s, token, dim }: { s: MuscleVolumeStatus; token: string; dim: boolean }) {
+function ShapeColumn({ s, token, dim }: { s: MuscleVolumeStatus; token: AccentKey; dim: boolean }) {
   const g = railGeometry(s);
   return (
     <div style={{ position: "relative", width: "100%", height: 66, borderRadius: 7, background: C("ink"), overflow: "hidden", opacity: dim ? 0.35 : 1, transition: "opacity .18s ease" }}>
@@ -511,7 +512,7 @@ function ShapeColumn({ s, token, dim }: { s: MuscleVolumeStatus; token: string; 
 /** "Ease off" / "Add volume" — the prescription as chips, with the reason said
  *  ONCE underneath instead of repeated verbatim on every muscle. */
 function Prescription({ flat, title, why, items, token, ml, unit }: {
-  flat: boolean; title: string; why: string; items: MuscleVolumeStatus[]; token: string; ml: (m: string) => string; unit: string;
+  flat: boolean; title: string; why: string; items: MuscleVolumeStatus[]; token: AccentKey; ml: (m: string) => string; unit: string;
 }) {
   if (!items.length) return null;
   return (
@@ -524,7 +525,7 @@ function Prescription({ flat, title, why, items, token, ml, unit }: {
         {items.map((s) => (
           <span key={s.muscle} style={{ display: "inline-flex", alignItems: "center", gap: space.sm, padding: "8px 16px", borderRadius: 999, border: `1px solid ${mix(token, 35)}`, background: mix(token, 10) }}>
             <span style={{ fontSize: fs.bodyLg, fontWeight: 600, color: C("chalk") }}>{ml(s.muscle)}</span>
-            <span style={{ ...mono(fs.bodyLg), fontWeight: 700, color: C(token) }}>{deltaLabel(s)}</span>
+            <span style={{ ...mono(fs.bodyLg), fontWeight: 700, color: accentText(token) }}>{deltaLabel(s)}</span>
           </span>
         ))}
       </div>
@@ -538,7 +539,7 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
   return (
     <button className="pressable"
       onClick={onClick} role="switch" aria-checked={on}
-      style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 12px", borderRadius: 999, cursor: "pointer", color: on ? C("lime") : C("ash"), background: on ? mix("lime", 12) : "transparent", border: `1px solid ${on ? C("lime") : C("line")}` }}
+      style={{ ...mono(fs.caption), whiteSpace: "nowrap", padding: "8px 12px", borderRadius: 999, cursor: "pointer", color: accentText(on ? "lime" : "ash"), background: on ? mix("lime", 12) : "transparent", border: `1px solid ${on ? C("lime") : C("line")}` }}
     >
       {label}
     </button>
@@ -571,7 +572,7 @@ function BlockCard({ flat, lead, block, ramp, on }: {
           <p style={{ marginTop: 12, marginBottom: 0, fontSize: fs.bodyLg, lineHeight: 1.45, color: C("chalk") }}>
             {t("w.analyze.vol.weekPre")}{block.week}{t("w.analyze.vol.weekOf")}{block.weeks}
             <span style={{ color: C("ash") }}>{" — "}</span>
-            <span style={{ color: current?.kind === "deload" ? C("blue") : C("lime") }}>{current ? t(blockKindKey(current.kind)) : ""}</span>
+            <span style={{ color: accentText(current?.kind === "deload" ? "blue" : "lime") }}>{current ? t(blockKindKey(current.kind)) : ""}</span>
           </p>
 
           <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginTop: 16, height: 72, maxWidth: 420 }}>
@@ -701,7 +702,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
               <span style={{ flex: 1, minWidth: 0, fontSize: fs.body, fontWeight: r.active ? 600 : 400, color: r.lit ? C("chalk") : C("ash"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {t(r.labelKey)}
               </span>
-              <span style={{ ...mono(fs.caption), color: r.lit ? C("lime") : C("ash") }}>{meta}</span>
+              <span style={{ ...mono(fs.caption), color: accentText(r.lit ? "lime" : "ash") }}>{meta}</span>
             </button>
           );
         })}
@@ -732,7 +733,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
             >
               <span style={{ ...mono(fs.nano), textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.analyze.vol.nextUp")}</span>
               <span style={{ flex: 1, fontSize: fs.bodyLg, fontWeight: 600, color: C("chalk") }}>{t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</span>
-              <span aria-hidden style={{ ...mono(fs.body), color: C("lime") }}>→</span>
+              <span aria-hidden style={{ ...mono(fs.body), color: accentText("lime") }}>→</span>
             </button>
             <p style={{ ...prose, marginTop: 6 }}>{t(done.next.unlocksKey)}</p>
           </>
@@ -766,7 +767,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, flexWrap: "wrap" }}>
               <h3 style={subhead}>{t("w.analyze.vol.levelTitle")}</h3>
               {level.basis !== "none" && (
-                <span style={{ ...mono(fs.caption), color: C("lime") }}>{t(LEVEL_KEY[level.level])}</span>
+                <span style={{ ...mono(fs.caption), color: accentText("lime") }}>{t(LEVEL_KEY[level.level])}</span>
               )}
             </div>
             {level.basis === "none" ? (
@@ -796,7 +797,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
                 </p>
                 {experience.disagrees && (
                   <div style={{ display: "flex", alignItems: "center", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>
-                    <p style={{ flex: 1, minWidth: 200, margin: 0, fontSize: fs.body, lineHeight: 1.5, color: C("amber") }}>{t("w.analyze.vol.levelDisagrees")}</p>
+                    <p style={{ flex: 1, minWidth: 200, margin: 0, fontSize: fs.body, lineHeight: 1.5, color: accentText("amber") }}>{t("w.analyze.vol.levelDisagrees")}</p>
                     {onOpenModel && <Toggle on={false} label={t("w.analyze.model.open")} onClick={onOpenModel} />}
                   </div>
                 )}
@@ -823,7 +824,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
                     <div key={f.key}>
                       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm }}>
                         <span style={{ fontSize: fs.body, color: C("chalk") }}>{t(factorLabelKey(f.key))}</span>
-                        <span style={{ ...mono(fs.body), fontWeight: 700, color: f.multiplier >= 1 ? C("lime") : C("amber"), minWidth: 44, textAlign: "right" }}>{factorPercent(f.multiplier)}</span>
+                        <span style={{ ...mono(fs.body), fontWeight: 700, color: accentText(f.multiplier >= 1 ? "lime" : "amber"), minWidth: 44, textAlign: "right" }}>{factorPercent(f.multiplier)}</span>
                       </div>
                       <div style={{ ...mono(fs.caption), color: C("ash"), marginTop: 2 }}>{meta}</div>
                     </div>
@@ -892,7 +893,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
 /** One muscle: name, count, the normalised rail — and, on tap, the landmarks
  *  behind it (read-only, or as fields while editing). */
 function MuscleRow({ s, label, token, target, history, expanded, zone, showGloss, onToggle, onZone }: {
-  s: MuscleVolumeStatus; label: string; token: string; expanded: boolean;
+  s: MuscleVolumeStatus; label: string; token: AccentKey; expanded: boolean;
   /** This week's block target, when volume is being periodized. */
   target: BlockMuscleTarget | null;
   /** Weekly hard sets for THIS muscle over the last eight weeks, oldest first. */
@@ -928,7 +929,7 @@ function MuscleRow({ s, label, token, target, history, expanded, zone, showGloss
       >
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 8 }}>
           <span style={{ flex: 1, fontSize: fs.note, fontWeight: 600 }}>{label}</span>
-          <span style={{ ...mono(fs.note), fontWeight: 700, color: C(token) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</span>
+          <span style={{ ...mono(fs.note), fontWeight: 700, color: accentText(token) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</span>
           <span style={{ ...mono(fs.caption), color: C("ash") }}>{target ? `${t("w.analyze.vol.target")} ${target.target}` : t(ZONE_KEY[s.zone])}</span>
         </div>
         <div style={{ position: "relative", height: 11, borderRadius: 6, background: C("ink"), overflow: "hidden" }}>
@@ -970,7 +971,7 @@ function MuscleRow({ s, label, token, target, history, expanded, zone, showGloss
             <button className="pressable"
               key={k} onClick={() => onZone(k)} aria-pressed={on}
               aria-label={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
-              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", ...mono(9), letterSpacing: ".08em", color: on ? C("lime") : C("ash"), opacity: zone && !on ? 0.4 : 1, transition: "opacity .2s ease, color .2s ease" }}
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", ...mono(9), letterSpacing: ".08em", color: accentText(on ? "lime" : "ash"), opacity: zone && !on ? 0.4 : 1, transition: "opacity .2s ease, color .2s ease" }}
             >
               {BAND_LABEL[k]} <span style={{ fontSize: 11, color: C("chalk") }}>{sc[k]}</span>
             </button>
@@ -992,7 +993,7 @@ function MuscleRow({ s, label, token, target, history, expanded, zone, showGloss
         <div style={{ marginTop: 12 }}>
           <div style={{ ...mono(fs.caption), color: C("ash") }}>MV {s.landmark.mv}</div>
           {target && verdict && (
-            <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: verdict === "on" ? C("lime") : C("ash") }}>
+            <p style={{ marginTop: 8, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: accentText(verdict === "on" ? "lime" : "ash") }}>
               {t("w.analyze.vol.weekTarget")} {target.target} {t("w.analyze.vol.sets")}
               <span style={{ color: C("ash") }}>{" — "}</span>
               {t(TARGET_VERDICT_KEY[verdict])}

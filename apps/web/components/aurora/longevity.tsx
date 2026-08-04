@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import { fs, space, longevityReport } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
@@ -52,7 +53,7 @@ export default function AuroraLongevity() {
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.5, color: C("ash"), marginTop: 8 }}>{t("w.recovery.longevity.intro")}</p>
 
       <div style={{ ...card, marginTop: 16 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("lime") }}>{t("w.recovery.longevity.yourMarkers")}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: accentText("lime") }}>{t("w.recovery.longevity.yourMarkers")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2 }}>{t("w.recovery.longevity.prefillNote")}</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))", gap: space.ms, marginTop: 12 }}>
           {fields.map(([k, label, unit]) => (
@@ -85,7 +86,7 @@ export default function AuroraLongevity() {
               </div>
             ))}
           </div>
-          {report.flags.length > 0 && <div style={{ marginTop: 8 }}>{report.flags.map((fl) => <div key={fl} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("amber") }}>⚠ {fl}</div>)}</div>}
+          {report.flags.length > 0 && <div style={{ marginTop: 8 }}>{report.flags.map((fl) => <div key={fl} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: accentText("amber") }}>⚠ {fl}</div>)}</div>}
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 10 }}>{t("w.recovery.longevity.model")} {report.modelVersion}</div>
         </div>
       )}

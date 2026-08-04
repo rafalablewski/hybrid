@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useState } from "react";
 import { fs, space,
   ONBOARDING_GOAL_GROUPS,
@@ -81,7 +82,7 @@ export default function AuroraOnboarding({ onEnrolled }: { onEnrolled: () => voi
             ) : <div style={{ color: C("ash"), fontSize: fs.bodyLg }}>{t("w.account.onboarding.no-plan")}</div>}
           </Step>
         )}
-        {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("red"), marginTop: 12 }}>{error}</div>}
+        {error && <div role="alert" style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: accentText("red"), marginTop: 12 }}>{error}</div>}
       </div>
 
       <div style={{ display: "flex", gap: space.md, alignItems: "center", marginTop: 24 }}>

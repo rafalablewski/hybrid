@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type MoodDef } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
@@ -177,8 +178,8 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
           {list.map((s) => {
             const prCount = prCounts.get(s.id) ?? 0;
             const actions: SwipeAction[] = [
-              { key: "restore", label: t("w.analyze.hist.restore"), color: C("lime"), onPress: () => setArchivedFlag(s.id, false) },
-              { key: "delete", label: t("w.analyze.hist.delete"), color: C("red"), onPress: () => remove(s.id, s.title) },
+              { key: "restore", label: t("w.analyze.hist.restore"), color: accentText("lime"), onPress: () => setArchivedFlag(s.id, false) },
+              { key: "delete", label: t("w.analyze.hist.delete"), color: accentText("red"), onPress: () => remove(s.id, s.title) },
             ];
             return (
               <SwipeCard key={s.id} actions={actions} busy={busy === s.id}>

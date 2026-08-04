@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import { fs, space,
   buildTeamTree,
@@ -260,7 +261,7 @@ export default function AuroraOrg() {
                     </select>
                     <button className="pressable" onClick={invite} style={btn("lime")}>{t("w.teams.org.addMember")}</button>
                   </div>
-                  {inviteErr && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: C("red") }}>{inviteErr}</div>}
+                  {inviteErr && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 6, color: accentText("red") }}>{inviteErr}</div>}
                 </div>
               )}
               {canManage && detail.invites.length > 0 && (
@@ -269,7 +270,7 @@ export default function AuroraOrg() {
                   {detail.invites.map((iv) => (
                     <div key={iv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{iv.email} – {iv.role.toLowerCase()}</span>
-                      <span role="button" tabIndex={0} aria-label={`${t("w.teams.org.revoke")} ${iv.email}`} style={{ cursor: "pointer", color: C("red"), fontSize: fs.caption, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); revokeInvite(iv.id); } }}>{t("w.teams.org.revoke")}</span>
+                      <span role="button" tabIndex={0} aria-label={`${t("w.teams.org.revoke")} ${iv.email}`} style={{ cursor: "pointer", color: accentText("red"), fontSize: fs.caption, fontFamily: "var(--font-mono)" }} onClick={() => revokeInvite(iv.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); revokeInvite(iv.id); } }}>{t("w.teams.org.revoke")}</span>
                     </div>
                   ))}
                 </div>

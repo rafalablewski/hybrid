@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
 import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, ScreenHead, jget, jsend } from "./social-ui";
@@ -108,7 +109,7 @@ export default function SocialFeed() {
               </button>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
-                  {item.kind === "pr" && <span style={{ color: C("amber") }}>🏆</span>}
+                  {item.kind === "pr" && <span style={{ color: accentText("amber") }}>🏆</span>}
                   {item.title}
                 </div>
                 <div style={{ color: C("ash"), fontSize: 12, fontFamily: "var(--font-mono)" }}>{item.when}</div>

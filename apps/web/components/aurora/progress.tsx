@@ -1,5 +1,6 @@
 "use client";
 
+import { accentText } from "@/lib/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fs, space } from "@hybrid/core";
 
@@ -94,7 +95,7 @@ export default function AuroraProgress() {
               <img src={p.url} alt={p.date} style={{ width: "100%", aspectRatio: "3/4", objectFit: "cover", display: "block" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px" }}>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption }}>{p.date}</span>
-                <button className="pressable" onClick={() => remove(p.path)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("red"), background: "none", border: "none", cursor: "pointer" }}>{t("w.recovery.progress.delete")}</button>
+                <button className="pressable" onClick={() => remove(p.path)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: accentText("red"), background: "none", border: "none", cursor: "pointer" }}>{t("w.recovery.progress.delete")}</button>
               </div>
             </div>
           ))}
