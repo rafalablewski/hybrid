@@ -46,8 +46,6 @@ import { fs, space,
   sessionClockTime,
   READINESS_FEELINGS,
   READINESS_FACE,
-  logbookWeek,
-  todayDoneState,
   type TodayTabId,
   type ReadinessFeeling,
   type SemanticRole,
@@ -76,7 +74,6 @@ import ExerciseWidgetRail from "./exercise-widget";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
 import DoneFloor from "./done-floor";
-import AuroraTodayRail from "./today-rail";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import AuroraEnduranceLanes from "./endurance-lanes";
@@ -89,6 +86,7 @@ import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
+import { TodayHubPills } from "./today-hub-pills";
 import { RtpPanel } from "./protocol";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
@@ -190,10 +188,24 @@ export default function AuroraToday({
   // home and its job is "what do I do today?", so every visit opens on the
   // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
+  // The in-flow switcher's own box. THE DOCK (aurora/today-hub-pills.tsx)
+  // measures its bottom edge so the floating row appears the instant the real
+  // control leaves the viewport, never beside it.
+  const hubAnchor = useRef<HTMLDivElement | null>(null);
   // The switch runs as a hub transition (lib/use-screen-transition): the pills'
   // flying lens owns the motion and the content cross-dissolves beneath it,
   // instead of the old hard cut.
-  const selectTab = useCallback((id: TodayTabId) => { runHubTransition(() => setTab(id)); track("today_tab", { tab: id }); }, []);
+  // Switching hubs lands you at the TOP of the view you chose. The three views
+  // share one window scroll, and the dock made it possible to switch from deep
+  // inside a page for the first time — without this you arrive 2000px down
+  // someone else's screen. Instant, not smooth: the hub switch already owns the
+  // motion (the chrome holds still while the body dissolves), and a scroll
+  // animation racing that transition reads as two things moving at once.
+  const selectTab = useCallback((id: TodayTabId) => {
+    runHubTransition(() => setTab(id));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    track("today_tab", { tab: id });
+  }, []);
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
@@ -279,24 +291,6 @@ export default function AuroraToday({
   // (un-enrolled) — a stale day must never scope the cards with no rail visible.
   const [railDay, setRailDay] = useState<ScheduledDay | LogbookDay | null>(null);
   useEffect(() => { setRailDay(null); }, [planId, planStartedAt]);
-  // ── Today's sticky pill rail ──────────────────────────────────────────────
-  // Each pill is measured off its own source card's bottom edge, so the three
-  // anchors below are the ONLY coupling between this screen and the rail; the
-  // capture rule itself lives in core (today-rail.ts) and is shared with
-  // mobile. The rail always reads the REAL today, never the scrubbed day — a
-  // pinned bar that followed the rail's selection would contradict itself.
-  const railWeekRow = useRef<HTMLDivElement | null>(null);
-  const railSourceCard = useRef<HTMLDivElement | null>(null);
-  const railFeelingCard = useRef<HTMLDivElement | null>(null);
-  const railAnchors = useMemo(
-    () => ({ date: railWeekRow, done: railSourceCard, ready: railFeelingCard }),
-    [],
-  );
-  // The same seven days the week strip draws, so the capsule's dot track and
-  // the strip can never disagree. logbookWeek is the trailing window ending
-  // today for BOTH modes — the plan rail's own window is plan-relative, and a
-  // pinned capsule must always end on today.
-  const railWeek = useMemo(() => logbookWeek(sessions), [sessions]);
   const dayIsToday = !(useRail || logbookMode) || !railDay || railDay.isToday;
   // undefined lets every core day-helper fall through to its Date.now() default.
   const dayTs = dayIsToday ? undefined : railDay!.ts;
@@ -559,10 +553,11 @@ export default function AuroraToday({
   // Hoisted so the non-dashboard tabs render the SAME masthead chrome without
   // a second copy of it — they differ only in what hangs below the pills.
   const shell = { maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)" } as const;
+  // `motion-hub-chrome`: during a hub switch (data-nav-kind="hub") this block
+  // is lifted into its own view-transition group and held perfectly still —
+  // only the content BELOW it dissolves. See globals.css THE TODAY HUB.
   const hubHeader = (
-    // `motion-hub-chrome`: during a hub switch (data-nav-kind="hub") this block
-    // is lifted into its own view-transition group and held perfectly still —
-    // only the content BELOW it dissolves. See globals.css THE TODAY HUB.
+    <>
     <div className="motion-hub-chrome">
       {/* HEADER — profile, the HYBRID LOCKUP, bell.
           THREE COLUMNS, FIXED FLANKS. The row used to be `space-between`,
@@ -615,8 +610,18 @@ export default function AuroraToday({
           these three are what a home holds: the day's plan, the numbers behind
           it, and the people around it. Registry shared with mobile
           (@hybrid/core today-tabs.ts). */}
-      <TodayTabs value={tab} onChange={selectTab} />
+      <div ref={hubAnchor}>
+        <TodayTabs value={tab} onChange={selectTab} />
+      </div>
     </div>
+
+      {/* THE DOCK — the same three destinations, floating, once the control
+          above has scrolled off. Rendered outside `motion-hub-chrome` because
+          it is position:fixed: a fixed element inside a view-transition group
+          is captured with the group and would fly with it. Every hub tab
+          mounts this, so Performance and Feed keep their exits too. */}
+      <TodayHubPills value={tab} onChange={selectTab} anchor={hubAnchor} />
+    </>
   );
 
   // ── THE OTHER TWO TABS ────────────────────────────────────────────────────
@@ -659,23 +664,6 @@ export default function AuroraToday({
   return (
     <div style={shell}>
       {hubHeader}
-
-      {/* THE STICKY PILL RAIL — what Today leaves behind once the masthead and
-          the logbook have scrolled away. Zero-height in the flow: the bar is
-          absolutely positioned over the content, so nothing below moves and the
-          page scrolls UNDER the blur. Mirrors mobile home.tsx. */}
-      <AuroraTodayRail
-        anchors={railAnchors}
-        days={railWeek.days}
-        doneState={todayDoneState({
-          loggedToday: railWeek.days[railWeek.days.length - 1]?.logged ?? false,
-          planStatus: sched?.days.find((d) => d.isToday)?.status ?? null,
-        })}
-        feeling={todayFeeling}
-        onOpenMonth={() => (onNavigate ? onNavigate("calendar") : router.push("/calendar"))}
-        onOpenDone={() => (hasData ? setDoneOpen(true) : onStart())}
-        onOpenCheckin={() => railFeelingCard.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-      />
 
       {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
           chooser's "Free", or the scrub-distance tag) and ONE big headline.
@@ -735,20 +723,17 @@ export default function AuroraToday({
           <FetchError onRetry={() => onRetry?.()} />
         </div>
       ) : useRail ? (
-        <div ref={railSourceCard}>
-          <AuroraWeekRail
-            planId={planId!}
-            planStartedAt={planStartedAt!}
-            sessions={sessions}
-            maxes={planMaxes}
-            onStart={onStart}
-            onNavigate={onNavigate}
-            onSelectDay={setRailDay}
-            resetToken={railResetToken}
-            weekRowRef={railWeekRow}
-            doneFloor={doneFloor}
-          />
-        </div>
+        <AuroraWeekRail
+          planId={planId!}
+          planStartedAt={planStartedAt!}
+          sessions={sessions}
+          maxes={planMaxes}
+          onStart={onStart}
+          onNavigate={onNavigate}
+          onSelectDay={setRailDay}
+          resetToken={railResetToken}
+          doneFloor={doneFloor}
+        />
       ) : logbookMode ? (
         /* LOGBOOK MODE ("The Constant") — the same week-rail object, in
            logbook mode: the last seven days with the athlete's real logged
@@ -756,17 +741,14 @@ export default function AuroraToday({
            session instead of the chooser forever. The chooser demotes to slim
            rows under an Explore-standard "Add structure" head. */
         <div style={{ marginTop: 16 }}>
-          <div ref={railSourceCard}>
-            <AuroraLogbookRail
-              sessions={sessions}
-              onLog={() => onStart()}
-              onNavigate={onNavigate}
-              onSelectDay={setRailDay}
-              resetToken={railResetToken}
-              weekRowRef={railWeekRow}
-              doneFloor={doneFloor}
-            />
-          </div>
+          <AuroraLogbookRail
+            sessions={sessions}
+            onLog={() => onStart()}
+            onNavigate={onNavigate}
+            onSelectDay={setRailDay}
+            resetToken={railResetToken}
+            doneFloor={doneFloor}
+          />
           <div style={{ margin: "24px 0 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
             <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.logbook.trainYourWay")}</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.home.logbook.optional")}</span>
@@ -959,22 +941,20 @@ export default function AuroraToday({
           the done count + log action live on the Also Today card above. Follows
           the rail's selected day: a past day shows (and can back-log) THAT day's
           feeling; a future day is read-only — you can't feel the future. */}
-      <div ref={railFeelingCard}>
-        <FeelingCard
-          feeling={feeling}
-          dayMetrics={dayCheckin}
-          daySessions={daySessions}
-          recoveryDue={recoveryDue != null || readGateNow.wanted}
-          lastSessionEnd={lastSessionEnd}
-          dayReads={dayReads}
-          gate={readGateNow}
-          isToday={dayIsToday}
-          isFuture={dayIsFuture}
-          dayTs={railDay?.ts ?? null}
-          dayLabel={dayLabel}
-          onPicked={loadFeeling}
-        />
-      </div>
+      <FeelingCard
+        feeling={feeling}
+        dayMetrics={dayCheckin}
+        daySessions={daySessions}
+        recoveryDue={recoveryDue != null || readGateNow.wanted}
+        lastSessionEnd={lastSessionEnd}
+        dayReads={dayReads}
+        gate={readGateNow}
+        isToday={dayIsToday}
+        isFuture={dayIsFuture}
+        dayTs={railDay?.ts ?? null}
+        dayLabel={dayLabel}
+        onPicked={loadFeeling}
+      />
 
       {/* RETURN TO PLAY — the running protocol, on the day it has to be done.
           It used to render inside the Performance tab's Tissue card, several

@@ -42,7 +42,6 @@ export default function AuroraLogbookRail({
   onNavigate,
   onSelectDay,
   resetToken,
-  weekRowRef,
   doneFloor,
 }: {
   sessions: LoggedSession[];
@@ -56,9 +55,6 @@ export default function AuroraLogbookRail({
   /** Bump to snap the rail's internal selection back to today (the masthead's
    *  "Back to today" affordance). */
   resetToken?: number;
-  /** Today's pill rail measures the date capsule's capture point off the week
-   *  strip's own bottom edge, so the pill appears exactly as the strip goes. */
-  weekRowRef?: React.RefObject<HTMLDivElement | null>;
   /** The DONE FLOOR — every session logged on the viewed day, rendered as this
    *  card's lower floor under a labelled seam (aurora/done-floor.tsx). It is
    *  passed in rather than built here because the screen owns the day's
@@ -103,7 +99,7 @@ export default function AuroraLogbookRail({
       </div>
 
       {/* the seven-day week — the plan rail's chip anatomy, logbook vocabulary */}
-      <div ref={weekRowRef} style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "16px 0 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 4, margin: "16px 0 0" }}>
         {week.days.map((d) => (
           <DayChip key={d.dateKey} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}

@@ -116,7 +116,6 @@ export default function AuroraWeekRail({
   onNavigate,
   onSelectDay,
   resetToken,
-  onWeekRowLayout,
   doneFloor,
 }: {
   planId: string;
@@ -135,9 +134,6 @@ export default function AuroraWeekRail({
   /** Bump to snap the rail's internal selection back to today (the masthead's
    *  "Back to today" affordance). Mirrors the web rail. */
   resetToken?: number;
-  /** Today's pill rail measures the date capsule's capture point off the week
-   *  strip's own bottom edge (y + height, within this card). */
-  onWeekRowLayout?: (bottom: number) => void;
   /** The DONE FLOOR — every session logged on the viewed day, rendered as this
    *  card's lower floor under a labelled seam (aurora/done-floor.tsx). The plan
    *  floor above states what is ASKED of the athlete; this one states what they
@@ -219,7 +215,7 @@ export default function AuroraWeekRail({
       </View>
 
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
-      <View onLayout={(e) => onWeekRowLayout?.(e.nativeEvent.layout.y + e.nativeEvent.layout.height)} style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
         {windowDays.map((d) => (
           <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
         ))}
