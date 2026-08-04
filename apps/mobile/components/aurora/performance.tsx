@@ -374,10 +374,12 @@ function Full({ top }: { top?: ReactNode }) {
       <TissueCard risk={risk} load={loadState} hasData={hasData} onOpenToday={() => router.push("/")} />
 
       {/* 4 · THIS WEEK'S VOLUME — the hero shape, a verdict that names names,
-          and one door. Everything behind it went back to being the Volume
-          screen. */}
+          and the rest of it in a drawer. The block ramp, the prescriptions and
+          the muscle rails now ease open UNDERNEATH the columns that raised the
+          question rather than living on another screen; the provenance ladder
+          and the working are dispatched from there as a sheet. */}
       <View style={{ marginTop: 16 }}>
-        <AuroraVolume compact onOpen={() => router.push("/volume")} />
+        <AuroraVolume compact />
       </View>
 
       {/* 5 · SEASON — one card. The bar draws the fraction, so the line names

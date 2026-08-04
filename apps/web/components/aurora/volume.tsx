@@ -24,6 +24,7 @@ import { useCheckins } from "@/lib/use-checkins";
 import { readIntake } from "@/lib/intake";
 import { useLang } from "@/lib/i18n";
 import { HeroScreen, HeroAccessory } from "./hero";
+import Sheet from "./sheet";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
@@ -46,32 +47,41 @@ const sectionTitle: CSSProperties = { fontFamily: "var(--font-heading)", fontWei
  * hero (how many muscles are in range + the week drawn as a seven-column
  * shape), then where the athlete is in the block, then the week's prescription,
  * then the per-muscle rails, then — only on request — whose numbers these
- * actually are and the glossary. The rail geometry is normalised in
- * @hybrid/core (`railX`), so every muscle's band lands at the same x and the
- * rows stack into one readable picture.
+ * actually are. The rail geometry is normalised in @hybrid/core (`railX`), so
+ * every muscle's band lands at the same x and the rows stack into one readable
+ * picture.
+ *
+ * TWO DEPTHS, ONE SURFACE. The compact block used to answer "5/7 in range" and
+ * then send the athlete to a DIFFERENT SCREEN for the block ramp, the
+ * prescription and the muscle rails — a full context switch to read the detail
+ * of the card you were already looking at, with the shape you had just read
+ * left behind. The detail now EASES OPEN UNDERNEATH the shape instead (a
+ * 0fr → 1fr grid row, the same drawer the Activity card's figures pull out —
+ * see week-verdict.tsx), so "ease off" and "by muscle" arrive in place, under
+ * the columns that raised the question, and closing puts them back.
  *
  * The landmarks themselves come from ONE core call (`athleteLandmarks`), which
  * layers population table → profile estimate → what the log observed → the
  * athlete's own edits, and hands back the provenance so this screen never
- * presents a population average as a personal fact.
+ * presents a population average as a personal fact. That provenance — and the
+ * working behind it — is a DIFFERENT KIND of question from "what should I do
+ * this week", so it is dispatched as a Sheet rather than stacked as a seventh
+ * card at the foot of the reading.
  */
-export default function AuroraVolume({ sessions, unified = false, compact = false, onOpen, onOpenModel }: {
+export default function AuroraVolume({ sessions, unified = false, compact = false, onOpenModel }: {
   sessions: LoggedSession[];
   /** True when these sections render INSIDE another page rather than as their
    *  own screen: the page title demotes to a section head, since the page
    *  already has one masthead. Every section, control and number is otherwise
    *  identical. */
   unified?: boolean;
-  /** COMPACT — the hero week-shape and a door, nothing else. This is what the
-   *  Performance page carries: "5/7 in range", the seven columns, the verdict
-   *  naming names, and the way in. Everything else in this file is a
-   *  programming tool with a chart grammar of its own (bands, notches,
-   *  calipers, carets) and belongs behind that door, entered on purpose.
-   *  The landmarks are resolved by the SAME code either way, so the summary
-   *  and the screen can never disagree. */
+  /** COMPACT — the hero week-shape, and the rest of the screen folded into a
+   *  drawer under it. This is what the Performance page carries: "5/7 in
+   *  range", the seven columns, the verdict naming names, and — on request,
+   *  in place — the block, the prescription and the rails. The landmarks are
+   *  resolved by the SAME code either way, so the card and the screen can
+   *  never disagree. */
   compact?: boolean;
-  /** Where the compact block's door goes. */
-  onOpen?: () => void;
   /** Where the "edit the model" door goes — the settings route that owns the
    *  landmark fields, the profile form and the model switches. They used to be
    *  ~50 controls revealed inside this read surface by an edit toggle. */
@@ -85,15 +95,26 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
   const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved, setProfile } = useVolumeModel(sessions);
   const lm = resolved.landmarks;
 
+  // THE DRAWER, and the sheet the provenance is dispatched to. `deep` is the
+  // one flag the expensive passes read: a Performance page that only wants the
+  // week's shape pays for the week's shape, and everything heavier is bought
+  // the moment the athlete opens the detail.
+  const [drawer, setDrawer] = useState(false);
+  // Once opened the detail STAYS MOUNTED — unmounting it on close would give
+  // the collapse nothing to collapse, and the passes are already paid for.
+  const [everOpen, setEverOpen] = useState(false);
+  const [source, setSource] = useState(false);
+  const deep = !compact || everOpen;
+
   // HAS THE CEILING SETTLED? The same resolver re-run at every week of the
   // athlete's own history — a screen-level computation, deliberately memoised
   // apart from `resolved` because it costs one resolve per replayed week.
   const replay = useMemo(
     () =>
-      // Never in compact mode: one landmark resolve per week of the athlete's
-      // history, to draw four rows behind a disclosure the compact block has no
-      // room for, is pure cost on a page that only wants the week's shape.
-      prefs.adaptiveLandmarks && !compact
+      // Not until the detail is open: one landmark resolve per week of the
+      // athlete's history, to draw four rows behind a disclosure inside a sheet
+      // nobody has asked for, is pure cost on a page that only wants the shape.
+      prefs.adaptiveLandmarks && deep
         ? testedMuscles(
             replayLandmarks(sessions, recovery, {
               profile,
@@ -103,7 +124,7 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
             }),
           )
         : [],
-    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery, compact],
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery, deep],
   );
 
   const block = useMemo(() => resolveBlock(prefs.volumeBlock), [prefs.volumeBlock]);
@@ -128,11 +149,11 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
   // thought, and the athlete no longer picks a muscle in two places.
   const history = useMemo(() => {
     const out = {} as Record<MuscleGroup, number[]>;
-    // Seven eight-week passes for rows the compact block never renders.
-    if (compact) return out;
+    // Seven eight-week passes for rows a closed drawer never renders.
+    if (!deep) return out;
     for (const r of rows) out[r.muscle] = weeklyMuscleSets(sessions, r.muscle, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
     return out;
-  }, [rows, sessions, compact, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
+  }, [rows, sessions, deep, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
 
   const [open, setOpen] = useState<MuscleGroup | null>(null);
   const [picked, setPicked] = useState<MuscleGroup | null>(null);
@@ -154,7 +175,47 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
     return `${parts.join(t("w.analyze.vol.verdictJoin"))}.`;
   })();
 
-  // COMPACT — the hero shape and a door. The verdict NAMES NAMES here: the
+  // ── THE DETAIL ────────────────────────────────────────────────────────────
+  // Everything behind the week-shape, authored ONCE and rendered at two
+  // weights: `flat` sections divided by hairlines inside the compact card's
+  // drawer, or the screen's own stack of cards. Same components, same numbers —
+  // the drawer is not a summary of the screen, it IS the screen.
+  const detail = (flat: boolean) => (
+    <>
+      {/* ── WHERE THIS WEEK SITS IN THE BLOCK ───────────────────────────────── */}
+      <BlockCard flat={flat} lead={flat} block={block} ramp={blockRamp(block, lm)} on={prefs.periodizeVolume} />
+
+      {/* ── THE WEEK'S PRESCRIPTION — verb + magnitude, said once ───────────── */}
+      <Prescription flat={flat} title={t("w.analyze.vol.easeOff")} why={t("w.analyze.vol.easeOffWhy")} items={summary.over} token="red" ml={ml} unit={t("w.analyze.vol.perWeek")} />
+      <Prescription flat={flat} title={t("w.analyze.vol.addVolume")} why={t("w.analyze.vol.addVolumeWhy")} items={summary.under} token="amber" ml={ml} unit={t("w.analyze.vol.perWeek")} />
+
+      {/* ── BY MUSCLE — one legend, then the stack of comparable rails ──────── */}
+      {!summary.empty && (
+        <ByMuscle
+          flat={flat} rows={ranked} ml={ml} targetFor={targetFor} history={history}
+          open={open} setOpen={setOpen} zone={zone} pickZone={pickZone}
+        />
+      )}
+
+      {/* ── WHOSE NUMBERS THESE ARE — a door, not a seventh card ────────────── */}
+      <SourceDoor flat={flat} onOpen={() => setSource(true)} />
+    </>
+  );
+
+  // The provenance and the working, dispatched. They answer "where did these
+  // come from", which is a different question from "what do I do this week" —
+  // stacked under the prescription they were read as more of the prescription.
+  const sourceSheet = (
+    <Sheet open={source} onClose={() => setSource(false)} title={t("w.analyze.vol.whose")} detents={["medium", "large"]}>
+      <SourceBody
+        resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys}
+        adaptive={prefs.adaptiveLandmarks} onOpenModel={onOpenModel} ml={ml}
+        level={levelEstimate} experience={experience} units={prefs.units}
+      />
+    </Sheet>
+  );
+
+  // COMPACT — the hero shape and the drawer. The verdict NAMES NAMES here: the
   // shape above it already says that something is out of range, so the sentence
   // has to say what and by how much, which is the one thing the columns can't.
   if (compact) {
@@ -190,16 +251,32 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
             </p>
           </>
         )}
-        {onOpen && (
-          <button
-            className="pressable"
-            onClick={onOpen}
-            style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: 16, paddingTop: 14, border: 0, borderTop: `1px solid ${C("line")}`, background: "none", cursor: "pointer", color: C("chalk"), textAlign: "left" }}
-          >
-            <span style={eyebrow}>{t("w.home.cockpit.volumeDoor")}</span>
-            <span style={{ marginLeft: "auto", ...mono(fs.caption), fontWeight: 700, color: "var(--lime-text)" }}>{t("w.analyze.vol.title")} →</span>
-          </button>
+        {!summary.empty && (
+          <>
+            <button
+              className="pressable"
+              onClick={() => { setEverOpen(true); setDrawer((v) => !v); }}
+              aria-expanded={drawer}
+              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: 16, paddingTop: 14, border: 0, borderTop: `1px solid ${C("line")}`, background: "none", cursor: "pointer", color: C("chalk"), textAlign: "left" }}
+            >
+              <span style={eyebrow}>{t("w.home.cockpit.volumeDoor")}</span>
+              <span style={{ marginLeft: "auto", ...mono(fs.caption), fontWeight: 700, color: "var(--lime-text)" }}>
+                {drawer ? t("w.analyze.vol.hideDetail") : t("w.analyze.vol.title")}
+                {/* The chevron ROTATES rather than swapping glyph, so the
+                    control reads as the same object in two states. */}
+                <span aria-hidden style={{ display: "inline-block", marginLeft: 6, transform: drawer ? "rotate(-180deg)" : "none", transition: "transform var(--d-sheet) var(--e-sheet)" }}>↓</span>
+              </span>
+            </button>
+
+            {/* THE DRAWER — a 0fr → 1fr grid row: a real height animation with
+                nothing measured, so the block, the prescription and the rails
+                slide out from under the shape that raised the question. */}
+            <div className="motion-drawer" data-open={drawer ? "" : undefined}>
+              <div>{everOpen && detail(true)}</div>
+            </div>
+          </>
         )}
+        {sourceSheet}
       </section>
     );
   }
@@ -291,38 +368,9 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
         )}
       </section>
 
-      {/* ── WHERE THIS WEEK SITS IN THE BLOCK ─────────────────────────────── */}
-      <BlockCard block={block} ramp={blockRamp(block, lm)} on={prefs.periodizeVolume} />
-
-      {/* ── THE WEEK'S PRESCRIPTION — verb + magnitude, said once ─────────── */}
-      <Prescription title={t("w.analyze.vol.easeOff")} why={t("w.analyze.vol.easeOffWhy")} items={summary.over} token="red" ml={ml} unit={t("w.analyze.vol.perWeek")} />
-      <Prescription title={t("w.analyze.vol.addVolume")} why={t("w.analyze.vol.addVolumeWhy")} items={summary.under} token="amber" ml={ml} unit={t("w.analyze.vol.perWeek")} />
-
-      {/* ── BY MUSCLE — one legend, then the stack of comparable rails ────── */}
-      {!summary.empty && (
-        <section style={card}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-            <h2 style={sectionTitle}>{t("w.analyze.vol.byMuscle")}</h2>
-            <span style={eyebrow}>{t("w.analyze.vol.range7d")}</span>
-          </div>
-
-          <div>
-            {ranked.map((r) => (
-              <MuscleRow
-                key={r.muscle} s={r} label={ml(r.muscle)} token={ZONE_TOKEN[r.zone]}
-                target={targetFor(r.muscle)} history={history[r.muscle] ?? []}
-                expanded={open === r.muscle}
-                zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
-                onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
-                onZone={(k) => pickZone(k, r.muscle)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── WHOSE NUMBERS THESE ARE — provenance, then the profile behind it ─ */}
-      <SourceCard resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys} adaptive={prefs.adaptiveLandmarks} onOpenModel={onOpenModel} ml={ml} level={levelEstimate} experience={experience} units={prefs.units} />
+      {/* The block, the prescription, the rails and the provenance door — the
+          SAME nodes the compact card's drawer carries, at card weight. */}
+      {detail(false)}
 
       {/* THE GLOSSARY IS GONE. It defined MV/MEV/MAV/MRV in a collapsed card
           at the foot of the screen — but every band value on every muscle row
@@ -332,7 +380,85 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
           actually asked. The card was the pre-interactive version left in
           place. (GLOSS_KEY still backs the row spotlight.) */}
 
+      {sourceSheet}
     </div>
+  );
+}
+
+/**
+ * One section of the detail, at whichever weight its host wants.
+ *
+ * On the screen each section is its own CARD; inside the compact card's drawer
+ * they are FLAT — divided by a hairline, because a card inside a card reads as
+ * a bug. Nothing else differs, so a section can never drift between the two
+ * places it appears.
+ */
+function Panel({ flat, lead = false, children }: { flat: boolean; lead?: boolean; children: React.ReactNode }) {
+  return (
+    <section style={flat
+      ? { marginTop: lead ? 18 : 20, paddingTop: lead ? 0 : 20, borderTop: lead ? undefined : `1px solid ${C("line")}` }
+      : card}
+    >
+      {children}
+    </section>
+  );
+}
+
+/** BY MUSCLE — the legend, then the stack of comparable rails. */
+function ByMuscle({ flat, rows, ml, targetFor, history, open, setOpen, zone, pickZone }: {
+  flat: boolean;
+  rows: MuscleVolumeStatus[];
+  ml: (m: string) => string;
+  targetFor: (m: MuscleGroup) => BlockMuscleTarget | null;
+  history: Record<MuscleGroup, number[]>;
+  open: MuscleGroup | null;
+  setOpen: (m: MuscleGroup | null) => void;
+  zone: { key: VolumeBandKey; muscle: MuscleGroup } | null;
+  pickZone: (k: VolumeBandKey, m: MuscleGroup) => void;
+}) {
+  const { t } = useLang();
+  return (
+    <Panel flat={flat}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+        <h2 style={sectionTitle}>{t("w.analyze.vol.byMuscle")}</h2>
+        <span style={eyebrow}>{t("w.analyze.vol.range7d")}</span>
+      </div>
+
+      <div>
+        {rows.map((r) => (
+          <MuscleRow
+            key={r.muscle} s={r} label={ml(r.muscle)} token={ZONE_TOKEN[r.zone]}
+            target={targetFor(r.muscle)} history={history[r.muscle] ?? []}
+            expanded={open === r.muscle}
+            zone={zone?.key ?? null} showGloss={zone?.muscle === r.muscle}
+            onToggle={() => setOpen(open === r.muscle ? null : r.muscle)}
+            onZone={(k) => pickZone(k, r.muscle)}
+          />
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+/** The way into the provenance sheet. A row, not a card: "where did these come
+ *  from" is a question the reading raises, not another part of the reading. */
+function SourceDoor({ flat, onOpen }: { flat: boolean; onOpen: () => void }) {
+  const { t } = useLang();
+  return (
+    <Panel flat={flat}>
+      <button
+        className="pressable"
+        type="button"
+        onClick={onOpen}
+        style={{ display: "flex", alignItems: "center", gap: space.ms, width: "100%", padding: 0, border: 0, background: "transparent", textAlign: "left", cursor: "pointer" }}
+      >
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ ...sectionTitle, display: "block" }}>{t("w.analyze.vol.whose")}</span>
+          <span style={{ display: "block", marginTop: 4, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{t("w.analyze.vol.showWork")}</span>
+        </span>
+        <span aria-hidden style={{ ...mono(fs.body), color: "var(--lime-text)" }}>→</span>
+      </button>
+    </Panel>
   );
 }
 
@@ -353,12 +479,12 @@ function ShapeColumn({ s, token, dim }: { s: MuscleVolumeStatus; token: string; 
 
 /** "Ease off" / "Add volume" — the prescription as chips, with the reason said
  *  ONCE underneath instead of repeated verbatim on every muscle. */
-function Prescription({ title, why, items, token, ml, unit }: {
-  title: string; why: string; items: MuscleVolumeStatus[]; token: string; ml: (m: string) => string; unit: string;
+function Prescription({ flat, title, why, items, token, ml, unit }: {
+  flat: boolean; title: string; why: string; items: MuscleVolumeStatus[]; token: string; ml: (m: string) => string; unit: string;
 }) {
   if (!items.length) return null;
   return (
-    <section style={card}>
+    <Panel flat={flat}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <h2 style={sectionTitle}>{title}</h2>
         <span style={eyebrow}>{unit}</span>
@@ -372,7 +498,7 @@ function Prescription({ title, why, items, token, ml, unit }: {
         ))}
       </div>
       <p style={{ marginTop: 16, marginBottom: 0, fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{why}</p>
-    </section>
+    </Panel>
   );
 }
 
@@ -412,13 +538,13 @@ function Stepper({ label, value, suffix, min, max, onChange }: {
  * the step down of the deload. Switched off, the card is just the case for
  * turning it on, so the landmark view stays exactly as it was.
  */
-function BlockCard({ block, ramp, on }: {
-  block: VolumeBlock; ramp: RampColumn[]; on: boolean;
+function BlockCard({ flat, lead, block, ramp, on }: {
+  flat: boolean; lead: boolean; block: VolumeBlock; ramp: RampColumn[]; on: boolean;
 }) {
   const { t } = useLang();
   const current = ramp.find((c) => c.current) ?? ramp[0];
   return (
-    <section style={card}>
+    <Panel flat={flat} lead={lead}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <h2 style={sectionTitle}>{t("w.analyze.vol.thisBlock")}</h2>
         <Toggle on={on} label={t("w.analyze.vol.periodize")} onClick={() => setLoggerPref("periodizeVolume", !on)} />
@@ -451,7 +577,7 @@ function BlockCard({ block, ramp, on }: {
 
         </>
       )}
-    </section>
+    </Panel>
   );
 }
 
@@ -470,9 +596,16 @@ const FACTOR_FIELD: Partial<Record<LandmarkFactor["key"], keyof AthleteVolumePro
 const RUNG_H = 38;
 
 /**
- * WHOSE NUMBERS ARE THESE.
+ * WHOSE NUMBERS ARE THESE — the body of the provenance SHEET.
  *
- * The card answers three questions, in the order an athlete actually asks them,
+ * It used to be the seventh card at the foot of the Volume screen, where it
+ * read as more of the prescription. It is dispatched as a sheet now: the
+ * question is asked ABOUT the reading, from anywhere the reading appears (the
+ * screen, or the compact card's drawer on Performance), and it is answered
+ * without the athlete losing their place. The sheet's own header carries the
+ * title, so this body starts straight at the ladder.
+ *
+ * The body answers three questions, in the order an athlete actually asks them,
  * and gives each one a different weight rather than stacking six paragraphs at
  * the same size:
  *
@@ -492,7 +625,7 @@ const RUNG_H = 38;
  *
  * Mirrors apps/mobile/components/aurora/volume.tsx.
  */
-function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenModel, ml, level, experience, units }: {
+function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenModel, ml, level, experience, units }: {
   resolved: ReturnType<typeof athleteLandmarks>;
   /** The ceiling's own history, muscles the log has actually tested. */
   tested: LandmarkReplay[];
@@ -524,15 +657,13 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
   const prose: CSSProperties = { margin: 0, fontSize: fs.body, lineHeight: 1.55, color: C("ash") };
 
   return (
-    <section style={card}>
-      <h2 style={{ ...sectionTitle, fontSize: fs.subtitle }}>{t("w.analyze.vol.whose")}</h2>
-
+    <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
       {/* ── THE LADDER ──────────────────────────────────────────────────────
           Four rungs in the order the engine applies them, lit as far as the
           evidence reaches. The lit spine is the whole answer: a column that
           stops at rung one says "textbook averages" far more plainly than the
           caption that used to sit up here fighting the title for the same row. */}
-      <div role="radiogroup" aria-label={t("w.analyze.vol.whose")} style={{ marginTop: 14 }}>
+      <div role="radiogroup" aria-label={t("w.analyze.vol.whose")}>
         {ladder.map((r) => {
           const on = r.source === shown;
           const meta = rungMeta(r);
@@ -740,7 +871,7 @@ function SourceCard({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
         </>
       )}
 
-    </section>
+    </div>
   );
 }
 

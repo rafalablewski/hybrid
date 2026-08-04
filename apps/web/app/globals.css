@@ -768,6 +768,30 @@ html[data-sheet-open] body { background: #000; }
   transition: transform var(--d-sheet) var(--e-sheet), opacity var(--d-fast) var(--e-fade);
 }
 
+/* DRAWER — a section that eases open UNDERNEATH the control that opened it,
+   instead of the athlete being sent to another screen to read the detail of
+   the card they were already looking at (Volume's compact block on
+   Performance; the Activity card's figures in week-verdict.tsx).
+   0fr → 1fr on a grid row is a real height animation with NOTHING MEASURED, so
+   the content can grow inside the open drawer (a muscle row expanding) and the
+   height simply follows. It runs the sheet spring, because a drawer and a sheet
+   are the same gesture at two scales. Mirrored on mobile by an interpolated
+   height in aurora/volume.tsx. */
+.motion-drawer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--d-sheet) var(--e-sheet);
+}
+.motion-drawer[data-open] { grid-template-rows: 1fr; }
+.motion-drawer > * { overflow: hidden; min-height: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* SUBSTITUTE: the height snaps, the content cross-dissolves — a user with
+     Reduce Motion on still has to perceive that something opened. */
+  .motion-drawer { transition: none; }
+  .motion-drawer[data-open] > * { animation: motionDissolveIn var(--d-reduced) linear both; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* Substitute: the panel cross-dissolves in place instead of travelling, and
      the host stops receding. Not an instant cut — the dissolve is the signal. */

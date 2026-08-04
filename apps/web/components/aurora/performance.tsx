@@ -420,10 +420,12 @@ export default function AuroraPerformance({
         <TissueCard risk={risk} load={load} hasData={hasData} onOpenToday={() => setScreen("today")} />
 
         {/* 4 · THIS WEEK'S VOLUME — the hero shape, the verdict that names
-            names, and one door. Everything behind that door (the block ramp,
-            the prescriptions, the muscle rails, the provenance ladder, the
-            landmark and profile editors) went back to being the Volume screen. */}
-        <AuroraVolume sessions={sessions} compact onOpen={() => setScreen("volume")} />
+            names, and the rest of it in a drawer. The block ramp, the
+            prescriptions and the muscle rails now ease open UNDERNEATH the
+            columns that raised the question rather than living on another
+            screen; the provenance ladder and the working are dispatched from
+            there as a sheet. */}
+        <AuroraVolume sessions={sessions} compact />
 
         {/* 5 · SEASON — one card. The bar draws the fraction, so the line names
             the week once instead of restating it as a percentage. */}
