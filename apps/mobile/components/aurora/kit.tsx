@@ -1,5 +1,5 @@
-import { type ReactNode, useState } from "react";
-import { View, Text, ScrollView, TextInput, StyleSheet, RefreshControl, KeyboardAvoidingView, Platform, Animated, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { View, Text, ScrollView, TextInput, StyleSheet, RefreshControl, KeyboardAvoidingView, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -9,7 +9,8 @@ import { fs, space, leading, tracking, F, serifIf, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, type AuroraIconName } from "@hybrid/core";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { LiquidSeg } from "./liquid-seg";
 import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
@@ -866,5 +867,111 @@ export function ASub({ children, style }: { children: ReactNode; style?: TextSty
     <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={[{ fontFamily: F.reg, fontSize: fs.note, color: palette.ash, lineHeight: leading(fs.note, "relaxed") }, style]}>
       {children}
     </Text>
+  );
+}
+
+/**
+ * The panel's position while the drawer carries a height of its own — OUT OF
+ * FLOW, which is the whole reason a measured drawer works at all. See ADrawer.
+ */
+const DRAWER_PANEL_CLIPPED: ViewStyle = { position: "absolute", top: 0, left: 0, right: 0 };
+
+/**
+ * ADrawer — a disclosure that MOVES. A section eases open UNDERNEATH the control
+ * that opened it, instead of popping into place inside a card that eases (or the
+ * athlete being sent to another screen to read the detail of the card they were
+ * already looking at).
+ *
+ * The web twin gets the movement from a 0fr → 1fr grid row (globals.css
+ * `.motion-drawer`) — a real height animation with nothing measured. RN has no
+ * such thing, so the panel is MEASURED and its height interpolated on the SAME
+ * sheet spring; once the opening has settled the height goes back to `auto`,
+ * otherwise content that grows inside an already-open drawer (a muscle row
+ * expanding inside Volume's open detail) would be clipped to a height measured
+ * before it grew.
+ *
+ * The content MOUNTS on first open and stays: a collapse needs something to
+ * collapse, and a fold nobody has opened should not pay to lay out.
+ */
+export function ADrawer({ open, children }: { open: boolean; children: ReactNode }) {
+  const reduced = useReducedMotion();
+  const [panelH, setPanelH] = useState(0);
+  const [settled, setSettled] = useState(false);
+  const grow = useRef(new Animated.Value(0)).current;
+  // Latched in RENDER, not in an effect. An effect commits one frame too late:
+  // the content would not be laid out yet, `panelH` would still be 0, and the
+  // animation below would bail — so every open would wait for a second layout
+  // pass before it started moving.
+  const mounted = useRef(open);
+  if (open) mounted.current = true;
+
+  // `settled` mirrored into a ref so the guard below can read it WITHOUT making
+  // it a dependency. As a dep it would re-run this effect the moment a close
+  // clears it — restarting the closing timing halfway through its own run.
+  const settledRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) { settledRef.current = false; setSettled(false); }
+    // Already open and settled: the height is `auto`, so a re-measure (a row
+    // expanding INSIDE this drawer) has nothing to animate. Left unguarded this
+    // restarts the spring on every layout pass of the content.
+    if (open && settledRef.current) return undefined;
+    // Reduce Motion SUBSTITUTES a cross-dissolve for the travel: the drawer
+    // takes its height at once and fades in. Never an instant cut — the user
+    // still has to perceive that something opened.
+    if (reduced) {
+      Animated.timing(grow, { toValue: open ? 1 : 0, duration: durations.reduced, easing: Easing.linear, useNativeDriver: false }).start();
+      return undefined;
+    }
+    // Nothing to animate to until the content has been measured once.
+    if (open && panelH <= 0) return undefined;
+    const anim = open
+      ? Animated.spring(grow, { toValue: 1, useNativeDriver: false, ...springToRN(springs.sheet) })
+      : Animated.timing(grow, { toValue: 0, duration: durations.fast, easing: Easing.in(Easing.cubic), useNativeDriver: false });
+    anim.start(({ finished }) => { if (finished && open) { settledRef.current = true; setSettled(true); } });
+    return () => anim.stop();
+  }, [open, panelH, reduced, grow]);
+
+  // FLOWING — the drawer takes its height FROM the panel (auto) rather than
+  // carrying one. That is the settled-open state, and Reduce Motion's open
+  // state; every other state pins an explicit height on the drawer.
+  const flowing = reduced ? open : settled;
+
+  return (
+    <Animated.View
+      style={[
+        { overflow: "hidden", opacity: settled ? 1 : grow },
+        flowing
+          ? null
+          : { height: reduced ? 0 : grow.interpolate({ inputRange: [0, 1], outputRange: [0, panelH], extrapolate: "clamp" }) },
+      ]}
+      pointerEvents={open ? "auto" : "none"}
+      /* Staying mounted is what buys the collapse — but a clipped panel is
+         still in the accessibility tree, so a closed drawer would hand
+         VoiceOver a section that isn't on screen. The web twin reaches this
+         with one `inert` attribute; RN needs both platforms named. */
+      accessibilityElementsHidden={!open}
+      importantForAccessibility={open ? "auto" : "no-hide-descendants"}
+    >
+      <View
+        /* OUT OF FLOW for every state that pins a height on the drawer — which
+           is what makes the measurement below possible at all. A box clipped to
+           EXACTLY 0 does not let an in-flow child overflow it: Yoga reads a zero
+           available main size as an at-most-0 constraint and lays the child out
+           at 0 (any height ABOVE zero overflows normally — 0 is the one value
+           that clamps). In flow, then, a closed drawer measures its panel as 0,
+           `panelH` never leaves 0, the guard above bails on every run, and the
+           drawer never moves: the chevron and the label toggle over a card that
+           never opens. An absolutely positioned panel is sized against the
+           drawer's WIDTH alone, so it measures its true height in every state.
+
+           Measured on EVERY layout, not just the first — the interpolation's
+           target has to follow content that changed while the drawer was open. */
+        style={flowing ? null : DRAWER_PANEL_CLIPPED}
+        onLayout={(e) => setPanelH(Math.round(e.nativeEvent.layout.height))}
+      >
+        {mounted.current ? children : null}
+      </View>
+    </Animated.View>
   );
 }
