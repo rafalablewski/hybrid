@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   HUB_DOCK_REST,
   HUB_PILL,
