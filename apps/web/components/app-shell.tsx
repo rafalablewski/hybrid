@@ -63,6 +63,7 @@ const AuroraVideo = dynamic(() => import("./aurora/video"), { ssr: false });
 const AuroraLongevity = dynamic(() => import("./aurora/longevity"), { ssr: false });
 const AuroraVelocity = dynamic(() => import("./aurora/velocity"), { ssr: false });
 const AuroraVolume = dynamic(() => import("./aurora/volume"), { ssr: false });
+const AuroraVolumeModel = dynamic(() => import("./aurora/volume-model"), { ssr: false });
 const AuroraTrends = dynamic(() => import("./aurora/trends"), { ssr: false });
 const AuroraExercises = dynamic(() => import("./aurora/exercises"), { ssr: false });
 const AuroraExercisePage = dynamic(() => import("./aurora/exercise-page"), { ssr: false });
@@ -896,7 +897,8 @@ export default function AppShell() {
           <AuroraPerformance sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} sessionsReady={sessionsReady} macroSettled={macroSettled} setScreen={setScreen} onOpenSport={openSportPage} onEnrolled={() => { refreshMacro(); setScreen("today"); }} />
         )}
 
-        {screen === "volume" && <AuroraVolume sessions={sessions} />}
+        {screen === "volume" && <AuroraVolume sessions={sessions} onOpenModel={() => setScreen("volume-model")} />}
+        {screen === "volume-model" && <AuroraVolumeModel sessions={sessions} />}
         {screen === "trends" && <AuroraTrends sessions={sessions} onOpenExercise={openExercisePage} />}
 
         {screen === "onboarding" && (

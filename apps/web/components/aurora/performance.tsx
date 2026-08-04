@@ -177,7 +177,15 @@ export default function AuroraPerformance({
   const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), prefs.countWarmupsInVolume, bw), [sessions, prefs.countWarmupsInVolume, bw]);
 
   if (persona === "casual") {
-    return <Teaser paid={entitlement === "paid"} onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete", true) : setScreen("upgrade"))} />;
+    // The teaser leads with the athlete's OWN freshness — the figure is real,
+    // computed from their real log, and only the depth is locked.
+    return (
+      <Teaser
+        paid={entitlement === "paid"}
+        onUnlock={() => (entitlement === "paid" ? setClientPersona("athlete", true) : setScreen("upgrade"))}
+        state={sessionsReady && sessions.length > 0 ? state : null}
+      />
+    );
   }
 
   // Only a legitimate reading once the sessions read is `ready`: before the
@@ -526,11 +534,44 @@ const TEASE: { key: string }[] = [
   { key: "sportSC" }, { key: "velocity" }, { key: "endurance" },
 ];
 
-function Teaser({ paid, onUnlock }: { paid: boolean; onUnlock: () => void }) {
+/**
+ * THE TEASER — one real figure, then the locked depth.
+ *
+ * It used to be six identical padlocked rows: a wall that told a free user
+ * nothing about what the feature would say about THEM. It now leads with the
+ * athlete's own freshness, computed from their own log by the same engine the
+ * full page uses, and locks what sits behind it. A teaser that demonstrates
+ * beats a teaser that lists.
+ *
+ * With no logged training there is no figure to show and none is invented —
+ * the list stands alone, exactly as it did.
+ */
+function Teaser({ paid, onUnlock, state }: {
+  paid: boolean;
+  onUnlock: () => void;
+  /** The athlete's real state, or null when they have nothing logged yet. */
+  state: ReturnType<typeof computePerformanceState> | null;
+}) {
   const { t } = useLang();
   return (
     <HeroScreen hero={{ rank: "title", title: t("w.home.cockpit.teaseTitle") }}>
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
+      {state && (
+        <div style={{ ...CARD, marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: C(hpiVar(state.hpi.band)) }}>{state.hpi.score}</span>
+            <div style={{ minWidth: 120, flex: 1 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
+                {t("w.home.cockpit.freshness")} — {state.hpi.band}
+              </div>
+              <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4, lineHeight: 1.5 }}>{t("w.home.cockpit.teaseYours")}</div>
+            </div>
+          </div>
+          <div style={{ fontSize: fs.body, lineHeight: 1.55, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
+            <b style={{ fontWeight: 700 }}>{t(`w.home.cockpit.limiter.${state.hpi.limiter}`)}</b>
+          </div>
+        </div>
+      )}
       <p style={{ fontSize: fs.bodyLg, lineHeight: 1.6, color: C("ash") }}>{t("w.home.cockpit.teaseSub1")}<b style={{ color: C("lime") }}>{t("w.home.cockpit.teaseSub2")}</b>{t("w.home.cockpit.teaseSub3")}</p>
       <div style={{ display: "grid", gap: space.ms, marginTop: 16 }}>
         {TEASE.map((s) => (

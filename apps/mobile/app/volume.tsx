@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import AuroraVolume from "../components/aurora/volume";
 
 /**
@@ -10,5 +11,6 @@ import AuroraVolume from "../components/aurora/volume";
  * the landmark editors — lives here, entered on purpose.
  */
 export default function Volume() {
-  return <AuroraVolume />;
+  const router = useRouter();
+  return <AuroraVolume onOpenModel={() => router.push("/volume-model")} />;
 }

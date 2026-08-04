@@ -474,13 +474,49 @@ const TEASE: { key: string }[] = [
   { key: "sportSC" }, { key: "velocity" }, { key: "endurance" },
 ];
 
+/**
+ * THE TEASER — one real figure, then the locked depth.
+ *
+ * It used to be six identical padlocked rows: a wall that told a free user
+ * nothing about what the feature would say about THEM. It now leads with the
+ * athlete's own freshness, computed from their own log by the same engine the
+ * full page uses, and locks what sits behind it. A teaser that demonstrates
+ * beats a teaser that lists. Mirrors web.
+ *
+ * With no logged training there is no figure to show and none is invented.
+ */
 function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; top?: ReactNode }) {
-  const { palette: C } = useTheme();
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
+  // The teaser owns its own reads — it renders instead of `Full`, so it never
+  // sees that component's data.
+  const sessionsRead = useSessionsRead();
+  const signalsRead = useSignalsRead();
+  const sessions = sessionsRead.data ?? [];
+  const bio = useMemo(() => toBiometrics((signalsRead.data ?? []) as unknown as Parameters<typeof toBiometrics>[0]), [signalsRead.data]);
+  const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
+  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  const hasData = sessionsRead.ready && sessions.length > 0;
   return (
     <AuroraScreen top={top} hero={top ? undefined : { rank: "title", title: t("w.home.cockpit.teaseTitle") }}>
       {top && <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>}
-      <ASub style={{ marginTop: top ? 8 : 0 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
+      {hasData && (
+        <ACard solid style={{ marginTop: top ? 12 : 0 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                {t("w.home.cockpit.freshness")} — {state.hpi.band}
+              </Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.teaseYours")}</Text>
+            </View>
+          </View>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line, lineHeight: leading(fs.body) }}>
+            {t(`w.home.cockpit.limiter.${state.hpi.limiter}`)}
+          </Text>
+        </ACard>
+      )}
+      <ASub style={{ marginTop: hasData ? 16 : top ? 8 : 0 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
       {TEASE.map((s) => (
         /* No leading marker: a dot in front of a label is decoration, and the
            house rule forbids it. The lock on the right is the semantic one. */

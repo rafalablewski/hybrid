@@ -614,6 +614,10 @@ export const web_home = {
     "w.home.cockpit.deeper": "Go deeper",
     "w.home.cockpit.trends": "Trends",
     "w.home.cockpit.askCoach": "Ask the coach",
+    // The teaser shows ONE real figure — the athlete's own freshness, from
+    // their own training — and locks the depth behind it. A teaser that
+    // demonstrates beats a column of padlocks.
+    "w.home.cockpit.teaseYours": "Computed from your own training. Everything below is Full.",
     // The coach door shows the question it would ask NOW, generated from what
     // the page is already holding — a door that demonstrates beats one that
     // advertises. Falls back to the generic prompt only when nothing stands out.
@@ -1474,6 +1478,7 @@ export const web_home = {
     "w.home.cockpit.deeper": "Wejdź głębiej",
     "w.home.cockpit.trends": "Trendy",
     "w.home.cockpit.askCoach": "Zapytaj trenera",
+    "w.home.cockpit.teaseYours": "Policzone z Twojego treningu. Wszystko poniżej to Full.",
     "w.home.cockpit.ask.tissue": "Czy mogę bezpiecznie trenować {tissue}?",
     "w.home.cockpit.ask.stalled": "Dlaczego {lift} stanął w miejscu?",
     "w.home.cockpit.ask.limiter.strength": "Jak trenować mimo tego zmęczenia?",
@@ -2327,6 +2332,7 @@ export const web_home = {
     "w.home.cockpit.deeper": "Tiefer gehen",
     "w.home.cockpit.trends": "Trends",
     "w.home.cockpit.askCoach": "Coach fragen",
+    "w.home.cockpit.teaseYours": "Aus deinem eigenen Training berechnet. Alles darunter ist Full.",
     "w.home.cockpit.ask.tissue": "Kann ich {tissue} sicher trainieren?",
     "w.home.cockpit.ask.stalled": "Warum stagniert {lift}?",
     "w.home.cockpit.ask.limiter.strength": "Wie trainiere ich trotz dieser Ermüdung?",
