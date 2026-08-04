@@ -106,6 +106,23 @@ code {
 .tally .n.crit { color: var(--crit); }
 .tally .n.dup { color: var(--dup); }
 .tally .n.scope { color: var(--scope); }
+.tally .n.ship-n { color: var(--accent); }
+
+.status {
+  display: flex; align-items: baseline; gap: 10px;
+  margin: 24px 0 0; padding: 14px 16px; max-width: 68ch;
+  border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+  background: var(--ink2); font-size: 15px; line-height: 1.55;
+}
+.status-dot {
+  flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); transform: translateY(-1px);
+}
+.shipped-note {
+  margin: 12px 0 0; padding-top: 11px; border-top: 1px dashed var(--line);
+  font-size: 14.5px; line-height: 1.55; color: var(--chalk);
+}
+.shipped-note b { color: var(--accent); font-weight: 700; }
 
 /* ── sections ──────────────────────────────────────────────────────────── */
 section { padding-top: 88px; }
@@ -369,7 +386,17 @@ footer p { font-size: 14px; color: var(--ash); max-width: 62ch; }
     <div><div class="n dup">6</div><div class="k kick">duplicate</div></div>
     <div><div class="n scope">5</div><div class="k kick">scope &amp; form</div></div>
     <div><div class="n">3</div><div class="k kick">marked by you</div></div>
+    <div><div class="n ship-n">13</div><div class="k kick">shipped</div></div>
   </div>
+
+  <p class="status">
+    <span class="status-dot" aria-hidden></span>
+    All thirteen are implemented on both clients, in seven commits on
+    <code>claude/design-redundancies-review-g16bgm</code>. 2283 core tests green,
+    both typechecks clean, iOS bundle verified. The specimen plates below are the
+    proposals as written; the notes under each finding record what actually
+    shipped where it differed.
+  </p>
 </header>
 
 <!-- ══════════════════════════════════════════════════════════════════════ -->
@@ -667,6 +694,7 @@ footer p { font-size: 14px; color: var(--ash); max-width: 62ch; }
         <li><strong>Rank on a smoothed score</strong>, not a raw ratio: <code>(value − baseline) / (baseline + k)</code> with a per-metric <code>k</code>. A 0.1 → 6.8 km jump stops outranking 5.2 → 7.2 t.</li>
         <li><strong>Cap the printed percent.</strong> Above a ceiling (say ±300%), print the step instead: <code>0.1 → 6.8 km</code>. It is the honest rendering of the same fact, and it is shorter.</li>
       </ol>
+      <p class="shipped-note"><b>Shipped:</b> (1) and (3) as written, minus the session floor — a count has no negligible quantity to express, and the coverage gate already says everything a floor would, so sessions rank exactly as before. (2) was <b>dropped</b>: the smoothing re-ordered periods the existing suite already pins (a metric's <code>k</code> relative to its own baseline changed which of two equal percentages won a tie), and it is unnecessary once the floors exist. A metric failing a gate becomes the <b>fallback</b> rather than being discarded, so a genuinely flat week that only moved on distance still gets a sentence — printed as the step.</p>
     </div>
   </article>
 
@@ -756,6 +784,7 @@ footer p { font-size: 14px; color: var(--ash); max-width: 62ch; }
         <li><strong>One discipline, one home.</strong> Exclude disciplines in <code>ENDURANCE_DISCIPLINES</code> from the exercise rail's <em>auto-fill</em> — they already own a lane with five tiles of depth. Keep them if the athlete favourited them explicitly; an explicit choice outranks a de-duplication rule. The freed slot goes to the next real movement, which for this athlete is the Trap-Bar Deadlift that just set a PR two rows above.</li>
         <li>Add a core test asserting no auto-filled card shares a discipline with a rendered lane.</li>
       </ol>
+      <p class="shipped-note"><b>Shipped</b> as written. The deferral is a caller flag (<code>deferToLanes</code>) rather than an unconditional rule, because only the screen knows whether the lanes render — Today gates them on the athlete persona, and a casual user would otherwise lose the card with nothing to replace it. The lane <em>set</em> is still derived in core from the same <code>activeDisciplines</code> the lanes are built from. The test has a converse half: the same log <em>undeferred</em> must still surface the duplicate, so it fails if the flag ever stops working.</p>
     </div>
   </article>
 
@@ -853,6 +882,7 @@ footer p { font-size: 14px; color: var(--ash); max-width: 62ch; }
     <div class="fix">
       <div class="kick">Fix</div>
       <p>Drop the kind word. Colour keeps its role as the fast visual channel and the metric name keeps it as the text channel, so nothing becomes colour-only. The freed right slot in the footer takes the delta, which frees the top-right slot on the card for a longer movement name — "Standing Overhead Press" currently truncates on narrow devices. Confirm no other consumer of <code>w.home.exw.kind*</code> before deleting the keys (a grep says the two widgets are the only ones).</p>
+      <p class="shipped-note"><b>Shipped</b> as written; the three keys had no other consumer and are deleted with their last use, in all three languages.</p>
     </div>
   </article>
 
@@ -1212,14 +1242,14 @@ footer p { font-size: 14px; color: var(--ash); max-width: 62ch; }
 
   <div class="ship">
     <div>
-      <div class="kick">Tier 1 – ship alone, today</div>
+      <div class="kick">Tier 1 – shipped first</div>
       <ol>
         <li><strong>A2 (1)</strong> — pace through <code>formatDisciplinePace</code>. A wrong unit on a measured swim is a correctness bug, not a design preference, and it is a two-line change plus a field.</li>
         <li><strong>A1</strong> — the percent ceiling and the eligibility floors. "+7849%" is the single loudest quality defect on the screen and it costs nothing to remove.</li>
       </ol>
     </div>
     <div>
-      <div class="kick">Tier 2 – the redundancy sweep</div>
+      <div class="kick">Tier 2 – the redundancy sweep – shipped</div>
       <ol>
         <li>M1, M2, M3 — the three heads, plus the sort chip (A9).</li>
         <li>A4, A5, A6, A7 — the four verbatim repeats.</li>
@@ -1227,7 +1257,7 @@ footer p { font-size: 14px; color: var(--ash); max-width: 62ch; }
       </ol>
     </div>
     <div>
-      <div class="kick">Tier 3 – structural</div>
+      <div class="kick">Tier 3 – structural – shipped</div>
       <ol>
         <li>A2 (2) — one discipline, one home. Changes what appears in the rail, so it wants a look at real accounts first.</li>
         <li>R2's test-side parentage, replacing the printed guarantee.</li>
