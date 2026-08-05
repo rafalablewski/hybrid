@@ -256,7 +256,13 @@ export default function AuroraHome() {
     AsyncStorage.getItem("hybrid.equipment").then((v) => { if (v === "full" || v === "home" || v === "minimal") setPrefEquip(v); }).catch(() => {});
   }, []);
 
-  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
+  const today = useToday();
+  // `today` is a DEPENDENCY, not a call to the clock inside the memo. The
+  // recovery window (BIOMETRIC_FRESH_DAYS) is evaluated against Date.now() at
+  // memo time, so without this an app left open across a day boundary keeps
+  // treating a reading as fresh past its last day — the same defect the daily
+  // check-in already guards this way.
+  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals, today]);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   // TODAY's readiness feeling (independent of the rail's selected day) → feeds
   // the prescription so the one-tap check-in mechanically scales today's load.
@@ -265,7 +271,6 @@ export default function AuroraHome() {
   // backgrounded overnight (the normal case) woke still treating yesterday's
   // check-in as today's, and scaled today's prescription off it. See
   // lib/use-today.ts.
-  const today = useToday();
   // …and it is the readiness ANSWER, not `checkinFeeling`'s average of four
   // different questions. The average is what made the week rail's readiness
   // pill read "Good" while the card beneath it highlighted the Primed face the

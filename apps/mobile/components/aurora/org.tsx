@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView } from "react-native";
 import {
-  buildTeamTree, flattenTree, canManageOrg, canRead, roleScope, ORG_ROLES,
+  buildTeamTree, flattenTree, canManageOrg, canRead, roleScope, ORG_ROLES, hpiBandKey,
   type OrgRole,
 } from "@hybrid/core";
 import {
@@ -269,7 +269,7 @@ export default function AuroraOrg() {
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.lg, marginTop: 8 }}>
                 <Text style={{ fontFamily: F.black, fontSize: 40, color: hpiColor(C, athlete.hpi.band) }}>{athlete.hpi.score}</Text>
                 <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  <Chip color={hpiColor(C, athlete.hpi.band)}>{athlete.hpi.band}</Chip>
+                  <Chip color={hpiColor(C, athlete.hpi.band)}>{t(hpiBandKey(athlete.hpi.band))}</Chip>
                   <Chip color={txt(C, C.amber)}>{`${t("w.teams.org.limiter")} – ${athlete.hpi.limiter}`}</Chip>
                   <Chip color={athlete.injury.flaggedCount ? txt(C, C.red) : txt(C, C.lime)}>{`${t("w.teams.org.injury")} ${athlete.injury.overall}/100`}</Chip>
                 </View>

@@ -12,6 +12,7 @@ import {
 } from "@hybrid/core";
 import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
 import { useBodyweightLookup } from "../lib/use-bodyweight";
+import { useToday } from "../lib/use-today";
 import { useTheme, txt } from "../lib/theme";
 import { leading, fs, space, F } from "../lib/ui";
 import { AuroraScreen, ACard, ASegment, RADIUS } from "../components/aurora/kit";
@@ -43,11 +44,13 @@ export default function Statistics() {
 
   const buckets = useMemo(() => sessionBuckets(sessions, range), [sessions, range]);
   const bw = useBodyweightLookup();
+  // A memo dependency, not a clock call inside it — see the recovery window.
+  const today = useToday();
   const recap = useMemo(() => weeklyRecap(sessions, Date.now(), bw), [sessions, bw]);
   const state = useMemo(() => {
     const bio = toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]);
     return computePerformanceState(personalTrainingLog(sessions), bio);
-  }, [sessions, signals]);
+  }, [sessions, signals, today]);
   const hasData = sessions.length > 0;
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 

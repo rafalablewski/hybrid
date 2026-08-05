@@ -42,6 +42,36 @@ export type HpiBand =
   | "compromised"
   | "depleted";
 
+/**
+ * The band as an i18n KEY.
+ *
+ * `Hpi.band` is an engine identifier — "compromised" — and both clients were
+ * printing it straight onto the card, uppercased by CSS. So the one word that
+ * tells an athlete what their score MEANS was English on every locale, sitting
+ * inside a line that was otherwise translated. A key, resolved by the clients,
+ * is the same fix `ReadinessVerdict` already applies to its faces.
+ *
+ * The admin Engine Room deliberately keeps the raw identifier: it is an
+ * operator console, and every other field on it is the engine's own vocabulary.
+ */
+export const HPI_BAND_KEY: Record<HpiBand, string> = {
+  peak: "w.home.cockpit.band.peak",
+  primed: "w.home.cockpit.band.primed",
+  moderate: "w.home.cockpit.band.moderate",
+  compromised: "w.home.cockpit.band.compromised",
+  depleted: "w.home.cockpit.band.depleted",
+};
+
+/**
+ * The band's key, tolerant of a band that arrives as a plain `string`.
+ *
+ * Not every caller holds the engine's own union: the coach roster reads an API
+ * view type where `band` is just a string. This is the one resolver both
+ * clients call, so neither has to cast — and an unrecognised band falls through
+ * to its own raw value rather than resolving to nothing.
+ */
+export const hpiBandKey = (band: string): string => HPI_BAND_KEY[band as HpiBand] ?? band;
+
 export interface Hpi {
   /** the headline, 0..100 */
   score: number;
@@ -67,7 +97,13 @@ export interface Hpi {
  */
 export { enduranceFatigue };
 
-function band(score: number): HpiBand {
+/**
+ * Score → band. EXPORTED because the two pillar figures need banding by the
+ * same rule as the headline: the freshness explainer colours "Strength fresh 62"
+ * from `hpiRole(hpiBand(62))`, so a component and the headline above it can
+ * never sit in two different colour vocabularies for the same reading.
+ */
+export function hpiBand(score: number): HpiBand {
   if (score >= 85) return "peak";
   if (score >= 70) return "primed";
   if (score >= 55) return "moderate";
@@ -112,7 +148,7 @@ export function computeHpi(
 
   return {
     score,
-    band: band(score),
+    band: hpiBand(score),
     components: { strength, endurance, recovery },
     limiter,
     weights,

@@ -5,8 +5,9 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
+  freshnessExplain, wearableExplain, wearableSourcePhrase, type FreshnessPillar, type WearableExplain,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, localDayKey,
+  ROLE_COLOR, hpiRole, hpiBandKey, readinessRole, quickCheckinFeeling, READINESS_FACE, localDayKey,
   readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
   readinessFacts, KEPT_ARC_ALPHA,
   INJURY_AREA_KEY,
@@ -28,6 +29,8 @@ import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
+import FreshnessSheet from "./freshness-sheet";
+import WearableSheet from "./wearable-sheet";
 
 // State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts),
 // resolved through lib/ui's `roleText` — every state colour on this page is
@@ -44,6 +47,19 @@ const segPaint = (s: Pick<RingSegment, "role" | "dim">) =>
   s.dim ? tint(roleText(s.role), Math.round(KEPT_ARC_ALPHA * 100)) : roleText(s.role);
 const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 const PLOT = { width: 318, height: 104, pad: 10 };
+
+/** A signed point contribution, with a REAL minus (U+2212) rather than the
+ *  hyphen `${-3}` leaves behind — a hyphen beside a tabular figure reads as a
+ *  dash in a sentence, not as a sign. Mirrors mobile's signedPoints. */
+const signedPoints = (n: number) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);
+
+/** What the ±15 line calls its own source. Resolved in @hybrid/core so a
+ *  provider keeps its real name, a manual reading never borrows one, and both
+ *  clients say the same thing. */
+const wearableSource = (e: WearableExplain, t: (k: string) => string) => {
+  const p = wearableSourcePhrase(e);
+  return p.key ? t(p.key) : p.label ?? "";
+};
 
 /* ---------- unknown-state placeholders ---------- */
 /** One skeleton bar — a placeholder that states nothing. Deliberately not a
@@ -189,6 +205,17 @@ export default function AuroraPerformance({
       .replace("{tissue}", f.muscle ? t(`w.home.today.muscle.${f.muscle}`) : "")
       .replace("{n}", f.value > 0 && f.key === "w.home.readiness.factWearable" ? `+${f.value}` : String(f.value));
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  // WHICH FRESHNESS COLUMN IS OPEN, and the explanation behind it — computed
+  // only while the sheet is up, from the SAME engine the columns print.
+  const [freshOpen, setFreshOpen] = useState<FreshnessPillar | null>(null);
+  const freshExplain = useMemo(
+    () => (freshOpen ? freshnessExplain(freshOpen, log, bio) : null),
+    [freshOpen, log, bio],
+  );
+  // THE ±15's provenance. Computed whenever there IS a reading, because the
+  // card's own line needs the source name — not only the sheet.
+  const [wearableOpen, setWearableOpen] = useState(false);
+  const wearable = useMemo(() => (bio ? wearableExplain(bio) : null), [bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
   const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
@@ -263,19 +290,45 @@ export default function AuroraPerformance({
           <SHead title={t("w.home.cockpit.stateTitle")} />
           {hasData ? (
             <>
+              {/* THE HEADLINE — three levels, not two grey lines.
+                  It used to set the metric's NAME and the athlete's READING at
+                  identical weight ("FRESHNESS — COMPROMISED", one mono ash rule
+                  joined by a dash), so nothing said which of the two was the
+                  fact; the band went uncoloured beside a numeral that was
+                  coloured, splitting one state across two treatments 8px apart;
+                  and the band word itself was the raw engine identifier, English
+                  on every locale. Now: label, reading, provenance — each at its
+                  own weight, with the band carrying the figure's own colour
+                  because they are one fact stated twice. */}
               <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
                 <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: roleText(hpiRole(state.hpi.band)) }}>{state.hpi.score}</span>
                 <div style={{ minWidth: 120, flex: 1 }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
-                    {t("w.home.cockpit.freshness")} — {state.hpi.band}
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
+                    {t("w.home.cockpit.freshness")}
                   </div>
-                  {/* The wearable rides the headline as the signed adjustment it
-                      is (±15), instead of standing as a peer of two 0..100
-                      indices in a third column. */}
-                  {state.hpi.components.recovery !== 0 && (
-                    <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>
-                      {t("w.home.cockpit.wearableOf").replace("{n}", `${state.hpi.components.recovery > 0 ? "+" : ""}${state.hpi.components.recovery}`)}
-                    </div>
+                  <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.015em", lineHeight: 1.2, color: roleText(hpiRole(state.hpi.band)), marginTop: 2 }}>
+                    {t(hpiBandKey(state.hpi.band))}
+                  </div>
+                  {/* THE ±15, AND A DOOR ONTO IT. This line used to assert a
+                      "wearable" whatever had actually written the reading, in
+                      the present tense over a reading of any age, with nothing
+                      behind it to check. It now names the real source and
+                      opens the derivation. */}
+                  {state.hpi.components.recovery !== 0 && wearable && (
+                    <button
+                      type="button"
+                      className="pressable"
+                      onClick={() => setWearableOpen(true)}
+                      aria-label={`${t("w.home.wearable.title")} — ${t("w.home.fresh.explain")}`}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 4, padding: 0, background: "none", border: 0, cursor: "pointer", textAlign: "left", fontSize: fs.caption, color: C("ash") }}
+                    >
+                      <span>
+                        {t("w.home.cockpit.wearableOf")
+                          .replace("{n}", signedPoints(state.hpi.components.recovery))
+                          .replace("{source}", wearableSource(wearable, t))}
+                      </span>
+                      <AuroraIcon name="info" size={13} color={C("ash")} style={{ flex: "none" }} />
+                    </button>
                   )}
                 </div>
               </div>
@@ -288,10 +341,17 @@ export default function AuroraPerformance({
                 {state.drivers[0] && <span style={{ color: C("ash") }}> {state.drivers[0].detail}.</span>}
               </div>
 
+              {/* THE TWO PILLARS — each column is now a DOOR. They printed a
+                  bare numeral under a mono label with nothing behind it: no
+                  derivation, no inputs, no statement of what the figure refuses
+                  to claim. The ⓘ is the same affordance Today's readiness
+                  reading uses for "explain THIS number". */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
-                <Comp label={t("w.home.cockpit.strengthFresh")} value={`${state.hpi.components.strength}`} />
-                <Comp label={t("w.home.cockpit.enduranceFresh")} value={`${state.hpi.components.endurance}`} />
+                <Comp label={t("w.home.cockpit.strengthFresh")} value={`${state.hpi.components.strength}`} onExplain={() => setFreshOpen("strength")} explainLabel={t("w.home.fresh.explain")} />
+                <Comp label={t("w.home.cockpit.enduranceFresh")} value={`${state.hpi.components.endurance}`} onExplain={() => setFreshOpen("endurance")} explainLabel={t("w.home.fresh.explain")} />
               </div>
+              <FreshnessSheet explain={freshExplain} onClose={() => setFreshOpen(null)} />
+              <WearableSheet explain={wearableOpen ? wearable : null} onClose={() => setWearableOpen(false)} />
 
               {/* CAPABILITY — the other half. Freshness rises on a layoff; this
                   does not. Without it a screen called Performance reports only
@@ -615,12 +675,35 @@ function Pill({ children, dot }: { children: React.ReactNode; dot?: string }) {
   );
 }
 
-function Comp({ label, value }: { label: string; value: string }) {
+/**
+ * One pillar column, and the door under it.
+ *
+ * The WHOLE column is the hit target — a 9px mono label beside an 18px ⓘ is
+ * not a tap target anyone finds on a phone — with the ⓘ riding the label row as
+ * the visible affordance, exactly as Today's readiness reading does it.
+ */
+function Comp({ label, value, onExplain, explainLabel }: {
+  label: string;
+  value: string;
+  onExplain: () => void;
+  explainLabel: string;
+}) {
   return (
-    <div style={{ textAlign: "center" }}>
+    <button
+      type="button"
+      className="pressable"
+      onClick={onExplain}
+      aria-label={`${label} ${value} – ${explainLabel}`}
+      style={{ display: "block", width: "100%", textAlign: "center", background: "none", border: 0, padding: 0, cursor: "pointer", color: C("chalk") }}
+    >
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, color: C("chalk"), letterSpacing: "-.02em" }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginTop: 6 }}>{label}</div>
-    </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
+        {/* The glyph IS a ring — wrapping it in a second bordered circle, as the
+            Today reading does at 18px, reads as noise beside a 9px label. */}
+        <AuroraIcon name="info" size={13} color={C("ash")} style={{ flex: "none" }} />
+      </div>
+    </button>
   );
 }
 
@@ -699,8 +782,11 @@ function Teaser({ paid, onUnlock, state }: {
           <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
             <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: roleText(hpiRole(state.hpi.band)) }}>{state.hpi.score}</span>
             <div style={{ minWidth: 120, flex: 1 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
-                {t("w.home.cockpit.freshness")} — {state.hpi.band}
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
+                {t("w.home.cockpit.freshness")}
+              </div>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.015em", lineHeight: 1.2, color: roleText(hpiRole(state.hpi.band)), marginTop: 2 }}>
+                {t(hpiBandKey(state.hpi.band))}
               </div>
               <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4, lineHeight: 1.5 }}>{t("w.home.cockpit.teaseYours")}</div>
             </div>

@@ -205,55 +205,67 @@ export default function TissueCard({
         onOpened={refresh}
       />
 
-      {/* FOOTER RAIL — both ways in, at the same weight. Opening a protocol is
-          not a "go" action, so it never takes the chartreuse fill. */}
+      {/* FOOTER RAIL — ONE row, two ends.
+          The quiet DISCLOSURES sit left; the ACTION sits right. They used to be
+          stacked: the action alone on a space-between row whose left slot was an
+          empty View whenever a tissue was flagged, and "How is this calculated?"
+          on a second row pinned with alignSelf:flex-end. So the card ended in a
+          right-hugging column of two controls that do entirely different things
+          — a disclosure about the model directly under the way into a rehab
+          protocol, at identical weight, with the whole left half empty. Kind now
+          maps to side, and the rail never collapses into a stack. Opening a
+          protocol is still not a "go" action, so it never takes the chartreuse
+          fill. */}
       <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          {/* Hidden, not disabled, while a flag holds the rows open — a
-              control that cannot do anything should not be drawn. */}
-          {hasData && !alert ? (
-            <Pressable
-              onPress={() => setRowsOpen((v) => !v)}
-              hitSlop={6}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: showRows }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
-                {showRows ? t("w.injury.hideTissues") : t("w.injury.allTissues")}
-              </Text>
-              <AuroraIcon name="chevron-down" size={12} color={C.ash} style={showRows ? { transform: [{ rotate: "180deg" }] } : undefined} />
-            </Pressable>
-          ) : <View />}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 16, flexShrink: 1 }}>
+            {/* Hidden, not disabled, while a flag holds the rows open — a
+                control that cannot do anything should not be drawn. */}
+            {hasData && !alert && (
+              <Pressable
+                onPress={() => setRowsOpen((v) => !v)}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showRows }}
+                style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+              >
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                  {showRows ? t("w.injury.hideTissues") : t("w.injury.allTissues")}
+                </Text>
+                <AuroraIcon name="chevron-down" size={12} color={C.ash} style={showRows ? { transform: [{ rotate: "180deg" }] } : undefined} />
+              </Pressable>
+            )}
+            {/* THE CALIBRATION, BEHIND A DISCLOSURE. It used to print on the
+                card face, where it read as team-facing metadata nobody outside
+                the building can act on — and lent the numbers an air of
+                precision they do not have. It now answers the question an
+                athlete is already asking when they open it. */}
+            {hasData && (
+              <Pressable
+                onPress={() => setHowOpen((v) => !v)}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: howOpen }}
+                style={{ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 }}
+              >
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, flexShrink: 1 }}>{t("w.injury.howCalculated")}</Text>
+                <AuroraIcon name="chevron-down" size={12} color={C.ash} style={howOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
+              </Pressable>
+            )}
+          </View>
           <Pressable onPress={() => setPicking(null)} hitSlop={6} accessibilityRole="button">
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: alert ? txt(C, C.red) : C.ash }}>
               {alert ? t("w.injury.openProtocol") : t("w.injury.logInjury")}
             </Text>
           </Pressable>
         </View>
-        {/* THE CALIBRATION, BEHIND A DISCLOSURE. It used to print on the card
-            face, where it read as team-facing metadata nobody outside the
-            building can act on — and lent the numbers an air of precision they
-            do not have. It now answers the question an athlete is already
-            asking when they open it. */}
-        {hasData && (
-          <View style={{ marginTop: 10 }}>
-            <Pressable
-              onPress={() => setHowOpen((v) => !v)}
-              hitSlop={6}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: howOpen }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-end" }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.injury.howCalculated")}</Text>
-              <AuroraIcon name="chevron-down" size={12} color={C.ash} style={howOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
-            </Pressable>
-            {howOpen && (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", marginTop: 7, lineHeight: leading(fs.nano) }}>
-                {t("w.analyze.perf.model")} {axis.modelVersion}
-              </Text>
-            )}
-          </View>
+        {/* The model line lands under the control that opened it — on the LEFT.
+            Right-aligned mono metadata under a right-aligned button is what made
+            the whole footer read as drifting off the card. */}
+        {hasData && howOpen && (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: leading(fs.nano) }}>
+            {t("w.analyze.perf.model")} {axis.modelVersion}
+          </Text>
         )}
       </View>
     </ACard>
