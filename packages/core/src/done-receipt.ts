@@ -1,7 +1,7 @@
 /**
  * Done receipt — the completed-state summary of a plan day ("All done for
- * today"): what was trained, when it finished, and only the numbers that can
- * be trusted. One pure model both week rails render (design:
+ * today"): what was trained, and only the numbers that can be trusted. One
+ * pure model both week rails render (design:
  * design/done-card-redesign-ideas.html, concept 1 "The receipt, corrected"),
  * so web + mobile agree on every figure AND on which figures not to show.
  *
@@ -21,14 +21,19 @@
  * comparison panel does.
  */
 import type { LoggedSession } from "./engines/session";
-import { sessionCardioTotals, sessionClockTime } from "./engines/session";
+import { sessionCardioTotals } from "./engines/session";
 import { liveSessionStats } from "./live-stats";
 import { sessionEnergy } from "./energy";
 import { fmtTonnage, type WeightUnit } from "./units";
 
+// NO FINISHING CLOCK. The receipt used to carry the local time the day
+// finished at, rendered as a quiet "finished 16:32" under the headline. A day
+// is not one workout: the plan rail builds its receipt from the ONE session
+// that fulfilled the scheduled day, so on a day trained twice the stamp
+// reported the first workout's finish while every figure beside it summed
+// something else — a clock that contradicted the card it sat on. The figures
+// are the receipt; the clock said nothing they needed and could be wrong.
 export interface DoneReceipt {
-  /** local clock the session finished at ("11:18"); null when never stamped. */
-  finishedClock: string | null;
   /** trusted training minutes; null when untracked or below the plausibility floor. */
   durationMin: number | null;
   /**
@@ -162,7 +167,6 @@ export function doneReceipt(
   });
 
   return {
-    finishedClock: session.completedAt ? sessionClockTime(session.completedAt) : null,
     durationMin: durationMin > 0 ? durationMin : null,
     durationSec: measured && device!.durationSec != null ? device!.durationSec : null,
     tonnageKg: stats.volume,

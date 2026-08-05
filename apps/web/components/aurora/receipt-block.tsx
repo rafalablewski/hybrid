@@ -6,8 +6,13 @@ import { useLang } from "@/lib/i18n";
 const C = (v: string) => `var(--color-${v})`;
 
 // ── AURORA Done receipt block ───────────────────────────────────────────────
-// The finished day, as both week rails render it: the ✓, the headline, the
-// finishing clock, ONE figure at display size and the rest standing down.
+// The finished day, as both week rails render it: the ✓, the headline, ONE
+// figure at display size and the rest standing down.
+//
+// NO FINISHING CLOCK. "finished 16:32" used to sit under the headline; it is
+// gone (see the note in core done-receipt.ts). A day trained twice reported
+// the FIRST workout's finish beside figures that summed the whole day, and no
+// reading of that line was true of the card it sat on.
 //
 // THE GUTTER IS THE POINT. The card used to run three left edges at once — its
 // hairlines at 0, the ✓ and headline at the card's padding, and every line
@@ -62,9 +67,6 @@ export default function ReceiptBlock({
   const { t } = useLang();
   const empty: { hero: DoneReceiptStat | null; rest: DoneReceiptStat[] } = { hero: null, rest: [] };
   const { hero, rest } = receipt ? doneReceiptHero(receipt, units) : empty;
-  const finished = receipt?.finishedClock
-    ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
-    : "";
 
   return (
     <div style={{ display: "flex", alignItems: "flex-start" }}>
@@ -87,12 +89,6 @@ export default function ReceiptBlock({
             </span>
           )}
         </div>
-
-        {!!finished && (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>
-            {finished}
-          </div>
-        )}
 
         {hero && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginTop: 14, flexWrap: "wrap" }}>

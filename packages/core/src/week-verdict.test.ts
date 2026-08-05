@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
+import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, figureDeltaPct, figureDirection, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
 import { resolveActivityRange } from "./activity-window";
 import { addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
@@ -277,5 +277,57 @@ describe("activityVerdict — a thin baseline can't hijack the sentence (A1)", (
     expect(v.metric).toBe("distance");
     expect(v.deltaPct).toBe(200);
     expect(verdictShowsStep(v)).toBe(false);
+  });
+});
+
+/* ── A COLUMN'S OWN MOVE ───────────────────────────────────────────────────
+   The colour on the figure row follows SELECTION now, so an opened column has
+   to be able to say what IT did — independently of the metric the sentence
+   named, which may be a different one moving the other way. */
+describe("figureDirection / figureDeltaPct", () => {
+  const f = (value: number, baseline: number) => ({ metric: "hours" as const, value, baseline });
+
+  it("no baseline is not a flat move", () => {
+    expect(figureDeltaPct(f(120, 0))).toBeNull();
+    expect(figureDirection(f(120, 0))).toBe("flat");
+    // …and the distinction survives: a figure that appeared from nothing must
+    // not print "0%" as if it had held steady.
+    expect(figureDeltaPct(f(0, 0))).toBeNull();
+  });
+
+  it("reads the signed move against its own baseline", () => {
+    expect(figureDeltaPct(f(120, 100))).toBe(20);
+    expect(figureDeltaPct(f(80, 100))).toBe(-20);
+    expect(figureDirection(f(120, 100))).toBe("up");
+    expect(figureDirection(f(80, 100))).toBe("down");
+  });
+
+  it("takes the SENTENCE's threshold, so a hue can't claim what a claim can't", () => {
+    const under = 100 + VERDICT_THRESHOLD_PCT - 1;
+    expect(figureDirection(f(under, 100))).toBe("flat");
+    expect(figureDirection(f(100 + VERDICT_THRESHOLD_PCT, 100))).toBe("up");
+    expect(figureDirection(f(100 - VERDICT_THRESHOLD_PCT, 100))).toBe("down");
+  });
+
+  it("a column may move opposite to the metric the sentence named", () => {
+    // Tonnage climbing while the hours behind it fall: the card's headline is
+    // the rise, but opening Hours has to read terracotta.
+    const priors = [9, 16, 23, 30].map((d) => s(d, 5000, 90));
+    const v = activityVerdict([...priors, s(2, 9000, 45)], d7());
+    expect(v.metric).toBe("tonnage");
+    expect(v.direction).toBe("up");
+
+    const hours = v.figures.find((x) => x.metric === "hours")!;
+    expect(figureDirection(hours)).toBe("down");
+    expect(figureDirection(v.figures.find((x) => x.metric === "tonnage")!)).toBe("up");
+  });
+
+  it("every figure the card renders can be asked, including the named one", () => {
+    const priors = [9, 16, 23, 30].map((d) => s(d, 5000));
+    const v = activityVerdict([...priors, s(2, 9000)], d7());
+    for (const fig of v.figures) expect(["up", "down", "flat"]).toContain(figureDirection(fig));
+    // The named metric's own direction agrees with the sentence's.
+    const namedFig = v.figures.find((x) => x.metric === v.metric)!;
+    expect(figureDirection(namedFig)).toBe(v.direction);
   });
 });

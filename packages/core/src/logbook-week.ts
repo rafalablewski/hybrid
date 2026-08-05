@@ -102,12 +102,10 @@ export function logbookWeek(
 /**
  * Merge same-day receipts into one honest summary for the logbook rail's
  * done state: sums only what every figure can vouch for (doneReceipt already
- * dropped untrustworthy durations per session), keeps the LAST finish clock
- * (the day ended when its final session did). Null for an empty day.
+ * dropped untrustworthy durations per session). Null for an empty day.
  */
 export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
   if (!receipts.length) return null;
-  let finishedClock: string | null = null;
   let durationMin = 0;
   let hasDuration = false;
   // Seconds only add up while EVERY measured session brought them; a day mixing
@@ -136,7 +134,6 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
   let cardioLead: string | null = null;
   let leadAgrees = true;
   for (const r of receipts) {
-    if (r.finishedClock) finishedClock = r.finishedClock;
     if (r.durationMin != null) {
       durationMin += r.durationMin;
       hasDuration = true;
@@ -161,7 +158,6 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     measured = measured || r.measured;
   }
   return {
-    finishedClock,
     durationMin: hasDuration ? durationMin : null,
     durationSec: hasDuration && allSec && durationSec > 0 ? durationSec : null,
     tonnageKg,
