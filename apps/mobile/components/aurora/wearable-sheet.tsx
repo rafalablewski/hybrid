@@ -71,24 +71,22 @@ export default function WearableSheet({ explain, onClose }: {
             </View>
           </Block>
 
-          {/* THE LEDGER — sum, rounding, and the bound when it bites. */}
-          {e.measuredCount > 0 && (
-            <Block C={C} scheme={scheme} head={t("w.home.wearable.ledgerHead")}>
-              <View style={{ gap: 8 }}>
-                <LedgerLine C={C} label={t("w.home.wearable.stepSum")} value={signed(e.raw)} />
-                {e.clamped && <LedgerLine C={C} label={t("w.home.wearable.stepClamp").replace("{n}", "15")} value={signed(e.total)} />}
-                <View style={{ height: 1, backgroundColor: C.line }} />
-                <LedgerLine C={C} label={t("w.home.wearable.stepRound")} value={signed(e.total)} total />
-              </View>
-            </Block>
-          )}
+          {/* THE LEDGER — sum, rounding, and the bound when it bites. There is
+              always at least one measured row to sum: neither builder returns a
+              Biometrics unless a metric had a usable, recent reading. */}
+          <Block C={C} scheme={scheme} head={t("w.home.wearable.ledgerHead")}>
+            <View style={{ gap: 8 }}>
+              <LedgerLine C={C} label={t("w.home.wearable.stepSum")} value={signed(e.raw)} />
+              {e.clamped && <LedgerLine C={C} label={t("w.home.wearable.stepClamp").replace("{n}", "15")} value={signed(e.total)} />}
+              <View style={{ height: 1, backgroundColor: C.line }} />
+              <LedgerLine C={C} label={t("w.home.wearable.stepRound")} value={signed(e.total)} total />
+            </View>
+          </Block>
 
           {/* WHY IT CAN VANISH — the recency rule, stated from the constant. */}
-          <Block C={C} scheme={scheme} head={e.measuredCount === 0 ? t("w.home.wearable.noneHead") : t("w.home.wearable.freshHead")}>
+          <Block C={C} scheme={scheme} head={t("w.home.wearable.freshHead")}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: leading(fs.body) }}>
-              {e.measuredCount === 0
-                ? t("w.home.wearable.none")
-                : t("w.home.wearable.fresh").replace("{n}", String(e.freshDays))}
+              {t("w.home.wearable.fresh").replace("{n}", String(e.freshDays))}
             </Text>
           </Block>
         </View>

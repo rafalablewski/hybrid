@@ -140,9 +140,14 @@ function Full({ top }: { top?: ReactNode }) {
     }).catch(() => {});
   }, []);
 
-  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals]);
-  const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   const today = useToday();
+  // `today` is a DEPENDENCY, not a call to the clock inside the memo. The
+  // recovery window (BIOMETRIC_FRESH_DAYS) is evaluated against Date.now() at
+  // memo time, so without this an app left open across a day boundary keeps
+  // treating a reading as fresh past its last day — the same defect the daily
+  // check-in already guards this way.
+  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals, today]);
+  const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   const todayFeeling = useMemo(
     () => quickCheckinFeeling(checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null),
     [checkins, today],
@@ -725,7 +730,13 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
   const sessionsRead = useSessionsRead();
   const signalsRead = useSignalsRead();
   const sessions = sessionsRead.data ?? [];
-  const bio = useMemo(() => toBiometrics((signalsRead.data ?? []) as unknown as Parameters<typeof toBiometrics>[0]), [signalsRead.data]);
+  const today = useToday();
+  // `today` is a DEPENDENCY, not a call to the clock inside the memo. The
+  // recovery window (BIOMETRIC_FRESH_DAYS) is evaluated against Date.now() at
+  // memo time, so without this an app left open across a day boundary keeps
+  // treating a reading as fresh past its last day — the same defect the daily
+  // check-in already guards this way.
+  const bio = useMemo(() => toBiometrics((signalsRead.data ?? []) as unknown as Parameters<typeof toBiometrics>[0]), [signalsRead.data, today]);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hasData = sessionsRead.ready && sessions.length > 0;

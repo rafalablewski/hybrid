@@ -67,33 +67,31 @@ export default function WearableSheet({ explain, onClose }: {
             </div>
           </section>
 
-          {/* THE LEDGER — sum, rounding, and the bound when it bites. */}
-          {e.measuredCount > 0 && (
-            <section>
-              <Head title={t("w.home.wearable.ledgerHead")} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "8px 12px", alignItems: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
-                <span>{t("w.home.wearable.stepSum")}</span>
-                <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{signed(e.raw)}</span>
-                {e.clamped && (
-                  <>
-                    <span>{t("w.home.wearable.stepClamp").replace("{n}", "15")}</span>
-                    <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{signed(e.total)}</span>
-                  </>
-                )}
-                <span style={{ gridColumn: "1 / -1", height: 1, background: C("line") }} />
-                <span style={{ color: C("chalk"), fontWeight: 700 }}>{t("w.home.wearable.stepRound")}</span>
-                <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: C("chalk"), fontWeight: 700 }}>{signed(e.total)}</span>
-              </div>
-            </section>
-          )}
+          {/* THE LEDGER — sum, rounding, and the bound when it bites. There is
+              always at least one measured row to sum: neither builder returns a
+              Biometrics unless a metric had a usable, recent reading. */}
+          <section>
+            <Head title={t("w.home.wearable.ledgerHead")} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "8px 12px", alignItems: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>
+              <span>{t("w.home.wearable.stepSum")}</span>
+              <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{signed(e.raw)}</span>
+              {e.clamped && (
+                <>
+                  <span>{t("w.home.wearable.stepClamp").replace("{n}", "15")}</span>
+                  <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{signed(e.total)}</span>
+                </>
+              )}
+              <span style={{ gridColumn: "1 / -1", height: 1, background: C("line") }} />
+              <span style={{ color: C("chalk"), fontWeight: 700 }}>{t("w.home.wearable.stepRound")}</span>
+              <span style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: C("chalk"), fontWeight: 700 }}>{signed(e.total)}</span>
+            </div>
+          </section>
 
           {/* WHY IT CAN VANISH — the recency rule, stated from the constant. */}
           <section>
-            <Head title={e.measuredCount === 0 ? t("w.home.wearable.noneHead") : t("w.home.wearable.freshHead")} />
+            <Head title={t("w.home.wearable.freshHead")} />
             <p style={{ margin: 0, fontSize: fs.body, lineHeight: 1.6, color: C("ash") }}>
-              {e.measuredCount === 0
-                ? t("w.home.wearable.none")
-                : t("w.home.wearable.fresh").replace("{n}", String(e.freshDays))}
+              {t("w.home.wearable.fresh").replace("{n}", String(e.freshDays))}
             </p>
           </section>
         </div>
