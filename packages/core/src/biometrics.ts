@@ -1,5 +1,5 @@
 import type { Biometrics, BiometricMetric } from "./engines/types";
-import { BIOMETRIC_FRESH_DAYS, signalAgeDays } from "./engines/signals";
+import { BIOMETRIC_BASELINE_WINDOW, BIOMETRIC_FRESH_DAYS, signalAgeDays } from "./engines/signals";
 
 /** A stored biometric reading (manual entry today; HealthKit/WHOOP later). */
 export interface BiometricEntry {
@@ -61,7 +61,14 @@ export function buildBiometrics(entries: BiometricEntry[], now: number = Date.no
   ): BiometricMetric => {
     const todayVal = today[key];
     if (todayVal == null) return neutral(better);
-    const prior = rest.map((e) => e[key]).filter((v): v is number => v != null);
+    // The SAME definition the Signal path uses (priorBaseline): today excluded,
+    // capped at the same window. This path always excluded today; it did not
+    // bound the window, so two identical histories could still resolve to two
+    // different baselines depending on which table they lived in.
+    const prior = rest
+      .map((e) => e[key])
+      .filter((v): v is number => v != null)
+      .slice(0, BIOMETRIC_BASELINE_WINDOW);
     const baseline = prior.length ? prior.reduce((a, b) => a + b, 0) / prior.length : todayVal;
     return { today: todayVal, baseline, unit, better, source: "manual", ts: today.date, measured: true };
   };

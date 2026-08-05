@@ -112,8 +112,12 @@ export function signalUnit(kind: SignalKind): string {
 
 /**
  * Rolling baseline (mean + sample SD) over the most recent `window` readings of
- * one kind, newest-first or oldest-first — order doesn't matter. Mirrors the
- * "today vs. your own baseline" logic the readiness engine already trusts.
+ * one kind, newest-first or oldest-first — order doesn't matter.
+ *
+ * NOTE what this INCLUDES: the newest reading. That makes it the right function
+ * for "what has this metric been doing lately", and the WRONG one for "is today
+ * unusual for me" — see `priorBaseline` below, which is what the recovery
+ * adjustment uses and why.
  */
 export function rollingBaseline(
   signals: Signal[],
@@ -155,6 +159,48 @@ export function latest(signals: Signal[], kind: SignalKind): Signal | undefined 
     .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())[0];
 }
 
+/** How many PRIOR readings define "normal". */
+export const BIOMETRIC_BASELINE_WINDOW = 14;
+
+/**
+ * THE BASELINE TODAY IS MEASURED AGAINST — the newest reading EXCLUDED.
+ *
+ * `rollingBaseline` includes it, and the recovery adjustment used to compare
+ * today's reading against a mean that contained today's reading. That is
+ * self-referential: the more unusual today is, the harder it drags the average
+ * toward itself, so it always reads as less unusual than it was. The signal
+ * partly erased itself, and worst exactly when there was least history —
+ * against a single prior reading the deviation came out HALVED (a real 20% HRV
+ * rise scored +4 instead of +8), converging to the honest figure only after
+ * about a fortnight.
+ *
+ * It also meant the two entry points disagreed: the legacy `buildBiometrics`
+ * always excluded today, so identical readings produced different adjustments
+ * depending on which table they happened to live in. This is now the one
+ * definition both use.
+ *
+ * With NO prior readings the caller falls back to today's own value, which
+ * makes the deviation exactly 0 — the first-ever reading cannot move a score it
+ * has nothing to be compared against.
+ */
+export function priorBaseline(
+  signals: Signal[],
+  kind: SignalKind,
+  window = BIOMETRIC_BASELINE_WINDOW,
+): SignalBaseline {
+  const vals = signals
+    .filter((s) => s.kind === kind)
+    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
+    // Drop the newest — that one IS "today", and it cannot be its own normal.
+    .slice(1, 1 + window)
+    .map((s) => s.value);
+  const n = vals.length;
+  if (n === 0) return { mean: 0, sd: 0, n: 0 };
+  const mean = vals.reduce((a, b) => a + b, 0) / n;
+  const variance = n > 1 ? vals.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1) : 0;
+  return { mean, sd: Math.sqrt(variance), n };
+}
+
 /**
  * HOW OLD A READING MAY BE AND STILL COUNT AS TODAY'S.
  *
@@ -192,11 +238,12 @@ function metric(
   // one thing we must never do is present an unknown-age reading as current.
   const age = signalAgeDays(today.ts, now);
   if (age === null || age > BIOMETRIC_FRESH_DAYS) return undefined;
-  const base = rollingBaseline(signals, kind);
+  const base = priorBaseline(signals, kind);
   return {
     today: today.value,
-    // fall back to today's reading when there's no history yet (neutral)
-    baseline: base.n > 1 ? base.mean : today.value,
+    // ONE prior reading is enough to compare against; with none, today is its
+    // own baseline, so the deviation is 0 and the term contributes nothing.
+    baseline: base.n > 0 ? base.mean : today.value,
     unit: signalUnit(kind),
     better: signalDirection(kind),
     source: today.source,

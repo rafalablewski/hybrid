@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toBiometrics, BIOMETRIC_FRESH_DAYS, signalAgeDays } from "./signals";
+import { toBiometrics, BIOMETRIC_FRESH_DAYS, BIOMETRIC_BASELINE_WINDOW, priorBaseline, signalAgeDays } from "./signals";
 import { buildBiometrics } from "../biometrics";
 import { biometricAdjustment } from "./readiness";
 import { wearableExplain, wearableSourceLabel, WEARABLE_METRIC_KEY } from "./wearable-explain";
@@ -195,5 +195,64 @@ describe("wearableExplain — the door", () => {
       sig("sleep", 8, day(2), "manual"), sig("sleep", 6, day(0), "manual"),
     ], NOW)!;
     expect(wearableExplain(mixed, NOW).sources).toEqual(["apple", "manual"]);
+  });
+});
+
+describe("the baseline is what today is measured AGAINST, so it excludes today", () => {
+  /** Four steady days, then a spike. */
+  const steady = (mu: number, today: number, priors: number): Signal[] => {
+    const rows: Signal[] = [];
+    for (let i = priors; i >= 1; i--) rows.push(sig("hrv", mu, day(i)));
+    rows.push(sig("hrv", today, day(0)));
+    return rows;
+  };
+
+  it("does not let today drag its own baseline", () => {
+    const bio = toBiometrics(steady(50, 60, 4), NOW)!;
+    // Including today the mean would be 52 and the reading would look 15% high.
+    expect(bio.hrv.baseline).toBe(50);
+    expect(biometricAdjustment(bio)).toBe(8);
+  });
+
+  it("gives the full signal off a SINGLE prior reading", () => {
+    // This is the case the old definition halved: baseline (50+60)/2 = 55.
+    const bio = toBiometrics(steady(50, 60, 1), NOW)!;
+    expect(bio.hrv.baseline).toBe(50);
+    expect(biometricAdjustment(bio)).toBe(8);
+  });
+
+  it("cannot move the score on the first-ever reading", () => {
+    const bio = toBiometrics([sig("hrv", 60, day(0))], NOW)!;
+    expect(bio.hrv.baseline).toBe(bio.hrv.today);
+    expect(biometricAdjustment(bio)).toBe(0);
+  });
+
+  it("bounds the baseline to the window", () => {
+    // 20 priors at 50, then 4 older ones at 100 — the old ones fall outside the
+    // 14-reading window and must not drag the mean.
+    const rows: Signal[] = [];
+    for (let i = 24; i >= 21; i--) rows.push(sig("hrv", 100, day(i)));
+    for (let i = 20; i >= 1; i--) rows.push(sig("hrv", 50, day(i)));
+    rows.push(sig("hrv", 60, day(0)));
+    expect(priorBaseline(rows, "hrv").n).toBe(BIOMETRIC_BASELINE_WINDOW);
+    expect(toBiometrics(rows, NOW)!.hrv.baseline).toBe(50);
+  });
+
+  it("agrees with the legacy path on identical readings", () => {
+    // The defect this closes: the same history resolved to two different
+    // baselines depending on which table it happened to live in.
+    const values = [44, 46, 45, 43, 52];
+    const signals = values.map((v, i) => sig("hrv", v, day(values.length - 1 - i)));
+    const entries = values.map((v, i) => ({ date: day(values.length - 1 - i), hrv: v }));
+    const fromSignals = toBiometrics(signals, NOW)!;
+    const fromLegacy = buildBiometrics(entries, NOW)!;
+    expect(fromSignals.hrv.today).toBe(fromLegacy.hrv.today);
+    expect(fromSignals.hrv.baseline).toBeCloseTo(fromLegacy.hrv.baseline, 10);
+    expect(biometricAdjustment(fromSignals)).toBe(biometricAdjustment(fromLegacy));
+  });
+
+  it("still reads a drop as a drop", () => {
+    const bio = toBiometrics(steady(50, 40, 4), NOW)!;
+    expect(biometricAdjustment(bio)).toBe(-8);
   });
 });
