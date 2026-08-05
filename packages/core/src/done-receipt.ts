@@ -23,6 +23,7 @@
 import type { LoggedSession } from "./engines/session";
 import { sessionCardioTotals, sessionClockTime } from "./engines/session";
 import { liveSessionStats } from "./live-stats";
+import { sessionEnergy } from "./energy";
 import { fmtTonnage, type WeightUnit } from "./units";
 
 export interface DoneReceipt {
@@ -64,6 +65,17 @@ export interface DoneReceipt {
   distanceKm: number;
   /** total elevation gain, m (0 when nothing climbed or nothing recorded it). */
   elevationM: number;
+  /**
+   * Energy cost, kcal — the device's measurement when one recorded the work,
+   * else the MET model's ESTIMATE from what was logged (energy.ts). Null when
+   * neither can say anything honest: no bodyweight (the model is linear in
+   * mass, so inventing one would invent the answer) or no minutes anywhere.
+   */
+  kcal: number | null;
+  /** true when every calorie in `kcal` was MEASURED by a device — so the UI
+   *  drops the "~" it otherwise wears. False for a modelled figure, and for a
+   *  merged day that mixes a measured session with a typed one. */
+  kcalMeasured: boolean;
   /** true when a matched device supplied the figures above (duration, and the
    *  distance/climb it recorded) — i.e. they are MEASURED, not typed or
    *  modelled. False for a purely logged session, and for any read taken with
@@ -130,6 +142,16 @@ export function doneReceipt(
   const distanceKm = device?.distanceKm != null ? device.distanceKm : cardio.distanceKm;
   const elevationM = device?.elevationM != null ? device.elevationM : cardio.elevationM;
 
+  // The day's burn, off the same trusted duration every other figure here uses
+  // — the device's measurement when it counted the calories, else the MET model
+  // (energy.ts owns both branches, and returns null rather than guessing when
+  // there's no bodyweight to scale by).
+  const energy = sessionEnergy(session, {
+    bodyweightKg: opts.bodyweightKg,
+    durationMin: durationMin > 0 ? durationMin : null,
+    ignoreDevice: opts.ignoreDevice,
+  });
+
   return {
     finishedClock: session.completedAt ? sessionClockTime(session.completedAt) : null,
     durationMin: durationMin > 0 ? durationMin : null,
@@ -146,6 +168,8 @@ export function doneReceipt(
     // formatSportDistance for the sport's own unit.
     distanceKm,
     elevationM: Math.round(elevationM),
+    kcal: energy?.kcal ?? null,
+    kcalMeasured: energy?.measured ?? false,
     measured,
   };
 }
@@ -155,6 +179,10 @@ export function doneReceipt(
 export interface DoneReceiptStat {
   value: string;
   labelKey: string;
+  /** true when the figure is MODELLED rather than logged or measured — the
+   *  value already carries the "~" that says so; the flag lets a client treat
+   *  it differently (a quieter tone, a tooltip) without parsing the string. */
+  estimate?: boolean;
 }
 
 /**
@@ -168,6 +196,11 @@ export interface DoneReceiptStat {
  * distance and stops there, instead of the "1 SETS" the effort counter used to
  * produce. A day that lifted and swam still reports the sets it actually
  * lifted, not the swim padded into the count.
+ *
+ * ENERGY COMES LAST, and it is the one figure here that can be MODELLED: it
+ * wears a "~" unless a device counted every calorie in it (the Wrapped's
+ * idiom), and it is omitted entirely when there's no bodyweight to scale the
+ * MET model by — an estimate marked as one is honest, an invented mass is not.
  */
 export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceiptStat[] {
   const out: DoneReceiptStat[] = [];
@@ -183,6 +216,12 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
       labelKey: "w.home.today.distance",
     });
   if (r.strengthSets > 0) out.push({ value: String(r.strengthSets), labelKey: "w.home.today.sets" });
+  if (r.kcal != null && r.kcal > 0)
+    out.push({
+      value: `${r.kcalMeasured ? "" : "~"}${r.kcal} kcal`,
+      labelKey: "w.home.today.energy",
+      estimate: !r.kcalMeasured,
+    });
   return out;
 }
 

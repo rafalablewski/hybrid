@@ -225,7 +225,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onLo
           </Text>
         )}
         {stats.length > 0 && (
-          <View style={{ flexDirection: "row", gap: 24, marginTop: 16, marginLeft: 31 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 24, rowGap: 14, marginTop: 16, marginLeft: 31 }}>
             {stats.map((s) => (
               <View key={s.labelKey}>
                 <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: -0.3, color: C.chalk, fontVariant: ["tabular-nums"] }}>{s.value}</Text>

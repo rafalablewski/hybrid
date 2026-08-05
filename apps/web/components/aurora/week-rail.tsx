@@ -407,7 +407,7 @@ function DayDetail({ day, receipt, units, streakDays, doneFloor, onStart, onSkip
           </div>
         )}
         {stats.length > 0 && (
-          <div style={{ display: "flex", gap: 24, margin: "16px 0 0 31px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", columnGap: 24, rowGap: 14, margin: "16px 0 0 31px" }}>
             {stats.map((s) => (
               <span key={s.labelKey}>
                 <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>

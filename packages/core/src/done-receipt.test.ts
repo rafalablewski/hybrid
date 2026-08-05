@@ -203,4 +203,72 @@ describe("doneReceiptStats", () => {
     );
     expect(stats.map((s) => s.labelKey)).not.toContain("w.home.rail.duration");
   });
+
+  // ── energy — the estimated burn, last, and only when it can be scaled ─────
+  it("estimates the calories and marks them as an estimate", () => {
+    const swim = doneReceipt(
+      session({
+        title: "Swimming",
+        completedAt: "2026-07-16T10:40:00.000Z",
+        blocks: [{ kind: "cardio", name: "Swimming", distance: 0.5, minutes: 10 }],
+      }),
+      { bodyweightKg: 80 },
+    );
+    expect(swim.kcal).toBeGreaterThan(0);
+    expect(swim.kcalMeasured).toBe(false);
+    const stats = doneReceiptStats(swim, "kg");
+    // energy sits last, after everything logged or measured
+    expect(stats[stats.length - 1]!.labelKey).toBe("w.home.today.energy");
+    expect(stats[stats.length - 1]!.value).toBe(`~${swim.kcal} kcal`);
+    expect(stats[stats.length - 1]!.estimate).toBe(true);
+  });
+
+  it("has no calories without a bodyweight to scale the model by", () => {
+    const r = doneReceipt(session());
+    expect(r.kcal).toBeNull();
+    expect(doneReceiptStats(r, "kg").map((s) => s.labelKey)).not.toContain("w.home.today.energy");
+  });
+
+  it("drops the '~' when the device counted the calories", () => {
+    const run = doneReceipt(
+      session({
+        title: "Running",
+        blocks: [{ kind: "cardio", name: "Running", distance: 7.2, minutes: 40 }],
+        device: {
+          provider: "apple",
+          uuid: "hk-9",
+          activityLabel: "Running",
+          start: "2026-07-16T10:30:00.000Z",
+          end: "2026-07-16T11:10:00.000Z",
+          durationMin: 40,
+          kcal: 430,
+        } as LoggedSession["device"],
+      }),
+      { bodyweightKg: 80 },
+    );
+    expect(run.kcal).toBe(430);
+    expect(run.kcalMeasured).toBe(true);
+    const energy = doneReceiptStats(run, "kg").find((s) => s.labelKey === "w.home.today.energy")!;
+    expect(energy.value).toBe("430 kcal");
+    expect(energy.estimate).toBe(false);
+  });
+
+  it("reads the athlete's own figures when the device is ignored", () => {
+    const over = {
+      title: "Running",
+      blocks: [{ kind: "cardio" as const, name: "Running", distance: 7.2, minutes: 40 }],
+      device: {
+        provider: "apple",
+        uuid: "hk-9",
+        activityLabel: "Running",
+        start: "2026-07-16T10:30:00.000Z",
+        end: "2026-07-16T11:10:00.000Z",
+        durationMin: 40,
+        kcal: 430,
+      } as LoggedSession["device"],
+    };
+    const logged = doneReceipt(session(over), { bodyweightKg: 80, ignoreDevice: true });
+    expect(logged.kcalMeasured).toBe(false);
+    expect(logged.kcal).toBeGreaterThan(0);
+  });
 });
