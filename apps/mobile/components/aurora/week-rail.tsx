@@ -5,7 +5,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   planSchedule,
   doneReceipt,
-  doneReceiptStats,
   dayStamp,
   dayStampText,
   streak,
@@ -21,6 +20,7 @@ import { useLang } from "../../lib/i18n";
 import { leading, fs, F, serifIf, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
+import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -416,41 +416,19 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onSt
   // name for the work. What survives is the fact that card withholds: the
   // clock time the day finished at.
   if (day.status === "done") {
-    const stats = receipt ? doneReceiptStats(receipt, units) : [];
-    const finished = receipt?.finishedClock
-      ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
-      : "";
     return (
       <View>
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12, flex: 1 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 19, lineHeight: 22, color: txt(C, C.lime) }}>✓</Text>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
-              {t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
-            </Text>
-          </View>
-          {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
-        </View>
-        {!!finished && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginLeft: 31, lineHeight: leading(fs.caption) }}>
-            {finished}
-          </Text>
-        )}
-        {stats.length > 0 && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 24, rowGap: 14, marginTop: 16, marginLeft: 31 }}>
-            {stats.map((s) => (
-              <View key={s.labelKey}>
-                <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: -0.3, color: C.chalk, fontVariant: ["tabular-nums"] }}>{s.value}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginTop: 5 }}>{t(s.labelKey)}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        <ReceiptBlock
+          receipt={receipt}
+          units={units}
+          title={t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
+          stamp={stamp}
+        />
         {doneFloor}
         <Pressable
           onPress={onHistory}
           accessibilityRole="button"
-          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 16, paddingTop: 16, paddingLeft: 31 }}
+          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 16, paddingTop: 16, paddingLeft: RECEIPT_GUTTER }}
         >
           <CtaLabel label={`${t("w.home.rail.viewHistory")} →`} color={C.ash} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase" }} />
         </Pressable>

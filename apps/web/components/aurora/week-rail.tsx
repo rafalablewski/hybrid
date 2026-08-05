@@ -4,7 +4,6 @@ import { useMemo, useEffect, useState, type CSSProperties, type ReactNode } from
 import {
   planSchedule,
   doneReceipt,
-  doneReceiptStats,
   dayStamp,
   dayStampText,
   streak,
@@ -21,6 +20,7 @@ import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { CtaLabel } from "./cta-label";
+import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
 
 // ── AURORA Week rail (web) ──────────────────────────────────────────────────
 // The date-anchored replacement for the count-based "Your plan today". A static
@@ -386,38 +386,16 @@ function DayDetail({ day, receipt, units, streakDays, doneFloor, onStart, onSkip
   // name for the work. What survives is the fact that card withholds: the
   // clock time the day finished at.
   if (day.status === "done") {
-    const stats = receipt ? doneReceiptStats(receipt, units) : [];
-    const finished = receipt?.finishedClock
-      ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
-      : "";
     return (
       <div>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, minWidth: 0 }}>
-            <span style={{ color: "var(--lime-text)", fontSize: 19, fontWeight: 800, flexShrink: 0 }} aria-hidden>✓</span>
-            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 19, letterSpacing: "-.02em" }}>
-              {t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
-            </div>
-          </div>
-          {stamp && <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), whiteSpace: "nowrap", flexShrink: 0 }}>{stamp}</span>}
-        </div>
-        {finished && (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), margin: "6px 0 0 31px", lineHeight: 1.5 }}>
-            {finished}
-          </div>
-        )}
-        {stats.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", columnGap: 24, rowGap: 14, margin: "16px 0 0 31px" }}>
-            {stats.map((s) => (
-              <span key={s.labelKey}>
-                <span style={{ display: "block", fontWeight: 800, fontSize: 16, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 5 }}>{t(s.labelKey)}</span>
-              </span>
-            ))}
-          </div>
-        )}
+        <ReceiptBlock
+          receipt={receipt}
+          units={units}
+          title={t(day.isToday ? "w.home.rail.allDone" : "w.home.rail.done")}
+          stamp={stamp}
+        />
         {doneFloor}
-        <button className="pressable" onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: "16px 0 0 31px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
+        <button className="pressable" onClick={onHistory} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, margin: "16px 0 0", padding: `16px 0 0 ${RECEIPT_GUTTER}px`, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
           <CtaLabel size={12}>{`${t("w.home.rail.viewHistory")} →`}</CtaLabel>
         </button>
         {catchUp}

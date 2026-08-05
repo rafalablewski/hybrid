@@ -73,6 +73,7 @@ describe("mergeDoneReceipts", () => {
     kcal: null,
     kcalMeasured: false,
     measured: false,
+    cardioLead: null,
     ...over,
   });
 
