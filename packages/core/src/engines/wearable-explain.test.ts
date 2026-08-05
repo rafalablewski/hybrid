@@ -5,7 +5,7 @@ import { biometricAdjustment } from "./readiness";
 import { wearableExplain, wearableSourceLabel, WEARABLE_METRIC_KEY } from "./wearable-explain";
 import { computeHpi } from "./hpi";
 import { computeFatigue } from "./fatigue";
-import type { Signal } from "./types";
+import type { Signal } from "./signals";
 
 /**
  * THE WEARABLE TERM HAD NO GUARDS AND NO DOOR.
