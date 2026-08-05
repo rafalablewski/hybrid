@@ -8,7 +8,7 @@ import {
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  velocityProfiles, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
+  velocityProfiles, hpiRole, hpiBandKey, readinessRole, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
   readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
   readinessFacts, KEPT_ARC_ALPHA,
   localDayKey, INJURY_AREA_KEY,
@@ -58,6 +58,11 @@ const segPaint = (C: Palette, s: Pick<RingSegment, "role" | "dim">) =>
  *  app (the injury mannequin), so mobile no longer has to approximate the chart
  *  with bars and markers: the fourteen days have one shape on both clients. */
 const PLOT = { width: 318, height: 104, pad: 10 };
+
+/** A signed point contribution, with a REAL minus (U+2212) rather than the
+ *  hyphen `${-3}` leaves behind — a hyphen beside a tabular figure reads as a
+ *  dash in a sentence, not as a sign. Mirrors web's signedPoints. */
+const signedPoints = (n: number) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);
 
 /**
  * AURORA Performance (mobile) — the athlete hub, at SIX surfaces. Mirrors
@@ -228,18 +233,29 @@ function Full({ top }: { top?: ReactNode }) {
         <ASection title={t("w.home.cockpit.stateTitle")} />
         {hasData ? (
           <>
+            {/* THE HEADLINE — three levels, not two grey lines.
+                It used to set the metric's NAME and the athlete's READING at
+                identical weight ("FRESHNESS — COMPROMISED", one mono ash rule
+                joined by a dash), so nothing said which of the two was the fact;
+                the band went uncoloured beside a numeral that was coloured; and
+                the band word itself was the raw engine identifier, English on
+                every locale. Now: label, reading, provenance. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
               <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
-                  {t("w.home.cockpit.freshness")} — {state.hpi.band}
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                  {t("w.home.cockpit.freshness")}
+                </Text>
+                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
+                  {t(hpiBandKey(state.hpi.band))}
                 </Text>
                 {/* The wearable rides the headline as the signed adjustment it
                     is (±15), rather than standing as a peer of two 0..100
-                    indices in a third column. */}
+                    indices in a third column. A real minus sign, not the hyphen
+                    a template literal leaves behind. */}
                 {state.hpi.components.recovery !== 0 && (
-                  <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>
-                    {t("w.home.cockpit.wearableOf").replace("{n}", `${state.hpi.components.recovery > 0 ? "+" : ""}${state.hpi.components.recovery}`)}
+                  <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
+                    {t("w.home.cockpit.wearableOf").replace("{n}", signedPoints(state.hpi.components.recovery))}
                   </Text>
                 )}
               </View>
@@ -696,8 +712,11 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
             <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
-                {t("w.home.cockpit.freshness")} — {state.hpi.band}
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                {t("w.home.cockpit.freshness")}
+              </Text>
+              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
+                {t(hpiBandKey(state.hpi.band))}
               </Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.teaseYours")}</Text>
             </View>

@@ -227,44 +227,50 @@ export default function TissueCard({
         onOpen={(tissue, injuryDate) => create(tissue, injuryDate)}
       />
 
-      {/* FOOTER RAIL — both ways in, at the same weight. Opening a protocol is
-          not a "go" action, so it never takes the chartreuse fill. */}
+      {/* FOOTER RAIL — ONE row, two ends.
+          The quiet DISCLOSURES sit left; the ACTION sits right. They used to be
+          stacked: the action alone on a space-between row whose left slot was an
+          empty span whenever a tissue was flagged, and "How is this calculated?"
+          on a second row forced right with margin-left:auto. So the card ended
+          in a right-hugging column of two controls that do entirely different
+          things — a disclosure about the model directly under the way into a
+          rehab protocol, at identical weight, with the whole left half empty.
+          Kind now maps to side, and the rail never collapses into a stack.
+          Opening a protocol is still not a "go" action, so it never takes the
+          chartreuse fill. */}
       <div style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          {/* Hidden, not disabled, while a flag holds the rows open — a
-              control that cannot do anything should not be drawn. */}
-          {hasData && !alert ? (
-            <button type="button" className="pressable" onClick={() => setRowsOpen((v) => !v)} aria-expanded={showRows} style={{ ...railBtn, color: C("ash") }}>
-              {showRows ? t("w.injury.hideTissues") : t("w.injury.allTissues")}
-              <span aria-hidden style={{ fontSize: 8, marginLeft: 5 }}>{showRows ? "▲" : "▼"}</span>
-            </button>
-          ) : <span />}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "8px 16px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
+            {/* Hidden, not disabled, while a flag holds the rows open — a
+                control that cannot do anything should not be drawn. */}
+            {hasData && !alert && (
+              <button type="button" className="pressable" onClick={() => setRowsOpen((v) => !v)} aria-expanded={showRows} style={{ ...railBtn, color: C("ash") }}>
+                {showRows ? t("w.injury.hideTissues") : t("w.injury.allTissues")}
+                <span aria-hidden style={{ fontSize: 8, marginLeft: 5 }}>{showRows ? "▲" : "▼"}</span>
+              </button>
+            )}
+            {/* THE CALIBRATION, BEHIND A DISCLOSURE. It used to print on the
+                card face, where it read as team-facing metadata nobody outside
+                the building can act on — and lent the numbers an air of
+                precision they do not have. It now answers the question an
+                athlete is already asking when they open it. */}
+            {hasData && (
+              <button type="button" className="pressable" aria-expanded={howOpen} onClick={() => setHowOpen((v) => !v)} style={{ ...railBtn, color: C("ash") }}>
+                {t("w.injury.howCalculated")}
+                <span aria-hidden style={{ fontSize: 8, marginLeft: 5 }}>{howOpen ? "▲" : "▼"}</span>
+              </button>
+            )}
+          </div>
           <button type="button" className="pressable" onClick={() => setPicking(null)} style={{ ...railBtn, color: alert ? "var(--red-text)" : C("ash") }}>
             {alert ? t("w.injury.openProtocol") : t("w.injury.logInjury")}
           </button>
         </div>
-        {/* THE CALIBRATION, BEHIND A DISCLOSURE. It used to print on the card
-            face, where it read as team-facing metadata nobody outside the
-            building can act on — and lent the numbers an air of precision they
-            do not have. It now answers the question an athlete is already
-            asking when they open it. */}
-        {hasData && (
-          <div style={{ marginTop: 10 }}>
-            <button
-              type="button"
-              className="pressable"
-              aria-expanded={howOpen}
-              onClick={() => setHowOpen((v) => !v)}
-              style={{ ...railBtn, color: C("ash"), marginLeft: "auto", display: "flex" }}
-            >
-              {t("w.injury.howCalculated")}
-              <span aria-hidden style={{ fontSize: 8, marginLeft: 5 }}>{howOpen ? "▲" : "▼"}</span>
-            </button>
-            {howOpen && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), lineHeight: 1.6, marginTop: 7 }}>
-                {t("w.analyze.perf.model")} {axis.modelVersion}
-              </div>
-            )}
+        {/* The model line lands under the control that opened it — on the LEFT.
+            Right-aligned mono metadata under a right-aligned button is what made
+            the whole footer read as drifting off the card. */}
+        {hasData && howOpen && (
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), lineHeight: 1.6, marginTop: 10 }}>
+            {t("w.analyze.perf.model")} {axis.modelVersion}
           </div>
         )}
       </div>

@@ -7,7 +7,7 @@ import { fs, space,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
   freshnessExplain, type FreshnessPillar,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, localDayKey,
+  ROLE_COLOR, hpiRole, hpiBandKey, readinessRole, quickCheckinFeeling, READINESS_FACE, localDayKey,
   readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
   readinessFacts, KEPT_ARC_ALPHA,
   INJURY_AREA_KEY,
@@ -46,6 +46,11 @@ const segPaint = (s: Pick<RingSegment, "role" | "dim">) =>
   s.dim ? tint(roleText(s.role), Math.round(KEPT_ARC_ALPHA * 100)) : roleText(s.role);
 const CARD = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
 const PLOT = { width: 318, height: 104, pad: 10 };
+
+/** A signed point contribution, with a REAL minus (U+2212) rather than the
+ *  hyphen `${-3}` leaves behind — a hyphen beside a tabular figure reads as a
+ *  dash in a sentence, not as a sign. Mirrors mobile's signedPoints. */
+const signedPoints = (n: number) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);
 
 /* ---------- unknown-state placeholders ---------- */
 /** One skeleton bar — a placeholder that states nothing. Deliberately not a
@@ -272,18 +277,32 @@ export default function AuroraPerformance({
           <SHead title={t("w.home.cockpit.stateTitle")} />
           {hasData ? (
             <>
+              {/* THE HEADLINE — three levels, not two grey lines.
+                  It used to set the metric's NAME and the athlete's READING at
+                  identical weight ("FRESHNESS — COMPROMISED", one mono ash rule
+                  joined by a dash), so nothing said which of the two was the
+                  fact; the band went uncoloured beside a numeral that was
+                  coloured, splitting one state across two treatments 8px apart;
+                  and the band word itself was the raw engine identifier, English
+                  on every locale. Now: label, reading, provenance — each at its
+                  own weight, with the band carrying the figure's own colour
+                  because they are one fact stated twice. */}
               <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
                 <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: roleText(hpiRole(state.hpi.band)) }}>{state.hpi.score}</span>
                 <div style={{ minWidth: 120, flex: 1 }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
-                    {t("w.home.cockpit.freshness")} — {state.hpi.band}
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
+                    {t("w.home.cockpit.freshness")}
+                  </div>
+                  <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.015em", lineHeight: 1.2, color: roleText(hpiRole(state.hpi.band)), marginTop: 2 }}>
+                    {t(hpiBandKey(state.hpi.band))}
                   </div>
                   {/* The wearable rides the headline as the signed adjustment it
                       is (±15), instead of standing as a peer of two 0..100
-                      indices in a third column. */}
+                      indices in a third column. A real minus sign, not the
+                      hyphen `-3` a template literal leaves behind. */}
                   {state.hpi.components.recovery !== 0 && (
-                    <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>
-                      {t("w.home.cockpit.wearableOf").replace("{n}", `${state.hpi.components.recovery > 0 ? "+" : ""}${state.hpi.components.recovery}`)}
+                    <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>
+                      {t("w.home.cockpit.wearableOf").replace("{n}", signedPoints(state.hpi.components.recovery))}
                     </div>
                   )}
                 </div>
@@ -737,8 +756,11 @@ function Teaser({ paid, onUnlock, state }: {
           <div style={{ display: "flex", alignItems: "center", gap: space.md, flexWrap: "wrap" }}>
             <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 46, lineHeight: 1, color: roleText(hpiRole(state.hpi.band)) }}>{state.hpi.score}</span>
             <div style={{ minWidth: 120, flex: 1 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
-                {t("w.home.cockpit.freshness")} — {state.hpi.band}
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>
+                {t("w.home.cockpit.freshness")}
+              </div>
+              <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.015em", lineHeight: 1.2, color: roleText(hpiRole(state.hpi.band)), marginTop: 2 }}>
+                {t(hpiBandKey(state.hpi.band))}
               </div>
               <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4, lineHeight: 1.5 }}>{t("w.home.cockpit.teaseYours")}</div>
             </div>

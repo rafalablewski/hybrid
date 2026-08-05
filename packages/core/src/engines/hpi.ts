@@ -42,6 +42,36 @@ export type HpiBand =
   | "compromised"
   | "depleted";
 
+/**
+ * The band as an i18n KEY.
+ *
+ * `Hpi.band` is an engine identifier — "compromised" — and both clients were
+ * printing it straight onto the card, uppercased by CSS. So the one word that
+ * tells an athlete what their score MEANS was English on every locale, sitting
+ * inside a line that was otherwise translated. A key, resolved by the clients,
+ * is the same fix `ReadinessVerdict` already applies to its faces.
+ *
+ * The admin Engine Room deliberately keeps the raw identifier: it is an
+ * operator console, and every other field on it is the engine's own vocabulary.
+ */
+export const HPI_BAND_KEY: Record<HpiBand, string> = {
+  peak: "w.home.cockpit.band.peak",
+  primed: "w.home.cockpit.band.primed",
+  moderate: "w.home.cockpit.band.moderate",
+  compromised: "w.home.cockpit.band.compromised",
+  depleted: "w.home.cockpit.band.depleted",
+};
+
+/**
+ * The band's key, tolerant of a band that arrives as a plain `string`.
+ *
+ * Not every caller holds the engine's own union: the coach roster reads an API
+ * view type where `band` is just a string. This is the one resolver both
+ * clients call, so neither has to cast — and an unrecognised band falls through
+ * to its own raw value rather than resolving to nothing.
+ */
+export const hpiBandKey = (band: string): string => HPI_BAND_KEY[band as HpiBand] ?? band;
+
 export interface Hpi {
   /** the headline, 0..100 */
   score: number;

@@ -9,6 +9,7 @@ import { fs, space,
   canRead,
   roleScope,
   ORG_ROLES,
+  hpiBandKey,
   type OrgRole,
   type TeamNode,
 } from "@hybrid/core";
@@ -287,7 +288,7 @@ export default function AuroraOrg() {
               <div style={{ display: "flex", gap: space.xl, alignItems: "baseline", marginTop: 8 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 40, color: C(hpiColor(athlete.hpi.band)) }}>{athlete.hpi.score}</div>
                 <div>
-                  {chip(hpiColor(athlete.hpi.band), athlete.hpi.band)}
+                  {chip(hpiColor(athlete.hpi.band), t(hpiBandKey(athlete.hpi.band)))}
                   {chip("amber", `${t("w.teams.org.limiter")} – ${athlete.hpi.limiter}`)}
                   {chip(athlete.injury.flaggedCount ? "red" : "lime", `${t("w.teams.org.injury")} ${athlete.injury.overall}/100`)}
                 </div>
