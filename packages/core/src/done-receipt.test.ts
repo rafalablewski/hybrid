@@ -56,14 +56,14 @@ describe("doneReceipt", () => {
     expect(r.durationMin).toBe(12);
   });
 
-  it("has no duration and no finish clock without completedAt", () => {
-    const r = doneReceipt(session({ completedAt: null }));
-    expect(r.durationMin).toBeNull();
-    expect(r.finishedClock).toBeNull();
+  it("has no duration without completedAt", () => {
+    expect(doneReceipt(session({ completedAt: null })).durationMin).toBeNull();
   });
 
-  it("stamps the local finish clock", () => {
-    expect(doneReceipt(session()).finishedClock).toMatch(/\d{1,2}[:.]\d{2}/);
+  // The receipt carries no finishing clock at all — a day is not one workout,
+  // and the stamp reported whichever session the rail happened to build from.
+  it("carries no finishing clock", () => {
+    expect("finishedClock" in doneReceipt(session())).toBe(false);
   });
 
   // ── the device is the source of truth ──────────────────────────────────────

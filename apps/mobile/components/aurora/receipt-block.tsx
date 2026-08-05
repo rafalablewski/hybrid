@@ -2,11 +2,16 @@ import { View, Text } from "react-native";
 import { doneReceiptHero, type DoneReceipt, type DoneReceiptStat, type WeightUnit } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, serifIf, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, serifIf, FIXED_FONT_SCALE } from "../../lib/ui";
 
 // ── AURORA Done receipt block (mobile) ──────────────────────────────────────
-// The finished day, as both week rails render it: the ✓, the headline, the
-// finishing clock, ONE figure at display size and the rest standing down.
+// The finished day, as both week rails render it: the ✓, the headline, ONE
+// figure at display size and the rest standing down.
+//
+// NO FINISHING CLOCK. "finished 16:32" used to sit under the headline; it is
+// gone (see the note in core done-receipt.ts). A day trained twice reported
+// the FIRST workout's finish beside figures that summed the whole day, and no
+// reading of that line was true of the card it sat on.
 //
 // THE GUTTER IS THE POINT. The card used to run three left edges at once — its
 // hairlines at 0, the ✓ and headline at the card's padding, and every line
@@ -51,9 +56,6 @@ export default function ReceiptBlock({
   const { t } = useLang();
   const empty: { hero: DoneReceiptStat | null; rest: DoneReceiptStat[] } = { hero: null, rest: [] };
   const { hero, rest } = receipt ? doneReceiptHero(receipt, units) : empty;
-  const finished = receipt?.finishedClock
-    ? t("w.home.rail.finishedAt").replace("{t}", receipt.finishedClock)
-    : "";
 
   // A supporting label, for the figures whose unit can't name them. Uppercase
   // mono — the house grammar for a label, and the only casing that is correct
@@ -80,12 +82,6 @@ export default function ReceiptBlock({
           </Text>
           {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
-
-        {!!finished && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: leading(fs.caption) }}>
-            {finished}
-          </Text>
-        )}
 
         {!!hero && (
           <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 7, marginTop: 14 }}>

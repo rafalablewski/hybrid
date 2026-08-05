@@ -62,7 +62,6 @@ describe("mergeDoneReceipts", () => {
   // (the `r` factory below builds a receipt; these two cases cover the measured
   // clock, which only adds up while every timed session brought seconds)
   const r = (over: Partial<DoneReceipt>): DoneReceipt => ({
-    finishedClock: null,
     durationMin: null,
     durationSec: null,
     tonnageKg: 0,
@@ -81,12 +80,11 @@ describe("mergeDoneReceipts", () => {
     expect(mergeDoneReceipts([])).toBeNull();
   });
 
-  it("sums figures and keeps the LAST finish clock", () => {
+  it("sums the day's figures", () => {
     const merged = mergeDoneReceipts([
-      r({ finishedClock: "09:10", durationMin: 40, tonnageKg: 1200, sets: 10, distanceKm: 0 }),
-      r({ finishedClock: "18:45", durationMin: 30, tonnageKg: 300, sets: 4, distanceKm: 5.2 }),
+      r({ durationMin: 40, tonnageKg: 1200, sets: 10, distanceKm: 0 }),
+      r({ durationMin: 30, tonnageKg: 300, sets: 4, distanceKm: 5.2 }),
     ])!;
-    expect(merged.finishedClock).toBe("18:45");
     expect(merged.durationMin).toBe(70);
     expect(merged.tonnageKg).toBe(1500);
     expect(merged.sets).toBe(14);

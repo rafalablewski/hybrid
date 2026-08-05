@@ -174,12 +174,13 @@ function DayDetail({ day, receipt, units, streakDays, doneFloor, onLog, onHistor
   // state: one headline, the finishing time, only trustworthy figures, and a
   // quiet text link into History.
   //
-  // NO WORKOUT NAMES HERE. This line used to join the day's session titles
+  // NO META LINE HERE AT ALL. It used to join the day's session titles
   // ("Tennis – Afternoon workout – finished 14:33"), and the Done-today card a
   // few hundred pixels below lists those very sessions by name, one row each,
-  // with their own figures — the same words twice on one screen. The receipt
-  // keeps the one fact that card deliberately withholds: the clock time the day
-  // finished at.
+  // with their own figures — the same words twice on one screen. The names went
+  // then; the finishing clock that survived them has gone too (it named the
+  // first workout of a day the figures beside it summed whole). The receipt is
+  // its figures.
   if (day.logged) {
     return (
       <div>
