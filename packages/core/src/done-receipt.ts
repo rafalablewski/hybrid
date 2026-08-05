@@ -187,9 +187,9 @@ export interface DoneReceiptStat {
 
 /**
  * The stats a receipt shows, in display order — duration, volume, distance,
- * sets — each included only when it has something true to say. Unit lives in
- * the value; the uppercase label stays a bare word (one grammar, per the
- * design's trust pass).
+ * climb, sets, energy — each included only when it has something true to say.
+ * Unit lives in the value; the uppercase label stays a bare word (one grammar,
+ * per the design's trust pass).
  *
  * SETS IS A STRENGTH FIGURE. It reads `strengthSets`, so a swim, a tennis
  * match or a squash game — none of which have sets — shows its duration and
@@ -215,6 +215,10 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
       value: r.distanceKm < 1 ? `${Math.round(r.distanceKm * 1000)} m` : `${Math.round(r.distanceKm * 10) / 10} km`,
       labelKey: "w.home.today.distance",
     });
+  // Climb sits beside distance — they are the same fact about the ground the
+  // day covered, and the receipt has always SUMMED it (device-true, like the
+  // distance) without ever rendering it.
+  if (r.elevationM > 0) out.push({ value: `${r.elevationM} m`, labelKey: "w.home.today.climb" });
   if (r.strengthSets > 0) out.push({ value: String(r.strengthSets), labelKey: "w.home.today.sets" });
   if (r.kcal != null && r.kcal > 0)
     out.push({

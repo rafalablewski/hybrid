@@ -204,6 +204,32 @@ describe("doneReceiptStats", () => {
     expect(stats.map((s) => s.labelKey)).not.toContain("w.home.rail.duration");
   });
 
+  it("renders the climb it has always summed, beside the distance", () => {
+    const run = doneReceipt(
+      session({
+        title: "Running",
+        completedAt: "2026-07-16T11:20:00.000Z",
+        blocks: [{ kind: "cardio", name: "Running", distance: 9.4, minutes: 50, elevation: 320 }],
+      }),
+    );
+    expect(run.elevationM).toBe(320);
+    const stats = doneReceiptStats(run, "kg");
+    expect(stats.map((s) => s.labelKey)).toEqual([
+      "w.home.rail.duration",
+      "w.home.today.distance",
+      "w.home.today.climb",
+    ]);
+    expect(stats[2]!.value).toBe("320 m");
+  });
+
+  it("says nothing about the climb on flat ground", () => {
+    const flat = doneReceiptStats(
+      doneReceipt(session({ blocks: [{ kind: "cardio", name: "Running", distance: 5, minutes: 30 }] })),
+      "kg",
+    );
+    expect(flat.map((s) => s.labelKey)).not.toContain("w.home.today.climb");
+  });
+
   // ── energy — the estimated burn, last, and only when it can be scaled ─────
   it("estimates the calories and marks them as an estimate", () => {
     const swim = doneReceipt(
