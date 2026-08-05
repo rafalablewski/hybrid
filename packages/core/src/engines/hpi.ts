@@ -67,7 +67,13 @@ export interface Hpi {
  */
 export { enduranceFatigue };
 
-function band(score: number): HpiBand {
+/**
+ * Score → band. EXPORTED because the two pillar figures need banding by the
+ * same rule as the headline: the freshness explainer colours "Strength fresh 62"
+ * from `hpiRole(hpiBand(62))`, so a component and the headline above it can
+ * never sit in two different colour vocabularies for the same reading.
+ */
+export function hpiBand(score: number): HpiBand {
   if (score >= 85) return "peak";
   if (score >= 70) return "primed";
   if (score >= 55) return "moderate";
@@ -112,7 +118,7 @@ export function computeHpi(
 
   return {
     score,
-    band: band(score),
+    band: hpiBand(score),
     components: { strength, endurance, recovery },
     limiter,
     weights,

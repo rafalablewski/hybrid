@@ -5,6 +5,7 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
+  freshnessExplain, type FreshnessPillar,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
   ROLE_COLOR, hpiRole, readinessRole, quickCheckinFeeling, READINESS_FACE, localDayKey,
   readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
@@ -28,6 +29,7 @@ import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
+import FreshnessSheet from "./freshness-sheet";
 
 // State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts),
 // resolved through lib/ui's `roleText` — every state colour on this page is
@@ -189,6 +191,13 @@ export default function AuroraPerformance({
       .replace("{tissue}", f.muscle ? t(`w.home.today.muscle.${f.muscle}`) : "")
       .replace("{n}", f.value > 0 && f.key === "w.home.readiness.factWearable" ? `+${f.value}` : String(f.value));
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  // WHICH FRESHNESS COLUMN IS OPEN, and the explanation behind it — computed
+  // only while the sheet is up, from the SAME engine the columns print.
+  const [freshOpen, setFreshOpen] = useState<FreshnessPillar | null>(null);
+  const freshExplain = useMemo(
+    () => (freshOpen ? freshnessExplain(freshOpen, log, bio) : null),
+    [freshOpen, log, bio],
+  );
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
   const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
@@ -288,10 +297,16 @@ export default function AuroraPerformance({
                 {state.drivers[0] && <span style={{ color: C("ash") }}> {state.drivers[0].detail}.</span>}
               </div>
 
+              {/* THE TWO PILLARS — each column is now a DOOR. They printed a
+                  bare numeral under a mono label with nothing behind it: no
+                  derivation, no inputs, no statement of what the figure refuses
+                  to claim. The ⓘ is the same affordance Today's readiness
+                  reading uses for "explain THIS number". */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C("line")}` }}>
-                <Comp label={t("w.home.cockpit.strengthFresh")} value={`${state.hpi.components.strength}`} />
-                <Comp label={t("w.home.cockpit.enduranceFresh")} value={`${state.hpi.components.endurance}`} />
+                <Comp label={t("w.home.cockpit.strengthFresh")} value={`${state.hpi.components.strength}`} onExplain={() => setFreshOpen("strength")} explainLabel={t("w.home.fresh.explain")} />
+                <Comp label={t("w.home.cockpit.enduranceFresh")} value={`${state.hpi.components.endurance}`} onExplain={() => setFreshOpen("endurance")} explainLabel={t("w.home.fresh.explain")} />
               </div>
+              <FreshnessSheet explain={freshExplain} onClose={() => setFreshOpen(null)} />
 
               {/* CAPABILITY — the other half. Freshness rises on a layoff; this
                   does not. Without it a screen called Performance reports only
@@ -615,12 +630,35 @@ function Pill({ children, dot }: { children: React.ReactNode; dot?: string }) {
   );
 }
 
-function Comp({ label, value }: { label: string; value: string }) {
+/**
+ * One pillar column, and the door under it.
+ *
+ * The WHOLE column is the hit target — a 9px mono label beside an 18px ⓘ is
+ * not a tap target anyone finds on a phone — with the ⓘ riding the label row as
+ * the visible affordance, exactly as Today's readiness reading does it.
+ */
+function Comp({ label, value, onExplain, explainLabel }: {
+  label: string;
+  value: string;
+  onExplain: () => void;
+  explainLabel: string;
+}) {
   return (
-    <div style={{ textAlign: "center" }}>
+    <button
+      type="button"
+      className="pressable"
+      onClick={onExplain}
+      aria-label={`${label} ${value} – ${explainLabel}`}
+      style={{ display: "block", width: "100%", textAlign: "center", background: "none", border: 0, padding: 0, cursor: "pointer", color: C("chalk") }}
+    >
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, color: C("chalk"), letterSpacing: "-.02em" }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash"), marginTop: 6 }}>{label}</div>
-    </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{label}</span>
+        {/* The glyph IS a ring — wrapping it in a second bordered circle, as the
+            Today reading does at 18px, reads as noise beside a 9px label. */}
+        <AuroraIcon name="info" size={13} color={C("ash")} style={{ flex: "none" }} />
+      </div>
+    </button>
   );
 }
 
