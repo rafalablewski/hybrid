@@ -380,11 +380,13 @@ function DayDetail({ day, receipt, units, streakDays, doneFloor, onStart, onSkip
   // only trustworthy figures, and a quiet text link into History instead of a
   // pill. The prescription is settled — it doesn't re-list.
   //
-  // NO WORKOUT NAME HERE. The line used to lead with the plan day's title
+  // NO META LINE HERE AT ALL. It used to lead with the plan day's title
   // ("Upper + Engine – finished 11:18") — and the Done-today card below names
   // the very session that fulfilled it, wearing a PLAN tag. One screen, one
-  // name for the work. What survives is the fact that card withholds: the
-  // clock time the day finished at.
+  // name for the work. The finishing clock that outlived the name has gone too:
+  // this receipt is built from the ONE session that fulfilled the day, so on a
+  // day trained twice the clock reported the first workout while the figures
+  // beside it summed the day. The receipt is its figures.
   if (day.status === "done") {
     return (
       <div>
