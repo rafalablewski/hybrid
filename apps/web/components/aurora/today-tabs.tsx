@@ -9,7 +9,7 @@ const C = (v: string) => `var(--color-${v})`;
 /** One Today-hub mark. Same 72×72 stroke box and weight as AuroraIcon, so the
  *  pills sit in the app's one monoline icon voice. Decorative here — the button
  *  carries the tab's real name as its accessible label. Shared with the
- *  floating dock (aurora/today-hub-pills.tsx) so the resting control and the
+ *  floating dock (aurora/today-hub-dock.tsx) so the resting control and the
  *  detached row cannot draw the same three marks two ways. */
 export function HubGlyph({ name, size = 21, strokeWidth = 3.5 }: { name: HubGlyphName; size?: number; strokeWidth?: number }) {
   return (

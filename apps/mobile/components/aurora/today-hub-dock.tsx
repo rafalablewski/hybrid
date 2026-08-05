@@ -42,7 +42,7 @@ import { HubGlyph } from "./today-tabs";
 // RETURN — the row answers scroll DIRECTION. Reading down takes it away; the
 // first flick up brings it back. Both rules live in @hybrid/core
 // (today-hub-dock.ts) so web detaches, hides and returns at identical points;
-// this file owns only the pixels. Mirrors web (aurora/today-hub-pills.tsx).
+// this file owns only the pixels. Mirrors web (aurora/today-hub-dock.tsx).
 //
 // ── THE GLASS IS REAL (iOS) ─────────────────────────────────────────────────
 // The row used to wear a static glass tile per pill and tween the widths in JS,
@@ -118,7 +118,7 @@ function runMotion(v: Animated.Value, to: number, m: HubMotion, useNativeDriver:
       });
 }
 
-export function TodayHubPills({
+export function TodayHubDock({
   value,
   onChange,
   topInset,
@@ -319,4 +319,4 @@ export function TodayHubPills({
   );
 }
 
-export default TodayHubPills;
+export default TodayHubDock;
