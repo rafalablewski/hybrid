@@ -1,0 +1,809 @@
+<title>The activity card — the active column, and the card inside the card</title>
+<style>
+  /* ── HYBRID tokens, verbatim from the shipped palette ────────────────────
+     Dark = AURORA, light = KYOTO HOUR. Every colour on this page resolves
+     through these, so what you see is what the app would paint. */
+  :root {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e;
+    --lime-text: #3c4f43; --red-text: #a3442f; --amber-text: #885c00;
+    --lime-wash: rgba(60, 79, 67, .10); --red-wash: rgba(163, 68, 47, .09);
+    --shadow-card: 0 14px 30px -18px rgba(88, 74, 52, .38);
+    --sans: "Archivo", ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --pad: clamp(18px, 4vw, 40px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+      --chalk: #f3f4ef; --ash: #8b8f86;
+      --lime-text: #c6f84f; --red-text: #e58a5c; --amber-text: #d0cd94;
+      --lime-wash: rgba(198, 248, 79, .09); --red-wash: rgba(229, 138, 92, .10);
+      --shadow-card: 0 6px 22px -12px rgba(0, 0, 0, .55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86;
+    --lime-text: #c6f84f; --red-text: #e58a5c; --amber-text: #d0cd94;
+    --lime-wash: rgba(198, 248, 79, .09); --red-wash: rgba(229, 138, 92, .10);
+    --shadow-card: 0 6px 22px -12px rgba(0, 0, 0, .55);
+  }
+  :root[data-theme="light"] {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e;
+    --lime-text: #3c4f43; --red-text: #a3442f; --amber-text: #885c00;
+    --lime-wash: rgba(60, 79, 67, .10); --red-wash: rgba(163, 68, 47, .09);
+    --shadow-card: 0 14px 30px -18px rgba(88, 74, 52, .38);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ink); color: var(--chalk);
+    font-family: var(--sans); line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: var(--pad) var(--pad) 110px; }
+
+  /* ── page furniture ──────────────────────────────────────────────────── */
+  .eyebrow { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ash); margin: 0; }
+  h1 { font-size: clamp(28px, 4.6vw, 48px); line-height: 1.04; letter-spacing: -.035em; font-weight: 800; margin: 14px 0 0; text-wrap: balance; max-width: 20ch; }
+  h1 em { font-style: normal; color: var(--lime-text); }
+  .lede { margin: 20px 0 0; max-width: 68ch; color: var(--ash); font-size: clamp(15px, 1.35vw, 17px); }
+  .lede strong { color: var(--chalk); font-weight: 600; }
+  h2 { font-size: clamp(21px, 2.3vw, 28px); letter-spacing: -.028em; font-weight: 800; margin: 0; text-wrap: balance; }
+  h3 { font-size: 16px; font-weight: 700; letter-spacing: -.012em; margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  section { margin-top: clamp(52px, 6.5vw, 88px); }
+  .sechead { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .sechead p { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .body { margin-top: 18px; max-width: 70ch; color: var(--ash); font-size: 14.5px; }
+  .body strong { color: var(--chalk); font-weight: 600; }
+  .body em { font-style: normal; color: var(--chalk); }
+  .body + .body { margin-top: 11px; }
+  code { font-family: var(--mono); font-size: .85em; color: var(--chalk); }
+
+  a { color: var(--lime-text); }
+  :focus-visible { outline: 2px solid var(--lime-text); outline-offset: 3px; border-radius: 4px; }
+
+  /* ── the option grid ─────────────────────────────────────────────────── */
+  .grid { display: grid; gap: clamp(20px, 2.4vw, 30px); margin-top: 26px; }
+  @media (min-width: 940px) { .grid.three { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 760px) { .grid.two { grid-template-columns: repeat(2, 1fr); } }
+
+  .opt { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .opt .meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .opt .tag {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ash); border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; white-space: nowrap;
+  }
+  .opt .tag.pick { color: var(--lime-text); border-color: color-mix(in srgb, var(--lime-text) 45%, transparent); }
+  .opt .tag.no { color: var(--red-text); border-color: color-mix(in srgb, var(--red-text) 40%, transparent); }
+  .opt .note { font-size: 13.5px; color: var(--ash); }
+  .opt .note strong { color: var(--chalk); font-weight: 600; }
+  .opt .note em { font-style: normal; color: var(--chalk); }
+
+  /* ── the screen the card sits on ─────────────────────────────────────── */
+  .stage { background: var(--ink); border: 1px solid var(--line); border-radius: 26px; padding: 16px; }
+  .stage .gut { font-family: var(--mono); font-size: 9px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); opacity: .65; margin-bottom: 10px; }
+
+  /* ── THE CARD, reproduced ────────────────────────────────────────────── */
+  .app {
+    background: var(--card); border: 1px solid var(--line); border-radius: 28px;
+    padding: 16px; box-shadow: var(--shadow-card); position: relative;
+  }
+  .app.flush { overflow: hidden; transition: padding-bottom .34s cubic-bezier(.2,.7,.3,1); }
+  .app.flush.open { padding-bottom: 0; }
+
+  .vtop { display: flex; align-items: flex-start; gap: 16px; }
+  .vtop .lead { flex: 1; min-width: 0; }
+  .vtop .lead .s { font-size: 16px; line-height: 1.4; color: var(--chalk); }
+  .vtop .lead .s b { font-weight: 700; }
+  .vtop .lead .w { margin-top: 5px; font-family: var(--mono); font-size: 11px; line-height: 1.45; color: var(--ash); }
+  .vtop .step { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; white-space: nowrap; color: var(--lime-text); }
+
+  .figs { display: flex; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .fig {
+    flex: 1; min-width: 0; text-align: left; cursor: pointer; appearance: none;
+    padding: 4px 6px 6px; margin: -4px 0 0; background: transparent; border: none;
+    border-radius: 12px; color: inherit; font: inherit;
+    transition: background .2s ease;
+  }
+  .fig + .fig { margin-left: 6px; border-left: 1px solid var(--line); transition: background .2s ease, border-color .2s ease; }
+  .fig .k {
+    display: block; font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
+    text-transform: uppercase; white-space: nowrap; color: var(--ash); transition: color .2s ease;
+  }
+  .fig .v {
+    display: block; font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 17px; font-weight: 500; letter-spacing: -.02em; margin-top: 3px; color: var(--chalk);
+    transition: color .2s ease;
+  }
+  .fig .rail {
+    display: block; height: 2px; border-radius: 2px; margin-top: 7px; background: var(--ash);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform .26s cubic-bezier(.2,.7,.3,1), background .2s ease;
+  }
+
+  /* selection first, so a tone below can still claim the label */
+  .fig.sel .k { color: var(--chalk); }
+  .fig.sel .rail { transform: scaleX(1); background: var(--chalk); }
+  .fig.sel, .fig.sel + .fig { border-left-color: transparent; }
+
+  /* tone states, applied by the script */
+  .fig.up .k,   .fig.up .v   { color: var(--lime-text); }
+  .fig.down .k, .fig.down .v { color: var(--red-text); }
+  .fig.level .k, .fig.level .v { color: var(--chalk); }
+  .fig.sel.up .rail   { background: var(--lime-text); }
+  .fig.sel.down .rail { background: var(--red-text); }
+
+  .fig.wash-up    { background: var(--lime-wash); }
+  .fig.wash-down  { background: var(--red-wash); }
+  .fig.wash-level { background: color-mix(in srgb, var(--chalk) 5%, transparent); }
+  .fig.wash-ink   { background: var(--ink); }
+
+  /* the caret — only the "now" build has one */
+  .caretbay { position: relative; height: 0; transition: height .28s cubic-bezier(.2,.7,.3,1); }
+  .caretbay.on { height: 9px; }
+  .caret {
+    position: absolute; top: 3px; width: 10px; height: 10px; margin-left: -5px; left: 12.5%;
+    background: var(--ink); border-left: 1px solid var(--line); border-top: 1px solid var(--line);
+    transform: rotate(45deg); border-radius: 2px; opacity: 0;
+    transition: left .34s cubic-bezier(.2,.7,.3,1), opacity .2s ease;
+  }
+  .caretbay.on .caret { opacity: 1; }
+
+  .draw { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.2,.7,.3,1); }
+  .draw.on { grid-template-rows: 1fr; }
+  .draw > .clip { overflow: hidden; min-height: 0; }
+
+  /* the three drawer skins */
+  .panel.nested { background: var(--ink); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; }
+  .panel.flush  { background: var(--ink); border-top: 1px solid var(--line); margin: 12px -16px 0; padding: 14px 16px 16px; }
+  .panel.bare   { border-top: 1px solid var(--line); margin-top: 12px; padding: 12px 0 0; }
+
+  /* the sheet alternative */
+  .sheet {
+    margin-top: 14px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 26px 26px 0 0; border-bottom: none; padding: 10px 16px 22px; box-shadow: var(--shadow-card);
+  }
+  .sheet .grab { width: 38px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 12px; }
+
+  .dhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .dhead .k { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .dhead .n { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--chalk); text-align: right; }
+  .dhead .n.up { color: var(--lime-text); }
+  .dhead .n.down { color: var(--red-text); }
+
+  .share { display: flex; gap: 2px; height: 6px; margin-top: 12px; border-radius: 999px; overflow: hidden; }
+  .share span { flex-basis: 0; border-radius: 999px; background: var(--line); }
+  .share span.s0 { background: var(--chalk); }
+  .share span.s1 { background: var(--ash); }
+  .share.tone-up span.s0 { background: var(--lime-text); }
+  .share.tone-down span.s0 { background: var(--red-text); }
+
+  .rows { margin-top: 8px; }
+  .row, .srow {
+    display: flex; width: calc(100% + 16px); margin-left: -8px; align-items: center;
+    background: transparent; border: none; border-radius: 12px; cursor: pointer;
+    color: inherit; font: inherit; text-align: left;
+  }
+  .row { gap: 8px; padding: 6px 8px; }
+  .srow { gap: 10px; padding: 8px; }
+  .row:hover, .srow:hover { background: color-mix(in srgb, var(--chalk) 6%, transparent); }
+  .row .ic { font-size: 13px; width: 18px; text-align: center; }
+  .row .nm { flex: 1; min-width: 0; font-size: 13px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .pc { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: .08em; color: var(--ash); }
+  .row .vl { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--chalk); min-width: 62px; text-align: right; }
+
+  .subhead { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .srow .dt { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 10px; letter-spacing: .08em; color: var(--ash); flex: 0 0 44px; }
+  .srow .mid { flex: 1; min-width: 0; }
+  .srow .mid b { display: block; font-weight: 400; font-size: 13px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .srow .mid i { display: block; font-style: normal; font-family: var(--mono); font-size: 10px; color: var(--ash); margin-top: 1px; }
+  .srow .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--chalk); white-space: nowrap; }
+
+  .hint { font-family: var(--mono); font-size: 9px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); opacity: .75; text-align: center; margin-top: 10px; }
+
+  /* ── the annotations on the "now" specimen ───────────────────────────── */
+  .flags { display: grid; gap: 12px; margin-top: 18px; }
+  .flag { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; font-size: 13.5px; color: var(--ash); }
+  .flag .n {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; color: var(--red-text);
+    border: 1px solid color-mix(in srgb, var(--red-text) 40%, transparent); border-radius: 6px;
+    padding: 1px 5px; margin-top: 2px; white-space: nowrap;
+  }
+  .flag strong { color: var(--chalk); font-weight: 600; }
+  .flag em { font-style: normal; color: var(--chalk); }
+
+  /* ── the edge count ──────────────────────────────────────────────────── */
+  .tblwrap { overflow-x: auto; margin-top: 26px; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 11px 16px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); font-weight: 400; }
+  td { color: var(--ash); }
+  td.name { color: var(--chalk); font-weight: 600; white-space: nowrap; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--chalk); }
+  .good { color: var(--lime-text); }
+  .bad { color: var(--red-text); }
+
+  /* ── the spec list ───────────────────────────────────────────────────── */
+  .spec { display: grid; gap: 12px; }
+  .specrow { display: grid; gap: 5px; padding: 14px 16px; background: var(--ink2); border: 1px solid var(--line); border-radius: 16px; }
+  .specrow .h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .specrow .h b { font-size: 14.5px; font-weight: 700; color: var(--chalk); }
+  .specrow .h span { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash); }
+  .specrow p { font-size: 13.5px; color: var(--ash); }
+  .specrow p em { font-style: normal; color: var(--chalk); }
+
+  .toggle {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ash); background: var(--ink2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 8px 15px; cursor: pointer;
+  }
+  .toggle:hover { color: var(--chalk); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">HYBRID — Today / the activity card — web + mobile</p>
+  <h1>The colour points at the wrong thing, and the drawer is <em>a card inside a card</em>.</h1>
+  <p class="lede">
+    Two defects, one shared root. Colour in this card marks <strong>the metric the sentence is
+    about</strong> — it is written once and never moves, so pressing a column changes almost nothing you
+    can see. And because pressing is invisible, the drawer had to shout: it arrives as a second bordered,
+    rounded card with a caret pointing back up at whichever figure opened it.
+    <strong>Fix the colour and the caret and the inner border stop paying for themselves.</strong>
+    One change funds the other.
+  </p>
+  <p class="lede">Every card below is live — press the columns.</p>
+
+  <button class="toggle" id="themeToggle" type="button">Preview in the other theme</button>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>What ships today</h2>
+      <p>week-verdict.tsx — both clients</p>
+    </div>
+
+    <div class="grid two">
+      <div>
+        <div class="stage">
+          <div class="gut">Now — press Tonnage, Sessions, Hours</div>
+          <div data-card='{"colour":"now","drawer":"nested","caret":true,"hint":true}'></div>
+        </div>
+      </div>
+      <div>
+        <p class="body" style="margin-top:0">
+          KM stays green whatever you press, because green here means "distance is what the
+          <em>sentence</em> named", not "distance is what you are <em>looking at</em>". The pressed
+          column gets a <code>#0c0d0c</code> fill on a <code>#151715</code> card — a difference nobody
+          sees on a phone in daylight.
+        </p>
+        <div class="flags">
+          <div class="flag"><span class="n">1</span><span>
+            <strong>Selection has no channel.</strong> Tone is spent on the named metric, so selection is
+            left with a near-invisible background swap. The card answers "which figure did the sentence
+            come from" and never "which figure am I reading".
+          </span></div>
+          <div class="flag"><span class="n">2</span><span>
+            <strong>Three edges to cross.</strong> Card border → caret → drawer border, for one list of
+            rows that already belongs to the card. The drawer repeats the radius, the border and the
+            raised-surface idiom of its own parent.
+          </span></div>
+          <div class="flag"><span class="n">3</span><span>
+            <strong>The caret exists to say what the colour should have said.</strong> It travels between
+            columns purely to point at the one that opened the panel — a moving arrow doing a job one hue
+            could do standing still.
+          </span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>Defect one — who owns the colour</h2>
+      <p>three ways</p>
+    </div>
+    <p class="body">
+      One constraint shaped the original rule and still holds: <em>a bad week must not read as a
+      highlight.</em> Colour here is semantic — chartreuse up, terracotta down, chalk flat — and it is
+      deliberately not the brand accent. So "colour the active one" cannot simply mean "paint the active
+      one green". Each option resolves that differently.
+    </p>
+
+    <div class="grid three">
+
+      <div class="opt">
+        <div class="meta"><h3>A. Selection gets its own channel</h3><span class="tag">Conservative</span></div>
+        <div class="stage">
+          <div class="gut">Press any column</div>
+          <div data-card='{"colour":"rail","drawer":"flush","caret":false}'></div>
+        </div>
+        <p class="note">
+          Tone stays on the named metric. Selection is expressed in <strong>value, not hue</strong> — the
+          label rises from ash to chalk and a 2px rail draws in beneath the column.
+          <br><br>Honest, and it can never miscolour. But it is not what you asked for: the active column
+          is <em>emphasised</em>, not <em>coloured</em>, and at a glance green still wins the eye.
+        </p>
+      </div>
+
+      <div class="opt">
+        <div class="meta"><h3>B. The verdict's tone travels</h3><span class="tag no">Rejected</span></div>
+        <div class="stage">
+          <div class="gut">Press any column</div>
+          <div data-card='{"colour":"travel","drawer":"flush","caret":false}'></div>
+        </div>
+        <p class="note">
+          One tone — the card's own direction — moves to whatever you press. Simple, and it does exactly
+          what "the active one is coloured" says on the tin.
+          <br><br>It also <strong>lies</strong>. Press Hours and it turns chartreuse in a week where hours
+          <em>fell 20%</em>. The card's one semantic channel would be reporting the selection's mood
+          instead of the metric's.
+        </p>
+      </div>
+
+      <div class="opt">
+        <div class="meta"><h3>C. Each column carries its own verdict</h3><span class="tag pick">Recommended</span></div>
+        <div class="stage">
+          <div class="gut">Press any column</div>
+          <div data-card='{"colour":"own","drawer":"flush","caret":false}'></div>
+        </div>
+        <p class="note">
+          The active column is coloured <strong>in its own direction</strong>: Tonnage up in chartreuse,
+          Hours down in terracotta, Sessions in chalk because +6% sits inside the flat threshold.
+          <br><br>Active is always the coloured one, and the colour is always true. At rest nothing is
+          selected, so the named metric holds the tone and the card looks exactly as it does now.
+        </p>
+      </div>
+    </div>
+
+    <p class="body" style="margin-top:30px">
+      <strong>Why C is the one.</strong> It needs no new data and no new constant. Every figure already
+      arrives carrying its own <code>value</code> and <code>baseline</code>, and "is this move worth a
+      colour" is answered by the same <code>VERDICT_THRESHOLD_PCT</code> (15%) the sentence uses to
+      decide whether the week has a story at all. Nothing new for the two clients to keep in sync.
+    </p>
+    <p class="body">
+      <strong>The one thing C costs.</strong> Select another column and the named metric drops to chalk,
+      so for that moment the sentence has no coloured figure tying back to it. The tie is carried by the
+      words instead — the metric is bold inside the sentence and the step figure beside it keeps the tone.
+      It reads as "I have moved my attention", which is exactly what happened.
+    </p>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>Defect two — the card inside the card</h2>
+      <p>three ways</p>
+    </div>
+    <p class="body">
+      The drawer holds a share bar, three activity rows and the sessions beneath them. None of that is a
+      separate object — it is the long version of the figure you just pressed. It currently announces
+      itself with a border, a 16px radius, a different surface <em>and</em> a caret: four devices to say
+      one thing, "this belongs to the column above".
+    </p>
+
+    <div class="grid three">
+
+      <div class="opt">
+        <div class="meta"><h3>D1. Flush compartment</h3><span class="tag pick">Recommended</span></div>
+        <div class="stage">
+          <div class="gut">Opens under Hours</div>
+          <div data-card='{"colour":"own","drawer":"flush","caret":false,"open":"hours"}'></div>
+        </div>
+        <p class="note">
+          The panel runs the full width to the card's true edges and takes its bottom corners, so it is
+          the card's <strong>lower compartment</strong> rather than a tenant. One hairline, one step down
+          in surface.<br><br>Border gone, inner radius gone, caret gone — <strong>three fewer
+          edges</strong>, and the expansion still happens in place.
+        </p>
+      </div>
+
+      <div class="opt">
+        <div class="meta"><h3>D2. No container at all</h3><span class="tag">Leanest</span></div>
+        <div class="stage">
+          <div class="gut">Opens under Hours</div>
+          <div data-card='{"colour":"own","drawer":"bare","caret":false,"open":"hours"}'></div>
+        </div>
+        <p class="note">
+          A hairline and whitespace. The content simply continues on the card's own surface.
+          <br><br>The cleanest answer available, and possibly <em>too</em> clean: with the session rows on
+          the same surface as the figures, a long list stops reading as "inside the thing I pressed" once
+          the columns scroll off the top of the screen.
+        </p>
+      </div>
+
+      <div class="opt">
+        <div class="meta"><h3>D3. Push it out to a sheet</h3><span class="tag no">Not now</span></div>
+        <div class="stage">
+          <div class="gut">Press a figure — the card never grows</div>
+          <div data-card='{"colour":"own","drawer":"flush","caret":false,"sheet":true,"open":"hours"}'></div>
+        </div>
+        <p class="note">
+          The breakdown moves out to the existing bottom sheet. Zero nesting by construction.
+          <br><br>But it trades a glance for a modal. This card's whole promise is that a figure opens
+          <em>in place</em>, under the number it came from; a sheet turns checking two columns into a
+          four-tap round trip.
+        </p>
+      </div>
+    </div>
+
+    <div class="tblwrap">
+      <table>
+        <thead>
+          <tr><th>Build</th><th>Container edges</th><th>Pointers</th><th>Surfaces</th><th>Net</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="name">Now</td>
+            <td><span class="num">2</span> — card border, drawer border</td>
+            <td><span class="num">1</span> — the travelling caret</td>
+            <td><span class="num">3</span> — card, drawer, pressed-column fill</td>
+            <td class="bad">Four devices for one list</td>
+          </tr>
+          <tr>
+            <td class="name">D1 — flush</td>
+            <td><span class="num">1</span> — the card's own</td>
+            <td><span class="num">0</span> — the coloured column points</td>
+            <td><span class="num">2</span> — card, compartment</td>
+            <td class="good">−3 edges, expansion kept</td>
+          </tr>
+          <tr>
+            <td class="name">D2 — bare</td>
+            <td><span class="num">1</span></td>
+            <td><span class="num">0</span></td>
+            <td><span class="num">1</span></td>
+            <td>−4 edges, at some cost to grouping</td>
+          </tr>
+          <tr>
+            <td class="name">D3 — sheet</td>
+            <td><span class="num">1</span> in the card, <span class="num">1</span> in the sheet</td>
+            <td><span class="num">0</span></td>
+            <td><span class="num">2</span>, never at once</td>
+            <td>No nesting, but the glance is gone</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>The recommendation, assembled</h2>
+      <p>C + D1</p>
+    </div>
+    <p class="body">
+      Per-column tone plus the flush compartment. Press across all four figures: the colour follows your
+      finger and stays true about each metric, and the panel below is visibly the bottom of the same card.
+      The drawer's header now carries that column's own comparison — <em>−20% vs a 6.4 h four-week
+      average</em> — which is the working-out for the colour you just triggered, printed where you
+      triggered it.
+    </p>
+
+    <div class="grid two">
+      <div>
+        <div class="stage">
+          <div class="gut">Recommended — press any figure</div>
+          <div data-card='{"colour":"own","drawer":"flush","caret":false,"delta":true,"tint":true}'></div>
+        </div>
+      </div>
+      <div>
+        <div class="spec">
+          <div class="specrow">
+            <div class="h"><b>Tone per column</b><span>core + both clients</span></div>
+            <p>
+              Each figure derives its own direction from <code>value</code> against <code>baseline</code>
+              at <code>VERDICT_THRESHOLD_PCT</code>. Selected → that tone on both label and value; inside
+              the threshold → chalk. Unselected → ash label, chalk value, as now. The helper belongs in
+              <code>packages/core/src/week-verdict.ts</code> so web and mobile cannot drift.
+            </p>
+          </div>
+          <div class="specrow">
+            <div class="h"><b>At rest the sentence keeps the colour</b><span>no selection</span></div>
+            <p>
+              With nothing open the named metric is toned exactly as today, so the card's resting state is
+              unchanged and the fix costs nothing on first paint.
+            </p>
+          </div>
+          <div class="specrow">
+            <div class="h"><b>The pressed column loses its fill</b><span>−1 surface</span></div>
+            <p>
+              The <code>ink</code> background behind the active column goes; tone and the 2px rail carry
+              selection. A 9%-opacity wash of the same tone is shown here — it reads on a phone in
+              daylight without becoming a second card. Drop it if you want the leanest version.
+            </p>
+          </div>
+          <div class="specrow">
+            <div class="h"><b>The drawer becomes the card's compartment</b><span>−1 border, −1 radius</span></div>
+            <p>
+              Full-bleed to the card's inner edges, one hairline on top, bottom corners inherited from the
+              card. The <code>0fr → 1fr</code> grid animation is untouched, so it still slides open.
+            </p>
+          </div>
+          <div class="specrow">
+            <div class="h"><b>The caret is deleted</b><span>−1 moving part</span></div>
+            <p>
+              Its only job was pointing at the column that opened the panel. The coloured column does that
+              without moving.
+            </p>
+          </div>
+          <div class="specrow">
+            <div class="h"><b>The header states the column's own move</b><span>replaces a restated count</span></div>
+            <p>
+              "Where the hours came from" keeps its place; the session count on the right becomes that
+              column's delta against its baseline, in that column's tone. The count was already restating
+              the Sessions figure two rows above it.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="body" style="margin-top:26px">
+      The change lands on <code>apps/web/components/aurora/week-verdict.tsx</code> and
+      <code>apps/mobile/components/aurora/week-verdict.tsx</code> in the same commit — they are twins,
+      and the tone rule sits in <code>packages/core</code> so neither client can invent its own.
+    </p>
+  </section>
+
+</div>
+
+<script>
+  /* ── the data — the week from the screenshot, with plausible baselines for
+        the three metrics the sentence did not name ───────────────────────── */
+  var FIGS = [
+    { id: "distance", label: "KM",       value: "17.3",  base: "1.3 km", dir: "up",    delta: "1.3 → 17.3 km", named: true },
+    { id: "tonnage",  label: "Tonnage",  value: "7.2 t", base: "6.1 t",  dir: "up",    delta: "+18%" },
+    { id: "sessions", label: "Sessions", value: "7",     base: "6.6",    dir: "level", delta: "+6%" },
+    { id: "hours",    label: "Hours",    value: "5.1",   base: "6.4 h",  dir: "down",  delta: "−20%" }
+  ];
+
+  var DETAIL = {
+    distance: {
+      head: "Where the distance came from",
+      groups: [
+        { ic: "🏃", nm: "Running",  pc: 82, vl: "14.2 km" },
+        { ic: "🚴", nm: "Cycling",  pc: 11, vl: "1.9 km" },
+        { ic: "🏊", nm: "Swimming", pc: 7,  vl: "1.2 km" }
+      ],
+      rows: [
+        { dt: "2 Aug",  nm: "Long easy run",    mt: "52 min",  amt: "9.4 km" },
+        { dt: "31 Jul", nm: "Track intervals",  mt: "38 min",  amt: "4.8 km" },
+        { dt: "29 Jul", nm: "Pool – technique", mt: "31 min",  amt: "1.2 km" }
+      ]
+    },
+    tonnage: {
+      head: "Where the tonnage came from",
+      groups: [
+        { ic: "🏋️", nm: "Lower body", pc: 54, vl: "3.9 t" },
+        { ic: "💪", nm: "Upper push", pc: 28, vl: "2.0 t" },
+        { ic: "🤸", nm: "Upper pull", pc: 18, vl: "1.3 t" }
+      ],
+      rows: [
+        { dt: "1 Aug",  nm: "Squat + accessories", mt: "18 sets – 64 min", amt: "3.1 t" },
+        { dt: "30 Jul", nm: "Press day",           mt: "14 sets – 51 min", amt: "2.4 t" },
+        { dt: "28 Jul", nm: "Pull day",            mt: "12 sets – 47 min", amt: "1.7 t" }
+      ]
+    },
+    sessions: {
+      head: "What the sessions were",
+      groups: [
+        { ic: "🏋️", nm: "Strength", pc: 43, vl: "3 sessions" },
+        { ic: "🏃", nm: "Running",  pc: 43, vl: "3 sessions" },
+        { ic: "🏊", nm: "Swimming", pc: 14, vl: "1 session" }
+      ],
+      rows: [
+        { dt: "2 Aug",  nm: "Long easy run",       mt: "52 min – 9.4 km", amt: "1" },
+        { dt: "1 Aug",  nm: "Squat + accessories", mt: "64 min – 3.1 t",  amt: "1" },
+        { dt: "31 Jul", nm: "Track intervals",     mt: "38 min – 4.8 km", amt: "1" }
+      ]
+    },
+    hours: {
+      head: "Where the hours came from",
+      groups: [
+        { ic: "🏋️", nm: "Strength", pc: 53, vl: "2 h 42 min" },
+        { ic: "🏃", nm: "Running",  pc: 37, vl: "1 h 53 min" },
+        { ic: "🏊", nm: "Swimming", pc: 10, vl: "31 min" }
+      ],
+      rows: [
+        { dt: "1 Aug",  nm: "Squat + accessories", mt: "3.1 t – 18 sets", amt: "64 min" },
+        { dt: "2 Aug",  nm: "Long easy run",       mt: "9.4 km",          amt: "52 min" },
+        { dt: "30 Jul", nm: "Press day",           mt: "2.4 t – 14 sets", amt: "51 min" }
+      ]
+    }
+  };
+
+  function el(tag, cls, txt) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt !== undefined) n.textContent = txt;
+    return n;
+  }
+
+  function buildCard(host, o) {
+    var app = el("div", "app" + (o.drawer === "flush" && !o.sheet ? " flush" : ""));
+    var sel = o.open || null;
+
+    /* the sentence */
+    var top = el("div", "vtop");
+    var lead = el("div", "lead");
+    var s = el("div", "s");
+    s.appendChild(document.createTextNode("Your "));
+    s.appendChild(el("b", null, "distance"));
+    s.appendChild(document.createTextNode(" is the highest it's been in four weeks."));
+    lead.appendChild(s);
+    lead.appendChild(el("div", "w", "Four-week average 1.3"));
+    top.appendChild(lead);
+    top.appendChild(el("div", "step", "1.3 → 17.3"));
+    app.appendChild(top);
+
+    /* the figures */
+    var figs = el("div", "figs");
+    var btns = {};
+    FIGS.forEach(function (f) {
+      var btn = el("button", "fig");
+      btn.type = "button";
+      btn.setAttribute("aria-expanded", "false");
+      btn.setAttribute("aria-label", f.label + " – " + f.value);
+      btn.appendChild(el("span", "k", f.label));
+      btn.appendChild(el("span", "v", f.value));
+      if (o.colour !== "now") btn.appendChild(el("span", "rail"));
+      btn.addEventListener("click", function () { pick(sel === f.id ? null : f.id); });
+      btns[f.id] = btn;
+      figs.appendChild(btn);
+    });
+    app.appendChild(figs);
+
+    /* the caret bay — the "now" build only */
+    var bay = null, caret = null;
+    if (o.caret) {
+      bay = el("div", "caretbay");
+      caret = el("span", "caret");
+      caret.setAttribute("aria-hidden", "true");
+      bay.appendChild(caret);
+      app.appendChild(bay);
+    }
+
+    /* the drawer, or the sheet standing in for it */
+    var draw = null, panel = null, sheet = null;
+    if (o.sheet) {
+      sheet = el("div", "sheet");
+      sheet.appendChild(el("div", "grab"));
+      panel = el("div", "panel bare");
+      panel.style.borderTop = "none";
+      panel.style.marginTop = "0";
+      panel.style.paddingTop = "0";
+      sheet.appendChild(panel);
+    } else {
+      draw = el("div", "draw");
+      var clip = el("div", "clip");
+      panel = el("div", "panel " + o.drawer);
+      clip.appendChild(panel);
+      draw.appendChild(clip);
+      app.appendChild(draw);
+    }
+
+    var hint = null;
+    if (o.hint) {
+      hint = el("p", "hint", "Open a figure for the sessions behind it");
+      app.appendChild(hint);
+    }
+
+    host.appendChild(app);
+    if (sheet) host.appendChild(sheet);
+
+    /* which tone, if any, this figure should wear right now */
+    function toneOf(f, on) {
+      if (o.colour === "now" || o.colour === "rail") return f.named ? f.dir : null;
+      if (sel === null) return f.named ? (o.colour === "travel" ? "up" : f.dir) : null;
+      if (!on) return null;
+      return o.colour === "travel" ? "up" : f.dir;
+    }
+
+    function paintPanel(f) {
+      panel.textContent = "";
+      var d = DETAIL[f.id];
+
+      var head = el("div", "dhead");
+      head.appendChild(el("span", "k", d.head));
+      var right = el("span", "n" + (o.delta && f.dir !== "level" ? " " + f.dir : ""));
+      right.textContent = o.delta ? f.delta + " vs " + f.base : "7 sessions";
+      head.appendChild(right);
+      panel.appendChild(head);
+
+      var share = el("div", "share" + (o.tint && f.dir !== "level" ? " tone-" + f.dir : ""));
+      share.setAttribute("aria-hidden", "true");
+      d.groups.forEach(function (g, i) {
+        var sp = el("span", i < 2 ? "s" + i : null);
+        sp.style.flexGrow = String(Math.max(g.pc, 2));
+        share.appendChild(sp);
+      });
+      panel.appendChild(share);
+
+      var rows = el("div", "rows");
+      d.groups.forEach(function (g) {
+        var r = el("button", "row");
+        r.type = "button";
+        var ic = el("span", "ic", g.ic);
+        ic.setAttribute("aria-hidden", "true");
+        r.appendChild(ic);
+        r.appendChild(el("span", "nm", g.nm));
+        r.appendChild(el("span", "pc", g.pc + "%"));
+        r.appendChild(el("span", "vl", g.vl));
+        rows.appendChild(r);
+      });
+      panel.appendChild(rows);
+
+      panel.appendChild(el("div", "subhead", "Sessions"));
+      d.rows.forEach(function (it) {
+        var r = el("button", "srow");
+        r.type = "button";
+        r.appendChild(el("span", "dt", it.dt));
+        var mid = el("span", "mid");
+        mid.appendChild(el("b", null, it.nm));
+        mid.appendChild(el("i", null, it.mt));
+        r.appendChild(mid);
+        r.appendChild(el("span", "amt", it.amt));
+        panel.appendChild(r);
+      });
+    }
+
+    function pick(id) {
+      /* the sheet build never collapses — the breakdown lives outside the card */
+      sel = o.sheet ? (id || sel) : id;
+
+      var idx = -1;
+      FIGS.forEach(function (f, i) {
+        var on = sel === f.id;
+        if (on) idx = i;
+        var tone = toneOf(f, on);
+        var cls = "fig";
+        if (on) cls += " sel";
+        if (tone) cls += " " + tone;
+        if (on && o.colour === "now") cls += " wash-ink";
+        if (on && o.tint && tone) cls += " wash-" + tone;
+        btns[f.id].className = cls;
+        btns[f.id].setAttribute("aria-expanded", on && !o.sheet ? "true" : "false");
+      });
+
+      if (bay) {
+        bay.className = "caretbay" + (sel ? " on" : "");
+        if (sel) caret.style.left = ((idx + 0.5) * (100 / FIGS.length)) + "%";
+      }
+      if (draw) {
+        draw.className = "draw" + (sel ? " on" : "");
+        app.className = "app" + (o.drawer === "flush" ? " flush" : "") + (sel && o.drawer === "flush" ? " open" : "");
+      }
+      if (idx >= 0) paintPanel(FIGS[idx]);
+      if (hint) hint.style.display = sel ? "none" : "";
+    }
+
+    pick(sel);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-card]"), function (host) {
+    buildCard(host, JSON.parse(host.getAttribute("data-card")));
+  });
+
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    var dark = root.getAttribute("data-theme")
+      ? root.getAttribute("data-theme") === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+</script>
