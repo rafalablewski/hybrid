@@ -57,6 +57,26 @@ export interface BiometricMetric {
   baseline: number;
   unit: string;
   better: "high" | "low";
+  /**
+   * PROVENANCE, so the athlete can be told where their number came from.
+   *
+   * The wearable term printed "Includes −3 from your wearable" while carrying
+   * no record of what wrote the reading or when — so an athlete with no device
+   * could not tell a live measurement from a months-old one, and the copy
+   * asserted a wearable even when the source was a manual entry. These three
+   * fields are what the explainer sheet reads.
+   */
+  /** `Signal.source` — "apple" / "whoop" / "oura" / "manual" / … */
+  source?: string;
+  /** ISO timestamp of the reading being treated as today's. */
+  ts?: string;
+  /**
+   * False when no usable reading existed and the metric was NEUTRALISED —
+   * today === baseline, so it contributes exactly nothing. Distinguishing this
+   * from a real reading that happens to sit on baseline is what lets the sheet
+   * say "not measured" instead of implying a measurement of zero deviation.
+   */
+  measured?: boolean;
 }
 
 export interface Biometrics {

@@ -12,8 +12,9 @@ import {
   readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
   readinessFacts, KEPT_ARC_ALPHA,
   localDayKey, INJURY_AREA_KEY,
-  freshnessExplain,
+  freshnessExplain, wearableExplain, wearableSourcePhrase,
   type CapabilityMovement, type FreshnessPillar, type ReadinessFact, type RingSegment, type SemanticRole,
+  type WearableExplain,
 } from "@hybrid/core";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -30,6 +31,7 @@ import { AuroraIcon } from "./icons";
 import TissueCard from "./tissue-card";
 import ReadinessFace from "./readiness-face";
 import FreshnessSheet from "./freshness-sheet";
+import WearableSheet from "./wearable-sheet";
 import FetchError from "./fetch-error";
 import { CtaLabel } from "./cta-label";
 
@@ -63,6 +65,14 @@ const PLOT = { width: 318, height: 104, pad: 10 };
  *  hyphen `${-3}` leaves behind — a hyphen beside a tabular figure reads as a
  *  dash in a sentence, not as a sign. Mirrors web's signedPoints. */
 const signedPoints = (n: number) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);
+
+/** What the ±15 line calls its own source. Resolved in @hybrid/core so a
+ *  provider keeps its real name, a manual reading never borrows one, and both
+ *  clients say the same thing. */
+const wearableSource = (e: WearableExplain, t: (k: string) => string) => {
+  const p = wearableSourcePhrase(e);
+  return p.key ? t(p.key) : p.label ?? "";
+};
 
 /**
  * AURORA Performance (mobile) — the athlete hub, at SIX surfaces. Mirrors
@@ -170,6 +180,10 @@ function Full({ top }: { top?: ReactNode }) {
     () => (freshOpen ? freshnessExplain(freshOpen, log, bio) : null),
     [freshOpen, log, bio],
   );
+  // THE ±15's provenance. Computed whenever there IS a reading, because the
+  // card's own line needs the source name — not only the sheet.
+  const [wearableOpen, setWearableOpen] = useState(false);
+  const wearable = useMemo(() => (bio ? wearableExplain(bio) : null), [bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const loadState = useMemo(() => computeLoad(sessions), [sessions]);
   const bw = useBodyweightLookup();
@@ -253,10 +267,20 @@ function Full({ top }: { top?: ReactNode }) {
                     is (±15), rather than standing as a peer of two 0..100
                     indices in a third column. A real minus sign, not the hyphen
                     a template literal leaves behind. */}
-                {state.hpi.components.recovery !== 0 && (
-                  <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>
-                    {t("w.home.cockpit.wearableOf").replace("{n}", signedPoints(state.hpi.components.recovery))}
-                  </Text>
+                {state.hpi.components.recovery !== 0 && wearable && (
+                  <Pressable
+                    onPress={() => setWearableOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t("w.home.wearable.title")} — ${t("w.home.fresh.explain")}`}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}
+                  >
+                    <Text style={{ flexShrink: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.ash }}>
+                      {t("w.home.cockpit.wearableOf")
+                        .replace("{n}", signedPoints(state.hpi.components.recovery))
+                        .replace("{source}", wearableSource(wearable, t))}
+                    </Text>
+                    <AuroraIcon name="info" size={13} color={C.ash} />
+                  </Pressable>
                 )}
               </View>
             </View>
@@ -278,6 +302,7 @@ function Full({ top }: { top?: ReactNode }) {
               <Comp C={C} scheme={scheme} label={t("w.home.cockpit.enduranceFresh")} value={`${state.hpi.components.endurance}`} onExplain={() => setFreshOpen("endurance")} explainLabel={t("w.home.fresh.explain")} />
             </View>
             <FreshnessSheet explain={freshExplain} onClose={() => setFreshOpen(null)} />
+            <WearableSheet explain={wearableOpen ? wearable : null} onClose={() => setWearableOpen(false)} />
 
             {/* CAPABILITY — freshness rises on a layoff; this does not. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>

@@ -54,3 +54,4 @@ export * from "./composition";
 export * from "./segment";
 export * from "./readiness-deficit";
 export * from "./freshness-explain";
+export * from "./wearable-explain";

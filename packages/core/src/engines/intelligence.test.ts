@@ -21,6 +21,13 @@ const sig = (
   source = "manual",
 ): Signal => ({ athleteId: "a1", kind, value, unit: "", source, ts });
 
+/** The fixtures below are DATED, so they must be read against their own clock.
+ *  `toBiometrics` only treats a reading as today's within BIOMETRIC_FRESH_DAYS,
+ *  and leaving these on Date.now() would make them pass or fail depending on
+ *  when the suite runs — which is exactly the staleness the window exists to
+ *  catch. This is the morning after the newest fixture reading. */
+const AS_OF = Date.parse("2026-06-04T09:00:00Z");
+
 describe("signal ontology", () => {
   const series: Signal[] = [
     sig("hrv", 60, "2026-06-01"),
@@ -55,7 +62,7 @@ describe("signal ontology", () => {
   });
 
   it("adapts signals into the engines' Biometrics shape", () => {
-    const bio = toBiometrics(series);
+    const bio = toBiometrics(series, AS_OF);
     expect(bio).toBeDefined();
     expect(bio!.hrv.today).toBe(50);
     expect(bio!.hrv.better).toBe("high");
@@ -67,7 +74,7 @@ describe("signal ontology", () => {
   });
 
   it("returns undefined when there are no recovery signals", () => {
-    expect(toBiometrics([sig("jumpHeight", 40, "2026-06-03")])).toBeUndefined();
+    expect(toBiometrics([sig("jumpHeight", 40, "2026-06-03")], AS_OF)).toBeUndefined();
   });
 });
 
@@ -137,7 +144,7 @@ describe("HPI", () => {
       sig("sleep", 7, "2026-06-01"),
       sig("sleep", 7, "2026-06-02"),
       sig("sleep", 9, "2026-06-03"),
-    ]);
+    ], AS_OF);
     const without = computeHpi(f);
     const withBio = computeHpi(f, goodBio);
     expect(withBio.components.recovery).toBeGreaterThan(0);

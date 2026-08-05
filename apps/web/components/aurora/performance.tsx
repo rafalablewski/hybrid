@@ -5,7 +5,7 @@ import { fs, space,
   prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, velocityProfiles, LEVELS,
-  freshnessExplain, type FreshnessPillar,
+  freshnessExplain, wearableExplain, wearableSourcePhrase, type FreshnessPillar, type WearableExplain,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
   ROLE_COLOR, hpiRole, hpiBandKey, readinessRole, quickCheckinFeeling, READINESS_FACE, localDayKey,
   readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
@@ -30,6 +30,7 @@ import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FreshnessSheet from "./freshness-sheet";
+import WearableSheet from "./wearable-sheet";
 
 // State colour via the SHARED semantic vocabulary (@hybrid/core semantic.ts),
 // resolved through lib/ui's `roleText` — every state colour on this page is
@@ -51,6 +52,14 @@ const PLOT = { width: 318, height: 104, pad: 10 };
  *  hyphen `${-3}` leaves behind — a hyphen beside a tabular figure reads as a
  *  dash in a sentence, not as a sign. Mirrors mobile's signedPoints. */
 const signedPoints = (n: number) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);
+
+/** What the ±15 line calls its own source. Resolved in @hybrid/core so a
+ *  provider keeps its real name, a manual reading never borrows one, and both
+ *  clients say the same thing. */
+const wearableSource = (e: WearableExplain, t: (k: string) => string) => {
+  const p = wearableSourcePhrase(e);
+  return p.key ? t(p.key) : p.label ?? "";
+};
 
 /* ---------- unknown-state placeholders ---------- */
 /** One skeleton bar — a placeholder that states nothing. Deliberately not a
@@ -203,6 +212,10 @@ export default function AuroraPerformance({
     () => (freshOpen ? freshnessExplain(freshOpen, log, bio) : null),
     [freshOpen, log, bio],
   );
+  // THE ±15's provenance. Computed whenever there IS a reading, because the
+  // card's own line needs the source name — not only the sheet.
+  const [wearableOpen, setWearableOpen] = useState(false);
+  const wearable = useMemo(() => (bio ? wearableExplain(bio) : null), [bio]);
   const risk = useMemo(() => computeInjuryRisk(log, bio), [log, bio]);
   const load = useMemo(() => computeLoad(sessions), [sessions]);
   const totals = useMemo(() => runTotals(enduranceSessions(sessions)), [sessions]);
@@ -296,14 +309,26 @@ export default function AuroraPerformance({
                   <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.015em", lineHeight: 1.2, color: roleText(hpiRole(state.hpi.band)), marginTop: 2 }}>
                     {t(hpiBandKey(state.hpi.band))}
                   </div>
-                  {/* The wearable rides the headline as the signed adjustment it
-                      is (±15), instead of standing as a peer of two 0..100
-                      indices in a third column. A real minus sign, not the
-                      hyphen `-3` a template literal leaves behind. */}
-                  {state.hpi.components.recovery !== 0 && (
-                    <div style={{ fontSize: fs.caption, color: C("ash"), marginTop: 4 }}>
-                      {t("w.home.cockpit.wearableOf").replace("{n}", signedPoints(state.hpi.components.recovery))}
-                    </div>
+                  {/* THE ±15, AND A DOOR ONTO IT. This line used to assert a
+                      "wearable" whatever had actually written the reading, in
+                      the present tense over a reading of any age, with nothing
+                      behind it to check. It now names the real source and
+                      opens the derivation. */}
+                  {state.hpi.components.recovery !== 0 && wearable && (
+                    <button
+                      type="button"
+                      className="pressable"
+                      onClick={() => setWearableOpen(true)}
+                      aria-label={`${t("w.home.wearable.title")} — ${t("w.home.fresh.explain")}`}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 4, padding: 0, background: "none", border: 0, cursor: "pointer", textAlign: "left", fontSize: fs.caption, color: C("ash") }}
+                    >
+                      <span>
+                        {t("w.home.cockpit.wearableOf")
+                          .replace("{n}", signedPoints(state.hpi.components.recovery))
+                          .replace("{source}", wearableSource(wearable, t))}
+                      </span>
+                      <AuroraIcon name="info" size={13} color={C("ash")} style={{ flex: "none" }} />
+                    </button>
                   )}
                 </div>
               </div>
@@ -326,6 +351,7 @@ export default function AuroraPerformance({
                 <Comp label={t("w.home.cockpit.enduranceFresh")} value={`${state.hpi.components.endurance}`} onExplain={() => setFreshOpen("endurance")} explainLabel={t("w.home.fresh.explain")} />
               </div>
               <FreshnessSheet explain={freshExplain} onClose={() => setFreshOpen(null)} />
+              <WearableSheet explain={wearableOpen ? wearable : null} onClose={() => setWearableOpen(false)} />
 
               {/* CAPABILITY — the other half. Freshness rises on a layoff; this
                   does not. Without it a screen called Performance reports only
