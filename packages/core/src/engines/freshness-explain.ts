@@ -106,11 +106,18 @@ export interface FreshnessExplain {
    */
   empty: boolean;
   /**
-   * The log is not empty but NOTHING IN IT FEEDS THIS PILLAR — a month of
-   * running with no lifting reads "Strength fresh 100", and that 100 is the
-   * absence of input, not a measured all-clear. Without this flag the two cases
-   * are indistinguishable on the card and the sheet would explain a measurement
-   * that never happened.
+   * The log is not empty but NOTHING IN IT FEEDS THIS PILLAR. The everyday case
+   * is a pure lifting log: it names no energy system, so "Endurance fresh" reads
+   * 100 — and that 100 is the absence of input, not a measured all-clear.
+   * Without this flag the two are indistinguishable on the card and the sheet
+   * would explain a measurement that never happened.
+   *
+   * NOTE what this is NOT. A running log does not trip the strength flag: the
+   * catalog attributes `Easy Run` to quads, so a runner's tissue rows are
+   * genuinely measured (thin, but measured). The flag asks whether the log
+   * carries anything this pillar CAN read — for strength, whether any logged
+   * movement resolves to a tissue at all, which is the case for a log of
+   * unattributed sport (a padel match, a swim) rather than for cardio.
    */
   noInput: boolean;
 }
