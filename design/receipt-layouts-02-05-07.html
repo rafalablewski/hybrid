@@ -1,0 +1,538 @@
+<title>02, 05, 07 — five layouts each</title>
+
+<style>
+  /* AURORA tokens, verbatim from packages/core/src/theme/palette.ts.
+     Archivo + JetBrains Mono can't be fetched here — the stacks name them
+     first and fall back to the nearest system faces. Read the EDGES. */
+  :root {
+    --page:#070806; --ink:#0c0d0c; --ink2:#141614; --card:#151715; --sunk:#101210;
+    --line:#242724; --line2:#33372f; --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
+    --lime:#c6f84f; --teal:#6cb6bd; --on-accent:#0c0d0c;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --guide: transparent;
+  }
+  body { background: var(--page); color: var(--chalk); font-family: var(--sans); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+  ::selection { background: var(--lime); color: var(--on-accent); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 50px 20px 110px; }
+
+  .kick { font: 600 11px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; color: var(--ash2); }
+  h1 { font-size: clamp(28px, 4.2vw, 42px); font-weight: 800; letter-spacing: -.035em; line-height: 1.05; margin: 14px 0 0; text-wrap: balance; }
+  .lede { color: var(--ash); font-size: 15px; max-width: 76ch; margin: 16px 0 0; }
+  .lede b { color: var(--chalk); font-weight: 600; }
+
+  /* ── diagnosis ─────────────────────────────────────────────────────── */
+  .diag { margin: 34px 0 0; display: grid; grid-template-columns: minmax(0,360px) minmax(0,1fr); gap: 32px; align-items: start; }
+  @media (max-width: 860px) { .diag { grid-template-columns: 1fr; } }
+  .edges { display: flex; flex-direction: column; gap: 14px; }
+  .edge { display: flex; gap: 13px; align-items: baseline; }
+  .edge b { font: 600 11px/1.5 var(--mono); color: var(--lime); flex: none; width: 46px; letter-spacing: .06em; }
+  .edge span { color: var(--ash); font-size: 13.5px; }
+  .edge span i { color: var(--chalk); font-style: normal; font-weight: 600; }
+
+  /* ── guide toggle ──────────────────────────────────────────────────── */
+  .tools { margin: 40px 0 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 14px 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .tools label { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font: 600 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash); }
+  .tools input { appearance: none; width: 34px; height: 20px; border-radius: 999px; background: var(--line); border: 1px solid var(--line2); position: relative; cursor: pointer; flex: none; }
+  .tools input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 999px; background: var(--ash); transition: transform .15s ease, background .15s ease; }
+  .tools input:checked { background: color-mix(in srgb, var(--lime) 28%, var(--line)); border-color: color-mix(in srgb, var(--lime) 45%, var(--line2)); }
+  .tools input:checked::after { transform: translateX(14px); background: var(--lime); }
+  .tools input:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  .tools p { color: var(--ash2); font-size: 12.5px; }
+  @media (prefers-reduced-motion: reduce) { .tools input::after { transition: none; } }
+  body:has(#guides:checked) .card { --guide: rgba(198,248,79,.34); }
+
+  /* ── sections + gallery ────────────────────────────────────────────── */
+  .gallery { display: flex; flex-direction: column; gap: 62px; margin: 46px 0 0; }
+  .set { display: flex; flex-direction: column; gap: 20px; }
+  .sethead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 12px; flex-wrap: wrap; }
+  .sethead h2 { font-size: 22px; font-weight: 800; letter-spacing: -.028em; margin: 0; }
+  .sethead h2 b { color: var(--lime); font: 600 13px/1 var(--mono); letter-spacing: .16em; margin-right: 12px; vertical-align: 2px; }
+  .sethead .idea { font: 500 11.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ash2); }
+  .setnote { color: var(--ash); font-size: 13.5px; max-width: 82ch; margin: -4px 0 0; }
+  .row5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 30px 26px; align-items: start; }
+  .item { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .item .lbl { display: flex; align-items: baseline; gap: 9px; }
+  .item .lbl b { font: 600 10.5px/1 var(--mono); color: var(--lime); letter-spacing: .12em; flex: none; }
+  .item .lbl h3 { font-size: 15px; font-weight: 700; letter-spacing: -.015em; margin: 0; }
+  .item .fix { font: 500 11.5px/1.6 var(--mono); color: var(--ash2); }
+  .item .fix i { color: var(--ash); font-style: normal; }
+
+  /* ── the mock card ─────────────────────────────────────────────────── */
+  .card {
+    background: var(--ink2); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: 0 6px 22px -12px rgba(0,0,0,.55); padding: 20px; position: relative; overflow: hidden;
+  }
+  /* alignment guides: the card's own padding edge, and the legacy 31px indent */
+  .card::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(to right, transparent 19px, var(--guide) 19px, var(--guide) 20px, transparent 20px),
+      linear-gradient(to right, transparent 50px, var(--guide) 50px, var(--guide) 51px, transparent 51px);
+  }
+  .card > * { position: relative; }
+
+  .tick { color: var(--lime); font-weight: 800; flex: none; }
+  .ttl { font-size: 19px; font-weight: 800; letter-spacing: -.025em; }
+  .stamp { font: 400 11px/1 var(--mono); color: var(--ash); white-space: nowrap; flex: none; }
+  .fin { font: 400 12px/1.5 var(--mono); color: var(--ash); }
+  .num { font-variant-numeric: tabular-nums; }
+  .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .go { font: 600 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+  .rule { border-top: 1px solid var(--line); }
+  .bleed { margin-left: -20px; margin-right: -20px; }
+
+  /* value/label pair used by several layouts */
+  .kv .v { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
+  .kv .k { font: 500 9.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); margin-top: 6px; }
+
+  /* ══ 02 — one number earns the size ══════════════════════════════════ */
+  .a1 .hero { display: flex; align-items: baseline; gap: 7px; margin-top: 14px; }
+  .a1 .hero .v { font-size: 46px; font-weight: 800; letter-spacing: -.045em; line-height: .88; }
+  .a1 .hero .u { font-size: 16px; font-weight: 600; color: var(--ash); }
+  .a1 .rest { display: flex; gap: 18px; font: 500 12.5px/1 var(--mono); color: var(--ash); margin-top: 12px; }
+  .a1 .foot { margin-top: 16px; padding-top: 14px; }
+
+  .a2 .body { padding-left: 31px; }
+  .a2 .hd { align-items: flex-start; }
+  .a2 .glyph { position: absolute; left: 20px; font-size: 19px; line-height: 1.15; }
+  .a2 .hero { display: flex; align-items: baseline; gap: 7px; margin-top: 14px; }
+  .a2 .hero .v { font-size: 46px; font-weight: 800; letter-spacing: -.045em; line-height: .88; }
+  .a2 .hero .u { font-size: 16px; font-weight: 600; color: var(--ash); }
+  .a2 .rest { display: flex; gap: 18px; font: 500 12.5px/1 var(--mono); color: var(--ash); margin-top: 12px; }
+  .a2 .foot { margin-top: 16px; padding-top: 14px; margin-left: -31px; padding-left: 31px; }
+
+  .a3 .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+  .a3 .hero { display: flex; align-items: baseline; gap: 6px; }
+  .a3 .hero .v { font-size: 42px; font-weight: 800; letter-spacing: -.045em; line-height: .86; }
+  .a3 .hero .u { font-size: 15px; font-weight: 600; color: var(--ash); }
+  .a3 .rest { display: flex; gap: 18px; font: 500 12.5px/1 var(--mono); color: var(--ash); margin-top: 14px; }
+  .a3 .foot { margin-top: 15px; padding-top: 14px; }
+
+  .a4 .kicker { font: 600 10px/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--lime); }
+  .a4 .hero { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
+  .a4 .hero .v { font-size: 52px; font-weight: 800; letter-spacing: -.05em; line-height: .84; }
+  .a4 .hero .u { font-size: 17px; font-weight: 600; color: var(--ash); }
+  .a4 .sub { font: 400 12px/1.5 var(--mono); color: var(--ash); margin-top: 12px; }
+  .a4 .foot { margin-top: 16px; padding-top: 14px; }
+
+  .a5 .split { display: grid; grid-template-columns: 1fr 1px auto; gap: 0 18px; align-items: center; margin-top: 14px; }
+  .a5 .hero .v { font-size: 44px; font-weight: 800; letter-spacing: -.045em; line-height: .88; }
+  .a5 .hero .u { font-size: 15px; font-weight: 600; color: var(--ash); margin-left: 6px; }
+  .a5 .div { background: var(--line); align-self: stretch; }
+  .a5 .side { display: flex; flex-direction: column; gap: 12px; text-align: right; }
+  .a5 .side .v { font: 600 13px/1 var(--mono); }
+  .a5 .side .k { font: 500 9px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); margin-top: 5px; }
+  .a5 .foot { margin-top: 16px; padding-top: 14px; }
+
+  /* ══ 05 — one continuous line ════════════════════════════════════════ */
+  .b1 .para { font: 400 13px/2.05 var(--mono); color: var(--ash); margin-top: 4px; }
+  .b1 .para b { color: var(--chalk); font-weight: 600; font-size: 15px; }
+  .b1 .para .g { display: inline-block; width: 20px; }
+  .b1 .foot { margin-top: 16px; padding-top: 14px; }
+
+  .b2 .grid { margin-top: 2px; }
+  .b2 .ln { line-height: 26px; }
+  .b2 .ln.t { font-size: 19px; font-weight: 800; letter-spacing: -.025em; line-height: 30px; }
+  .b2 .ln.m { font: 400 12px/26px var(--mono); color: var(--ash); }
+  .b2 .ln.f { font: 400 13px/30px var(--mono); color: var(--ash); }
+  .b2 .ln.f b { color: var(--chalk); font-weight: 600; font-size: 15px; }
+  .b2 .ln.f .g { display: inline-block; width: 20px; }
+  .b2 .foot { margin-top: 14px; padding-top: 14px; }
+
+  .b3 .flow { font: 400 13px/1.85 var(--mono); color: var(--ash); margin-top: 8px; }
+  .b3 .flow b { color: var(--chalk); font-weight: 600; font-size: 15px; }
+  .b3 .flow .g { display: inline-block; width: 20px; }
+  .b3 .foot { margin-top: 16px; padding-top: 14px; }
+
+  .b4 .oneline { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  .b4 .figs { font: 400 13px/1.6 var(--mono); color: var(--ash); }
+  .b4 .figs b { color: var(--chalk); font-weight: 600; font-size: 15px; }
+  .b4 .figs .g { display: inline-block; width: 18px; }
+  .b4 .fin { margin-top: 8px; }
+  .b4 .foot { margin-top: 16px; padding-top: 14px; }
+
+  .b5 .spread { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; font: 400 13px/1 var(--mono); color: var(--ash); }
+  .b5 .spread b { color: var(--chalk); font-weight: 600; font-size: 15px; }
+  .b5 .foot { margin-top: 16px; padding-top: 14px; }
+
+  /* ══ 07 — the recessed plate ═════════════════════════════════════════ */
+  .plate { background: var(--sunk); box-shadow: inset 0 1px 0 rgba(255,255,255,.045), inset 0 -1px 0 rgba(0,0,0,.55); }
+  .c1 .plate { margin: 16px -20px 0; padding: 15px 20px 14px; display: flex; column-gap: 26px; row-gap: 14px; flex-wrap: wrap; }
+  .c1 .foot { margin-top: 0; padding-top: 14px; border-top: none; }
+
+  .c2 .plate { margin-top: 16px; padding: 15px 16px 14px; border-radius: 14px; display: flex; column-gap: 26px; row-gap: 14px; flex-wrap: wrap; }
+  .c2 .foot { margin-top: 16px; padding-top: 14px; }
+
+  .c3 { padding-bottom: 0; }
+  .c3 .plate { margin: 16px -20px 0; padding: 15px 20px 16px; display: flex; column-gap: 26px; row-gap: 14px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; }
+  .c3 .go { padding-bottom: 2px; }
+
+  .c4 { padding: 20px 20px 0; }
+  .c4 .plate { margin: 0 -20px; padding: 18px 20px 16px; }
+  .c4 .hd { margin-bottom: 12px; }
+  .c4 .figs { display: flex; column-gap: 26px; row-gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+  .c4 .foot { margin-top: 14px; padding-top: 14px; }
+
+  .c5 .plate { margin: 16px -20px 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); }
+  .c5 .cell { padding: 15px 0 14px 20px; border-left: 1px solid var(--line); }
+  .c5 .cell:first-child { border-left: none; }
+  .c5 .foot { margin-top: 0; padding-top: 14px; border-top: none; }
+
+  /* ── close ─────────────────────────────────────────────────────────── */
+  .close { margin: 70px 0 0; border-top: 1px solid var(--line); padding-top: 24px; }
+  .close h2 { font-size: 21px; font-weight: 800; letter-spacing: -.025em; margin: 0 0 12px; }
+  .close p { color: var(--ash); font-size: 14px; max-width: 74ch; }
+  .close p + p { margin-top: 10px; }
+  .close b { color: var(--chalk); font-weight: 600; }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="kick">Today — the logged day</div>
+    <h1>Three concepts, five layouts each. The argument is the left edge.</h1>
+    <p class="lede">
+      The oddness isn't the type or the spacing — it's that the card runs <b>three different left edges</b> at once,
+      and every line picks one at random. Fix the edge and most of the "weird margins" disappear on their own.
+      Each layout below holds a single edge and states which one.
+    </p>
+  </header>
+
+  <section class="diag">
+    <div class="card" style="max-width:400px">
+      <div class="hd">
+        <div style="display:flex;align-items:baseline;gap:12px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+        <span class="stamp">Yesterday</span>
+      </div>
+      <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+      <div style="display:flex;column-gap:24px;row-gap:14px;flex-wrap:wrap;margin:16px 0 0 31px" class="kv">
+        <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+        <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+        <div><div class="v num">~630 kcal</div><div class="k">Energy</div></div>
+      </div>
+      <div class="rule" style="margin-top:16px;padding:14px 0 0 31px"><span class="go">View in history →</span></div>
+    </div>
+    <div class="edges">
+      <div class="edge"><b>0px</b><span>The hairlines. The week rule above and the seam below run <i>full-bleed</i> to the card's outer edge.</span></div>
+      <div class="edge"><b>20px</b><span>The card's padding. The ✓, the headline and the day stamp sit here.</span></div>
+      <div class="edge"><b>51px</b><span>The legacy indent — 20 + 31, where 31 is the width of a ✓ glyph plus its gap. The finish clock, every figure and the "View in history" label all hang off it, aligning to a mark the eye can't see because the glyph above them is only 12px wide.</span></div>
+      <div class="edge"><b></b><span style="color:var(--ash2)">Three edges, no hierarchy between them — so the card reads as ragged rather than indented. Turn the guides on below to see it.</span></div>
+    </div>
+  </section>
+
+  <div class="tools">
+    <label for="guides"><input type="checkbox" id="guides"><span>Show alignment guides</span></label>
+    <p>Draws the 20px and 51px edges on every card. A layout that has solved the problem shows content on one line only.</p>
+  </div>
+
+  <div class="gallery">
+
+    <!-- ══════════ 02 ══════════ -->
+    <section class="set">
+      <div class="sethead">
+        <h2><b>02</b>One number earns the size</h2>
+        <span class="idea">Hero: 62 min — the day was a match</span>
+      </div>
+      <p class="setnote">The hero figure is fixed across all five; only the frame around it moves.</p>
+      <div class="row5">
+
+        <div class="item">
+          <div class="lbl"><b>A</b><h3>Flush</h3></div>
+          <div class="card a1">
+            <div class="hd">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="fin" style="margin-top:6px">finished 17:17</div>
+            <div class="hero"><span class="v num">62</span><span class="u">min</span></div>
+            <div class="rest"><span class="num">2.6 km</span><span class="num">~630 kcal</span></div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>One edge at 20px.</i> The indent is simply deleted; the ✓ stops governing anything below it.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>B</b><h3>Hanging tick</h3></div>
+          <div class="card a2">
+            <span class="tick glyph">✓</span>
+            <div class="body">
+              <div class="hd"><span class="ttl">Logged</span><span class="stamp">Yesterday</span></div>
+              <div class="fin" style="margin-top:6px">finished 17:17</div>
+              <div class="hero"><span class="v num">62</span><span class="u">min</span></div>
+              <div class="rest"><span class="num">2.6 km</span><span class="num">~630 kcal</span></div>
+              <div class="rule foot"><span class="go">View in history →</span></div>
+            </div>
+          </div>
+          <p class="fix"><i>One edge at 51px.</i> The indent is kept but made true — the ✓ hangs in the margin and every line, seam included, aligns.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>C</b><h3>Hero right</h3></div>
+          <div class="card a3">
+            <div class="top">
+              <div>
+                <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+                <div class="fin" style="margin-top:6px">finished 17:17</div>
+              </div>
+              <div class="hero"><span class="v num">62</span><span class="u">min</span></div>
+            </div>
+            <div class="rest"><span class="num">2.6 km</span><span class="num">~630 kcal</span></div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>Two edges, both intentional.</i> Words left, figure right — the split is the hierarchy, like a price on a label.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>D</b><h3>Figure as headline</h3></div>
+          <div class="card a4">
+            <div class="hd"><span class="kicker">Logged</span><span class="stamp">Yesterday</span></div>
+            <div class="hero"><span class="v num">62</span><span class="u">min</span></div>
+            <div class="sub">2.6 km, ~630 kcal — finished 17:17</div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>One edge at 20px.</i> "Logged" demotes to a kicker and the ✓ goes entirely, so nothing is left to indent against.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>E</b><h3>Split cell</h3></div>
+          <div class="card a5">
+            <div class="hd">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="fin" style="margin-top:6px">finished 17:17</div>
+            <div class="split">
+              <div class="hero"><span class="v num">62</span><span class="u">min</span></div>
+              <div class="div"></div>
+              <div class="side">
+                <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+                <div><div class="v num">~630</div><div class="k">kcal</div></div>
+              </div>
+            </div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>One edge, one column rule.</i> The hairline does the separating, so the secondaries keep their labels without crowding.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════ 05 ══════════ -->
+    <section class="set">
+      <div class="sethead">
+        <h2><b>05</b>One continuous line</h2>
+        <span class="idea">No glyph separators anywhere</span>
+      </div>
+      <p class="setnote">All five carry the same figures with space and weight as the only separators — the difference is the rhythm they sit on.</p>
+      <div class="row5">
+
+        <div class="item">
+          <div class="lbl"><b>A</b><h3>Paragraph</h3></div>
+          <div class="card b1">
+            <div class="hd">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="para">
+              finished 17:17<br>
+              <b class="num">62</b> min<span class="g"></span><b class="num">2.6</b> km<span class="g"></span>~<b class="num">630</b> kcal
+            </div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>One edge at 20px.</i> Meta and figures become one text block, so there is nothing left to indent separately.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>B</b><h3>Baseline grid</h3></div>
+          <div class="card b2">
+            <div class="hd" style="margin-bottom:2px">
+              <div class="ln t">Logged</div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="grid">
+              <div class="ln m">finished 17:17</div>
+              <div class="ln f"><b class="num">62</b> min<span class="g"></span><b class="num">2.6</b> km<span class="g"></span>~<b class="num">630</b> kcal</div>
+            </div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>One edge, one rhythm.</i> Every line snaps to a 26px baseline, ✓ removed — the vertical spacing stops being ad hoc.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>C</b><h3>Tick inline</h3></div>
+          <div class="card b3">
+            <div class="hd">
+              <div class="flow" style="margin:0"><span class="tick">✓</span> <span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="flow">
+              <b class="num">62</b> min<span class="g"></span><b class="num">2.6</b> km<span class="g"></span>~<b class="num">630</b> kcal<br>
+              finished 17:17
+            </div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>One edge at 20px.</i> Figures move above the clock — the day's cost outranks its timestamp, and both start flush.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>D</b><h3>Single line</h3></div>
+          <div class="card b4">
+            <div class="oneline">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <div class="figs"><b class="num">62</b> min<span class="g"></span><b class="num">2.6</b> km<span class="g"></span>~<b class="num">630</b> kcal</div>
+            </div>
+            <div class="fin">finished 17:17 — yesterday</div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>Two edges, held.</i> Headline and figures share one baseline; the card loses a whole row of height.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>E</b><h3>Justified</h3></div>
+          <div class="card b5">
+            <div class="hd">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="fin" style="margin-top:6px">finished 17:17</div>
+            <div class="spread">
+              <span><b class="num">62</b> min</span>
+              <span><b class="num">2.6</b> km</span>
+              <span>~<b class="num">630</b> kcal</span>
+            </div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>Edge to edge.</i> The figures justify across the full measure, so the gaps are structural instead of a fixed 24px.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════ 07 ══════════ -->
+    <section class="set">
+      <div class="sethead">
+        <h2><b>07</b>The recessed plate</h2>
+        <span class="idea">Form from light, no border</span>
+      </div>
+      <p class="setnote">The plate solves the indent by containing it — but only if the plate itself sits on a real edge.</p>
+      <div class="row5">
+
+        <div class="item">
+          <div class="lbl"><b>A</b><h3>Full-bleed plate</h3></div>
+          <div class="card c1">
+            <div class="hd">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="fin" style="margin-top:6px">finished 17:17</div>
+            <div class="plate kv">
+              <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+              <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+              <div><div class="v num">~630 kcal</div><div class="k">Energy</div></div>
+            </div>
+            <div class="foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>One edge at 20px.</i> The plate runs wall to wall like the card's own hairlines, so its content keeps the card's padding.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>B</b><h3>Inset tray</h3></div>
+          <div class="card c2">
+            <div class="hd">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="fin" style="margin-top:6px">finished 17:17</div>
+            <div class="plate kv">
+              <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+              <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+              <div><div class="v num">~630 kcal</div><div class="k">Energy</div></div>
+            </div>
+            <div class="rule foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>Two edges, nested.</i> A rounded tray floating inside the card — cleaner object, but it spends the depth budget.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>C</b><h3>Plate as floor</h3></div>
+          <div class="card c3">
+            <div class="hd">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="fin" style="margin-top:6px">finished 17:17</div>
+            <div class="plate">
+              <div class="kv" style="display:flex;column-gap:24px;row-gap:14px;flex-wrap:wrap">
+                <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+                <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+                <div><div class="v num">~630 kcal</div><div class="k">Energy</div></div>
+              </div>
+              <span class="go">History →</span>
+            </div>
+          </div>
+          <p class="fix"><i>One edge, no seam.</i> The plate becomes the card's floor and swallows the link, so the hairline above it is unnecessary.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>D</b><h3>Whole receipt sunk</h3></div>
+          <div class="card c4">
+            <div class="plate">
+              <div class="hd">
+                <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+                <span class="stamp">Yesterday</span>
+              </div>
+              <div class="fin">finished 17:17</div>
+              <div class="figs kv">
+                <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+                <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+                <div><div class="v num">~630 kcal</div><div class="k">Energy</div></div>
+              </div>
+              <div class="rule foot"><span class="go">View in history →</span></div>
+            </div>
+          </div>
+          <p class="fix"><i>One edge, one plane.</i> The whole logged day is the recess; the card above it stays the week's surface.</p>
+        </div>
+
+        <div class="item">
+          <div class="lbl"><b>E</b><h3>Milled compartments</h3></div>
+          <div class="card c5">
+            <div class="hd">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="tick">✓</span><span class="ttl">Logged</span></div>
+              <span class="stamp">Yesterday</span>
+            </div>
+            <div class="fin" style="margin-top:6px">finished 17:17</div>
+            <div class="plate kv">
+              <div class="cell"><div class="v num">62<span style="font-size:11px;color:var(--ash);font-weight:600"> min</span></div><div class="k">Duration</div></div>
+              <div class="cell"><div class="v num">2.6<span style="font-size:11px;color:var(--ash);font-weight:600"> km</span></div><div class="k">Distance</div></div>
+              <div class="cell"><div class="v num">~630<span style="font-size:11px;color:var(--ash);font-weight:600"> kcal</span></div><div class="k">Energy</div></div>
+            </div>
+            <div class="foot"><span class="go">View in history →</span></div>
+          </div>
+          <p class="fix"><i>One edge, three columns.</i> Equal compartments instead of flex gaps — the figures can never bunch up as the day grows.</p>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <section class="close">
+    <h2>Reading the set</h2>
+    <p>
+      <b>02-B</b> and <b>05-B</b> are the two that fix the cause rather than the symptom. B keeps the indent and
+      makes it honest — the ✓ hangs in its own margin and every line below, seam included, lands on 51px. 05-B
+      deletes the indent and puts the whole block on a 26px baseline, which is why its vertical spacing reads as
+      deliberate rather than assembled.
+    </p>
+    <p>
+      In the 07 set, <b>A</b> and <b>E</b> are the ones worth building: the plate has to be full-bleed. The moment it
+      is inset (B) it introduces a fourth edge, which is the original problem with extra shadow.
+    </p>
+    <p>
+      One caution on 05-D and 02-C: both put content on a right edge, which is the one place the day stamp already
+      lives. On a narrow phone with a six-figure day they will collide before anything else here does.
+    </p>
+  </section>
+
+</div>

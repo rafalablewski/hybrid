@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { doneReceipt, doneReceiptStats } from "./done-receipt";
+import { doneReceipt, doneReceiptStats, doneReceiptHero } from "./done-receipt";
+import { mergeDoneReceipts } from "./logbook-week";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 
 const strength = (sets: number, load = "100", reps = "5"): SessionBlock => ({
@@ -202,5 +203,179 @@ describe("doneReceiptStats", () => {
       "kg",
     );
     expect(stats.map((s) => s.labelKey)).not.toContain("w.home.rail.duration");
+  });
+
+  it("renders the climb it has always summed, beside the distance", () => {
+    const run = doneReceipt(
+      session({
+        title: "Running",
+        completedAt: "2026-07-16T11:20:00.000Z",
+        blocks: [{ kind: "cardio", name: "Running", distance: 9.4, minutes: 50, elevation: 320 }],
+      }),
+    );
+    expect(run.elevationM).toBe(320);
+    const stats = doneReceiptStats(run, "kg");
+    expect(stats.map((s) => s.labelKey)).toEqual([
+      "w.home.rail.duration",
+      "w.home.today.distance",
+      "w.home.today.climb",
+    ]);
+    expect(stats[2]!.value).toBe("320 m");
+  });
+
+  it("says nothing about the climb on flat ground", () => {
+    const flat = doneReceiptStats(
+      doneReceipt(session({ blocks: [{ kind: "cardio", name: "Running", distance: 5, minutes: 30 }] })),
+      "kg",
+    );
+    expect(flat.map((s) => s.labelKey)).not.toContain("w.home.today.climb");
+  });
+
+  // ── energy — the estimated burn, last, and only when it can be scaled ─────
+  it("estimates the calories and marks them as an estimate", () => {
+    const swim = doneReceipt(
+      session({
+        title: "Swimming",
+        completedAt: "2026-07-16T10:40:00.000Z",
+        blocks: [{ kind: "cardio", name: "Swimming", distance: 0.5, minutes: 10 }],
+      }),
+      { bodyweightKg: 80 },
+    );
+    expect(swim.kcal).toBeGreaterThan(0);
+    expect(swim.kcalMeasured).toBe(false);
+    const stats = doneReceiptStats(swim, "kg");
+    // energy sits last, after everything logged or measured
+    expect(stats[stats.length - 1]!.labelKey).toBe("w.home.today.energy");
+    expect(stats[stats.length - 1]!.value).toBe(`~${swim.kcal} kcal`);
+    expect(stats[stats.length - 1]!.estimate).toBe(true);
+  });
+
+  it("has no calories without a bodyweight to scale the model by", () => {
+    const r = doneReceipt(session());
+    expect(r.kcal).toBeNull();
+    expect(doneReceiptStats(r, "kg").map((s) => s.labelKey)).not.toContain("w.home.today.energy");
+  });
+
+  it("drops the '~' when the device counted the calories", () => {
+    const run = doneReceipt(
+      session({
+        title: "Running",
+        blocks: [{ kind: "cardio", name: "Running", distance: 7.2, minutes: 40 }],
+        device: {
+          provider: "apple",
+          uuid: "hk-9",
+          activityLabel: "Running",
+          start: "2026-07-16T10:30:00.000Z",
+          end: "2026-07-16T11:10:00.000Z",
+          durationMin: 40,
+          kcal: 430,
+        } as LoggedSession["device"],
+      }),
+      { bodyweightKg: 80 },
+    );
+    expect(run.kcal).toBe(430);
+    expect(run.kcalMeasured).toBe(true);
+    const energy = doneReceiptStats(run, "kg").find((s) => s.labelKey === "w.home.today.energy")!;
+    expect(energy.value).toBe("430 kcal");
+    expect(energy.estimate).toBe(false);
+  });
+
+  it("reads the athlete's own figures when the device is ignored", () => {
+    const over = {
+      title: "Running",
+      blocks: [{ kind: "cardio" as const, name: "Running", distance: 7.2, minutes: 40 }],
+      device: {
+        provider: "apple",
+        uuid: "hk-9",
+        activityLabel: "Running",
+        start: "2026-07-16T10:30:00.000Z",
+        end: "2026-07-16T11:10:00.000Z",
+        durationMin: 40,
+        kcal: 430,
+      } as LoggedSession["device"],
+    };
+    const logged = doneReceipt(session(over), { bodyweightKg: 80, ignoreDevice: true });
+    expect(logged.kcalMeasured).toBe(false);
+    expect(logged.kcal).toBeGreaterThan(0);
+  });
+});
+
+describe("doneReceiptHero — one number earns the size", () => {
+  const cardio = (name: string, distance: number, minutes: number): SessionBlock => ({
+    kind: "cardio",
+    name,
+    distance,
+    minutes,
+  });
+
+  it("splits the figures into a hero and the rest, keeping their order", () => {
+    const run = doneReceipt(
+      session({ title: "Running", completedAt: "2026-07-16T11:20:00.000Z", blocks: [cardio("Running", 9.4, 50)] }),
+      { bodyweightKg: 80 },
+    );
+    const { hero, rest } = doneReceiptHero(run, "kg");
+    // one discipline covered the ground, so the distance leads
+    expect(hero!.labelKey).toBe("w.home.today.distance");
+    expect(hero!.figure).toBe("9.4");
+    expect(hero!.unit).toBe("km");
+    expect(rest.map((s) => s.labelKey)).toEqual(["w.home.rail.duration", "w.home.today.energy"]);
+  });
+
+  it("carries the figure and its unit apart, and joined", () => {
+    const { hero } = doneReceiptHero(doneReceipt(session()), "kg");
+    expect(hero!.labelKey).toBe("w.home.today.volume");
+    expect(hero!.figure).toBe("5.5");
+    expect(hero!.unit).toBe("t");
+    expect(hero!.value).toBe("5.5 t");
+  });
+
+  it("lets tonnage lead a day that lifted AND ran", () => {
+    const mixed = doneReceipt(session({ blocks: [strength(11), cardio("Running", 5, 25)] }));
+    expect(doneReceiptHero(mixed, "kg").hero!.labelKey).toBe("w.home.today.volume");
+  });
+
+  it("refuses to headline a distance made of two disciplines", () => {
+    // The day the whole redesign was drawn from: a swim and a tennis match.
+    // 0.2 + 2.4 km is a real total and a meaningless headline — nobody trains
+    // "2.6 km" of swimming-and-tennis. The minutes they did train take it.
+    const swim = doneReceipt(
+      session({ id: "s1", title: "Swimming", completedAt: "2026-07-16T10:42:00.000Z", blocks: [cardio("Swimming", 0.2, 12)] }),
+    );
+    const tennis = doneReceipt(
+      session({ id: "s2", title: "Tennis", completedAt: "2026-07-16T11:20:00.000Z", blocks: [cardio("Tennis", 2.4, 50)] }),
+    );
+    expect(swim.cardioLead).toBe("Swimming");
+    expect(tennis.cardioLead).toBe("Tennis");
+
+    const day = mergeDoneReceipts([swim, tennis])!;
+    expect(day.cardioLead).toBeNull();
+    const { hero, rest } = doneReceiptHero(day, "kg");
+    expect(hero!.labelKey).toBe("w.home.rail.duration");
+    expect(hero!.figure).toBe("62");
+    expect(rest.map((s) => s.value)).toEqual(["2.6 km"]);
+  });
+
+  it("keeps the lead when the day's two sessions were the same discipline", () => {
+    const am = doneReceipt(session({ id: "a", title: "Running", completedAt: "2026-07-16T11:00:00.000Z", blocks: [cardio("Running", 6, 30)] }));
+    const pm = doneReceipt(session({ id: "b", title: "Running", completedAt: "2026-07-16T18:00:00.000Z", blocks: [cardio("Running", 4, 20)] }));
+    const day = mergeDoneReceipts([am, pm])!;
+    expect(day.cardioLead).toBe("Running");
+    expect(doneReceiptHero(day, "kg").hero!.value).toBe("10 km");
+  });
+
+  it("marks the figures that cannot stand without their label", () => {
+    const hilly = doneReceipt(
+      session({ blocks: [strength(11), { kind: "cardio", name: "Running", distance: 9.4, minutes: 50, elevation: 320 }] }),
+    );
+    const { rest } = doneReceiptHero(hilly, "kg");
+    const byKey = Object.fromEntries(rest.map((s) => [s.labelKey, s.needsLabel ?? false]));
+    expect(byKey["w.home.today.climb"]).toBe(true);
+    expect(byKey["w.home.today.sets"]).toBe(true);
+    expect(byKey["w.home.today.distance"]).toBe(false);
+  });
+
+  it("has no hero when nothing trustworthy was logged", () => {
+    const empty = doneReceipt(session({ completedAt: null, blocks: [] }));
+    expect(doneReceiptHero(empty, "kg").hero).toBeNull();
   });
 });

@@ -119,9 +119,22 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
   let strengthSets = 0;
   let distanceKm = 0;
   let elevationM = 0;
+  // Calories add up across the day, but the "~" doesn't come off unless EVERY
+  // session that contributed one was measured: a day mixing a watch-counted run
+  // with a typed gym session has a total that is part measurement, part model,
+  // and the honest label for that is still an estimate.
+  let kcal = 0;
+  let hasKcal = false;
+  let kcalMeasured = true;
   // The day counts as measured when ANY of its sessions was matched to a device
   // — that part of the day's totals came off a wrist.
   let measured = false;
+  // The day's distance belongs to ONE discipline only while every session that
+  // covered ground covered it the same way. A swim and a tennis match sum to a
+  // kilometre figure made of two incomparable kinds of kilometre, so the day
+  // loses its lead and the hero falls back to a total that is always true.
+  let cardioLead: string | null = null;
+  let leadAgrees = true;
   for (const r of receipts) {
     if (r.finishedClock) finishedClock = r.finishedClock;
     if (r.durationMin != null) {
@@ -135,6 +148,16 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     strengthSets += r.strengthSets;
     distanceKm += r.distanceKm;
     elevationM += r.elevationM;
+    if (r.kcal != null && r.kcal > 0) {
+      kcal += r.kcal;
+      hasKcal = true;
+      if (!r.kcalMeasured) kcalMeasured = false;
+    }
+    if (r.distanceKm > 0) {
+      if (r.cardioLead == null) leadAgrees = false;
+      else if (cardioLead == null) cardioLead = r.cardioLead;
+      else if (cardioLead !== r.cardioLead) leadAgrees = false;
+    }
     measured = measured || r.measured;
   }
   return {
@@ -148,6 +171,9 @@ export function mergeDoneReceipts(receipts: DoneReceipt[]): DoneReceipt | null {
     // doneReceipt). The rail rounds when it renders.
     distanceKm,
     elevationM: Math.round(elevationM),
+    kcal: hasKcal ? kcal : null,
+    kcalMeasured: hasKcal && kcalMeasured,
     measured,
+    cardioLead: leadAgrees ? cardioLead : null,
   };
 }

@@ -70,7 +70,10 @@ describe("mergeDoneReceipts", () => {
     strengthSets: 0,
     distanceKm: 0,
     elevationM: 0,
+    kcal: null,
+    kcalMeasured: false,
     measured: false,
+    cardioLead: null,
     ...over,
   });
 
@@ -110,5 +113,26 @@ describe("mergeDoneReceipts", () => {
     // total would be a lie — it drops rather than under-count.
     const mixed = mergeDoneReceipts([r({ durationMin: 20, durationSec: 1181 }), r({ durationMin: 45 })])!;
     expect(mixed.durationSec).toBeNull();
+  });
+
+  it("sums the day's calories, and keeps them measured only when every session was", () => {
+    const measured = mergeDoneReceipts([
+      r({ kcal: 420, kcalMeasured: true }),
+      r({ kcal: 180, kcalMeasured: true }),
+    ])!;
+    expect(measured.kcal).toBe(600);
+    expect(measured.kcalMeasured).toBe(true);
+
+    // A watch-counted run plus a typed gym session: the total is part
+    // measurement, part model — so it stays an estimate.
+    const mixed = mergeDoneReceipts([r({ kcal: 420, kcalMeasured: true }), r({ kcal: 300 })])!;
+    expect(mixed.kcal).toBe(720);
+    expect(mixed.kcalMeasured).toBe(false);
+  });
+
+  it("keeps calories null when no session could estimate any", () => {
+    const merged = mergeDoneReceipts([r({ durationMin: 40 }), r({ durationMin: 20 })])!;
+    expect(merged.kcal).toBeNull();
+    expect(merged.kcalMeasured).toBe(false);
   });
 });

@@ -1,0 +1,565 @@
+<title>The logged day — 9 redesign passes</title>
+
+<style>
+  /* ── AURORA, verbatim from packages/core/src/theme/palette.ts ───────────
+     Committed to one theme on purpose: these are screens, not documents.
+     The app ships Archivo + JetBrains Mono from a font CDN, which this page
+     cannot reach — the stacks below name them first and fall back to the
+     closest system faces, so read the WEIGHTS and the SPACING here, not the
+     letterforms.                                                           */
+  :root {
+    --page:   #070806;
+    --ink:    #0c0d0c;
+    --ink2:   #141614;
+    --card:   #151715;
+    --sunk:   #101210;
+    --line:   #242724;
+    --line2:  #33372f;
+    --chalk:  #f3f4ef;
+    --ash:    #8b8f86;
+    --ash2:   #5f6459;
+    --lime:   #c6f84f;
+    --teal:   #6cb6bd;
+    --clay:   #e58a5c;
+    --on-accent: #0c0d0c;
+    --sans: "Archivo", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  body {
+    background: var(--page); color: var(--chalk);
+    font-family: var(--sans); -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  ::selection { background: var(--lime); color: var(--on-accent); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 52px 20px 110px; }
+
+  /* ── page head ─────────────────────────────────────────────────────────
+     Explore's SectionHead standard: display title left, mono meta right,
+     no marker in front of anything.                                        */
+  .kick { font: 600 11px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; color: var(--ash2); }
+  h1 { font-size: clamp(30px, 4.6vw, 46px); font-weight: 800; letter-spacing: -.035em; line-height: 1.04; margin: 14px 0 0; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--ash2); }
+  .lede { color: var(--ash); font-size: 15.5px; max-width: 74ch; margin: 18px 0 0; }
+  .lede b { color: var(--chalk); font-weight: 600; }
+
+  /* ── guardrails ───────────────────────────────────────────────────────── */
+  .rails { margin: 34px 0 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 18px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 20px 30px; }
+  .rail .k { font: 600 9.5px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--lime); }
+  .rail p { color: var(--ash); font-size: 13px; line-height: 1.55; margin: 7px 0 0; }
+  .rail p b { color: var(--chalk); font-weight: 600; }
+
+  /* ── the specimen we are redesigning ──────────────────────────────────── */
+  .now { margin: 42px 0 0; display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 34px; align-items: center; }
+  @media (max-width: 820px) { .now { grid-template-columns: 1fr; } }
+  .now h2 { font-size: 22px; font-weight: 800; letter-spacing: -.025em; margin: 0 0 10px; }
+  .now p { color: var(--ash); font-size: 14px; max-width: 62ch; }
+  .now p + p { margin-top: 10px; }
+
+  /* ── gallery ──────────────────────────────────────────────────────────── */
+  .gallery { margin: 64px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(345px, 1fr)); gap: 54px 34px; align-items: start; }
+  .concept { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .cap .n { font: 600 11px/1 var(--mono); letter-spacing: .2em; color: var(--lime); }
+  .cap h3 { font-size: 20px; font-weight: 800; letter-spacing: -.025em; margin: 9px 0 6px; text-wrap: balance; }
+  .cap .why { color: var(--ash); font-size: 13.5px; line-height: 1.6; }
+  .cap .why b { color: var(--chalk); font-weight: 600; }
+  .tradeoff { border-top: 1px solid var(--line); padding-top: 11px; display: flex; flex-direction: column; gap: 5px; }
+  .tradeoff div { font: 500 11px/1.55 var(--mono); color: var(--ash2); display: flex; gap: 9px; }
+  .tradeoff div span { color: var(--ash); flex: none; letter-spacing: .1em; text-transform: uppercase; font-size: 9.5px; padding-top: 2px; width: 52px; }
+  .ctx { font: 600 9.5px/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--ash2); }
+
+  /* ── the mock surface (the Your-training card, cropped to the day) ────── */
+  .card { background: var(--ink2); border: 1px solid var(--line); border-radius: 22px; padding: 20px; box-shadow: 0 6px 22px -12px rgba(0,0,0,.55); }
+  .tick { color: var(--lime); font-weight: 800; }
+  .stamp { font: 400 11px/1 var(--mono); color: var(--ash); white-space: nowrap; }
+  .fin { font: 400 12px/1.5 var(--mono); color: var(--ash); }
+  .seam { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 14px; font: 600 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+  .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .hd .t { font-size: 19px; font-weight: 800; letter-spacing: -.025em; }
+  .row { display: flex; align-items: baseline; gap: 12px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* 01 — the sentence */
+  .k1 .say { font-size: 17px; font-weight: 600; letter-spacing: -.015em; line-height: 1.45; margin: 14px 0 0 31px; }
+  .k1 .say .u { color: var(--ash); font-weight: 500; }
+  .k1 .say .e { color: var(--ash); font-weight: 500; }
+
+  /* 02 — one number earns the size */
+  .k2 .hero { margin: 16px 0 0 31px; display: flex; align-items: baseline; gap: 8px; }
+  .k2 .hero .v { font-size: 46px; font-weight: 800; letter-spacing: -.045em; line-height: .9; }
+  .k2 .hero .u { font-size: 17px; font-weight: 600; color: var(--ash); }
+  .k2 .rest { font: 500 12.5px/1 var(--mono); color: var(--ash); margin: 12px 0 0 31px; display: flex; gap: 18px; flex-wrap: wrap; }
+
+  /* 03 — the aligned ledger */
+  .k3 .ledger { margin: 14px 0 0 31px; }
+  .k3 .ln { display: grid; grid-template-columns: 1fr auto 6px auto 30px; align-items: baseline; gap: 0 8px; border-top: 1px solid var(--line); padding: 9px 0; }
+  .k3 .ln:first-child { border-top: none; }
+  .k3 .k { font: 600 9.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); }
+  .k3 .approx { font: 500 12px/1 var(--mono); color: var(--ash2); text-align: right; }
+  .k3 .v { font: 600 14px/1 var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+  .k3 .u { font: 400 11px/1 var(--mono); color: var(--ash); }
+
+  /* 04 — measured, or modelled */
+  .k4 .stats { display: flex; flex-wrap: wrap; column-gap: 24px; row-gap: 14px; margin: 15px 0 0 31px; }
+  .k4 .v { font-size: 16px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; position: relative; }
+  .k4 .est .v { font-weight: 500; color: #d8dbd2; }
+  .k4 .est .v::before { content: "~"; position: absolute; left: -11px; color: var(--ash2); font-weight: 400; }
+  .k4 .k { font: 500 9.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); margin-top: 6px; }
+  .k4 .sig { font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--teal); margin: 13px 0 0 31px; display: flex; align-items: center; gap: 7px; }
+  .k4 .sig i { width: 5px; height: 5px; border-radius: 999px; background: var(--teal); font-style: normal; }
+
+  /* 05 — one continuous line */
+  .k5 .flow { margin: 8px 0 0 31px; font: 400 13px/1.9 var(--mono); color: var(--ash); }
+  .k5 .flow b { color: var(--chalk); font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .k5 .flow .sp { display: inline-block; width: 22px; }
+
+  /* 06 — the day, in proportion */
+  .k6 .bar { margin: 16px 0 0 31px; display: flex; gap: 3px; height: 4px; }
+  .k6 .bar i { display: block; border-radius: 999px; }
+  .k6 .legend { margin: 9px 0 0 31px; display: flex; gap: 16px; font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ash2); }
+  .k6 .stats { display: flex; column-gap: 24px; row-gap: 14px; flex-wrap: wrap; margin: 16px 0 0 31px; }
+  .k6 .v { font-size: 16px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .k6 .k { font: 500 9.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); margin-top: 6px; }
+
+  /* 07 — the recessed plate */
+  .k7 .plate { margin: 16px 0 0; background: var(--sunk); border-radius: 14px; padding: 15px 16px 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,.045), inset 0 -1px 0 rgba(0,0,0,.5); display: flex; flex-wrap: wrap; column-gap: 26px; row-gap: 14px; }
+  .k7 .v { font-size: 16px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .k7 .k { font: 500 9.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); margin-top: 6px; }
+
+  /* 08 — the unit is the label */
+  .k8 .stats { display: flex; flex-wrap: wrap; column-gap: 26px; row-gap: 12px; margin: 16px 0 0 31px; align-items: baseline; }
+  .k8 .v { font-size: 20px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .k8 .v small { font-size: 12px; font-weight: 600; color: var(--ash); margin-left: 3px; letter-spacing: 0; }
+  .k8 .keep { display: flex; flex-direction: column; }
+  .k8 .keep .k { font: 500 9.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); margin-top: 6px; }
+
+  /* 09 — the quiet close */
+  .k9 .datum { font: 600 10.5px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--ash2); }
+  .k9 .stats { display: flex; flex-wrap: wrap; column-gap: 26px; row-gap: 14px; margin: 14px 0 0; }
+  .k9 .v { font-size: 17px; font-weight: 700; letter-spacing: -.025em; font-variant-numeric: tabular-nums; color: var(--chalk); }
+  .k9 .k { font: 500 9.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); margin-top: 6px; }
+
+  /* ── close ────────────────────────────────────────────────────────────── */
+  .close { margin: 74px 0 0; border-top: 1px solid var(--line); padding-top: 26px; display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 34px; align-items: start; }
+  @media (max-width: 820px) { .close { grid-template-columns: 1fr; } }
+  .close h2 { font-size: 22px; font-weight: 800; letter-spacing: -.025em; margin: 0 0 12px; }
+  .close p { color: var(--ash); font-size: 14px; max-width: 64ch; }
+  .close p + p { margin-top: 11px; }
+  .close b { color: var(--chalk); font-weight: 600; }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="kick">Today — the logged day</div>
+    <h1>Nine ways to read a finished day. <em>One card, redesigned nine times.</em></h1>
+    <p class="lede">
+      The section is small and it is the most-read thing on the screen: what the day cost, in figures that
+      can be vouched for. Each pass below applies <b>one</b> idea from Ive's working method — reduction,
+      deference, honesty of materials, care for what nobody notices — rather than restyling all of them at once,
+      so the trade-off in each is visible and arguable. All nine render the same real day: a swim and a tennis
+      match, 4 August.
+    </p>
+  </header>
+
+  <section class="rails">
+    <div class="rail">
+      <div class="k">Never a middot</div>
+      <p>No <b>·</b>, <b>•</b> or <b>|</b> joining values. Where a string separator is unavoidable, a spaced en dash. In components, layout does the separating.</p>
+    </div>
+    <div class="rail">
+      <div class="k">No marker before a label</div>
+      <p>No dot, circle or square in front of a heading. Title left, mono meta right — the Explore section head. Semantic dots (status, device) stay.</p>
+    </div>
+    <div class="rail">
+      <div class="k">The device outranks the typing</div>
+      <p>Every figure reads through the device projection. Derived rates use the watch's exact seconds, never the rounded display value.</p>
+    </div>
+    <div class="rail">
+      <div class="k">An estimate says so</div>
+      <p>The <b>~</b> comes off only when a device counted every calorie. No bodyweight, no number — the stat is omitted, never invented.</p>
+    </div>
+    <div class="rail">
+      <div class="k">Web and mobile, same change</div>
+      <p>Whatever ships here ships on both clients, off one shared model in <b>done-receipt.ts</b>. Nine layouts, one <b>doneReceiptStats</b>.</p>
+    </div>
+  </section>
+
+  <section class="now">
+    <div class="card">
+      <div class="hd">
+        <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+        <span class="stamp">Yesterday</span>
+      </div>
+      <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+      <div style="display:flex;column-gap:24px;row-gap:14px;flex-wrap:wrap;margin:16px 0 0 31px">
+        <div><div style="font-size:16px;font-weight:800;letter-spacing:-.02em" class="num">62 min</div><div style="font:500 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash2);margin-top:6px">Duration</div></div>
+        <div><div style="font-size:16px;font-weight:800;letter-spacing:-.02em" class="num">2.6 km</div><div style="font:500 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash2);margin-top:6px">Distance</div></div>
+        <div><div style="font-size:16px;font-weight:800;letter-spacing:-.02em" class="num">~630 kcal</div><div style="font:500 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ash2);margin-top:6px">Energy</div></div>
+      </div>
+      <div class="seam">View in history →</div>
+    </div>
+    <div>
+      <h2>Where it stands today</h2>
+      <p>
+        A lime tick, a headline, the finishing clock, then a row of value-over-label pairs and a text link into
+        History. It is honest and it is legible, and every figure on it is now a true total for the day.
+      </p>
+      <p>
+        What it isn't yet is <b>resolved</b>. Three facts of different kinds — one logged, one measured, one modelled —
+        are set in identical type at identical size, so the card gives the athlete no way to feel the difference
+        between a number the watch counted and a number we inferred. Every pass below is an argument about that.
+      </p>
+    </div>
+  </section>
+
+  <div class="gallery">
+
+    <!-- 01 -->
+    <article class="concept k1">
+      <div class="cap">
+        <div class="n">01</div>
+        <h3>The sentence</h3>
+        <p class="why">
+          The labels exist because the figures were arranged in a grid; take the grid away and the units name
+          themselves. The day becomes <b>one line of language</b>, read rather than scanned. Reduction in its
+          strictest sense: three words of chrome removed, no information lost.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">Yesterday</span>
+        </div>
+        <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+        <div class="say"><span class="num">62</span> <span class="u">minutes</span>, <span class="num">2.6</span> <span class="u">km</span>, <span class="e">about</span> <span class="num">630</span> <span class="u">kcal</span></div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>three labels and the row</div>
+        <div><span>Costs</span>a five-figure day runs to two lines, and the numbers stop being findable by thumb</div>
+        <div><span>Note</span>"about" replaces the tilde — the estimate said in words, not punctuation</div>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="concept k2">
+      <div class="cap">
+        <div class="n">02</div>
+        <h3>One number earns the size</h3>
+        <p class="why">
+          Three figures at one size is three focal points, which is none. The discipline already knows which
+          number the day was <b>about</b> — minutes for a match, distance for a run, tonnage for a lifting day —
+          so that one takes display size and the rest stand down to a single quiet line.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">Yesterday</span>
+        </div>
+        <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+        <div class="hero"><span class="v num">62</span><span class="u">min</span></div>
+        <div class="rest"><span class="num">2.6 km</span><span class="num">~630 kcal</span></div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>the competition between equals</div>
+        <div><span>Costs</span>the hero is chosen by a rule, and a mixed day is exactly where rules pick wrong</div>
+        <div><span>Note</span>the same engine already picks a headline figure for the History cards</div>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="concept k3">
+      <div class="cap">
+        <div class="n">03</div>
+        <h3>The aligned ledger</h3>
+        <p class="why">
+          A receipt is a column, not a row. Values right-align on tabular numerals, units sit in their own
+          column so <b>km</b> never nudges <b>kcal</b> out of true, and the tilde hangs in a gutter of its own —
+          so an estimate can never shift a digit sideways. Nobody will notice this. That is the point.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">Yesterday</span>
+        </div>
+        <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+        <div class="ledger">
+          <div class="ln"><span class="k">Duration</span><span class="approx"></span><span></span><span class="v">62</span><span class="u">min</span></div>
+          <div class="ln"><span class="k">Distance</span><span class="approx"></span><span></span><span class="v">2.6</span><span class="u">km</span></div>
+          <div class="ln"><span class="k">Energy</span><span class="approx">~</span><span></span><span class="v">630</span><span class="u">kcal</span></div>
+        </div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>every accidental misalignment as the day grows</div>
+        <div><span>Costs</span>height — three facts become three lines, and a lifting day becomes six</div>
+        <div><span>Note</span>scales to any number of figures without ever wrapping</div>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="concept k4">
+      <div class="cap">
+        <div class="n">04</div>
+        <h3>Measured, or modelled</h3>
+        <p class="why">
+          The card holds two materials and pretends they are one. Here a <b>measured</b> figure is set solid,
+          a <b>modelled</b> one a weight lighter with its tilde hung outside the numeral, and the day carries a
+          single device mark rather than a badge per stat. Honesty about what a thing is made of, expressed in
+          weight instead of a warning.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">Yesterday</span>
+        </div>
+        <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+        <div class="stats">
+          <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+          <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+          <div class="est"><div class="v num">630 kcal</div><div class="k">Energy</div></div>
+        </div>
+        <div class="sig"><i></i>Measured on Apple&nbsp;Watch</div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>the per-stat tilde as visual noise inside the number</div>
+        <div><span>Costs</span>two weights in one row read as a mistake unless the rule is absolute</div>
+        <div><span>Note</span>the model already carries <b>kcalMeasured</b> — nothing new to compute</div>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="concept k5">
+      <div class="cap">
+        <div class="n">05</div>
+        <h3>One continuous line</h3>
+        <p class="why">
+          The stat row is a second block bolted under a first. Dissolve the seam: the figures continue the
+          finishing line on one baseline, held apart by <b>space and weight alone</b> — no glyph, no rule, no box.
+          The card becomes a single surface with three densities rather than two stacked parts.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">Yesterday</span>
+        </div>
+        <div class="flow">
+          finished 17:17<br>
+          <b>62</b> min<span class="sp"></span><b>2.6</b> km<span class="sp"></span>~<b>630</b> kcal
+        </div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>a structural break and three uppercase labels</div>
+        <div><span>Costs</span>the figures lose their landing zone — the eye has to read to find them</div>
+        <div><span>Note</span>no separator glyph anywhere, which is the house rule taken literally</div>
+      </div>
+    </article>
+
+    <!-- 06 -->
+    <article class="concept k6">
+      <div class="cap">
+        <div class="n">06</div>
+        <h3>The day, in proportion</h3>
+        <p class="why">
+          The one ornament allowed is information. A 4px rule under the headline, split in <b>true proportion</b> —
+          12 minutes of swimming against 50 of tennis — says what the totals cannot: how the day was actually
+          spent. Colour is the calendar's existing encoding, not a new language.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">Yesterday</span>
+        </div>
+        <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+        <div class="bar">
+          <i style="width:19.4%;background:var(--teal);opacity:.55"></i>
+          <i style="flex:1;background:var(--teal)"></i>
+        </div>
+        <div class="legend"><span>Swim 12</span><span>Tennis 50</span></div>
+        <div class="stats">
+          <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+          <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+          <div><div class="v num">~630 kcal</div><div class="k">Energy</div></div>
+        </div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>nothing — this one adds</div>
+        <div><span>Costs</span>on a single-session day the bar is a solid line stating the obvious</div>
+        <div><span>Note</span>the sessions are already below the seam, so the bar risks a third telling</div>
+      </div>
+    </article>
+
+    <!-- 07 -->
+    <article class="concept k7">
+      <div class="cap">
+        <div class="n">07</div>
+        <h3>The recessed plate</h3>
+        <p class="why">
+          Rather than draw a box around the figures, <b>sink</b> them: a half-tone darker plane, one hairline of
+          light along its top edge and one shadow along its bottom, the way a milled dish reads on an aluminium
+          body. Form from material and light, with no border and no new colour.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">Yesterday</span>
+        </div>
+        <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+        <div class="plate">
+          <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+          <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+          <div><div class="v num">~630 kcal</div><div class="k">Energy</div></div>
+        </div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>the need for the 31px indent to group the figures</div>
+        <div><span>Costs</span>a plane inside a card inside a card — the depth budget is nearly spent</div>
+        <div><span>Note</span>reads as intended only on the dark theme; Kyoto Hour needs the inverse</div>
+      </div>
+    </article>
+
+    <!-- 08 -->
+    <article class="concept k8">
+      <div class="cap">
+        <div class="n">08</div>
+        <h3>The unit is the label</h3>
+        <p class="why">
+          <b>min</b> already says duration and <b>km</b> already says distance, so the words under them are the
+          interface talking to itself. Drop the label wherever the unit carries it, keep it only where the unit
+          is genuinely ambiguous. The value grows into the space the labels vacated.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">Yesterday</span>
+        </div>
+        <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+        <div class="stats">
+          <div class="v num">62<small>min</small></div>
+          <div class="v num">2.6<small>km</small></div>
+          <div class="keep"><div class="v num">~630<small>kcal</small></div></div>
+        </div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>every label the unit already states</div>
+        <div><span>Costs</span>it breaks on the interesting day — <b>2.6 km</b> beside <b>320 m</b> of climb needs both words back</div>
+        <div><span>Note</span>honest verdict: the rule holds for three figures and fails at five</div>
+      </div>
+    </article>
+
+    <!-- 09 -->
+    <article class="concept k9">
+      <div class="cap">
+        <div class="n">09</div>
+        <h3>The quiet close</h3>
+        <p class="why">
+          The tick and the word "Logged" congratulate the athlete for something they already know they did —
+          the week strip above has a ✓ on the day, and the sessions are named below. Take the applause out and
+          the card becomes what it always was: <b>the figures, and the way back to them</b>.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <span class="datum">Tue 4 Aug — finished 17:17</span>
+        </div>
+        <div class="stats">
+          <div><div class="v num">62 min</div><div class="k">Duration</div></div>
+          <div><div class="v num">2.6 km</div><div class="k">Distance</div></div>
+          <div><div class="v num">~630 kcal</div><div class="k">Energy</div></div>
+        </div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Removes</span>the lime tick, the headline and the relative day stamp</div>
+        <div><span>Costs</span>the completion signal — the streak has nowhere to show itself</div>
+        <div><span>Note</span>the loudest option on the page, precisely because it says the least</div>
+      </div>
+    </article>
+
+    <!-- 10 -->
+    <article class="concept k4">
+      <div class="cap">
+        <div class="n">10</div>
+        <h3>The interesting day, tested</h3>
+        <p class="why">
+          Every layout above survives three figures. This is the one that decides between them: a matched hill
+          run and a gym session on the same date — <b>six</b> figures, two materials, one of them a total the
+          watch measured and one we modelled. A design that only works on a light day isn't finished.
+        </p>
+      </div>
+      <div class="card">
+        <div class="hd">
+          <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+          <span class="stamp">6-day streak</span>
+        </div>
+        <div class="fin" style="margin:6px 0 0 31px">finished 19:02</div>
+        <div class="stats">
+          <div><div class="v num">98 min</div><div class="k">Duration</div></div>
+          <div><div class="v num">5.5 t</div><div class="k">Volume</div></div>
+          <div><div class="v num">9.4 km</div><div class="k">Distance</div></div>
+          <div><div class="v num">320 m</div><div class="k">Climb</div></div>
+          <div><div class="v num">11</div><div class="k">Sets</div></div>
+          <div class="est"><div class="v num">1,040 kcal</div><div class="k">Energy</div></div>
+        </div>
+        <div class="sig"><i></i>Run measured on Apple&nbsp;Watch</div>
+        <div class="seam">View in history →</div>
+      </div>
+      <div class="tradeoff">
+        <div><span>Shown in</span>pass 04, the only one that stays legible at six figures without growing</div>
+        <div><span>Costs</span>two rows on a phone — the row wraps, which is why it now wraps by design</div>
+        <div><span>Note</span>the energy is modelled because the gym half was typed, so the whole total is</div>
+      </div>
+    </article>
+
+  </div>
+
+  <section class="close">
+    <div class="card k3">
+      <div class="hd">
+        <div class="row"><span class="tick">✓</span><span class="t">Logged</span></div>
+        <span class="stamp">Yesterday</span>
+      </div>
+      <div class="fin" style="margin:6px 0 0 31px">finished 17:17</div>
+      <div class="ledger">
+        <div class="ln"><span class="k">Duration</span><span class="approx"></span><span></span><span class="v">62</span><span class="u">min</span></div>
+        <div class="ln"><span class="k">Distance</span><span class="approx"></span><span></span><span class="v">2.6</span><span class="u">km</span></div>
+        <div class="ln"><span class="k">Energy</span><span class="approx">~</span><span></span><span class="v" style="font-weight:400;color:#d8dbd2">630</span><span class="u">kcal</span></div>
+      </div>
+      <div class="sig" style="font:500 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin:13px 0 0 31px;display:flex;align-items:center;gap:7px"><i style="width:5px;height:5px;border-radius:999px;background:var(--teal);display:block"></i>Measured on Apple&nbsp;Watch</div>
+      <div class="seam">View in history →</div>
+    </div>
+    <div>
+      <h2>If it were mine: 03 with 04's honesty</h2>
+      <p>
+        The ledger is the only structure that doesn't degrade as the day gets more interesting — it takes a
+        sixth figure the same way it takes a third, and it never wraps. The material rule from 04 rides on top
+        of it for free: the modelled figure a weight lighter, its tilde in the gutter, one device mark for the day.
+      </p>
+      <p>
+        <b>What it costs is height</b>, and that is the argument to have. The row is compact and the column is
+        clear, and on a card that already carries a week strip, a session list and a link into History, compact
+        may simply be worth more than clear.
+      </p>
+      <p>
+        06 is the one I'd revisit separately. It answers a different question — not what the day cost but how it
+        was spent — and it probably belongs to the session list below the seam rather than to the receipt.
+      </p>
+    </div>
+  </section>
+
+</div>

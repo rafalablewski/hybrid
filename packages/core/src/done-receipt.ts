@@ -23,6 +23,7 @@
 import type { LoggedSession } from "./engines/session";
 import { sessionCardioTotals, sessionClockTime } from "./engines/session";
 import { liveSessionStats } from "./live-stats";
+import { sessionEnergy } from "./energy";
 import { fmtTonnage, type WeightUnit } from "./units";
 
 export interface DoneReceipt {
@@ -64,11 +65,31 @@ export interface DoneReceipt {
   distanceKm: number;
   /** total elevation gain, m (0 when nothing climbed or nothing recorded it). */
   elevationM: number;
+  /**
+   * Energy cost, kcal — the device's measurement when one recorded the work,
+   * else the MET model's ESTIMATE from what was logged (energy.ts). Null when
+   * neither can say anything honest: no bodyweight (the model is linear in
+   * mass, so inventing one would invent the answer) or no minutes anywhere.
+   */
+  kcal: number | null;
+  /** true when every calorie in `kcal` was MEASURED by a device — so the UI
+   *  drops the "~" it otherwise wears. False for a modelled figure, and for a
+   *  merged day that mixes a measured session with a typed one. */
+  kcalMeasured: boolean;
   /** true when a matched device supplied the figures above (duration, and the
    *  distance/climb it recorded) — i.e. they are MEASURED, not typed or
    *  modelled. False for a purely logged session, and for any read taken with
    *  `ignoreDevice`. */
   measured: boolean;
+  /**
+   * The ONE cardio discipline the day's distance belongs to ("Running"), or
+   * null when the day covered ground in more than one — a swim and a tennis
+   * match sum to "2.6 km", a figure made of two incomparable kinds of
+   * kilometre. `doneReceiptHero` uses it to decide whether the distance is fit
+   * to headline the day; the same caution `sessionHeadline` already applies
+   * when it refuses to pace a multi-activity session.
+   */
+  cardioLead: string | null;
 }
 
 /**
@@ -130,6 +151,16 @@ export function doneReceipt(
   const distanceKm = device?.distanceKm != null ? device.distanceKm : cardio.distanceKm;
   const elevationM = device?.elevationM != null ? device.elevationM : cardio.elevationM;
 
+  // The day's burn, off the same trusted duration every other figure here uses
+  // — the device's measurement when it counted the calories, else the MET model
+  // (energy.ts owns both branches, and returns null rather than guessing when
+  // there's no bodyweight to scale by).
+  const energy = sessionEnergy(session, {
+    bodyweightKg: opts.bodyweightKg,
+    durationMin: durationMin > 0 ? durationMin : null,
+    ignoreDevice: opts.ignoreDevice,
+  });
+
   return {
     finishedClock: session.completedAt ? sessionClockTime(session.completedAt) : null,
     durationMin: durationMin > 0 ? durationMin : null,
@@ -146,7 +177,13 @@ export function doneReceipt(
     // formatSportDistance for the sport's own unit.
     distanceKm,
     elevationM: Math.round(elevationM),
+    kcal: energy?.kcal ?? null,
+    kcalMeasured: energy?.measured ?? false,
     measured,
+    cardioLead: (() => {
+      const moved = session.blocks.filter((b) => b.kind === "cardio");
+      return moved.length === 1 ? moved[0]!.name : null;
+    })(),
   };
 }
 
@@ -155,35 +192,122 @@ export function doneReceipt(
 export interface DoneReceiptStat {
   value: string;
   labelKey: string;
+  /** The numeral alone ("48", "3.0", "~630") and its unit ("min", "t", "kcal";
+   *  empty for a bare count). `value` is the two joined — they are carried
+   *  apart so the hero can set them at two sizes on one baseline without any
+   *  client parsing the string back out of it. */
+  figure: string;
+  unit: string;
+  /** true when the figure is MODELLED rather than logged or measured — the
+   *  value already carries the "~" that says so; the flag lets a client treat
+   *  it differently (a quieter tone, a tooltip) without parsing the string. */
+  estimate?: boolean;
+  /**
+   * true when the value CANNOT stand on its own — a bare "11" or a "320 m"
+   * sitting beside a "9.4 km" says nothing without its label. Surfaces that
+   * drop the labels (the hero's supporting line) must re-attach one for these;
+   * everything else reads unambiguously from its unit.
+   */
+  needsLabel?: boolean;
 }
+
+/** Build a stat from its parts, so `value` can never drift from the two halves
+ *  a hero renders. */
+const stat = (
+  figure: string,
+  unit: string,
+  labelKey: string,
+  extra: Omit<DoneReceiptStat, "value" | "figure" | "unit" | "labelKey"> = {},
+): DoneReceiptStat => ({ figure, unit, value: unit ? `${figure} ${unit}` : figure, labelKey, ...extra });
 
 /**
  * The stats a receipt shows, in display order — duration, volume, distance,
- * sets — each included only when it has something true to say. Unit lives in
- * the value; the uppercase label stays a bare word (one grammar, per the
- * design's trust pass).
+ * climb, sets, energy — each included only when it has something true to say.
+ * Unit lives in the value; the uppercase label stays a bare word (one grammar,
+ * per the design's trust pass).
  *
  * SETS IS A STRENGTH FIGURE. It reads `strengthSets`, so a swim, a tennis
  * match or a squash game — none of which have sets — shows its duration and
  * distance and stops there, instead of the "1 SETS" the effort counter used to
  * produce. A day that lifted and swam still reports the sets it actually
  * lifted, not the swim padded into the count.
+ *
+ * ENERGY COMES LAST, and it is the one figure here that can be MODELLED: it
+ * wears a "~" unless a device counted every calorie in it (the Wrapped's
+ * idiom), and it is omitted entirely when there's no bodyweight to scale the
+ * MET model by — an estimate marked as one is honest, an invented mass is not.
  */
 export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceiptStat[] {
   const out: DoneReceiptStat[] = [];
-  if (r.durationMin != null) out.push({ value: `${r.durationMin} min`, labelKey: "w.home.rail.duration" });
-  if (r.tonnageKg > 0) out.push({ value: fmtTonnage(r.tonnageKg, units), labelKey: "w.home.today.volume" });
+  if (r.durationMin != null) out.push(stat(String(r.durationMin), "min", "w.home.rail.duration"));
+  if (r.tonnageKg > 0) {
+    // fmtTonnage owns the unit and the athlete's system ("5.5 t" / "12,100 lb").
+    const t = fmtTonnage(r.tonnageKg, units);
+    const cut = t.lastIndexOf(" ");
+    out.push(stat(cut > 0 ? t.slice(0, cut) : t, cut > 0 ? t.slice(cut + 1) : "", "w.home.today.volume"));
+  }
   // The receipt keeps metre precision; a rail stat reads in tenths of a km —
   // but only once there IS a kilometre. Under one, tenths round a 34 m pool
   // swim to "0 km", so anything sub-kilometre reads in metres (the same rule
   // the device panel and the match picker already use).
   if (r.distanceKm > 0)
-    out.push({
-      value: r.distanceKm < 1 ? `${Math.round(r.distanceKm * 1000)} m` : `${Math.round(r.distanceKm * 10) / 10} km`,
-      labelKey: "w.home.today.distance",
-    });
-  if (r.strengthSets > 0) out.push({ value: String(r.strengthSets), labelKey: "w.home.today.sets" });
+    out.push(
+      r.distanceKm < 1
+        ? stat(String(Math.round(r.distanceKm * 1000)), "m", "w.home.today.distance")
+        : stat(String(Math.round(r.distanceKm * 10) / 10), "km", "w.home.today.distance"),
+    );
+  // Climb sits beside distance — they are the same fact about the ground the
+  // day covered, and the receipt has always SUMMED it (device-true, like the
+  // distance) without ever rendering it. It needs its label: "320 m" beside
+  // "9.4 km" is unreadable as climb without one.
+  if (r.elevationM > 0) out.push(stat(String(r.elevationM), "m", "w.home.today.climb", { needsLabel: true }));
+  if (r.strengthSets > 0) out.push(stat(String(r.strengthSets), "", "w.home.today.sets", { needsLabel: true }));
+  if (r.kcal != null && r.kcal > 0)
+    out.push(
+      stat(`${r.kcalMeasured ? "" : "~"}${r.kcal}`, "kcal", "w.home.today.energy", { estimate: !r.kcalMeasured }),
+    );
   return out;
+}
+
+/** The receipt split into the one figure that leads and the ones that follow. */
+export interface DoneReceiptHero {
+  /** the figure the day was ABOUT, set at display size; null on a day with no
+   *  figures at all (nothing trustworthy was logged). */
+  hero: DoneReceiptStat | null;
+  /** everything else, in the same order `doneReceiptStats` returns. */
+  rest: DoneReceiptStat[];
+}
+
+/**
+ * Choose the ONE figure that earns display size, and hand back the remainder.
+ *
+ * Three equal figures is three focal points, which is none. The priority
+ * mirrors `sessionHeadline` (engines/history-views.ts), so the day card and the
+ * History rows underneath it can never headline two different facts about the
+ * same day: TONNAGE if anything was lifted, else DISTANCE, else DURATION.
+ *
+ * With one caution `sessionHeadline` doesn't need and a DAY does: distance only
+ * leads when `cardioLead` says the day's ground was covered in ONE discipline.
+ * A swim plus a tennis match sums to 2.6 km, and no athlete has ever trained
+ * "2.6 km" of swimming-and-tennis — but they did train 62 minutes, so the
+ * duration takes it. Climb, sets and energy never lead: two of them are
+ * supporting detail, and the third is modelled, which must not outrank a figure
+ * that was measured.
+ */
+export function doneReceiptHero(r: DoneReceipt, units: WeightUnit): DoneReceiptHero {
+  const stats = doneReceiptStats(r, units);
+  if (!stats.length) return { hero: null, rest: [] };
+  const leadKey =
+    r.tonnageKg > 0
+      ? "w.home.today.volume"
+      : r.distanceKm > 0 && r.cardioLead
+        ? "w.home.today.distance"
+        : r.durationMin != null
+          ? "w.home.rail.duration"
+          : null;
+  const found = leadKey ? stats.findIndex((s) => s.labelKey === leadKey) : -1;
+  const at = found >= 0 ? found : 0;
+  return { hero: stats[at]!, rest: stats.filter((_, i) => i !== at) };
 }
 
 // stripWeekdayPrefix lived here to trim the weekday off the done receipt's
