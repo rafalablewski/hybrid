@@ -7,11 +7,13 @@ import {
   fmtWeight, splitFigure, strengthPrProof,
   resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage, durations,
+  figureDeltaPct, figureDirection,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
-  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit, type WeightUnit,
+  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit,
+  type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
-import { ADrawer } from "./kit";
+import { ADrawer, withAlpha } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -45,17 +47,32 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
  *     it lands on taking the foreground. Week / 7 days / 30 days / YTD, with
  *     the fifth segment opening a sheet of individual months. Persisted per
  *     device.
- *   • FIGURES THAT OPEN. Every column is a button; pressing one expands a panel
- *     beneath the row — with a caret sliding along to point at the column it
- *     belongs to — carrying the groups the total is made of and the sessions
- *     underneath them. "41.6 km" becomes 39 km of running, 600 m in the pool
- *     and the rest across tennis and squash, each with its own sessions.
+ *   • FIGURES THAT OPEN. Every column is a button; pressing one expands the
+ *     card's lower compartment, carrying the groups the total is made of and
+ *     the sessions underneath them. "41.6 km" becomes 39 km of running, 600 m
+ *     in the pool and the rest across tennis and squash, each with its sessions.
  *
  * The card NEVER disappears. A block that comes and goes is worse than one that
  * is sometimes quiet, so an empty period keeps its place and says so.
  *
- * Colour is the SEMANTIC channel here (terracotta down, chartreuse up, ash
+ * Colour is the SEMANTIC channel here (terracotta down, chartreuse up, chalk
  * flat), not the brand accent — a bad week must not read as a highlight.
+ *
+ * SELECTION OWNS THAT COLOUR, and that is what pays for the rest of the card's
+ * restraint. It used to mark the metric the SENTENCE named and nothing else, so
+ * it never moved: pressing Hours left the chartreuse sitting on Distance, and
+ * the press itself showed up only as an `ink`-on-`ink2` fill nobody sees on a
+ * phone in daylight. Because pressing was invisible, the drawer had to shout —
+ * it arrived as a second bordered, rounded card inside this one, with a caret
+ * travelling between columns to point back at whichever figure had opened it.
+ *
+ * So the open column takes the tone (core's `figureDirection` — its OWN move,
+ * never the sentence's, so a fallen Hours column reads terracotta inside a card
+ * headlining a distance rise), and with the colour doing the pointing, THREE
+ * container edges went with it: the caret, the drawer's border and the drawer's
+ * radius. The panel is now the card's own lower compartment, bled to its edges
+ * and taking its bottom corners. At rest — nothing open — the named metric
+ * still holds the tone, so the resting card is unchanged.
  */
 
 const STORE_KEY = "hybrid.today.range";
@@ -388,17 +405,23 @@ export default function AuroraWeekVerdict({
   ];
   const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
 
-  // The caret travels in MEASURED pixels — a percentage string can't be
-  // animated on the native driver, and the caret has to arrive with the panel.
-  const [rowW, setRowW] = useState(0);
-  const caretX = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (rowW <= 0 || openIndex < 0) return;
-    Animated.spring(caretX, {
-      toValue: ((openIndex + 0.5) * rowW) / Math.max(1, ordered.length) - 5,
-      useNativeDriver: true, speed: 16, bounciness: 4,
-    }).start();
-  }, [openIndex, rowW, ordered.length, caretX]);
+  /** A direction as a text colour. Distinct from `toneText` above, which is the
+   *  SENTENCE's and reads ash when flat: a column the athlete deliberately
+   *  opened is being read, so its flat state is chalk, not the muted grey of a
+   *  figure nobody asked about. */
+  const dirColor = (d: VerdictDirection) =>
+    d === "down" ? txt(C, C.red) : d === "up" ? txt(C, C.lime) : C.chalk;
+
+  // THE OPEN COLUMN'S OWN COMPARISON — the working-out for the colour the press
+  // just produced, printed where it was produced. Absent when the metric has no
+  // baseline to move from, which is not the same as "it didn't move".
+  const openFig = open ? v.figures.find((f) => f.metric === open) ?? null : null;
+  const openDelta = openFig ? figureDeltaPct(openFig) : null;
+  const openWhy = openFig && openDelta !== null
+    ? t("w.home.act.vsBase")
+      .replace("{d}", `${openDelta > 0 ? "+" : openDelta < 0 ? "−" : ""}${Math.abs(openDelta)}%`)
+      .replace("{b}", fmt(openFig.metric, openFig.baseline))
+    : null;
 
   return (
     <View style={{ marginTop: 20 }}>
@@ -437,7 +460,12 @@ export default function AuroraWeekVerdict({
         trackStyle={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, marginBottom: 10 }}
       />
 
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, paddingHorizontal: 16, paddingVertical: 16, ...cardShadow(scheme) }}>
+      {/* The compartment below supplies the bottom padding while it is open, so
+          the card gives its own up rather than fencing the panel in. */}
+      <View style={{
+        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28,
+        paddingHorizontal: 16, paddingTop: 16, paddingBottom: open ? 0 : 16, ...cardShadow(scheme),
+      }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
           <View style={{ flex: 1 }}>
@@ -466,13 +494,19 @@ export default function AuroraWeekVerdict({
 
         {/* THE RECEIPTS — the figures the sentence was drawn from. Each one is
             a button onto its own breakdown. */}
-        <View
-          onLayout={(e) => setRowW(e.nativeEvent.layout.width)}
-          style={{ flexDirection: "row", marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}
-        >
+        <View style={{ flexDirection: "row", marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
           {ordered.map((f, i) => {
             const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
+            // AT REST the sentence keeps the colour, so the card's first paint
+            // is exactly what it always was. The moment a column is open,
+            // SELECTION owns the channel and the open one is toned by its own
+            // move — never the sentence's, which may be a different metric
+            // going the other way.
+            const dir: VerdictDirection | null = open === null
+              ? (isNamed ? v.direction : null)
+              : (isOpen ? figureDirection(f) : null);
+            const col = dir ? dirColor(dir) : null;
             return (
               <Pressable
                 key={f.metric}
@@ -483,34 +517,37 @@ export default function AuroraWeekVerdict({
                 style={{
                   flex: 1, paddingLeft: i === 0 ? 6 : gutter, paddingRight: 6, paddingTop: 4, paddingBottom: 6,
                   marginLeft: i === 0 ? -6 : 0, marginTop: -4, borderRadius: 12,
-                  backgroundColor: isOpen ? C.ink : "transparent",
-                  borderLeftWidth: i === 0 ? 0 : 1, borderLeftColor: isOpen ? "transparent" : C.line,
+                  // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
+                  // here: at 9% it reads as the column being lit rather than as
+                  // a second surface laid over the card.
+                  backgroundColor: isOpen && col ? withAlpha(col, dir === "flat" ? 0.06 : 0.09) : "transparent",
+                  // The divider retires on BOTH sides of the open column — a
+                  // hairline butting into a lit panel reads as a crack in it.
+                  borderLeftWidth: i === 0 ? 0 : 1,
+                  borderLeftColor: isOpen || openIndex === i - 1 ? "transparent" : C.line,
                 }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: isNamed ? toneText : C.ash }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: col ?? C.ash }}>
                   {t(verdictLabelKey(f.metric))}
                 </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: -0.5, marginTop: 3, color: isNamed ? toneText : C.chalk }}>
+                <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: -0.5, marginTop: 3, color: col ?? C.chalk }}>
                   {fmt(f.metric, f.value)}
                 </Text>
+                {/* THE RAIL — selection in a second channel, so the state does
+                    not rest on hue alone (a flat column is toned chalk, and
+                    colour vision is not universal). */}
+                <View style={{
+                  height: 2, borderRadius: 2, marginTop: 7,
+                  backgroundColor: isOpen ? (col ?? C.ash) : "transparent",
+                }} />
               </Pressable>
             );
           })}
         </View>
 
-        {/* THE CARET — travels to the column it belongs to, so the panel below
-            is visibly a drawer pulled out of THAT figure, not a second card. */}
-        <View style={{ height: open ? 9 : 0 }} pointerEvents="none">
-          {open && (
-            <Animated.View style={{
-              position: "absolute", top: 3, left: 0,
-              width: 10, height: 10, backgroundColor: C.ink,
-              borderLeftWidth: 1, borderTopWidth: 1, borderColor: C.line,
-              borderRadius: 2,
-              transform: [{ translateX: caretX }, { rotate: "45deg" }],
-            }} />
-          )}
-        </View>
+        {/* The caret that used to sit here is gone. Its whole job was pointing
+            at the column that opened the panel, and the lit column does that
+            without moving — see the file header. */}
 
         {/* ── THE DRAWER — the detail SLIDES out of the figure row instead of
             appearing under it. The measured height, the mount-on-first-open and
@@ -521,11 +558,21 @@ export default function AuroraWeekVerdict({
         <ADrawer open={!!detail}>
           {detail && (
             <View style={{
-              backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-              paddingHorizontal: 16, paddingVertical: 12,
+              // THE CARD'S LOWER COMPARTMENT, not a card in a card. It bleeds
+              // the card's own padding on three sides and inherits its bottom
+              // corners (28 less the 1px border), so the only edge between the
+              // figures and their breakdown is one hairline. The card drops its
+              // bottom padding while this is open — the panel's own padding is
+              // the card's bottom now.
+              backgroundColor: C.ink, borderTopWidth: 1, borderTopColor: C.line,
+              marginHorizontal: -16, marginTop: 12,
+              paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16,
+              borderBottomLeftRadius: 27, borderBottomRightRadius: 27,
             }}>
               <MetricDetail
                 detail={detail}
+                why={openWhy}
+                whyColor={openFig ? dirColor(figureDirection(openFig)) : C.ash}
                 rows={rows}
                 shownCount={shown.length}
                 all={all}
@@ -678,10 +725,14 @@ export default function AuroraWeekVerdict({
 /* ───────────────────────────── the breakdown ───────────────────────────── */
 
 function MetricDetail({
-  detail, rows, shownCount, all, group, onGroup, onAll, onSession,
+  detail, why, whyColor, rows, shownCount, all, group, onGroup, onAll, onSession,
   t, fmtValue, fmtMinutes, groupName, dateFmt, units,
 }: {
   detail: ActivityDetail;
+  /** This column's own move against its own baseline — the working-out for the
+   *  tone the press just put on it. Null when it has no baseline. */
+  why: string | null;
+  whyColor: string;
   rows: ActivityEntry[];
   shownCount: number;
   all: boolean;
@@ -726,11 +777,17 @@ function MetricDetail({
 
   return (
     <>
+      {/* The right of this row used to carry the session count, which is now on
+          the "Sessions" rule below — where the sessions actually are. This says
+          instead what the column just did, in the tone the column is wearing:
+          the reason for the colour, beside the colour. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...kicker, color: C.ash, flex: 1 }} numberOfLines={1}>{t(activityDetailKey(detail.metric))}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
-          {detail.sessions === 1 ? t("w.home.act.oneSession") : t("w.home.act.nSessions").replace("{n}", String(detail.sessions))}
-        </Text>
+        {why && (
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: whyColor }}>
+            {why}
+          </Text>
+        )}
       </View>
 
       {detail.groups.length === 0 && (
@@ -779,10 +836,16 @@ function MetricDetail({
             })}
           </View>
 
-          {/* The sessions themselves — the receipts under the receipts. */}
-          <Text style={{ ...kicker, color: C.ash, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
-            {t("w.home.act.sessionsHead")}
-          </Text>
+          {/* The sessions themselves — the receipts under the receipts. The
+              count rides this rule now: it is a fact about the sessions, and
+              this is the line that introduces them. */}
+          <View style={{
+            flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10,
+            marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line,
+          }}>
+            <Text style={{ ...kicker, color: C.ash }}>{t("w.home.act.sessionsHead")}</Text>
+            <Text style={{ ...kicker, color: C.chalk }}>{detail.sessions}</Text>
+          </View>
           <View style={{ marginTop: 4 }}>
             {rows.map((it, i) => {
               const line = meta(it);

@@ -6,8 +6,10 @@ import {
   fmtWeight, splitFigure, strengthPrProof,
   resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
+  figureDeltaPct, figureDirection,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
-  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit, type WeightUnit,
+  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit,
+  type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
@@ -39,17 +41,32 @@ import { useToday } from "@/lib/use-today";
  *     it lands on taking the foreground. Week / 7 days / 30 days / YTD, with
  *     the fifth segment opening a sheet of individual months. The choice
  *     persists per device.
- *   • FIGURES THAT OPEN. Every column is a button; pressing one expands a panel
- *     beneath the row — with a caret sliding along to point at the column it
- *     belongs to — carrying the groups the total is made of and the sessions
- *     underneath them. "41.6 km" becomes 39 km of running, 600 m in the pool
- *     and the rest across tennis and squash, each with its own sessions.
+ *   • FIGURES THAT OPEN. Every column is a button; pressing one expands the
+ *     card's lower compartment, carrying the groups the total is made of and
+ *     the sessions underneath them. "41.6 km" becomes 39 km of running, 600 m
+ *     in the pool and the rest across tennis and squash, each with its sessions.
  *
  * The card NEVER disappears. A block that comes and goes is worse than one that
  * is sometimes quiet, so an empty period keeps its place and says so.
  *
- * Colour is the SEMANTIC channel here (terracotta down, chartreuse up, ash
+ * Colour is the SEMANTIC channel here (terracotta down, chartreuse up, chalk
  * flat), not the brand accent — a bad week must not read as a highlight.
+ *
+ * SELECTION OWNS THAT COLOUR, and that is what pays for the rest of the card's
+ * restraint. It used to mark the metric the SENTENCE named and nothing else, so
+ * it never moved: pressing Hours left the chartreuse sitting on Distance, and
+ * the press itself showed up only as an `ink`-on-`ink2` fill nobody sees on a
+ * phone in daylight. Because pressing was invisible, the drawer had to shout —
+ * it arrived as a second bordered, rounded card inside this one, with a caret
+ * travelling between columns to point back at whichever figure had opened it.
+ *
+ * So the open column takes the tone (core's `figureDirection` — its OWN move,
+ * never the sentence's, so a fallen Hours column reads terracotta inside a card
+ * headlining a distance rise), and with the colour doing the pointing, THREE
+ * container edges went with it: the caret, the drawer's border and the drawer's
+ * radius. The panel is now the card's own lower compartment, bled to its edges
+ * and taking its bottom corners. At rest — nothing open — the named metric
+ * still holds the tone, so the resting card is unchanged.
  */
 
 const C = (v: string) => `var(--color-${v})`;
@@ -345,6 +362,24 @@ export default function AuroraWeekVerdict({
 
   const openIndex = open ? ordered.findIndex((f) => f.metric === open) : -1;
   const detail: ActivityDetail | null = open ? summary.details[open] : null;
+
+  /** A direction as a text colour. Distinct from `tone` above, which is the
+   *  SENTENCE's and reads ash when flat: a column the athlete deliberately
+   *  opened is being read, so its flat state is chalk, not the muted grey of a
+   *  figure nobody asked about. */
+  const dirColor = (d: VerdictDirection) =>
+    d === "down" ? "var(--red-text)" : d === "up" ? "var(--lime-text)" : C("chalk");
+
+  // THE OPEN COLUMN'S OWN COMPARISON — the working-out for the colour the press
+  // just produced, printed where it was produced. Absent when the metric has no
+  // baseline to move from, which is not the same as "it didn't move".
+  const openFig = open ? v.figures.find((f) => f.metric === open) ?? null : null;
+  const openDelta = openFig ? figureDeltaPct(openFig) : null;
+  const openWhy = openFig && openDelta !== null
+    ? t("w.home.act.vsBase")
+      .replace("{d}", `${openDelta > 0 ? "+" : openDelta < 0 ? "−" : ""}${Math.abs(openDelta)}%`)
+      .replace("{b}", fmt(openFig.metric, openFig.baseline))
+    : null;
   const shown = detail
     ? (group ? detail.groups.find((g) => g.id === group)?.items ?? detail.items : detail.items)
     : [];
@@ -412,7 +447,14 @@ export default function AuroraWeekVerdict({
         trackStyle={{ background: C("ink"), border: `1px solid ${C("line")}`, marginBottom: 10 }}
       />
 
-      <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 }}>
+      <div style={{
+        background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28,
+        boxShadow: "var(--shadow-card)", padding: 16,
+        // The compartment below supplies the bottom padding while it is open,
+        // so the card gives its own up rather than fencing the panel in.
+        paddingBottom: open ? 0 : 16,
+        transition: "padding-bottom .34s cubic-bezier(.2,.7,.3,1)",
+      }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
           <div style={{ flex: 1 }}>
@@ -439,6 +481,15 @@ export default function AuroraWeekVerdict({
           {ordered.map((f, i) => {
             const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
+            // AT REST the sentence keeps the colour, so the card's first paint
+            // is exactly what it always was. The moment a column is open,
+            // SELECTION owns the channel and the open one is toned by its own
+            // move — never the sentence's, which may be a different metric
+            // going the other way.
+            const dir: VerdictDirection | null = open === null
+              ? (isNamed ? v.direction : null)
+              : (isOpen ? figureDirection(f) : null);
+            const col = dir ? dirColor(dir) : null;
             return (
               <button className="pressable"
                 key={f.metric}
@@ -449,39 +500,44 @@ export default function AuroraWeekVerdict({
                   flex: 1, minWidth: 0, textAlign: "left", cursor: "pointer",
                   padding: "4px 6px 6px", margin: "-4px 0 0",
                   marginLeft: i === 0 ? undefined : gutter - 6,
-                  background: isOpen ? C("ink") : "transparent",
+                  // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
+                  // here: at 9% it reads as the column being lit rather than as
+                  // a second surface laid over the card.
+                  background: isOpen && col ? `color-mix(in srgb, ${col} ${dir === "flat" ? 6 : 9}%, transparent)` : "transparent",
                   border: "none", borderRadius: 12,
-                  borderLeft: i === 0 ? undefined : `1px solid ${isOpen ? "transparent" : C("line")}`,
-                  transition: "background .2s ease",
+                  // The divider retires on BOTH sides of the open column — a
+                  // hairline butting into a lit panel reads as a crack in it.
+                  borderLeft: i === 0 ? undefined : `1px solid ${isOpen || openIndex === i - 1 ? "transparent" : C("line")}`,
+                  transition: "background .2s ease, border-color .2s ease",
                   color: "inherit",
                 }}
               >
-                <span style={{ display: "block", ...kicker, color: isNamed ? tone : C("ash") }}>{t(verdictLabelKey(f.metric))}</span>
+                <span style={{ display: "block", ...kicker, color: col ?? C("ash") }}>{t(verdictLabelKey(f.metric))}</span>
                 <span style={{
                   display: "block", ...num, fontSize: figSize, fontWeight: 500, letterSpacing: "-.02em",
-                  marginTop: 3, color: isNamed ? tone : C("chalk"),
+                  marginTop: 3, color: col ?? C("chalk"),
                 }}>
                   {fmt(f.metric, f.value)}
                 </span>
+                {/* THE RAIL — selection in a second channel, so the state does
+                    not rest on hue alone (a flat column is toned chalk, and
+                    colour vision is not universal). It draws from the left
+                    rather than fading in, which is the same gesture the caret
+                    used to make travelling between columns. */}
+                <span aria-hidden style={{
+                  display: "block", height: 2, borderRadius: 2, marginTop: 7,
+                  background: col ?? C("ash"),
+                  transform: isOpen ? "scaleX(1)" : "scaleX(0)", transformOrigin: "left",
+                  transition: "transform .26s cubic-bezier(.2,.7,.3,1), background .2s ease",
+                }} />
               </button>
             );
           })}
         </div>
 
-        {/* THE CARET — travels to the column it belongs to, so the panel below
-            is visibly a drawer pulled out of THAT figure, not a second card. */}
-        <div style={{ position: "relative", height: open ? 9 : 0, transition: "height .28s cubic-bezier(.2,.7,.3,1)" }} aria-hidden>
-          <span
-            style={{
-              position: "absolute", top: 3, width: 10, height: 10, marginLeft: -5,
-              left: `${((openIndex < 0 ? 0 : openIndex) + 0.5) * (100 / Math.max(1, ordered.length))}%`,
-              background: C("ink"), borderLeft: `1px solid ${C("line")}`, borderTop: `1px solid ${C("line")}`,
-              transform: "rotate(45deg)", borderRadius: 2,
-              opacity: open ? 1 : 0,
-              transition: "left .34s cubic-bezier(.2,.7,.3,1), opacity .2s ease",
-            }}
-          />
-        </div>
+        {/* The caret that used to sit here is gone. Its whole job was pointing
+            at the column that opened the panel, and the lit column does that
+            without moving — see the file header. */}
 
         {/* ── THE DRAWER ─────────────────────────────────────────────────────
             A 0fr → 1fr grid row: a real height animation with no measuring, so
@@ -495,12 +551,22 @@ export default function AuroraWeekVerdict({
               <div
                 key={detail.metric}
                 style={{
-                  background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16,
-                  padding: "12px 16px", animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
+                  // THE CARD'S LOWER COMPARTMENT, not a card in a card. It bleeds
+                  // the card's own padding on three sides and inherits its bottom
+                  // corners (28 less the 1px border), so the only edge between
+                  // the figures and their breakdown is one hairline. The card
+                  // drops its bottom padding while this is open — the panel's own
+                  // padding is the card's bottom now.
+                  background: C("ink"), borderTop: `1px solid ${C("line")}`,
+                  margin: "12px -16px 0", padding: "14px 16px 16px",
+                  borderRadius: "0 0 27px 27px",
+                  animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
                 }}
               >
                 <MetricDetail
                   detail={detail}
+                  why={openWhy}
+                  whyColor={openFig ? dirColor(figureDirection(openFig)) : C("ash")}
                   rows={rows}
                   shownCount={shown.length}
                   all={all}
@@ -658,10 +724,14 @@ export default function AuroraWeekVerdict({
 /* ───────────────────────────── the breakdown ───────────────────────────── */
 
 function MetricDetail({
-  detail, rows, shownCount, all, group, onGroup, onAll, onSession,
+  detail, why, whyColor, rows, shownCount, all, group, onGroup, onAll, onSession,
   t, fmtValue, fmtMinutes, groupName, dateFmt, units,
 }: {
   detail: ActivityDetail;
+  /** This column's own move against its own baseline — the working-out for the
+   *  tone the press just put on it. Null when it has no baseline. */
+  why: string | null;
+  whyColor: string;
   rows: ActivityEntry[];
   shownCount: number;
   all: boolean;
@@ -703,11 +773,13 @@ function MetricDetail({
 
   return (
     <>
+      {/* The right of this row used to carry the session count, which is now
+          on the "Sessions" rule below — where the sessions actually are. This
+          says instead what the column just did, in the tone the column is
+          wearing: the reason for the colour, beside the colour. */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <span style={{ ...kicker, color: C("ash") }}>{t(activityDetailKey(detail.metric))}</span>
-        <span style={{ ...num, fontSize: fs.caption, color: C("chalk") }}>
-          {detail.sessions === 1 ? t("w.home.act.oneSession") : t("w.home.act.nSessions").replace("{n}", String(detail.sessions))}
-        </span>
+        {why && <span style={{ ...num, fontSize: fs.micro, color: whyColor, whiteSpace: "nowrap" }}>{why}</span>}
       </div>
 
       {detail.groups.length === 0 && (
@@ -756,9 +828,15 @@ function MetricDetail({
             })}
           </div>
 
-          {/* The sessions themselves — the receipts under the receipts. */}
-          <div style={{ ...kicker, color: C("ash"), marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C("line")}` }}>
-            {t("w.home.act.sessionsHead")}
+          {/* The sessions themselves — the receipts under the receipts. The
+              count rides this rule now: it is a fact about the sessions, and
+              this is the line that introduces them. */}
+          <div style={{
+            display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10,
+            ...kicker, color: C("ash"), marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C("line")}`,
+          }}>
+            <span>{t("w.home.act.sessionsHead")}</span>
+            <span style={{ ...num, letterSpacing: ".08em", color: C("chalk") }}>{detail.sessions}</span>
           </div>
           <div style={{ marginTop: 4 }}>
             {rows.map((it, i) => {
