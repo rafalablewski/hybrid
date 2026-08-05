@@ -212,6 +212,40 @@ export function activityVerdict(
 }
 
 /**
+ * A FIGURE'S OWN MOVE — the signed % it sits above or below its OWN baseline,
+ * rounded. Null when there is no baseline to move from, which is a different
+ * fact from "it did not move" and must never render as 0%.
+ */
+export function figureDeltaPct(f: VerdictFigure): number | null {
+  if (f.baseline <= 0) return null;
+  return Math.round(((f.value - f.baseline) / f.baseline) * 100);
+}
+
+/**
+ * A FIGURE'S OWN DIRECTION — what the COLUMN says about itself, as against
+ * `ActivityVerdict.direction`, which is what the SENTENCE says about the one
+ * metric it named.
+ *
+ * Both clients used to tone the columns by `direction` alone, which meant the
+ * card's colour marked the sentence's subject and nothing else — so it never
+ * moved when a different column was opened. Pressing Hours left the chartreuse
+ * sitting on Distance, and the only feedback the press produced was a fill one
+ * value-step off the card behind it. SELECTION owns the colour now, and this is
+ * what keeps that colour honest: an opened column is toned by its own move, so
+ * a week where hours fell reads terracotta on Hours even while the card's
+ * headline is a distance rise.
+ *
+ * Same threshold the sentence uses, so a move too small to be worth a claim is
+ * also too small to be worth a hue, and a column can never contradict the
+ * sentence above it.
+ */
+export function figureDirection(f: VerdictFigure): VerdictDirection {
+  const d = figureDeltaPct(f);
+  if (d === null || Math.abs(d) < VERDICT_THRESHOLD_PCT) return "flat";
+  return d < 0 ? "down" : "up";
+}
+
+/**
  * Whether the card should print the STEP ("0.1 → 6.8 km") instead of the
  * percentage. True past VERDICT_PCT_CEILING, where a ratio against a thin
  * baseline stops being a measurement and starts reading as a bug — a four-digit
