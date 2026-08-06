@@ -97,7 +97,7 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
   const { t } = useLang();
   if (!stats.length) return null;
   return (
-    <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, marginTop: 12, paddingTop: 12 }}>
+    <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, marginTop: 8, paddingTop: 8 }}>
       {stats.map((s) => (
         <div key={s.key} style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: mono, fontSize: fs.note, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: s.key === "hr" ? accentVar("blue") : C("chalk") }}>
@@ -117,7 +117,7 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
 function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units: WeightUnit }) {
   if (!sets.length) return null;
   return (
-    <div style={{ marginTop: 12 }}>
+    <div style={{ marginTop: 8 }}>
       {sets.map((l, i) => (
         <div
           key={`${l.name}-${i}`}
@@ -126,7 +126,7 @@ function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units
             justifyContent: "space-between",
             alignItems: "baseline",
             gap: 12,
-            padding: "7px 0",
+            padding: "5px 0",
             borderBottom: i === sets.length - 1 ? "none" : `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`,
           }}
         >
@@ -169,7 +169,7 @@ function Figure({ detail, units }: { detail: FeedDetail; units: WeightUnit }) {
         </div>
       )}
       {(detail.deltaPct != null || e1 || detail.firstEver) && (
-        <div style={{ fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: detail.deltaPct != null ? accentVar("lime") : C("ash"), marginTop: 6 }}>
+        <div style={{ fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: detail.deltaPct != null ? accentVar("lime") : C("ash"), marginTop: 4 }}>
           {e1 ? t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`) : null}
           {detail.deltaPct != null && <> {feedDeltaText(detail.deltaPct)}</>}
           {detail.firstEver && <span style={{ color: C("ash"), fontWeight: 500 }}>{detail.firstEver && (e1 || detail.deltaPct != null) ? " — " : ""}{t("feed.firstEver")}</span>}
@@ -218,15 +218,15 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   return (
     <article
       style={{
-        padding: isMobile ? "14px var(--page-pad-x, 16px)" : "14px 0",
+        padding: isMobile ? "12px var(--page-pad-x, 16px)" : "12px 0",
         margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 16px))" : 0,
         borderBottom: `1px solid ${C("line")}`,
       }}
     >
       {/* ZONE A — identity */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button className="pressable" onClick={() => onOpenProfile(item.author.handle)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }} aria-label={item.author.displayName ?? item.author.handle}>
-          <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={40} />
+          <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={36} />
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: display, fontWeight: 700, fontSize: fs.note, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -243,27 +243,28 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       </div>
 
       {/* ZONE B — headline */}
-      {headline && <div style={{ ...headlineStyle, color: C("chalk"), marginTop: 12 }}>{headline}</div>}
+      {headline && <div style={{ ...headlineStyle, color: C("chalk"), marginTop: 8 }}>{headline}</div>}
 
       {/* ZONE C — the figures */}
       {d?.archetype === "stat" && <Figure detail={d} units={units} />}
-      {d?.prCount ? <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 6 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</div> : null}
+      {d?.prCount ? <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</div> : null}
       {d?.sets && d.sets.length > 0 && <TopSets sets={d.sets} units={units} />}
       {d?.stats && d.stats.length > 0 && <StatRow stats={d.stats} units={units} />}
 
       {/* ZONE E — words. A caption is written FOR the feed; the private session
           note is owner-only by schema and never arrives here. */}
-      {item.body && <p style={{ color: moment === "p2" && d?.archetype === "text" ? C("chalk") : C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "12px 0 0" }}>{item.body}</p>}
+      {item.body && <p style={{ color: moment === "p2" && d?.archetype === "text" ? C("chalk") : C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "8px 0 0" }}>{item.body}</p>}
 
       {/* Legacy chips — only when core had no structured detail to give. */}
       {!d && item.chips.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
           {item.chips.map((c, i) => <Chip key={i}>{c}</Chip>)}
         </div>
       )}
 
-      {/* ZONE F — actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
+      {/* ZONE F — actions. No border of its own — the row's closing hairline
+          is the only line a post gets, X-style. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 10 }}>
         <button
           className="pressable"
           onClick={onKudos}

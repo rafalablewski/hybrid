@@ -36,7 +36,7 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
   if (!live.length) return null;
 
   return (
-    <View style={{ marginBottom: 12 }} accessibilityLabel={t("feed.live.title")}>
+    <View style={{ marginBottom: 10 }} accessibilityLabel={t("feed.live.title")}>
       {/* SectionHead idiom: display title left, mono meta right — no marker. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 2, paddingBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.bodyLg, color: C.chalk }}>{t("feed.live.title")}</Text>

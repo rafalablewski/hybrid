@@ -42,7 +42,7 @@ function Comments({ item }: { item: FeedItemView }) {
     setText(""); load();
   };
   return (
-    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
+    <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
       {list.map((c) => (
         <View key={c.id} style={{ flexDirection: "row", gap: 8, marginBottom: 8, alignItems: "center" }}>
           <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
@@ -126,7 +126,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       {/* Standing alone the head is the HERO's; as a Today hub tab the head is
           Today's, handed down through `top`. */}
       {top && (
-        <View style={{ marginBottom: 12, marginTop: 16 }}>
+        <View style={{ marginBottom: 10, marginTop: 12 }}>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>{t("w.social.feedTitle")}</Text>
           <Text style={{ color: C.ash, fontSize: 13 }}>{t("w.social.feedSub")}</Text>
         </View>
@@ -139,7 +139,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
 
       {/* FEED TABS — the ranked feed only earns trust while an unranked exit
           exists beside it. */}
-      <View style={{ flexDirection: "row", gap: 6, marginBottom: 12 }}>
+      <View style={{ flexDirection: "row", gap: 6, marginBottom: 10 }}>
         {(["forYou", "following"] as FeedTab[]).map((id) => (
           <Pressable key={id} onPress={() => setTab(id)}>
             <View style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: tab === id ? C.ash : C.line, backgroundColor: tab === id ? C.ink2 : "transparent" }}>
@@ -167,7 +167,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         </ACard>
       ) : (
         <Pressable onPress={() => setComposing(true)}>
-          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10, marginBottom: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
             <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body }}>{t("w.social.sharePlaceholder")}</Text>
           </View>
         </Pressable>
@@ -200,9 +200,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   // the end of the stream is a door back to the bar, not more content.
   const footer =
     items.length === 0 ? null : (
-      <Animated.View style={[fade, { alignItems: "center", paddingTop: 20, paddingBottom: 8 }]}>
+      <Animated.View style={[fade, { alignItems: "center", paddingTop: 14, paddingBottom: 8 }]}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>{t("feed.caughtUp").toUpperCase()}</Text>
-        <Text style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 10, marginBottom: 12, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
+        <Text style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 6, marginBottom: 10, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
         <SButton label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>
     );

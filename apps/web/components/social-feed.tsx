@@ -45,7 +45,7 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
     onCount((r.comments ?? []).length);
   };
   return (
-    <div style={{ marginTop: 12, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
+    <div style={{ marginTop: 10, borderTop: `1px solid ${C("line")}`, paddingTop: 10 }}>
       {(list ?? []).map((c) => (
         <div key={c.id} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
@@ -55,7 +55,7 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
           </div>
         </div>
       ))}
-      <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("w.social.commentPlaceholder")} style={{ flex: 1, padding: "8px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
         <Btn small onClick={send}>{t("w.social.post")}</Btn>
       </div>
@@ -87,15 +87,15 @@ function Composer({ onPosted }: { onPosted: () => void }) {
       <button
         className="pressable"
         onClick={() => setOpen(true)}
-        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", marginBottom: 12, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", textAlign: "left" }}
+        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", marginBottom: 10, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", textAlign: "left" }}
       >
         {t("w.social.sharePlaceholder")}
       </button>
     );
   }
   return (
-    <div style={card(aurora, { marginBottom: 12 })}>
-      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 56, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
+    <div style={card(aurora, { marginBottom: 10 })}>
+      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 48, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 12 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: 13, cursor: "pointer" }}>
           <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> {t("w.social.attachPr")}
@@ -175,7 +175,7 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           every request is also an invite (core/attestation.ts). */}
       <CosignInbox units={units} />
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
         {tabBtn("forYou", t("feed.tab.forYou"))}
         {tabBtn("following", t("feed.tab.following"))}
       </div>
@@ -216,9 +216,9 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
               scroll — so the end of the stream is a door back to the bar. The
               last row's own hairline already closes the stream, so the marker
               is plain centered text — same as mobile. */}
-          <div style={{ textAlign: "center", padding: "20px 0 8px" }}>
+          <div style={{ textAlign: "center", padding: "14px 0 8px" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C("ash") }}>{t("feed.caughtUp")}</div>
-            <p style={{ fontSize: 12, color: C("ash"), margin: "10px 0 12px" }}>{t("feed.caughtUpSub")}</p>
+            <p style={{ fontSize: 12, color: C("ash"), margin: "6px 0 10px" }}>{t("feed.caughtUpSub")}</p>
             <Btn onClick={() => (onNavigate ? onNavigate("log") : (window.location.href = "/log"))}>{t("feed.goTrain")}</Btn>
           </div>
         </>

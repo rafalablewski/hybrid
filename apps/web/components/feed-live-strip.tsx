@@ -34,7 +34,7 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
   if (!live.length) return null;
 
   return (
-    <section style={{ marginBottom: 12 }} aria-label={t("feed.live.title")}>
+    <section style={{ marginBottom: 10 }} aria-label={t("feed.live.title")}>
       {/* SectionHead idiom: display title left, mono meta right — never a
           decorative dot before the label. */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "2px 2px 8px" }}>
