@@ -8,6 +8,9 @@ import {
   FITNESS_LEVELS,
   fiveKmEquivalentSec,
   displayLevel,
+  nextThreshold,
+  badgeFor,
+  LEVEL_KEY,
 } from "./fitness-level";
 import type { LoggedSession } from "./session";
 
@@ -302,6 +305,70 @@ describe("the specialist athletes", () => {
     const stated = resolveExperience("beginner", pure);
     expect(stated.experience).toBe("beginner");
     expect(stated.disagrees).toBe(false);
+  });
+
+  it("names the reach in kilos, and the arithmetic on screen adds up", () => {
+    const r = estimateFitnessLevel(bodybuilder, { bodyweightKg: 90, sex: "M", ageYears: 30, now: NOW });
+    const reach = nextThreshold(r)!;
+    expect(reach.next).toBe("elite");
+    expect(reach.kind).toBe("strength");
+    expect(reach.lift).toBe("Deadlift");
+    // The card renders current, target and gap side by side — they must be one
+    // sum, not three independently-rounded figures.
+    expect(reach.current + reach.gap).toBe(reach.target);
+    expect(reach.progress).toBeGreaterThan(0);
+    expect(reach.progress).toBeLessThan(1);
+  });
+
+  it("turns the reach into a margin once there is nothing above", () => {
+    // 2.83 x bodyweight — past the 2.75 elite floor.
+    const r = estimateFitnessLevel([lift("Deadlift", 150, 6)], { bodyweightKg: 60, now: NOW });
+    expect(r.level).toBe("elite");
+    const reach = nextThreshold(r)!;
+    expect(reach.next).toBeNull();
+    // The target is the elite floor and the gap is how far CLEAR of it they are.
+    expect(reach.gap).toBeGreaterThan(0);
+    expect(reach.current - reach.gap).toBe(reach.target);
+    expect(reach.progress).toBe(1);
+  });
+
+  it("measures the reach in seconds when a run set the level", () => {
+    const r = estimateFitnessLevel(runner, { bodyweightKg: 60, sex: "M", ageYears: 28, now: NOW });
+    const reach = nextThreshold(r)!;
+    expect(reach.kind).toBe("endurance");
+    // Elite already, so the reach is the margin under the elite pace bar.
+    expect(reach.next).toBeNull();
+    expect(reach.current).toBeLessThan(reach.target);
+  });
+
+  it("has no reach to report when nothing was measured", () => {
+    expect(nextThreshold(estimateFitnessLevel([], { bodyweightKg: 80, now: NOW }))).toBeNull();
+    expect(nextThreshold(null)).toBeNull();
+  });
+
+  it("the badge is earned, and waits for a picture rather than a data point", () => {
+    // ONE lift is an estimate the private card may show — not a public badge.
+    const single = estimateFitnessLevel([lift("Deadlift", 200, 3)], { bodyweightKg: 90, now: NOW });
+    expect(single.evidence).toHaveLength(1);
+    expect(displayLevel(single)).not.toBeNull();
+    expect(badgeFor(single)).toBeNull();
+
+    // Two independent results and it earns one.
+    const b = badgeFor(estimateFitnessLevel(bodybuilder, { bodyweightKg: 90, now: NOW }))!;
+    expect(b.level).toBe("advanced");
+    expect(b.accent).toBe("lime");
+    expect(b.key).toBe(LEVEL_KEY.advanced);
+
+    // Never for an athlete the model could not measure.
+    expect(badgeFor(estimateFitnessLevel([], { bodyweightKg: 80, now: NOW }))).toBeNull();
+    expect(badgeFor(null)).toBeNull();
+  });
+
+  it("gives every level a badge accent, and reserves gold for the top", () => {
+    for (const l of FITNESS_LEVELS) expect(LEVEL_KEY[l].startsWith("w.analyze.vol.")).toBe(true);
+    const elite = badgeFor(estimateFitnessLevel([lift("Deadlift", 150, 6), lift("Back Squat", 140, 5)], { bodyweightKg: 60, now: NOW }))!;
+    expect(elite.level).toBe("elite");
+    expect(elite.accent).toBe("gold");
   });
 
   it("displayLevel refuses to call an unmeasured athlete untrained", () => {

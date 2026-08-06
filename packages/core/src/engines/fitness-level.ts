@@ -183,8 +183,48 @@ export interface LevelEvidence {
   /** ENDURANCE ONLY: the 5 km-equivalent time, seconds. */
   equivSec?: number;
   level: FitnessLevel;
+  /**
+   * The tier this result reached, as the entry value in the SAME unit the
+   * result is displayed in — kg of e1RM for a lift, sec/km for a run. Null for
+   * an untrained runner, whose tier has no floor (there is no slowest pace).
+   *
+   * Carried on the evidence rather than recomputed by callers because the
+   * thresholds are shifted by sex and the age-development curve: a screen that
+   * re-derived them would need the athlete's age and sex again and would drift
+   * the moment either changed.
+   */
+  tierFrom: number | null;
+  /** Entry value for the NEXT tier, same unit. Null at elite — nothing above. */
+  tierTo: number | null;
+  /** 0…1 — how far through the current tier this result sits. */
+  progress: number;
   /** ISO date of the session it came from. */
   at: string;
+}
+
+/**
+ * Where a result sits between the tier it reached and the one above it.
+ *
+ * `thresholds` are the four entry values in display units, ordered novice →
+ * elite. Pace runs the other way (lower is better), which is the only thing
+ * `higherIsBetter` changes.
+ */
+function tierSpan(
+  value: number,
+  thresholds: number[],
+  level: FitnessLevel,
+  higherIsBetter: boolean,
+): { tierFrom: number | null; tierTo: number | null; progress: number } {
+  const i = FITNESS_LEVELS.indexOf(level);
+  // Untrained has a floor of zero for a lift (you can always lift nothing) and
+  // none at all for a pace, since there is no slowest run.
+  const tierFrom = i === 0 ? (higherIsBetter ? 0 : null) : (thresholds[i - 1] ?? null);
+  const tierTo = i >= thresholds.length ? null : (thresholds[i] ?? null);
+  if (tierTo == null) return { tierFrom, tierTo, progress: 1 };
+  if (tierFrom == null) return { tierFrom, tierTo, progress: 0 };
+  const span = higherIsBetter ? tierTo - tierFrom : tierFrom - tierTo;
+  const done = higherIsBetter ? value - tierFrom : tierFrom - value;
+  return { tierFrom, tierTo, progress: span <= 0 ? 0 : Math.min(1, Math.max(0, done / span)) };
 }
 
 export interface FitnessLevelEstimate {
@@ -321,16 +361,26 @@ export function estimateFitnessLevel(
   for (const [key, { e1rm: est, at }] of best) {
     const std = byKey.get(key)!;
     const ratio = Math.round((est / bw!) * 100) / 100;
-    evidence.push({ kind: "strength", lift: key, e1rm: Math.round(est), ratio, level: levelFromRatio(ratio, thresholdsFor(std, sex, age)), at });
+    const thresholds = thresholdsFor(std, sex, age);
+    const kg = Math.round(est);
+    // Tier bounds in KILOS, rounded exactly as the displayed e1RM is, so a card
+    // saying "elite begins at 225 kg, 45 kg above your best" is arithmetic the
+    // athlete can check rather than two independently-rounded figures that
+    // happen to disagree by one.
+    const span = tierSpan(kg, thresholds.map((r) => Math.round(r * bw!)), levelFromRatio(ratio, thresholds), true);
+    evidence.push({ kind: "strength", lift: key, e1rm: kg, ratio, level: levelFromRatio(ratio, thresholds), ...span, at });
   }
   if (bestRun) {
     const pace = Math.round(bestRun.equivSec / ENDURANCE_STANDARD_KM);
+    const paces = endurancePaceThresholds(sex, age);
+    const level = levelFromPace(pace, paces);
     evidence.push({
       kind: "endurance",
       lift: `${Math.round(bestRun.km * 10) / 10} km`,
       ratio: pace,
       equivSec: bestRun.equivSec,
-      level: levelFromPace(pace, endurancePaceThresholds(sex, age)),
+      level,
+      ...tierSpan(pace, paces.map((p) => Math.round(p)), level, false),
       at: bestRun.at,
     });
   }
@@ -403,6 +453,98 @@ export function resolveExperience(
   if (stated) return { experience: stated, source: "stated", disagrees: !!derived && derived !== stated };
   if (derived) return { experience: derived, source: "estimated", disagrees: false };
   return { experience: undefined, source: "unknown", disagrees: false };
+}
+
+/**
+ * THE REACH — what closes the gap to the next tier.
+ *
+ * A level already reached is a fact about the past; the part that changes what
+ * an athlete does on Monday is the distance to the next one. This reads the
+ * result that SET the level (the strongest evidence) and reports what its next
+ * tier costs, in the unit the athlete trains in: kilos on the bar, or seconds
+ * per kilometre.
+ *
+ * At elite there is nothing above, so `next` is null and the reach becomes the
+ * MARGIN clear of the elite floor — the same shape, a different sentence.
+ */
+export interface LevelReach {
+  /** The tier ahead, or null when the athlete is already at the top. */
+  next: FitnessLevel | null;
+  kind: "strength" | "endurance";
+  /** The lift's name, or the run's distance label. */
+  lift: string;
+  /** The athlete's best: kg of e1RM, or sec/km. */
+  current: number;
+  /** What `next` costs, same unit. At elite, the elite floor itself. */
+  target: number;
+  /** Kilos to add, or seconds per km to shave. At elite, how far clear. */
+  gap: number;
+  /** 0…1 through the current tier — what a partial segment fills to. */
+  progress: number;
+}
+
+export function nextThreshold(estimate: FitnessLevelEstimate | null | undefined): LevelReach | null {
+  if (!estimate || estimate.basis === "none") return null;
+  // Evidence is sorted strongest-first, so [0] is the result that set the level.
+  const top = estimate.evidence[0];
+  if (!top) return null;
+  const current = top.kind === "strength" ? (top.e1rm ?? 0) : top.ratio;
+  const target = top.tierTo ?? top.tierFrom;
+  if (target == null) return null;
+  const i = FITNESS_LEVELS.indexOf(top.level);
+  return {
+    next: top.tierTo == null ? null : (FITNESS_LEVELS[i + 1] ?? null),
+    kind: top.kind,
+    lift: top.lift,
+    current,
+    target,
+    gap: Math.abs(target - current),
+    progress: top.progress,
+  };
+}
+
+/**
+ * THE PUBLIC BADGE — the level as one word, or nothing.
+ *
+ * Two rules the Performance card does not have to follow, because this one is
+ * seen by other people:
+ *
+ * 1. It is EARNED, never claimed. Only the log-derived estimate can produce it;
+ *    the self-assessed onboarding answer never can. That is the whole reason it
+ *    is worth showing — everyone's badge means the same thing.
+ * 2. It needs a PICTURE, not a data point. One heavy single should not crown a
+ *    public "Elite", so the badge waits for a second independent result. The
+ *    private card is free to show a one-lift estimate with its low confidence;
+ *    a follower-facing surface is not.
+ *
+ * The ratio never travels with it. PR loads are already public on the profile,
+ * so publishing "2.20 × bodyweight" beside them would let anyone divide and
+ * recover the athlete's body mass.
+ */
+export const BADGE_MIN_EVIDENCE = 2;
+
+/** The accent channel a badge paints with — the palette's existing ramp. */
+export type BadgeAccent = "ash" | "chalk" | "lime" | "gold";
+
+const BADGE_ACCENT: Record<FitnessLevel, BadgeAccent> = {
+  untrained: "ash",
+  novice: "ash",
+  intermediate: "chalk",
+  advanced: "lime",
+  elite: "gold",
+};
+
+export interface LevelBadge {
+  level: FitnessLevel;
+  /** i18n key for the word itself. */
+  key: string;
+  accent: BadgeAccent;
+}
+
+export function badgeFor(estimate: FitnessLevelEstimate | null | undefined): LevelBadge | null {
+  const level = displayLevel(estimate);
+  if (!level || !estimate || estimate.evidence.length < BADGE_MIN_EVIDENCE) return null;
+  return { level, key: LEVEL_KEY[level], accent: BADGE_ACCENT[level] };
 }
 
 /** i18n key naming what the estimate could see — so the card says "from your

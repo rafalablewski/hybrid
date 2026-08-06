@@ -29,6 +29,7 @@ import { AuroraScreen, ACard, APill, AHeading, ASub, RADIUS, Ring, withAlpha, AS
 import AuroraVolume from "./volume";
 import { AuroraIcon } from "./icons";
 import TissueCard from "./tissue-card";
+import LevelCard from "./level-card";
 import ReadinessFace from "./readiness-face";
 import FreshnessSheet from "./freshness-sheet";
 import WearableSheet from "./wearable-sheet";
@@ -493,7 +494,13 @@ function Full({ top }: { top?: ReactNode }) {
           have to do it; this card keeps the status line and the door. */}
       <TissueCard risk={risk} load={loadState} hasData={hasData} onOpenToday={() => router.push("/")} />
 
-      {/* 4 · THIS WEEK'S VOLUME — the hero shape, a verdict that names names,
+      {/* 4 · YOUR LEVEL — who the athlete is, before what they should train.
+          That is also the causal order: training age is the strongest single
+          input to the volume bands rendered directly below it. It sat four
+          interactions deep inside the Volume working until Aug 2026. */}
+      <LevelCard sessions={sessions} onOpenWorking={() => router.push("/volume")} />
+
+      {/* 5 · THIS WEEK'S VOLUME — the hero shape, a verdict that names names,
           and the rest of it in a drawer. The block ramp, the prescriptions and
           the muscle rails now ease open UNDERNEATH the columns that raised the
           question rather than living on another screen; the provenance ladder
@@ -505,7 +512,7 @@ function Full({ top }: { top?: ReactNode }) {
         <AuroraVolume compact onOpenModel={() => router.push("/volume-model")} />
       </View>
 
-      {/* 5 · SEASON — one card. The bar draws the fraction, so the line names
+      {/* 6 · SEASON — one card. The bar draws the fraction, so the line names
           the week once instead of restating it as a percentage. */}
       <ACard solid style={{ marginTop: 16 }}>
         <ASection
@@ -534,7 +541,7 @@ function Full({ top }: { top?: ReactNode }) {
         </View>
       </ACard>
 
-      {/* 6 · GO DEEPER — the exits. Every row carries a live value, because a
+      {/* 7 · GO DEEPER — the exits. Every row carries a live value, because a
           door that tells you what is behind it is the only kind worth a row. */}
       <ACard solid style={{ marginTop: 16 }}>
         <ASection title={t("w.home.cockpit.deeper")} />

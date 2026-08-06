@@ -15,6 +15,7 @@ import {
   totalVolume,
   athleteId,
   canSeeHPI,
+  type BadgeAccent,
   type LoggedSession,
   type Achievement,
   type HeatCell,
@@ -28,6 +29,7 @@ import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
+import { useFitnessLevel } from "../../lib/use-fitness-level";
 import { leading, fs, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS, ASection } from "./kit";
@@ -37,6 +39,17 @@ import { AuroraIcon } from "./icons";
 import { ArrowGlyph } from "./cta-label";
 
 type P = ReturnType<typeof useTheme>["palette"];
+
+/**
+ * The badge's ink. The level ramp reuses the palette's existing tones rather
+ * than inventing a colour per tier — ash and chalk for the lower tiers, the
+ * lime accent-TEXT tone for advanced, gold reserved for elite. Every one is a
+ * per-theme AA-guarded value (palette.test.ts), so the chip clears contrast on
+ * Kyoto Hour's washi card as well as on Aurora's near-black. Mirrors web's
+ * badgeInk in aurora/profile.tsx.
+ */
+const badgeInk = (C: P, accent: BadgeAccent): string =>
+  accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
 type TabId = "overview" | "prs" | "activity" | "private";
 
 /**
@@ -103,6 +116,9 @@ export default function AuroraProfile() {
   // there rather than recomputing them here, so the profile never duplicates the
   // command center. The metrics below feed the PUBLIC grid (PRs, streak, tonnage).
   const bw = useBodyweightLookup();
+  // The SAME estimate the Performance card and the Volume working read, so
+  // the profile can never claim a level the rest of the app contradicts.
+  const { badge } = useFitnessLevel(sessions);
   const heat = useMemo<HeatCell[][]>(() => trainingHeatmap(sessions, 26), [sessions]);
   const achievements = useMemo<Achievement[]>(() => computeAchievements(sessions, bw), [sessions, bw]);
   const prMap = useMemo(() => topLoadMap(sessions, bw), [sessions, bw]);
@@ -256,12 +272,35 @@ export default function AuroraProfile() {
         </View>
       </View>
 
-      {/* NAME + membership pill (pill UNCHANGED from the original design). */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingHorizontal: 0 }}>
+      {/* NAME + membership pill (pill UNCHANGED from the original design), and
+          the LEVEL BADGE beside it.
+
+          The badge is EARNED, never claimed: it renders only the log-derived
+          estimate, never the self-assessed onboarding answer, and it shows
+          nothing at all until two independent results back it (see badgeFor).
+          That is the whole reason it is worth showing to other people —
+          everyone's badge means the same thing.
+
+          One word, and only one word. PR loads are already public tiles on this
+          screen, so publishing the ratio beside them would let anyone divide and
+          recover the athlete's body mass. The figures stay on Performance. */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingHorizontal: 0, flexWrap: "wrap" }}>
         <Text style={{ fontFamily: F.black, fontSize: 23, color: C.chalk, letterSpacing: -0.5 }}>{name}</Text>
         <View style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: 0.9 }}>{tier}</Text>
         </View>
+        {badge && (
+          <Pressable
+            onPress={() => router.push("/performance")}
+            accessibilityRole="button"
+            accessibilityLabel={t("w.analyze.vol.levelCardTitle")}
+            style={{ borderWidth: 1, borderColor: badgeInk(C, badge.accent), borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3 }}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: badgeInk(C, badge.accent), letterSpacing: 0.9, textTransform: "uppercase" }}>
+              {t(badge.key)}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       {/* BIO + quiet HYBRID ID line. */}

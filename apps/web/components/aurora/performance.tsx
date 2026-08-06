@@ -23,6 +23,7 @@ import { useToday } from "@/lib/use-today";
 import { HeroScreen } from "./hero";
 import TissueCard from "./tissue-card";
 import AuroraVolume from "./volume";
+import LevelCard from "./level-card";
 import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
@@ -92,7 +93,7 @@ function StateSkeleton() {
 }
 
 /**
- * AURORA Performance (web) — the athlete hub, at SIX surfaces.
+ * AURORA Performance (web) — the athlete hub, at SEVEN surfaces.
  *
  * It was twenty. Volume and Trends had been absorbed whole and took roughly
  * two thirds of the scroll; eleven cards restated something a neighbour had
@@ -112,11 +113,17 @@ function StateSkeleton() {
  *      explanation and the check-in nudge.
  *   3. TISSUE — unchanged, minus the protocol (which now lives on Today, where
  *      an injured athlete meets it on the morning they have to do it).
- *   4. THIS WEEK'S VOLUME — the hero shape and a door. The block ramp, the
+ *   4. YOUR LEVEL — the training level read from the bar and the watch, as one
+ *      word, five tier segments and one plain sentence naming what closes the
+ *      gap to the next tier. Placed BEFORE volume deliberately: who the athlete
+ *      is, then what they should train — which is also the causal order, since
+ *      training age is the strongest single input to the bands below it. It was
+ *      four interactions deep inside the Volume working until Aug 2026.
+ *   5. THIS WEEK'S VOLUME — the hero shape and a door. The block ramp, the
  *      prescriptions, the muscle rails and the provenance ladder are a
  *      programming tool and went back to being their own screen.
- *   5. SEASON — one card. Goal, phase, progress, and the two controls.
- *   6. GO DEEPER — the exits, every row carrying a live value.
+ *   6. SEASON — one card. Goal, phase, progress, and the two controls.
+ *   7. GO DEEPER — the exits, every row carrying a live value.
  *
  * Cut on the way: the HPI and ACWR chips (previews of a card within reach),
  * "Your week" (a rolling-seven-day week beside Today's Monday-anchored one —
@@ -530,7 +537,17 @@ export default function AuroraPerformance({
             opening itself the moment a tissue is flagged. */}
         <TissueCard risk={risk} load={load} hasData={hasData} onOpenToday={() => setScreen("today")} />
 
-        {/* 4 · THIS WEEK'S VOLUME — the hero shape, the verdict that names
+        {/* 4 · YOUR LEVEL — who the athlete is, before what they should train.
+            That is also the causal order: training age is the strongest single
+            input to the volume bands rendered directly below it.
+
+            It used to sit four interactions deep (Volume → drawer → provenance
+            sheet → "Show the working"), which is a strange place for the one
+            figure every athlete actually arrives wanting. The working stays
+            where it is and this card is its door. */}
+        <LevelCard sessions={sessions} onOpenWorking={() => setScreen("volume")} />
+
+        {/* 5 · THIS WEEK'S VOLUME — the hero shape, the verdict that names
             names, and the rest of it in a drawer. The block ramp, the
             prescriptions and the muscle rails now ease open UNDERNEATH the
             columns that raised the question rather than living on another
@@ -541,7 +558,7 @@ export default function AuroraPerformance({
             destination that row renders its arrow and does nothing. */}
         <AuroraVolume sessions={sessions} compact onOpenModel={() => setScreen("volume-model")} />
 
-        {/* 5 · SEASON — one card. The bar draws the fraction, so the line names
+        {/* 6 · SEASON — one card. The bar draws the fraction, so the line names
             the week once instead of restating it as a percentage. */}
         <div style={CARD}>
           {/* The HEADING is itself a claim ("Set up" vs the goal's name) — hold
@@ -573,7 +590,7 @@ export default function AuroraPerformance({
           </div>
         </div>
 
-        {/* 6 · GO DEEPER — the exits. Every row carries a live value, because a
+        {/* 7 · GO DEEPER — the exits. Every row carries a live value, because a
             door that tells you what is behind it is the only kind worth a row. */}
         <div style={CARD}>
           <SHead title={t("w.home.cockpit.deeper")} />
