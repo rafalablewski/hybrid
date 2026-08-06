@@ -18,15 +18,16 @@ import { C, Avatar } from "./social-ui";
  */
 
 // FULL-BLEED per the house rule: negative margins the width of the screen
-// gutter pull the scroll clip to the true edge, with MATCHING internal padding
-// so resting avatars still line up with the content column.
+// gutter (--page-pad-x — 12px on mobile) pull the scroll clip to the true
+// edge, with MATCHING internal padding so resting avatars still line up with
+// the content column.
 const rail: React.CSSProperties = {
   display: "flex",
   gap: 14,
   overflowX: "auto",
   scrollbarWidth: "none",
-  margin: "0 calc(-1 * var(--page-pad-x, 16px)) 4px",
-  padding: "2px var(--page-pad-x, 16px) 8px",
+  margin: "0 calc(-1 * var(--page-pad-x, 12px)) 4px",
+  padding: "2px var(--page-pad-x, 12px) 8px",
 };
 
 export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; onOpen: (handle: string) => void }) {
@@ -34,7 +35,7 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
   if (!live.length) return null;
 
   return (
-    <section style={{ marginBottom: 12 }} aria-label={t("feed.live.title")}>
+    <section style={{ marginBottom: 10 }} aria-label={t("feed.live.title")}>
       {/* SectionHead idiom: display title left, mono meta right — never a
           decorative dot before the label. */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "2px 2px 8px" }}>

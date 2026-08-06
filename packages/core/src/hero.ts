@@ -97,11 +97,12 @@ export const HERO = {
    *  spatial constant — the reason a push never moves the back button. */
   rail: { height: 44, top: 4, /** rail + top + bottom breathing = the collapsed bar */ bottom: 8 },
 
-  /** Side gutters. `edge` is the screen gutter every client already uses (16);
+  /** Side gutters. `edge` is the screen gutter every client uses (12 — dropped
+   *  from 16 in the density pass: wider content, less dead space at the edges);
    *  `hero` is the hero's own inset — 2pt wider so a display title's optical
    *  left edge lines up with body text below it, which at 34/900 it does not
-   *  when both are flush at 16. */
-  gutter: { edge: 16, hero: 18 },
+   *  when both are flush at the edge gutter. */
+  gutter: { edge: 12, hero: 14 },
 
   /** Content height BELOW the safe-area inset, per rank, at rest.
    *  `bar` === the collapsed height, which is why `bar` has no collapse. */

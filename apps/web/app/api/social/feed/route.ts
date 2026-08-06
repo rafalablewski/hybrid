@@ -20,8 +20,10 @@ export async function GET(request: Request) {
       where: { followerId: me.id, status: "active" },
       select: { followeeId: true, closeFriend: true },
     });
-    // Include my OWN activity in the feed too (like Strava's "you"), minus
-    // anyone in a block relationship with me.
+    // Include my OWN activity in the feed too, minus anyone in a block
+    // relationship with me. My posts carry my REAL profile name — in a stream
+    // of names a "You" row reads like a placeholder, and the timeline is the
+    // one place the athlete sees their own posts as others do.
     const blocked = await blockedIdsFor(me.id);
     const ids = [me.id, ...follows.map((f) => f.followeeId).filter((id) => !blocked.has(id))];
     const closeSet = new Set(follows.filter((f) => f.closeFriend).map((f) => f.followeeId));
@@ -42,7 +44,7 @@ export async function GET(request: Request) {
           // fallback) gets an empty handle so the card renders just their name,
           // never a synthetic "@a1b2c3d4".
           handle: c?.hasProfile ? c.handle : "",
-          displayName: id === me.id ? "You" : c?.displayName ?? null,
+          displayName: c?.displayName ?? null,
           avatarUrl: c?.avatarUrl ?? null,
           closeFriend: closeSet.has(id),
         },

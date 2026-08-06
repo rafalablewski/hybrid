@@ -119,9 +119,10 @@ slide under the physical screen edge — never clip at the content column with
 the screen gutter showing beside a cut card. The **golden standard is the
 exercise-widget rail** (`aurora/exercise-widget.tsx`, both clients): negative
 horizontal margins the width of the screen gutter pull the scroll clip to the
-true edge (mobile `marginHorizontal: -16` against AuroraScreen's 16dp gutter;
-web `margin: 0 calc(-1 * var(--page-pad-x, 16px))`), with MATCHING internal
-padding so resting cards still align with the content column. `CoachRail`'s
+true edge (mobile `marginHorizontal: -12` against AuroraScreen's 12dp gutter —
+the kit's `GUTTER`; web `margin: 0 calc(-1 * var(--page-pad-x, 12px))`, the
+shell publishes 12px on mobile), with MATCHING internal padding so resting
+cards still align with the content column. `CoachRail`'s
 `bleed` prop is the same idiom. The one exception: a rail rendered inside a
 Sheet or a card respects its container's padding — bleed is only for rails
 sitting directly on a screen.

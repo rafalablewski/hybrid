@@ -5,7 +5,7 @@ import { F, serifIf, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { Avatar } from "./social-kit";
-import { RADIUS } from "./aurora/kit";
+import { GUTTER, RADIUS } from "./aurora/kit";
 
 /**
  * NOW TRAINING (mobile) — twin of apps/web/components/feed-live-strip.tsx.
@@ -36,7 +36,7 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
   if (!live.length) return null;
 
   return (
-    <View style={{ marginBottom: 12 }} accessibilityLabel={t("feed.live.title")}>
+    <View style={{ marginBottom: 10 }} accessibilityLabel={t("feed.live.title")}>
       {/* SectionHead idiom: display title left, mono meta right — no marker. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 2, paddingBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.bodyLg, color: C.chalk }}>{t("feed.live.title")}</Text>
@@ -45,15 +45,15 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
         </Text>
       </View>
 
-      {/* FULL-BLEED per the house rule: negative margins the width of
-          AuroraScreen's 16dp gutter pull the scroll clip to the true screen
-          edge, with matching internal padding so resting avatars still line up
-          with the content column. */}
+      {/* FULL-BLEED per the house rule: negative margins the width of the
+          screen gutter pull the scroll clip to the true screen edge, with
+          matching internal padding so resting avatars still line up with the
+          content column. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 14, paddingBottom: 4 }}
+        style={{ marginHorizontal: -GUTTER }}
+        contentContainerStyle={{ paddingHorizontal: GUTTER, gap: 14, paddingBottom: 4 }}
       >
         {live.map((l) => {
           const ring = txt(C, l.accent === "blue" ? colors.blue : colors.lime);

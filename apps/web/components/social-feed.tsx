@@ -9,6 +9,7 @@ import FeedCard from "./feed-card";
 import FeedLiveStrip from "./feed-live-strip";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useIsMobile } from "@/lib/use-media-query";
 
 /**
  * CONNECT — the feed (web). Twin of apps/mobile/components/feed-view.tsx; both
@@ -44,7 +45,7 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
     onCount((r.comments ?? []).length);
   };
   return (
-    <div style={{ marginTop: 12, borderTop: `1px solid ${C("line")}`, paddingTop: 10 }}>
+    <div style={{ marginTop: 10, borderTop: `1px solid ${C("line")}`, paddingTop: 10 }}>
       {(list ?? []).map((c) => (
         <div key={c.id} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
@@ -54,7 +55,7 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
           </div>
         </div>
       ))}
-      <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("w.social.commentPlaceholder")} style={{ flex: 1, padding: "8px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
         <Btn small onClick={send}>{t("w.social.post")}</Btn>
       </div>
@@ -86,15 +87,15 @@ function Composer({ onPosted }: { onPosted: () => void }) {
       <button
         className="pressable"
         onClick={() => setOpen(true)}
-        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", marginBottom: 12, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", textAlign: "left" }}
+        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", marginBottom: 10, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", textAlign: "left" }}
       >
         {t("w.social.sharePlaceholder")}
       </button>
     );
   }
   return (
-    <div style={card(aurora, { marginBottom: 12 })}>
-      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 56, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
+    <div style={card(aurora, { marginBottom: 10 })}>
+      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 48, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 12 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: 13, cursor: "pointer" }}>
           <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> {t("w.social.attachPr")}
@@ -110,6 +111,7 @@ function Composer({ onPosted }: { onPosted: () => void }) {
 
 export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: string) => void } = {}) {
   const { t } = useLang();
+  const isMobile = useIsMobile();
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
@@ -173,15 +175,35 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           every request is also an invite (core/attestation.ts). */}
       <CosignInbox units={units} />
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+      {/* People-search rides the tab row's right side as a bare icon (the
+          SectionHead idiom) — a full search bar would spend a row of the
+          stream on a rare action. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         {tabBtn("forYou", t("feed.tab.forYou"))}
         {tabBtn("following", t("feed.tab.following"))}
+        <button
+          className="pressable"
+          onClick={() => (onNavigate ? onNavigate("discover") : (window.location.href = "/discover"))}
+          aria-label={t("w.social.searchPeople")}
+          style={{ marginLeft: "auto", background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <circle cx="8" cy="8" r="5.5" />
+            <path d="m12.4 12.4 3.4 3.4" strokeLinecap="round" />
+          </svg>
+        </button>
       </div>
 
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
       <FeedLiveStrip live={live} onOpen={(h) => setDrawer(h)} />
 
       <Composer onPosted={load} />
+
+      {/* The stream boundary. The rows below are full-width timeline rows
+          (feed-card.tsx), each closed by a hairline — the header hands over
+          with the same line so the first post is bounded top. At mobile widths
+          it bleeds with the rows so the line runs edge to edge. */}
+      <div style={{ height: 1, background: C("line"), margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 12px))" : 0 }} />
 
       {items.length === 0 ? (
         <EmptyState
@@ -205,14 +227,12 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           ))}
 
           {/* The exit. The feed's job is to make you train, not to make you
-              scroll — so the end of the stream is a door back to the bar. */}
-          <div style={{ textAlign: "center", padding: "20px 0 8px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C("ash") }}>
-              <span style={{ flex: 1, borderTop: `1px solid ${C("line")}` }} />
-              {t("feed.caughtUp")}
-              <span style={{ flex: 1, borderTop: `1px solid ${C("line")}` }} />
-            </div>
-            <p style={{ fontSize: 12, color: C("ash"), margin: "10px 0 12px" }}>{t("feed.caughtUpSub")}</p>
+              scroll — so the end of the stream is a door back to the bar. The
+              last row's own hairline already closes the stream, so the marker
+              is plain centered text — same as mobile. */}
+          <div style={{ textAlign: "center", padding: "14px 0 8px" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C("ash") }}>{t("feed.caughtUp")}</div>
+            <p style={{ fontSize: 12, color: C("ash"), margin: "6px 0 10px" }}>{t("feed.caughtUpSub")}</p>
             <Btn onClick={() => (onNavigate ? onNavigate("log") : (window.location.href = "/log"))}>{t("feed.goTrain")}</Btn>
           </div>
         </>

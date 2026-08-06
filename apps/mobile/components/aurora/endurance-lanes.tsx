@@ -190,15 +190,15 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
           </Pressable>
         )}
       </View>
-      {/* Full-bleed rail — negative margins the width of AuroraScreen's 16dp
+      {/* Full-bleed rail — negative margins the width of AuroraScreen's 12dp
           gutter pull the scroll clip to the true screen edge, with matching
           internal padding so resting tiles stay on the content column. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
-        style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 2 }}
+        style={{ marginHorizontal: -12 }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingVertical: 2 }}
       >
         <SummaryTile lane={lane} />
         <VolumeTile lane={lane} />

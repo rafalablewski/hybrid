@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, TextInput, FlatList, RefreshControl, Animated } from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
 import { Loading, F, fs, leading, tracking, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
@@ -8,7 +9,7 @@ import type { FeedItemView, CommentView, LiveAthlete } from "@hybrid/core";
 import { colors } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
-import { ACard, cardStack, RADIUS } from "./aurora/kit";
+import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
 import FeedCard from "./feed-card";
 import FeedLiveStrip from "./feed-live-strip";
 import { CosignInbox } from "./pr-attestation";
@@ -126,7 +127,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       {/* Standing alone the head is the HERO's; as a Today hub tab the head is
           Today's, handed down through `top`. */}
       {top && (
-        <View style={{ marginBottom: 16, marginTop: 16 }}>
+        <View style={{ marginBottom: 10, marginTop: 12 }}>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>{t("w.social.feedTitle")}</Text>
           <Text style={{ color: C.ash, fontSize: 13 }}>{t("w.social.feedSub")}</Text>
         </View>
@@ -138,8 +139,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       <CosignInbox units={units} />
 
       {/* FEED TABS — the ranked feed only earns trust while an unranked exit
-          exists beside it. */}
-      <View style={{ flexDirection: "row", gap: 6, marginBottom: 12 }}>
+          exists beside it. People-search rides the row's right side as a bare
+          icon (the SectionHead idiom) — a full search bar would spend a row of
+          the stream on a rare action. */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 }}>
         {(["forYou", "following"] as FeedTab[]).map((id) => (
           <Pressable key={id} onPress={() => setTab(id)}>
             <View style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: tab === id ? C.ash : C.line, backgroundColor: tab === id ? C.ink2 : "transparent" }}>
@@ -147,6 +150,14 @@ export default function FeedView({ top }: { top?: ReactNode }) {
             </View>
           </Pressable>
         ))}
+        <View style={{ marginLeft: "auto" }}>
+          <Pressable onPress={() => router.push("/discover")} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("w.social.searchPeople")}>
+            <Svg width={18} height={18} viewBox="0 0 18 18" fill="none">
+              <Circle cx={8} cy={8} r={5.5} stroke={C.ash} strokeWidth={1.6} />
+              <Path d="m12.4 12.4 3.4 3.4" stroke={C.ash} strokeWidth={1.6} strokeLinecap="round" />
+            </Svg>
+          </Pressable>
+        </View>
       </View>
 
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
@@ -167,11 +178,16 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         </ACard>
       ) : (
         <Pressable onPress={() => setComposing(true)}>
-          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10, marginBottom: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
             <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body }}>{t("w.social.sharePlaceholder")}</Text>
           </View>
         </Pressable>
       )}
+
+      {/* The stream boundary. The rows below are full-bleed timeline rows
+          (feed-card.tsx), each closed by an edge-to-edge hairline — the header
+          hands over with the same line so the first post is bounded top. */}
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -GUTTER }} />
       </Animated.View>
     </>
   );
@@ -195,9 +211,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   // the end of the stream is a door back to the bar, not more content.
   const footer =
     items.length === 0 ? null : (
-      <Animated.View style={[fade, { alignItems: "center", paddingTop: 20, paddingBottom: 8 }]}>
+      <Animated.View style={[fade, { alignItems: "center", paddingTop: 14, paddingBottom: 8 }]}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>{t("feed.caughtUp").toUpperCase()}</Text>
-        <Text style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 10, marginBottom: 12, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
+        <Text style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 6, marginBottom: 10, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
         <SButton label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>
     );
@@ -237,8 +253,12 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   // doesn't jump under the status bar for the remount's first frame.
   if (hub || top) {
     return (
-      <AuroraScreen scroll={false} hubTab={hub}>
-        {list({ ...navScroll, contentContainerStyle: { padding: 16, paddingBottom: padBottom } })}
+      // padding={0}: the FlatList's contentContainer owns ALL the screen
+      // padding — the shell must not pad on top of it, or the feed sits
+      // double-inset (16+16, the old bug) and the rows' full-bleed margins
+      // can't reach the physical edge.
+      <AuroraScreen scroll={false} hubTab={hub} padding={0}>
+        {list({ ...navScroll, contentContainerStyle: { paddingHorizontal: GUTTER, paddingTop: 16, paddingBottom: padBottom } })}
         {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
       </AuroraScreen>
     );
@@ -246,7 +266,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   return (
     <AuroraScreen
       hero={{ rank: "title", title: t("w.social.feedTitle"), meta: [t("w.social.feedSub")] }}
-      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: 18 }] })}
+      // GUTTER — the app's screen gutter the rows' full-bleed margins assume;
+      // the hub shape above uses the same value.
+      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER }] })}
     >
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </AuroraScreen>

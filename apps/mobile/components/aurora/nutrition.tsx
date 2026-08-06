@@ -1704,7 +1704,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -12 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 12 }}>
           {RECIPE_FILTERS.map((rf) => (
             <Pressable key={rf} onPress={() => setRecipeFilter(rf)} style={{ borderWidth: 1, borderColor: recipeFilter === rf ? C.lime : C.line, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: recipeFilter === rf ? C.lime : C.ink2 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: recipeFilter === rf ? C.onAccent : C.ash }}>{t(`w.recovery.nutrition.recipeFilter.${rf}`)}</Text>
@@ -1964,10 +1964,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               cards you swipe through rather than two more menu rows that hide
               their contents behind a chevron. Both are FULL-BLEED like every
               screen-level rail: negative margins the width of AuroraScreen's
-              16dp gutter pull the scroll clip to the true screen edge, with
+              12dp gutter pull the scroll clip to the true screen edge, with
               matching internal padding so resting cards stay on the column. */}
           <ASection flat title={t("w.recovery.nutrition.recipes")} meta={`${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`} action={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -12 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 12 }}>
             {RECIPES.map((r) => (
               <PressScale key={r.id} onPress={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" accessibilityLabel={r.name} style={{ width: recipeCardW, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: C.ink2 }}>
                 <RecipeHero tint={r.tint} emoji={r.emoji} height={96} fontSize={40} />
@@ -1985,7 +1985,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               through search; the rail puts the companies themselves on the
               screen. */}
           <ASection flat title={t("w.recovery.nutrition.verifiedFoods")} meta={`${t("w.explore.seeAll")} →`} action={() => setView("sources")} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={sourceCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={sourceCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -12 }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 12 }}>
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
               return (
