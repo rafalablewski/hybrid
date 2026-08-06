@@ -20,6 +20,7 @@ import {
   type LoggedSession,
 } from "./engines";
 import { relativeTime } from "./activity";
+import { prDetail, sessionDetail, postDetail, type FeedDetail } from "./feed-card";
 
 // ---------------------------------------------------------------- handles ----
 export const HANDLE_MIN = 3;
@@ -142,6 +143,13 @@ export interface FeedItem {
   /** optional headline metric (e.g. PR e1RM, session volume kg). */
   metric?: number;
   accent: FeedAccent;
+  /**
+   * The CARD payload — moment class, archetype, hero figure, tier, top sets and
+   * the device-true stat row (see feed-card.ts). Both clients render from this
+   * one shape, so a card can never drift between web and mobile. Optional: a
+   * client reading an older response still renders `title`/`chips` as text.
+   */
+  detail?: FeedDetail;
 }
 
 export interface FeedOptions {
@@ -231,6 +239,7 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         when: relativeTime(at, now),
         metric: vol || undefined,
         accent: "lime",
+        detail: sessionDetail(s),
         _sort: sortAt,
       });
 
@@ -258,6 +267,10 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
           when: relativeTime(at, now),
           metric: top.topLoad,
           accent: "amber",
+          // Tier 1 is EARNED here, not claimed: a matched device recording
+          // corroborates the session the lift was set in (attestation.ts).
+          // Tier 2 needs a witness and is resolved server-side per viewer.
+          detail: prDetail({ ...top, count: prs.length }, { device: !!s.device }),
           _sort: sortAt + 1,
         });
       }
@@ -311,6 +324,7 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         when: relativeTime(post.at, now),
         metric,
         accent,
+        detail: postDetail(post.kind, d),
         _sort: post.at + (author.closeFriend ? boostMs : 0),
       });
     }
