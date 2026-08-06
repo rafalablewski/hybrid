@@ -11,6 +11,7 @@
  *   • any handler may return `{ error }` instead of its success body;
  *   • list/profile endpoints add `unavailable` when a table isn't migrated yet.
  */
+import type { FitnessLevel, BadgeAccent } from "./engines/fitness-level";
 import type { FeedReason } from "./feed-rank";
 import type { LiveAthlete } from "./feed-live";
 import type {
@@ -135,6 +136,18 @@ export interface PublicProfileResponse extends Degradable, ApiError {
   followState: FollowState;
   canViewResults: boolean;
   stats: ProfileStats | null;
+  /**
+   * The athlete's earned training level, as ONE WORD and the accent to paint it
+   * in — never the ratio, never the evidence behind it.
+   *
+   * PR loads are already public tiles on a profile, so shipping "2.20 ×
+   * bodyweight" beside them would let any viewer divide and recover the
+   * athlete's body mass. Null whenever the badge has not been earned (see
+   * badgeFor) AND whenever the viewer cannot see results at all, so a private
+   * account's level never leaves the server rather than being filtered in a
+   * client that could simply not filter it.
+   */
+  fitnessLevel: { level: FitnessLevel; accent: BadgeAccent } | null;
 }
 
 /** Own editable profile (GET/PUT /api/social/profile). */

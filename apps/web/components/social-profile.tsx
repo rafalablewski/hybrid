@@ -2,7 +2,7 @@
 
 import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
-import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
+import { normalizeHandle, isValidHandle, AVATAR_PRESETS, LEVEL_KEY } from "@hybrid/core";
 import type { PublicProfileResponse, OwnProfileResponse, CompareResponse, CompareResult, SharedLift, MutationResult } from "@hybrid/core";
 import { useDialog } from "../lib/use-dialog";
 import { useLang } from "@/lib/i18n";
@@ -12,6 +12,25 @@ import {
 } from "./social-ui";
 
 interface Stats { totalSessions: number; totalVolumeKg: number; currentStreak: number; topLifts: { lift: string; topLoad: number }[] }
+
+/** The training-level badge on someone else's profile. Same palette ramp as the
+ *  owner's own chip in aurora/profile.tsx — ash and chalk for the lower tiers,
+ *  the lime accent-text tone for advanced, gold reserved for elite. */
+function LevelChip({ level }: { level: NonNullable<PublicProfileResponse["fitnessLevel"]> }) {
+  const { t } = useLang();
+  const ink = level.accent === "gold" ? C("gold")
+    : level.accent === "lime" ? accentText("lime")
+    : level.accent === "chalk" ? C("chalk") : C("ash");
+  return (
+    <span style={{
+      fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: ".08em",
+      textTransform: "uppercase", border: `1px solid ${ink}`, color: ink,
+      borderRadius: 999, padding: "3px 8px", whiteSpace: "nowrap",
+    }}>
+      {t(LEVEL_KEY[level.level])}
+    </span>
+  );
+}
 interface MyProfile { handle: string; displayName: string | null; bio: string | null; visibility: string; avatarUrl: string | null }
 
 function StatRow({ stats }: { stats: Stats | null }) {
@@ -73,6 +92,12 @@ export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: ()
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C("chalk") }}>{p.displayName || `@${p.handle}`}</span>
                   {p.coachVerified && <VerifiedTick />}
+                  {/* The earned level, as one word. Server-side it sits behind
+                      the same privacy gate as the stats, so a private account's
+                      level never reaches this client at all — and the ratio
+                      behind it never travels, because the PR tiles below are
+                      public and a viewer could divide one by the other. */}
+                  {data?.fitnessLevel && <LevelChip level={data.fitnessLevel} />}
                 </div>
                 <div style={{ color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 13 }}>@{p.handle}</div>
               </div>

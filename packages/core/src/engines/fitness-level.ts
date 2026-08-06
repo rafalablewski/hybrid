@@ -580,6 +580,11 @@ export function nextThreshold(estimate: FitnessLevelEstimate | null | undefined)
  * The ratio never travels with it. PR loads are already public on the profile,
  * so publishing "2.20 × bodyweight" beside them would let anyone divide and
  * recover the athlete's body mass.
+ *
+ * "A picture" means BOTH: at least two independent results, AND the one that
+ * actually set the level must be repeatable. Counting rows alone was not enough
+ * — two disciplines holding one effort each is two rows and still two flukes,
+ * which is exactly the reading the endurance gates exist to distrust.
  */
 export const BADGE_MIN_EVIDENCE = 2;
 
@@ -604,6 +609,10 @@ export interface LevelBadge {
 export function badgeFor(estimate: FitnessLevelEstimate | null | undefined): LevelBadge | null {
   const level = displayLevel(estimate);
   if (!level || !estimate || estimate.evidence.length < BADGE_MIN_EVIDENCE) return null;
+  // The result that SET the level has to be one the athlete can repeat. Only
+  // endurance rows carry `confirmed` (a lift has no second-best rule), so an
+  // undefined value means "not applicable", not "unconfirmed".
+  if (estimate.evidence[0]?.confirmed === false) return null;
   return { level, key: LEVEL_KEY[level], accent: BADGE_ACCENT[level] };
 }
 

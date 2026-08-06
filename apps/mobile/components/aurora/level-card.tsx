@@ -161,6 +161,15 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
         </Text>
       )}
 
+      {/* A single effort is read but never trusted the way a repeated one is —
+          and since it is also why the public badge is absent, saying so is the
+          difference between a missing badge and a broken one. */}
+      {level && estimate.evidence[0]?.confirmed === false && (
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption, "relaxed"), color: C.ash, marginTop: 10 }}>
+          {t("w.analyze.vol.levelUnconfirmed")}
+        </Text>
+      )}
+
       {/* The card grows by one line HERE and only here — the estimate reading
           differently from what the athlete told us. Theirs still wins inside the
           volume model; this reports the disagreement rather than resolving it. */}

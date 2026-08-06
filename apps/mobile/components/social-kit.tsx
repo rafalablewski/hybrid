@@ -3,10 +3,16 @@ import { View, Text, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { F, PressScale as Pressable, Loading } from "../lib/ui";
-import type { PublicProfileResponse, CompareResult, SharedLift } from "@hybrid/core";
+import { LEVEL_KEY } from "@hybrid/core";
+import type { PublicProfileResponse, CompareResult, SharedLift, BadgeAccent } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
 import { useConfirm } from "./aurora/confirm";
 import Sheet from "./aurora/sheet";
+
+/** The level chip's ink — the palette's existing ramp, no new colours. Mirrors
+ *  badgeInk in aurora/profile.tsx and LevelChip on web. */
+const levelInk = (C: ReturnType<typeof useTheme>["palette"], accent: BadgeAccent): string =>
+  accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
 
 export function initials(name?: string | null, handle?: string) {
   const s = (name || handle || "?").trim();
@@ -97,6 +103,16 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                   <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`} {p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}>✓</Text> : null}</Text>
+                    {/* The earned level, as one word — gated server-side by the
+                        same privacy rule as the stats, and never carrying the
+                        ratio behind it. Mirrors web's LevelChip. */}
+                    {data?.fitnessLevel ? (
+                      <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: levelInk(C, data.fitnessLevel.accent), borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, marginTop: 6 }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: 9, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", color: levelInk(C, data.fitnessLevel.accent) }}>
+                          {t(LEVEL_KEY[data.fitnessLevel.level])}
+                        </Text>
+                      </View>
+                    ) : null}
                     <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{p.handle}</Text>
                   </View>
                 </View>

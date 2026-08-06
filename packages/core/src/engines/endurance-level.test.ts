@@ -5,7 +5,7 @@ import {
   ENDURANCE_STANDARDS, TRIATHLON_CLASSES, TIER_POINTS, ELITE_SCORE,
   type EnduranceDiscipline,
 } from "./endurance-level";
-import { estimateFitnessLevel } from "./fitness-level";
+import { estimateFitnessLevel, badgeFor } from "./fitness-level";
 import type { LoggedSession, CardioBlock } from "./session";
 
 const NOW = new Date("2026-06-16T12:00:00.000Z").getTime();
@@ -316,5 +316,35 @@ describe("the endurance half, through the estimate", () => {
       else expect(female[3]!).toBeGreaterThan(male[3]!);
     }
     expect(standardFor("running")!.thresholds).toEqual([360, 300, 250, 200]);
+  });
+});
+
+describe("the public badge is backed by something repeatable", () => {
+  const run = (d: number, m: number) => S(`r${d}`, d, [cardio({ discipline: "running", name: "Run", distance: 10, minutes: m })]);
+  const swim = (d: number, m: number) => S(`s${d}`, d, [cardio({ discipline: "swimming", name: "Swim", distance: 1.5, minutes: m })]);
+
+  it("withholds the badge when two disciplines each hold ONE effort", () => {
+    // Two evidence rows, and two flukes. Counting rows alone would have called
+    // this a picture; it is two single efforts, which is exactly the reading the
+    // gates exist to distrust.
+    const e = estimateFitnessLevel([run(3, 31), swim(9, 22)], { now: NOW });
+    expect(e.evidence.length).toBeGreaterThanOrEqual(2);
+    expect(e.evidence[0]!.confirmed).toBe(false);
+    expect(badgeFor(e)).toBeNull();
+  });
+
+  it("grants it once the level-setting discipline repeats", () => {
+    const e = estimateFitnessLevel([run(3, 31), run(9, 32), swim(11, 22)], { now: NOW });
+    expect(e.evidence[0]!.confirmed).toBe(true);
+    expect(badgeFor(e)).not.toBeNull();
+  });
+
+  it("still refuses when only the SUPPORTING discipline repeats", () => {
+    // The swims repeat, but the run that sets the level does not — and it is the
+    // level-setting result that has to be repeatable, not any result.
+    const e = estimateFitnessLevel([run(3, 31), swim(9, 22), swim(15, 23)], { now: NOW });
+    expect(e.evidence[0]!.discipline).toBe("running");
+    expect(e.evidence[0]!.confirmed).toBe(false);
+    expect(badgeFor(e)).toBeNull();
   });
 });

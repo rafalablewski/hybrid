@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { relationTo, canViewResults, profileStats, type Visibility } from "@hybrid/core";
+import { relationTo, canViewResults, profileStats, estimateFitnessLevel, badgeFor, type Visibility } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import { tableMissing, edgesFor, allSessionsFor, blockedIdsFor } from "@/lib/social";
@@ -32,7 +32,26 @@ export async function GET(request: Request, { params }: { params: Promise<{ hand
     const myEdge = edges.find((e) => e.followerId === me.id && e.followeeId === profile.userId);
     const isCoach = profile.user.role === "COACH";
 
-    const stats = canView ? profileStats(await allSessionsFor(profile.userId)) : null;
+    // The sessions are fetched once and read twice — the public stats, and the
+    // earned level badge. Both sit behind the SAME `canView` gate, so a private
+    // account's level never leaves the server rather than being filtered by a
+    // client that could simply choose not to filter it.
+    const sessions = canView ? await allSessionsFor(profile.userId) : null;
+    const stats = sessions ? profileStats(sessions) : null;
+
+    // Body mass makes the strength half readable; without it the estimate still
+    // scores every endurance discipline, so a runner or swimmer keeps a badge.
+    const bw = sessions
+      ? (await prisma.bodyMetric.findFirst({
+          where: { userId: profile.userId, weightKg: { not: null } },
+          orderBy: { measuredAt: "desc" },
+          select: { weightKg: true },
+        }))?.weightKg ?? null
+      : null;
+    // ONE WORD and its accent. The ratio never travels — PR loads are already
+    // public tiles, and publishing the ratio beside them would let any viewer
+    // divide and recover the athlete's body mass.
+    const badge = sessions ? badgeFor(estimateFitnessLevel(sessions, { bodyweightKg: bw })) : null;
 
     return NextResponse.json({
       profile: {
@@ -50,6 +69,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ hand
       followState: myEdge ? (myEdge.status === "pending" ? "requested" : myEdge.closeFriend ? "close" : "following") : "none",
       canViewResults: canView,
       stats,
+      fitnessLevel: badge ? { level: badge.level, accent: badge.accent } : null,
     });
   } catch (e) {
     if (tableMissing(e)) return NextResponse.json({ error: "not found", unavailable: true }, { status: 404 });
