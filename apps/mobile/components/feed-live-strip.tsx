@@ -5,7 +5,7 @@ import { F, serifIf, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { Avatar } from "./social-kit";
-import { RADIUS } from "./aurora/kit";
+import { GUTTER, RADIUS } from "./aurora/kit";
 
 /**
  * NOW TRAINING (mobile) — twin of apps/web/components/feed-live-strip.tsx.
@@ -46,14 +46,14 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
       </View>
 
       {/* FULL-BLEED per the house rule: negative margins the width of the
-          FEED's 12dp gutter (tighter than the app default — see feed-view)
-          pull the scroll clip to the true screen edge, with matching internal
-          padding so resting avatars still line up with the content column. */}
+          screen gutter pull the scroll clip to the true screen edge, with
+          matching internal padding so resting avatars still line up with the
+          content column. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -12 }}
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 14, paddingBottom: 4 }}
+        style={{ marginHorizontal: -GUTTER }}
+        contentContainerStyle={{ paddingHorizontal: GUTTER, gap: 14, paddingBottom: 4 }}
       >
         {live.map((l) => {
           const ring = txt(C, l.accent === "blue" ? colors.blue : colors.lime);

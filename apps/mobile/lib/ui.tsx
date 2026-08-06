@@ -387,7 +387,7 @@ export function useScreenBottomPad(): number {
  * `Screen` LIVED HERE and is gone: use AuroraScreen from components/aurora/kit.
  *
  * It was a near-clone of that shell — same ambient field, same
- * KeyboardAvoidingView, same 16dp scroller with nav-collapse and pull-to-refresh,
+ * KeyboardAvoidingView, same gutter-padded scroller with nav-collapse and pull-to-refresh,
  * same SafeAreaView-vs-measured-insets split for a hub tab — minus the screen
  * entrance animation, so the four screens still on it cut in where every other
  * screen faded. AuroraScreen gained an explicit `hubTab` prop to cover the one

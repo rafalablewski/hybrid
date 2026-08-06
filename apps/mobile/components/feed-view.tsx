@@ -9,7 +9,7 @@ import type { FeedItemView, CommentView, LiveAthlete } from "@hybrid/core";
 import { colors } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
-import { ACard, cardStack, RADIUS } from "./aurora/kit";
+import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
 import FeedCard from "./feed-card";
 import FeedLiveStrip from "./feed-live-strip";
 import { CosignInbox } from "./pr-attestation";
@@ -122,10 +122,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
 
   const header = (
     <>
-      {/* The hub chrome hands over from Today, which runs the app's 16 gutter —
-          the +4 keeps it pixel-stable across the tab switch while the feed's
-          own content runs the tighter 12. */}
-      {top != null && <View style={{ paddingHorizontal: 4 }}>{top}</View>}
+      {top}
       <Animated.View style={fade} onLayout={startHubFade}>
       {/* Standing alone the head is the HERO's; as a Today hub tab the head is
           Today's, handed down through `top`. */}
@@ -190,7 +187,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       {/* The stream boundary. The rows below are full-bleed timeline rows
           (feed-card.tsx), each closed by an edge-to-edge hairline — the header
           hands over with the same line so the first post is bounded top. */}
-      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -12 }} />
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -GUTTER }} />
       </Animated.View>
     </>
   );
@@ -256,10 +253,12 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   // doesn't jump under the status bar for the remount's first frame.
   if (hub || top) {
     return (
-      <AuroraScreen scroll={false} hubTab={hub}>
-        {/* 12, not the app's 16: the feed runs a tighter side gutter (the rows'
-            full-bleed margins in feed-card.tsx match it). */}
-        {list({ ...navScroll, contentContainerStyle: { paddingHorizontal: 12, paddingTop: 16, paddingBottom: padBottom } })}
+      // padding={0}: the FlatList's contentContainer owns ALL the screen
+      // padding — the shell must not pad on top of it, or the feed sits
+      // double-inset (16+16, the old bug) and the rows' full-bleed margins
+      // can't reach the physical edge.
+      <AuroraScreen scroll={false} hubTab={hub} padding={0}>
+        {list({ ...navScroll, contentContainerStyle: { paddingHorizontal: GUTTER, paddingTop: 16, paddingBottom: padBottom } })}
         {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
       </AuroraScreen>
     );
@@ -267,9 +266,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   return (
     <AuroraScreen
       hero={{ rank: "title", title: t("w.social.feedTitle"), meta: [t("w.social.feedSub")] }}
-      // 12 — the feed's tight side gutter the rows' full-bleed margins assume;
-      // the hub shape above uses the same 12.
-      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: 12 }] })}
+      // GUTTER — the app's screen gutter the rows' full-bleed margins assume;
+      // the hub shape above uses the same value.
+      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER }] })}
     >
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </AuroraScreen>

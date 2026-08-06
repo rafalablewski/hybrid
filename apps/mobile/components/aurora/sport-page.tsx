@@ -295,8 +295,8 @@ export default function AuroraSportPage() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={{ marginHorizontal: -16 }}
-                contentContainerStyle={{ paddingHorizontal: 16, gap: space.md }}
+                style={{ marginHorizontal: -12 }}
+                contentContainerStyle={{ paddingHorizontal: 12, gap: space.md }}
               >
                 {m.bests.map((b) => (
                   <View key={b.id} style={{ width: 176, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: space.lg }}>

@@ -132,7 +132,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
   const { t } = useLang();
   return (
     // Full-bleed chip rail — clips at the screen edge, rests on the column.
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingBottom: 4, paddingHorizontal: 16 }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -12 }} contentContainerStyle={{ gap: 8, paddingBottom: 4, paddingHorizontal: 12 }}>
       {HISTORY_VIEWS.map((v) => (
         <AChip key={v.id} label={t(v.labelKey)} selected={v.id === view} onPress={() => onChange(v.id)} />
       ))}

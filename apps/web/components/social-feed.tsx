@@ -169,11 +169,7 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
   );
 
   return (
-    // At mobile widths the feed runs a 12px side inset — tighter than the
-    // shell's --page-pad-x — so the column pulls out by the difference and
-    // every module below aligns at 12 (the rows then bleed the remaining 12
-    // to the true edge). Desktop keeps the plain 600px column.
-    <div style={{ maxWidth: 600, margin: isMobile ? "0 calc(12px - var(--page-pad-x, 16px))" : undefined }}>
+    <div style={{ maxWidth: 600 }}>
       {/* Verified-record witness requests addressed to ME. A person is waiting
           on this answer, so it outranks every piece of content below it — and
           every request is also an invite (core/attestation.ts). */}
@@ -207,7 +203,7 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           (feed-card.tsx), each closed by a hairline — the header hands over
           with the same line so the first post is bounded top. At mobile widths
           it bleeds with the rows so the line runs edge to edge. */}
-      <div style={{ height: 1, background: C("line"), margin: isMobile ? "0 -12px" : 0 }} />
+      <div style={{ height: 1, background: C("line"), margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 12px))" : 0 }} />
 
       {items.length === 0 ? (
         <EmptyState

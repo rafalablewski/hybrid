@@ -169,8 +169,8 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
         onContentSizeChange={(w) => setRail((r) => ({ ...r, content: w }))}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
-        style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: 16 }}
+        style={{ marginHorizontal: -12 }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: 12 }}
       >
         {group.goals.map((g) => (
           <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />

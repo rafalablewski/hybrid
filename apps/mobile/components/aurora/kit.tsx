@@ -33,6 +33,13 @@ import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
  */
 export const RADIUS = { mark: 3, inner: 12, field: 16, card: 28, pill: 999 } as const;
 
+/** The screen's side gutter, in dp — matches the web app-shell's mobile
+ *  --page-pad-x (12px) so content fills the same share of the screen on both
+ *  clients. Full-bleed rails bleed by exactly this (see the slider rule in
+ *  CLAUDE.md); HERO.gutter.edge in core carries the same value for the hero
+ *  system. Vertical rhythm is separate (AuroraScreen's `padding`, 16). */
+export const GUTTER = 12;
+
 /**
  * The gap below a card that is one of a VERTICAL RUN.
  *
@@ -58,9 +65,11 @@ export function AuroraScreen({
   scroller,
   scroll = true,
   center = false,
-  // 16dp side gutter — matches the web app-shell's mobile gutter (16px) so a
-  // card fills the same share of the screen on both clients. Wider cards, less
-  // dead space at the edges.
+  // Vertical rhythm only — the side gutter is the kit's GUTTER (12dp), applied
+  // below so the two never drift apart per-screen. `padding={0}` opts the shell
+  // out of BOTH (for a screen whose own scroller owns the padding, e.g. the
+  // feed's FlatList — the shell padding on top of it was the old double-inset
+  // bug).
   padding = 16,
   refreshing,
   onRefresh,
@@ -180,7 +189,7 @@ function AuroraPlainScreen({
       // Clear the floating Aurora pill nav so the last content row never hides
       // under the bar — derived from the real bar height + safe-area inset (one
       // source of truth in lib/layout), not a hand-copied magic number.
-      contentContainerStyle={{ padding, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
+      contentContainerStyle={{ padding, paddingHorizontal: padding ? GUTTER : 0, paddingBottom: auroraScrollClearance(insets.bottom), flexGrow: center ? 1 : undefined, justifyContent: center ? "center" : undefined }}
       {...navScroll}
       // The nav pill owns its own scroll listener; chain ours after it rather
       // than replacing it, so the pill still hides on scroll.
@@ -193,7 +202,7 @@ function AuroraPlainScreen({
       {inner}
     </ScrollView>
   ) : (
-    <View style={{ flex: 1, padding, justifyContent: center ? "center" : "flex-start" }}>{top}{inner}</View>
+    <View style={{ flex: 1, padding, paddingHorizontal: padding ? GUTTER : 0, justifyContent: center ? "center" : "flex-start" }}>{top}{inner}</View>
   );
   const shell = (
     <>

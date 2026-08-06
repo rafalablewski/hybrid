@@ -238,7 +238,7 @@ function Full({ top }: { top?: ReactNode }) {
       <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: hasData ? C.chalk : C.ash, marginTop: top ? 6 : 4, lineHeight: leading(fs.body) }}>{verdictLine}</Text>
       {(phaseBlock || macro?.eventInWeeks != null) && (
         // Full-bleed chip rail — clips at the screen edge, rests on the column.
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -12 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 12 }}>
           {phaseBlock && <MetaPill C={C} dot={C.lime}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{phaseBlock.label}</Text> {t("w.home.today.phase")}</MetaPill>}
           {macro?.eventInWeeks != null && <MetaPill C={C} icon={<AuroraIcon name="calendar-event" size={13} color={C.chalk} />}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</MetaPill>}
         </ScrollView>

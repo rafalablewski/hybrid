@@ -9,14 +9,15 @@ import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
 import { MetaLine } from "./meta";
 import { ArrowGlyph } from "./cta-label";
+import { GUTTER } from "./kit";
 
 // The CONNECT feed — post cards (avatar header, prose body, stat pills ·
 // kudos/comments/share), the latest few of your circle's activity. `horizontal`
 // lays them in a left/right slider (fixed-width cards); otherwise full-width
 // stacked. Renders nothing when the feed is empty. Mirrors the web feed-preview.
-// AuroraScreen's 16dp side gutter (kit.tsx) — a full-bleed rail pulls itself
-// back out by exactly that so its scroll clip reaches the true screen edge.
-const SCREEN_PAD = 16;
+// AuroraScreen's side gutter (GUTTER, kit.tsx) — a full-bleed rail pulls
+// itself back out by exactly that so its scroll clip reaches the true edge.
+const SCREEN_PAD = GUTTER;
 
 // `bleed` (horizontal only): run the slider FULL-BLEED — negative margins the
 // width of the Screen padding pull the scroll clip out to the physical edge

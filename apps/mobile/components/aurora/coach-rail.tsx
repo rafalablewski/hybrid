@@ -7,6 +7,7 @@ import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../..
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
+import { GUTTER } from "./kit";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
 // the web rail: live marketplace (/api/coaches) with the shared placeholder
@@ -41,9 +42,9 @@ function Stat({ C, value, label, first, star }: { C: Palette; value: string; lab
 // `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
 // parent can supply its own section head instead — which is how Today mounts it.
 // The built-in header is kept for any caller that has no head of its own.
-// AuroraScreen's 16dp side gutter (kit.tsx) — a full-bleed rail pulls itself
-// back out by exactly that so its scroll clip reaches the true screen edge.
-const SCREEN_PAD = 16;
+// AuroraScreen's side gutter (GUTTER, kit.tsx) — a full-bleed rail pulls
+// itself back out by exactly that so its scroll clip reaches the true edge.
+const SCREEN_PAD = GUTTER;
 
 // `bleed` lets the slider run FULL-BLEED: negative margins the width of the
 // Screen padding pull the scroll clip out to the physical edge (with matching

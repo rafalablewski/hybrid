@@ -28,7 +28,7 @@ import HistoryStrip from "./history-strip";
  * have.
  *
  * Same full-bleed rail idiom as the exercise widget and the endurance lanes:
- * negative margins the width of AuroraScreen's 16dp gutter, matching inner
+ * negative margins the width of AuroraScreen's 12dp gutter, matching inner
  * padding, so tiles slide under the true screen edge and resting tiles still
  * line up with the content column.
  *
@@ -78,8 +78,8 @@ export default function AuroraOtherSports({
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
-        style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 2 }}
+        style={{ marginHorizontal: -12 }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingVertical: 2 }}
       >
         {shown.map((lane) => <SportTile key={lane.sport} lane={lane} onOpen={onOpen} />)}
         {/* The rail's exit — a trailing ghost tile (the exercises rail's ＋ card

@@ -17,7 +17,7 @@ import { F, fs, leading, tracking, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { Avatar } from "./social-kit";
-import { RADIUS } from "./aurora/kit";
+import { GUTTER, RADIUS } from "./aurora/kit";
 
 /**
  * THE FEED ROW (mobile) — twin of apps/web/components/feed-card.tsx. Both
@@ -26,7 +26,7 @@ import { RADIUS } from "./aurora/kit";
  * implementation with two renderers.
  *
  * A post is a full-width ROW, not a card: no surface, no border radius, just a
- * hairline under each post, and the row bleeds under AuroraScreen's 16dp gutter
+ * hairline under each post, and the row bleeds under AuroraScreen's 12dp gutter
  * so the divider runs edge to edge (the timeline treatment). Moment still
  * drives weight — a p0 record gets the display headline and the big figure —
  * but the container itself never changes.
@@ -37,11 +37,9 @@ import { RADIUS } from "./aurora/kit";
  * watch signature.
  */
 
-/** The FEED's side gutter — deliberately tighter than AuroraScreen's default
- *  16 so a timeline of rows wastes no room. The list's content padding matches
- *  (feed-view.tsx), and the row bleeds by the same amount so the divider runs
- *  under the physical screen edge. Mirrors web's 12px feed inset. */
-const GUTTER = 12;
+// The row bleeds by the kit's GUTTER — the same value the list's content
+// padding uses (feed-view.tsx) — so the divider runs under the physical
+// screen edge with content still on the column.
 
 export function WatchGlyph({ color }: { color: string }) {
   return (

@@ -102,7 +102,7 @@ const PRS_FADE = 24;
 const PRS_GAP = 14;
 /** AuroraScreen's gutter — what the rail bleeds by, so cards slide under the
  *  physical screen edge. Mirrors web's --page-pad-x. */
-const PRS_BLEED = 16;
+const PRS_BLEED = 12;
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -565,8 +565,8 @@ export default function AuroraWeekVerdict({
               // bottom padding while this is open — the panel's own padding is
               // the card's bottom now.
               backgroundColor: C.ink, borderTopWidth: 1, borderTopColor: C.line,
-              marginHorizontal: -16, marginTop: 12,
-              paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16,
+              marginHorizontal: -12, marginTop: 12,
+              paddingHorizontal: 12, paddingTop: 14, paddingBottom: 16,
               borderBottomLeftRadius: 27, borderBottomRightRadius: 27,
             }}>
               <MetricDetail

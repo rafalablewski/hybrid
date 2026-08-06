@@ -827,7 +827,7 @@ export default function AuroraHome() {
             {/* the chooser as a snap slider — the exercise-widget rail's idiom:
                 one card ≈ 72% wide so the next path peeks in from the right,
                 FULL-BLEED like every screen-level rail: negative margins the
-                width of AuroraScreen's 16dp gutter pull the scroll clip to the
+                width of AuroraScreen's 12dp gutter pull the scroll clip to the
                 true screen edge, matching internal padding keeps resting cards
                 on the column. */}
             <ScrollView
@@ -835,8 +835,8 @@ export default function AuroraHome() {
               showsHorizontalScrollIndicator={false}
               snapToInterval={structW + 12}
               decelerationRate="fast"
-              style={{ marginHorizontal: -16 }}
-              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 16 }}
+              style={{ marginHorizontal: -12 }}
+              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 12 }}
             >
               <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/plans")} />
               <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />

@@ -118,7 +118,7 @@ export default function ExerciseWidgetRail({
           {t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
         </Text>
       </View>
-      {/* Full-bleed rail — negative margins the width of AuroraScreen's 16dp
+      {/* Full-bleed rail — negative margins the width of AuroraScreen's 12dp
           gutter pull the scroll clip to the true screen edge, with matching
           internal padding so resting cards stay on the column. Cards wear the
           cluster's ONE TILE SKELETON (consistency wave 2): name row → figure →
@@ -129,8 +129,8 @@ export default function ExerciseWidgetRail({
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
-        style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ gap: 8, paddingVertical: 2, paddingHorizontal: 16 }}
+        style={{ marginHorizontal: -12 }}
+        contentContainerStyle={{ gap: 8, paddingVertical: 2, paddingHorizontal: 12 }}
       >
         {cards.map((card) => {
           const h = headline(card, units, t);
