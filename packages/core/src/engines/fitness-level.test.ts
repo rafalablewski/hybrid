@@ -7,6 +7,10 @@ import {
   LEVEL_BASIS_KEY,
   FITNESS_LEVELS,
   fiveKmEquivalentSec,
+  displayLevel,
+  nextThreshold,
+  badgeFor,
+  LEVEL_KEY,
 } from "./fitness-level";
 import type { LoggedSession } from "./session";
 
@@ -212,14 +216,195 @@ describe("the endurance half", () => {
     expect(FITNESS_LEVELS.indexOf(veteran.level)).toBeGreaterThanOrEqual(FITNESS_LEVELS.indexOf(peak.level));
   });
 
-  it("keeps the best run, not the most recent one", () => {
+  it("lets the SECOND best effort speak, so one good day cannot buy a tier", () => {
+    // Two runs: a 21:00 and a 30:00. The fast one is the athlete's PR and stays
+    // their PR — it just does not set the level, because a fluke happens once
+    // and a capacity happens twice. See engines/endurance-level.ts, gate 1.
     const r = estimateFitnessLevel([run(5, 30, 3), run(5, 21, 60)], { now: NOW });
-    expect(r.evidence[0]!.equivSec).toBe(21 * 60);
+    expect(r.evidence[0]!.equivSec).toBe(30 * 60);
+    expect(r.evidence[0]!.confirmed).toBe(true);
+
+    // With only ONE effort it still speaks — refusing to read an athlete's only
+    // honest race would be worse — but it is marked unconfirmed.
+    const single = estimateFitnessLevel([run(5, 21, 60)], { now: NOW });
+    expect(single.evidence[0]!.equivSec).toBe(21 * 60);
+    expect(single.evidence[0]!.confirmed).toBe(false);
   });
 
   it("every basis has a line of copy naming it", () => {
     for (const b of ["strength", "endurance", "both", "none"] as const) {
       expect(LEVEL_BASIS_KEY[b].startsWith("w.analyze.vol.")).toBe(true);
     }
+  });
+});
+
+/**
+ * THE TWO ATHLETES THE HALVES EXIST FOR.
+ *
+ * A specialist in one discipline and a novice in the other is not an edge case,
+ * it is most of the customer base. These two lock in both halves of the answer:
+ * the headline is the BEST result (a weak run must never drag a strong lifter
+ * down), and the training age handed to the volume model is the STRENGTH read
+ * (a fast run must never inflate a light lifter's set counts).
+ */
+describe("the specialist athletes", () => {
+  // 90 kg bodybuilder: advanced on every lift, jogs 5 km in 33:00 (6:36/km,
+  // slower than the 6:00/km novice bar), rides and swims a little.
+  const bodybuilder: LoggedSession[] = [
+    lift("Back Squat", 175, 4, 10),
+    lift("Deadlift", 200, 3, 8),
+    lift("Bench Press", 130, 4, 10),
+    run(5, 33, 6),
+    { id: "ride", title: "Ride", startedAt: daysAgo(5), blocks: [{ kind: "cardio", name: "Cycling", discipline: "cycling", distance: 40, minutes: 80 }] },
+    { id: "swim", title: "Swim", startedAt: daysAgo(4), blocks: [{ kind: "cardio", name: "Swim", discipline: "swimming", distance: 1.5, minutes: 40 }] },
+  ];
+
+  // 60 kg runner: a 1:08 half marathon, and lifting that never goes heavy.
+  const runner: LoggedSession[] = [
+    run(21.1, 68, 7),
+    lift("Back Squat", 50, 8, 5),
+    lift("Bench Press", 40, 8, 5),
+    lift("Deadlift", 70, 8, 3),
+  ];
+
+  it("a weak run never drags a strong lifter down", () => {
+    const r = estimateFitnessLevel(bodybuilder, { bodyweightKg: 90, sex: "M", ageYears: 30, now: NOW });
+    expect(r.level).toBe("advanced");
+    expect(r.strengthLevel).toBe("advanced");
+    // The jog is scored honestly and simply does not win.
+    expect(r.enduranceLevel).toBe("untrained");
+    expect(r.evidence[0]!.kind).toBe("strength");
+    // The volume model gets the strength read, which is what it always wanted.
+    expect(resolveExperience(undefined, r).experience).toBe("advanced");
+  });
+
+  it("reads the swim but still refuses the powerless bike", () => {
+    const r = estimateFitnessLevel(bodybuilder, { bodyweightKg: 90, now: NOW });
+    const endurance = r.evidence.filter((e) => e.kind === "endurance");
+    const disciplines = endurance.map((e) => e.discipline);
+    // The swim is admitted now — pool freestyle has a real standard behind it.
+    expect(disciplines).toContain("swimming");
+    expect(disciplines).toContain("running");
+    // The ride is not: without a power meter there is nothing scoreable on it,
+    // and a table over raw km/h would be a fiction.
+    expect(disciplines).not.toContain("cycling");
+    expect(r.basis).toBe("both");
+    // And neither weak effort moves the headline, which is the whole point.
+    expect(r.level).toBe("advanced");
+  });
+
+  it("light lifting never drags a fast runner down", () => {
+    const r = estimateFitnessLevel(runner, { bodyweightKg: 60, sex: "M", ageYears: 28, now: NOW });
+    expect(r.level).toBe("elite");
+    expect(r.enduranceLevel).toBe("elite");
+    expect(r.evidence[0]!.kind).toBe("endurance");
+  });
+
+  it("a fast run never inflates the lifting volume the runner is prescribed", () => {
+    const r = estimateFitnessLevel(runner, { bodyweightKg: 60, sex: "M", ageYears: 28, now: NOW });
+    // The headline is elite. The BAR says novice, and the bar is what sets MEV/MRV.
+    expect(r.strengthLevel).toBe("novice");
+    expect(resolveExperience(undefined, r).experience).toBe("beginner");
+    expect(resolveExperience(undefined, r).experience).not.toBe(LEVEL_TO_EXPERIENCE[r.level]);
+  });
+
+  it("a runner who never lifts gets NO derived training age at all", () => {
+    const pure = estimateFitnessLevel([run(21.1, 68, 7)], { bodyweightKg: 60, now: NOW });
+    expect(pure.level).toBe("elite");
+    expect(pure.strengthLevel).toBeNull();
+    // Not "advanced", and not a cautious default either — nothing. The caller
+    // falls back to what the athlete said, exactly as for someone who never
+    // answered the onboarding question.
+    const resolved = resolveExperience(undefined, pure);
+    expect(resolved.experience).toBeUndefined();
+    expect(resolved.source).toBe("unknown");
+    // …and a stated answer still wins, with no false disagreement to report.
+    const stated = resolveExperience("beginner", pure);
+    expect(stated.experience).toBe("beginner");
+    expect(stated.disagrees).toBe(false);
+  });
+
+  it("names the reach in kilos, and the arithmetic on screen adds up", () => {
+    const r = estimateFitnessLevel(bodybuilder, { bodyweightKg: 90, sex: "M", ageYears: 30, now: NOW });
+    const reach = nextThreshold(r)!;
+    expect(reach.next).toBe("elite");
+    expect(reach.kind).toBe("strength");
+    // The BACK SQUAT, not the heavier deadlift. Raw ratios are not comparable
+    // across lifts with different standards — 198 kg is 82% of the way through
+    // the squat's advanced band while 220 kg is 52% through the deadlift's — so
+    // results rank by how far into their own tier they sit. That is also the
+    // only quantity a lift and a run can be ranked against each other by, and
+    // it gives the athlete the nearer, more actionable target.
+    expect(reach.lift).toBe("Back Squat");
+    // The card renders current, target and gap side by side — they must be one
+    // sum, not three independently-rounded figures.
+    expect(reach.current + reach.gap).toBe(reach.target);
+    expect(reach.progress).toBeGreaterThan(0);
+    expect(reach.progress).toBeLessThan(1);
+  });
+
+  it("turns the reach into a margin once there is nothing above", () => {
+    // 2.83 x bodyweight — past the 2.75 elite floor.
+    const r = estimateFitnessLevel([lift("Deadlift", 150, 6)], { bodyweightKg: 60, now: NOW });
+    expect(r.level).toBe("elite");
+    const reach = nextThreshold(r)!;
+    expect(reach.next).toBeNull();
+    // The target is the elite floor and the gap is how far CLEAR of it they are.
+    expect(reach.gap).toBeGreaterThan(0);
+    expect(reach.current - reach.gap).toBe(reach.target);
+    expect(reach.progress).toBe(1);
+  });
+
+  it("measures the reach in seconds when a run set the level", () => {
+    const r = estimateFitnessLevel(runner, { bodyweightKg: 60, sex: "M", ageYears: 28, now: NOW });
+    const reach = nextThreshold(r)!;
+    expect(reach.kind).toBe("endurance");
+    // Elite already, so the reach is the margin under the elite pace bar.
+    expect(reach.next).toBeNull();
+    expect(reach.current).toBeLessThan(reach.target);
+  });
+
+  it("has no reach to report when nothing was measured", () => {
+    expect(nextThreshold(estimateFitnessLevel([], { bodyweightKg: 80, now: NOW }))).toBeNull();
+    expect(nextThreshold(null)).toBeNull();
+  });
+
+  it("the badge is earned, and waits for a picture rather than a data point", () => {
+    // ONE lift is an estimate the private card may show — not a public badge.
+    const single = estimateFitnessLevel([lift("Deadlift", 200, 3)], { bodyweightKg: 90, now: NOW });
+    expect(single.evidence).toHaveLength(1);
+    expect(displayLevel(single)).not.toBeNull();
+    expect(badgeFor(single)).toBeNull();
+
+    // Two independent results and it earns one.
+    const b = badgeFor(estimateFitnessLevel(bodybuilder, { bodyweightKg: 90, now: NOW }))!;
+    expect(b.level).toBe("advanced");
+    expect(b.accent).toBe("lime");
+    expect(b.key).toBe(LEVEL_KEY.advanced);
+
+    // Never for an athlete the model could not measure.
+    expect(badgeFor(estimateFitnessLevel([], { bodyweightKg: 80, now: NOW }))).toBeNull();
+    expect(badgeFor(null)).toBeNull();
+  });
+
+  it("gives every level a badge accent, and reserves gold for the top", () => {
+    for (const l of FITNESS_LEVELS) expect(LEVEL_KEY[l].startsWith("w.analyze.vol.")).toBe(true);
+    const elite = badgeFor(estimateFitnessLevel([lift("Deadlift", 150, 6), lift("Back Squat", 140, 5)], { bodyweightKg: 60, now: NOW }))!;
+    expect(elite.level).toBe("elite");
+    expect(elite.accent).toBe("gold");
+  });
+
+  it("displayLevel refuses to call an unmeasured athlete untrained", () => {
+    const cyclist = estimateFitnessLevel(
+      [{ id: "ride", title: "Ride", startedAt: daysAgo(3), blocks: [{ kind: "cardio", name: "Cycling", discipline: "cycling", distance: 120, minutes: 210 }] }],
+      { bodyweightKg: 75, now: NOW },
+    );
+    // The raw field is the trap: it reads "untrained" for an athlete the model
+    // simply cannot measure. displayLevel is what every surface should render.
+    expect(cyclist.basis).toBe("none");
+    expect(cyclist.level).toBe("untrained");
+    expect(displayLevel(cyclist)).toBeNull();
+    expect(displayLevel(estimateFitnessLevel(bodybuilder, { bodyweightKg: 90, now: NOW }))).toBe("advanced");
+    expect(displayLevel(null)).toBeNull();
   });
 });

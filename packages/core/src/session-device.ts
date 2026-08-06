@@ -66,6 +66,17 @@ export interface DeviceWorkout {
   flights?: number;
   /** The device's own intensity read (average METs over the workout). */
   avgMets?: number;
+  /**
+   * Mean power over the workout, watts — a paired cycling power meter, or any
+   * source that reports one.
+   *
+   * The ONE measurement that makes a ride scoreable. Gearing, terrain, wind and
+   * draft mean identical engines produce wildly different km/h, so the
+   * fitness-level engine refuses to read a ride by speed; watts divided by body
+   * mass it can read, and it is the cleanest endurance signal the app has. See
+   * engines/endurance-level.ts.
+   */
+  avgWatts?: number;
   /** Indoor session, when the device says. */
   indoor?: boolean;
   /** Outdoor temperature at the workout, °C. */

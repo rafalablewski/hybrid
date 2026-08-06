@@ -22,6 +22,7 @@ export * from "./records";
 export * from "./landmarks";
 export * from "./athlete-profile";
 export * from "./fitness-level";
+export * from "./endurance-level";
 export * from "./landmark-profile";
 export * from "./landmark-resolve";
 export * from "./landmark-adapt";

@@ -26,13 +26,25 @@ describe("what the model still doesn't know about you", () => {
 
   it("a full profile is complete", () => {
     const c = volumeProfileCompleteness({
-      experience: "advanced", ageYears: 30, bodyweightKg: 80, heightCm: 180,
+      experience: "advanced", ageYears: 30, sex: "F", bodyweightKg: 80, heightCm: 180,
       sleep: 4, stress: 2, nutrition: "maintenance", daysPerWeek: 5,
     });
     expect(c.complete).toBe(true);
     expect(c.score).toBe(1);
     expect(c.next).toBeNull();
     expect(c.missing).toEqual([]);
+  });
+
+  it("counts sex as a real gap, because it moves every threshold", () => {
+    // Without it the estimate holds the athlete to the men's bar, which for a
+    // woman usually costs a whole tier of training age — so a profile that has
+    // everything EXCEPT sex is not complete.
+    const c = volumeProfileCompleteness({
+      experience: "advanced", ageYears: 30, bodyweightKg: 80, heightCm: 180,
+      sleep: 4, stress: 2, nutrition: "maintenance", daysPerWeek: 5,
+    });
+    expect(c.complete).toBe(false);
+    expect(c.next?.key).toBe("sex");
   });
 
   it("orders what's missing by how much it would move the estimate", () => {

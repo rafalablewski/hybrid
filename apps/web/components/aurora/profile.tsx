@@ -16,6 +16,7 @@ import { fs, space,
   totalVolume,
   athleteId as makeAthleteId,
   canSeeHPI,
+  type BadgeAccent,
   type Achievement,
   type HeatCell,
   type LoggedSession,
@@ -26,6 +27,7 @@ import { fs, space,
 import { useSession } from "@/lib/session";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { usePersona } from "@/lib/persona";
+import { useFitnessLevel } from "@/lib/use-fitness-level";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
@@ -51,6 +53,16 @@ import PrivateTab from "./private-tab";
 const C = (v: string) => `var(--color-${v})`;
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+/**
+ * The badge's ink. The level ramp reuses the palette's existing tones rather
+ * than inventing a colour per tier — ash and chalk for the lower tiers, the
+ * lime accent-TEXT tone for advanced, and gold reserved for elite. Every one is
+ * a per-theme AA-guarded value (palette.test.ts), so the chip clears contrast
+ * on Kyoto Hour's washi card as well as on Aurora's near-black.
+ */
+const badgeInk = (accent: BadgeAccent): string =>
+  accent === "gold" ? C("gold") : accent === "lime" ? accentText("lime") : accent === "chalk" ? C("chalk") : C("ash");
 
 type TabId = "overview" | "prs" | "activity" | "private";
 
@@ -115,6 +127,9 @@ export default function AuroraProfile({
   const hasData = sessions.length > 0;
 
   const bw = useBodyweightLookup();
+  // The SAME estimate the Performance card and the Volume working read, so the
+  // profile can never claim a level the rest of the app contradicts.
+  const { badge } = useFitnessLevel(sessions);
   const weekStreak = useMemo(() => longestWeekStreak(sessions), [sessions]);
   const dayStreak = useMemo(() => streak(sessions), [sessions]);
   // Lifetime tonnage — total load × reps across every logged session (kg-domain,
@@ -290,10 +305,38 @@ export default function AuroraProfile({
         </div>
       </div>
 
-      {/* NAME + membership pill (pill UNCHANGED from the original design). */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "0 4px" }}>
+      {/* NAME + membership pill (pill UNCHANGED from the original design), and
+          the LEVEL BADGE beside it.
+
+          The badge is EARNED, never claimed: it renders only the log-derived
+          estimate, never the self-assessed onboarding answer, and it shows
+          nothing at all until two independent results back it (see badgeFor).
+          That is the whole reason it is worth showing to other people —
+          everyone's badge means the same thing.
+
+          One word, and only one word. PR loads are already public tiles on this
+          screen, so publishing the ratio beside them would let anyone divide and
+          recover the athlete's body mass. The figures stay on Performance. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "0 4px", flexWrap: "wrap" }}>
         <span style={{ fontWeight: 900, fontSize: 23, letterSpacing: "-.02em" }}>{name}</span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, border: `1px solid ${C("lime")}`, color: "var(--lime-text)", borderRadius: 999, padding: "3px 8px", letterSpacing: ".08em" }}>{tier}</span>
+        {badge && (
+          <button
+            className="pressable"
+            type="button"
+            onClick={go("performance", "/app/performance")}
+            title={t("w.analyze.vol.levelCardTitle")}
+            style={{
+              fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: ".08em",
+              textTransform: "uppercase", borderRadius: 999, padding: "3px 8px", cursor: "pointer",
+              background: "transparent",
+              border: `1px solid ${badgeInk(badge.accent)}`,
+              color: badgeInk(badge.accent),
+            }}
+          >
+            {t(badge.key)}
+          </button>
+        )}
       </div>
 
       {/* BIO + quiet HYBRID ID line. */}

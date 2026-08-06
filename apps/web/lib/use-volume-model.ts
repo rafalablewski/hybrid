@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import {
   athleteLandmarks,
   measuredProfile, withMeasured, measuredFields,
-  estimateFitnessLevel, resolveExperience,
+  resolveExperience,
   readReports, placeReads, QUICK_CHECKIN_METRIC,
   type AthleteVolumeProfile, type LoggedSession, type RecoveryReport,
 } from "@hybrid/core";
 import { useLoggerPrefs, setLoggerPref } from "@/lib/logger-prefs";
 import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "@/lib/use-bodyweight";
 import { useCheckins } from "@/lib/use-checkins";
+import { useFitnessLevel } from "@/lib/use-fitness-level";
 import { readIntake } from "@/lib/intake";
 
 /**
@@ -77,13 +78,13 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // benchmark lifts is a better read, it is already in the log, and the
   // athlete's own answer still wins — the estimate only fills a gap, and any
   // disagreement is shown rather than silently applied.
-  const levelEstimate = useMemo(
-    () => estimateFitnessLevel(sessions, {
-      bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight,
-      ageYears: prefs.volumeProfile.ageYears ?? null,
-    }),
-    [sessions, prefs.volumeProfile.bodyweightKg, prefs.volumeProfile.ageYears, bodyweight],
-  );
+  //
+  // Read through useFitnessLevel so this screen, the Performance card and the
+  // Profile badge are the SAME estimate rather than three calls that could
+  // drift apart. Note resolveExperience deliberately reads only the STRENGTH
+  // half of it: MEV/MRV are lifting landmarks, and a fast 10 km cannot say how
+  // many sets of squats an athlete recovers from.
+  const { estimate: levelEstimate } = useFitnessLevel(sessions);
   const statedExperience = prefs.volumeProfile.experience ?? intake.experience;
   const experience = useMemo(() => resolveExperience(statedExperience, levelEstimate), [statedExperience, levelEstimate]);
 

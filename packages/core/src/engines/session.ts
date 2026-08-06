@@ -231,6 +231,18 @@ export interface CardioBlock {
   incline?: number;
   /** Swim stroke — Free, Breast, Back, Fly, IM… (shown only for swim activities). */
   stroke?: string;
+  /**
+   * Average power for the effort, watts — cycling (and any other discipline a
+   * meter reports it for). Optional and additive: written by a paired power
+   * meter or imported from a device recording, never typed.
+   *
+   * It is the ONLY thing that makes cycling scoreable. Gearing, terrain, wind
+   * and draft mean identical engines produce wildly different km/h, so the
+   * fitness-level engine refuses to read a ride by speed — but watts are watts,
+   * and with a body mass they become the cleanest endurance signal the app has.
+   * See engines/endurance-level.ts.
+   */
+  watts?: number;
   /** Target heart-rate zone, 1–5. */
   zone?: number;
   /** Elevation gain, metres (outdoor climb sports — runs, rides, hikes). */

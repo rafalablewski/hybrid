@@ -23,6 +23,7 @@ import type { AthleteVolumeProfile } from "./landmark-profile";
 export type VolumeProfileFieldKey =
   | "experience"
   | "ageYears"
+  | "sex"
   | "bodyweightKg"
   | "heightCm"
   | "sleep"
@@ -48,12 +49,17 @@ export interface VolumeProfileField {
  * as MRV. Everything else only adjusts what you can absorb.
  */
 export const VOLUME_PROFILE_FIELDS: VolumeProfileField[] = [
-  { key: "experience", weight: 0.30, derivable: true, unlocksKey: "w.analyze.vol.unlocksExperience" },
-  { key: "bodyweightKg", weight: 0.18, derivable: true, unlocksKey: "w.analyze.vol.unlocksBodyweight" },
-  { key: "ageYears", weight: 0.14, derivable: false, unlocksKey: "w.analyze.vol.unlocksAge" },
-  { key: "daysPerWeek", weight: 0.12, derivable: true, unlocksKey: "w.analyze.vol.unlocksDays" },
-  { key: "sleep", weight: 0.10, derivable: true, unlocksKey: "w.analyze.vol.unlocksSleep" },
-  { key: "nutrition", weight: 0.08, derivable: true, unlocksKey: "w.analyze.vol.unlocksNutrition" },
+  { key: "experience", weight: 0.27, derivable: true, unlocksKey: "w.analyze.vol.unlocksExperience" },
+  { key: "bodyweightKg", weight: 0.17, derivable: true, unlocksKey: "w.analyze.vol.unlocksBodyweight" },
+  { key: "ageYears", weight: 0.13, derivable: false, unlocksKey: "w.analyze.vol.unlocksAge" },
+  { key: "daysPerWeek", weight: 0.11, derivable: true, unlocksKey: "w.analyze.vol.unlocksDays" },
+  { key: "sleep", weight: 0.09, derivable: true, unlocksKey: "w.analyze.vol.unlocksSleep" },
+  // Not derivable, and it earns its weight: every strength and endurance
+  // threshold in the app is published for a male athlete and shifted from
+  // there, so an unanswered sex holds a woman to the men's bar and usually
+  // costs her a tier of training age — which then moves MEV and MRV.
+  { key: "sex", weight: 0.08, derivable: false, unlocksKey: "w.analyze.vol.unlocksSex" },
+  { key: "nutrition", weight: 0.07, derivable: true, unlocksKey: "w.analyze.vol.unlocksNutrition" },
   // Derivable NOT because the app infers a height — it never would — but
   // because the athlete already gave it once in Profile → Body & progress, and
   // measuredProfile reads it from there rather than asking a second time.
@@ -66,6 +72,7 @@ export const VOLUME_PROFILE_FIELDS: VolumeProfileField[] = [
 export const VOLUME_PROFILE_FIELD_KEY: Record<VolumeProfileFieldKey, string> = {
   experience: "w.analyze.vol.factorExperience",
   ageYears: "w.analyze.vol.fieldAge",
+  sex: "w.analyze.vol.fieldSex",
   bodyweightKg: "w.analyze.vol.fieldBodyweight",
   heightCm: "w.analyze.vol.fieldHeight",
   sleep: "w.analyze.vol.fieldSleep",
