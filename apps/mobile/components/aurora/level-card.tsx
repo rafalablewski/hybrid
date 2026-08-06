@@ -67,9 +67,6 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
           // no longer says which one.
           .replace("{dist}", `${top.lift} ${t(ENDURANCE_DISCIPLINE_KEY[top.discipline ?? "running"])}`)
           .replace("{pace}", figure(top));
-    // Kilos for a lift; for an endurance reach, the discipline's own unit — a
-    // swim is quoted per 100 m and a ride in W/kg, and formatting either as a
-    // per-km clock would be a different claim entirely.
     // Kilos for a lift; for an endurance reach, the discipline's OWN unit — a
     // swim is quoted per 100 m and a ride in W/kg, and rendering either as a
     // per-km clock would be a different claim, not a rounding difference.
