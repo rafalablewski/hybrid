@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { feedCardView } from "@hybrid/core";
+import { feedCardView, type FeedDetail } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { MetaLine } from "./meta";
 import { ArrowGlyph } from "./cta-label";
 
@@ -19,7 +20,7 @@ function initials(name?: string | null, handle?: string) {
   return (p.length >= 2 ? p[0]![0]! + p[1]![0]! : s.slice(0, 2)).toUpperCase();
 }
 
-interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; body: string | null; chips: string[]; lead: string | null; when: string; kudos: number; comments: number; accent: string }
+interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; detail?: FeedDetail; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; body: string | null; chips: string[]; lead: string | null; when: string; kudos: number; comments: number; accent: string }
 
 // `bleed` (horizontal only): run the slider FULL-BLEED — negative margins the
 // width of the shell's --page-pad-x pull the scroll clip out to the true screen
@@ -27,6 +28,7 @@ interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; author: 
 // slide under the bezel instead of vanishing at the content column.
 export default function FeedPreview({ onOpen, horizontal = false, bleed = false }: { onOpen: () => void; horizontal?: boolean; bleed?: boolean }) {
   const { t } = useLang();
+  const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<Item[] | null>(null);
   useEffect(() => {
     let alive = true;
@@ -78,7 +80,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
   return (
     <div style={wrap}>
       {feed.map((it) => {
-        const v = feedCardView(it);
+        const v = feedCardView(it, { t, units });
         const a = it.author as { displayName: string | null; handle: string; avatarUrl: string | null; coachVerified?: boolean };
         return (
           <button className="pressable" key={it.id} onClick={onOpen} style={postStyle}>

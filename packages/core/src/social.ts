@@ -20,6 +20,19 @@ import {
   type LoggedSession,
 } from "./engines";
 import { relativeTime } from "./activity";
+import {
+  FEED_STAT_LABEL_KEY,
+  feedDeltaText,
+  feedFigureText,
+  feedStatText,
+  feedTierChip,
+  prDetail,
+  sessionDetail,
+  postDetail,
+  type FeedDetail,
+} from "./feed-card";
+import type { WeightUnit } from "./units";
+import { isLive } from "./feed-live";
 
 // ---------------------------------------------------------------- handles ----
 export const HANDLE_MIN = 3;
@@ -142,6 +155,13 @@ export interface FeedItem {
   /** optional headline metric (e.g. PR e1RM, session volume kg). */
   metric?: number;
   accent: FeedAccent;
+  /**
+   * The CARD payload — moment class, archetype, hero figure, tier, top sets and
+   * the device-true stat row (see feed-card.ts). Both clients render from this
+   * one shape, so a card can never drift between web and mobile. Optional: a
+   * client reading an older response still renders `title`/`chips` as text.
+   */
+  detail?: FeedDetail;
 }
 
 export interface FeedOptions {
@@ -166,10 +186,48 @@ export interface FeedCardView {
   body: string | null;
   chips: string[];
 }
-export function feedCardView(it: { author: { displayName?: string | null; handle: string }; body?: string | null; chips?: string[]; lead?: string | null; when: string }): FeedCardView {
+export function feedCardView(
+  it: {
+    author: { displayName?: string | null; handle: string };
+    body?: string | null;
+    chips?: string[];
+    lead?: string | null;
+    when: string;
+    detail?: FeedDetail;
+  },
+  /**
+   * Pass the caller's `t` (and unit preference) and the view is derived from
+   * the CARD MODEL instead of the legacy title/chips: the preview then speaks
+   * the same language as the feed — a PR leads "Deadlift — new PR" and carries
+   * its load and tier, rather than flattening into an anonymous chip. Without
+   * them the legacy shape is returned unchanged, so older callers are unaffected.
+   */
+  opts?: { t?: (key: string) => string; units?: WeightUnit },
+): FeedCardView {
   // Prefer the real name; fall back to a handle only when it's a genuine one
   // (an empty handle means "no profile" — never render a bare "@").
   const name = it.author.displayName || (it.author.handle ? `@${it.author.handle}` : "Someone");
+  const d = it.detail;
+  if (d && opts?.t) {
+    const t = opts.t;
+    const units = opts.units ?? "kg";
+    const lead =
+      d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout"
+        ? d.headlineArg || t(d.headlineKey)
+        : d.headlineArg
+          ? t(d.headlineKey).replace("{lift}", d.headlineArg)
+          : t(d.headlineKey);
+    const chips: string[] = [];
+    if (d.figureKg != null && d.figureKg > 0) {
+      const f = feedFigureText(d.figureKg, units);
+      chips.push(`${f.value} ${f.unit}`);
+    }
+    const tier = feedTierChip(d.tier);
+    if (tier) chips.push(`${tier.short} ${t(tier.labelKey)}`);
+    if (d.deltaPct != null) chips.push(feedDeltaText(d.deltaPct));
+    for (const stat of d.stats ?? []) chips.push(`${feedStatText(stat, units)} ${t(FEED_STAT_LABEL_KEY[stat.key])}`);
+    return { name, when: it.when, lead, body: it.body ?? null, chips: chips.slice(0, 4) };
+  }
   return { name, when: it.when, lead: it.lead ?? null, body: it.body ?? null, chips: it.chips ?? [] };
 }
 
@@ -207,6 +265,12 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       .map((s) => ({ ...s, blocks: migrateBlocks(s.blocks) }))
       .sort((a, b) => ms(a.startedAt) - ms(b.startedAt));
     ordered.forEach((s, idx) => {
+      // A session still in progress is PRESENCE, not a post: it belongs in the
+      // Now-training strip (feed-live.ts), and posting it as a finished card
+      // would announce a workout that hasn't happened yet. A session left open
+      // past the live window is a different thing — someone forgot to press
+      // finish — and still reads as a card, dated when they started.
+      if (isLive(s, now)) return;
       const at = ms(s.completedAt ?? s.startedAt);
       if (!Number.isFinite(at) || at < now - windowMs || at > now + 60_000) return;
       const blocks = s.blocks;
@@ -231,6 +295,7 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         when: relativeTime(at, now),
         metric: vol || undefined,
         accent: "lime",
+        detail: sessionDetail(s),
         _sort: sortAt,
       });
 
@@ -258,6 +323,10 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
           when: relativeTime(at, now),
           metric: top.topLoad,
           accent: "amber",
+          // Tier 1 is EARNED here, not claimed: a matched device recording
+          // corroborates the session the lift was set in (attestation.ts).
+          // Tier 2 needs a witness and is resolved server-side per viewer.
+          detail: prDetail({ ...top, count: prs.length }, { device: !!s.device }),
           _sort: sortAt + 1,
         });
       }
@@ -311,6 +380,7 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         when: relativeTime(post.at, now),
         metric,
         accent,
+        detail: postDetail(post.kind, d),
         _sort: post.at + (author.closeFriend ? boostMs : 0),
       });
     }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildSocialFeed, type FeedSubjectInput } from "@hybrid/core";
+import { buildLiveNow, buildSocialFeed, rankFeed, type FeedSignals, type FeedSubjectInput, type Relation } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import { tableMissing, recentSessionsByUsers, recentPostsByUsers, authorCards, blockedIdsFor } from "@/lib/social";
@@ -78,7 +78,52 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ feed: enriched });
+    // ---- RANKING (core/feed-rank.ts) ------------------------------------
+    // The signals we can compute HONESTLY today. Gym, program and strength
+    // band aren't modelled yet, so they're simply absent — the ranker treats
+    // an absent signal as no boost, never as a guess.
+    const [backEdges, coachLinks, iGave, iGot] = await Promise.all([
+      // Who follows ME — the other half of a mutual follow ("friend").
+      prisma.follow.findMany({ where: { followeeId: me.id, status: "active" }, select: { followerId: true } }),
+      prisma.coachLink.findMany({
+        where: { OR: [{ clientId: me.id }, { coachId: me.id }], status: "ACTIVE" },
+        select: { coachId: true, clientId: true },
+      }),
+      // Interaction history, both directions — an edge we BUILT, not one we
+      // were assigned.
+      prisma.kudos.groupBy({ by: ["ownerId"], _count: { _all: true }, where: { userId: me.id, ownerId: { in: ids } } }),
+      prisma.kudos.groupBy({ by: ["userId"], _count: { _all: true }, where: { ownerId: me.id, userId: { in: ids } } }),
+    ]);
+
+    const followsMe = new Set(backEdges.map((e) => e.followerId));
+    const iFollow = new Set(follows.map((f) => f.followeeId));
+    const coachOf = new Set<string>();
+    for (const l of coachLinks) coachOf.add(l.coachId === me.id ? l.clientId : l.coachId);
+
+    const interactions = new Map<string, number>();
+    for (const r of iGave as { ownerId: string; _count: { _all: number } }[]) interactions.set(r.ownerId, (interactions.get(r.ownerId) ?? 0) + r._count._all);
+    for (const r of iGot as { userId: string; _count: { _all: number } }[]) interactions.set(r.userId, (interactions.get(r.userId) ?? 0) + r._count._all);
+
+    const signalsFor = (authorId: string): FeedSignals => {
+      if (authorId === me.id) return { relation: "self", mine: true };
+      const out = iFollow.has(authorId);
+      const back = followsMe.has(authorId);
+      const relation: Relation = closeSet.has(authorId) ? "close" : out && back ? "friend" : out ? "following" : back ? "follower" : "none";
+      return { relation, coach: coachOf.has(authorId), interactions: interactions.get(authorId) ?? 0 };
+    };
+
+    // The RANKED order ships as the feed; the clients' Following tab re-sorts
+    // chronologically from the same payload, so the unranked exit never needs
+    // a second round trip.
+    const ranked = rankFeed(enriched, (i) => signalsFor(i.author.id), { limit: 50 });
+
+    // NOW TRAINING — presence, from the SAME subjects, so the strip costs no
+    // extra query. Only people I follow are in `subjects` and the block list is
+    // already applied above, so "who is at the gym right now" never reaches
+    // anyone the athlete hasn't approved.
+    const live = buildLiveNow(subjects, { viewerId: me.id });
+
+    return NextResponse.json({ feed: ranked, live });
   } catch (e) {
     if (tableMissing(e)) return NextResponse.json({ feed: [], unavailable: true });
     return NextResponse.json({ error: "failed" }, { status: 500 });

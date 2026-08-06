@@ -660,7 +660,7 @@ export default function AuroraToday({
     return (
       <div style={shell}>
         {hubHeader}
-        <div style={{ marginTop: 16 }}><SocialFeed /></div>
+        <div style={{ marginTop: 16 }}><SocialFeed onNavigate={onNavigate} /></div>
       </div>
     );
   }

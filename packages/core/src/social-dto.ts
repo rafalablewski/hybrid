@@ -11,6 +11,8 @@
  *   • any handler may return `{ error }` instead of its success body;
  *   • list/profile endpoints add `unavailable` when a table isn't migrated yet.
  */
+import type { FeedReason } from "./feed-rank";
+import type { LiveAthlete } from "./feed-live";
 import type {
   FeedItem,
   ProfileStats,
@@ -45,9 +47,15 @@ export interface FeedItemView extends FeedItem {
   comments: number;
   kudosedByMe: boolean;
   mine: boolean;
+  /** Why this card is in a RANKED feed, when the viewer doesn't already follow
+   *  the author (core/feed-rank.ts). Absent means "no explanation needed". */
+  reason?: FeedReason;
 }
 export interface FeedResponse extends Degradable, ApiError {
   feed: FeedItemView[];
+  /** Who is mid-session right now (core/feed-live.ts). Absent or empty when
+   *  nobody is — the strip hides rather than showing a void. */
+  live?: LiveAthlete[];
 }
 
 export interface KudosResponse extends ApiError {

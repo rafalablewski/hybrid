@@ -1,0 +1,886 @@
+<title>CONNECT — the HYBRID feed specification</title>
+<style>
+  :root {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86; --lime: #c6f84f; --on-lime: #0c0d0c;
+    --teal: #6cb6bd; --slate: #8ba0cc; --sand: #d0cd94; --terra: #e58a5c; --gold: #e6c34e;
+    --wfbg: #101210; --wfline: #3a3e39; --wfink: #9aa094;
+    --display: -apple-system, "SF Pro Display", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+    --r-card: 20px; --r-chip: 999px; --r-field: 12px;
+    --max: 860px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+      --chalk: #2b2a26; --ash: #6f6b5e; --lime: #44584c; --on-lime: #f2f5ef;
+      --teal: #4c5a78; --slate: #4c5a78; --sand: #885c00; --terra: #a3442f; --gold: #b58a24;
+      --wfbg: #f1ede1; --wfline: #c9c3af; --wfink: #7d7868;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86; --lime: #c6f84f; --on-lime: #0c0d0c;
+    --teal: #6cb6bd; --slate: #8ba0cc; --sand: #d0cd94; --terra: #e58a5c; --gold: #e6c34e;
+    --wfbg: #101210; --wfline: #3a3e39; --wfink: #9aa094;
+  }
+  :root[data-theme="light"] {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e; --lime: #44584c; --on-lime: #f2f5ef;
+    --teal: #4c5a78; --slate: #4c5a78; --sand: #885c00; --terra: #a3442f; --gold: #b58a24;
+    --wfbg: #f1ede1; --wfline: #c9c3af; --wfink: #7d7868;
+  }
+
+  html { background: var(--ink); }
+  body {
+    background: var(--ink); color: var(--chalk);
+    font: 400 15.5px/1.62 var(--display);
+    margin: 0; padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: var(--max); margin: 0 auto; padding: 0 24px 120px; }
+  a { color: inherit; }
+
+  /* ---------- type roles ---------- */
+  .kicker {
+    font: 600 11px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .12em;
+    color: var(--ash); margin: 0 0 10px;
+  }
+  .kicker b { color: var(--lime); font-weight: 600; }
+  h1 {
+    font: 800 clamp(34px, 6vw, 54px)/1.05 var(--display); letter-spacing: -0.022em;
+    margin: 14px 0 18px; text-wrap: balance;
+  }
+  h2 {
+    font: 800 26px/1.15 var(--display); letter-spacing: -0.015em;
+    margin: 0 0 6px; text-wrap: balance;
+  }
+  h3 { font: 700 18px/1.3 var(--display); letter-spacing: -0.01em; margin: 34px 0 10px; }
+  h4 { font: 700 15px/1.4 var(--display); margin: 26px 0 8px; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  li { margin: 0 0 6px; }
+  ul, ol { padding-left: 22px; margin: 0 0 16px; }
+  strong { font-weight: 700; }
+  em { font-style: italic; }
+  .lede { font-size: 18px; line-height: 1.55; color: var(--chalk); max-width: 62ch; }
+  .muted { color: var(--ash); }
+  code {
+    font: 500 0.86em/1 var(--mono); color: var(--chalk);
+    background: var(--ink2); border: 1px solid var(--line);
+    border-radius: 5px; padding: 2px 5px; white-space: nowrap;
+  }
+
+  /* ---------- section chrome ---------- */
+  section.d { margin-top: 88px; }
+  .sechead {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 26px;
+  }
+  .sechead .meta { font: 500 11px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--ash); white-space: nowrap; }
+
+  /* ---------- cards, callouts ---------- */
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: 20px 22px; margin: 18px 0;
+  }
+  .card h4 { margin-top: 0; }
+  .callout {
+    background: var(--ink2); border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: 18px 22px; margin: 22px 0;
+  }
+  .callout .kicker { margin-bottom: 6px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .grid2 .card { margin: 0; }
+
+  /* ---------- tables ---------- */
+  .twrap { overflow-x: auto; margin: 18px 0; border: 1px solid var(--line); border-radius: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.5; }
+  th {
+    font: 600 10.5px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .09em;
+    color: var(--ash); text-align: left; padding: 10px 14px;
+    border-bottom: 1px solid var(--line); background: var(--ink2);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.num, .mono { font: 500 12.5px/1.5 var(--mono); font-variant-numeric: tabular-nums; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+
+  /* ---------- pills, badges, swatches ---------- */
+  .pill {
+    display: inline-block; font: 600 10.5px/1 var(--mono); text-transform: uppercase;
+    letter-spacing: .08em; padding: 5px 10px; border-radius: var(--r-chip);
+    border: 1px solid var(--line); color: var(--ash); white-space: nowrap;
+  }
+  .pill.p0 { color: var(--on-lime); background: var(--lime); border-color: var(--lime); }
+  .pill.p1 { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); }
+  .pill.p2 { color: var(--chalk); }
+  .pill.p3 { color: var(--ash); border-style: dashed; }
+  .pill.teal { color: var(--teal); border-color: color-mix(in srgb, var(--teal) 45%, var(--line)); }
+  .pill.slate { color: var(--slate); border-color: color-mix(in srgb, var(--slate) 45%, var(--line)); }
+  .pill.sand { color: var(--sand); border-color: color-mix(in srgb, var(--sand) 45%, var(--line)); }
+  .pill.terra { color: var(--terra); border-color: color-mix(in srgb, var(--terra) 45%, var(--line)); }
+  .sw { display: inline-block; width: 13px; height: 13px; border-radius: 4px; border: 1px solid var(--line); vertical-align: -2px; margin-right: 7px; }
+
+  /* ---------- tier ladder ---------- */
+  .tiers { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; margin: 18px 0; }
+  .tier { display: grid; grid-template-columns: 74px 120px 1fr; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .tier:last-child { border-bottom: none; }
+  .tier .tn { font: 700 13px/1.2 var(--mono); color: var(--lime); }
+  .tier .tt { font-weight: 700; font-size: 13.5px; }
+  .tier .td { color: var(--ash); font-size: 13px; }
+  .tier.off .tn, .tier.off .tt { color: var(--ash); }
+  .tier.off { background: var(--ink2); }
+
+  /* ---------- TOC ---------- */
+  nav.toc {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: 20px 24px; margin: 34px 0 0;
+    columns: 2; column-gap: 32px;
+  }
+  nav.toc a {
+    display: block; text-decoration: none; font: 500 13px/2.1 var(--mono);
+    color: var(--chalk); break-inside: avoid;
+  }
+  nav.toc a span { color: var(--ash); margin-right: 10px; font-size: 11px; }
+  nav.toc a:hover { color: var(--lime); }
+  @media (max-width: 640px) { nav.toc { columns: 1; } }
+
+  /* ---------- wireframe kit ---------- */
+  .wfgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 26px; margin: 24px 0; }
+  figure.wf { margin: 0; }
+  .frame {
+    background: var(--wfbg); border: 1.5px solid var(--wfline); border-radius: 26px;
+    padding: 12px 10px; display: flex; flex-direction: column; gap: 7px;
+    max-width: 330px; margin: 0 auto; min-height: 540px;
+  }
+  .wfb {
+    border: 1px dashed var(--wfline); border-radius: 9px; padding: 6px 9px;
+    font: 500 9.5px/1.5 var(--mono); text-transform: uppercase; letter-spacing: .05em;
+    color: var(--wfink);
+  }
+  .wfb.s { border-style: solid; background: color-mix(in srgb, var(--wfline) 12%, transparent); }
+  .wfb.hi { border-style: solid; border-color: var(--lime); color: var(--lime); }
+  .wfb.ghost { border: none; padding: 2px 9px; }
+  .wfrow { display: flex; gap: 7px; }
+  .wfrow > .wfb { flex: 1; }
+  .wfrow > .wfb.fix { flex: 0 0 auto; }
+  .wfb .big { display: block; font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--chalk); font-family: var(--display); font-weight: 700; }
+  .grow { flex: 1; }
+  figcaption { font: 400 12.5px/1.6 var(--display); color: var(--ash); padding: 12px 6px 0; max-width: 330px; margin: 0 auto; }
+  figcaption b { color: var(--chalk); font-weight: 600; }
+
+  /* ---------- header ---------- */
+  header.hero { padding: 84px 0 10px; }
+  .hero .who { font: 500 12px/1.7 var(--mono); color: var(--ash); margin-top: 22px; }
+  .hero .who b { color: var(--chalk); font-weight: 600; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 40px 0; }
+
+  .anti { border-left: 3px solid var(--terra); }
+  .pro { border-left: 3px solid var(--lime); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    a { transition: color 140ms ease; }
+  }
+</style>
+
+<main>
+
+<header class="hero">
+  <p class="kicker">HYBRID — product design specification — v1.0 — August 2026 — <b>CONNECT</b></p>
+  <h1>The feed where a number is worth something</h1>
+  <p class="lede">A complete specification for HYBRID's social feed: information architecture, feed anatomy, 34 card types, interaction design, ranking, engagement loops, the visual system, ten wireframes, and a critical self-review. Built to be handed to product, design, engineering, and investors as one blueprint.</p>
+  <p class="who">Grounded in the shipped codebase: <b>packages/core/src/social.ts</b> (feed engine, kudos, relations), <b>attestation.ts</b> (Verified Strength Record), the Aurora design system (<b>theme/tokens.ts</b>, <b>scale.ts</b>, <b>nav-bar.ts</b>), and the production schema (<b>prisma/schema.prisma</b>). Everything proposed here is written against what exists — each section closes with what is net-new versus already shipped.</p>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#thesis"><span>00</span>Thesis</a>
+    <a href="#analysis"><span>01</span>Before designing — the competitive read</a>
+    <a href="#principles"><span>02</span>Design principles</a>
+    <a href="#users"><span>03</span>Users — seven ways to read a feed</a>
+    <a href="#d1"><span>D1</span>Information architecture</a>
+    <a href="#d2"><span>D2</span>Feed structure, top to bottom</a>
+    <a href="#d3"><span>D3</span>Anatomy of the post</a>
+    <a href="#d4"><span>D4</span>34 card types</a>
+    <a href="#d5"><span>D5</span>Interaction design</a>
+    <a href="#d6"><span>D6</span>Ranking</a>
+    <a href="#d7"><span>D7</span>Engagement loops</a>
+    <a href="#d8"><span>D8</span>Visual design system</a>
+    <a href="#d9"><span>D9</span>Wireframes</a>
+    <a href="#d10"><span>D10</span>Critical review</a>
+  </nav>
+</header>
+
+<section class="d" id="thesis">
+  <div class="sechead"><h2>Thesis</h2><div class="meta">00</div></div>
+  <p class="lede">Every strength number on the internet is self-reported, and therefore worthless. There is no strength equivalent of a verified race time. HYBRID already built the ladder that fixes this — the Verified Strength Record — and the feed is where that ladder becomes a social object.</p>
+  <p>Strava's feed works because a run is hard to fake: GPS, pace, heart rate arrive as evidence, not claims. Lifting feeds — Hevy's above all — are weak because every number in them is typed. The result is a feed of receipts nobody can trust and therefore nobody discusses. Our wedge is that <strong>HYBRID posts carry proof</strong>: the tier badge (claimed, sensed, witnessed, recorded, instrumented, sanctioned) travels with every figure, the watch's recording outranks the keyboard everywhere (the device-truth rule, already law in this codebase), and the co-sign flow makes verification itself a social act — every witness request is also an invite.</p>
+  <p>The second structural bet: <strong>the workout is the post</strong>. Strava solved cold-start content by making posting a byproduct of living. We inherit that — a finished session, a PR, a recap is already a fully-formed card before the athlete types a word. The composer exists, but it is the garnish, not the meal.</p>
+  <p>The third: <strong>this feed lives in the locker room, not the town square</strong>. It is a tab inside Today, one swipe from the athlete's own dashboard — training context surrounds it. It is not an app-within-an-app competing with the logger for identity.</p>
+</section>
+
+<section class="d" id="analysis">
+  <div class="sechead"><h2>Before designing — the competitive read</h2><div class="meta">01</div></div>
+
+  <h3>What makes X addictive</h3>
+  <ul>
+    <li><strong>Speed as a feature.</strong> The timeline paints instantly, actions are optimistic, nothing blocks on the network. The cost of one more flick is zero, so the flick never stops.</li>
+    <li><strong>Variable reward at high frequency.</strong> Short posts mean high cadence; every refresh is a slot-machine pull with a real chance of something excellent.</li>
+    <li><strong>The reply is the content.</strong> X's unit of value is not the post but the argument under it. Conversation compounds: each reply is a new post with its own audience.</li>
+    <li><strong>Zero-friction authoring.</strong> The compose box is one tap away and a post is one sentence. The gap between thought and publication is seconds.</li>
+    <li><strong>Live events.</strong> When something happens in the world, X is where it happens first. Recency is a ranking feature and a habit anchor.</li>
+    <li><strong>Status made legible.</strong> Follower counts, view counts, ratios — metrics turn posting into a game with a visible score. (This is also X's poison: the game selects for outrage.)</li>
+  </ul>
+
+  <h3>What makes Strava addictive</h3>
+  <ul>
+    <li><strong>The activity is the post.</strong> You produce content by training. No creative act, no blank-page anxiety, no cold-start problem. The feed fills itself.</li>
+    <li><strong>Kudos, not likes.</strong> A bounded, warm, one-tap gesture with no counter-culture of ratios. Giving kudos is cheap; receiving them after a hard session lands emotionally.</li>
+    <li><strong>Evidence, not claims.</strong> The map, the pace chart, the heart-rate trace. Numbers arrive with their own proof, which is why comparing them is meaningful.</li>
+    <li><strong>Asynchronous competition.</strong> Segments and leaderboards let you race people who aren't there. Yesterday's you, your club, a stranger on the same hill.</li>
+    <li><strong>Aggregates as identity.</strong> Weekly stats, annual totals, the year-in-sport. Strava tells you who you are becoming, and people return to watch that number grow.</li>
+    <li><strong>Clubs as accountability.</strong> A small group seeing whether you showed up is a stronger retention force than any notification.</li>
+  </ul>
+
+  <h3>Why Hevy's social layer is weak</h3>
+  <ul>
+    <li><strong>Every card is the same receipt.</strong> A 200 kg PR and a Tuesday accessory day render identically: exercise list, sets, volume. The feed has no concept of a <em>moment</em>, so nothing stands out and nothing is worth reacting to.</li>
+    <li><strong>Numbers without proof.</strong> All figures are typed. Impressive numbers read as noise or lies; honest numbers get no credit. There is nothing to discuss because there is nothing to believe.</li>
+    <li><strong>Likes without conversation.</strong> Comments exist but the content gives them nothing to grab. No questions, no form clips, no programs, no controversy — receipts don't start arguments.</li>
+    <li><strong>No graph tools.</strong> Discovery is near-nonexistent: no gym graph, no strength-peer matching, no coach layer. Your feed is the three friends you invited manually.</li>
+    <li><strong>Nothing on rest days.</strong> The feed only speaks when someone trains. Four days a week it has no reason to be opened — precisely the days a social product must fill.</li>
+  </ul>
+
+  <h3>Opportunities nobody has solved</h3>
+  <div class="grid2">
+    <div class="card"><h4>Verified strength</h4><p class="muted" style="margin:0">No product can answer "did that lift happen?" HYBRID's attestation ladder (tiers 0–2 shipped) makes the feed the first place a strength number carries provenance — and the public read API later makes it the institutional record.</p></div>
+    <div class="card"><h4>The two-person primitive</h4><p class="muted" style="margin:0">Lifting structurally requires a second person and no software serves that relationship. The Spotter Protocol (planned) turns spotting into pairing, co-signing, credited reps and a feed card — and every use is an invite.</p></div>
+    <div class="card"><h4>Rest-day content</h4><p class="muted" style="margin:0">Recovery, readiness, streaks, recaps, questions, polls, research digests — states worth sharing that don't require a barbell. A feed for seven days a week, not three.</p></div>
+    <div class="card"><h4>Programs ranked by outcome</h4><p class="muted" style="margin:0">Program selection is the highest-stakes decision a lifter makes, made on influencer vibes. The Program Efficacy Index (shipped) turns "this program, run by people like you, produced this" into shareable feed content nobody else has.</p></div>
+    <div class="card"><h4>The coach as a citizen, not an ad</h4><p class="muted" style="margin:0">Coaches are the highest-value posters in fitness and every platform treats them as spam. A coach layer with real storefronts (shipped) plus feed-native advice and client-win cards makes coaching content welcome.</p></div>
+    <div class="card"><h4>A feed that knows a PR from a Tuesday</h4><p class="muted" style="margin:0">Rank the <em>moment</em>, not the post. A milestone should interrupt; an ordinary session should aggregate. No fitness feed does this; it is the single largest quality lever available.</p></div>
+  </div>
+</section>
+
+<section class="d" id="principles">
+  <div class="sechead"><h2>Design principles</h2><div class="meta">02</div></div>
+  <p>Every decision downstream of this point must be defensible against these eight. When two conflict, the earlier one wins.</p>
+
+  <div class="grid2">
+    <div class="card pro"><h4>1 — Earn the number</h4><p class="muted" style="margin:0">Verification is the spine. Tier badges travel with every figure, on every surface. Verified figures render at full weight; claimed figures render quieter. Never shame the unverified — provenance is metadata, not a caste system.</p></div>
+    <div class="card pro"><h4>2 — The workout is the post</h4><p class="muted" style="margin:0">Zero-authoring default. Finishing a session mints a complete, beautiful card; sharing it is one decision, not a creative project. Typed posts exist but the system never depends on them.</p></div>
+    <div class="card pro"><h4>3 — Rank moments, not posts</h4><p class="muted" style="margin:0">A first pull-up outranks a follower count. Moment weight (PR, milestone, comeback, streak) is the first term of the ranking function, ahead of engagement probability — see D6.</p></div>
+    <div class="card pro"><h4>4 — Kudos, not clout</h4><p class="muted" style="margin:0">Bounded, warm metrics. No follower counts on cards, no view counts, no ratios. The score of this game is training consistency, not audience size.</p></div>
+    <div class="card pro"><h4>5 — The device outranks the keyboard</h4><p class="muted" style="margin:0">Already law in this codebase (device-truth rule): measured figures beat typed ones everywhere — durations, distances, paces, heart rate. The feed reads through <code>deviceTrueSession()</code> like every other surface.</p></div>
+    <div class="card pro"><h4>6 — Dense, with hierarchy</h4><p class="muted" style="margin:0">Strength athletes read numbers fluently; don't hide them. Linear's clarity and Notion's spacing: mono tabular data under bold display headlines, one accent per card, air between zones.</p></div>
+    <div class="card pro"><h4>7 — Nothing performative by default</h4><p class="muted" style="margin:0">Private-by-schema stays private: <code>Session.note</code>, mood, feel and fatigue are owner-only and never serialised to the feed (already enforced). Sharing granularity is chosen at share time, not discovered after.</p></div>
+    <div class="card pro"><h4>8 — Every card points back to the bar</h4><p class="muted" style="margin:0">The feed's job is to make you train, not to make you scroll. Cards carry training-native actions: match this lift, try this program, join this challenge, schedule this session. Session-quality north star, not time-on-feed.</p></div>
+  </div>
+</section>
+
+<section class="d" id="users">
+  <div class="sechead"><h2>Users — seven ways to read a feed</h2><div class="meta">03</div></div>
+  <p>The same feed must serve seven consumption styles without forking into modes. The mechanism is card-type weighting per user (D6), not separate products.</p>
+
+  <div class="twrap"><table>
+    <tr><th>User</th><th>How they consume</th><th>What they post</th><th>What retains them</th></tr>
+    <tr><td>Beginner lifter</td><td>Lurks. Reads technique threads and form-check discussions; intimidated by big numbers. Needs proof that ordinary people progress.</td><td>Almost nothing typed — but milestone cards (first pull-up, first plate, 10-session streak) post themselves with consent.</td><td>Encouragement loops: kudos on milestones, relative progress framing ("+12% this month"), never absolute-load leaderboards.</td></tr>
+    <tr><td>Intermediate gym-goer</td><td>The largest cohort. Scans quickly, compares programs, saves workouts to try. Reads recaps and progression charts of people slightly ahead of them.</td><td>Completed workouts (auto), occasional questions, program reviews.</td><td>Strength-peer matching (±10% e1RM band), program-efficacy cards, weekly recap vanity.</td></tr>
+    <tr><td>Powerlifter</td><td>Reads numbers first, names second. Cares about verification tiers, e1RM trends, meet results, federation news. Deep-reads single lifts.</td><td>PR cards with witness co-signs, meet prep logs, meet results (tier 5 when sanctioned).</td><td>The Verified Strength Record itself — the only place their total means something outside a meet.</td></tr>
+    <tr><td>Bodybuilder</td><td>Visual-first: physique photos, pump shots, transformation pairs. Volume and muscle-group split matter more than 1RM.</td><td>Photo-led workout cards, transformation cards, nutrition posts.</td><td>Muscle-map visuals, volume PRs, photo-safe privacy defaults (face-crop tools, delayed location).</td></tr>
+    <tr><td>Coach</td><td>Scans clients first (separate coach console), then prospects. The feed is their storefront's top-of-funnel.</td><td>Advice cards, form breakdowns, program drops, anonymised client wins.</td><td>Attribution: every coach card links their storefront (shipped marketplace); client-win cards convert followers to enrolments.</td></tr>
+    <tr><td>Personal trainer</td><td>Like coach, but local. Nearby surface and gym graph matter most; they recruit within one postcode.</td><td>Form checks, gym-community content, availability posts.</td><td>Gym-scoped discovery; "trains at your gym" ranking feature.</td></tr>
+    <tr><td>Elite athlete</td><td>Mostly broadcasts; consumes rivals and federation news. Their presence is content — they need low-effort posting and protection from reply floods.</td><td>Tier 4–5 verified lifts, competition results, sponsored content (labelled).</td><td>Verification at the top of the ladder (instrumented, sanctioned) — the only feed where their numbers are provably real; comment-limiting controls.</td></tr>
+  </table></div>
+
+  <div class="callout"><p class="kicker">Design consequence</p>
+  <p>Beginner and elite must coexist in one feed. Two protections make that work: <strong>relative framing</strong> (cards emphasise deltas and effort, not absolute load, whenever the viewer's strength band is far from the author's) and <strong>peer banding</strong> in ranking (D6) so most of what you see comes from people whose numbers are conceivable for you. Aspiration is a spice, not the diet.</p></div>
+</section>
+
+<section class="d" id="d1">
+  <div class="sechead"><h2>Deliverable 1 — Information architecture</h2><div class="meta">D1</div></div>
+
+  <h3>Where the feed lives</h3>
+  <p>HYBRID's bottom nav is fixed at five tabs — <strong>Today, Nutrition, Train, More, Profile</strong> (<code>nav-bar.ts</code>) — and Today carries three pills: <strong>Dashboard, Performance, Feed</strong> (<code>today-tabs.ts</code>). We keep this. The feed does not get a sixth tab, for three deliberate reasons: the detached nav slot is reserved for Apple's search role; a separate social tab reframes HYBRID as a social app it isn't; and adjacency to Dashboard means every feed visit starts one swipe from the athlete's own data — the comparison that makes fitness feeds sticky.</p>
+
+  <div class="twrap"><table>
+    <tr><th>Level</th><th>Structure</th></tr>
+    <tr><td>App nav</td><td class="mono">Today — Nutrition — Train — More — Profile (pill nav, Liquid Glass; native UITabBarController on iOS)</td></tr>
+    <tr><td>Today pills</td><td class="mono">Dashboard | Performance | Feed ← CONNECT lives here</td></tr>
+    <tr><td>Feed tabs</td><td class="mono">For you (ranked) | Following (chronological, guaranteed) | Clubs (scoped)</td></tr>
+    <tr><td>Discovery</td><td class="mono">Search (people, gyms, clubs, exercises) — Suggestions — Coach directory — Leaderboard</td></tr>
+    <tr><td>Profile</td><td class="mono">Identity → showcase → verified records → training graph → posts → connections</td></tr>
+    <tr><td>Notifications</td><td class="mono">Inbox (actionable: co-signs, follows, coach) above Activity (kudos, comments, mentions)</td></tr>
+    <tr><td>Messaging</td><td class="mono">Contextual threads only — no general DM inbox at v1 (rationale below)</td></tr>
+  </table></div>
+
+  <h3>Feed hierarchy</h3>
+  <ul>
+    <li><strong>For you</strong> — the ranked feed (D6). Default tab. Interleaves followed content with peer-band, gym, club and coach content, all labelled with a "why you're seeing this" affordance.</li>
+    <li><strong>Following</strong> — strictly chronological, strictly people you follow. Non-negotiable escape hatch; it keeps the ranked feed honest and the trust intact. Remembers your last-read position.</li>
+    <li><strong>Clubs</strong> — the feeds of clubs you've joined (planned capability <code>social-leaderboard-clubs</code>), merged, with per-club filter pills. Until clubs ship, this tab is hidden — never an empty room.</li>
+  </ul>
+
+  <h3>Discovery hierarchy</h3>
+  <ul>
+    <li><strong>Search</strong> — one field, four result sections: People (handle + real name — an email is never shown, per the shipped identity rule), Gyms, Clubs, Exercises (an exercise page shows its verified leaderboard + recent public sets).</li>
+    <li><strong>Suggestions</strong> — existing <code>/api/social/suggestions</code>, upgraded with graph reasons: same gym, mutual friends, same program, same strength band, contacts (opt-in).</li>
+    <li><strong>Coach directory</strong> — the shipped marketplace (<code>components/coaches.tsx</code>): verified-first directory → storefront → one-tap enrolment.</li>
+    <li><strong>Leaderboard</strong> — friends-only today (shipped), clubs and challenges when <code>social-leaderboard-clubs</code> lands.</li>
+  </ul>
+
+  <h3>Profile hierarchy</h3>
+  <p>Top to bottom: identity (avatar, real name, handle, gym, coach/elite chips) → follow/message state → <strong>showcase</strong> (the athlete's chosen 3 stats — already a <code>SocialProfile.showcase</code> field) → <strong>verified records strip</strong> (best lift per movement with tier badge — the profile's centrepiece) → training graph (consistency heat-map, 12 weeks) → posts (chronological cards) → connections. A coach's profile adds the storefront block (programs, rating, price note, "Start program") above posts.</p>
+
+  <h3>Notification hierarchy</h3>
+  <p>Two strata, hard-separated. <strong>Inbox</strong> — things requiring a decision: co-sign requests ("Adam asks you to confirm his 180 kg squat"), follow requests, coach enrolment requests, challenge invites. <strong>Activity</strong> — things requiring at most a glance: kudos (coalesced: "Kasia and 6 others gave kudos"), comments, mentions, matched-lift and rival events. Inbox items are cards with actions; activity items are rows. Badging counts Inbox only — a badge must always mean a decision is waiting.</p>
+
+  <h3>Messaging hierarchy — the deliberate omission</h3>
+  <p><strong>No general-purpose DMs at v1.</strong> Messaging exists only as contextual threads: comments under a card, the co-sign request/response flow, and the coach↔client channel (which already exists as invites, enrolments and coach notes). Rationale: a DM inbox is the single largest moderation, safety and abuse surface a social product can add; it competes with comments for the same conversations while stripping them of context; and fitness DMs are the canonical harassment vector for women in this category. We add athlete↔athlete DMs only when a concrete loop demands them (e.g. Spotter Protocol pairing), scoped to mutuals, and that decision gets its own spec.</p>
+
+  <div class="callout"><p class="kicker">Exists vs net-new</p>
+  <p><strong>Shipped:</strong> nav + Today pills, feed/discover/leaderboard/coaches screens on both clients, follow graph with pending states, blocklist, notifications API. <strong>Net-new:</strong> the three-tab feed split (today it's one list), gym entity + gym graph, clubs (planned), exercise pages, Inbox/Activity separation, last-read position.</p></div>
+</section>
+
+<section class="d" id="d2">
+  <div class="sechead"><h2>Deliverable 2 — Feed structure, top to bottom</h2><div class="meta">D2</div></div>
+  <p>The exact vertical order of the feed screen. Every module is listed; most are conditional — the feed shows at most two modules between cards, and never the same module twice per session.</p>
+
+  <div class="twrap"><table>
+    <tr><th>#</th><th>Module</th><th>Behaviour</th></tr>
+    <tr><td class="num">1</td><td><strong>Screen head</strong></td><td>The Today pills (Dashboard | Performance | Feed) under the standing HYBRID header. No separate feed header — the feed is a state of Today. Collapses on scroll behind the Liquid Glass header (existing <code>--scroll-collapse</code> mechanic).</td></tr>
+    <tr><td class="num">2</td><td><strong>Co-sign inbox</strong></td><td>Shipped and stays first: pending witness requests ("Adam asks you to confirm you watched his Back Squat at 180 kg" → I watched it / Decline). It outranks everything because it's a promise someone is waiting on — and every request is an invite, the growth loop.</td></tr>
+    <tr><td class="num">3</td><td><strong>Feed tabs</strong></td><td>For you | Following | Clubs — pill row, full-bleed per the rail rule, sticky under the header.</td></tr>
+    <tr><td class="num">4</td><td><strong>Now training strip</strong></td><td>Our answer to Stories — and the argument against them. Stories are performative authored content; lifters won't film vertical video between sets. Instead: a one-row strip of avatars of friends <em>currently mid-session</em> (live session state already exists in the logger), each with discipline accent ring. Tap → a live card: current exercise, elapsed time, a "🔥 send fuel" one-tap. Ephemeral by nature, zero authoring, and it answers the real question — "who's at the gym right now?" Hidden when empty.</td></tr>
+    <tr><td class="num">5</td><td><strong>Composer, collapsed</strong></td><td>One quiet line: avatar + "Say something — or just train". Expands to text + attach (photo, session, PR, poll, question). Deliberately underweighted: principle 2.</td></tr>
+    <tr><td class="num">6</td><td><strong>The ranked stream</strong></td><td>Cards per D3/D4, ranked per D6. Author-diversity caps, moment cards visually louder, ordinary sessions of the same person within a day coalesce.</td></tr>
+    <tr><td class="num">7</td><td><strong>Your Monday recap</strong> <span class="pill">interleaved</span></td><td>Own weekly recap card, Mondays only, dismissible, at slot 3. Sharing it is one tap; it previews exactly as others would see it.</td></tr>
+    <tr><td class="num">8</td><td><strong>Leaderboard delta</strong> <span class="pill">interleaved</span></td><td>Compact module when positions changed: "You moved to #2 on volume this week — Kasia is 4,200 kg ahead." Links the shipped leaderboard. Max once/day.</td></tr>
+    <tr><td class="num">9</td><td><strong>Challenge module</strong> <span class="pill">interleaved</span></td><td>Active challenge progress, or ending-soon call. Only for joined or club-adjacent challenges — never cold-sell.</td></tr>
+    <tr><td class="num">10</td><td><strong>Coach rail</strong> <span class="pill">interleaved</span></td><td>The shipped full-bleed <code>CoachRail</code> marquee (290 px storefront cards), at most once per session, only for users without a coach, slot ≥ 8.</td></tr>
+    <tr><td class="num">11</td><td><strong>People suggestions</strong> <span class="pill">interleaved</span></td><td>Three suggestion rows with graph reasons ("trains at Atlas Gym — 2 mutuals"). Frequency decays as the graph fills; disappears entirely past 30 follows.</td></tr>
+    <tr><td class="num">12</td><td><strong>Caught-up marker</strong></td><td>For-you: "You're caught up — everything new since Tuesday." Below it, the door out: <strong>"Go train — W4D2 Lower is ready"</strong> deep-linking the logger (principle 8). Older ranked content continues beneath for those who keep scrolling.</td></tr>
+    <tr><td class="num">13</td><td><strong>Empty / cold-start state</strong></td><td>Never an empty room: seed with co-sign explainer, contact sync (opt-in), gym picker, coach rail, and public moment cards from the athlete's strength band. The composer is <em>not</em> the empty state's hero — following people is.</td></tr>
+  </table></div>
+
+  <div class="callout anti"><p class="kicker">What we deliberately do not build</p>
+  <p><strong>Stories</strong> (authored ephemera — replaced by the Now-training strip, which is ephemeral <em>state</em>, not ephemeral <em>content</em>). <strong>Trending topics</strong> (a strength feed has no news cycle worth chasing; editorial cards in D4 cover the real thing). <strong>A "Nearby" public firehose</strong> (privacy hazard with no matching value — nearby expresses itself as a ranking feature and gym graph instead, D6). <strong>Reposts at v1</strong> (quote-posting a stranger's PR is X's outrage mechanic wearing a singlet; saving + sharing-out cover the honest use).</p></div>
+</section>
+
+<section class="d" id="d3">
+  <div class="sechead"><h2>Deliverable 3 — Anatomy of the post</h2><div class="meta">D3</div></div>
+  <p>One card model, six zones, A through F. Every card type in D4 is a configuration of these zones — no card invents private structure. Zones render top to bottom; any zone may be absent, but never reordered.</p>
+
+  <h3>Zone A — Identity bar</h3>
+  <div class="twrap"><table>
+    <tr><th>Element</th><th>Spec</th></tr>
+    <tr><td>Avatar</td><td>40 px circle; discipline-accent ring when live-training; preset gradient until <code>social-avatar-upload</code> unblocks. Tap → profile drawer.</td></tr>
+    <tr><td>Name</td><td>Real name (<code>displayName</code> → <code>User.name</code>), 700 weight. Never an email, never a raw id (shipped identity rule). Handle in ash mono after it.</td></tr>
+    <tr><td>Verification tick</td><td>Identity verification (the existing <code>VerifiedTick</code>) — distinct from lift tiers. Identity says <em>who</em>; the tier badge in zone B says <em>whether the number is real</em>. Conflating them is the classic mistake; we never do.</td></tr>
+    <tr><td>Role chips</td><td>At most two: <span class="pill slate">Coach</span> (links storefront), <span class="pill sand">Elite</span> (federation-ranked), gym chip ("Atlas Gym", tap → gym page). Slate for coach, sand for elite, per the app's accent semantics.</td></tr>
+    <tr><td>Time + place</td><td>Relative time in mono ("2 h"); place at gym granularity only, never coordinates; place can be delayed ("posts location after leaving") — a safety default, on for everyone.</td></tr>
+    <tr><td>Visibility glyph</td><td>Owner-only: public / followers / private eye glyph mirroring <code>Visibility</code>. Viewers never see it — knowing a post is followers-only is itself information.</td></tr>
+    <tr><td>Activity type</td><td>Discipline pill sets the card accent: lime strength, teal conditioning, sand sport, slate coach content (matches the app's tokens).</td></tr>
+    <tr><td>Overflow ⋯</td><td>Context menu: Save, Share out, Copy link, Follow/Unfollow, Mute @name (30 d), Mute this card type, Report, Block. Mute-card-type is the pressure valve that lets us run an opinionated ranked feed.</td></tr>
+  </table></div>
+
+  <h3>Zone B — Headline</h3>
+  <p>The moment, in display type — the one line that survives a 200 ms glance: <strong>"Back Squat 180 kg — new PR"</strong> with its tier badge inline; "First pull-up"; "12-week transformation"; "Won the March Volume challenge". Ordinary sessions get the session title in title size, quieter. The tier badge is the only badge that may sit inside a headline: <span class="pill p1">T2 · witnessed</span> — rendered as a chip, tap → the attestation sheet (who co-signed, when, the snapshotted claim — <code>RecordAttestation</code> is append-only, so the sheet is a receipt, not a claim).</p>
+
+  <h3>Zone C — The figures</h3>
+  <p>All figures read through <code>deviceTrueSession()</code> — measured beats typed, paces derive from exact seconds, never display-rounded values (device-truth rule). Configurations:</p>
+  <ul>
+    <li><strong>Stat row</strong> — up to four mono tabular stats: duration, volume, sets, kcal / avg HR (HR only when a device recording backs it). A subtle watch glyph marks device-measured figures — the "device signature".</li>
+    <li><strong>Top sets</strong> — collapsed default for workouts: the 2–3 heaviest or PR-relevant sets ("Squat 5 × 180 kg", "Bench 3 × 122.5 kg"), not the full ledger. Expand → full block-by-block table with per-set loads, reps, RPE (RPE only if the author opted to share it — feel/fatigue stay owner-only by schema).</li>
+    <li><strong>PR figure</strong> — the shipped <code>prPostFigure()</code>: big mono load + e1RM delta + spark of that lift's last 8 sessions.</li>
+    <li><strong>Muscle map</strong> — compact anterior/posterior silhouette heat for physique-oriented cards.</li>
+  </ul>
+
+  <h3>Zone D — Evidence</h3>
+  <ul>
+    <li><strong>Media</strong> — 1–4 photos (grid) or one video (muted autoplay in-viewport, tap for sound). Lift videos get an optional bar-path overlay later (tier 3 capture).</li>
+    <li><strong>Charts</strong> — progression spark (this lift, 12 weeks), bodyweight trend, HR trace for conditioning. Mono numerals, endpoint emphasised, no gridlines louder than data.</li>
+    <li><strong>Map</strong> — runs/rides only; start/end trimmed by privacy zones; hidden entirely unless the author shares routes.</li>
+  </ul>
+
+  <h3>Zone E — Words</h3>
+  <p>Author's caption (280 chars soft target, expandable), then structured context chips: program link ("W4D2 — Soviet 8-Week"), club, challenge, event. <code>Session.note</code> is <em>never</em> here — it is owner-only by schema and stays that way; the caption is written <em>for</em> the feed or not at all.</p>
+
+  <h3>Zone F — Action bar</h3>
+  <div class="twrap"><table>
+    <tr><th>Action</th><th>Behaviour</th></tr>
+    <tr><td>Kudos</td><td>Primary. One tap, optimistic, haptic; the count is the only public number on the card. Long-press → who gave it. (Existing <code>Kudos</code> model, unique per user+subject.)</td></tr>
+    <tr><td>Comment</td><td>Opens inline thread (shipped): flat with single-level replies. Count shown.</td></tr>
+    <tr><td>Co-sign</td><td>Contextual, PR cards only, only if you were there (same-gym-hour heuristic): "I watched this" — the witness path into tier 2 from the feed side.</td></tr>
+    <tr><td>Match this</td><td>Training-native share: adds this workout/lift to your planned session. The feed's most important action long-term (principle 8).</td></tr>
+    <tr><td>Save</td><td>Private bookmark → Saved collection (workouts become templates).</td></tr>
+    <tr><td>Share out</td><td>OS share sheet with a rendered share card (tier badge included). Quote-posting: not at v1 (D2).</td></tr>
+  </table></div>
+
+  <h3>Collapsed vs expanded</h3>
+  <p><strong>Collapsed (in-feed):</strong> A + B + C(stat row / top sets) + D(first media) + E(2 lines) + F. Target ≤ 420 pt tall. <strong>Expanded (post page):</strong> everything — full set ledger, all media, full thread, attestation receipts, program context, and the logged-vs-measured comparison panel (the one surface that deliberately reads the raw session beside the device recording, mirroring the session summary's exception).</p>
+</section>
+
+<section class="d" id="d4">
+  <div class="sechead"><h2>Deliverable 4 — 34 card types</h2><div class="meta">D4</div></div>
+  <p>Thirty-four types, six families, all built from the D3 zones. <strong>Priority</strong> = ranking moment-weight class (P0 interrupts, P1 leads, P2 fills, P3 seasons — see D6). Collapsed state is per D3 unless noted; "expands to" names the card's full state.</p>
+
+  <h3>Family 1 — Training <span class="pill">auto-generated</span></h3>
+  <div class="twrap"><table>
+    <tr><th>#</th><th>Card</th><th>Purpose</th><th>Pri</th><th>Leads with (visual hierarchy)</th><th>Expands to</th><th>Key actions</th></tr>
+    <tr><td class="num">1</td><td>Completed workout</td><td>The bread of the feed; presence, not spectacle</td><td><span class="pill p2">P2</span></td><td>Session title → top sets → stat row</td><td>Full set ledger + device panel</td><td>Kudos, comment, match, save</td></tr>
+    <tr><td class="num">2</td><td>Bench PR</td><td rowspan="3">The signature moment; each lift its own card so the headline is the lift</td><td rowspan="3"><span class="pill p0">P0</span></td><td rowspan="3">Load in stat type (46 pt mono) → tier badge → e1RM delta → 12-wk spark</td><td rowspan="3">Attestation receipt + lift history + set video</td><td rowspan="3">Kudos, co-sign, comment, match</td></tr>
+    <tr><td class="num">3</td><td>Squat PR</td></tr>
+    <tr><td class="num">4</td><td>Deadlift PR</td></tr>
+    <tr><td class="num">5</td><td>Any-lift PR</td><td>Same treatment for every catalogued movement — PRs aren't only the big three</td><td><span class="pill p1">P1</span></td><td>As 2–4, slightly quieter headline</td><td>Same</td><td>Same</td></tr>
+    <tr><td class="num">6</td><td>First-ever ("First pull-up")</td><td>The beginner's PR; the warmest card in the system</td><td><span class="pill p0">P0</span></td><td>Plain-language headline → optional clip; no loads at all</td><td>Journey view: attempts timeline</td><td>Kudos (celebrate variant), comment</td></tr>
+    <tr><td class="num">7</td><td>Milestone (100th session, 100k kg lifetime)</td><td>Consistency made visible</td><td><span class="pill p1">P1</span></td><td>Counter in stat type → since-date</td><td>Lifetime stats sheet</td><td>Kudos, comment</td></tr>
+    <tr><td class="num">8</td><td>Running activity</td><td>Hybrid athletes run; teal discipline accent</td><td><span class="pill p2">P2</span></td><td>Distance + pace (device-exact) → map ribbon → HR</td><td>Splits table + HR trace + route</td><td>Kudos, comment, match route</td></tr>
+    <tr><td class="num">9</td><td>Cycling activity</td><td>As running</td><td><span class="pill p2">P2</span></td><td>Distance, elevation, avg power if present</td><td>Same pattern</td><td>Same</td></tr>
+    <tr><td class="num">10</td><td>Live session</td><td>Presence — feeds the Now-training strip and stands alone for close friends</td><td><span class="pill p1">P1</span></td><td>Pulsing live dot (semantic, allowed) → current exercise → elapsed</td><td>Live view w/ per-set updates</td><td>Send fuel 🔥, watch</td></tr>
+    <tr><td class="num">11</td><td>Spotter credit</td><td>The two-person primitive: "Marta spotted Jan — 2 assisted reps counted honestly"</td><td><span class="pill p1">P1</span></td><td>Dual avatars → the set they shared</td><td>Both sessions side-by-side</td><td>Kudos (to both), comment</td></tr>
+  </table></div>
+
+  <h3>Family 2 — Progress &amp; recap <span class="pill">auto-generated, share-gated</span></h3>
+  <div class="twrap"><table>
+    <tr><th>#</th><th>Card</th><th>Purpose</th><th>Pri</th><th>Leads with</th><th>Expands to</th><th>Key actions</th></tr>
+    <tr><td class="num">12</td><td>Weekly recap</td><td>Aggregate identity: sessions, volume, streak, best set</td><td><span class="pill p2">P2</span></td><td>4-stat mono row → consistency dots (7)</td><td>Full week: per-day sessions</td><td>Kudos, comment, share out</td></tr>
+    <tr><td class="num">13</td><td>Monthly recap</td><td>The long arc; strongest share-out artifact</td><td><span class="pill p1">P1</span></td><td>Hero stat (chosen by significance) → trend sparks</td><td>Month report</td><td>Share out, kudos</td></tr>
+    <tr><td class="num">14</td><td>Transformation (before/after)</td><td>Bodybuilder's centrepiece; explicit consent flow, watermarked, screenshot-discouraged</td><td><span class="pill p0">P0</span></td><td>Paired photos → timespan → Δ bodyweight</td><td>Timeline of interim photos</td><td>Kudos, comment (slow-mode default)</td></tr>
+    <tr><td class="num">15</td><td>Bodyweight trend</td><td>Cut/bulk arcs as content; opt-in only</td><td><span class="pill p2">P2</span></td><td>12-wk chart → Δ figure → goal chip</td><td>Full graph + phases</td><td>Kudos, comment</td></tr>
+    <tr><td class="num">16</td><td>Lift progression (bench/deadlift/squat chart)</td><td>"Six months of bench" — the chart IS the post</td><td><span class="pill p2">P2</span></td><td>e1RM line, endpoint emphasised → period chip</td><td>Per-session data points → sessions</td><td>Kudos, comment, match program</td></tr>
+    <tr><td class="num">17</td><td>Recovery report</td><td>Rest-day content: readiness restored, HRV trend (wearable-gated)</td><td><span class="pill p3">P3</span></td><td>Readiness dial → sleep/HRV chips</td><td>Recovery detail</td><td>Kudos, comment</td></tr>
+    <tr><td class="num">18</td><td>Streak card</td><td>Terra-accented consistency flex, auto-offered at 7/30/100</td><td><span class="pill p2">P2</span></td><td>Streak count in stat type → calendar strip</td><td>Streak history</td><td>Kudos, comment</td></tr>
+    <tr><td class="num">19</td><td>AI analysis ("your squat responds to volume")</td><td>The engine's insight as shareable content; always labelled, always sourced</td><td><span class="pill p2">P2</span></td><td>One-sentence finding → supporting chart</td><td>Methodology sheet (which sessions, which model)</td><td>Comment, save</td></tr>
+  </table></div>
+
+  <h3>Family 3 — Social &amp; identity</h3>
+  <div class="twrap"><table>
+    <tr><th>#</th><th>Card</th><th>Purpose</th><th>Pri</th><th>Leads with</th><th>Expands to</th><th>Key actions</th></tr>
+    <tr><td class="num">20</td><td>Status post</td><td>The typed post (shipped <code>Post.kind = status</code>); text-first</td><td><span class="pill p2">P2</span></td><td>Text in body type; media if attached</td><td>Thread view</td><td>Kudos, comment</td></tr>
+    <tr><td class="num">21</td><td>Gym photo</td><td>The gym selfie, named honestly; photo-led</td><td><span class="pill p3">P3</span></td><td>Photo full-bleed → caption</td><td>Lightbox</td><td>Kudos, comment</td></tr>
+    <tr><td class="num">22</td><td>Question</td><td>"Knee caves at depth — cues?" Distinct type so answers rank, not kudos</td><td><span class="pill p2">P2</span></td><td>Question in headline type → context chips (lift, level)</td><td>Answer thread, best-answer pinnable by author</td><td>Answer, follow thread</td></tr>
+    <tr><td class="num">23</td><td>Poll</td><td>Community pulse ("Low-bar or high-bar?")</td><td><span class="pill p3">P3</span></td><td>Options as tappable bars → live results after voting</td><td>Results + comments</td><td>Vote, comment</td></tr>
+    <tr><td class="num">24</td><td>Discussion thread</td><td>Long-form seed (coach or power-user); title + body</td><td><span class="pill p2">P2</span></td><td>Title → 3-line body preview</td><td>Full thread, replies</td><td>Comment, save, follow</td></tr>
+    <tr><td class="num">25</td><td>Matched lift ("You and Tomek both benched 100 kg today")</td><td>Serendipity between peers; both must be public/followers-visible</td><td><span class="pill p2">P2</span></td><td>Dual avatars → the shared figure</td><td>Compare view (shipped <code>compareAthletes()</code>)</td><td>Kudos both, comment, compare</td></tr>
+    <tr><td class="num">26</td><td>Co-sign receipt ("Marta confirmed Jan's 180 kg")</td><td>Verification made social; advertises the ladder</td><td><span class="pill p2">P2</span></td><td>Witness avatar → claim → new tier badge</td><td>Attestation sheet</td><td>Kudos, comment</td></tr>
+  </table></div>
+
+  <h3>Family 4 — Coach <span class="pill slate">slate accent</span></h3>
+  <div class="twrap"><table>
+    <tr><th>#</th><th>Card</th><th>Purpose</th><th>Pri</th><th>Leads with</th><th>Expands to</th><th>Key actions</th></tr>
+    <tr><td class="num">27</td><td>Coach advice</td><td>Feed-native expertise; the coach's top-of-funnel</td><td><span class="pill p2">P2</span></td><td>Advice headline → body preview → storefront chip</td><td>Full post + storefront link</td><td>Save, comment, view coach</td></tr>
+    <tr><td class="num">28</td><td>Form check</td><td>Video + coach breakdown; requestable by clients, publishable anonymised</td><td><span class="pill p1">P1</span></td><td>Video with timestamped annotations → one-line verdict</td><td>Frame-by-frame notes</td><td>Save, comment, ask coach</td></tr>
+    <tr><td class="num">29</td><td>Exercise technique</td><td>Evergreen how-to (coach- or editorial-authored)</td><td><span class="pill p3">P3</span></td><td>Movement name → cue list (3) → clip</td><td>Full technique page</td><td>Save, match this</td></tr>
+    <tr><td class="num">30</td><td>Program drop / workout plan</td><td>Coach publishes a program (shipped <code>CoachProgram.published</code>); efficacy index shown when data exists</td><td><span class="pill p1">P1</span></td><td>Program title → level/weeks chips → efficacy figure</td><td>Storefront program page → enrol</td><td>Start program, save</td></tr>
+    <tr><td class="num">31</td><td>Client win</td><td>Anonymised-by-default proof of coaching ("A client added 20 kg in 12 weeks")</td><td><span class="pill p2">P2</span></td><td>Delta figure → program chip → coach identity</td><td>Case study (with client consent)</td><td>View coach, comment</td></tr>
+  </table></div>
+
+  <h3>Family 5 — Community &amp; events</h3>
+  <div class="twrap"><table>
+    <tr><th>#</th><th>Card</th><th>Purpose</th><th>Pri</th><th>Leads with</th><th>Expands to</th><th>Key actions</th></tr>
+    <tr><td class="num">32</td><td>Challenge start / finished challenge</td><td>Time-boxed competition (planned clubs capability); join → progress → podium</td><td><span class="pill p1">P1</span></td><td>Challenge name → metric → countdown / podium (🥇🥈🥉, the shipped medal idiom)</td><td>Challenge leaderboard</td><td>Join, view board</td></tr>
+    <tr><td class="num">33</td><td>Competition / meet result</td><td>Sanctioned results — tier 5; also event announcements ("Hyrox Warsaw, May 12")</td><td><span class="pill p0">P0</span> result / <span class="pill p3">P3</span> event</td><td>Total + placing → federation chip → tier 5 badge</td><td>Meet sheet: attempts board</td><td>Kudos, comment, congratulate</td></tr>
+    <tr><td class="num">34</td><td>Editorial (research summary, fitness news, equipment review, product launch)</td><td>One editorial family, source-first: labelled publisher chip, abstract-style summary, no engagement bait. Capped at 1 per 20 cards</td><td><span class="pill p3">P3</span></td><td>Source chip → claim headline → 3-bullet summary</td><td>Full summary + link out</td><td>Save, comment</td></tr>
+  </table></div>
+
+  <div class="callout"><p class="kicker">Why 34 types don't mean 34 layouts</p>
+  <p>Every card is a zone configuration (D3). Engineering ships <strong>six layout archetypes</strong> — stat-led, media-led, chart-led, text-led, dual-avatar, module — and each type is a preset over them (see D10, where this collapse is made explicit). Adding card type #35 is a content decision, not a component.</p></div>
+</section>
+
+<section class="d" id="d5">
+  <div class="sechead"><h2>Deliverable 5 — Interaction design</h2><div class="meta">D5</div></div>
+
+  <h3>Scroll, refresh, load</h3>
+  <ul>
+    <li><strong>Scrolling</strong> — native physics, no scroll-jacking, no snap. The header collapses behind Liquid Glass using the existing <code>--scroll-collapse</code> mechanic (blur and saturation ramp with progress). Media plays only in-viewport; offscreen cards recycle (FlashList on mobile — already on the backlog as <code>mobile-list-virtualization</code>).</li>
+    <li><strong>Pull-to-refresh</strong> — the glass lens stretches: the refresh indicator is a small Liquid Glass disc that descends, refracts the content behind it (the existing lens material: 10% film, 6 px blur, 1.25 brightness), spins as a rim highlight, and springs back on release with <code>--lg-spring</code> (0.34, 1.56, 0.64, 1). New cards insert <em>above</em> with a "12 new" pill rather than yanking scroll position.</li>
+    <li><strong>Infinite loading</strong> — cursor-paginated, prefetch at 3 cards from the end, skeletons never spinners. "Caught up" marker per D2; beyond it, older ranked content loads on explicit continue.</li>
+  </ul>
+
+  <h3>Gestures</h3>
+  <div class="twrap"><table>
+    <tr><th>Gesture</th><th>Effect</th><th>Notes</th></tr>
+    <tr><td>Tap card body</td><td>Expand to post page</td><td>Shared-element transition: the card grows into the page; identity bar persists (240 ms, <code>--lg-ease</code>)</td></tr>
+    <tr><td>Double-tap media/figures</td><td>Kudos</td><td>Lime pulse from tap point; haptic light. Never on text (protects reading)</td></tr>
+    <tr><td>Swipe right (short)</td><td>Kudos</td><td>Card slides 24 pt, lime edge glow, spring back; identical to un-kudos when already given</td></tr>
+    <tr><td>Swipe left (short)</td><td>Save</td><td>Sand bookmark edge; second swipe unsaves</td></tr>
+    <tr><td>Long-press card</td><td>Context menu</td><td>Card lifts (scale 1.02, shadow deepens), glass sheet menu: Save, Share out, Match this, Mute @name, Mute type, Report. Haptic medium</td></tr>
+    <tr><td>Long-press kudos</td><td>Who gave kudos</td><td>Avatar stack sheet</td></tr>
+    <tr><td>Pinch media</td><td>Zoom in place</td><td>Standard lightbox on release past threshold</td></tr>
+    <tr><td>Horizontal edge swipe</td><td>Between feed tabs</td><td>For you ↔ Following ↔ Clubs; the Today pills stay put</td></tr>
+  </table></div>
+
+  <h3>Micro-interactions and haptics</h3>
+  <div class="twrap"><table>
+    <tr><th>Moment</th><th>Motion</th><th>Haptic</th></tr>
+    <tr><td>Kudos given</td><td>Glyph fills lime, scales 1 → 1.25 → 1 on the spring curve; count ticks up with a 60 ms mono digit roll</td><td>Light</td></tr>
+    <tr><td>PR card enters viewport</td><td>Once per card, the load figure counts up 0 → value over 500 ms; tier badge fades in after</td><td>None (ambient)</td></tr>
+    <tr><td>Co-sign confirmed</td><td>Badge tier flips with a 3D Y-flip; rim catches a lime specular sweep</td><td>Success</td></tr>
+    <tr><td>Send fuel (live card)</td><td>🔥 arcs from your tap to the avatar; recipient's watch taps them mid-set</td><td>Light / recipient: notification</td></tr>
+    <tr><td>Comment posted</td><td>Optimistic insert, slight settle bounce</td><td>Light</td></tr>
+    <tr><td>Streak milestone card</td><td>Terra ember drift behind the counter (respects reduced-motion: static)</td><td>Medium</td></tr>
+  </table></div>
+  <p>All motion honours <code>prefers-reduced-motion</code> (crossfades replace movement) and the existing reduced-transparency fallback (solid <code>rgba(glass-base, 0.94)</code> replaces blur).</p>
+
+  <h3>States</h3>
+  <ul>
+    <li><strong>Skeletons</strong> — card-shaped placeholders mirroring the six archetypes (identity circle, headline bar, stat row blocks) with the app's shimmer; skeleton count matches viewport, never a spinner in the scroll.</li>
+    <li><strong>Empty states</strong> — per surface, always with one action: feed cold-start (D2 #13), no notifications ("Quiet. Go make some noise — start today's session"), search no-results (offer invite link), Clubs pre-launch (hidden, not empty).</li>
+    <li><strong>Offline</strong> — the feed renders its last page from cache with an ash "Offline — showing Tuesday 18:40" ribbon. Kudos, saves, comments queue locally and reconcile with server order on reconnect; queued items show a subtle clock glyph. Composer drafts persist. Nothing blocks; nothing is lost.</li>
+    <li><strong>Errors</strong> — inline, specific, recoverable: a failed page load appends a retry card ("Couldn't load more — Retry"), never a full-screen error over content that already rendered. Failed actions revert optimistic state with a toast naming the action ("Kudos didn't send — tap to retry").</li>
+  </ul>
+</section>
+
+<section class="d" id="d6">
+  <div class="sechead"><h2>Deliverable 6 — Ranking</h2><div class="meta">D6</div></div>
+
+  <h3>Philosophy</h3>
+  <p class="lede">Rank the moment first, the relationship second, the clock third — and cap the machine's favourite trick.</p>
+  <p>Engagement-probability ranking, left alone, converges on outrage and thirst; that is X's lesson. Strava's lesson is the opposite failure: pure recency buries a friend's marathon under nine commutes. Our function makes <strong>moment weight</strong> — an editorial judgment encoded as data — the leading term, and treats predicted engagement as a <em>capped multiplier</em>, never the leader. The feed's KPI is sessions-started-after-viewing, not dwell time (principle 8): we tune ranking against training outcomes, which no engagement-maximising feed can claim.</p>
+
+  <h3>The score</h3>
+  <p><code>score = M × (1 + A) × (1 + F) × E × D(t)</code> — moment, affinity, fit, engagement (capped), decay.</p>
+
+  <div class="twrap"><table>
+    <tr><th>Term</th><th>Signals</th><th>Notes</th></tr>
+    <tr><td>M — moment</td><td>Card-type base class P0 &gt; P1 &gt; P2 &gt; P3 (D4), verification tier bonus (a T2 PR outranks a T0 PR), rarity (first-ever &gt; repeat), magnitude (e1RM delta percentile within the author's history)</td><td>The editorial term. Set by product, not learned; learned terms may only modulate within a class, never across.</td></tr>
+    <tr><td>A — affinity</td><td>Relationship strength: close friend &gt; friend (mutual) &gt; following &gt; none (shipped <code>Relation</code> ladder); interaction history (kudos/comments both ways, recency-weighted); co-sign history (a witness bond is the strongest edge we have)</td><td>Two-way signals only — being followed <em>by</em> someone famous adds nothing.</td></tr>
+    <tr><td>F — fit</td><td>Training similarity (shared lifts, same program, same goal), strength proximity (author's e1RM within ±10–15% of viewer's on the card's lift), same gym, same city, same club/challenge, coach relevance (your coach ×3; coaches you follow ×1.5), competition relevance (same upcoming meet/event)</td><td>Fit is why a stranger's card can beat a friend's: a same-gym peer matching your bench is more useful than a friend's ninth commute.</td></tr>
+    <tr><td>E — engagement</td><td>Predicted p(kudos ∪ comment ∪ save ∪ match) from card features + viewer history</td><td><strong>Clamped to [0.8, 1.5].</strong> The cap is the whole point: E breaks ties, it never sets the agenda.</td></tr>
+    <tr><td>D(t) — decay</td><td>Half-life per family: live 15 min; workout 18 h; PR 72 h; recap 5 d; question/discussion 7 d (answers refresh it); editorial 14 d</td><td>Different content ages differently; one global half-life is why other feeds feel either stale or frantic.</td></tr>
+  </table></div>
+
+  <h3>Guardrails</h3>
+  <ul>
+    <li><strong>Author diversity</strong> — max 2 cards per author per session view; a same-author third coalesces into "Marek trained twice more today".</li>
+    <li><strong>Consistency over celebrity</strong> — a small boost for authors on active streaks and for posts-per-follower <em>low</em> accounts: the quiet consistent lifter surfaces, the engagement farmer doesn't.</li>
+    <li><strong>Negative signals are absolute</strong> — mute-type and "show less like this" apply immediately and permanently until reversed; no decay-back.</li>
+    <li><strong>Every non-followed card explains itself</strong> — "Same program, W4" / "Trains at Atlas Gym" / "±5 kg of your bench", in the identity bar's meta line. If we can't state the reason in six words, we don't show the card.</li>
+    <li><strong>Following stays chronological</strong> — the ranked feed earns trust only while the unranked exit exists.</li>
+    <li><strong>Cold start</strong> — before the graph exists: strength-band + gym + program fit only, quality-floored (verified moments and answered questions), geography-diverse. No engagement term at all for new users; it has nothing honest to say yet.</li>
+  </ul>
+</section>
+
+<section class="d" id="d7">
+  <div class="sechead"><h2>Deliverable 7 — Engagement loops</h2><div class="meta">D7</div></div>
+  <p>Loops that return people to training, ranked by honesty. Global constraints first — these are product law, not tuning parameters:</p>
+  <ul>
+    <li><strong>Notification budget:</strong> ≤ 3 pushes/day default (user-adjustable), Inbox-class always wins the budget; everything else coalesces into digests.</li>
+    <li><strong>Every push deep-links to a state worth arriving at.</strong> If the destination isn't ready (e.g. recap not rendered), the push doesn't send.</li>
+    <li><strong>No synthetic urgency, no guilt copy.</strong> "Challenge ends tonight" is a fact; "Don't lose your streak 😢" is manipulation. We send facts.</li>
+    <li><strong>Rivalry is opt-in.</strong> Comparison pushes ("Kasia passed you") send only between users who both enabled Rivals.</li>
+  </ul>
+
+  <div class="twrap"><table>
+    <tr><th>Loop</th><th>Trigger → message</th><th>Cadence cap</th><th>Why it's honest</th></tr>
+    <tr><td>Co-sign request</td><td>Witness named → "Adam asks you to confirm his 180 kg squat"</td><td>Uncapped (person-to-person)</td><td>A human is literally waiting; also the growth loop — non-users get it as an invite</td></tr>
+    <tr><td>Co-sign confirmed</td><td>Witness responds → "Marta confirmed your squat — Tier 2"</td><td>Per event</td><td>News about your own record</td></tr>
+    <tr><td>Matched lift</td><td>Peer hits your number same week → "Tomek also benched 100 kg today"</td><td>2/week</td><td>Serendipity between consenting peers, both public</td></tr>
+    <tr><td>Friend PR</td><td>Close friend or Rival PRs → "Kasia just deadlifted 150 kg (T2)"</td><td>Digest if &gt;2/day</td><td>You'd want to know; kudos one tap from the push</td></tr>
+    <tr><td>Rival passed you</td><td>Mutual Rivals only → "Piotr moved ahead on bench — 2.5 kg"</td><td>1/week/rival</td><td>Explicitly subscribed competition</td></tr>
+    <tr><td>Coach responded</td><td>Coach comments/answers form check → "Coach Nowak replied on your squat video"</td><td>Uncapped</td><td>You asked; they answered</td></tr>
+    <tr><td>Streak maintenance</td><td>Planned session day, evening, streak ≥ 7 → "Session W4D2 keeps the 12-day streak"</td><td>1/day, only on planned days</td><td>Tied to their own plan, not an arbitrary daily nag</td></tr>
+    <tr><td>Recovery reminder</td><td>Readiness recovered after hard block → "Green again — yesterday's rest worked"</td><td>2/week</td><td>Rest-day touchpoint that praises resting; anti-overtraining, not anti-rest</td></tr>
+    <tr><td>Challenge ending</td><td>Joined challenge, &lt; 24 h, position within reach → "Volume March ends tonight — you're #4, 900 kg off #3"</td><td>1/challenge</td><td>Actionable, time-true, joined voluntarily</td></tr>
+    <tr><td>Weekly recap</td><td>Monday morning → "Your week: 4 sessions, 21,300 kg, one PR"</td><td>1/week</td><td>The aggregate-identity loop; doubles as the share prompt</td></tr>
+    <tr><td>Monthly recap</td><td>Month end → hero-stat card ready</td><td>1/month</td><td>Same, longer arc</td></tr>
+    <tr><td>Crew is lifting</td><td>≥ 2 close friends live at your usual hour → "Marta and Jan are training now"</td><td>1/day, usual-hour only</td><td>Presence, the gym-buddy loop; drives Now-training strip</td></tr>
+    <tr><td>Question answered</td><td>Answer on your question / best-answer marked on yours</td><td>Digest</td><td>You asked</td></tr>
+  </table></div>
+
+  <p>The deliberate absences: no "someone viewed your profile", no "you have unopened notifications", no re-engagement streak-guilt after a layoff — a returning athlete gets "Week 1, day 1 — rebuilt for where you are now" from the plan engine, not a shame screen.</p>
+</section>
+
+<section class="d" id="d8">
+  <div class="sechead"><h2>Deliverable 8 — Visual design system</h2><div class="meta">D8</div></div>
+  <p>The feed inherits Aurora — the app's single shipped template — wholesale. Nothing below is invented for the feed; the feed's job is to be the most disciplined user of the existing system. Values are quoted from <code>theme/tokens.ts</code>, <code>scale.ts</code>, <code>nav-bar.ts</code> and <code>globals.css</code>.</p>
+
+  <h3>Color — Aurora Spectrum (dark) / Kyoto Hour (light)</h3>
+  <div class="twrap"><table>
+    <tr><th>Token</th><th>Dark</th><th>Light</th><th>Feed usage</th></tr>
+    <tr><td><span class="sw" style="background:#0c0d0c"></span>ink</td><td class="num">#0c0d0c</td><td class="num">#f6f3ea</td><td>Screen ground</td></tr>
+    <tr><td><span class="sw" style="background:#151715"></span>card</td><td class="num">#151715</td><td class="num">#fcfaf3</td><td>Card surface — flat, hairline-bordered, no shadow at rest</td></tr>
+    <tr><td><span class="sw" style="background:#242724"></span>line</td><td class="num">#242724</td><td class="num">#e6e1d2</td><td>Hairlines everywhere; the only divider weight</td></tr>
+    <tr><td><span class="sw" style="background:#f3f4ef"></span>chalk</td><td class="num">#f3f4ef</td><td class="num">#2b2a26</td><td>Primary text, figures</td></tr>
+    <tr><td><span class="sw" style="background:#8b8f86"></span>ash</td><td class="num">#8b8f86</td><td class="num">#6f6b5e</td><td>Meta, timestamps, labels</td></tr>
+    <tr><td><span class="sw" style="background:#c6f84f"></span>lime</td><td class="num">#c6f84f</td><td class="num">#44584c (pine)</td><td>Strength accent, kudos, primary actions, tier badges</td></tr>
+    <tr><td><span class="sw" style="background:#6cb6bd"></span>blue (teal)</td><td class="num">#6cb6bd</td><td class="num">#4c5a78</td><td>Conditioning cards — runs, rides, HR</td></tr>
+    <tr><td><span class="sw" style="background:#8ba0cc"></span>violet (slate)</td><td class="num">#8ba0cc</td><td class="num">#4c5a78</td><td>Coach content family</td></tr>
+    <tr><td><span class="sw" style="background:#d0cd94"></span>amber (sand)</td><td class="num">#d0cd94</td><td class="num">#885c00</td><td>Sport/event cards, elite chip, premium cues</td></tr>
+    <tr><td><span class="sw" style="background:#e58a5c"></span>red (terra)</td><td class="num">#e58a5c</td><td class="num">#a3442f</td><td>Streaks, live-now, alerts — the CONNECT accent</td></tr>
+    <tr><td><span class="sw" style="background:#e6c34e"></span>gold</td><td class="num">#e6c34e</td><td class="num">#b58a24</td><td>Podium, sanctioned (tier 5) results only</td></tr>
+  </table></div>
+  <p><strong>One accent per card.</strong> The discipline sets it (zone A); every other element on the card stays in chalk/ash. Two accents on one card is a design-review rejection.</p>
+
+  <h3>Typography</h3>
+  <div class="twrap"><table>
+    <tr><th>Role</th><th>Face</th><th>Feed usage</th></tr>
+    <tr><td>Display</td><td>Archivo 400–900</td><td>Headlines (zone B) at 800; names at 700; body at 400. Light theme headings switch to Shippori Mincho per the shipped theme.</td></tr>
+    <tr><td>Condensed</td><td>Archivo Narrow 500–700</td><td>Chips, pills, filter tabs</td></tr>
+    <tr><td>Mono</td><td>JetBrains Mono 400–700</td><td>Every figure, timestamp, kicker. Always <code>tabular-nums</code>. Loads render as "180 kg" with the unit at 70% size.</td></tr>
+  </table></div>
+  <p>Scale (from <code>scale.ts</code>, shared by both clients): <span class="mono">nano 10 · micro 11 · caption 12 · body 13 · bodyLg 14 · note 15 · subtitle 16 · title 18 · heading 20 · headline 22 · display 26 · hero 34 · stat 46</span> — the middots here are the file's own notation, not UI copy. Feed mapping: card headline = <strong>headline 22</strong>, PR load = <strong>stat 46</strong>, names = <strong>note 15</strong>, meta = <strong>caption 12</strong>, stat rows = <strong>subtitle 16 mono</strong>. Line heights and tracking from the same map (display −0.5, labels +0.9, caps +1.2).</p>
+
+  <h3>Spacing, radius, cards</h3>
+  <ul>
+    <li><strong>Spacing</strong> — the shared map: <span class="mono">4 · 6 · 8 · 10 · 12 · 16 · 20 · 24 · 32 · 40</span>. Card internal padding 16; zone gaps 12; card-to-card 12 on ink (the hairline does the separating, not distance); screen gutter 16 — and every horizontal rail bleeds full-width under the physical edge per the app's rail rule (negative margin = gutter, matching internal padding).</li>
+    <li><strong>Radius</strong> — Aurora's <span class="mono">card 28 · field 16 · inner 12 · pill 999 · mark 3</span>. Feed cards 28; media within cards 16; chips pill.</li>
+    <li><strong>Depth</strong> — flat at rest: card on ink with a line hairline, no shadow. Elevation is earned by interaction only (long-press lift) and by material (glass sheets). Aurora's depth language is <em>material</em>, not drop shadows.</li>
+  </ul>
+
+  <h3>Materials — Liquid Glass</h3>
+  <p>The shipped recipe, applied to the feed's chrome only (never to content cards): nav and collapsing header at <span class="mono">blur 14 / saturate 1.8 / brightness 1.08</span> over a 6% film; sheets (context menus, attestation receipts, kudos lists) at <span class="mono">blur 20 / saturate 1.4</span>; the refresh lens at the lens spec (10% film, blur 6, brightness 1.25). "A nearly clear body whose identity lives at the rim" — the codebase's own words; rim refraction, grain overlay and specular sweeps come from the registered <code>--lg-*</code> properties. Fallbacks are already law: <code>@supports not (backdrop-filter)</code> and reduced-transparency get solid 94–97% surfaces.</p>
+
+  <h3>Badges — the tier ladder</h3>
+  <div class="tiers">
+    <div class="tier"><span class="tn">T0</span><span class="tt">Claimed</span><span class="td">Typed into the logger. No badge shown — absence is the mark. Figures render at 600 weight.</span></div>
+    <div class="tier"><span class="tn">T1</span><span class="tt">Sensed</span><span class="td">Matched device recording corroborates the workout. Watch glyph, ash. Figures at 700.</span></div>
+    <div class="tier"><span class="tn">T2</span><span class="tt">Witnessed</span><span class="td">Co-signed by a named account. Lime chip with witness count; tap → receipt. Figures at 800.</span></div>
+    <div class="tier off"><span class="tn">T3</span><span class="tt">Recorded</span><span class="td">Video with lift detection + plate count (planned). Chip gains a frame glyph.</span></div>
+    <div class="tier off"><span class="tn">T4</span><span class="tt">Instrumented</span><span class="td">Bar sensor / force plate (planned). Chip gains a sensor glyph.</span></div>
+    <div class="tier off"><span class="tn">T5</span><span class="tt">Sanctioned</span><span class="td">Federation result (planned). Gold — the only gold in the feed besides podiums.</span></div>
+  </div>
+  <p>The ladder is monotone in <em>visual weight</em>, not colour spray: higher tiers earn heavier figures and one chip, never rainbow badges. Identity verification (the tick) stays visually unrelated.</p>
+
+  <h3>Charts</h3>
+  <p>Sparklines and progressions follow one spec: 1.5 px line in the card's accent, area fill at 12% opacity, endpoint dot emphasised with the current value in mono beside it, no axes in-card (full axes on expand), faint hairline grid only on expanded views. Never more than one series in a collapsed card. All values device-true.</p>
+
+  <h3>Dark, light, accessibility</h3>
+  <ul>
+    <li><strong>Dark (Aurora)</strong> is the design-lead theme; <strong>light (Kyoto Hour)</strong> is a full re-voicing, not an inversion — washi grounds, pine accent, Mincho headings — already shipped and token-guarded by <code>palette.test.ts</code>.</li>
+    <li><strong>Contrast</strong> — chalk on card ≈ 14:1; ash on card ≈ 4.9:1 (meta text ≥ 4.5:1 held in both themes); lime is never body-text-on-ink for long runs — it's a chip/figure colour.</li>
+    <li><strong>Type scaling</strong> — both clients read the shared scale; web's px → rem migration is on the backlog (<code>web-font-rem</code>) and the feed ships rem-first rather than adding to that debt.</li>
+    <li><strong>Screen readers</strong> — cards expose a composed label ("Kasia Nowak, Back Squat 180 kilograms, new personal record, witnessed tier, 2 hours ago, 14 kudos"); actions are real buttons in DOM/accessibility order A → F; charts carry text summaries.</li>
+    <li><strong>Motion & transparency</strong> — reduced-motion swaps movement for crossfades; reduced-transparency swaps glass for solids (both fallbacks already exist in the codebase).</li>
+    <li><strong>House rules apply</strong> — no middot separators anywhere (spaced en dash in joined meta lines), no decorative dots before section labels (SectionHead idiom: bold display title left, mono meta right), semantic dots only (live, legend, calendar).</li>
+  </ul>
+</section>
+
+<section class="d" id="d9">
+  <div class="sechead"><h2>Deliverable 9 — Wireframes</h2><div class="meta">D9</div></div>
+  <p>Low-fidelity by intent: structure and labels, no styling decisions beyond what D8 already fixes. Dashed = tappable region; solid = static content; lime = the screen's primary action. Frames are the mobile client; web renders the same stack in a centered column with the pill nav.</p>
+
+  <div class="wfgrid">
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb s grow">Header — HYBRID (Liquid Glass, collapses)</div></div>
+      <div class="wfrow"><div class="wfb">Dashboard</div><div class="wfb">Performance</div><div class="wfb s">Feed ●</div></div>
+      <div class="wfb hi">Co-sign inbox — "Adam asks: Back Squat 180 kg" [I watched it] [Decline]</div>
+      <div class="wfrow"><div class="wfb s">For you</div><div class="wfb">Following</div><div class="wfb">Clubs</div></div>
+      <div class="wfb">Now training — avatar strip (live rings) → tap: live card</div>
+      <div class="wfb ghost">Composer (collapsed) — "Say something — or just train"</div>
+      <div class="wfb s" style="min-height:118px">CARD: PR (P0)<span class="big">Deadlift 210 kg — T2 chip</span>stat 46 mono — e1RM Δ — 12-wk spark<br>[kudos] [co-sign] [comment] [match] [⋯]</div>
+      <div class="wfb" style="min-height:84px">CARD: workout (P2) — title, top sets ×3, stat row (watch glyph), kudos/comment/save</div>
+      <div class="wfb">MODULE: leaderboard delta — "#2 on volume this week"</div>
+      <div class="wfb" style="min-height:70px">CARD: question — headline + context chips + answer count</div>
+      <div class="wfb ghost">— You're caught up — [Go train: W4D2 Lower]</div>
+      <div class="grow"></div>
+      <div class="wfb s">Pill nav — Today ● Nutrition Train More Profile</div>
+    </div>
+    <figcaption><b>1 — Feed.</b> Feed is Today's third pill. Co-sign inbox pinned first; tabs sticky; Now-training strip replaces stories; composer deliberately quiet; caught-up marker exits to the logger.</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb fix">← Back</div><div class="wfb s grow">Post — identity bar persists (shared element)</div></div>
+      <div class="wfb s">A: avatar — Kasia Nowak @kasia — Coach chip — Atlas Gym — 2 h</div>
+      <div class="wfb s" style="min-height:56px">B: HEADLINE — "Back Squat 180 kg — new PR" + T2 chip (tap → receipt sheet)</div>
+      <div class="wfb" style="min-height:64px">C: figures — stat row (duration/volume/sets/HR·watch glyph) + full set ledger, per-set load/reps/RPE</div>
+      <div class="wfb" style="min-height:74px">D: evidence — video (muted autoplay) — progression chart w/ axes</div>
+      <div class="wfb">Logged vs measured panel (raw session beside device recording)</div>
+      <div class="wfb">E: caption + program chip "W4D2 — Soviet 8-Week"</div>
+      <div class="wfb hi">F: [Kudos 14] [Comment 3] [Co-sign] [Match this] [Save] [Share]</div>
+      <div class="wfb" style="min-height:64px">Thread preview — top 2 comments → all comments</div>
+      <div class="grow"></div>
+      <div class="wfb ghost">Overflow ⋯ — mute / report / copy link</div>
+    </div>
+    <figcaption><b>2 — Expanded post.</b> All six zones at full depth; attestation receipt and logged-vs-measured panel appear only here, never in-feed.</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb fix">← Post</div><div class="wfb s grow">Comments (12)</div></div>
+      <div class="wfb ghost">Context stub — collapsed card: headline + figure only</div>
+      <div class="wfb" style="min-height:56px">Comment — avatar, name, body, 1 h — [kudos] [reply]</div>
+      <div class="wfb" style="min-height:44px">↳ Reply (single level) — avatar, body — [kudos]</div>
+      <div class="wfb" style="min-height:56px">Comment — author-pinned "best answer" (question cards)</div>
+      <div class="wfb" style="min-height:56px">Comment — coach reply w/ slate Coach chip</div>
+      <div class="wfb ghost">Load earlier comments (12 more)</div>
+      <div class="grow"></div>
+      <div class="wfb ghost">Slow-mode notice (transformation cards): "Comments reviewed by author"</div>
+      <div class="wfb hi">Input — avatar + field + [Send]; @mention typeahead; keyboard-safe</div>
+    </div>
+    <figcaption><b>3 — Comments.</b> Flat with one reply level — depth-2 threads are where fitness comments go to die. The card stays visible as a collapsed stub for context.</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb fix">← Back</div><div class="wfb grow">@handle</div><div class="wfb fix">⋯ block/report</div></div>
+      <div class="wfb s" style="min-height:56px">Identity — avatar 72, REAL NAME (700), handle, gym chip, bio 2 lines</div>
+      <div class="wfrow"><div class="wfb hi grow">Follow / Following ▾</div><div class="wfb fix">Compare</div></div>
+      <div class="wfb">Showcase — athlete's 3 chosen stats (mono)</div>
+      <div class="wfb s" style="min-height:64px">VERIFIED RECORDS — best per lift w/ tier chips: SQ 180 T2 — BP 122.5 T1 — DL 210 T2</div>
+      <div class="wfb">Training graph — 12-week consistency heat strip</div>
+      <div class="wfrow"><div class="wfb s">Posts</div><div class="wfb">PRs</div><div class="wfb">Media</div></div>
+      <div class="wfb" style="min-height:64px">Post card (collapsed)</div>
+      <div class="wfb" style="min-height:64px">Post card (collapsed)</div>
+      <div class="grow"></div>
+      <div class="wfb ghost">Connections — followers / following (counts live here, not on cards)</div>
+    </div>
+    <figcaption><b>4 — Profile.</b> Verified records are the centrepiece — a strength profile leads with what's provable. Follower counts live only here (principle 4).</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb fix">←</div><div class="wfb s grow">Notifications</div><div class="wfb fix">Settings</div></div>
+      <div class="wfb ghost">INBOX — decisions (badge counts these only)</div>
+      <div class="wfb hi" style="min-height:56px">Co-sign request — claim snapshot — [I watched it] [Decline]</div>
+      <div class="wfb">Follow request (private acct) — [Accept] [Decline]</div>
+      <div class="wfb">Coach enrolment request — [View]</div>
+      <div class="wfb">Challenge invite — [Join] [Ignore]</div>
+      <div class="wfb ghost">ACTIVITY — glances (coalesced)</div>
+      <div class="wfb">Kudos — "Kasia and 6 others — your Tuesday session"</div>
+      <div class="wfb">Comment — "Piotr: what's your bracing cue?" → thread</div>
+      <div class="wfb">Matched lift — "Tomek also benched 100 kg"</div>
+      <div class="wfb">Rival (opt-in) — "Piotr ahead on bench by 2.5 kg"</div>
+      <div class="grow"></div>
+      <div class="wfb ghost">Mark all read — activity only; inbox items must be answered</div>
+    </div>
+    <figcaption><b>5 — Notifications.</b> Hard Inbox/Activity split: a badge always means a decision is waiting. Activity coalesces; Inbox never does.</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfb hi">Search field — "people, gyms, clubs, exercises" + [Cancel]</div>
+      <div class="wfrow"><div class="wfb s">All</div><div class="wfb">People</div><div class="wfb">Gyms</div><div class="wfb">Clubs</div><div class="wfb">Exercises</div></div>
+      <div class="wfb ghost">Recent searches — clearable</div>
+      <div class="wfb ghost">PEOPLE</div>
+      <div class="wfb">Row — avatar, real name, @handle, "2 mutuals" — [Follow]</div>
+      <div class="wfb">Row — avatar, name, Coach chip, rating — [View]</div>
+      <div class="wfb ghost">GYMS</div>
+      <div class="wfb">Row — Atlas Gym — 34 members — [View]</div>
+      <div class="wfb ghost">EXERCISES</div>
+      <div class="wfb" style="min-height:52px">Row — Back Squat — verified board preview (top 3 w/ tier chips) → exercise page</div>
+      <div class="grow"></div>
+      <div class="wfb ghost">Empty: "No one yet — invite link" </div>
+    </div>
+    <figcaption><b>6 — Search.</b> One field, four entity types. Exercise results open exercise pages with verified leaderboards — search as a discovery surface, not a lookup box.</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb fix">←</div><div class="wfb s grow">Find friends</div><div class="wfb fix">Search</div></div>
+      <div class="wfb">Contact sync (opt-in) — one-time card, dismissible</div>
+      <div class="wfb ghost">FROM YOUR GYM</div>
+      <div class="wfb">Row — name — "Trains at Atlas Gym — 2 mutuals" — [Follow]</div>
+      <div class="wfb">Row — name — "Same program: Soviet 8-Week" — [Follow]</div>
+      <div class="wfb ghost">YOUR STRENGTH BAND</div>
+      <div class="wfb">Row — name — "Bench within 5 kg of yours" — [Follow]</div>
+      <div class="wfb ghost">FOLLOW A COACH — full-bleed rail (290 px cards)</div>
+      <div class="wfb" style="min-height:64px">CoachRail — storefront cards: name, specialty, rating, [View]</div>
+      <div class="wfb ghost">LEADERBOARD — friends, metric switch → shipped screen</div>
+      <div class="grow"></div>
+      <div class="wfb ghost">Every suggestion states its graph reason — no reason, no row</div>
+    </div>
+    <figcaption><b>7 — Discover.</b> Suggestions grouped by reason, not by score. The coach rail is the shipped full-bleed marquee.</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb fix">←</div><div class="wfb s grow">Challenges</div></div>
+      <div class="wfb ghost">ACTIVE — yours</div>
+      <div class="wfb s" style="min-height:70px">March Volume — progress bar — you #4 of 31 — 2 d left — [Board]</div>
+      <div class="wfb" style="min-height:52px">Squat Streak 30 — day 12/30 — calendar strip</div>
+      <div class="wfb ghost">OPEN — join</div>
+      <div class="wfb" style="min-height:56px">Hyrox Prep Cohort — 8 wks — 120 in — metric: sessions — [Join]</div>
+      <div class="wfb" style="min-height:56px">100k kg Club — lifetime volume — [Join]</div>
+      <div class="wfb ghost">FINISHED</div>
+      <div class="wfb">February Bench — podium 🥇🥈🥉 — your #7 — [Recap card]</div>
+      <div class="grow"></div>
+      <div class="wfb hi">Create challenge (clubs/coaches) — metric, window, visibility</div>
+    </div>
+    <figcaption><b>8 — Challenges.</b> Time-boxed, metric-ranked via the shipped <code>friendLeaderboard</code> metrics; finishing mints a feed card (D4 #32). Ships with the clubs capability.</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb fix">←</div><div class="wfb grow">Coach</div><div class="wfb fix">Share</div></div>
+      <div class="wfb s" style="min-height:56px">Identity — avatar, name, VerifiedTick, Coach chip, specialty, sports, rating ★4.9 (23)</div>
+      <div class="wfb">Headline + bio — accepting clients — price note</div>
+      <div class="wfb hi">Start a program — one-tap enrolment (pending/active per autoAccept)</div>
+      <div class="wfb ghost">PROGRAMS (published)</div>
+      <div class="wfb" style="min-height:56px">Program — level, weeks, efficacy figure ("+9% e1RM median, n=41") — [View]</div>
+      <div class="wfb">Program — [View]</div>
+      <div class="wfb ghost">REVIEWS</div>
+      <div class="wfb">Review — stars, body, client name</div>
+      <div class="wfb ghost">POSTS — advice / form checks / client wins (slate accent)</div>
+      <div class="wfb" style="min-height:52px">Coach card (collapsed)</div>
+      <div class="grow"></div>
+    </div>
+    <figcaption><b>9 — Coach profile.</b> The shipped storefront with the feed grafted under it; the efficacy figure is the honest differentiator no rival storefront can show.</figcaption>
+  </figure>
+
+  <figure class="wf">
+    <div class="frame">
+      <div class="wfrow"><div class="wfb fix">←</div><div class="wfb s grow">Activity — Lower W4D2</div><div class="wfb fix">⋯</div></div>
+      <div class="wfb">Identity bar — athlete, gym, started 17:32, 64 min (watch glyph)</div>
+      <div class="wfb s" style="min-height:52px">Stat band — volume 12,400 kg — sets 22 — kcal 540 — avg HR 132 (all device-true)</div>
+      <div class="wfb" style="min-height:88px">Block ledger — per exercise: sets × reps × load, PR rows flagged w/ tier chips, RPE if shared</div>
+      <div class="wfb">Muscle map — session heat, anterior/posterior</div>
+      <div class="wfb">Device panel — logged vs measured comparison (the one raw-session read)</div>
+      <div class="wfb">Charts — intensity over session, HR trace (teal)</div>
+      <div class="wfb hi">[Kudos] [Comment] [Match this workout] [Save as template]</div>
+      <div class="grow"></div>
+      <div class="wfb ghost">Owner extras (never public): note, mood, feel/fatigue — schema-private</div>
+    </div>
+    <figcaption><b>10 — Activity detail.</b> The full session as others see it; the owner-only strip at the bottom exists solely in the owner's view — enforced by schema, not by styling.</figcaption>
+  </figure>
+
+  </div>
+</section>
+
+<section class="d" id="d10">
+  <div class="sechead"><h2>Deliverable 10 — Critical review</h2><div class="meta">D10</div></div>
+  <p>The document above, read hostilely. Each finding states the weakness, then the redesign it forced. Items marked <span class="pill terra">open</span> ship with the risk and a measurement plan.</p>
+
+  <h3>Weak points</h3>
+  <div class="card anti"><h4>1 — The feed is buried a swipe deep <span class="pill terra">open</span></h4>
+  <p>Feed-as-Today-pill (D1) trades reach for context. Strava's feed is the home screen; ours is one tap further, and habit loops are exponentially sensitive to taps. <strong>Mitigation shipped in this spec:</strong> the co-sign inbox and Now-training strip surface on the Today <em>dashboard</em> as a compact CONNECT strip (the existing <code>feed-preview.tsx</code>, upgraded), so the feed's most alive content meets the user on screen one. <strong>Measurement:</strong> if feed DAU/app DAU &lt; 35% after two months, we revisit the pill order (Feed second, Performance third) before ever considering a nav tab.</p></div>
+
+  <div class="card anti"><h4>2 — Verification could read as a caste system → redesigned</h4>
+  <p>If T0 posts feel second-class, beginners — who are all T0 — churn. <strong>Redesign, now in D8:</strong> absence of a badge is the T0 mark (no "unverified" scarlet letter); tier bonuses in ranking apply only <em>within</em> PR-class cards, never to ordinary workouts; first-ever cards carry no loads at all. Verification pressure lands exactly where it belongs — on big claims — and nowhere else.</p></div>
+
+  <div class="card anti"><h4>3 — Two audiences, one feed (coach spam risk) → redesigned</h4>
+  <p>Coach content is our differentiator and our spam vector: unchecked, every storefront floods the funnel. <strong>Redesign, now in D4/D6:</strong> coach cards are their own family with slate accent (instantly recognisable, filterable via mute-type), capped by the editorial-style frequency rule for non-followed coaches, and the coach rail appears at most once per session for coachless users only. Coaches earn organic reach through client-win and answer cards — proof, not promotion.</p></div>
+
+  <div class="card anti"><h4>4 — Nearby + gym graph is a stalking surface → redesigned</h4>
+  <p>The original brief asked for "Nearby". Combined with live presence, that is a real-world safety hazard, disproportionately for women. <strong>Redesign, throughout:</strong> no public nearby surface at all (D2); location at gym granularity only; delayed-location default on posts; the Now-training strip is close-friends/followers-scoped and per-session suppressible; gym membership is opt-in and hidden from search until the athlete confirms. Privacy review sign-off is a launch gate, not a fast-follow.</p></div>
+
+  <div class="card anti"><h4>5 — Redundancy: 34 card types was over-specified → redesigned</h4>
+  <p>Half the D4 taxonomy differs only in copy. <strong>Redesign, now explicit in D4's closing note:</strong> six layout archetypes (stat-led, media-led, chart-led, text-led, dual-avatar, module) are the engineering surface; the 34 types are presets. This also kills a subtler redundancy — separate bench/squat/deadlift PR cards are one preset parameterised by lift.</p></div>
+
+  <div class="card anti"><h4>6 — Unnecessary complexity trimmed</h4>
+  <p>Cut during this review: reposts/quotes (outrage mechanics, D2), general DMs (moderation surface without a loop, D1), stories (authored ephemera lifters won't make, D2), trending (no news cycle, D2), a separate messaging tab, and velocity metrics in zone C at v1 (<code>vbt-capture</code> is blocked on hardware; the spec references it nowhere in the collapsed card so nothing dangles).</p></div>
+
+  <div class="card anti"><h4>7 — Missing opportunities, acknowledged <span class="pill terra">open</span></h4>
+  <p>Not in v1, deliberately: <strong>exercise-page segment-style leaderboards</strong> (needs <code>equipment-identity</code> to make cross-gym loads comparable — QR-anchored machines, normalized load); <strong>program-efficacy cards as a growth wedge</strong> (index is shipped; the share card is a fast-follow); <strong>Spotter Protocol cards</strong> (D4 #11 speculates ahead of the planned capability — it ships behind it); <strong>history import</strong> (Hevy/Strong CSV — the single cheapest way to seed profiles with content, already on the backlog).</p></div>
+
+  <div class="card anti"><h4>8 — Scalability &amp; performance <span class="pill terra">open</span></h4>
+  <p>Risks, in order: (a) <strong>fan-out</strong> — ranked-feed candidate generation must be precomputed per follow-graph shard; the current <code>buildSocialFeed()</code> is a query-time build that will not survive 10⁵ users — the ranking service is a real backend project, phased: chronological + moment boosts first, learned E term later. (b) <strong>media</strong> — video autoplay on a FlatList without FlashList virtualization (backlog: <code>mobile-list-virtualization</code>) will jank; that item becomes a feed-launch prerequisite. (c) <strong>web bundle</strong> — the feed joins the app-shell switch, so <code>web-code-splitting</code> graduates from backlog to prerequisite too. (d) <strong>notification fan-out</strong> — matched-lift detection is a pairwise scan; run it as a daily batch, not per-post.</p></div>
+
+  <div class="card anti"><h4>9 — Privacy, restated as commitments</h4>
+  <p>Owner-only fields (<code>note</code>, mood, feel, fatigue, raw device stream) never serialise to feed DTOs — enforced at the API layer and covered by tests, not by client discipline. Visibility is evaluated server-side per viewer (<code>canViewResults()</code> exists). Blocks are mutual invisibility everywhere including search, suggestions, matched-lift pairing and witness requests (the shipped attest API already checks the blocklist). Minors: no strength-band matching, no location surfaces. Transformation media is watermarked and excluded from OS share previews. Data export includes social objects; account deletion cascades them (schema already cascades).</p></div>
+
+  <h3>What survives the review unchanged</h3>
+  <p>The thesis. Verification-as-content is the one idea here no competitor can copy without our ladder; the workout-is-the-post kills the cold-start problem Hevy never solved; and ranking moments over engagement is the difference between a feed athletes respect and a feed they doom-scroll. Everything else in this document is negotiable; those three are the product.</p>
+
+  <div class="callout"><p class="kicker">Implementation map — exists vs net-new</p>
+  <p><strong>Shipped and reused:</strong> social engine + DTOs, feed/kudos/comments/follow/block APIs and screens on both clients, co-sign inbox + attestation (tiers 0–2), coach marketplace + rail, leaderboard + compare, suggestions/search, i18n (EN/PL/DE), Aurora tokens/scale/glass, device-truth projection. <strong>Net-new (ordered):</strong> ① six-archetype card system + moment classes; ② feed tabs (For you/Following) + ranking v1 (heuristic, no ML); ③ Inbox/Activity notification split; ④ Now-training strip; ⑤ engagement loops on the existing notification pipe (push delivery is the known pending piece); ⑥ recap/milestone/matched-lift generators; ⑦ clubs + challenges (planned capability); ⑧ exercise pages; ⑨ ranking v2 (learned E term). <strong>Prerequisites promoted from backlog:</strong> <code>mobile-list-virtualization</code>, <code>web-code-splitting</code>, <code>social-avatar-upload</code> (unblock: storage bucket + RLS policy).</p></div>
+</section>
+
+<hr>
+<p class="muted" style="font: 500 11.5px/1.7 var(--mono)">HYBRID — CONNECT feed specification v1.0 — August 2026. Set in the app's type roles (Archivo / JetBrains Mono in product; system equivalents in this document). Colors are the shipped Aurora Spectrum and Kyoto Hour palettes. Source of truth for capability status: packages/core/src/capabilities.ts.</p>
+
+</main>

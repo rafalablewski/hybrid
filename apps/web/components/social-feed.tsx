@@ -1,15 +1,32 @@
 "use client";
 
-import { accentText } from "@/lib/ui";
-import { useEffect, useState } from "react";
-import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, MutationResult } from "@hybrid/core";
-import { C, useSocialTheme, card, Avatar, Btn, EmptyState, ScreenHead, jget, jsend } from "./social-ui";
+import { useEffect, useMemo, useState } from "react";
+import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, LiveAthlete, MutationResult } from "@hybrid/core";
+import { C, useSocialTheme, card, Avatar, Btn, EmptyState, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 import { CosignInbox } from "./pr-attestation";
+import FeedCard from "./feed-card";
+import FeedLiveStrip from "./feed-live-strip";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 
+/**
+ * CONNECT — the feed (web). Twin of apps/mobile/components/feed-view.tsx; both
+ * render the shared card model from core (feed-card.ts), so a card can never
+ * look like one product on one client and another on the other.
+ *
+ * The screen's order is the spec's (reference/feed-spec.html, D2):
+ *   co-sign inbox (someone is waiting on an answer) → feed tabs → the quiet
+ *   composer → the stream → the caught-up marker, which hands the athlete back
+ *   to the bar rather than to more scrolling.
+ *
+ * FOR YOU vs FOLLOWING: the ranked feed only earns trust while an unranked exit
+ * exists. "Following" is strictly chronological and strictly other people —
+ * no ranking, no interleaving, no own posts.
+ */
+
 type FeedItem = FeedItemView;
+type Tab = "forYou" | "following";
 
 function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
   const { t } = useLang();
@@ -45,31 +62,73 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
   );
 }
 
-export default function SocialFeed() {
+/** The composer, deliberately underweighted: in this product the workout is the
+ *  post, so the blank page is a one-line invitation until it's wanted. */
+function Composer({ onPosted }: { onPosted: () => void }) {
   const { t } = useLang();
   const { aurora } = useSocialTheme();
-  const units = useLoggerPrefs().units;
-  const [feed, setFeed] = useState<FeedItem[] | null>(null);
-  const [drawer, setDrawer] = useState<string | null>(null);
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
 
-  const load = () => jget<FeedResponse>("/api/social/feed").then((r) => setFeed(r.feed ?? []));
-  useEffect(() => { load(); }, []);
-
-  const cheer = async (item: FeedItem) => {
-    const r = await jsend<KudosResponse>("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
-    setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos, kudosedByMe: r.kudosedByMe } : x)) ?? f);
-  };
   const share = async () => {
     if (!text.trim() && !attachPr) return;
     setPosting(true);
     const r = await jsend<MutationResult>("/api/social/posts", "POST", { text, attachPr });
     setPosting(false);
     if (r.error) { alert(r.error); return; }
-    setText(""); setAttachPr(false); load();
+    setText(""); setAttachPr(false); setOpen(false); onPosted();
+  };
+
+  if (!open) {
+    return (
+      <button
+        className="pressable"
+        onClick={() => setOpen(true)}
+        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", marginBottom: 12, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", textAlign: "left" }}
+      >
+        {t("w.social.sharePlaceholder")}
+      </button>
+    );
+  }
+  return (
+    <div style={card(aurora, { marginBottom: 12 })}>
+      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 56, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 12 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: 13, cursor: "pointer" }}>
+          <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> {t("w.social.attachPr")}
+        </label>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Btn small ghost onClick={() => { setOpen(false); setText(""); setAttachPr(false); }}>{t("common.cancel")}</Btn>
+          <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? t("w.social.sharing") : t("w.social.share")}</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: string) => void } = {}) {
+  const { t } = useLang();
+  const units = useLoggerPrefs().units;
+  const [feed, setFeed] = useState<FeedItem[] | null>(null);
+  const [drawer, setDrawer] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("forYou");
+  const [live, setLive] = useState<LiveAthlete[]>([]);
+
+  const load = () =>
+    jget<FeedResponse>("/api/social/feed").then((r) => {
+      setFeed(r.feed ?? []);
+      setLive(r.live ?? []);
+    });
+  useEffect(() => { load(); }, []);
+
+  const cheer = async (item: FeedItem) => {
+    // Optimistic: a kudos must never wait on the network to look given.
+    setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: x.kudos + (x.kudosedByMe ? -1 : 1), kudosedByMe: !x.kudosedByMe } : x)) ?? f);
+    const r = await jsend<KudosResponse>("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
+    setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos ?? x.kudos, kudosedByMe: r.kudosedByMe ?? x.kudosedByMe } : x)) ?? f);
   };
   const del = async (item: FeedItem) => {
     if (!window.confirm(t("w.social.deletePostConfirm"))) return;
@@ -77,70 +136,88 @@ export default function SocialFeed() {
     load();
   };
 
+  // "Following" is the honest exit: other people, newest first, nothing ranked.
+  const items = useMemo(() => {
+    if (!feed) return [];
+    return tab === "following" ? feed.filter((i) => !i.mine).slice().sort((a, b) => b.at - a.at) : feed;
+  }, [feed, tab]);
+
   if (!feed) return <EmptyState title={t("common.loading")} />;
+
+  const tabBtn = (id: Tab, label: string) => (
+    <button
+      className="pressable"
+      key={id}
+      onClick={() => setTab(id)}
+      aria-pressed={tab === id}
+      style={{
+        padding: "7px 13px",
+        borderRadius: 999,
+        border: `1px solid ${tab === id ? `color-mix(in srgb, ${C("chalk")} 25%, ${C("line")})` : C("line")}`,
+        background: tab === id ? C("ink2") : "transparent",
+        color: tab === id ? C("chalk") : C("ash"),
+        fontFamily: "var(--font-display)",
+        fontWeight: 600,
+        fontSize: 11.5,
+        cursor: "pointer",
+      }}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <ScreenHead title={t("w.social.feedTitle")} sub={t("w.social.feedSub")} />
-
-      {/* Verified-record witness requests addressed to ME — answering one is a
-          social act, so the inbox lives on the feed. See core/attestation.ts. */}
+      {/* Verified-record witness requests addressed to ME. A person is waiting
+          on this answer, so it outranks every piece of content below it — and
+          every request is also an invite (core/attestation.ts). */}
       <CosignInbox units={units} />
 
-      {/* COMPOSER — share a status or your latest PR card with your followers. */}
-      <div style={card(aurora, { marginBottom: 16 })}>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 56, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: 13, cursor: "pointer" }}>
-            <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> 🏆 {t("w.social.attachPr")}
-          </label>
-          <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? t("w.social.sharing") : t("w.social.share")}</Btn>
-        </div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {tabBtn("forYou", t("feed.tab.forYou"))}
+        {tabBtn("following", t("feed.tab.following"))}
       </div>
 
-      {feed.length === 0 ? (
-        <EmptyState title={t("w.social.feedQuietTitle")} sub={t("w.social.feedQuietSub")} />
+      {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
+      <FeedLiveStrip live={live} onOpen={(h) => setDrawer(h)} />
+
+      <Composer onPosted={load} />
+
+      {items.length === 0 ? (
+        <EmptyState
+          title={tab === "following" ? t("feed.followingEmpty") : t("w.social.feedQuietTitle")}
+          sub={tab === "following" ? t("feed.followingEmptySub") : t("w.social.feedQuietSub")}
+        />
       ) : (
-        feed.map((item) => (
-          <div key={item.id} style={card(aurora, { marginBottom: 14 })}>
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <button className="pressable" onClick={() => setDrawer(item.author.handle)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={42} />
-              </button>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
-                  {item.kind === "pr" && <span style={{ color: accentText("amber") }}>🏆</span>}
-                  {item.title}
-                </div>
-                <div style={{ color: C("ash"), fontSize: 12, fontFamily: "var(--font-mono)" }}>{item.when}</div>
-              </div>
-              {item.subjectType === "post" && item.mine && (
-                <button className="pressable" onClick={() => del(item)} aria-label={t("w.social.deletePostAria")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
-              )}
+        <>
+          {items.map((item) => (
+            <FeedCard
+              key={item.id}
+              item={item}
+              units={units}
+              onOpenProfile={(h) => setDrawer(h)}
+              onKudos={() => cheer(item)}
+              onComments={() => setOpen(open === item.id ? null : item.id)}
+              onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
+            >
+              {open === item.id && <Comments item={item} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}
+            </FeedCard>
+          ))}
+
+          {/* The exit. The feed's job is to make you train, not to make you
+              scroll — so the end of the stream is a door back to the bar. */}
+          <div style={{ textAlign: "center", padding: "20px 0 8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C("ash") }}>
+              <span style={{ flex: 1, borderTop: `1px solid ${C("line")}` }} />
+              {t("feed.caughtUp")}
+              <span style={{ flex: 1, borderTop: `1px solid ${C("line")}` }} />
             </div>
-            {item.body && <p style={{ color: C("chalk"), fontSize: 14, margin: "10px 0 0", lineHeight: 1.5 }}>{item.body}</p>}
-            {(item.lead || item.chips.length > 0) && (
-              <div style={{ border: `1px solid ${C("line")}`, borderRadius: 14, padding: "11px 13px", marginTop: 10 }}>
-                {item.lead && <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: C("chalk") }}>{item.lead}</div>}
-                {item.chips.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: item.lead ? 8 : 0 }}>
-                    {item.chips.map((c, i) => <span key={i} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "3px 9px" }}>{c}</span>)}
-                  </div>
-                )}
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 16, marginTop: 12, alignItems: "center" }}>
-              <button className="pressable" onClick={() => cheer(item)} style={{ background: "none", border: "none", cursor: "pointer", color: item.kudosedByMe ? C("lime") : C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}>
-                {item.kudosedByMe ? "👏" : "👏"} {item.kudos > 0 ? item.kudos : ""} {t("w.social.cheer")}
-              </button>
-              <button className="pressable" onClick={() => setOpen(open === item.id ? null : item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13 }}>
-                💬 {item.comments > 0 ? item.comments : ""} {t("w.social.comment")}
-              </button>
-            </div>
-            {open === item.id && <Comments item={item} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}
+            <p style={{ fontSize: 12, color: C("ash"), margin: "10px 0 12px" }}>{t("feed.caughtUpSub")}</p>
+            <Btn onClick={() => (onNavigate ? onNavigate("log") : (window.location.href = "/log"))}>{t("feed.goTrain")}</Btn>
           </div>
-        ))
+        </>
       )}
+
       {drawer && <ProfileDrawer handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </div>
   );
