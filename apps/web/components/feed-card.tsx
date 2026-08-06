@@ -204,7 +204,10 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       ? { fontFamily: display, fontWeight: 800, fontSize: fs.headline, letterSpacing: tracking.display, lineHeight: `${leading(fs.headline, "tight")}px` }
       : { fontFamily: display, fontWeight: 800, fontSize: fs.title, lineHeight: `${leading(fs.title, "snug")}px` };
 
-  const meta = [item.author.handle ? `@${item.author.handle}` : null, item.when].filter(Boolean) as string[];
+  // "Why you're seeing this" — a ranked card from someone the viewer doesn't
+  // follow must be able to say why it's here, or it shouldn't be here at all.
+  const reason = item.reason ? t(item.reason.key) : null;
+  const meta = [item.author.handle ? `@${item.author.handle}` : null, item.when, reason].filter(Boolean) as string[];
 
   return (
     <article

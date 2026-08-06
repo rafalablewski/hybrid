@@ -20,7 +20,18 @@ import {
   type LoggedSession,
 } from "./engines";
 import { relativeTime } from "./activity";
-import { prDetail, sessionDetail, postDetail, type FeedDetail } from "./feed-card";
+import {
+  FEED_STAT_LABEL_KEY,
+  feedDeltaText,
+  feedFigureText,
+  feedStatText,
+  feedTierChip,
+  prDetail,
+  sessionDetail,
+  postDetail,
+  type FeedDetail,
+} from "./feed-card";
+import type { WeightUnit } from "./units";
 
 // ---------------------------------------------------------------- handles ----
 export const HANDLE_MIN = 3;
@@ -174,10 +185,48 @@ export interface FeedCardView {
   body: string | null;
   chips: string[];
 }
-export function feedCardView(it: { author: { displayName?: string | null; handle: string }; body?: string | null; chips?: string[]; lead?: string | null; when: string }): FeedCardView {
+export function feedCardView(
+  it: {
+    author: { displayName?: string | null; handle: string };
+    body?: string | null;
+    chips?: string[];
+    lead?: string | null;
+    when: string;
+    detail?: FeedDetail;
+  },
+  /**
+   * Pass the caller's `t` (and unit preference) and the view is derived from
+   * the CARD MODEL instead of the legacy title/chips: the preview then speaks
+   * the same language as the feed — a PR leads "Deadlift — new PR" and carries
+   * its load and tier, rather than flattening into an anonymous chip. Without
+   * them the legacy shape is returned unchanged, so older callers are unaffected.
+   */
+  opts?: { t?: (key: string) => string; units?: WeightUnit },
+): FeedCardView {
   // Prefer the real name; fall back to a handle only when it's a genuine one
   // (an empty handle means "no profile" — never render a bare "@").
   const name = it.author.displayName || (it.author.handle ? `@${it.author.handle}` : "Someone");
+  const d = it.detail;
+  if (d && opts?.t) {
+    const t = opts.t;
+    const units = opts.units ?? "kg";
+    const lead =
+      d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout"
+        ? d.headlineArg || t(d.headlineKey)
+        : d.headlineArg
+          ? t(d.headlineKey).replace("{lift}", d.headlineArg)
+          : t(d.headlineKey);
+    const chips: string[] = [];
+    if (d.figureKg != null && d.figureKg > 0) {
+      const f = feedFigureText(d.figureKg, units);
+      chips.push(`${f.value} ${f.unit}`);
+    }
+    const tier = feedTierChip(d.tier);
+    if (tier) chips.push(`${tier.short} ${t(tier.labelKey)}`);
+    if (d.deltaPct != null) chips.push(feedDeltaText(d.deltaPct));
+    for (const stat of d.stats ?? []) chips.push(`${feedStatText(stat, units)} ${t(FEED_STAT_LABEL_KEY[stat.key])}`);
+    return { name, when: it.when, lead, body: it.body ?? null, chips: chips.slice(0, 4) };
+  }
   return { name, when: it.when, lead: it.lead ?? null, body: it.body ?? null, chips: it.chips ?? [] };
 }
 

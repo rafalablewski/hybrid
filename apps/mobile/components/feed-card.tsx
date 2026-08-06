@@ -190,8 +190,11 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       ? { fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking.display }
       : { fontFamily: F.bold, fontSize: fs.title, lineHeight: leading(fs.title, "snug") };
 
+  // "Why you're seeing this" — a ranked card from someone the viewer doesn't
+  // follow must be able to say why it's here, or it shouldn't be here at all.
   // A spaced en dash joins the meta line — never a middot.
-  const meta = [item.author.handle ? `@${item.author.handle}` : null, item.when].filter(Boolean).join(" – ");
+  const reason = item.reason ? t(item.reason.key) : null;
+  const meta = [item.author.handle ? `@${item.author.handle}` : null, item.when, reason].filter(Boolean).join(" – ");
 
   return (
     <ACard style={{ marginBottom: 12, ...(moment === "p0" ? { borderColor: txt(C, accentFill) } : null) }}>

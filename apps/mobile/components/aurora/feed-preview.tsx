@@ -4,6 +4,7 @@ import { feedCardView } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
 import { MetaLine } from "./meta";
@@ -29,6 +30,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
     ? ({ shadowColor: "#584934", shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const)
     : ({ shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const);
   const { t } = useLang();
+  const units = useLoggerPrefs().units;
   const { width } = useWindowDimensions();
   const cardW = Math.min(320, width * 0.82);
   const [feed, setFeed] = useState<any[] | null>(null);
@@ -87,7 +89,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
   return (
     <Wrap>
       {feed.map((it: any) => {
-        const v = feedCardView(it);
+        const v = feedCardView(it, { t, units });
         const handle = it.author?.handle;
         return (
           <Pressable key={it.id} onPress={onOpen} style={postStyle}>

@@ -10,7 +10,7 @@ import {
   feedTierChip,
   feedDeltaText,
 } from "./feed-card";
-import { buildSocialFeed } from "./social";
+import { buildSocialFeed, feedCardView } from "./social";
 import type { LoggedSession } from "./engines";
 
 const set = (load: string, reps: string, role?: "warmup") => ({ load, reps, ...(role ? { role } : {}) });
@@ -119,6 +119,34 @@ describe("formatting", () => {
     expect(feedTierChip(0)).toBeNull();
     expect(feedTierChip(undefined)).toBeNull();
     expect(feedTierChip(2)).toEqual({ short: "T2", labelKey: "feed.tier.2" });
+  });
+});
+
+describe("the preview speaks the same language as the feed", () => {
+  // feedCardView backs the Today preview strip on both clients. Given the card
+  // model it must produce the CARD's headline and figures, not the legacy chip
+  // soup — otherwise the same PR reads as a record in one place and as an
+  // anonymous row two screens away.
+  const t = (k: string) => ({ "feed.hl.pr": "{lift} — new PR", "feed.tier.2": "Witnessed", "feed.stat.min": "min", "feed.stat.volume": "volume" })[k] ?? k;
+
+  it("leads a PR with the lift and carries its load, tier and delta", () => {
+    const v = feedCardView(
+      { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], detail: prDetail({ lift: "Deadlift", topLoad: 210, previousTopLoad: 200, previous: 217 }, { tier: 2 }) },
+      { t, units: "kg" },
+    );
+    expect(v.lead).toBe("Deadlift — new PR");
+    expect(v.chips).toContain("210 kg");
+    expect(v.chips).toContain("T2 Witnessed");
+  });
+
+  it("falls back to the legacy shape when no translator is passed", () => {
+    const legacy = { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], detail: prDetail({ lift: "Deadlift", topLoad: 210 }) };
+    expect(feedCardView(legacy)).toMatchObject({ lead: "PR", chips: ["Deadlift — 210 kg"] });
+  });
+
+  it("never renders a bare @ for a profile-less athlete", () => {
+    expect(feedCardView({ author: { displayName: "Jan Kowalski", handle: "" }, when: "1 h" }).name).toBe("Jan Kowalski");
+    expect(feedCardView({ author: { displayName: null, handle: "" }, when: "1 h" }).name).toBe("Someone");
   });
 });
 
