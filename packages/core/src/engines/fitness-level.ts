@@ -188,9 +188,36 @@ export interface LevelEvidence {
 }
 
 export interface FitnessLevelEstimate {
+  /**
+   * The HEADLINE level — the best result across both halves. Read it for a
+   * badge, a card or any other display of "what level is this athlete".
+   *
+   * DO NOT read it to prescribe anything: it is `"untrained"` when `basis` is
+   * `"none"`, so a surface that renders it without checking `basis` will tell a
+   * cyclist with a full training history that they are untrained. Use
+   * `displayLevel()`, which returns `null` instead of a libel.
+   */
   level: FitnessLevel;
-  /** The tier the volume model consumes. */
+  /**
+   * The headline level as a training-age tier.
+   *
+   * NOT what the lifting volume model should consume — see `strengthLevel` and
+   * `resolveExperience`. An elite runner's headline is `advanced`, and their
+   * MEV/MRV is not.
+   */
   experience: Experience;
+  /**
+   * The best level the BENCHMARK LIFTS support, or null when the window holds
+   * no benchmark lift (or no body mass to divide by).
+   *
+   * This is the read the lifting volume model wants: MEV/MRV are landmarks for
+   * lifting, so the training age behind them has to come from lifting. A 2:57
+   * /km half marathon says nothing about how many sets of squats an athlete can
+   * recover from.
+   */
+  strengthLevel: FitnessLevel | null;
+  /** The level the best qualifying RUN supports, or null when there was none. */
+  enduranceLevel: FitnessLevel | null;
   /** 0…1 — how much the log actually supports this. */
   confidence: number;
   /** The results behind it, strongest first. */
@@ -198,6 +225,17 @@ export interface FitnessLevelEstimate {
   /** What the estimate could actually see — named, not implied. */
   basis: "strength" | "endurance" | "both" | "none";
 }
+
+/**
+ * The headline level, or `null` when the log could not measure one.
+ *
+ * Every display surface should read THIS rather than `estimate.level`: the raw
+ * field carries `"untrained"` in the no-data case, which is indistinguishable
+ * from a measured untrained athlete and is wrong about everyone who trains a
+ * discipline the estimate cannot read (see the header — cycling and rowing).
+ */
+export const displayLevel = (e: FitnessLevelEstimate | null | undefined): FitnessLevel | null =>
+  e && e.basis !== "none" ? e.level : null;
 
 const levelFromRatio = (ratio: number, thresholds: number[]): FitnessLevel => {
   if (ratio >= thresholds[3]!) return "elite";
@@ -221,7 +259,11 @@ export function estimateFitnessLevel(
   opts: { bodyweightKg?: number | null; sex?: Sex; ageYears?: number | null; now?: number; days?: number } = {},
 ): FitnessLevelEstimate {
   const bw = opts.bodyweightKg;
-  const none: FitnessLevelEstimate = { level: "untrained", experience: "beginner", confidence: 0, evidence: [], basis: "none" };
+  const none: FitnessLevelEstimate = {
+    level: "untrained", experience: "beginner",
+    strengthLevel: null, enduranceLevel: null,
+    confidence: 0, evidence: [], basis: "none",
+  };
 
   const now = opts.now ?? Date.now();
   const since = now - (opts.days ?? 180) * DAY;
@@ -312,9 +354,18 @@ export function estimateFitnessLevel(
   const confidence = Math.min(0.85, 0.35 + (evidence.length - 1) * 0.18);
 
   const hasStrength = best.size > 0;
+  // The two halves, kept SEPARATE as well as folded together. The headline is
+  // the best of them, but "how strong is this athlete" and "how fast" are
+  // different questions with different consumers, and collapsing them before
+  // returning was what let an elite runner's pace set their squat volume.
+  // `evidence` is sorted strongest-first, so the first of each kind is its best.
+  const strengthLevel = evidence.find((e) => e.kind === "strength")?.level ?? null;
+  const enduranceLevel = evidence.find((e) => e.kind === "endurance")?.level ?? null;
   return {
     level,
     experience: LEVEL_TO_EXPERIENCE[level],
+    strengthLevel,
+    enduranceLevel,
     confidence: Math.round(confidence * 100) / 100,
     evidence,
     basis: hasStrength && bestRun ? "both" : hasStrength ? "strength" : "endurance",
@@ -328,12 +379,27 @@ export function estimateFitnessLevel(
  * for every manual value. The estimate fills the gap when they never answered,
  * and is reported separately so the UI can show a disagreement rather than
  * silently overriding one with the other.
+ *
+ * IT READS THE STRENGTH HALF ONLY, and that is the whole point of the function.
+ * `experience` feeds `athleteLandmarks`, which sets MEV and MRV — how many hard
+ * SETS a muscle can be prescribed and recover from. An endurance read cannot
+ * answer that question: a 60 kg athlete running 2:57 /km is genuinely elite and
+ * still squats 1.06 × bodyweight, and the headline level used to hand the
+ * volume model `advanced` on the strength of the run. That is not a cosmetic
+ * mismatch — it prescribes an advanced lifter's set counts to someone who has
+ * never trained the pattern.
+ *
+ * With no benchmark lift in the window there is NO derived training age. The
+ * fallback is the athlete's own answer, and after that `unknown` — never a
+ * tier invented from a discipline that cannot speak to it. Callers already
+ * handle `undefined` (it is what an athlete who never answered has always
+ * produced), and the landmark resolver's own default is the cautious end.
  */
 export function resolveExperience(
   stated: Experience | undefined,
   estimate: FitnessLevelEstimate | null,
 ): { experience: Experience | undefined; source: "stated" | "estimated" | "unknown"; disagrees: boolean } {
-  const derived = estimate && estimate.basis !== "none" ? estimate.experience : undefined;
+  const derived = estimate?.strengthLevel ? LEVEL_TO_EXPERIENCE[estimate.strengthLevel] : undefined;
   if (stated) return { experience: stated, source: "stated", disagrees: !!derived && derived !== stated };
   if (derived) return { experience: derived, source: "estimated", disagrees: false };
   return { experience: undefined, source: "unknown", disagrees: false };
