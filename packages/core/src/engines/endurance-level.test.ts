@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   combineEndurance, enduranceEfforts, engineScore, transfer, readDiscipline,
   admissibleDiscipline, shiftedThresholds, standardFor,
-  ENDURANCE_STANDARDS, TRIATHLON_CLASSES, TIER_POINTS, ELITE_SCORE,
+  ENDURANCE_STANDARDS, TRIATHLON_CLASSES, TIER_POINTS, ELITE_SCORE, isTaggedTriathlon,
   type EnduranceDiscipline,
 } from "./endurance-level";
 import { estimateFitnessLevel, badgeFor } from "./fitness-level";
@@ -346,5 +346,71 @@ describe("the public badge is backed by something repeatable", () => {
     expect(e.evidence[0]!.discipline).toBe("running");
     expect(e.evidence[0]!.confirmed).toBe(false);
     expect(badgeFor(e)).toBeNull();
+  });
+});
+
+describe("the gaps that were left open", () => {
+  const runs = (m: number) => [
+    S("a", 3, [cardio({ discipline: "running", name: "Run", distance: 5, minutes: m })]),
+    S("b", 9, [cardio({ discipline: "running", name: "Run", distance: 5, minutes: m })]),
+  ];
+
+  it("holds a woman to the women's bar, not the men's", () => {
+    // 5 km in 26:00. Against the men's table that is barely past novice; the
+    // women's thresholds are 11% slower, so the same clock places her higher.
+    const asMale = estimateFitnessLevel(runs(26), { sex: "M", ageYears: 30, now: NOW });
+    const asFemale = estimateFitnessLevel(runs(26), { sex: "F", ageYears: 30, now: NOW });
+    const order = ["untrained", "novice", "intermediate", "advanced", "elite"];
+    expect(order.indexOf(asFemale.level)).toBeGreaterThan(order.indexOf(asMale.level));
+    // And the default is still male, which is why leaving it unset was costing
+    // every female athlete a tier.
+    expect(estimateFitnessLevel(runs(26), { ageYears: 30, now: NOW }).level).toBe(asMale.level);
+  });
+
+  it("shifts the bar for sex in every discipline, not just running", () => {
+    for (const std of ENDURANCE_STANDARDS) {
+      const m = shiftedThresholds(std, "M", 30);
+      const f = shiftedThresholds(std, "F", 30);
+      for (let i = 0; i < 4; i++) {
+        if (std.higherIsBetter) expect(f[i]!).toBeLessThan(m[i]!);
+        else expect(f[i]!).toBeGreaterThan(m[i]!);
+      }
+    }
+  });
+
+  it("reads a ride the moment power arrives, from a device or by hand", () => {
+    const ride = (d: number, watts?: number) =>
+      S(`c${d}`, d, [cardio({ discipline: "cycling", name: "Ride", distance: 40, minutes: 40, watts })]);
+    expect(efforts([ride(3), ride(9)], { bodyweightKg: 75 }).get("cycling")).toBeUndefined();
+    const withPower = efforts([ride(3, 320), ride(9, 315)], { bodyweightKg: 75 }).get("cycling")!;
+    expect(withPower).toHaveLength(2);
+    expect(withPower[0]!.value).toBeCloseTo(320 / 75, 2);
+  });
+
+  it("recognises a triathlon tag, and will not let it invent a class", () => {
+    expect(isTaggedTriathlon(["triathlon"])).toBe(true);
+    expect(isTaggedTriathlon(["Tri"])).toBe(true);
+    expect(isTaggedTriathlon(["trial", "trip"])).toBe(false);
+    expect(isTaggedTriathlon(null)).toBe(false);
+
+    // 44 km total is 15% off Olympic distance — declined on inference alone,
+    // accepted once the athlete says it was a race.
+    const legs = [
+      cardio({ discipline: "swimming", name: "Swim", distance: 1.4, minutes: 25 }),
+      cardio({ discipline: "cycling", name: "Bike", distance: 34, minutes: 62 }),
+      cardio({ discipline: "running", name: "Run", distance: 8.6, minutes: 40 }),
+    ];
+    const untagged = { id: "u", title: "Brick", startedAt: daysAgo(4), blocks: legs } as LoggedSession;
+    const tagged = { ...untagged, id: "t", tags: ["triathlon"] } as LoggedSession;
+    expect(efforts([untagged]).get("triathlon")).toBeUndefined();
+    expect(efforts([tagged]).get("triathlon")![0]!.label).toBe("olympic");
+
+    // A tag still cannot turn a sprint-length session into an Ironman.
+    const short = { id: "s", title: "Race", startedAt: daysAgo(4), tags: ["triathlon"], blocks: [
+      cardio({ discipline: "swimming", name: "Swim", distance: 0.75, minutes: 15 }),
+      cardio({ discipline: "cycling", name: "Bike", distance: 20, minutes: 36 }),
+      cardio({ discipline: "running", name: "Run", distance: 5, minutes: 22 }),
+    ] } as LoggedSession;
+    expect(efforts([short]).get("triathlon")![0]!.label).toBe("sprint");
   });
 });

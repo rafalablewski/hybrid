@@ -36,8 +36,13 @@ export function useFitnessLevel(sessions: LoggedSession[]): FitnessLevelRead {
     () => estimateFitnessLevel(sessions, {
       bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight,
       ageYears: prefs.volumeProfile.ageYears ?? null,
+      // Every threshold in the app is published for a male athlete and shifted
+      // from there, so an unanswered sex holds a woman to the men's bar. The
+      // engine still defaults to "M" — but it is a default now, not a silent
+      // assumption nobody could correct.
+      sex: prefs.volumeProfile.sex,
     }),
-    [sessions, prefs.volumeProfile.bodyweightKg, prefs.volumeProfile.ageYears, bodyweight],
+    [sessions, prefs.volumeProfile.bodyweightKg, prefs.volumeProfile.ageYears, prefs.volumeProfile.sex, bodyweight],
   );
 
   return useMemo(

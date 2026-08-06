@@ -111,6 +111,17 @@ export default function AuroraVolumeModel() {
           ))}
         </View>
 
+        {/* SEX — not cosmetic and not optional-feeling. Every strength and
+            endurance threshold in the app is published for a male athlete and
+            shifted from there, so leaving this blank holds a woman to the men's
+            bar and usually costs her a tier of training age. Mirrors web. */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, alignItems: "center" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, color: C.ash, marginRight: 2 }}>{t("w.analyze.vol.fieldSex")}</Text>
+          {(["F", "M"] as const).map((x) => (
+            <Toggle key={x} C={C} on={profile.sex === x} label={t(x === "F" ? "w.analyze.vol.sexF" : "w.analyze.vol.sexM")} onPress={() => setProfile({ sex: profile.sex === x ? undefined : x })} />
+          ))}
+        </View>
+
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           {([
             ["ageYears", t("w.analyze.vol.fieldAge"), 10, 100],

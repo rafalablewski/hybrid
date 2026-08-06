@@ -75,6 +75,9 @@ export function deviceTrueSession(session: LoggedSession): LoggedSession {
           // duration itself stays in minutes.
           ...(d.durationSec != null ? { seconds: d.durationSec } : {}),
           ...(d.distanceKm != null ? { distance: d.distanceKm } : {}),
+          // The device's power, on the same rule as its distance and its clock:
+          // a measured figure outranks a typed one everywhere.
+          ...(d.avgWatts != null ? { watts: d.avgWatts } : {}),
           ...(d.elevationM != null ? { elevation: d.elevationM } : {}),
         }
       : { ...target, minutes: d.durationMin };

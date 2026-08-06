@@ -48,10 +48,28 @@ export async function GET(request: Request, { params }: { params: Promise<{ hand
           select: { weightKg: true },
         }))?.weightKg ?? null
       : null;
+    // SEX, so the public badge is scored against the same bar the athlete's own
+    // Performance card uses. Every threshold in the app is published for a male
+    // athlete and shifted from there, and without this the server would hold a
+    // woman to the men's bar while her own card holds her to the women's — the
+    // two surfaces disagreeing about her level, which is precisely what one
+    // shared estimate exists to prevent.
+    //
+    // Read from the talent profile because it is the only place sex is
+    // PERSISTED; the volume profile lives in each device's own prefs and the
+    // server cannot see it. The durable fix is persisting the volume profile
+    // server-side — until then a woman who filled in only the volume profile
+    // gets the right level on her own card and no worse than the old behaviour
+    // in public.
+    const talent = sessions
+      ? await prisma.talentProfile.findUnique({ where: { userId: profile.userId }, select: { sex: true } })
+      : null;
     // ONE WORD and its accent. The ratio never travels — PR loads are already
     // public tiles, and publishing the ratio beside them would let any viewer
     // divide and recover the athlete's body mass.
-    const badge = sessions ? badgeFor(estimateFitnessLevel(sessions, { bodyweightKg: bw })) : null;
+    const badge = sessions
+      ? badgeFor(estimateFitnessLevel(sessions, { bodyweightKg: bw, sex: talent?.sex === "F" ? "F" : "M" }))
+      : null;
 
     return NextResponse.json({
       profile: {

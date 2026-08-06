@@ -609,7 +609,7 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: String(ENDURANCE_SEX_FACTOR), value: "female factor", meaning: "thresholds are this much slower" },
       { symbol: `${ENDURANCE_MIN_KM} km`, value: "minimum distance", meaning: "shorter is not an aerobic test" },
     ],
-    note: "Running is one of six endurance disciplines now (see below), and the only one whose table predates them. Normalising to a 5 km equivalent is what makes a 10 km and a parkrun comparable, so a marathoner is never read as a slow 5 km runner. Whichever half of the athlete is stronger sets the headline level, and `basis` always names which halves had data.",
+    note: "SEX SHIFTS EVERY BAR IN THIS ENGINE. Both tables here — the five lifts and the six endurance disciplines — are published for a MALE athlete at peak training age; the female thresholds are derived (relative strength ×0.68–0.78, pace ×1.06–1.12, power ×0.85). The value comes from the volume profile, beside age and body mass, and until Aug 2026 nothing passed it: the engine defaulted to \"M\" and silently held every female athlete to the men's bar, which for most of them cost a whole tier of training age and therefore moved MEV and MRV. It is still the default when unanswered — but it is a default the athlete can now correct, and the completeness meter counts it as a real gap.\n\nRunning is one of six endurance disciplines now (see below), and the only one whose table predates them. Normalising to a 5 km equivalent is what makes a 10 km and a parkrun comparable, so a marathoner is never read as a slow 5 km runner. Whichever half of the athlete is stronger sets the headline level, and `basis` always names which halves had data.",
   },
   {
     id: "endurance-score",

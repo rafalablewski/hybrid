@@ -227,9 +227,27 @@ export const TRIATHLON_CLASSES: TriathlonClass[] = [
   { key: "full", km: 226, thresholds: [900, 720, 630, 540] },
 ];
 
-/** How far a session's total distance may sit from a canonical race and still
- *  be read as one. Tight on purpose: a brick session is not a race. */
+/**
+ * How far a session's total distance may sit from a canonical race and still be
+ * read as one, when nobody said it was a race. Tight on purpose: a brick session
+ * that happens to total 51 km is not an Olympic-distance result.
+ */
 export const TRIATHLON_TOLERANCE = 0.12;
+
+/**
+ * The same tolerance for a session the athlete TAGGED as a race.
+ *
+ * Wider, because the tag is an assertion and inference is only a guess: a real
+ * race with a short-course swim or a re-measured bike leg should not fall out of
+ * its own class over 4%. Still bounded — a tag cannot turn a sprint into an
+ * Ironman, it only says which canonical race this was closest to.
+ */
+export const TRIATHLON_TAGGED_TOLERANCE = 0.25;
+
+/** Whether the athlete said this session was a triathlon. Read from the
+ *  session's own tags, which the log has always carried. */
+export const isTaggedTriathlon = (tags: string[] | null | undefined): boolean =>
+  (tags ?? []).some((t) => /^tri(athlon)?$/i.test(t.trim()) || /triathlon/i.test(t));
 
 export const ENDURANCE_STANDARDS: EnduranceStandard[] = [RUNNING, SWIMMING, CYCLING, ROWING, SKIING];
 
@@ -416,7 +434,7 @@ export function enduranceEfforts(
     // A TRIATHLON is a property of the SESSION, not of any one block: swim, bike
     // and run together, totalling a canonical race. Checked first so the three
     // legs are not also read as three weak standalone efforts.
-    const tri = triathlonEffort(cardio, s.startedAt, sex, age);
+    const tri = triathlonEffort(cardio, s.startedAt, sex, age, isTaggedTriathlon(s.tags));
     if (tri) { push(tri); continue; }
 
     for (const b of cardio) {
@@ -452,13 +470,17 @@ export function enduranceEfforts(
 }
 
 /** A session read as a triathlon, or null. */
-function triathlonEffort(cardio: CardioBlock[], at: string, sex: Sex, age: number | null): EnduranceEffort | null {
+function triathlonEffort(cardio: CardioBlock[], at: string, sex: Sex, age: number | null, tagged: boolean): EnduranceEffort | null {
   const has = (d: string) => cardio.some((b) => b.discipline === d && (b.distance ?? 0) > 0);
   if (!has("swimming") || !has("cycling") || !has("running")) return null;
   const km = cardio.reduce((a, b) => a + (b.distance ?? 0), 0);
   const sec = cardio.reduce((a, b) => a + secondsOf(b), 0);
   if (!(sec > 0)) return null;
-  const cls = TRIATHLON_CLASSES.find((c) => Math.abs(km - c.km) / c.km <= TRIATHLON_TOLERANCE);
+  // A tagged race is the athlete asserting it happened; inference is a guess.
+  // The tag widens which canonical class the distance may land in — it never
+  // invents one, so a tagged 30 km session is still a sprint, not an Ironman.
+  const tol = tagged ? TRIATHLON_TAGGED_TOLERANCE : TRIATHLON_TOLERANCE;
+  const cls = TRIATHLON_CLASSES.find((c) => Math.abs(km - c.km) / c.km <= tol);
   if (!cls) return null;
   const sexF = sex === "F" ? 1.1 : 1;
   const devF = age == null ? 1 : developmentFraction(age);

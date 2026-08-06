@@ -1,3 +1,4 @@
+import type { Sex } from "../benchmarks";
 import type { MuscleGroup } from "./types";
 import type { Experience } from "../onboarding";
 import { VOLUME_LANDMARKS, type VolumeLandmark } from "./landmarks";
@@ -49,6 +50,19 @@ export interface AthleteVolumeProfile {
   trainingYears?: number;
   /** Chronological age in years. */
   ageYears?: number;
+  /**
+   * Biological sex, for the STANDARDS the fitness-level estimate is scored
+   * against — never for the landmarks themselves.
+   *
+   * Every strength and endurance threshold in the app is published for a male
+   * athlete at peak training age and shifted from there (relative-strength
+   * factors ~0.68–0.78, pace factors 1.06–1.12). With no value the engine
+   * defaults to "M", which quietly held every female athlete to the men's bar
+   * and cost most of them a tier. It lives HERE, beside age and body mass,
+   * because those are the estimate's other two inputs and the athlete should
+   * not have to give it in three places.
+   */
+  sex?: Sex;
   /** Body mass in kg. */
   bodyweightKg?: number;
   /** Standing height. Not a factor of its own — it makes the BODY MASS factor
