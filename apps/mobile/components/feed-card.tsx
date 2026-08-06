@@ -37,9 +37,11 @@ import { RADIUS } from "./aurora/kit";
  * watch signature.
  */
 
-/** AuroraScreen's gutter — what the row bleeds by, so the divider runs under
- *  the physical screen edge. Mirrors web's --page-pad-x. */
-const GUTTER = 16;
+/** The FEED's side gutter — deliberately tighter than AuroraScreen's default
+ *  16 so a timeline of rows wastes no room. The list's content padding matches
+ *  (feed-view.tsx), and the row bleeds by the same amount so the divider runs
+ *  under the physical screen edge. Mirrors web's 12px feed inset. */
+const GUTTER = 12;
 
 export function WatchGlyph({ color }: { color: string }) {
   return (

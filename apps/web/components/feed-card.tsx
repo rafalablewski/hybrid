@@ -218,8 +218,11 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   return (
     <article
       style={{
-        padding: isMobile ? "12px var(--page-pad-x, 16px)" : "12px 0",
-        margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 16px))" : 0,
+        // 12 — the feed's side inset. The column already sits 12 from the
+        // screen edge at mobile widths (social-feed.tsx), so bleeding by the
+        // same 12 runs the divider edge to edge with content aligned at 12.
+        padding: isMobile ? "12px 12px" : "12px 0",
+        margin: isMobile ? "0 -12px" : 0,
         borderBottom: `1px solid ${C("line")}`,
       }}
     >

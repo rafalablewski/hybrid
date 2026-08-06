@@ -3,6 +3,7 @@
 import { fs, liveElapsedText, tracking, type LiveAthlete } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { accentText } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 import { C, Avatar } from "./social-ui";
 
 /**
@@ -17,20 +18,23 @@ import { C, Avatar } from "./social-ui";
  * your circle is inactive is worse than no rail. Twin of the mobile strip.
  */
 
-// FULL-BLEED per the house rule: negative margins the width of the screen
+// FULL-BLEED per the house rule: negative margins the width of the feed's
 // gutter pull the scroll clip to the true edge, with MATCHING internal padding
-// so resting avatars still line up with the content column.
-const rail: React.CSSProperties = {
+// so resting avatars still line up with the content column. At mobile widths
+// the feed column sits 12 from the edge (social-feed.tsx), so the strip bleeds
+// by that 12; desktop keeps the shell's --page-pad-x.
+const rail = (isMobile: boolean): React.CSSProperties => ({
   display: "flex",
   gap: 14,
   overflowX: "auto",
   scrollbarWidth: "none",
-  margin: "0 calc(-1 * var(--page-pad-x, 16px)) 4px",
-  padding: "2px var(--page-pad-x, 16px) 8px",
-};
+  margin: isMobile ? "0 -12px 4px" : "0 calc(-1 * var(--page-pad-x, 16px)) 4px",
+  padding: isMobile ? "2px 12px 8px" : "2px var(--page-pad-x, 16px) 8px",
+});
 
 export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; onOpen: (handle: string) => void }) {
   const { t } = useLang();
+  const isMobile = useIsMobile();
   if (!live.length) return null;
 
   return (
@@ -46,7 +50,7 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
         </span>
       </div>
 
-      <div style={rail}>
+      <div style={rail(isMobile)}>
         {live.map((l) => {
           const ring = accentText(l.accent === "blue" ? "blue" : "lime");
           const elapsed = liveElapsedText(l.elapsedMin);

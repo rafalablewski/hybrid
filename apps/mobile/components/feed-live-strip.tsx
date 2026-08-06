@@ -45,15 +45,15 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
         </Text>
       </View>
 
-      {/* FULL-BLEED per the house rule: negative margins the width of
-          AuroraScreen's 16dp gutter pull the scroll clip to the true screen
-          edge, with matching internal padding so resting avatars still line up
-          with the content column. */}
+      {/* FULL-BLEED per the house rule: negative margins the width of the
+          FEED's 12dp gutter (tighter than the app default — see feed-view)
+          pull the scroll clip to the true screen edge, with matching internal
+          padding so resting avatars still line up with the content column. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -16 }}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 14, paddingBottom: 4 }}
+        style={{ marginHorizontal: -12 }}
+        contentContainerStyle={{ paddingHorizontal: 12, gap: 14, paddingBottom: 4 }}
       >
         {live.map((l) => {
           const ring = txt(C, l.accent === "blue" ? colors.blue : colors.lime);

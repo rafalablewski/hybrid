@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, TextInput, FlatList, RefreshControl, Animated } from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
 import { Loading, F, fs, leading, tracking, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
@@ -121,7 +122,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
 
   const header = (
     <>
-      {top}
+      {/* The hub chrome hands over from Today, which runs the app's 16 gutter —
+          the +4 keeps it pixel-stable across the tab switch while the feed's
+          own content runs the tighter 12. */}
+      {top != null && <View style={{ paddingHorizontal: 4 }}>{top}</View>}
       <Animated.View style={fade} onLayout={startHubFade}>
       {/* Standing alone the head is the HERO's; as a Today hub tab the head is
           Today's, handed down through `top`. */}
@@ -138,8 +142,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       <CosignInbox units={units} />
 
       {/* FEED TABS — the ranked feed only earns trust while an unranked exit
-          exists beside it. */}
-      <View style={{ flexDirection: "row", gap: 6, marginBottom: 10 }}>
+          exists beside it. People-search rides the row's right side as a bare
+          icon (the SectionHead idiom) — a full search bar would spend a row of
+          the stream on a rare action. */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 }}>
         {(["forYou", "following"] as FeedTab[]).map((id) => (
           <Pressable key={id} onPress={() => setTab(id)}>
             <View style={{ paddingHorizontal: 13, paddingVertical: 7, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: tab === id ? C.ash : C.line, backgroundColor: tab === id ? C.ink2 : "transparent" }}>
@@ -147,6 +153,14 @@ export default function FeedView({ top }: { top?: ReactNode }) {
             </View>
           </Pressable>
         ))}
+        <View style={{ marginLeft: "auto" }}>
+          <Pressable onPress={() => router.push("/discover")} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("w.social.searchPeople")}>
+            <Svg width={18} height={18} viewBox="0 0 18 18" fill="none">
+              <Circle cx={8} cy={8} r={5.5} stroke={C.ash} strokeWidth={1.6} />
+              <Path d="m12.4 12.4 3.4 3.4" stroke={C.ash} strokeWidth={1.6} strokeLinecap="round" />
+            </Svg>
+          </Pressable>
+        </View>
       </View>
 
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
@@ -176,7 +190,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       {/* The stream boundary. The rows below are full-bleed timeline rows
           (feed-card.tsx), each closed by an edge-to-edge hairline — the header
           hands over with the same line so the first post is bounded top. */}
-      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -16 }} />
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -12 }} />
       </Animated.View>
     </>
   );
@@ -243,7 +257,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   if (hub || top) {
     return (
       <AuroraScreen scroll={false} hubTab={hub}>
-        {list({ ...navScroll, contentContainerStyle: { padding: 16, paddingBottom: padBottom } })}
+        {/* 12, not the app's 16: the feed runs a tighter side gutter (the rows'
+            full-bleed margins in feed-card.tsx match it). */}
+        {list({ ...navScroll, contentContainerStyle: { paddingHorizontal: 12, paddingTop: 16, paddingBottom: padBottom } })}
         {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
       </AuroraScreen>
     );
@@ -251,9 +267,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   return (
     <AuroraScreen
       hero={{ rank: "title", title: t("w.social.feedTitle"), meta: [t("w.social.feedSub")] }}
-      // 16 — the AuroraScreen gutter the rows' full-bleed margins assume; the
-      // hub shape above uses the same 16.
-      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: 16 }] })}
+      // 12 — the feed's tight side gutter the rows' full-bleed margins assume;
+      // the hub shape above uses the same 12.
+      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: 12 }] })}
     >
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </AuroraScreen>
