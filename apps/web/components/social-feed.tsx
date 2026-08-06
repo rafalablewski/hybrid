@@ -9,6 +9,7 @@ import FeedCard from "./feed-card";
 import FeedLiveStrip from "./feed-live-strip";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { useIsMobile } from "@/lib/use-media-query";
 
 /**
  * CONNECT — the feed (web). Twin of apps/mobile/components/feed-view.tsx; both
@@ -44,7 +45,7 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
     onCount((r.comments ?? []).length);
   };
   return (
-    <div style={{ marginTop: 12, borderTop: `1px solid ${C("line")}`, paddingTop: 10 }}>
+    <div style={{ marginTop: 12, borderTop: `1px solid ${C("line")}`, paddingTop: 12 }}>
       {(list ?? []).map((c) => (
         <div key={c.id} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
@@ -110,6 +111,7 @@ function Composer({ onPosted }: { onPosted: () => void }) {
 
 export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: string) => void } = {}) {
   const { t } = useLang();
+  const isMobile = useIsMobile();
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
@@ -183,6 +185,12 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
 
       <Composer onPosted={load} />
 
+      {/* The stream boundary. The rows below are full-width timeline rows
+          (feed-card.tsx), each closed by a hairline — the header hands over
+          with the same line so the first post is bounded top. At mobile widths
+          it bleeds with the rows so the line runs edge to edge. */}
+      <div style={{ height: 1, background: C("line"), margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 16px))" : 0 }} />
+
       {items.length === 0 ? (
         <EmptyState
           title={tab === "following" ? t("feed.followingEmpty") : t("w.social.feedQuietTitle")}
@@ -205,13 +213,11 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           ))}
 
           {/* The exit. The feed's job is to make you train, not to make you
-              scroll — so the end of the stream is a door back to the bar. */}
+              scroll — so the end of the stream is a door back to the bar. The
+              last row's own hairline already closes the stream, so the marker
+              is plain centered text — same as mobile. */}
           <div style={{ textAlign: "center", padding: "20px 0 8px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C("ash") }}>
-              <span style={{ flex: 1, borderTop: `1px solid ${C("line")}` }} />
-              {t("feed.caughtUp")}
-              <span style={{ flex: 1, borderTop: `1px solid ${C("line")}` }} />
-            </div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C("ash") }}>{t("feed.caughtUp")}</div>
             <p style={{ fontSize: 12, color: C("ash"), margin: "10px 0 12px" }}>{t("feed.caughtUpSub")}</p>
             <Btn onClick={() => (onNavigate ? onNavigate("log") : (window.location.href = "/log"))}>{t("feed.goTrain")}</Btn>
           </div>

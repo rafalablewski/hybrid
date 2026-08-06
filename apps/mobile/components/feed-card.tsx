@@ -17,27 +17,29 @@ import { F, fs, leading, tracking, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { Avatar } from "./social-kit";
-import { ACard, RADIUS } from "./aurora/kit";
+import { RADIUS } from "./aurora/kit";
 
 /**
- * THE FEED CARD (mobile) — twin of apps/web/components/feed-card.tsx. Both
+ * THE FEED ROW (mobile) — twin of apps/web/components/feed-card.tsx. Both
  * render the SAME `FeedDetail` computed in core (packages/core/src/feed-card.ts),
  * so the zones, the moment weighting and the provenance rules are one
  * implementation with two renderers.
  *
+ * A post is a full-width ROW, not a card: no surface, no border radius, just a
+ * hairline under each post, and the row bleeds under AuroraScreen's 16dp gutter
+ * so the divider runs edge to edge (the timeline treatment). Moment still
+ * drives weight — a p0 record gets the display headline and the big figure —
+ * but the container itself never changes.
+ *
  * See the web file for the zone map; the rules are identical here:
- * one accent per card, moment drives weight, the tier chip proves the FIGURE
- * (the tick proves the person), tier 0 wears no badge, and a device-measured
- * figure carries the watch signature.
+ * moment drives weight, the tier chip proves the FIGURE (the tick proves the
+ * person), tier 0 wears no badge, and a device-measured figure carries the
+ * watch signature.
  */
 
-const ACCENT_FILL: Record<string, string> = {
-  lime: colors.lime,
-  blue: colors.blue,
-  violet: colors.violet,
-  amber: colors.amber,
-  red: colors.red,
-};
+/** AuroraScreen's gutter — what the row bleeds by, so the divider runs under
+ *  the physical screen edge. Mirrors web's --page-pad-x. */
+const GUTTER = 16;
 
 export function WatchGlyph({ color }: { color: string }) {
   return (
@@ -84,7 +86,7 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
   const { t } = useLang();
   if (!stats.length) return null;
   return (
-    <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.line, marginTop: 14, paddingTop: 12 }}>
+    <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.line, marginTop: 12, paddingTop: 12 }}>
       {stats.map((s) => (
         <View key={s.key} style={{ flex: 1, minWidth: 0 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -102,7 +104,7 @@ function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units
   const C = useTheme().palette;
   if (!sets.length) return null;
   return (
-    <View style={{ marginTop: 10 }}>
+    <View style={{ marginTop: 12 }}>
       {sets.map((l, i) => {
         const load = l.loadKg != null ? feedFigureText(l.loadKg, units) : null;
         return (
@@ -175,7 +177,6 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const { t } = useLang();
   const d = item.detail;
   const moment = d?.moment ?? "p2";
-  const accentFill = ACCENT_FILL[item.accent ?? "lime"] ?? colors.lime;
 
   const headline = d
     ? d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout"
@@ -197,7 +198,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const meta = [item.author.handle ? `@${item.author.handle}` : null, item.when, reason].filter(Boolean).join(" – ");
 
   return (
-    <ACard style={{ marginBottom: 12, ...(moment === "p0" ? { borderColor: txt(C, accentFill) } : null) }}>
+    <View style={{ marginHorizontal: -GUTTER, paddingHorizontal: GUTTER, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line }}>
       {/* ZONE A — identity */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Pressable onPress={() => onOpenProfile(item.author.handle)}>
@@ -224,17 +225,17 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       {d?.stats && d.stats.length > 0 ? <StatRow stats={d.stats} units={units} /> : null}
 
       {/* ZONE E — words */}
-      {item.body ? <Text style={{ color: d?.archetype === "text" ? C.chalk : C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 10 }}>{item.body}</Text> : null}
+      {item.body ? <Text style={{ color: d?.archetype === "text" ? C.chalk : C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 12 }}>{item.body}</Text> : null}
 
       {/* Legacy chips — only when core had no structured detail to give. */}
       {!d && (item.chips?.length ?? 0) > 0 ? (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           {item.chips.map((c, i) => <Chip key={i}>{c}</Chip>)}
         </View>
       ) : null}
 
       {/* ZONE F — actions */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 18, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 18, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
         <Pressable onPress={onKudos}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <Bolt color={item.kudosedByMe ? txt(C, colors.lime) : C.ash} filled={item.kudosedByMe} />
@@ -252,6 +253,6 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       </View>
 
       {children}
-    </ACard>
+    </View>
   );
 }

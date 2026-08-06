@@ -42,7 +42,7 @@ function Comments({ item }: { item: FeedItemView }) {
     setText(""); load();
   };
   return (
-    <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
+    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
       {list.map((c) => (
         <View key={c.id} style={{ flexDirection: "row", gap: 8, marginBottom: 8, alignItems: "center" }}>
           <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
@@ -126,7 +126,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       {/* Standing alone the head is the HERO's; as a Today hub tab the head is
           Today's, handed down through `top`. */}
       {top && (
-        <View style={{ marginBottom: 16, marginTop: 16 }}>
+        <View style={{ marginBottom: 12, marginTop: 16 }}>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>{t("w.social.feedTitle")}</Text>
           <Text style={{ color: C.ash, fontSize: 13 }}>{t("w.social.feedSub")}</Text>
         </View>
@@ -172,6 +172,11 @@ export default function FeedView({ top }: { top?: ReactNode }) {
           </View>
         </Pressable>
       )}
+
+      {/* The stream boundary. The rows below are full-bleed timeline rows
+          (feed-card.tsx), each closed by an edge-to-edge hairline — the header
+          hands over with the same line so the first post is bounded top. */}
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -16 }} />
       </Animated.View>
     </>
   );
@@ -246,7 +251,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   return (
     <AuroraScreen
       hero={{ rank: "title", title: t("w.social.feedTitle"), meta: [t("w.social.feedSub")] }}
-      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: 18 }] })}
+      // 16 — the AuroraScreen gutter the rows' full-bleed margins assume; the
+      // hub shape above uses the same 16.
+      scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: 16 }] })}
     >
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </AuroraScreen>

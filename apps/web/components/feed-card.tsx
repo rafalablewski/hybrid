@@ -17,20 +17,26 @@ import {
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { accentText } from "@/lib/ui";
+import { useIsMobile } from "@/lib/use-media-query";
 import { C, Avatar } from "./social-ui";
 
 /**
- * THE FEED CARD (web) — the D3 zones from reference/feed-spec.html, rendered
+ * THE FEED ROW (web) — the D3 zones from reference/feed-spec.html, rendered
  * from the shared `FeedDetail` that core computes (packages/core/src/feed-card.ts)
  * so this file and its mobile twin can never drift.
  *
+ * A post is a full-width ROW, not a card: no surface, no border radius, just a
+ * hairline under each post (the timeline treatment). At mobile widths the row
+ * bleeds under the shell's gutter (--page-pad-x) so the divider runs edge to
+ * edge, matching the native app; at desktop widths it spans the feed column.
+ *
  * Zones, top to bottom: A identity, B headline, C figures, D evidence,
- * E words, F actions. Every card type is a configuration of these — a PR is
+ * E words, F actions. Every post type is a configuration of these — a PR is
  * `archetype: "stat"` (one big number and its provenance), a session is
  * `"sets"` (top sets over a stat row), a status post is `"text"`.
  *
  * The rules this file enforces visually:
- *   • ONE accent per card — the discipline sets it, everything else is chalk/ash.
+ *   • ONE accent per row — the discipline sets it, everything else is chalk/ash.
  *   • Moment drives weight — a p0 PR gets the 46px figure; a p2 session does not.
  *   • Provenance sits on the FIGURE, not the name: the tier chip proves the
  *     number, the identity tick proves the person. Tier 0 wears no badge at all.
@@ -91,7 +97,7 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
   const { t } = useLang();
   if (!stats.length) return null;
   return (
-    <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, marginTop: 14, paddingTop: 12 }}>
+    <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, marginTop: 12, paddingTop: 12 }}>
       {stats.map((s) => (
         <div key={s.key} style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: mono, fontSize: fs.note, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: s.key === "hr" ? accentVar("blue") : C("chalk") }}>
@@ -111,7 +117,7 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
 function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units: WeightUnit }) {
   if (!sets.length) return null;
   return (
-    <div style={{ marginTop: 10 }}>
+    <div style={{ marginTop: 12 }}>
       {sets.map((l, i) => (
         <div
           key={`${l.name}-${i}`}
@@ -185,9 +191,9 @@ export interface FeedCardProps {
 
 export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, children }: FeedCardProps) {
   const { t } = useLang();
+  const isMobile = useIsMobile();
   const d = item.detail;
   const moment = d?.moment ?? "p2";
-  const accent = item.accent ?? "lime";
 
   // The headline: core names the lift, the client speaks the language.
   const headline = d
@@ -212,11 +218,9 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   return (
     <article
       style={{
-        background: C("card"),
-        border: `1px solid ${moment === "p0" ? `color-mix(in srgb, ${accentVar(accent)} 22%, ${C("line")})` : C("line")}`,
-        borderRadius: 24,
-        padding: 16,
-        marginBottom: 12,
+        padding: isMobile ? "14px var(--page-pad-x, 16px)" : "14px 0",
+        margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 16px))" : 0,
+        borderBottom: `1px solid ${C("line")}`,
       }}
     >
       {/* ZONE A — identity */}
@@ -249,17 +253,17 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
 
       {/* ZONE E — words. A caption is written FOR the feed; the private session
           note is owner-only by schema and never arrives here. */}
-      {item.body && <p style={{ color: moment === "p2" && d?.archetype === "text" ? C("chalk") : C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "10px 0 0" }}>{item.body}</p>}
+      {item.body && <p style={{ color: moment === "p2" && d?.archetype === "text" ? C("chalk") : C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "12px 0 0" }}>{item.body}</p>}
 
       {/* Legacy chips — only when core had no structured detail to give. */}
       {!d && item.chips.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
           {item.chips.map((c, i) => <Chip key={i}>{c}</Chip>)}
         </div>
       )}
 
       {/* ZONE F — actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
         <button
           className="pressable"
           onClick={onKudos}
