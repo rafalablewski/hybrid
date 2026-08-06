@@ -26,8 +26,8 @@
     "@hybrid/core": "workspace:*",
     "@kingstinct/react-native-healthkit": "^14.0.2",
     "@react-native-async-storage/async-storage": "3.1.1",
-    "@supabase/supabase-js": "2.107.0",
-    "@tanstack/react-query": "^5.101.0",
+    "@supabase/supabase-js": "2.112.0",
+    "@tanstack/react-query": "^5.101.4",
     "expo": "~56.0.8",
     "expo-blur": "~56.0.3",
     "expo-constants": "~56.0.16",
@@ -46,26 +46,26 @@
     "expo-system-ui": "~56.0.5",
     "expo-updates": "~56.0.19",
     "qrcode": "^1.5.4",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-native": "0.85.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-native": "0.86.2",
     "react-native-iap": "^15.3.2",
-    "react-native-nitro-modules": "^0.36.1",
-    "react-native-reanimated": "~4.4.0",
+    "react-native-nitro-modules": "^0.36.5",
+    "react-native-reanimated": "~4.5.3",
     "react-native-safe-area-context": "~5.8.0",
-    "react-native-screens": "4.25.2",
-    "react-native-svg": "15.15.4",
+    "react-native-screens": "4.26.2",
+    "react-native-svg": "15.15.5",
     "react-native-url-polyfill": "^3.0.0",
-    "react-native-view-shot": "5.1.0",
+    "react-native-view-shot": "5.1.1",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "~0.9.1"
+    "react-native-worklets": "~0.11.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
     "@types/qrcode": "^1.5.6",
-    "@types/react": "19.2.16",
+    "@types/react": "19.2.18",
     "babel-preset-expo": "~56.0.14",
     "typescript": "6.0.3",
-    "vitest": "4.1.8"
+    "vitest": "4.1.10"
   }
 }
