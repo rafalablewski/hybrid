@@ -164,7 +164,7 @@ function OrderChip({ order, onPress }: { order: LaneOrder; onPress: () => void }
       <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
         {t(ORDER_KEY[order])}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 9, color: C.ash }}>⌄</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>⌄</Text>
     </Pressable>
   );
 }

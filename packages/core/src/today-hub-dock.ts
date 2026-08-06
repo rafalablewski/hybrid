@@ -25,7 +25,7 @@
 //  Pure and client-agnostic: web measures with getBoundingClientRect and reads
 //  window.scrollY, mobile subscribes to the nav-scroll signal every scroller
 //  already publishes, and both feed the SAME numbers in here — so the two
-//  clients cannot drift on when a pill appears (see today-hub-pills.tsx on
+//  clients cannot drift on when a pill appears (see today-hub-dock.tsx on
 //  both clients).
 // ============================================================
 

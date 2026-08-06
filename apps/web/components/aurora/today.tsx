@@ -87,7 +87,7 @@ import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
-import { TodayHubPills } from "./today-hub-pills";
+import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
@@ -192,7 +192,7 @@ export default function AuroraToday({
   // home and its job is "what do I do today?", so every visit opens on the
   // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
-  // The in-flow switcher's own box. THE DOCK (aurora/today-hub-pills.tsx)
+  // The in-flow switcher's own box. THE DOCK (aurora/today-hub-dock.tsx)
   // measures its bottom edge so the floating row appears the instant the real
   // control leaves the viewport, never beside it.
   const hubAnchor = useRef<HTMLDivElement | null>(null);
@@ -624,7 +624,7 @@ export default function AuroraToday({
           it is position:fixed: a fixed element inside a view-transition group
           is captured with the group and would fly with it. Every hub tab
           mounts this, so Performance and Feed keep their exits too. */}
-      <TodayHubPills value={tab} onChange={selectTab} anchor={hubAnchor} />
+      <TodayHubDock value={tab} onChange={selectTab} anchor={hubAnchor} />
     </>
   );
 

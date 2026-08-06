@@ -49,7 +49,7 @@ const ORDER_KEY: Record<LaneOrder, string> = {
 };
 
 const kicker: CSSProperties = {
-  fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
+  fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em",
   textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap",
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
@@ -249,8 +249,8 @@ function OrderChip({ order, onClick, t }: { order: LaneOrder; onClick: () => voi
         padding: "4px 9px", color: C("ash"),
       }}
     >
-      <span style={{ ...kicker, fontSize: 10 }}>{t(ORDER_KEY[order])}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9 }} aria-hidden>⌄</span>
+      <span style={kicker}>{t(ORDER_KEY[order])}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano }} aria-hidden>⌄</span>
     </button>
   );
 }

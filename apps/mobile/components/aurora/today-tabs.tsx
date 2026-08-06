@@ -7,7 +7,7 @@ import { LiquidSeg } from "./liquid-seg";
 /** One Today-hub mark, drawn as a true vector at the same 72×72 stroke box and
  *  weight as AuroraSvgIcon, so the pills sit in the app's one monoline icon
  *  voice. Decorative — the Pressable carries the tab's real name. Shared with
- *  the floating dock (aurora/today-hub-pills.tsx) so the resting control and
+ *  the floating dock (aurora/today-hub-dock.tsx) so the resting control and
  *  the detached row cannot draw the same three marks two ways. */
 export function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: HubGlyphName; color: string; size?: number; strokeWidth?: number }) {
   return (

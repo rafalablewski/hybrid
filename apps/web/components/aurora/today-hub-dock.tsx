@@ -30,7 +30,7 @@ import { HubGlyph } from "./today-tabs";
 // first flick up brings it back. Both rules live in @hybrid/core
 // (today-hub-dock.ts) so mobile detaches, hides and returns at identical
 // points; this file owns only the pixels. Mirrored on mobile
-// (aurora/today-hub-pills.tsx).
+// (aurora/today-hub-dock.tsx).
 //
 // SPLIT IS THE GAP. The row arrives with the pills touching and springs them
 // apart; leaving, it runs backwards and they merge. One animated number, shared
@@ -118,7 +118,7 @@ function useHubDock(anchor: RefObject<HTMLElement | null>, reduced: boolean, res
   return { phase, inset };
 }
 
-export function TodayHubPills({
+export function TodayHubDock({
   value,
   onChange,
   anchor,
@@ -302,4 +302,4 @@ export function TodayHubPills({
   );
 }
 
-export default TodayHubPills;
+export default TodayHubDock;

@@ -97,7 +97,7 @@ import AuroraLogbookRail from "./logbook-rail";
 import DoneFloor from "./done-floor";
 import GroupMark from "./group-mark";
 import { TodayTabs } from "./today-tabs";
-import { TodayHubPills } from "./today-hub-pills";
+import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
 // THE HUB's other two tabs — the same full screens their own routes render,
 // handed Today's header + pills through the `top` slot so the chrome above
@@ -675,7 +675,7 @@ export default function AuroraHome() {
   // THE DOCK — the same three destinations, floating, once the control inside
   // the header above has scrolled off. It rides OVER each view's scroller (a
   // hub tab owns its own), never inside it, so every tab keeps its exits.
-  const hubDock = <TodayHubPills value={tab} onChange={selectTab} topInset={insets.top} />;
+  const hubDock = <TodayHubDock value={tab} onChange={selectTab} topInset={insets.top} />;
   // Performance and Feed own their whole screen, so the dock is layered on top
   // of them rather than handed through `top` (which lands inside their
   // scrollers and would scroll away with the header).
