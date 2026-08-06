@@ -216,9 +216,19 @@ describe("the endurance half", () => {
     expect(FITNESS_LEVELS.indexOf(veteran.level)).toBeGreaterThanOrEqual(FITNESS_LEVELS.indexOf(peak.level));
   });
 
-  it("keeps the best run, not the most recent one", () => {
+  it("lets the SECOND best effort speak, so one good day cannot buy a tier", () => {
+    // Two runs: a 21:00 and a 30:00. The fast one is the athlete's PR and stays
+    // their PR — it just does not set the level, because a fluke happens once
+    // and a capacity happens twice. See engines/endurance-level.ts, gate 1.
     const r = estimateFitnessLevel([run(5, 30, 3), run(5, 21, 60)], { now: NOW });
-    expect(r.evidence[0]!.equivSec).toBe(21 * 60);
+    expect(r.evidence[0]!.equivSec).toBe(30 * 60);
+    expect(r.evidence[0]!.confirmed).toBe(true);
+
+    // With only ONE effort it still speaks — refusing to read an athlete's only
+    // honest race would be worse — but it is marked unconfirmed.
+    const single = estimateFitnessLevel([run(5, 21, 60)], { now: NOW });
+    expect(single.evidence[0]!.equivSec).toBe(21 * 60);
+    expect(single.evidence[0]!.confirmed).toBe(false);
   });
 
   it("every basis has a line of copy naming it", () => {
@@ -268,12 +278,19 @@ describe("the specialist athletes", () => {
     expect(resolveExperience(undefined, r).experience).toBe("advanced");
   });
 
-  it("reads neither the bike nor the swim, and says so through basis", () => {
+  it("reads the swim but still refuses the powerless bike", () => {
     const r = estimateFitnessLevel(bodybuilder, { bodyweightKg: 90, now: NOW });
-    // Six sessions in, only the lifts and the ONE run are evidence.
-    expect(r.evidence.filter((e) => e.kind === "endurance")).toHaveLength(1);
-    expect(r.evidence.every((e) => e.lift !== "Cycling" && e.lift !== "Swim")).toBe(true);
+    const endurance = r.evidence.filter((e) => e.kind === "endurance");
+    const disciplines = endurance.map((e) => e.discipline);
+    // The swim is admitted now — pool freestyle has a real standard behind it.
+    expect(disciplines).toContain("swimming");
+    expect(disciplines).toContain("running");
+    // The ride is not: without a power meter there is nothing scoreable on it,
+    // and a table over raw km/h would be a fiction.
+    expect(disciplines).not.toContain("cycling");
     expect(r.basis).toBe("both");
+    // And neither weak effort moves the headline, which is the whole point.
+    expect(r.level).toBe("advanced");
   });
 
   it("light lifting never drags a fast runner down", () => {
@@ -312,7 +329,13 @@ describe("the specialist athletes", () => {
     const reach = nextThreshold(r)!;
     expect(reach.next).toBe("elite");
     expect(reach.kind).toBe("strength");
-    expect(reach.lift).toBe("Deadlift");
+    // The BACK SQUAT, not the heavier deadlift. Raw ratios are not comparable
+    // across lifts with different standards — 198 kg is 82% of the way through
+    // the squat's advanced band while 220 kg is 52% through the deadlift's — so
+    // results rank by how far into their own tier they sit. That is also the
+    // only quantity a lift and a run can be ranked against each other by, and
+    // it gives the athlete the nearer, more actionable target.
+    expect(reach.lift).toBe("Back Squat");
     // The card renders current, target and gap side by side — they must be one
     // sum, not three independently-rounded figures.
     expect(reach.current + reach.gap).toBe(reach.target);

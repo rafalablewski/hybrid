@@ -54,6 +54,11 @@ import {
 } from "./landmark-profile";
 import { BODYWEIGHT_REF_KG, REFERENCE_BMI, VOLUME_PROFILE_FIELDS } from "./athlete-profile";
 import { STRENGTH_STANDARDS, ENDURANCE_PACE, ENDURANCE_SEX_FACTOR, RIEGEL_EXPONENT, ENDURANCE_STANDARD_KM, ENDURANCE_MIN_KM } from "./fitness-level";
+import {
+  ENDURANCE_STANDARDS, TIER_POINTS, ELITE_SCORE, AGREEMENT_BAND, HIGH_TRANSFER,
+  CONFIRMED_BASE, UNCONFIRMED_BASE, CORROBORATION_WEIGHT, CONTRADICTION_PENALTY, CONFIDENCE_CAP,
+  TRIATHLON_CLASSES, TRIATHLON_TOLERANCE, transfer, standardFor,
+} from "./endurance-level";
 import { SETTLED_DRIFT, CONVERGING_DRIFT, SETTLE_WINDOW } from "./landmark-replay";
 import {
   RESIDUAL_FLOOR,
@@ -118,7 +123,7 @@ export const ENGINE_FORMULA_GROUPS: { id: EngineFormulaGroup; label: string; sou
   { id: "landmarks", label: "Volume landmarks (MEV/MAV/MRV)", source: "engines/landmark-profile.ts + landmark-adapt.ts + landmark-resolve.ts" },
   { id: "volumeBlock", label: "Block volume ramp", source: "engines/volume-block.ts" },
   { id: "feelTiming", label: "Feel timing", source: "feel-timing.ts + readiness-reads.ts + checkin-scales.ts" },
-  { id: "fitnessLevel", label: "Training level & profile", source: "engines/fitness-level.ts + athlete-profile.ts" },
+  { id: "fitnessLevel", label: "Training level & profile", source: "engines/fitness-level.ts + endurance-level.ts + athlete-profile.ts" },
 ];
 
 export const ENGINE_FORMULAS: EngineFormula[] = [
@@ -420,7 +425,7 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: "≤12", value: "reps", meaning: "a rep-out is not a max test" },
       { symbol: "180 d", value: "window", meaning: "current form, not a lifetime best" },
     ],
-    note: "The BEST lift sets the level, not the average — training age is what you have built, not a number dragged down by the lift you neglect. Confidence rises with how many benchmark lifts are represented and caps at 0.85, because a ratio is a proxy for training age rather than a measurement of it. The athlete's own answer always wins; the estimate fills a gap and any disagreement is shown, never silently applied.",
+    note: "The BEST lift sets the level, not the average — training age is what you have built, not a number dragged down by the lift you neglect. Confidence rises with how many benchmark LIFTS are represented and caps at 0.85, because a ratio is a proxy for training age rather than a measurement of it; it counts only lifts, since a weak run used to be counted as support for a verdict it contradicted. The athlete's own answer always wins; the estimate fills a gap and any disagreement is shown, never silently applied. THIS is the read `resolveExperience` hands the volume model — strengthLevel, never the headline. MEV/MRV are lifting landmarks, so an endurance read cannot set them: a 60 kg athlete running 2:57 /km is genuinely elite and still squats 1.06 × bodyweight, and handing `advanced` to athleteLandmarks on the strength of the run prescribed an advanced lifter's set counts to someone who had never trained the pattern.",
   },
   {
     id: "profile-completeness",
@@ -604,7 +609,76 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: String(ENDURANCE_SEX_FACTOR), value: "female factor", meaning: "thresholds are this much slower" },
       { symbol: `${ENDURANCE_MIN_KM} km`, value: "minimum distance", meaning: "shorter is not an aerobic test" },
     ],
-    note: "Running only. Cycling and rowing pace depend on gearing, terrain, drag factor and draft, so a threshold table over raw speed would be a fiction — those are left unread rather than guessed. Whichever half of the athlete is stronger sets the level, and `basis` always names which halves had data.",
+    note: "Running is one of six endurance disciplines now (see below), and the only one whose table predates them. Normalising to a 5 km equivalent is what makes a 10 km and a parkrun comparable, so a marathoner is never read as a slow 5 km runner. Whichever half of the athlete is stronger sets the headline level, and `basis` always names which halves had data.",
+  },
+  {
+    id: "endurance-score",
+    engine: "fitnessLevel",
+    name: "The shared engine score",
+    expression: `score = ${TIER_POINTS} × tier + ${TIER_POINTS} × (v − entry[tier]) / (entry[tier+1] − entry[tier])`,
+    constants: [
+      { symbol: String(TIER_POINTS), value: "points per tier", meaning: "novice 25, intermediate 50, advanced 75" },
+      { symbol: String(ELITE_SCORE), value: "elite entry", meaning: "the scale continues past it, deliberately" },
+      { symbol: "1 / v", value: "pace inversion", meaning: "a pace is scored bigger-is-better after inverting" },
+      { symbol: "6", value: "disciplines", meaning: "run, swim, ride, row, ski, triathlon" },
+    ],
+    note: "Paces cannot be compared across water, road and snow, so nothing is compared as a pace. Each discipline owns four entry thresholds in its OWN unit — the same shape the five benchmark lifts use — and a raw performance is interpolated between them onto one unitless scale. The scale runs PAST 100 on purpose: an athlete standing on the elite floor and one well beyond it must not be the same number, or every downstream comparison would flatten the best athletes into one another. Below novice it decays proportionally rather than clamping, so a slow effort still ranks against a slower one.",
+  },
+  {
+    id: "endurance-admission",
+    engine: "fitnessLevel",
+    name: "Endurance admission, per modality",
+    expression: "discipline × modality → standard, else unread",
+    constants: ENDURANCE_STANDARDS.map((s): { symbol: string; value: string; meaning: string } => ({
+      symbol: s.discipline,
+      value: s.thresholds.join(" / "),
+      meaning: s.higherIsBetter ? "W/kg entries, novice → elite" : `entries novice → elite, ${s.min}–${s.max} ${s.discipline === "cycling" ? "min" : "km"}`,
+    })).concat(TRIATHLON_CLASSES.map((c): { symbol: string; value: string; meaning: string } => ({
+      symbol: `tri ${c.key}`,
+      value: c.thresholds.join(" / "),
+      meaning: `finishing minutes at ${c.km} km, ±${Math.round(TRIATHLON_TOLERANCE * 100)}%`,
+    }))),
+    note: "Admission is per MODALITY, not per sport. A row on an erg is among the best-standardised efforts in sport; the same athlete on water is nearly unscoreable (boat class, crew, stream, wind), so water rows are declined. Cycling by POWER is the cleanest of the six — watts are watts — while cycling by speed is a fiction, which is why a ride without a meter is still unread. Swimming is pool freestyle only. Skiing carries a solo cap because course profile and snow vary more than skiers do; another discipline agreeing lifts it. Triathlon is a property of the SESSION (swim + bike + run within tolerance of a canonical race), checked before the legs so a race is never also read as three weak standalone efforts.",
+  },
+  {
+    id: "endurance-gates",
+    engine: "fitnessLevel",
+    name: "The gates — second best, not best",
+    expression: "speaks = efforts.length ≥ 2 ? sortByScore(efforts)[1] : efforts[0] (unconfirmed)",
+    constants: [
+      { symbol: "2", value: "efforts to confirm", meaning: "a fluke happens once, a capacity twice" },
+      { symbol: "[1]", value: "the second best", meaning: "the PR is kept, it just does not set the level" },
+      { symbol: "solo cap", value: String(standardFor("skiing")?.soloCap ?? "—"), meaning: "skiing alone may not reach elite" },
+    ],
+    note: "Under a maximum the risk is never that a weak result drags the athlete down — it is that ONE flattering result lifts them, and with six disciplines there are six chances at a lucky reading, so the bias compounds. Every gate therefore acts on the GOOD results, inside a discipline, before it may compete. A single effort is still read (refusing an athlete's only honest race would be worse) but is marked unconfirmed: reduced confidence, and no public badge.",
+  },
+  {
+    id: "endurance-combine",
+    engine: "fitnessLevel",
+    name: "Maximum across disciplines, never a mean",
+    expression: `level = max(scores);  confidence = base ± Σ ${CORROBORATION_WEIGHT} × transfer(top, d)`,
+    constants: [
+      { symbol: `${CONFIRMED_BASE} / ${UNCONFIRMED_BASE}`, value: "base confidence", meaning: "confirmed / single-effort" },
+      { symbol: String(CORROBORATION_WEIGHT), value: "corroboration", meaning: "per agreeing discipline, × transfer" },
+      { symbol: String(CONTRADICTION_PENALTY), value: "contradiction", meaning: `when transfer ≥ ${HIGH_TRANSFER} and the gap ≥ ${AGREEMENT_BAND * 2}` },
+      { symbol: String(AGREEMENT_BAND), value: "agreement band", meaning: "one tier — inside it, two reads agree" },
+      { symbol: String(CONFIDENCE_CAP), value: "cap", meaning: "a performance is a proxy, never a measurement" },
+    ],
+    note: "performance = engine × economy, and economy ≤ 1, so every discipline hands back a LOWER BOUND on the same capacity. That makes averaging not merely unkind but invalid — the mean of two lower bounds is not a lower bound, and an elite run averaged with a hobby swim is false about both. The maximum is the tightest bound the evidence supports. Weak results are never skipped and never subtract: they change job from setting the level to CERTIFYING it, through confidence. Rejected on purpose: shrinking the max toward the second discipline (max − k × transfer × gap). Any k large enough to catch a real outlier also demotes the honest specialist, which is the athlete the design exists to protect.",
+  },
+  {
+    id: "endurance-transfer",
+    engine: "fitnessLevel",
+    name: "Transfer — which disagreements are informative",
+    expression: "transfer(a, b) ∈ (0, 1], symmetric",
+    constants: [
+      { symbol: "run ↔ ski", value: String(transfer("running", "skiing")), meaning: "shared engine — a gap here is worth a flag" },
+      { symbol: "run ↔ tri", value: String(transfer("running", "triathlon")), meaning: "triathlon contains running" },
+      { symbol: "run ↔ bike", value: String(transfer("running", "cycling")), meaning: "shared central, different peripheral" },
+      { symbol: "run ↔ swim", value: String(transfer("running", "swimming")), meaning: "the weakest pair — a slow swim says almost nothing" },
+      { symbol: String(HIGH_TRANSFER), value: "flag threshold", meaning: "above this, a two-tier gap is worth surfacing" },
+    ],
+    note: "An elite runner who swims badly is UNREMARKABLE: swimming is the most technique-bound sport on the list and the two barely constrain each other, so the hobby swim adds almost nothing to confidence and takes nothing away. An elite runner who SKIS badly is surprising, because those correlate strongly — and that pattern is far more often a mis-tagged session or a drifting GPS track than a physiological marvel, so it is flagged rather than believed. A documented prior in the same spirit as the strength standards, and the right shape to be shrunk toward the athlete's own data the way personal.ts shrinks the ACWR spike onset.",
   },
   {
     id: "landmark-replay",

@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { View, Text } from "react-native";
 import {
-  fs, fmtWeight, formatPace,
-  FITNESS_LEVELS, LEVEL_KEY,
+  fs, fmtWeight,
+  FITNESS_LEVELS, LEVEL_KEY, ENDURANCE_DISCIPLINE_KEY, enduranceFigure,
+  type LevelEvidence,
   type LoggedSession, type WeightUnit, type FitnessLevelEstimate,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -61,9 +62,19 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
           .replace("{load}", fmtWeight(top.e1rm ?? 0, units))
           .replace("{lift}", top.lift)
       : t("w.analyze.vol.levelWhyRun")
-          .replace("{dist}", top.lift)
-          .replace("{pace}", `${formatPace(top.ratio)} ${t("w.analyze.vol.levelPace")}`);
-    const fmt = (v: number) => (reach.kind === "strength" ? fmtWeight(v, units) : formatPace(v));
+          // "your 10.0 km swim", "your 40 min ride" — the discipline is named,
+          // because six of them can reach this sentence now and "10.0 km" alone
+          // no longer says which one.
+          .replace("{dist}", `${top.lift} ${t(ENDURANCE_DISCIPLINE_KEY[top.discipline ?? "running"])}`)
+          .replace("{pace}", figure(top));
+    // Kilos for a lift; for an endurance reach, the discipline's own unit — a
+    // swim is quoted per 100 m and a ride in W/kg, and formatting either as a
+    // per-km clock would be a different claim entirely.
+    // Kilos for a lift; for an endurance reach, the discipline's OWN unit — a
+    // swim is quoted per 100 m and a ride in W/kg, and rendering either as a
+    // per-km clock would be a different claim, not a rounding difference.
+    const fmt = (v: number) =>
+      reach.kind === "strength" ? fmtWeight(v, units) : enduranceFigure({ discipline: top.discipline, ratio: v }).value;
     const next = reach.next
       ? t(reach.kind === "strength" ? "w.analyze.vol.levelNextLift" : "w.analyze.vol.levelNextRun")
           .replace("{tier}", t(LEVEL_KEY[reach.next]))
@@ -72,6 +83,13 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
       : t("w.analyze.vol.levelTop").replace("{gap}", fmt(reach.gap));
     return `${why} ${next}`;
   }, [estimate, level, reach, t, units]);
+
+  // One formatter for every endurance figure on the card, so the sentence and
+  // the fine line below it can never quote the same effort in two units.
+  const figure = (e: { discipline?: LevelEvidence["discipline"]; ratio: number }) => {
+    const f = enduranceFigure(e);
+    return `${f.value} ${t(f.unitKey)}`;
+  };
 
   const index = level ? FITNESS_LEVELS.indexOf(level) : -1;
   const progress = reach?.progress ?? 0;
@@ -138,7 +156,7 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
             .slice(0, 2)
             .map((e) => (e.kind === "strength"
               ? `${e.ratio.toFixed(2)} ${t("w.analyze.vol.ofBodyweight")}`
-              : `${formatPace(e.ratio)} ${t("w.analyze.vol.levelPace")}`))
+              : figure(e)))
             .join(" – ")}
         </Text>
       )}
