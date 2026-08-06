@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildSocialFeed, rankFeed, type FeedSignals, type FeedSubjectInput, type Relation } from "@hybrid/core";
+import { buildLiveNow, buildSocialFeed, rankFeed, type FeedSignals, type FeedSubjectInput, type Relation } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import { tableMissing, recentSessionsByUsers, recentPostsByUsers, authorCards, blockedIdsFor } from "@/lib/social";
@@ -117,7 +117,13 @@ export async function GET(request: Request) {
     // a second round trip.
     const ranked = rankFeed(enriched, (i) => signalsFor(i.author.id), { limit: 50 });
 
-    return NextResponse.json({ feed: ranked });
+    // NOW TRAINING — presence, from the SAME subjects, so the strip costs no
+    // extra query. Only people I follow are in `subjects` and the block list is
+    // already applied above, so "who is at the gym right now" never reaches
+    // anyone the athlete hasn't approved.
+    const live = buildLiveNow(subjects, { viewerId: me.id });
+
+    return NextResponse.json({ feed: ranked, live });
   } catch (e) {
     if (tableMissing(e)) return NextResponse.json({ feed: [], unavailable: true });
     return NextResponse.json({ error: "failed" }, { status: 500 });

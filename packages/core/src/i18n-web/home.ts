@@ -327,6 +327,9 @@ export const web_home = {
     // ── CONNECT feed — the card system (packages/core/src/feed-card.ts).
     //    Headlines are a KEY + the lift/session it names, so core never ships
     //    a sentence and both clients translate the same card. ──
+    "feed.live.title": "Now training",
+    "feed.live.count": "{n} live",
+    "feed.live.aria": "{name}, training for {time}",
     "feed.why.coach": "Your coach",
     "feed.why.gym": "Trains at your gym",
     "feed.why.program": "Same program as you",
@@ -1327,6 +1330,9 @@ export const web_home = {
     "w.explore.browseAll": "Przeglądaj",
     "w.explore.seeAll": "Zobacz wszystko",
     "w.explore.seeMore": "Zobacz więcej",
+    "feed.live.title": "Teraz trenują",
+    "feed.live.count": "{n} na żywo",
+    "feed.live.aria": "{name}, trenuje od {time}",
     "feed.why.coach": "Twój trener",
     "feed.why.gym": "Trenuje w Twojej siłowni",
     "feed.why.program": "Ten sam plan co Ty",
@@ -2297,6 +2303,9 @@ export const web_home = {
     "w.explore.browseAll": "Alle ansehen",
     "w.explore.seeAll": "Alle ansehen",
     "w.explore.seeMore": "Mehr ansehen",
+    "feed.live.title": "Trainiert gerade",
+    "feed.live.count": "{n} live",
+    "feed.live.aria": "{name}, trainiert seit {time}",
     "feed.why.coach": "Dein Coach",
     "feed.why.gym": "Trainiert in deinem Gym",
     "feed.why.program": "Gleiches Programm wie du",

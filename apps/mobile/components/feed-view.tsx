@@ -4,12 +4,13 @@ import { Loading, F, fs, leading, tracking, useScreenBottomPad, useHubDissolve, 
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import type { FeedItemView, CommentView } from "@hybrid/core";
+import type { FeedItemView, CommentView, LiveAthlete } from "@hybrid/core";
 import { colors } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
 import { ACard, cardStack, RADIUS } from "./aurora/kit";
 import FeedCard from "./feed-card";
+import FeedLiveStrip from "./feed-live-strip";
 import { CosignInbox } from "./pr-attestation";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScrollProps } from "../lib/nav-scroll";
@@ -66,12 +67,20 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const [drawer, setDrawer] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<FeedTab>("forYou");
+  const [live, setLive] = useState<LiveAthlete[]>([]);
   const [composing, setComposing] = useState(false);
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
 
-  const load = useCallback(() => getFeed().then((r) => setFeed(r.feed ?? [])), []);
+  const load = useCallback(
+    () =>
+      getFeed().then((r) => {
+        setFeed(r.feed ?? []);
+        setLive(r.live ?? []);
+      }),
+    [],
+  );
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
@@ -139,6 +148,9 @@ export default function FeedView({ top }: { top?: ReactNode }) {
           </Pressable>
         ))}
       </View>
+
+      {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
+      <FeedLiveStrip live={live} onOpen={(h) => setDrawer(h)} />
 
       {/* COMPOSER — deliberately underweighted: in this product the workout is
           the post, so the blank page stays a one-line invitation until wanted. */}

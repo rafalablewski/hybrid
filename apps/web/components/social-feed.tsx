@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, MutationResult } from "@hybrid/core";
+import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, LiveAthlete, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 import { CosignInbox } from "./pr-attestation";
 import FeedCard from "./feed-card";
+import FeedLiveStrip from "./feed-live-strip";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 
@@ -114,8 +115,13 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
   const [drawer, setDrawer] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("forYou");
+  const [live, setLive] = useState<LiveAthlete[]>([]);
 
-  const load = () => jget<FeedResponse>("/api/social/feed").then((r) => setFeed(r.feed ?? []));
+  const load = () =>
+    jget<FeedResponse>("/api/social/feed").then((r) => {
+      setFeed(r.feed ?? []);
+      setLive(r.live ?? []);
+    });
   useEffect(() => { load(); }, []);
 
   const cheer = async (item: FeedItem) => {
@@ -171,6 +177,9 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
         {tabBtn("forYou", t("feed.tab.forYou"))}
         {tabBtn("following", t("feed.tab.following"))}
       </div>
+
+      {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
+      <FeedLiveStrip live={live} onOpen={(h) => setDrawer(h)} />
 
       <Composer onPosted={load} />
 

@@ -12,6 +12,7 @@
  *   • list/profile endpoints add `unavailable` when a table isn't migrated yet.
  */
 import type { FeedReason } from "./feed-rank";
+import type { LiveAthlete } from "./feed-live";
 import type {
   FeedItem,
   ProfileStats,
@@ -52,6 +53,9 @@ export interface FeedItemView extends FeedItem {
 }
 export interface FeedResponse extends Degradable, ApiError {
   feed: FeedItemView[];
+  /** Who is mid-session right now (core/feed-live.ts). Absent or empty when
+   *  nobody is — the strip hides rather than showing a void. */
+  live?: LiveAthlete[];
 }
 
 export interface KudosResponse extends ApiError {

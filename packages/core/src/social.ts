@@ -32,6 +32,7 @@ import {
   type FeedDetail,
 } from "./feed-card";
 import type { WeightUnit } from "./units";
+import { isLive } from "./feed-live";
 
 // ---------------------------------------------------------------- handles ----
 export const HANDLE_MIN = 3;
@@ -264,6 +265,12 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       .map((s) => ({ ...s, blocks: migrateBlocks(s.blocks) }))
       .sort((a, b) => ms(a.startedAt) - ms(b.startedAt));
     ordered.forEach((s, idx) => {
+      // A session still in progress is PRESENCE, not a post: it belongs in the
+      // Now-training strip (feed-live.ts), and posting it as a finished card
+      // would announce a workout that hasn't happened yet. A session left open
+      // past the live window is a different thing — someone forgot to press
+      // finish — and still reads as a card, dated when they started.
+      if (isLive(s, now)) return;
       const at = ms(s.completedAt ?? s.startedAt);
       if (!Number.isFinite(at) || at < now - windowMs || at > now + 60_000) return;
       const blocks = s.blocks;

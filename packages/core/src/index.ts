@@ -81,6 +81,7 @@ export * from "./tactical";
 export * from "./longevity";
 export * from "./interval";
 export * from "./activity";
+export * from "./feed-live";
 export * from "./feed-rank";
 export * from "./feed-card";
 export * from "./social";
