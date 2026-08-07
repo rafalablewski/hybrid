@@ -43,6 +43,7 @@ export default function RailTail({
   w = 132,
   radius = 28,
   minHeight,
+  snapAlign = "start",
   premium = false,
   shadow = true,
 }: {
@@ -53,14 +54,23 @@ export default function RailTail({
   /** Spoken label — add the rail's subject where "See all" alone is ambiguous
    *  out of context (a screen reader has no "end of THIS rail" cue). */
   a11y?: string;
-  /** Match the rail's card width. */
-  w?: number;
+  /** Match the rail's card width — a number of px, or the card's own flex
+   *  basis verbatim (`"min(52%, 196px)"`) where the rail sizes by viewport.
+   *  On a rail that snaps by a fixed interval, matching is not cosmetic: an
+   *  odd-width final child puts the content end off the snap grid, so the last
+   *  snap lands short and leaves the tail half-cut. */
+  w?: number | string;
   /** Match the rail's card radius. */
   radius?: number;
   /** Floor for rails whose cards size themselves (the tail has no content to
    *  give it height). Rails with fixed-height cards can leave it off — the
    *  flex row stretches the tail to the row's height. */
   minHeight?: number;
+  /** MUST match the snap alignment of the rail's own cards. Under
+   *  `scroll-snap-type: x mandatory` a start-aligned tail in a centre-aligned
+   *  rail is its own snap target: swiping to the end yanks the tail flush to
+   *  the scrollport start and drags the whole rail with it. */
+  snapAlign?: "start" | "center";
   /** ✦ — the destination is behind Full. Carries the premium accent, not lime. */
   premium?: boolean;
   /** Off inside dense rails whose cards are flat (the endurance lanes). */
@@ -70,7 +80,7 @@ export default function RailTail({
   const text = label ?? t("w.explore.seeAll");
   const color = premium ? "var(--premium-accent-text)" : C("ash");
   const style: CSSProperties = {
-    flex: `0 0 ${w}px`, scrollSnapAlign: "start", minHeight,
+    flex: `0 0 ${typeof w === "number" ? `${w}px` : w}`, scrollSnapAlign: snapAlign, minHeight,
     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
     background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: radius,
     boxShadow: shadow ? "var(--shadow-card)" : undefined,

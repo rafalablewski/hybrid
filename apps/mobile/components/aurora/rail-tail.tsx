@@ -51,7 +51,9 @@ export default function RailTail({
   /** Spoken label — add the rail's subject where "See all" alone is ambiguous
    *  out of context (a screen reader has no "end of THIS rail" cue). */
   a11y?: string;
-  /** Match the rail's card width. */
+  /** Match the rail's card width. On a rail with `snapToInterval` this is not
+   *  cosmetic: an odd-width final child puts the content end off the snap grid,
+   *  so the last snap lands short and leaves the tail half-cut. */
   w?: number;
   /** Match the rail's card radius. */
   radius?: number;

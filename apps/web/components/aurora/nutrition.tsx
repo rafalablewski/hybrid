@@ -145,12 +145,12 @@ const railScroller: React.CSSProperties = {
 };
 
 // The head above a rail — the Explore SectionHead anatomy: a bold display-face
-// title with the action as small mono uppercase on the RIGHT of the same row.
-// No marker before the title (the no-decorative-dot rule).
-/** A rail's section head — title only. The right slot is deliberately EMPTY:
- *  a rail's "see all" lives at the END OF THE RAIL as a tail card (see
- *  aurora/rail-tail.tsx), where the thumb already is once the cards run out.
- *  `action` remains for a head that needs a non-navigational meta or control. */
+// title, no marker before it (the no-decorative-dot rule).
+//
+// The right slot is now EMPTY for both callers: a rail's "see all" lives at the
+// END OF THE RAIL as a tail card (aurora/rail-tail.tsx), where the thumb already
+// is once the cards run out. `action` survives only for a head that needs a
+// non-navigational meta or control, and renders nothing when it isn't passed.
 function RailHead({ title, action }: { title: string; action?: { label: string; onClick: () => void; premium?: boolean } }) {
   const C = (v: string) => `var(--color-${v})`;
   return (
@@ -2165,7 +2165,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <RailTail
               onOpen={() => (recipesUnlocked ? setView("recipes") : onNavigate?.("upgrade"))}
               a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.recipes")}`}
-              premium={!recipesUnlocked} w={140}
+              premium={!recipesUnlocked}
+              w="min(52%, 196px)" snapAlign="center"
             />
           </div>
 
@@ -2193,7 +2194,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <RailTail
               onOpen={() => setView("sources")}
               a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.verifiedFoods")}`}
-              w={140}
+              w="min(72%, 268px)" snapAlign="center"
             />
           </div>
         </>
