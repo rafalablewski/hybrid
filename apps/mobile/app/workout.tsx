@@ -123,7 +123,7 @@ import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
-import { AuroraField, withAlpha, ACard, cardStack } from "../components/aurora/kit";
+import { AuroraField, withAlpha, ACard, cardStack, GUTTER } from "../components/aurora/kit";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
@@ -1047,7 +1047,11 @@ export default function Workout() {
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      {/* The logger owns its shell (no AuroraScreen), so it applies both of the
+          shell's paddings itself: 16 of vertical rhythm, the kit's GUTTER at
+          the sides — web's logger renders inside main's 12px gutter, and this
+          is the mobile half of that parity. */}
+      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         {/* No session-title input — the workout auto-titles itself; a name is
             only entered on the summary (Save as routine / optional rename). */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 16 }}>
@@ -1912,7 +1916,12 @@ function Summary({
   // Carousel: one ref per slide's off-screen story card; Share captures the
   // currently-visible slide. Story capture width is a touch under the screen so
   // the device pixel ratio scales the exported PNG up toward 1080px.
-  const slideW = Dimensions.get("window").width - 36;
+  // A slide is EXACTLY the content column (screen minus the two gutters).
+  // `pagingEnabled` snaps by the scroller's own width, so a slide that is not
+  // the column width drifts by the difference on every page — it used to be a
+  // hardcoded 36, which drifted 4pt a page against the old 16 gutter and would
+  // drift 12 against this one.
+  const slideW = Dimensions.get("window").width - GUTTER * 2;
   // The visible card IS a true 9:16 story (and the exact node we capture), sized
   // to fit comfortably in the page so the share is what-you-see-is-what-you-get.
   const previewW = Math.min(slideW, 320);
@@ -2021,7 +2030,7 @@ function Summary({
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
       {aurora && <AuroraField />}
       <FinishField />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 28, flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: 28, flexGrow: 1 }}>
         {/* The one exit — where dismissal muscle memory expects it. Guests leave
             to the welcome screen (there's no Today tab behind them). */}
         <SummaryOrb
