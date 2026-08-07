@@ -57,26 +57,79 @@ describe("card footers go through the CardFoot primitive", () => {
   }
 
   /**
-   * A hand-rolled rule at the bottom of a card is how all six of these started.
-   * The cards still draw plenty of legitimate internal dividers, so this looks
-   * only for the exact geometry the old footers shared — a top rule opened with
-   * `marginTop: 16` and closed with `paddingTop: 13`/`14`, in either order.
-   * Tissue's protocol row is the one allowed match: it is a status row in the
-   * card BODY, and it points at Today because a daily protocol cannot unfold
-   * into an analytics card.
+   * A hand-rolled rule at the bottom of a card is how all six of these started,
+   * so the guard has to be able to SEE one. A flat regex cannot: the six old
+   * footers wrote the same three declarations in four different orders, two of
+   * them put `border: 0,` between the padding and the border, and every web one
+   * interpolated `${C("line")}` — whose closing brace terminates any `[^}]*`
+   * span. A first cut of this test used exactly that regex and caught none of
+   * the six; it passed because there was nothing left to find, which is the
+   * worst way for a guard to pass.
+   *
+   * So: pull out each brace-BALANCED style object and ask whether it carries
+   * the footer signature — a 16 top margin, a top border, and a 13/14 top
+   * padding, in any order. Verified against HEAD~1 to match all six.
+   *
+   * Tissue's protocol row is the one allowed match on each client: it is a
+   * status row in the card BODY, and it points at Today because a daily
+   * protocol — steps, dates, checkboxes — cannot unfold into an analytics card.
    */
-  const RULE_FIRST = /marginTop:\s*16,\s*paddingTop:\s*1[34],\s*border(Top|TopWidth)/g;
-  const PAD_LAST = /marginTop:\s*16,\s*border(Top|TopWidth)[^}]*paddingTop:\s*1[34]/g;
+  function styleObjects(source: string): string[] {
+    const out: string[] = [];
+    const re = /style=\{\{/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(source))) {
+      let i = m.index + "style={".length;
+      let depth = 0;
+      const start = i;
+      for (; i < source.length; i++) {
+        if (source[i] === "{") depth++;
+        else if (source[i] === "}") { depth--; if (depth === 0) break; }
+      }
+      out.push(source.slice(start, i + 1));
+    }
+    return out;
+  }
+  const isFooterRule = (o: string) =>
+    /marginTop:\s*16\b/.test(o) &&
+    /(borderTop\s*:|borderTopWidth\s*:)/.test(o) &&
+    /paddingTop:\s*1[34]\b/.test(o);
 
   for (const [name, path] of CARDS) {
     it(`${name} hand-rolls no footer rule beyond the protocol row`, () => {
-      const s = src(path);
-      const hits = [...s.matchAll(RULE_FIRST), ...s.matchAll(PAD_LAST)];
+      const hits = styleObjects(src(path)).filter(isFooterRule);
       // Only the two Tissue cards may match, and only once each.
       const allowed = name.endsWith("tissue-card") ? 1 : 0;
-      expect(hits.length, `${name}: ${hits.map((h) => h[0]).join(" | ")}`).toBeLessThanOrEqual(allowed);
+      expect(hits.length, `${name}:\n${hits.join("\n")}`).toBeLessThanOrEqual(allowed);
     });
   }
+
+  /**
+   * And the guard must be capable of failing. Every old footer is reconstructed
+   * here in the shape it actually shipped in — if a future refactor of
+   * `styleObjects`/`isFooterRule` stops seeing these, the test above silently
+   * becomes decorative again.
+   */
+  it("the scanner sees each of the six footers it replaced", () => {
+    const SHIPPED = [
+      // web tissue — border between the margin and the padding
+      'style={{ marginTop: 16, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}',
+      // web level — `border: 0,` between the padding and the border
+      'style={{ display: "flex", width: "100%", marginTop: 16, paddingTop: 13, border: 0, borderTop: `1px solid ${C("line")}`, background: "transparent" }}',
+      // web volume — the same, at 14
+      'style={{ display: "flex", gap: 10, width: "100%", marginTop: 16, paddingTop: 14, border: 0, borderTop: `1px solid ${C("line")}`, background: "none" }}',
+      // mobile tissue — RN's two-property border
+      'style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}',
+      // mobile level
+      'style={{ flexDirection: "row", gap: space.sm, marginTop: 16, paddingTop: 13, borderTopWidth: 1, borderTopColor: C.line }}',
+      // mobile volume
+      'style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}',
+    ];
+    for (const shipped of SHIPPED) {
+      const found = styleObjects(shipped).filter(isFooterRule);
+      expect(found.length, `the scanner went blind to: ${shipped}`).toBe(1);
+    }
+  });
 });
 
 describe("nothing in a footer takes the accent", () => {
