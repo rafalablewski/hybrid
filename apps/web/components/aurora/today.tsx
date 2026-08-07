@@ -7,7 +7,6 @@ import { fs, space,
   localDayKey,
   prescribeSession,
   computeAccountability,
-  buildActivityFeed,
   planProgramToday,
   personalTrainingLog,
   velocityProfiles,
@@ -62,6 +61,7 @@ import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useCheckins } from "@/lib/use-checkins";
+import { useNotifications } from "@/lib/use-notifications";
 import { useRevalidate } from "@/lib/use-invalidate";
 import { useToday } from "@/lib/use-today";
 import { useLang } from "@/lib/i18n";
@@ -350,7 +350,12 @@ export default function AuroraToday({
     () => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "A",
     [name],
   );
-  const notifCount = useMemo(() => buildActivityFeed({ sessions }).length, [sessions]);
+  // The bell badge is the UNREAD count from the shared notifications feed —
+  // the same list the screen renders, so the two cannot disagree, and it
+  // reaches zero once the athlete has read it. It used to be the LENGTH of the
+  // training feed (sessions only, no social, no read state), a number that only
+  // ever went up.
+  const { unread: notifCount } = useNotifications();
 
   // The readiness FEELING log — the emoji the athlete picked in the quick
   // check-in (primed/good/flat/wrecked), not a computed score. The raw list is

@@ -67,7 +67,7 @@ export function buildActivityFeed(input: ActivityInput): ActivityItem[] {
     items.push({
       id: `assign-${a.id}`,
       kind: "upcoming",
-      title: "Upcoming workout",
+      title: "Upcoming session",
       detail: a.name,
       at,
       icon: "calendar",
@@ -82,7 +82,7 @@ export function buildActivityFeed(input: ActivityInput): ActivityItem[] {
     items.push({
       id: `session-${s.id}`,
       kind: "completed",
-      title: "Workout completed",
+      title: "Session completed",
       detail: `${s.title}${moves ? `, ${moves} ${moves === 1 ? "exercise" : "exercises"}` : ""}`,
       at,
       icon: "verified",
