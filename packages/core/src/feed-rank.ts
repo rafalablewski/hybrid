@@ -75,7 +75,7 @@ export interface RankOptions {
 /** M — the editorial term. Moment class leads; evidence and rarity modulate it
  *  WITHIN the class, never across (a verified Tuesday is still a Tuesday). */
 export function momentWeight(item: FeedItem): number {
-  const d = item.detail;
+  const d = item.card;
   const base = d?.moment === "p0" ? 4 : d?.moment === "p1" ? 2.4 : d?.moment === "p3" ? 0.6 : 1;
   let m = base;
   // Provenance pays only where a claim is actually being made. A tier badge on

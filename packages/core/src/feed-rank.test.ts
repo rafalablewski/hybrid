@@ -25,14 +25,15 @@ const item = (over: Partial<FeedItem> & { id: string; authorId?: string }): Feed
   at: hoursAgo(1),
   when: "1 h",
   accent: "lime",
-  detail: { moment: "p2", archetype: "sets", headlineKey: "feed.hl.session" },
+  detail: "",
+  card: { moment: "p2", archetype: "sets", headlineKey: "feed.hl.session" },
   ...over,
 });
 
 const pr = (over: Partial<FeedItem> & { id: string; authorId?: string }): FeedItem =>
   item({
     kind: "pr",
-    detail: { moment: "p0", archetype: "stat", headlineKey: "feed.hl.pr", headlineArg: "Deadlift", figureKg: 210, tier: 0 },
+    card: { moment: "p0", archetype: "stat", headlineKey: "feed.hl.pr", headlineArg: "Deadlift", figureKg: 210, tier: 0 },
     ...over,
   });
 
@@ -58,17 +59,17 @@ describe("moment leads the score", () => {
 
   it("rewards evidence only where a claim is being made", () => {
     const claimed = pr({ id: "a" });
-    const witnessed = pr({ id: "b", detail: { ...pr({ id: "b" }).detail!, tier: 2 } });
+    const witnessed = pr({ id: "b", card: { ...pr({ id: "b" }).card!, tier: 2 } });
     expect(momentWeight(witnessed)).toBeGreaterThan(momentWeight(claimed));
     // The same badge on a session card rewards owning a watch, not lifting.
     const session = item({ id: "c" });
-    const sessionWithTier = item({ id: "d", detail: { ...session.detail!, tier: 2 } });
+    const sessionWithTier = item({ id: "d", card: { ...session.card!, tier: 2 } });
     expect(momentWeight(sessionWithTier)).toBe(momentWeight(session));
   });
 
   it("treats a first-ever lift as rarer than another 2.5 kg on a familiar bar", () => {
-    const repeat = pr({ id: "a", detail: { ...pr({ id: "a" }).detail!, deltaPct: 1 } });
-    const first = pr({ id: "b", detail: { ...pr({ id: "b" }).detail!, firstEver: true } });
+    const repeat = pr({ id: "a", card: { ...pr({ id: "a" }).card!, deltaPct: 1 } });
+    const first = pr({ id: "b", card: { ...pr({ id: "b" }).card!, firstEver: true } });
     expect(momentWeight(first)).toBeGreaterThan(momentWeight(repeat));
   });
 });

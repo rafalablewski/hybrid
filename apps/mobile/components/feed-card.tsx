@@ -175,7 +175,7 @@ export interface FeedCardProps {
 export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, children }: FeedCardProps) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
-  const d = item.detail;
+  const d = item.card;
   const moment = d?.moment ?? "p2";
 
   const headline = d

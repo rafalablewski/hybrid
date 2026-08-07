@@ -137,11 +137,11 @@ describe("FeedCard renders every shape the feed can build", () => {
     // so the coverage is asserted rather than assumed.
     const kinds = new Set(feed.map((i) => i.kind));
     expect(kinds).toEqual(new Set(["session", "pr", "post"]));
-    expect(feed.some((i) => i.detail?.prCount)).toBe(true);
-    expect(feed.some((i) => i.detail?.firstEver)).toBe(true);
-    expect(feed.some((i) => i.detail?.tier)).toBe(true);
-    expect(feed.some((i) => (i.detail?.stats?.length ?? 0) > 0)).toBe(true);
-    expect(feed.some((i) => (i.detail?.sets?.length ?? 0) > 0)).toBe(true);
+    expect(feed.some((i) => i.card?.prCount)).toBe(true);
+    expect(feed.some((i) => i.card?.firstEver)).toBe(true);
+    expect(feed.some((i) => i.card?.tier)).toBe(true);
+    expect(feed.some((i) => (i.card?.stats?.length ?? 0) > 0)).toBe(true);
+    expect(feed.some((i) => (i.card?.sets?.length ?? 0) > 0)).toBe(true);
   });
 
   it.each(feed.map((item) => [`${item.kind} ${item.id}`, item] as const))("renders %s", (_label, item) => {
@@ -159,8 +159,8 @@ describe("FeedCard renders every shape the feed can build", () => {
     const post = feed.find((i) => i.kind === "post")!;
     expect(render(view(post, { mine: true }))).toContain("<div");
     // A response from a server older than the card model: chips and a lead,
-    // no `detail` — the row must still render rather than throw.
-    const { detail: _detail, ...legacy } = post;
+    // no `card` — the row must still render rather than throw.
+    const { card: _card, ...legacy } = post;
     // Chips are mono uppercase, so the legacy row proves itself by its text.
     expect(render(view({ ...legacy, chips: ["8,240 kg", "1 PR"], lead: "Push" }))).toContain("8,240 KG");
   });

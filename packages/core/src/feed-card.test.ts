@@ -131,7 +131,7 @@ describe("the preview speaks the same language as the feed", () => {
 
   it("leads a PR with the lift and carries its load, tier and delta", () => {
     const v = feedCardView(
-      { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], detail: prDetail({ lift: "Deadlift", topLoad: 210, previousTopLoad: 200, previous: 217 }, { tier: 2 }) },
+      { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], card: prDetail({ lift: "Deadlift", topLoad: 210, previousTopLoad: 200, previous: 217 }, { tier: 2 }) },
       { t, units: "kg" },
     );
     expect(v.lead).toBe("Deadlift — new PR");
@@ -140,7 +140,7 @@ describe("the preview speaks the same language as the feed", () => {
   });
 
   it("falls back to the legacy shape when no translator is passed", () => {
-    const legacy = { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], detail: prDetail({ lift: "Deadlift", topLoad: 210 }) };
+    const legacy = { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], card: prDetail({ lift: "Deadlift", topLoad: 210 }) };
     expect(feedCardView(legacy)).toMatchObject({ lead: "PR", chips: ["Deadlift — 210 kg"] });
   });
 
@@ -159,16 +159,55 @@ describe("the feed carries the card payload", () => {
 
   it("gives every session card its top sets and stat row", () => {
     const card = built().find((i) => i.kind === "session")!;
-    expect(card.detail).toMatchObject({ moment: "p2", archetype: "sets" });
-    expect(card.detail!.sets!.length).toBeGreaterThan(0);
-    expect(card.detail!.stats!.length).toBeGreaterThan(0);
+    expect(card.card).toMatchObject({ moment: "p2", archetype: "sets" });
+    expect(card.card!.sets!.length).toBeGreaterThan(0);
+    expect(card.card!.stats!.length).toBeGreaterThan(0);
   });
 
   it("gives a PR its own p0 card so a record never renders like a Tuesday", () => {
     const pr = built().find((i) => i.kind === "pr")!;
-    expect(pr.detail!.moment).toBe("p0");
-    expect(pr.detail!.figureKg).toBe(160);
+    expect(pr.card!.moment).toBe("p0");
+    expect(pr.card!.figureKg).toBe(160);
     const sessionCard = built().find((i) => i.kind === "session")!;
-    expect(sessionCard.detail!.moment).toBe("p2");
+    expect(sessionCard.card!.moment).toBe("p2");
+  });
+});
+
+describe("the wire keeps its promise to clients already on a phone", () => {
+  // `detail` was a STRING for the whole life of the feed before the card model,
+  // and an installed build renders it straight into a text node. Widening it to
+  // the card object threw "Objects are not valid as a React child" on a screen
+  // those athletes never opened deliberately — so the card lives under `card`
+  // and this field stays a string, on EVERY item, forever. An old build cannot
+  // be redeployed; the server is the only side that can keep the promise.
+  const feed = buildSocialFeed(
+    [
+      {
+        author: { id: "u1", handle: "kasia", displayName: "Kasia Nowak" },
+        sessions: [session()],
+        posts: [
+          { id: "p1", kind: "status", at: Date.parse("2026-03-02T18:00:00.000Z"), text: "Back under the bar." },
+          { id: "p2", kind: "pr", at: Date.parse("2026-03-02T17:00:00.000Z"), data: { lift: "Bench Press", topLoad: 120 } },
+          { id: "p3", kind: "workout", at: Date.parse("2026-03-02T16:00:00.000Z"), data: { title: "Push", volume: 8240 } },
+        ],
+      },
+    ],
+    { now: Date.parse("2026-03-02T20:00:00.000Z") },
+  );
+
+  it("sends a string in `detail` on every item, never an object", () => {
+    expect(feed.length).toBeGreaterThan(3);
+    for (const item of feed) expect(typeof item.detail).toBe("string");
+  });
+
+  it("says something in that string — an empty row is a broken row on an old build", () => {
+    for (const item of feed) expect(item.detail.length).toBeGreaterThan(0);
+  });
+
+  it("carries the same facts as the card, joined without a middot", () => {
+    const sessionItem = feed.find((i) => i.kind === "session")!;
+    expect(sessionItem.detail).toContain(sessionItem.lead!);
+    for (const chip of sessionItem.chips) expect(sessionItem.detail).toContain(chip);
+    for (const item of feed) expect(item.detail).not.toContain("·");
   });
 });

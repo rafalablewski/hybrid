@@ -20,7 +20,7 @@ function initials(name?: string | null, handle?: string) {
   return (p.length >= 2 ? p[0]![0]! + p[1]![0]! : s.slice(0, 2)).toUpperCase();
 }
 
-interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; detail?: FeedDetail; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; body: string | null; chips: string[]; lead: string | null; when: string; kudos: number; comments: number; accent: string }
+interface Item { id: string; kind: "session" | "pr" | "recap" | "post"; card?: FeedDetail; author: { displayName: string | null; handle: string; avatarUrl: string | null }; title: string; body: string | null; chips: string[]; lead: string | null; when: string; kudos: number; comments: number; accent: string }
 
 // `bleed` (horizontal only): run the slider FULL-BLEED — negative margins the
 // width of the shell's --page-pad-x pull the scroll clip out to the true screen

@@ -160,8 +160,26 @@ export interface FeedItem {
    * the device-true stat row (see feed-card.ts). Both clients render from this
    * one shape, so a card can never drift between web and mobile. Optional: a
    * client reading an older response still renders `title`/`chips` as text.
+   *
+   * IT IS `card`, NOT `detail`, AND MUST STAY THAT WAY. `detail` was a STRING
+   * on this interface for the whole life of the feed before the card model, and
+   * reusing the name for an object broke every build already on a phone: an
+   * installed client renders `{it.detail}` into a text node, and a text node
+   * handed an object THROWS — "Objects are not valid as a React child" — which
+   * the error boundary turns into a blank app, on a screen the athlete never
+   * asked for. A field's TYPE is part of its name. Widening one is a rename.
    */
-  detail?: FeedDetail;
+  card?: FeedDetail;
+  /**
+   * The card's facts as ONE LINE, for clients that predate `card`.
+   *
+   * Old builds don't update themselves — a TestFlight tester on a six-week-old
+   * install keeps calling this API — so the wire keeps its old promise: this
+   * field is a string, it always was, and every shipped client can render it.
+   * Current clients ignore it and read `card`; this is the compatibility floor
+   * under them, not a second source of truth.
+   */
+  detail: string;
 }
 
 export interface FeedOptions {
@@ -193,7 +211,7 @@ export function feedCardView(
     chips?: string[];
     lead?: string | null;
     when: string;
-    detail?: FeedDetail;
+    card?: FeedDetail;
   },
   /**
    * Pass the caller's `t` (and unit preference) and the view is derived from
@@ -207,7 +225,7 @@ export function feedCardView(
   // Prefer the real name; fall back to a handle only when it's a genuine one
   // (an empty handle means "no profile" — never render a bare "@").
   const name = it.author.displayName || (it.author.handle ? `@${it.author.handle}` : "Someone");
-  const d = it.detail;
+  const d = it.card;
   if (d && opts?.t) {
     const t = opts.t;
     const units = opts.units ?? "kg";
@@ -232,6 +250,15 @@ export function feedCardView(
 }
 
 const ms = (iso: string) => new Date(iso).getTime();
+
+/**
+ * The item's facts as one line, for `FeedItem.detail` — the compatibility floor
+ * under `card` (see the interface). Built from the SAME lead and chips the card
+ * carries, so the two can't disagree, and joined with a spaced en dash rather
+ * than the middot the pre-card wire used (house rule: no `·` as a separator).
+ */
+const summaryLine = (lead: string | null, chips: string[]): string =>
+  [lead, ...chips].filter(Boolean).join(" – ");
 
 /**
  * The figure to show for a shared PR post, across both stored shapes.
@@ -278,6 +305,10 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       const moves = blocks.length;
       const sortAt = at + (author.closeFriend ? boostMs : 0);
 
+      const sessionChips = [
+        ...(moves ? [`${moves} ${moves === 1 ? "exercise" : "exercises"}`] : []),
+        ...(vol ? [`${vol.toLocaleString()} kg`] : []),
+      ];
       items.push({
         id: `session-${s.id}`,
         kind: "session",
@@ -287,15 +318,13 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         title: `${author.displayName || "@" + author.handle} trained`,
         body: null,
         lead: s.title,
-        chips: [
-          ...(moves ? [`${moves} ${moves === 1 ? "exercise" : "exercises"}`] : []),
-          ...(vol ? [`${vol.toLocaleString()} kg`] : []),
-        ],
+        chips: sessionChips,
         at,
         when: relativeTime(at, now),
         metric: vol || undefined,
         accent: "lime",
-        detail: sessionDetail(s),
+        card: sessionDetail(s),
+        detail: summaryLine(s.title, sessionChips),
         _sort: sortAt,
       });
 
@@ -306,6 +335,10 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         // live from sessions, so unlike the stored PR posts there is no legacy
         // { lift, e1rm } shape to keep reading here.
         const top = prs.reduce((a, b) => (b.topLoad > a.topLoad ? b : a));
+        const prChips =
+          prs.length === 1
+            ? [`${top.lift} — ${top.topLoad} kg`]
+            : [`${prs.length} PRs`, `top ${top.lift} — ${top.topLoad} kg`];
         items.push({
           id: `pr-${s.id}`,
           kind: "pr",
@@ -315,10 +348,7 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
           title: `${author.displayName || "@" + author.handle} hit a PR`,
           body: null,
           lead: "PR",
-          chips:
-            prs.length === 1
-              ? [`${top.lift} — ${top.topLoad} kg`]
-              : [`${prs.length} PRs`, `top ${top.lift} — ${top.topLoad} kg`],
+          chips: prChips,
           at: at + 1, // tie-break above the session card
           when: relativeTime(at, now),
           metric: top.topLoad,
@@ -326,7 +356,10 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
           // Tier 1 is EARNED here, not claimed: a matched device recording
           // corroborates the session the lift was set in (attestation.ts).
           // Tier 2 needs a witness and is resolved server-side per viewer.
-          detail: prDetail({ ...top, count: prs.length }, { device: !!s.device }),
+          card: prDetail({ ...top, count: prs.length }, { device: !!s.device }),
+          // The title already says "hit a PR", so the compatibility line is the
+          // lifts themselves rather than the word again.
+          detail: summaryLine(null, prChips),
           _sort: sortAt + 1,
         });
       }
@@ -380,7 +413,10 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         when: relativeTime(post.at, now),
         metric,
         accent,
-        detail: postDetail(post.kind, d),
+        card: postDetail(post.kind, d),
+        // A status post has no summary to make, so the compatibility line is
+        // the post itself rather than an empty row.
+        detail: summaryLine(lead, chips) || post.text || "",
         _sort: post.at + (author.closeFriend ? boostMs : 0),
       });
     }

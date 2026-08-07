@@ -197,7 +197,7 @@ export interface FeedCardProps {
 export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, children }: FeedCardProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
-  const d = item.detail;
+  const d = item.card;
   const moment = d?.moment ?? "p2";
 
   // The headline: core names the lift, the client speaks the language.
