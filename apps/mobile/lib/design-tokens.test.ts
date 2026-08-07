@@ -138,11 +138,14 @@ describe("touch targets", () => {
     // survives is the pair (static tag, selectable filter) plus the genuinely
     // different objects, renamed to say so: MetaPill (a status readout),
     // RailAction (an animated rail item), DayChip ×2 (date tiles), PillBtn (the
-    // compact admin action) and PlanDockPill (a stateful docked CTA).
+    // compact admin action), PlanDockPill (a stateful docked CTA) and
+    // ActionPill (a card's one non-unfolding action — deliberately no shared
+    // vocabulary with the link beside it, so a footer control never has to be
+    // read to know what it will do).
     // Component declarations only — a capitalised name. `toggleTag`,
     // `saveTags` and the like are handlers, not components.
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm);
-    expectAtMost(decls, 8, "chip-shaped component → Chip or AChip");
+    expectAtMost(decls, 9, "chip-shaped component → Chip or AChip");
   });
 });
 
