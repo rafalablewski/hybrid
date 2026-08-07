@@ -10,8 +10,7 @@ import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { ACard } from "./kit";
-import { AuroraIcon } from "./icons";
+import { ACard, CardFoot, ActionPill } from "./kit";
 import { InjurySheet, RiskBody } from "./protocol";
 
 /** The protocol's full span, so the status line can say "day 9 of 21" without
@@ -72,12 +71,13 @@ export default function TissueCard({
   const axis = tissueAxis(risk);
   const byTissue = Object.fromEntries(risk.tissues.map((ti) => [ti.tissue, ti])) as Record<string, TissueRisk>;
   const [protocols, setProtocols] = useState<RtpProtocol[]>([]);
-  // The rows are a disclosure only while everything is calm — a flagged
-  // tissue opens them itself, since a worklist you have to find is not one.
-  const [rowsOpen, setRowsOpen] = useState(false);
-  // The calibration disclosure — closed by default, because it qualifies the
-  // figures rather than announcing itself.
-  const [howOpen, setHowOpen] = useState(false);
+  // The rows are a disclosure only while everything is calm — a flagged tissue
+  // opens them itself, since a worklist you have to find is not one. An
+  // OVERRIDE rather than a plain boolean, so a flag sets the DEFAULT without
+  // taking the control away: the previous cut hid the toggle entirely whenever
+  // a flag held the rows open, which left the card's one remaining control
+  // undrawn exactly when the card mattered most.
+  const [rowsOverride, setRowsOverride] = useState<boolean | null>(null);
   // The area the athlete pointed at on the card's own body, if that is how
   // they got to the sheet — the flag and the protocol are one object.
   const [picking, setPicking] = useState<MuscleGroup | null | false>(false);
@@ -87,7 +87,7 @@ export default function TissueCard({
 
   const active = protocols.filter((p) => p.status !== "abandoned");
   const alert = hasData && axis.flaggedCount > 0;
-  const showRows = hasData && (rowsOpen || alert);
+  const rowsOpen = rowsOverride ?? alert;
 
   const driverKinds = ((): RiskDriverKind[] => {
     const weight = new Map<RiskDriverKind, number>();
@@ -118,54 +118,21 @@ export default function TissueCard({
           <Axis axis={axis} C={C} t={t} />
         </>
       ) : (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption), marginTop: 8 }}>{t("w.home.cockpit.watchBuilding")}</Text>
-      )}
-
-      {showRows && (
         <>
-          <Rows rows={axis.rows} C={C} t={t} />
-          {risk.awaitingBaseline.length > 0 && (
-            <View style={{ marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: `${C.ash}14` }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
-            </View>
-          )}
-
-          {/* WHOLE-BODY — labelled, because the ratio in the rows above is each
-              tissue's own and this is a different measurement. */}
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
-          {load.enoughHistory ? (
-            <>
-              <View style={{ flexDirection: "row", gap: 1, backgroundColor: C.line, borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: "hidden" }}>
-                <Watch C={C} label={t("w.home.cockpit.acwr")} value={load.acwr.toFixed(2)} color={txt(C, acwrColor(load.band, C))} />
-                <Watch C={C} label={t("w.home.cockpit.srpe")} value={load.acute.toLocaleString()} />
-                <Watch C={C} label={t("w.home.cockpit.monotony")} value={load.monotony.toFixed(1)} />
-                <Watch C={C} label={t("w.home.cockpit.strain")} value={load.strain.toLocaleString()} />
-              </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: leading(fs.nano), marginTop: 8 }}>{t("w.injury.acwrNote")}</Text>
-            </>
-          ) : (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
-          )}
-
-          {/* THE BODY — the same tissues again, anatomically. The mannequin is
-              shared with the injury picker, so risk is read on the body you
-              point at when something goes wrong (web parity: it drew its own
-              rectangle map here, and mobile drew nothing at all). */}
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption), marginTop: 8 }}>{t("w.home.cockpit.watchBuilding")}</Text>
+          {/* THE BODY, WITH NOTHING MEASURED. The way into the injury sheet
+              lives inside the rows panel now — and an unmeasured card has no
+              rows, so it would render no way to file an injury at all. That is
+              precisely the athlete this card already worries about: hurt before
+              they have logged anything. The body is also the one useful thing
+              this state has to show, so it fills a card that otherwise says
+              only that it is still waiting. */}
           <View style={{ marginTop: 18 }}>
             <RiskBody byTissue={byTissue} onPick={(g) => setPicking(g)} />
           </View>
-
-          {driverKinds.length > 0 && (
-            <View style={{ marginTop: 16, gap: 10 }}>
-              {driverKinds.map((k) => (
-                <View key={k}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: txt(C, riskColor(risk.band, C)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</Text>
-                  <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          <View style={{ marginTop: 14 }}>
+            <ActionPill label={t("w.injury.logInjury")} onPress={() => setPicking(null)} />
+          </View>
         </>
       )}
 
@@ -205,69 +172,79 @@ export default function TissueCard({
         onOpened={refresh}
       />
 
-      {/* FOOTER RAIL — ONE row, two ends.
-          The quiet DISCLOSURES sit left; the ACTION sits right. They used to be
-          stacked: the action alone on a space-between row whose left slot was an
-          empty View whenever a tissue was flagged, and "How is this calculated?"
-          on a second row pinned with alignSelf:flex-end. So the card ended in a
-          right-hugging column of two controls that do entirely different things
-          — a disclosure about the model directly under the way into a rehab
-          protocol, at identical weight, with the whole left half empty. Kind now
-          maps to side, and the rail never collapses into a stack. Opening a
-          protocol is still not a "go" action, so it never takes the chartreuse
-          fill. */}
-      <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 16, flexShrink: 1 }}>
-            {/* Hidden, not disabled, while a flag holds the rows open — a
-                control that cannot do anything should not be drawn. */}
-            {hasData && !alert && (
-              <Pressable
-                onPress={() => setRowsOpen((v) => !v)}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: showRows }}
-                style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-              >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
-                  {showRows ? t("w.injury.hideTissues") : t("w.injury.allTissues")}
-                </Text>
-                <AuroraIcon name="chevron-down" size={12} color={C.ash} style={showRows ? { transform: [{ rotate: "180deg" }] } : undefined} />
-              </Pressable>
+      {/* THE PANEL — moved wholesale out of the card body and into the foot's
+          drawer, so it opens from under the shape that raised the question
+          rather than snapping into place. Web parity. */}
+      {hasData && (
+        <CardFoot
+          status={t("w.injury.riskModel").replace("{v}", axis.modelVersion)}
+          expander={{
+            // Never "All tissues": the panel is not an inventory, it is the
+            // same figure broken out per tissue. And never a second label for
+            // the open state — the chevron's rotation reports that.
+            label: t("w.injury.byTissue"),
+            open: rowsOpen,
+            onToggle: () => setRowsOverride(!rowsOpen),
+          }}
+        >
+          <View style={{ paddingBottom: 4 }}>
+            <Rows rows={axis.rows} C={C} t={t} />
+            {risk.awaitingBaseline.length > 0 && (
+              <View style={{ marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: `${C.ash}14` }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
+              </View>
             )}
-            {/* THE CALIBRATION, BEHIND A DISCLOSURE. It used to print on the
-                card face, where it read as team-facing metadata nobody outside
-                the building can act on — and lent the numbers an air of
-                precision they do not have. It now answers the question an
-                athlete is already asking when they open it. */}
-            {hasData && (
-              <Pressable
-                onPress={() => setHowOpen((v) => !v)}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: howOpen }}
-                style={{ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 }}
-              >
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, flexShrink: 1 }}>{t("w.injury.howCalculated")}</Text>
-                <AuroraIcon name="chevron-down" size={12} color={C.ash} style={howOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
-              </Pressable>
+
+            {/* WHOLE-BODY — labelled, because the ratio in the rows above is each
+                tissue's own and this is a different measurement. */}
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
+            {load.enoughHistory ? (
+              <>
+                <View style={{ flexDirection: "row", gap: 1, backgroundColor: C.line, borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: "hidden" }}>
+                  <Watch C={C} label={t("w.home.cockpit.acwr")} value={load.acwr.toFixed(2)} color={txt(C, acwrColor(load.band, C))} />
+                  <Watch C={C} label={t("w.home.cockpit.srpe")} value={load.acute.toLocaleString()} />
+                  <Watch C={C} label={t("w.home.cockpit.monotony")} value={load.monotony.toFixed(1)} />
+                  <Watch C={C} label={t("w.home.cockpit.strain")} value={load.strain.toLocaleString()} />
+                </View>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: leading(fs.nano), marginTop: 8 }}>{t("w.injury.acwrNote")}</Text>
+              </>
+            ) : (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
             )}
+
+            {/* THE BODY — the same tissues again, anatomically. The mannequin is
+                shared with the injury picker, so risk is read on the body you
+                point at when something goes wrong (web parity: it drew its own
+                rectangle map here, and mobile drew nothing at all). */}
+            <View style={{ marginTop: 18 }}>
+              <RiskBody byTissue={byTissue} onPick={(g) => setPicking(g)} />
+            </View>
+
+            {driverKinds.length > 0 && (
+              <View style={{ marginTop: 16, gap: 10 }}>
+                {driverKinds.map((k) => (
+                  <View key={k}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: txt(C, riskColor(risk.band, C)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</Text>
+                    <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* THE QUESTION, WHERE IT IS ASKED. Filing an injury used to sit in
+                the footer rail beside two disclosures, at identical weight: the
+                one control in any card footer that was neither a status nor a
+                disclosure, and the thing that broke the set across the three
+                cards. It belongs here, under the body, where pointing at a
+                region opens the SAME sheet with that region already filled. */}
+            <View style={{ marginTop: 16 }}>
+              <ActionPill label={t("w.injury.logInjury")} onPress={() => setPicking(null)} />
+            </View>
           </View>
-          <Pressable onPress={() => setPicking(null)} hitSlop={6} accessibilityRole="button">
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: alert ? txt(C, C.red) : C.ash }}>
-              {alert ? t("w.injury.openProtocol") : t("w.injury.logInjury")}
-            </Text>
-          </Pressable>
-        </View>
-        {/* The model line lands under the control that opened it — on the LEFT.
-            Right-aligned mono metadata under a right-aligned button is what made
-            the whole footer read as drifting off the card. */}
-        {hasData && howOpen && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 10, lineHeight: leading(fs.nano) }}>
-            {t("w.analyze.perf.model")} {axis.modelVersion}
-          </Text>
-        )}
-      </View>
+        </CardFoot>
+      )}
+
     </ACard>
   );
 }

@@ -498,7 +498,7 @@ function Full({ top }: { top?: ReactNode }) {
           That is also the causal order: training age is the strongest single
           input to the volume bands rendered directly below it. It sat four
           interactions deep inside the Volume working until Aug 2026. */}
-      <LevelCard sessions={sessions} onOpenWorking={() => router.push("/volume")} />
+      <LevelCard sessions={sessions} />
 
       {/* 5 · THIS WEEK'S VOLUME — the hero shape, a verdict that names names,
           and the rest of it in a drawer. The block ramp, the prescriptions and

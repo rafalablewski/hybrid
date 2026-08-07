@@ -11,6 +11,7 @@ import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
 import { heroTitleType, springs, springToRN, durations, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { haptic } from "../../lib/haptics";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { LiquidSeg } from "./liquid-seg";
 import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
@@ -995,5 +996,146 @@ export function ADrawer({ open, children }: { open: boolean; children: ReactNode
         {mounted.current ? children : null}
       </View>
     </Animated.View>
+  );
+}
+
+/**
+ * CARD FOOT — the ONE way a card is allowed to end.
+ *
+ * Three cards used to end three different ways. Tissue drew a rail of three
+ * mono controls; Your Level drew a full-width row whose label was a statistic
+ * and whose lime arrow pushed an entire screen; Volume drew an eyebrow on the
+ * left and a lime CTA with a rotating ↓ on the right that merely unfolded a
+ * drawer in place. Sixteen properties were being decided independently — face,
+ * size, weight, case, tracking, colour, glyph, glyph motion, gap, offsets, the
+ * open-state label, panel motion, the tap target, the haptic and, worst, what
+ * a press even DOES. The accent was the loudest of them: lime meant "leaves the
+ * card" on one and "unfolds in place" on the next, so it told the reader
+ * nothing at all.
+ *
+ * The resolution is a shape, not a style guide:
+ *
+ *   status    — an optional figure or fact that QUALIFIES the card. It renders
+ *               ABOVE the rule, is never pressable, and is never a button's
+ *               accessible name. A number is not a label.
+ *   expander  — exactly ONE link, and it unfolds in place. Nothing in a footer
+ *               navigates and nothing opens a sheet, so nothing here earns the
+ *               accent. The label names the NOUN of what appears and does NOT
+ *               change when it does — the chevron's rotation is the only state
+ *               anything reports, which is what retires "Hide tissues"/"Hide".
+ *   children  — what unfolds, inside the ADrawer this component owns.
+ *
+ * There is deliberately no `kind`, no colour, no glyph and no array: a card
+ * that wants a second link or an action in its footer is a review conversation,
+ * not a prop. An action that must live near the footer belongs INSIDE the panel
+ * (see the injury pill in tissue-card.tsx), where it cannot be mistaken for a
+ * disclosure.
+ *
+ * Mirrors apps/web/components/aurora/card-foot.tsx.
+ */
+
+/** The rail's one glyph. A 12dp VECTOR that rotates 180° — mobile used to draw
+ *  this and web an 8px text triangle that SWAPPED ▼/▲, which is two different
+ *  affordances for one control. Ash, never the accent. */
+function FootChevron({ open }: { open: boolean }) {
+  const { palette: C } = useTheme();
+  const reduced = useReducedMotion();
+  const spin = useRef(new Animated.Value(open ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduced) { spin.setValue(open ? 1 : 0); return; }
+    Animated.spring(spin, { toValue: open ? 1 : 0, useNativeDriver: true, ...springToRN(springs.sheet) }).start();
+  }, [open, reduced, spin]);
+  return (
+    <Animated.View
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      style={{ transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "-180deg"] }) }] }}
+    >
+      <AuroraIcon name="chevron-down" size={12} color={C.ash} />
+    </Animated.View>
+  );
+}
+
+export function CardFoot({
+  status,
+  expander,
+  children,
+}: {
+  /** A figure or fact that qualifies the card. Above the rule, never pressable. */
+  status?: string;
+  /** The one link. `label` names what unfolds and never changes on open. */
+  expander: { label: string; open: boolean; onToggle: () => void };
+  /** What unfolds. */
+  children: ReactNode;
+}) {
+  const { palette: C } = useTheme();
+  return (
+    <View style={{ marginTop: 16 }}>
+      {status ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginBottom: 11 }}>
+          {status}
+        </Text>
+      ) : null}
+      <View style={{ borderTopWidth: 1, borderTopColor: C.line }}>
+        <Pressable
+          onPress={() => { haptic.selection(); expander.onToggle(); }}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: expander.open }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            alignSelf: "flex-start",
+            // 44dp of pressable height. Every one of the five controls this
+            // replaces sat under 20dp — web set `padding: 0` on its rail
+            // buttons and mobile leaned on `hitSlop={6}` — which is the one
+            // property in this component that is not cosmetic.
+            minHeight: HIT_TARGET,
+          }}
+        >
+          <Text
+            numberOfLines={1}
+            style={{
+              fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600",
+              textTransform: "uppercase", letterSpacing: tracking.label,
+              // Ash, always. Nothing in a footer leaves the card, so nothing
+              // here may take the accent.
+              color: C.ash, flexShrink: 1,
+            }}
+          >
+            {expander.label}
+          </Text>
+          <FootChevron open={expander.open} />
+        </Pressable>
+        <ADrawer open={expander.open}>{children}</ADrawer>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * THE ACTION PILL — for the one thing a card may do that is not unfolding.
+ *
+ * It lives INSIDE a panel, never in the rail, and it is deliberately a
+ * different object from the link: bordered, chalk, pill-shaped. A reader never
+ * has to work out whether a footer control will unfold something or open a
+ * form, because the two share no vocabulary at all.
+ */
+export function ActionPill({ label, onPress }: { label: string; onPress: () => void }) {
+  const { palette: C } = useTheme();
+  return (
+    <Pressable
+      onPress={() => { haptic.selection(); onPress(); }}
+      accessibilityRole="button"
+      style={{
+        alignSelf: "flex-start", minHeight: HIT_TARGET, justifyContent: "center",
+        paddingHorizontal: 16, borderRadius: RADIUS.pill,
+        borderWidth: 1, borderColor: C.line, backgroundColor: "transparent",
+      }}
+    >
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: tracking.label, color: C.chalk }}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }

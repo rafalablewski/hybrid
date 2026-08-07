@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
-  fs, space, fmtWeight,
+  fs, fmtWeight,
   FITNESS_LEVELS, LEVEL_KEY, ENDURANCE_DISCIPLINE_KEY, enduranceFigure,
   type LevelEvidence,
   type LoggedSession, type WeightUnit,
 } from "@hybrid/core";
 import { accentText } from "@/lib/ui";
+import { CardFoot } from "./card-foot";
 import { useFitnessLevel, type FitnessLevelRead } from "@/lib/use-fitness-level";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
@@ -88,10 +89,8 @@ function Tiers({ index, progress }: { index: number; progress: number }) {
   );
 }
 
-export default function LevelCard({ sessions, onOpenWorking, read }: {
+export default function LevelCard({ sessions, read }: {
   sessions: LoggedSession[];
-  /** The door to the full working — the Volume screen's provenance block. */
-  onOpenWorking?: () => void;
   /** Pass a resolution in when the parent already has one, so a screen holding
    *  both this card and the Volume block computes the estimate exactly once. */
   read?: FitnessLevelRead;
@@ -101,6 +100,7 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
   const units: WeightUnit = prefs.units;
   const own = useFitnessLevel(sessions);
   const { estimate, level, reach } = read ?? own;
+  const [workOpen, setWorkOpen] = useState(false);
 
   // One formatter for every endurance figure on the card, so the sentence and
   // the fine line below it can never quote the same effort in two units.
@@ -201,15 +201,6 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
         </div>
       )}
 
-      {/* A single effort is read but never trusted the way a repeated one is —
-          and since it is also why the public badge is absent, saying so is the
-          difference between a missing badge and a broken one. */}
-      {level && estimate.evidence[0]?.confirmed === false && (
-        <p style={{ margin: "10px 0 0", fontSize: fs.caption, lineHeight: 1.5, color: C("ash") }}>
-          {t("w.analyze.vol.levelUnconfirmed")}
-        </p>
-      )}
-
       {/* The card grows by one line HERE and only here — the estimate reading
           differently from what the athlete told us. Theirs still wins inside the
           volume model; this reports the disagreement rather than resolving it. */}
@@ -217,24 +208,82 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
         <Disagreement estimate={estimate} />
       )}
 
-      {onOpenWorking && (
-        <button
-          className="pressable"
-          type="button"
-          onClick={onOpenWorking}
+      {/* THE FOOT. This used to be a full-width button labelled with a FIGURE
+          — "55% confidence" — whose lime arrow pushed the entire Volume screen.
+          Two things were wrong with it. A label has to name what happens, and a
+          percentage names nothing; and a whole screen is an oversized answer to
+          "why this level?", when the answer is the evidence the engine already
+          holds. The figure reports above the rule; the working unfolds here. */}
+      <CardFoot
+        status={level ? `${Math.round(estimate.confidence * 100)}% ${t("w.analyze.vol.confidence")}` : undefined}
+        expander={{ label: t("w.analyze.vol.theWorking"), open: workOpen, onToggle: () => setWorkOpen((v) => !v) }}
+      >
+        <Working estimate={estimate} reach={reach} figure={figure} units={units} />
+      </CardFoot>
+    </div>
+  );
+}
+
+/**
+ * THE WORKING — what the door used to lead to, in the card that raised the
+ * question. Three beats and nothing more: every effort the estimate read, the
+ * threshold that would move the athlete a tier, and why the confidence is what
+ * it is. The Volume screen keeps its own provenance block for its OWN numbers;
+ * the two stopped being the same door.
+ */
+function Working({ estimate, reach, figure, units }: {
+  estimate: FitnessLevelRead["estimate"];
+  reach: FitnessLevelRead["reach"];
+  figure: (e: { discipline?: LevelEvidence["discipline"]; ratio: number }) => string;
+  units: WeightUnit;
+}) {
+  const { t } = useLang();
+  if (estimate.evidence.length === 0) {
+    return <p style={{ margin: "0 0 4px", fontSize: fs.caption, lineHeight: 1.6, color: C("ash") }}>{t("w.analyze.vol.levelEmptyCard")}</p>;
+  }
+  const top = estimate.evidence[0];
+  const fmt = (v: number) =>
+    reach?.kind === "strength" ? fmtWeight(v, units) : enduranceFigure({ discipline: top?.discipline, ratio: v }).value;
+  return (
+    <div style={{ paddingBottom: 4 }}>
+      {/* EVERY EFFORT THE ESTIMATE READ — the spread across lifts is real news,
+          and this is where it belongs: not on the first thing an athlete meets,
+          but in the working they opened on purpose. */}
+      {estimate.evidence.map((e, i) => (
+        <div
+          key={`${e.kind}-${e.lift}-${i}`}
           style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm,
-            width: "100%", marginTop: 16, paddingTop: 13, border: 0, borderTop: `1px solid ${C("line")}`,
-            background: "transparent", textAlign: "left", cursor: "pointer",
+            display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12,
+            padding: "9px 0", borderBottom: `1px solid color-mix(in srgb, ${C("line")} 60%, transparent)`,
           }}
         >
-          <span style={{ fontSize: fs.caption, color: C("ash") }}>
-            {level
-              ? `${Math.round(estimate.confidence * 100)}% ${t("w.analyze.vol.confidence")}`
-              : t("w.analyze.vol.showWork")}
+          <span style={{ fontSize: fs.caption, color: C("chalk"), minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+            {e.kind === "strength" ? e.lift : `${e.lift} ${t(ENDURANCE_DISCIPLINE_KEY[e.discipline ?? "running"])}`}
           </span>
-          <span aria-hidden style={{ ...mono(fs.body), color: accentText("lime") }}>→</span>
-        </button>
+          <span style={{ ...mono(fs.micro), color: C("ash"), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+            {e.kind === "strength" ? `${e.ratio.toFixed(2)} ${t("w.analyze.vol.ofBodyweight")}` : figure(e)}
+          </span>
+        </div>
+      ))}
+
+      {/* THE THRESHOLD — the same numbers the sentence above quotes, so the two
+          can never round apart. */}
+      {reach?.next && (
+        <div style={{ ...mono(fs.nano), letterSpacing: ".05em", color: C("ash"), lineHeight: 1.7, marginTop: 12 }}>
+          {t(reach.kind === "strength" ? "w.analyze.vol.levelNextLift" : "w.analyze.vol.levelNextRun")
+            .replace("{tier}", t(LEVEL_KEY[reach.next]))
+            .replace("{target}", fmt(reach.target))
+            .replace("{gap}", fmt(reach.gap))}
+        </div>
+      )}
+
+      {/* WHY THE CONFIDENCE IS WHAT IT IS. The figure prints above the rule as
+          a status; this is the only place it is explained, which is the whole
+          reason the status is not itself a button. */}
+      {top?.confirmed === false && (
+        <div style={{ fontSize: fs.caption, lineHeight: 1.6, color: C("ash"), marginTop: 10 }}>
+          {t("w.analyze.vol.levelUnconfirmed")}
+        </div>
       )}
     </div>
   );

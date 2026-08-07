@@ -117,7 +117,10 @@ export const web_analyze = {
     "w.analyze.vol.sourceWhyObserved": "Corrected from what your log showed: the volume you carried and whether your top sets held up under it.",
     "w.analyze.vol.sourceWhyManual": "You set these yourself. Nothing overrides them.",
     "w.analyze.vol.showWork": "Show the working",
-    "w.analyze.vol.hideDetail": "Hide",
+    // The Level card's rail label. It names the NOUN of what unfolds and
+    // never changes on open — "Show the working" is an instruction, and the
+    // card used to label that control "55% confidence", which is a figure.
+    "w.analyze.vol.theWorking": "The working",
     "w.analyze.vol.factorsTitle": "What moved your bands",
     "w.analyze.vol.affectsStimulus": "growth end",
     "w.analyze.vol.affectsRecovery": "recovery end",
@@ -643,7 +646,7 @@ export const web_analyze = {
     "w.analyze.vol.sourceWhyObserved": "Skorygowane na podstawie Twojego dziennika: objętości, którą udźwignąłeś, i tego, czy Twoje serie szczytowe to wytrzymały.",
     "w.analyze.vol.sourceWhyManual": "Ustawiłeś je sam. Nic ich nie nadpisuje.",
     "w.analyze.vol.showWork": "Pokaż obliczenia",
-    "w.analyze.vol.hideDetail": "Ukryj",
+    "w.analyze.vol.theWorking": "Obliczenia",
     "w.analyze.vol.factorsTitle": "Co przesunęło Twoje pasma",
     "w.analyze.vol.affectsStimulus": "próg wzrostu",
     "w.analyze.vol.affectsRecovery": "próg regeneracji",
@@ -1167,7 +1170,7 @@ export const web_analyze = {
     "w.analyze.vol.sourceWhyObserved": "Korrigiert aus deinem Logbuch: dem Volumen, das du getragen hast, und ob deine Topsätze standgehalten haben.",
     "w.analyze.vol.sourceWhyManual": "Du hast sie selbst gesetzt. Nichts überschreibt sie.",
     "w.analyze.vol.showWork": "Rechenweg anzeigen",
-    "w.analyze.vol.hideDetail": "Ausblenden",
+    "w.analyze.vol.theWorking": "Rechenweg",
     "w.analyze.vol.factorsTitle": "Was deine Bänder verschoben hat",
     "w.analyze.vol.affectsStimulus": "Wachstumsende",
     "w.analyze.vol.affectsRecovery": "Erholungsende",
