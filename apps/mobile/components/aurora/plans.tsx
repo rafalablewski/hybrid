@@ -9,7 +9,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { ACard, AField, RADIUS, withAlpha } from "./kit";
+import { ACard, AField, GUTTER, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
 import MeasuredOutcome from "../measured-outcome";
@@ -126,7 +126,13 @@ function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c
       // section, they don't switch panels, and the chips are buttons already.
       accessibilityLabel={t("w.train.plans.jumpToCategory")}
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 8 }}
+      // FULL-BLEED, like web's sticky nav: the hero's rail slot re-pads its
+      // child by the screen gutter, so the rail bleeds that gutter back out
+      // (clip at the true edge) and re-applies it inside (chips on the content
+      // column). Padding alone put the chips at gutter + 16 and stopped the
+      // scroll clip a gutter short of the bezel.
+      style={{ marginHorizontal: -GUTTER }}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 8 }}
     >
       {categories.map((c) => (
         <Pressable

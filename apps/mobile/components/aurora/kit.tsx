@@ -37,7 +37,16 @@ export const RADIUS = { mark: 3, inner: 12, field: 16, card: 28, pill: 999 } as 
  *  --page-pad-x (12px) so content fills the same share of the screen on both
  *  clients. Full-bleed rails bleed by exactly this (see the slider rule in
  *  CLAUDE.md); HERO.gutter.edge in core carries the same value for the hero
- *  system. Vertical rhythm is separate (AuroraScreen's `padding`, 16). */
+ *  system. Vertical rhythm is separate (AuroraScreen's `padding`, 16).
+ *
+ *  A SCREEN THAT OWNS ITS OWN SCROLLER MUST IMPORT THIS. AuroraScreen and the
+ *  hero scaffold apply the gutter for you, so a screen that opts out of them
+ *  (Today's hub — its custom entrance + pager; History and the feed — their
+ *  own FlatList) is the one place the value can drift. It did: the 16 -> 12
+ *  sweep moved every rail on Today to bleed 12 while Today's own ScrollView
+ *  stayed at 16, leaving a 4dp sliver of gutter beside every cut card and
+ *  shifting the hub chrome 4dp between Dashboard and Performance/Feed. Read
+ *  the token, never a number. */
 export const GUTTER = 12;
 
 /**

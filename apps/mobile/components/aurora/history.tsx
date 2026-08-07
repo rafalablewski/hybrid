@@ -13,7 +13,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
-import { ACard, APill, RADIUS } from "./kit";
+import { ACard, APill, GUTTER, RADIUS } from "./kit";
 import { HeroScreen, HeroAccessory } from "./hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
@@ -239,7 +239,10 @@ export default function AuroraHistory() {
           windowSize={11}
           removeClippedSubviews
           {...scrollProps}
-          contentContainerStyle={[scrollProps.contentContainerStyle, { paddingHorizontal: 16 }]}
+          // HeroScreen hands a custom scroller no horizontal padding — the list
+          // owns the screen gutter, so it reads the kit's GUTTER (12dp) rather
+          // than a number of its own (feed-view does the same).
+          contentContainerStyle={[scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => q.refetch()} tintColor={C.lime} colors={[C.lime]} />}
         />
       )}
