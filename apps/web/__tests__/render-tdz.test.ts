@@ -136,9 +136,15 @@ function deadZoneReads(file: string): string[] {
 }
 
 describe("render-time dead zone", () => {
+  // The scan parses BOTH clients' whole source trees with the TypeScript
+  // compiler — seconds of work by construction, and it grows with the codebase.
+  // Vitest's 5s default was never the right contract for it: 2.5s on a dev
+  // machine, 5.97s on a CI runner, so the guard failed on the runner for being
+  // slow rather than for finding anything. The budget is generous on purpose —
+  // this number is a hang-catcher, not a performance assertion.
   it("no eager hook factory reads a const declared below it", () => {
     const offenders = SCAN_DIRS.flatMap((d) => sourceFiles(d)).flatMap(deadZoneReads);
     expect(offenders, `A useMemo/useState factory runs during render — move the helper ABOVE it:\n${offenders.join("\n")}`)
       .toEqual([]);
-  });
+  }, 120_000);
 });

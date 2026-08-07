@@ -13,7 +13,7 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import { colors } from "@hybrid/core";
-import { F, fs, leading, tracking, PressScale as Pressable } from "../lib/ui";
+import { F, fs, leading, serifIf, tracking, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { Avatar } from "./social-kit";
@@ -173,7 +173,7 @@ export interface FeedCardProps {
 }
 
 export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, children }: FeedCardProps) {
-  const C = useTheme().palette;
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const d = item.detail;
   const moment = d?.moment ?? "p2";
@@ -186,10 +186,15 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         : t(d.headlineKey)
     : item.lead || item.title;
 
+  // The app's TITLE face (serifIf — the twin of web's --font-heading): Archivo
+  // under Aurora, Shippori Mincho under Kyoto Hour. A post's headline is a
+  // heading, so it swaps with every other heading in the product — otherwise
+  // the feed is the one tab still in sans on the light theme, with its own
+  // "Now training" head in serif directly above it.
   const headlineStyle: TextStyle =
     moment === "p0"
-      ? { fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking.display }
-      : { fontFamily: F.bold, fontSize: fs.title, lineHeight: leading(fs.title, "snug") };
+      ? { fontFamily: serifIf(scheme, F.black), fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking.display }
+      : { fontFamily: serifIf(scheme, F.bold), fontSize: fs.title, lineHeight: leading(fs.title, "snug") };
 
   // "Why you're seeing this" — a ranked card from someone the viewer doesn't
   // follow must be able to say why it's here, or it shouldn't be here at all.
@@ -211,7 +216,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
           <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{meta}</Text>
         </View>
         {item.subjectType === "post" && item.mine && onDelete ? (
-          <Pressable onPress={onDelete} hitSlop={8}><Text style={{ color: C.ash, fontSize: fs.title }}>×</Text></Pressable>
+          <Pressable onPress={onDelete} hitSlop={8}><Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.title }}>×</Text></Pressable>
         ) : null}
       </View>
 
@@ -225,7 +230,10 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       {d?.stats && d.stats.length > 0 ? <StatRow stats={d.stats} units={units} /> : null}
 
       {/* ZONE E — words */}
-      {item.body ? <Text style={{ color: d?.archetype === "text" ? C.chalk : C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 8 }}>{item.body}</Text> : null}
+      {/* RN has no inherited font: a Text with no fontFamily draws in the
+          PLATFORM face, not Archivo — which is what set the feed's prose apart
+          from every other screen's. */}
+      {item.body ? <Text style={{ fontFamily: F.reg, color: d?.archetype === "text" ? C.chalk : C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 8 }}>{item.body}</Text> : null}
 
       {/* Legacy chips — only when core had no structured detail to give. */}
       {!d && (item.chips?.length ?? 0) > 0 ? (

@@ -1,6 +1,6 @@
 import { View, Text, TextInput } from "react-native";
 import {
-  fs, blockKindKey, resolveBlock, blockRamp,
+  fs, tracking, blockKindKey, resolveBlock, blockRamp,
   type AthleteVolumeProfile, type MuscleGroup, type VolumeBlock, type VolumeLandmark,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -116,7 +116,7 @@ export default function AuroraVolumeModel() {
             shifted from there, so leaving this blank holds a woman to the men's
             bar and usually costs her a tier of training age. Mirrors web. */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12, alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, letterSpacing: 0.7, color: C.ash, marginRight: 2 }}>{t("w.analyze.vol.fieldSex")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginRight: 2 }}>{t("w.analyze.vol.fieldSex")}</Text>
           {(["F", "M"] as const).map((x) => (
             <Toggle key={x} C={C} on={profile.sex === x} label={t(x === "F" ? "w.analyze.vol.sexF" : "w.analyze.vol.sexM")} onPress={() => setProfile({ sex: profile.sex === x ? undefined : x })} />
           ))}
@@ -134,7 +134,7 @@ export default function AuroraVolumeModel() {
             const isMeasured = measuredKeys.has(key);
             return (
               <View key={key} style={{ width: "30%", flexGrow: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.7, color: isMeasured ? txt(C, C.lime) : C.ash, textAlign: "center", marginBottom: 5 }}>{label}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: isMeasured ? txt(C, C.lime) : C.ash, textAlign: "center", marginBottom: 5 }}>{label}</Text>
                 <TextInput
                   keyboardType="number-pad"
                   defaultValue={profile[key] != null ? String(profile[key]) : ""}
@@ -173,7 +173,7 @@ export default function AuroraVolumeModel() {
                 const overridden = prefs.landmarkOverrides[m]?.[k] !== undefined;
                 return (
                   <View key={k} style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.7, color: C.ash, textAlign: "center", marginBottom: 4 }}>{FIELD_LABEL[i]}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textAlign: "center", marginBottom: 4 }}>{FIELD_LABEL[i]}</Text>
                     <TextInput
                       keyboardType="number-pad"
                       defaultValue={String(resolved.landmarks[m][k])}

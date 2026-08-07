@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties, type ReactNode } from "react";
+import { fs, leading } from "@hybrid/core";
 import { useTemplate } from "@/lib/use-template";
 import { useLang } from "@/lib/i18n";
 
@@ -170,8 +171,10 @@ export function VerifiedTick() {
 export function EmptyState({ title, sub }: { title: string; sub?: string }) {
   return (
     <div style={{ textAlign: "center", padding: "40px 16px", color: C("ash") }}>
-      <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 6 }}>{title}</div>
-      {sub && <div style={{ fontSize: 13, lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>{sub}</div>}
+      {/* Titles read the app's heading face, empty states included (cf. the
+          Endurance empty state) — a serif head under Kyoto Hour. */}
+      <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, color: C("chalk"), marginBottom: 6 }}>{title}</div>
+      {sub && <div style={{ fontFamily: "var(--font-display)", fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, maxWidth: 320, margin: "0 auto" }}>{sub}</div>}
     </div>
   );
 }
@@ -181,8 +184,10 @@ export function ScreenHead({ title, sub, right }: { title: string; sub?: string;
   return (
     <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 16, gap: 12 }}>
       <div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 24, color: C("chalk"), margin: 0 }}>{title}</h1>
-        {sub && <div style={{ color: C("ash"), fontSize: 13, marginTop: 4 }}>{sub}</div>}
+        {/* fs.headline — the rung a hand-rolled screen title lands on (scale.ts);
+            24 was off the ladder entirely. Heading face, like every other head. */}
+        <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.headline, lineHeight: `${leading(fs.headline, "snug")}px`, color: C("chalk"), margin: 0 }}>{title}</h1>
+        {sub && <div style={{ fontFamily: "var(--font-display)", color: C("ash"), fontSize: fs.body, marginTop: 4 }}>{sub}</div>}
       </div>
       {right}
     </div>
