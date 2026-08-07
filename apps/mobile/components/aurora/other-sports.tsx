@@ -8,7 +8,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS } from "./kit";
+import { GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
 
 /**
@@ -78,8 +78,8 @@ export default function AuroraOtherSports({
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
-        style={{ marginHorizontal: -12 }}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingVertical: 2 }}
+        style={{ marginHorizontal: -GUTTER }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 2 }}
       >
         {shown.map((lane) => <SportTile key={lane.sport} lane={lane} onOpen={onOpen} />)}
         {/* The rail's exit — a trailing ghost tile (the exercises rail's ＋ card

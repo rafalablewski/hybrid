@@ -152,7 +152,7 @@ export function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpe
   const rule = `color-mix(in srgb, ${C("chalk")} 18%, transparent)`;
   return (
     <>
-      <div ref={heroRef} style={{ position: "sticky", top: -COVER_DELTA, zIndex: 30, height: COVER_H, margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 16px)) 0", overflow: "hidden", background: COVER_INK, color: "#fff" }}>
+      <div ref={heroRef} style={{ position: "sticky", top: -COVER_DELTA, zIndex: 30, height: COVER_H, margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 12px)) 0", overflow: "hidden", background: COVER_INK, color: "#fff" }}>
         {/* duotone wash bleeding from the top corner (Explore recipe) —
             mirrored to the LEFT on the goal emblem so the light source itself
             tells you which level you're on, and run at a SOFTER mix on the
@@ -227,7 +227,7 @@ export function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpe
           0 on the light theme: there a dark poster meeting warm paper is a real
           boundary, not an artifact, and a dark veil would only muddy the hem. */}
       <div aria-hidden style={{ position: "relative", height: 0, zIndex: -1, pointerEvents: "none" }}>
-        <span style={{ position: "absolute", top: -BLEED_OVER, left: "calc(-1 * var(--page-pad-x, 16px))", right: "calc(-1 * var(--page-pad-x, 16px))", height: BLEED_OVER + BLEED_FADE, background: BLEED_BG, opacity: `calc(var(--cover-bleed, 1) * (1 - ${p}))` }} />
+        <span style={{ position: "absolute", top: -BLEED_OVER, left: "calc(-1 * var(--page-pad-x, 12px))", right: "calc(-1 * var(--page-pad-x, 12px))", height: BLEED_OVER + BLEED_FADE, background: BLEED_BG, opacity: `calc(var(--cover-bleed, 1) * (1 - ${p}))` }} />
       </div>
 
       {cover.stats.length > 0 && (

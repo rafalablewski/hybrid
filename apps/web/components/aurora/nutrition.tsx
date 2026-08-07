@@ -139,8 +139,8 @@ const railScroller: React.CSSProperties = {
   overflowX: "auto",
   scrollSnapType: "x mandatory",
   scrollbarWidth: "none",
-  margin: "0 calc(-1 * var(--page-pad-x, 16px))",
-  padding: "4px var(--page-pad-x, 16px) 6px",
+  margin: "0 calc(-1 * var(--page-pad-x, 12px))",
+  padding: "4px var(--page-pad-x, 12px) 6px",
 };
 
 // The head above a rail — the Explore SectionHead anatomy: a bold display-face
@@ -1058,7 +1058,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         {recent.length > 0 && (
           <div style={{ marginTop: 16 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.recovery.nutrition.tab.recent")}</div>
-            <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "0 var(--page-pad-x, 16px) 2px" }}>
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "0 var(--page-pad-x, 12px) 2px" }}>
               {recent.slice(0, 8).map((q) => (
                 <button className="pressable" key={q.key} onClick={() => relogRecent(q)} style={{ flex: "none", display: "flex", alignItems: "center", gap: 8, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "8px 16px 8px 12px", cursor: "pointer", color: C("chalk") }}>
                   <span style={{ width: 22, height: 22, borderRadius: 999, border: "1.4px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}><IPlus size={12} color="var(--lime-text)" strokeWidth={2.4} /></span>
@@ -1869,7 +1869,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
         {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 calc(-1 * var(--page-pad-x, 16px))", paddingLeft: "var(--page-pad-x, 16px)", paddingRight: "var(--page-pad-x, 16px)" }}>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 calc(-1 * var(--page-pad-x, 12px))", paddingLeft: "var(--page-pad-x, 12px)", paddingRight: "var(--page-pad-x, 12px)" }}>
           {RECIPE_FILTERS.map((rf) => (
             <button className="pressable" key={rf} onClick={() => setRecipeFilter(rf)} style={{ flex: "none", fontFamily: "var(--font-display)", fontWeight: recipeFilter === rf ? 700 : 600, fontSize: fs.body, border: `1px solid ${recipeFilter === rf ? C("lime") : C("line")}`, borderRadius: 999, padding: "8px 16px", color: recipeFilter === rf ? "var(--on-accent)" : C("ash"), background: recipeFilter === rf ? C("lime") : C("ink2"), whiteSpace: "nowrap", cursor: "pointer" }}>
               {t(`w.recovery.nutrition.recipeFilter.${rf}`)}

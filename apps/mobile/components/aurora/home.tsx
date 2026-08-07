@@ -72,7 +72,7 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, AuroraField, RADIUS, Ring } from "./kit";
+import { ACard, AuroraField, GUTTER, RADIUS, Ring } from "./kit";
 import ExerciseWidgetRail from "./exercise-widget";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
@@ -710,7 +710,16 @@ export default function AuroraHome() {
       <View style={{ flex: 1, paddingTop: insets.top }}>
       {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: auroraScrollClearance(insets.bottom) }}
+        // Today owns its shell instead of AuroraScreen, so it must apply the
+        // shell's two paddings ITSELF — 16 of vertical rhythm, and the kit's
+        // GUTTER (12dp) at the sides. Never hardcode the side value here: the
+        // gutter sweep moved every rail on this screen to bleed by GUTTER, and
+        // a screen padded 16 against rails bleeding 12 leaves a 4dp sliver of
+        // gutter beside every cut card — the exact thing the full-bleed rule
+        // in CLAUDE.md forbids — and shifts the hub chrome 4dp sideways when
+        // the athlete switches to Performance or Feed (they get the gutter
+        // from AuroraScreen).
+        contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: auroraScrollClearance(insets.bottom) }}
         {...navScroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}
       >
@@ -835,8 +844,8 @@ export default function AuroraHome() {
               showsHorizontalScrollIndicator={false}
               snapToInterval={structW + 12}
               decelerationRate="fast"
-              style={{ marginHorizontal: -12 }}
-              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 12 }}
+              style={{ marginHorizontal: -GUTTER }}
+              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: GUTTER }}
             >
               <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/plans")} />
               <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />

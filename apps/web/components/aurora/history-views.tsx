@@ -131,7 +131,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
   const { t } = useLang();
   return (
     // Full-bleed chip rail — clips at the screen edge, rests on the column.
-    <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", padding: "0 var(--page-pad-x, 16px) 4px", margin: "0 calc(-1 * var(--page-pad-x, 16px))" }}>
+    <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", padding: "0 var(--page-pad-x, 12px) 4px", margin: "0 calc(-1 * var(--page-pad-x, 12px))" }}>
       {HISTORY_VIEWS.map((v) => {
         const on = v.id === view;
         return (

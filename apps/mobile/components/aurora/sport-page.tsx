@@ -25,7 +25,7 @@ import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, RADIUS } from "./kit";
+import { AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
 
 const STORE_KEY = "hybrid.sport";
@@ -295,8 +295,8 @@ export default function AuroraSportPage() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={{ marginHorizontal: -12 }}
-                contentContainerStyle={{ paddingHorizontal: 12, gap: space.md }}
+                style={{ marginHorizontal: -GUTTER }}
+                contentContainerStyle={{ paddingHorizontal: GUTTER, gap: space.md }}
               >
                 {m.bests.map((b) => (
                   <View key={b.id} style={{ width: 176, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: space.lg }}>

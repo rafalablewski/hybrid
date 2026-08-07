@@ -337,7 +337,7 @@ export default function AuroraSportPage({
             {m.bests.length > 0 && (
               <div style={sectionStyle}>
                 <SectionHead title={t("w.train.sportPage.bests")} meta={t("w.train.sportPage.allTime")} />
-                <div style={{ display: "flex", gap: space.md, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "0 var(--page-pad-x, 16px) 4px" }}>
+                <div style={{ display: "flex", gap: space.md, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "0 var(--page-pad-x, 12px) 4px" }}>
                   {m.bests.map((b) => (
                     <div key={b.id} style={{ flex: "none", width: 176, background: C("card"), border: `1px solid ${C("line")}`, borderRadius: 22, padding: space.lg }}>
                       <div style={{ ...label(), fontSize: fs.nano }}>{bestLabel(b)}</div>

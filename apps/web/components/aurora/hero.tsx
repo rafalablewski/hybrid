@@ -363,7 +363,7 @@ export function HeroScreen({
           top: -geom.delta,
           zIndex: 30,
           height: geom.height,
-          margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 16px)) 0",
+          margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 12px)) 0",
           overflow: "hidden",
           background: onDark ? (mode === "takeover" ? HERO_TAKEOVER_INK : HERO_INK) : "transparent",
           color: onDark ? "#fff" : C("chalk"),
@@ -440,18 +440,18 @@ export function HeroScreen({
           content, so it costs no layout */}
       {onDark && (
         <div aria-hidden style={{ position: "relative", height: 0, zIndex: -1, pointerEvents: "none" }}>
-          <span style={{ position: "absolute", top: -BLEED_OVER, left: "calc(-1 * var(--page-pad-x, 16px))", right: "calc(-1 * var(--page-pad-x, 16px))", height: BLEED_OVER + BLEED_FADE, background: BLEED_BG, opacity: `calc(var(--cover-bleed, 1) * (1 - ${P}))` }} />
+          <span style={{ position: "absolute", top: -BLEED_OVER, left: "calc(-1 * var(--page-pad-x, 12px))", right: "calc(-1 * var(--page-pad-x, 12px))", height: BLEED_OVER + BLEED_FADE, background: BLEED_BG, opacity: `calc(var(--cover-bleed, 1) * (1 - ${P}))` }} />
         </div>
       )}
 
       {rail && (
-        <div style={{ position: "sticky", top: geom.barHeight, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "0 var(--page-pad-x, 16px)", background: "color-mix(in srgb, var(--color-ink) 88%, transparent)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", borderBottom: `1px solid ${C("line")}` }}>{rail}</div>
+        <div style={{ position: "sticky", top: geom.barHeight, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "0 var(--page-pad-x, 12px)", background: "color-mix(in srgb, var(--color-ink) 88%, transparent)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", borderBottom: `1px solid ${C("line")}` }}>{rail}</div>
       )}
 
       {children}
 
       {dock && (
-        <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 40, padding: "0 var(--page-pad-x, 16px) 16px", pointerEvents: docked ? "auto" : "none", opacity: ramp(dockAt, 1), transform: `translateY(calc((1 - ${ramp(dockAt, 1)}) * ${HERO.motion.rise}px))` }}>{dock}</div>
+        <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 40, padding: "0 var(--page-pad-x, 12px) 16px", pointerEvents: docked ? "auto" : "none", opacity: ramp(dockAt, 1), transform: `translateY(calc((1 - ${ramp(dockAt, 1)}) * ${HERO.motion.rise}px))` }}>{dock}</div>
       )}
     </div>
   );

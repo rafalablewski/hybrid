@@ -286,7 +286,7 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
       <div
         style={{
           display: "flex", gap: 8, overflowX: "auto", scrollSnapType: "x proximity", scrollbarWidth: "none",
-          margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "2px var(--page-pad-x, 16px) 6px",
+          margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "2px var(--page-pad-x, 12px) 6px",
         }}
       >
         <SummaryTile lane={lane} t={t} />

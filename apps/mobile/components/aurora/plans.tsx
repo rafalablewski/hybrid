@@ -9,7 +9,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { ACard, AField, RADIUS, withAlpha } from "./kit";
+import { ACard, AField, GUTTER, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
 import MeasuredOutcome from "../measured-outcome";
@@ -126,7 +126,12 @@ function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c
       // section, they don't switch panels, and the chips are buttons already.
       accessibilityLabel={t("w.train.plans.jumpToCategory")}
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingVertical: 8 }}
+      // CoverScreen's rail slot spans the full width and adds NO padding of its
+      // own (unlike the hero scaffold's, which re-pads its child) — so this
+      // padding IS the screen gutter, and a negative margin here would drag the
+      // first chip under the bezel. Full-bleed by construction; the only thing
+      // that was wrong was writing the number instead of the token.
+      contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 8 }}
     >
       {categories.map((c) => (
         <Pressable
@@ -169,8 +174,8 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
         onContentSizeChange={(w) => setRail((r) => ({ ...r, content: w }))}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
-        style={{ marginHorizontal: -12 }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: 12 }}
+        style={{ marginHorizontal: -GUTTER }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: GUTTER }}
       >
         {group.goals.map((g) => (
           <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />

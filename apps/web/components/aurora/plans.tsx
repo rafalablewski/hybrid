@@ -116,7 +116,7 @@ function CategoryRail({ categories }: { categories: string[] }) {
     <nav
       ref={navRef}
       aria-label={t("w.train.plans.jumpToCategory")}
-      style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "8px var(--page-pad-x, 16px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
+      style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "8px var(--page-pad-x, 12px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
     >
       {categories.map((c) => (
         <button className="pressable"
@@ -176,7 +176,7 @@ function GoalShelf({ group, pick }: { group: GoalGroup; pick: (id: string) => vo
       <div
         ref={railRef}
         onScroll={sync}
-        style={{ display: "flex", gap: 12, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "0 var(--page-pad-x, 16px)" }}
+        style={{ display: "flex", gap: 12, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "0 var(--page-pad-x, 12px)" }}
       >
         {group.goals.map((g) => (
           <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />
@@ -406,8 +406,8 @@ function PlanWeekRail({ bars, weeks, week, setWeek, wkLabel }: { bars: PlanWeekB
   const max = Math.max(1, ...bars.map((b) => b.value));
   const hasBars = bars.length > 0;
   return (
-    <div style={{ position: "sticky", top: COVER_BAR, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 16px))", background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}>
-      <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", padding: "8px var(--page-pad-x, 16px) 8px" }}>
+    <div style={{ position: "sticky", top: COVER_BAR, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 12px))", background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}>
+      <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", padding: "8px var(--page-pad-x, 12px) 8px" }}>
         {weeks.map((w) => {
           const on = w === week;
           const v = byWeek.get(w) ?? 0;

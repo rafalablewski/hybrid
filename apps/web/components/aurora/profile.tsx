@@ -487,7 +487,7 @@ export default function AuroraProfile({
           {/* Full-bleed rail: negative margins the width of the shell gutter
               (--page-pad-x) pull the scroll clip to the true screen edge, with
               matching internal padding so resting tiles stay on the column. */}
-          <div style={{ display: "flex", gap: space.ms, overflowX: "auto", scrollbarWidth: "none", padding: "4px var(--page-pad-x, 16px)", margin: "-4px calc(-1 * var(--page-pad-x, 16px)) 0" }}>
+          <div style={{ display: "flex", gap: space.ms, overflowX: "auto", scrollbarWidth: "none", padding: "4px var(--page-pad-x, 12px)", margin: "-4px calc(-1 * var(--page-pad-x, 12px)) 0" }}>
             {achievements.map((a) => {
               const pct = Math.round(a.progress * 100);
               return (

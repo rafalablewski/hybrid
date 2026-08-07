@@ -13,7 +13,7 @@ import {
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
-import { ADrawer, withAlpha } from "./kit";
+import { ADrawer, GUTTER, withAlpha } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -101,8 +101,18 @@ const PRS_FADE = 24;
 /** The gap between record cells, in dp. Mirrors web. */
 const PRS_GAP = 14;
 /** AuroraScreen's gutter — what the rail bleeds by, so cards slide under the
- *  physical screen edge. Mirrors web's --page-pad-x. */
-const PRS_BLEED = 12;
+ *  physical screen edge. The PRs section is a SIBLING of the verdict card, not
+ *  inside it, which is why this is the screen gutter and CARD_PAD below is not.
+ *  Mirrors web's --page-pad-x. */
+const PRS_BLEED = GUTTER;
+/** The verdict card's own inner padding — what the detail compartment bleeds by
+ *  to reach the card's edges. NOT the screen gutter: the compartment lives
+ *  inside the card, so it must follow the card. The two were both written as
+ *  bare numbers, which is how the 16 -> 12 gutter sweep came to "fix" this one
+ *  into 12 as well, insetting the compartment 4dp from the card on both sides
+ *  and shifting its text off the figures above it (web, still 16, was right).
+ *  Named, the mistake is no longer expressible. */
+const CARD_PAD = 16;
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -464,7 +474,7 @@ export default function AuroraWeekVerdict({
           the card gives its own up rather than fencing the panel in. */}
       <View style={{
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28,
-        paddingHorizontal: 16, paddingTop: 16, paddingBottom: open ? 0 : 16, ...cardShadow(scheme),
+        paddingHorizontal: CARD_PAD, paddingTop: 16, paddingBottom: open ? 0 : 16, ...cardShadow(scheme),
       }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
@@ -565,8 +575,8 @@ export default function AuroraWeekVerdict({
               // bottom padding while this is open — the panel's own padding is
               // the card's bottom now.
               backgroundColor: C.ink, borderTopWidth: 1, borderTopColor: C.line,
-              marginHorizontal: -12, marginTop: 12,
-              paddingHorizontal: 12, paddingTop: 14, paddingBottom: 16,
+              marginHorizontal: -CARD_PAD, marginTop: 12,
+              paddingHorizontal: CARD_PAD, paddingTop: 14, paddingBottom: 16,
               borderBottomLeftRadius: 27, borderBottomRightRadius: 27,
             }}>
               <MetricDetail

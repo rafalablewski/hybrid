@@ -42,7 +42,7 @@ import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
-import { withAlpha, ASection } from "./aurora/kit";
+import { withAlpha, ASection, GUTTER } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
 
@@ -212,8 +212,10 @@ function WeekRail({ C, bars, weeks, week, setWeek, wkLabel }: { C: Palette; bars
   const byWeek = new Map(bars.map((b) => [b.week, b.value]));
   const max = Math.max(1, ...bars.map((b) => b.value));
   const hasBars = bars.length > 0;
+  // CoverScreen's rail slot is full-width and unpadded, so this padding IS the
+  // screen gutter — the token, not the number.
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8, gap: 2 }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 8, gap: 2 }}>
       {weeks.map((w) => {
         const on = w === week;
         const v = byWeek.get(w) ?? 0;
