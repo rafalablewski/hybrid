@@ -556,9 +556,11 @@ export default function AuroraPerformance({
 
             It used to sit four interactions deep (Volume → drawer → provenance
             sheet → "Show the working"), which is a strange place for the one
-            figure every athlete actually arrives wanting. The working stays
-            where it is and this card is its door. */}
-        <LevelCard sessions={sessions} onOpenWorking={() => setScreen("volume")} />
+            figure every athlete actually arrives wanting. The card carries its
+            OWN working now — it used to push this screen's Volume tab to answer
+            "why this level?", which is an oversized answer to a question the
+            engine's evidence settles in three lines. */}
+        <LevelCard sessions={sessions} />
 
         {/* 5 · THIS WEEK'S VOLUME — the hero shape, the verdict that names
             names, and the rest of it in a drawer. The block ramp, the
