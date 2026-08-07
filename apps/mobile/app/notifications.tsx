@@ -5,7 +5,7 @@ import { relativeTime, type NotifItem } from "@hybrid/core";
 import { respondFollow, respondEnrollment } from "../lib/social-api";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { leading, fs, space, F, PressScale as Pressable } from "../lib/ui";
+import { leading, fs, space, tracking, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, RADIUS } from "../components/aurora/kit";
 import { HeroAccessory } from "../components/aurora/hero";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -102,7 +102,7 @@ export default function Notifications() {
             accessibilityRole="button"
             hitSlop={10}
           >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.8, textTransform: "uppercase", color: C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
               {t("notif.markAllRead")}
             </Text>
           </Pressable>

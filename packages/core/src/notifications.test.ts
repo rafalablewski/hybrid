@@ -52,13 +52,13 @@ describe("buildNotifications", () => {
   it("puts an open feel read at the top, ahead of a newer social event", () => {
     // The kudos is 30m old, the feel read came due an hour ago — urgency wins.
     const f = buildNotifications({ sessions: [session()], social: [kudos()], now: NOW });
-    expect(f.items[0].source).toBe("feel");
+    expect(f.items[0]!.source).toBe("feel");
   });
 
   it("floats a request that needs an answer above ordinary events", () => {
     const req = kudos({ id: "req-ada", kind: "follow_request", title: "Ada requested to follow you", actionable: true, at: NOW - 3 * H });
     const f = buildNotifications({ sessions: [], social: [kudos(), req], now: NOW });
-    expect(f.items[0].id).toBe("social-req-ada");
+    expect(f.items[0]!.id).toBe("social-req-ada");
   });
 });
 
@@ -144,12 +144,12 @@ describe("read state", () => {
     const f = buildNotifications({ sessions: [], social: [late], read, now: NOW });
     // The watermark alone would call this read; that is the known trade — the
     // sweep says "I have seen the list as of now".
-    expect(f.items[0].read).toBe(true);
+    expect(f.items[0]!.read).toBe(true);
   });
 
   it("marks one row read without touching the rest", () => {
     const f = buildNotifications({ sessions: [session()], social: [kudos()], now: NOW });
-    const read = markNotifRead(DEFAULT_NOTIF_READ, f.items[0].id);
+    const read = markNotifRead(DEFAULT_NOTIF_READ, f.items[0]!.id);
     const after = buildNotifications({ sessions: [session()], social: [kudos()], read, now: NOW });
     expect(after.unread).toBe(f.unread - 1);
   });
