@@ -6,7 +6,6 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
-import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { GUTTER } from "./kit";
 
@@ -40,9 +39,9 @@ function Stat({ C, value, label, first, star }: { C: Palette; value: string; lab
   );
 }
 
-// `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
-// parent can supply its own section head instead — which is how Today mounts it.
-// The built-in header is kept for any caller that has no head of its own.
+// `headerless` drops the built-in "Follow a coach" title so a parent can supply
+// its own section head instead — which is how Today mounts it. The built-in
+// header is kept for any caller that has no head of its own.
 // AuroraScreen's side gutter (GUTTER, kit.tsx) — a full-bleed rail pulls
 // itself back out by exactly that so its scroll clip reaches the true edge.
 const SCREEN_PAD = GUTTER;
@@ -53,10 +52,13 @@ const SCREEN_PAD = GUTTER;
 // slide under the bezel instead of vanishing at the content column. Only for
 // rails sitting directly on a Screen (Today) — inside a sheet the rail must
 // respect the sheet's own padding.
-// `seeMore` appends a trailing "See more" button at the end of the rail (the
-// unified rail affordance — the community rail carries the twin), so the rest of
-// the marketplace is one tap away without an "All →" link up in the header.
-export default function CoachRail({ onOpen, headerless = false, bleed = false, seeMore = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean; seeMore?: boolean }) {
+// The built-in header NAMES the rail and nothing else: the marketplace is
+// reached from the tail card at the end of the scroller (aurora/rail-tail.tsx),
+// which always renders, so the header's old "Browse all →" link was a second
+// door to the same room sitting at the wrong end of the swipe. `seeMore` went
+// with it — a rail always ends in its exit, so there was nothing left for the
+// flag to switch off. Mirrors web coach-rail.tsx.
+export default function CoachRail({ onOpen, headerless = false, bleed = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean }) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
@@ -77,12 +79,9 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
   return (
     <View style={{ marginTop: headerless ? 0 : 18 }}>
       {!headerless && (
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <View>
-            <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>{t("w.explore.coaches")}</Text>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>{t("w.explore.coachSwipe")}</Text>
-          </View>
-          <Pressable onPress={onOpen}><CtaLabel label={`${t("w.explore.browseAll")} →`} color={C.ash} fontSize={11} font={F.mono} style={{ letterSpacing: 0.9, textTransform: "uppercase" }} /></Pressable>
+        <View style={{ marginBottom: 10 }}>
+          <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>{t("w.explore.coaches")}</Text>
+          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>{t("w.explore.coachSwipe")}</Text>
         </View>
       )}
 
@@ -139,9 +138,9 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             </Pressable>
           );
         })}
-        {/* Trailing tail card — now the SHARED RailTail, so every rail in the
-            app draws its exit from one implementation. */}
-        {seeMore && <RailTail onOpen={onOpen} label={t("w.explore.seeMore")} />}
+        {/* THE EXIT — the SHARED RailTail, so every rail in the app draws its
+            door from one implementation, and always at the end of the scroll. */}
+        <RailTail onOpen={onOpen} label={t("w.explore.seeMore")} />
       </ScrollView>
     </View>
   );
