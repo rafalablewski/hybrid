@@ -20,7 +20,7 @@ import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS, withAlpha } from "./kit";
+import { GUTTER, RADIUS, withAlpha } from "./kit";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
  *  conditioning sand + ticker red ride accentText (parity with the web
@@ -129,8 +129,8 @@ export default function ExerciseWidgetRail({
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
-        style={{ marginHorizontal: -12 }}
-        contentContainerStyle={{ gap: 8, paddingVertical: 2, paddingHorizontal: 12 }}
+        style={{ marginHorizontal: -GUTTER }}
+        contentContainerStyle={{ gap: 8, paddingVertical: 2, paddingHorizontal: GUTTER }}
       >
         {cards.map((card) => {
           const h = headline(card, units, t);

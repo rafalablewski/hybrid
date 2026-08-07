@@ -20,6 +20,11 @@ import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 
+/** The card's own inner padding — what the full-bleed hairline inside it bleeds
+ *  by to reach the card's edges. NOT the screen gutter (this rail lives on a
+ *  card), which is exactly the distinction a bare `-20` could not make. */
+const CARD_PAD = 20;
+
 // ── AURORA Logbook rail (mobile) ────────────────────────────────────────────
 // "The Constant": the SAME week-rail object the plan state ships, mounted in
 // LOGBOOK MODE for the plan-less athlete with logged history — so the calendar
@@ -93,7 +98,7 @@ export default function AuroraLogbookRail({
         borderWidth: 1,
         borderColor: C.line,
         borderRadius: RADIUS.card,
-        padding: 20,
+        padding: CARD_PAD,
         shadowColor: "#000",
         shadowOpacity: 0.18,
         shadowRadius: 14,
@@ -117,7 +122,7 @@ export default function AuroraLogbookRail({
       </View>
 
       {/* full-bleed hairline — the only separator between week and day */}
-      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 16, marginBottom: 16 }} />
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -CARD_PAD, marginTop: 16, marginBottom: 16 }} />
 
       <DayDetail
         key={sel.dateKey}

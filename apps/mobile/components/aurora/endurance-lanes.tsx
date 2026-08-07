@@ -10,7 +10,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS } from "./kit";
+import { GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
 
 /**
@@ -197,8 +197,8 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
-        style={{ marginHorizontal: -12 }}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingVertical: 2 }}
+        style={{ marginHorizontal: -GUTTER }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 2 }}
       >
         <SummaryTile lane={lane} />
         <VolumeTile lane={lane} />

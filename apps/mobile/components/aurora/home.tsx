@@ -844,8 +844,8 @@ export default function AuroraHome() {
               showsHorizontalScrollIndicator={false}
               snapToInterval={structW + 12}
               decelerationRate="fast"
-              style={{ marginHorizontal: -12 }}
-              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: 12 }}
+              style={{ marginHorizontal: -GUTTER }}
+              contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: GUTTER }}
             >
               <StructureCard C={C} width={structW} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.logbook.slimFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/plans")} />
               <StructureCard C={C} width={structW} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.logbook.slimBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />

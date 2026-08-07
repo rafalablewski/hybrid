@@ -28,7 +28,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS, withAlpha, AChip } from "./kit";
+import { GUTTER, RADIUS, withAlpha, AChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -132,7 +132,7 @@ export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange
   const { t } = useLang();
   return (
     // Full-bleed chip rail — clips at the screen edge, rests on the column.
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -12 }} contentContainerStyle={{ gap: 8, paddingBottom: 4, paddingHorizontal: 12 }}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 8, paddingBottom: 4, paddingHorizontal: GUTTER }}>
       {HISTORY_VIEWS.map((v) => (
         <AChip key={v.id} label={t(v.labelKey)} selected={v.id === view} onPress={() => onChange(v.id)} />
       ))}

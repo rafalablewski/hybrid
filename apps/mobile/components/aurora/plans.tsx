@@ -126,12 +126,11 @@ function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c
       // section, they don't switch panels, and the chips are buttons already.
       accessibilityLabel={t("w.train.plans.jumpToCategory")}
       showsHorizontalScrollIndicator={false}
-      // FULL-BLEED, like web's sticky nav: the hero's rail slot re-pads its
-      // child by the screen gutter, so the rail bleeds that gutter back out
-      // (clip at the true edge) and re-applies it inside (chips on the content
-      // column). Padding alone put the chips at gutter + 16 and stopped the
-      // scroll clip a gutter short of the bezel.
-      style={{ marginHorizontal: -GUTTER }}
+      // CoverScreen's rail slot spans the full width and adds NO padding of its
+      // own (unlike the hero scaffold's, which re-pads its child) — so this
+      // padding IS the screen gutter, and a negative margin here would drag the
+      // first chip under the bezel. Full-bleed by construction; the only thing
+      // that was wrong was writing the number instead of the token.
       contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 8 }}
     >
       {categories.map((c) => (
@@ -175,8 +174,8 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
         onContentSizeChange={(w) => setRail((r) => ({ ...r, content: w }))}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
-        style={{ marginHorizontal: -12 }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: 12 }}
+        style={{ marginHorizontal: -GUTTER }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: GUTTER }}
       >
         {group.goals.map((g) => (
           <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />

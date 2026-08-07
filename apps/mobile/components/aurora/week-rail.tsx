@@ -69,6 +69,10 @@ const Caret = ({ c, open }: { c: string; open: boolean }) => (
 // Days shown at once, and how many lifts show before the fading disclosure.
 const WINDOW = 7;
 const PEEK = 2;
+/** The card's own inner padding — what the full-bleed hairline inside it bleeds
+ *  by to reach the card's edges. NOT the screen gutter (this rail lives on a
+ *  card), which is exactly the distinction a bare `-20` could not make. */
+const CARD_PAD = 20;
 
 /** A session's tab/label: the plan's time-of-day when it sets one (AM/PM), else a
  *  plain "Training N" — the ordinal, never a fabricated time, is the anchor. */
@@ -198,7 +202,7 @@ export default function AuroraWeekRail({
         borderWidth: 1,
         borderColor: C.line,
         borderRadius: RADIUS.card,
-        padding: 20,
+        padding: CARD_PAD,
         shadowColor: "#000",
         shadowOpacity: 0.18,
         shadowRadius: 14,
@@ -222,7 +226,7 @@ export default function AuroraWeekRail({
       </View>
 
       {/* full-bleed hairline — the only separator between week and session */}
-      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -20, marginTop: 16, marginBottom: 16 }} />
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -CARD_PAD, marginTop: 16, marginBottom: 16 }} />
 
       {/* state-aware session, flowing directly on the card (no nested surface) */}
       <DayDetail
