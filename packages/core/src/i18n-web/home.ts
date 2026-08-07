@@ -834,14 +834,22 @@ export const web_home = {
     "w.injury.line.clear": "Nothing's flagged. You're clear to train.",
     "w.injury.line.elevated": "One area is ramping faster than it can adapt. Ease it this week.",
     "w.injury.line.high": "Back off what's flagged — this is where strains happen.",
-    "w.injury.allTissues": "All tissues",
+    // The panel is not a list of everything — it is the same figure broken
+    // out PER TISSUE, seven rows on one axis. "By tissue" names that
+    // dimension in two words, and is short enough to survive DE/PL in a rail
+    // that had already been truncating ("HOW IS THIS CALC…").
+    "w.injury.byTissue": "By tissue",
     // The protocol lives on Today, where an injured athlete meets it on the
     // morning they have to do it. This card keeps the status and the door.
     "w.injury.protocolRunning": "Protocol running",
     "w.injury.protocolDay": "Day {n} of {total}",
     "w.injury.protocolWhere": "Today's steps are on your Today screen.",
-    "w.injury.howCalculated": "How is this calculated?",
-    "w.injury.hideTissues": "Hide tissues",
+    // The calibration used to hide behind a disclosure whose ENTIRE payload
+    // was this one line. A control whose whole content is a fact is not a
+    // control, so it prints above the rule instead. Named "Risk model" and
+    // not a bare version string: it reads as provenance rather than as a
+    // claim to precision the figures do not have.
+    "w.injury.riskModel": "Risk model {v}",
     "w.injury.wholeBody": "Whole-body, not per tissue",
     "w.injury.axisFlag": "flag",
     "w.injury.axisMod": "mod",
@@ -1809,12 +1817,11 @@ export const web_home = {
     "w.injury.line.clear": "Nic nie jest oznaczone. Możesz trenować.",
     "w.injury.line.elevated": "Jedna partia rośnie szybciej, niż zdąży się zaadaptować. Odpuść jej w tym tygodniu.",
     "w.injury.line.high": "Odpuść to, co oznaczone — właśnie tak dochodzi do naderwań.",
-    "w.injury.allTissues": "Wszystkie partie",
+    "w.injury.byTissue": "Wg partii",
     "w.injury.protocolRunning": "Protokół w toku",
     "w.injury.protocolDay": "Dzień {n} z {total}",
     "w.injury.protocolWhere": "Dzisiejsze kroki znajdziesz na ekranie Dziś.",
-    "w.injury.howCalculated": "Jak to jest liczone?",
-    "w.injury.hideTissues": "Ukryj partie",
+    "w.injury.riskModel": "Model ryzyka {v}",
     "w.injury.wholeBody": "Całe ciało, nie pojedyncza partia",
     "w.injury.axisFlag": "próg",
     "w.injury.axisMod": "umiark.",
@@ -2781,12 +2788,11 @@ export const web_home = {
     "w.injury.line.clear": "Nichts ist markiert. Du kannst trainieren.",
     "w.injury.line.elevated": "Eine Region steigert schneller, als sie sich anpassen kann. Nimm sie diese Woche zurück.",
     "w.injury.line.high": "Nimm zurück, was markiert ist — genau hier entstehen Zerrungen.",
-    "w.injury.allTissues": "Alle Regionen",
+    "w.injury.byTissue": "Nach Region",
     "w.injury.protocolRunning": "Protokoll läuft",
     "w.injury.protocolDay": "Tag {n} von {total}",
     "w.injury.protocolWhere": "Die heutigen Schritte stehen auf deinem Heute-Screen.",
-    "w.injury.howCalculated": "Wie wird das berechnet?",
-    "w.injury.hideTissues": "Regionen ausblenden",
+    "w.injury.riskModel": "Risikomodell {v}",
     "w.injury.wholeBody": "Ganzkörper, nicht pro Region",
     "w.injury.axisFlag": "Schwelle",
     "w.injury.axisMod": "mittel",

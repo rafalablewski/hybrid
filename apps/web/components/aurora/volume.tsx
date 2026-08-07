@@ -21,6 +21,7 @@ import { useVolumeModel } from "@/lib/use-volume-model";
 import { useLang } from "@/lib/i18n";
 import { HeroScreen, HeroAccessory } from "./hero";
 import Sheet from "./sheet";
+import { CardFoot } from "./card-foot";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
@@ -253,27 +254,23 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
           </>
         )}
         {!summary.empty && (
-          <>
-            <button
-              className="pressable"
-              onClick={() => { setEverOpen(true); setDrawer((v) => !v); }}
-              aria-expanded={drawer}
-              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: 16, paddingTop: 14, border: 0, borderTop: `1px solid ${C("line")}`, background: "none", cursor: "pointer", color: C("chalk"), textAlign: "left" }}
-            >
-              <span style={eyebrow}>{t("w.home.cockpit.volumeDoor")}</span>
-              <span style={{ marginLeft: "auto", ...mono(fs.caption), fontWeight: 700, color: "var(--lime-text)" }}>
-                {drawer ? t("w.analyze.vol.hideDetail") : t("w.analyze.vol.title")}
-                {/* The chevron ROTATES rather than swapping glyph, so the
-                    control reads as the same object in two states. */}
-                <span aria-hidden style={{ display: "inline-block", marginLeft: 6, transform: drawer ? "rotate(-180deg)" : "none", transition: "transform var(--d-sheet) var(--e-sheet)" }}>↓</span>
-              </span>
-            </button>
-
-            {/* THE DRAWER — a 0fr → 1fr grid row: a real height animation with
-                nothing measured, so the block, the prescription and the rails
-                slide out from under the shape that raised the question. */}
-            <Drawer open={drawer}>{everOpen ? detail(true) : null}</Drawer>
-          </>
+          /* THE FOOT — one link, ash, and that is all. This used to be a
+             two-string label: an eyebrow on the left describing the contents,
+             and a LIME "Volume" with a rotating ↓ on the right. Both were
+             wrong. The eyebrow was already the noun of what unfolds, so the
+             right-hand word was naming the screen the athlete is standing on;
+             and lime marks a control that takes you somewhere, which this one
+             never did — it opens a drawer in place, one card away from Your
+             Level, where the same lime with an arrow pushed a whole screen. */
+          <CardFoot
+            expander={{
+              label: t("w.home.cockpit.volumeDoor"),
+              open: drawer,
+              onToggle: () => { setEverOpen(true); setDrawer((v) => !v); },
+            }}
+          >
+            {everOpen ? detail(true) : null}
+          </CardFoot>
         )}
         {sourceSheet}
       </section>

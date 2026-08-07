@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Animated, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import { View, Text, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
 import {
-  springs, springToRN,
   volumeStatus, weeklyMuscleSets, athleteLandmarks,
   replayLandmarks, testedMuscles, REPLAY_VERDICT_KEY, type LandmarkReplay,
   railGeometry, railScale, railX, bandRegion, BAND_KEYS, volumeSummary, sortByUrgency, setsLabel, deltaLabel,
@@ -22,12 +21,10 @@ import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, ADrawer, AHeading, ASection, RADIUS, withAlpha } from "./kit";
-import { CtaLabel } from "./cta-label";
+import { AuroraScreen, ACard, ADrawer, AHeading, ASection, CardFoot, RADIUS, withAlpha } from "./kit";
 import { HeroAccessory } from "./hero";
 import Sheet from "./sheet";
 import { haptic } from "../../lib/haptics";
-import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
@@ -261,27 +258,23 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
           </>
         )}
         {!summary.empty && (
-          <>
-            <Pressable
-              onPress={() => { haptic.selection(); setEverOpen(true); setDrawer((v) => !v); }}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: drawer }}
-              style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.home.cockpit.volumeDoor")}</Text>
-              <CtaLabel
-                label={drawer ? t("w.analyze.vol.hideDetail") : t("w.analyze.vol.title")}
-                color={txt(C, C.lime)} fontSize={fs.caption} font={F.mono} style={{ marginLeft: "auto" }}
-              />
-              {/* The chevron ROTATES rather than swapping glyph, so the control
-                  reads as the same object in two states. */}
-              <Chevron open={drawer} />
-            </Pressable>
-
-            {/* THE DRAWER — the block, the prescription and the rails slide out
-                from under the shape that raised the question. */}
-            <ADrawer open={drawer}>{everOpen ? detail(true) : null}</ADrawer>
-          </>
+          /* THE FOOT — one link, ash, and that is all. This used to be a
+             two-string label: an eyebrow on the left describing the contents,
+             and a LIME "Volume" with a rotating ↓ on the right. Both were
+             wrong. The eyebrow was already the noun of what unfolds, so the
+             right-hand word was naming the screen the athlete is standing on;
+             and lime marks a control that takes you somewhere, which this one
+             never did — it opens a drawer in place, one card away from Your
+             Level, where the same lime with an arrow pushed a whole screen. */
+          <CardFoot
+            expander={{
+              label: t("w.home.cockpit.volumeDoor"),
+              open: drawer,
+              onToggle: () => { setEverOpen(true); setDrawer((v) => !v); },
+            }}
+          >
+            {everOpen ? detail(true) : null}
+          </CardFoot>
         )}
         {sourceSheet}
       </ACard>
@@ -413,31 +406,6 @@ function Panel({ flat, lead = false, children, style }: {
     <View style={[{ marginTop: lead ? 18 : 20, paddingTop: lead ? 0 : 20, borderTopWidth: lead ? 0 : 1, borderTopColor: C.line }, style]}>
       {children}
     </View>
-  );
-}
-
-/** The drawer's chevron. It ROTATES rather than swapping glyph, so the control
- *  reads as the same object in two states — and it turns on the same spring the
- *  drawer opens on, so the two are one movement. */
-function Chevron({ open }: { open: boolean }) {
-  const { palette: C } = useTheme();
-  const reduced = useReducedMotion();
-  const spin = useRef(new Animated.Value(open ? 1 : 0)).current;
-  useEffect(() => {
-    if (reduced) { spin.setValue(open ? 1 : 0); return; }
-    Animated.spring(spin, { toValue: open ? 1 : 0, useNativeDriver: true, ...springToRN(springs.sheet) }).start();
-  }, [open, reduced, spin]);
-  return (
-    <Animated.Text
-      accessibilityElementsHidden
-      importantForAccessibility="no"
-      style={{
-        fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime), marginLeft: 6,
-        transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "-180deg"] }) }],
-      }}
-    >
-      ↓
-    </Animated.Text>
   );
 }
 
