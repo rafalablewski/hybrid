@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { PressScale as Pressable } from "../lib/ui";
 
@@ -19,10 +19,19 @@ export class ErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
-  componentDidCatch(error: Error) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
     // No crash reporter wired yet (see the `crash-reporting` capability); at
     // least surface it to the JS console / native logs for now.
-    console.error("[ErrorBoundary] uncaught render error:", error);
+    //
+    // THE COMPONENT STACK IS THE REPORT. The message alone says WHAT broke and
+    // never WHERE: "Objects are not valid as a React child" names the value's
+    // keys and not one file, so a whole-app blank screen arrives with nothing
+    // to open. React hands the chain to componentDidCatch and this used to drop
+    // it. Trimmed to the frames nearest the throw — the rest is providers, the
+    // same in every report — and each on its own line, because a stack folded
+    // into one Metro row is unreadable.
+    const frames = info.componentStack?.trim().split("\n").slice(0, 12).join("\n") ?? "(no component stack)";
+    console.error(`[ErrorBoundary] uncaught render error: ${error?.message ?? error}\n${frames}`);
   }
 
   reset = () => this.setState({ error: null });
