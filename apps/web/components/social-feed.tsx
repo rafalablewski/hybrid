@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { fs, leading, tracking } from "@hybrid/core";
 import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, LiveAthlete, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
@@ -49,14 +50,15 @@ function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => v
       {(list ?? []).map((c) => (
         <div key={c.id} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
-          <div style={{ fontSize: 13 }}>
+          <div style={{ fontSize: fs.body, lineHeight: `${leading(fs.body)}px` }}>
             <span style={{ color: C("chalk"), fontWeight: 600 }}>{c.author?.displayName || `@${c.author?.handle}`} </span>
             <span style={{ color: C("ash") }}>{c.body}</span>
           </div>
         </div>
       ))}
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("w.social.commentPlaceholder")} style={{ flex: 1, padding: "8px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
+        {/* Named explicitly, like the composer's textarea beside it. */}
+        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("w.social.commentPlaceholder")} style={{ flex: 1, padding: "8px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.body }} />
         <Btn small onClick={send}>{t("w.social.post")}</Btn>
       </div>
     </div>
@@ -87,7 +89,7 @@ function Composer({ onPosted }: { onPosted: () => void }) {
       <button
         className="pressable"
         onClick={() => setOpen(true)}
-        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", marginBottom: 10, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", textAlign: "left" }}
+        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", marginBottom: 10, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: fs.body, cursor: "pointer", textAlign: "left" }}
       >
         {t("w.social.sharePlaceholder")}
       </button>
@@ -95,9 +97,9 @@ function Composer({ onPosted }: { onPosted: () => void }) {
   }
   return (
     <div style={card(aurora, { marginBottom: 10 })}>
-      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 48, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, outline: "none" }} />
+      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 48, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.note, outline: "none" }} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 12 }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: 13, cursor: "pointer" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: fs.body, cursor: "pointer" }}>
           <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> {t("w.social.attachPr")}
         </label>
         <div style={{ display: "flex", gap: 8 }}>
@@ -160,7 +162,7 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
         color: tab === id ? C("chalk") : C("ash"),
         fontFamily: "var(--font-display)",
         fontWeight: 600,
-        fontSize: 11.5,
+        fontSize: fs.micro,
         cursor: "pointer",
       }}
     >
@@ -169,7 +171,11 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
   );
 
   return (
-    <div style={{ maxWidth: 600 }}>
+    // The screen names its own FACE, like every other screen root (aurora/*.tsx)
+    // — belt and braces over the body-level default now set in globals.css,
+    // which is what the feed had been falling through (into the platform UI
+    // font) for its captions, comments and empty state.
+    <div style={{ maxWidth: 600, fontFamily: "var(--font-display)", color: C("chalk") }}>
       {/* Verified-record witness requests addressed to ME. A person is waiting
           on this answer, so it outranks every piece of content below it — and
           every request is also an invite (core/attestation.ts). */}
@@ -231,8 +237,8 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
               last row's own hairline already closes the stream, so the marker
               is plain centered text — same as mobile. */}
           <div style={{ textAlign: "center", padding: "14px 0 8px" }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: C("ash") }}>{t("feed.caughtUp")}</div>
-            <p style={{ fontSize: 12, color: C("ash"), margin: "6px 0 10px" }}>{t("feed.caughtUpSub")}</p>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash") }}>{t("feed.caughtUp")}</div>
+            <p style={{ fontSize: fs.caption, lineHeight: `${leading(fs.caption)}px`, color: C("ash"), margin: "6px 0 10px" }}>{t("feed.caughtUpSub")}</p>
             <Btn onClick={() => (onNavigate ? onNavigate("log") : (window.location.href = "/log"))}>{t("feed.goTrain")}</Btn>
           </div>
         </>

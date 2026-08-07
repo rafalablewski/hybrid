@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, TextInput, FlatList, RefreshControl, Animated } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { Loading, F, fs, leading, tracking, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
+import { Loading, F, fs, leading, serifIf, tracking, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -47,11 +47,11 @@ function Comments({ item }: { item: FeedItemView }) {
       {list.map((c) => (
         <View key={c.id} style={{ flexDirection: "row", gap: 8, marginBottom: 8, alignItems: "center" }}>
           <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
-          <Text style={{ flex: 1, fontSize: 13 }}><Text style={{ color: C.chalk, fontWeight: "600" }}>{c.author?.displayName || `@${c.author?.handle}`} </Text><Text style={{ color: C.ash }}>{c.body}</Text></Text>
+          <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body) }}><Text style={{ fontFamily: F.semi, color: C.chalk }}>{c.author?.displayName || `@${c.author?.handle}`} </Text><Text style={{ color: C.ash }}>{c.body}</Text></Text>
         </View>
       ))}
       <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
-        <TextInput value={text} onChangeText={setText} placeholder={t("w.social.commentPlaceholder")} placeholderTextColor={C.ash} style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 13 }} />
+        <TextInput value={text} onChangeText={setText} placeholder={t("w.social.commentPlaceholder")} placeholderTextColor={C.ash} style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontFamily: F.reg, fontSize: fs.body }} />
         <SButton label={t("w.social.post")} small onPress={send} />
       </View>
     </View>
@@ -60,7 +60,7 @@ function Comments({ item }: { item: FeedItemView }) {
 
 export default function FeedView({ top }: { top?: ReactNode }) {
   const { notify } = useConfirm();
-  const C = useTheme().palette;
+  const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItemView[] | null>(null);
@@ -128,8 +128,11 @@ export default function FeedView({ top }: { top?: ReactNode }) {
           Today's, handed down through `top`. */}
       {top && (
         <View style={{ marginBottom: 10, marginTop: 12 }}>
-          <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 24 }}>{t("w.social.feedTitle")}</Text>
-          <Text style={{ color: C.ash, fontSize: 13 }}>{t("w.social.feedSub")}</Text>
+          {/* The hub head reads the heading face at the ladder's `headline`
+              rung — the same head the standalone shape gets from its hero
+              (AuroraScreen rank "title"), not a hand-picked 24. */}
+          <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: fs.headline, lineHeight: leading(fs.headline, "snug") }}>{t("w.social.feedTitle")}</Text>
+          <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body }}>{t("w.social.feedSub")}</Text>
         </View>
       )}
 
@@ -213,7 +216,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     items.length === 0 ? null : (
       <Animated.View style={[fade, { alignItems: "center", paddingTop: 14, paddingBottom: 8 }]}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>{t("feed.caughtUp").toUpperCase()}</Text>
-        <Text style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 6, marginBottom: 10, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 6, marginBottom: 10, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
         <SButton label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>
     );
