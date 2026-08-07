@@ -73,6 +73,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, GUTTER, RADIUS, Ring } from "./kit";
+import { HubMasthead } from "./hub-masthead";
 import ExerciseWidgetRail from "./exercise-widget";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
@@ -132,14 +133,11 @@ export default function AuroraHome() {
   const { width: winW } = useWindowDimensions();
   const structW = Math.min(300, Math.round(winW * 0.72));
   const navScroll = useNavScrollProps();
-  // MASTHEAD COMPRESSION — the big title shrinks and the secondary lines recede
-  // as a CONTINUOUS function of scroll offset, not a stepped swap. Reads the
-  // SAME `collapse` value the floating nav pill already collapses on (one
-  // signal, two subscribers), so web and mobile compress in step — the web twin
-  // is globals.css .motion-masthead driven by --scroll-collapse.
-  const collapse = useNavScroll()?.collapse;
-  const mastScale = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.76] }) : 1;
-  const mastSubFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) : 1;
+  // MASTHEAD COMPRESSION moved into the head itself (aurora/hub-masthead.tsx),
+  // which subscribes to the same nav-scroll signal this screen used to read
+  // directly. It was Dashboard's alone for as long as it lived here; owning it
+  // in the component is what gives Performance and Feed the identical
+  // compression rather than none at all.
 
   // SAFE CACHE (lib/queries.ts `Read`). Sessions, signals, the enrolled season
   // and the check-ins all come from the SHARED cache, so Today and Performance
@@ -737,36 +735,29 @@ export default function AuroraHome() {
             whole-screen entrance above already owns the motion. */}
         <HubDissolve active={awayFromDashboard.current}>
 
-        {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
-            chooser's "Free", or the scrub-distance tag) and ONE big headline.
-            The greeting line was retired (ornament sweep): the caption already
-            says the day, and a "Good morning" sentence under the headline was
-            decoration competing with the Start action. The headline NAMES THE
-            VIEWED DAY (masthead() in @hybrid/core): "Today" until the week
-            rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the weekday name
-            beyond — a static "Today" over Friday's session would lie in the
-            largest type on screen. Off today, a "Back to today" return
-            affordance renders beneath, teal, in the same spot every time.
-            Mirrors web today.tsx. */}
-        <View style={{ marginTop: 16 }}>
-          <Animated.View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10, opacity: mastSubFade }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{mastCaption || " "}</Text>
-            {firstRun || (logbookMode && !mastTag) ? (
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.today.badgeFree")}</Text>
-            ) : mastTag ? (
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.amber) }}>{mastTag}</Text>
-            ) : null}
-          </Animated.View>
-          {/* transformOrigin has no RN equivalent, so the row is left-aligned and
-              scaled about its own left edge via the trailing translate — the
-              title shrinks toward the margin rather than toward the centre. */}
-          <Animated.View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 2, alignSelf: "flex-start", transform: [{ scale: mastScale }] }}>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 34, letterSpacing: -1, color: C.chalk }}>{mastTitle}</Text>
-            {/* Kyoto Hour hanko — the vermilion seal beside the true "Today" only
-                (never the scrubbed days); Aurora (dark) hides it. Decorative,
-                hence no a11y label. Mirrors web today.tsx + globals.css
-                .hanko-seal. */}
-            {scheme === "light" && dayIsToday && (
+        {/* THE MASTHEAD — the SHARED hub head (aurora/hub-masthead.tsx), the
+            same component Performance and Feed render, so the three tabs of one
+            hub can no longer present three different heads. Everything
+            measurable about it — the 34 rung, the tracking, the fixed meta row,
+            every gap, the scroll compression — lives in @hybrid/core
+            hub-masthead.ts; this screen passes only WORDS.
+            The headline NAMES THE VIEWED DAY (masthead() in @hybrid/core):
+            "Today" until the week rail is scrubbed, "Yesterday"/"Tomorrow" at
+            ±1, the weekday name beyond — a static "Today" over Friday's session
+            would lie in the largest type on screen. Off today, a "Back to
+            today" return affordance renders beneath, teal, in the same spot
+            every time. Mirrors web today.tsx. */}
+        <HubMasthead
+          eyebrow={mastCaption}
+          meta={firstRun || (logbookMode && !mastTag) ? t("w.home.today.badgeFree") : mastTag}
+          metaTone={!firstRun && !(logbookMode && !mastTag) && mastTag ? "accent" : "plain"}
+          title={mastTitle}
+          mark={
+            // Kyoto Hour hanko — the vermilion seal beside the true "Today" only
+            // (never the scrubbed days); Aurora (dark) hides it. Decorative,
+            // hence no a11y label. Mirrors web today.tsx + globals.css
+            // .hanko-seal.
+            scheme === "light" && dayIsToday ? (
               <View
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
@@ -774,14 +765,16 @@ export default function AuroraHome() {
               >
                 <Text style={{ fontFamily: serifIf(scheme, F.semi), fontSize: 13, color: C.ink }}>力</Text>
               </View>
-            )}
-          </Animated.View>
-          {!dayIsToday && (
-            <Pressable onPress={backToToday} accessibilityRole="button" hitSlop={8} style={{ alignSelf: "flex-start", marginTop: 4 }}>
-              <CtaLabel label={`${t("w.home.today.backToToday")} →`} color={txt(C, C.blue)} fontSize={11} font={F.mono} style={{ letterSpacing: 0.9, textTransform: "uppercase" }} />
-            </Pressable>
-          )}
-        </View>
+            ) : null
+          }
+          accessory={
+            !dayIsToday ? (
+              <Pressable onPress={backToToday} accessibilityRole="button" hitSlop={8} style={{ alignSelf: "flex-start", marginTop: 4 }}>
+                <CtaLabel label={`${t("w.home.today.backToToday")} →`} color={txt(C, C.blue)} fontSize={11} font={F.mono} style={{ letterSpacing: 0.9, textTransform: "uppercase" }} />
+              </Pressable>
+            ) : null
+          }
+        />
 
         {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the
             path to one) and, below it, what was actually done. First of the
@@ -790,7 +783,8 @@ export default function AuroraHome() {
             GroupMark, the quiet wayfinding tier above the blocks' own heads,
             so the page reads as four thoughts instead of nine competing
             cards. Mirrors web today.tsx. ═════ */}
-        <GroupMark label={t("w.home.group.train")} />
+        {/* mt={0}: The head emits the gap to the first content row (HUB_MASTHEAD.gap.below), so this block contributes none. RN does not collapse margins and CSS does, so a block that kept its own top margin would sit 16 lower on mobile than on web. */}
+        <GroupMark label={t("w.home.group.train")} mt={0} />
 
         {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
             eyebrow: the screen is already today's training and the plan names

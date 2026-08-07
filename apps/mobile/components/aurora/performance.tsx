@@ -26,6 +26,7 @@ import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
+import { HubMasthead } from "./hub-masthead";
 import AuroraVolume from "./volume";
 import { AuroraIcon } from "./icons";
 import TissueCard from "./tissue-card";
@@ -228,29 +229,52 @@ function Full({ top }: { top?: ReactNode }) {
       refreshing={refreshing}
       onRefresh={load}
       top={top}
-      hero={top ? undefined : { rank: "title", title: t("w.home.cockpit.commandCenter"), eyebrow: season || undefined }}
+      // Standing alone, the hero carries the same two facts the hub head does —
+      // the season as its eyebrow and the phase as its meta — so the phase is
+      // stated exactly once on both shapes of this screen.
+      hero={top ? undefined : { rank: "title", title: t("w.home.cockpit.commandCenter"), eyebrow: season || undefined, meta: phaseBlock ? [phaseBlock.label] : undefined }}
     >
+      {/* AS A HUB TAB the head is the SHARED hub masthead — the same component
+          Dashboard and Feed render (aurora/hub-masthead.tsx). It replaces a
+          hand-rolled 32 with the hub's one rung, and the eyebrow's `season || " "`
+          — a space character reserving a line invisibly — with a meta row that
+          reserves its own height properly. Standing alone the head is still the
+          HERO's, which is right: a pushed screen has a rail and a back
+          affordance, and a hub tab has neither. */}
       {top && (
-        <>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{season || " "}</Text>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 32, letterSpacing: -1, color: C.chalk, marginTop: 6 }}>{t("w.home.cockpit.commandCenter")}</Text>
-        </>
+        <HubMasthead
+          eyebrow={season}
+          // The PHASE, which used to be a pill in the rail below. One state
+          // value in the meta row says it once; it was reading twice within
+          // 30 pt, and orientation belongs in the head, not in a card.
+          meta={phaseBlock?.label ?? null}
+          metaTone="accent"
+          title={t("w.home.cockpit.commandCenter")}
+        />
       )}
-      <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: hasData ? C.chalk : C.ash, marginTop: top ? 6 : 4, lineHeight: leading(fs.body) }}>{verdictLine}</Text>
-      {(phaseBlock || macro?.eventInWeeks != null) && (
+      {macro?.eventInWeeks != null && (
         // Full-bleed chip rail — clips at the screen edge, rests on the column.
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER }}>
-          {phaseBlock && <MetaPill C={C} dot={C.lime}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{phaseBlock.label}</Text> {t("w.home.today.phase")}</MetaPill>}
-          {macro?.eventInWeeks != null && <MetaPill C={C} icon={<AuroraIcon name="calendar-event" size={13} color={C.chalk} />}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</MetaPill>}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: top ? 0 : 12, marginBottom: 16, marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER }}>
+          <MetaPill C={C} icon={<AuroraIcon name="calendar-event" size={13} color={C.chalk} />}><Text style={{ fontFamily: F.bold, color: C.chalk }}>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</Text> {t("w.home.cockpit.eventIn")}</MetaPill>
         </ScrollView>
       )}
 
       {/* A load FAILURE is its own state, never emptiness. */}
-      {failed && !sessionsRead.ready && <FetchError onRetry={load} style={{ marginTop: 16 }} />}
+      {failed && !sessionsRead.ready && <FetchError onRetry={load} style={{ marginBottom: 16 }} />}
 
       {/* 2 · YOUR STATE — the thesis, and the one block that got BIGGER. */}
-      <ACard solid style={{ marginTop: 16 }}>
+      {/* No top margin: the head above emits HUB_MASTHEAD.gap.below, and the
+          rail between them (when there is one) emits the same gap downward. RN
+          does not collapse margins and CSS does, so a block that kept its own
+          would sit 16 lower here than on web. */}
+      <ACard solid>
         <ASection title={t("w.home.cockpit.stateTitle")} />
+        {/* THE VERDICT — freshness, then the tissue worth watching. It used to
+            sit at the top of the screen as the head's subtitle; the hub head has
+            no sub slot, and this sentence reads better beside the number it
+            explains than above the whole page. It still says nothing the card
+            below doesn't say in full — the only licence a summary ever has. */}
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: hasData ? C.chalk : C.ash, marginBottom: 12, lineHeight: leading(fs.body) }}>{verdictLine}</Text>
         {hasData ? (
           <>
             {/* THE HEADLINE — three levels, not two grey lines.
@@ -749,9 +773,12 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
   const hasData = sessionsRead.ready && sessions.length > 0;
   return (
     <AuroraScreen top={top} hero={top ? undefined : { rank: "title", title: t("w.home.cockpit.teaseTitle") }}>
-      {top && <AHeading style={{ fontSize: fs.display }}>{t("w.home.cockpit.teaseTitle")}</AHeading>}
+      {/* The teaser is the SAME hub tab to the athlete, so it wears the same
+          head — not the AHeading rung it used to borrow, which made Performance
+          present its own name at two sizes depending on entitlement. */}
+      {top && <HubMasthead title={t("w.home.cockpit.teaseTitle")} />}
       {hasData && (
-        <ACard solid style={{ marginTop: top ? 12 : 0 }}>
+        <ACard solid>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
             <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
             <View style={{ flex: 1 }}>
@@ -769,7 +796,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
           </Text>
         </ACard>
       )}
-      <ASub style={{ marginTop: hasData ? 16 : top ? 8 : 0 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
+      <ASub style={{ marginTop: hasData ? 16 : 0 }}>{t("w.home.cockpit.teaseSub1")}{t("w.home.cockpit.teaseSub2")}{t("w.home.cockpit.teaseSub3")}</ASub>
       {TEASE.map((s) => (
         /* No leading marker: a dot in front of a label is decoration, and the
            house rule forbids it. The lock on the right is the semantic one. */
