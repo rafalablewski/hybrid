@@ -18,6 +18,7 @@ export * from "./checkin-flow";
 export * from "./checkin-scales";
 export * from "./feel-timing";
 export * from "./feel-schedule";
+export * from "./notifications";
 export * from "./readiness-reads";
 export * from "./day-key";
 export * from "./day-stamp";

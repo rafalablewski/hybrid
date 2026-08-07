@@ -1034,7 +1034,7 @@ export default function AppShell() {
 
         {/* Tools available in BOTH templates (Aurora-styled when active, classic
             otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}
-        {screen === "notifications" && <NotificationsScreen embedded />}
+        {screen === "notifications" && <NotificationsScreen embedded onNavigate={navigate} onOpenSession={openSession} />}
         {screen === "timer" && <IntervalTimerScreen embedded />}
         {screen === "statistics" && <StatisticsScreen embedded />}
 

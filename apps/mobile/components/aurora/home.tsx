@@ -8,7 +8,6 @@ import { publishTodaySnapshot } from "../../modules/widget-bridge";
 import {
   prescribeSession,
   computeAccountability,
-  buildActivityFeed,
   planProgramToday,
   FUNNEL,
   personalTrainingLog,
@@ -63,6 +62,7 @@ import { fetchAssignments, createCheckin, fetchRoutines, favouriteRoutine, type 
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
+import { useNotifications } from "../../lib/use-notifications";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
@@ -512,13 +512,18 @@ export default function AuroraHome() {
   const goUpgrade = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source }); router.push("/upgrade"); };
 
   // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
-  // count (the shared activity feed; never a fabricated number).
+  // count (the shared notifications feed; never a fabricated number).
   const initials = useMemo(() => {
     const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) return "·";
     return (parts[0]![0]! + (parts[1]?.[0] ?? "")).toUpperCase();
   }, [name]);
-  const notifCount = useMemo(() => buildActivityFeed({ sessions, assignments }).length, [sessions, assignments]);
+  // The bell badge is the UNREAD count from the shared notifications feed —
+  // the same list the screen renders, so the two cannot disagree, and it
+  // reaches zero once the athlete has read it. It used to be the LENGTH of the
+  // training feed (no social, no feel reads, no read state), a number that only
+  // ever went up.
+  const { unread: notifCount } = useNotifications();
 
   // The caption date for the daily header.
   const [dateStr, setDateStr] = useState("");
