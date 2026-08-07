@@ -2,7 +2,7 @@
 
 import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
-import { normalizeHandle, isValidHandle, AVATAR_PRESETS, LEVEL_KEY } from "@hybrid/core";
+import { fs, normalizeHandle, isValidHandle, AVATAR_PRESETS, LEVEL_KEY } from "@hybrid/core";
 import type { PublicProfileResponse, OwnProfileResponse, CompareResponse, CompareResult, SharedLift, MutationResult } from "@hybrid/core";
 import { useDialog } from "../lib/use-dialog";
 import { useLang } from "@/lib/i18n";
@@ -23,7 +23,9 @@ function LevelChip({ level }: { level: NonNullable<PublicProfileResponse["fitnes
     : level.accent === "chalk" ? C("chalk") : C("ash");
   return (
     <span style={{
-      fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: ".08em",
+      // fs.nano is the floor: there is no rung below it, and this is the mono +
+      // uppercase + tracked kicker — the least legible combination available.
+      fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, letterSpacing: ".08em",
       textTransform: "uppercase", border: `1px solid ${ink}`, color: ink,
       borderRadius: 999, padding: "3px 8px", whiteSpace: "nowrap",
     }}>

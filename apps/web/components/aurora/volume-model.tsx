@@ -128,7 +128,7 @@ export default function AuroraVolumeModel({ sessions }: { sessions: LoggedSessio
               toggle idiom as experience and nutrition; tapping the active one
               clears it, so it can be unset as well as set. */}
           <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ ...mono(9), letterSpacing: ".08em", color: C("ash"), marginRight: 2 }}>{t("w.analyze.vol.fieldSex")}</span>
+            <span style={{ ...mono(fs.nano), letterSpacing: ".08em", color: C("ash"), marginRight: 2 }}>{t("w.analyze.vol.fieldSex")}</span>
             {(["F", "M"] as const).map((x) => (
               <Toggle
                 key={x}
@@ -151,7 +151,7 @@ export default function AuroraVolumeModel({ sessions }: { sessions: LoggedSessio
               const isMeasured = measuredKeys.has(key);
               return (
                 <div key={key}>
-                  <div style={{ ...mono(9), letterSpacing: ".08em", color: isMeasured ? C("lime") : C("ash"), textAlign: "center", marginBottom: 5 }}>{label}</div>
+                  <div style={{ ...mono(fs.nano), letterSpacing: ".08em", color: isMeasured ? C("lime") : C("ash"), textAlign: "center", marginBottom: 5 }}>{label}</div>
                   <input
                     type="number" min={min} max={max} aria-label={label}
                     defaultValue={profile[key] ?? ""}
@@ -185,7 +185,7 @@ export default function AuroraVolumeModel({ sessions }: { sessions: LoggedSessio
               <div style={{ display: "grid", gridTemplateColumns: "minmax(78px, 1.2fr) repeat(5, minmax(0, 1fr))", gap: 6, paddingBottom: 7 }}>
                 <span />
                 {FIELD_LABEL.map((l) => (
-                  <span key={l} style={{ ...mono(9), letterSpacing: ".08em", color: C("ash"), textAlign: "center" }}>{l}</span>
+                  <span key={l} style={{ ...mono(fs.nano), letterSpacing: ".08em", color: C("ash"), textAlign: "center" }}>{l}</span>
                 ))}
               </div>
               {(Object.keys(resolved.landmarks) as MuscleGroup[]).map((m) => (

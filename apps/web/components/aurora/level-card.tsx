@@ -102,6 +102,16 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
   const own = useFitnessLevel(sessions);
   const { estimate, level, reach } = read ?? own;
 
+  // One formatter for every endurance figure on the card, so the sentence and
+  // the fine line below it can never quote the same effort in two units.
+  // DECLARED BEFORE the sentence below: a useMemo factory runs DURING render,
+  // so a `const` helper defined under it is still in its dead zone when the
+  // memo reads it — and an endurance-topped athlete crashed the whole screen.
+  const figure = (e: { discipline?: LevelEvidence["discipline"]; ratio: number }) => {
+    const f = enduranceFigure(e);
+    return `${f.value} ${t(f.unitKey)}`;
+  };
+
   // THE SENTENCE, ASSEMBLED. Two clauses from values the engine already holds —
   // never one string, so it stays true in every state and survives translation
   // without a rewrite.
@@ -138,13 +148,6 @@ export default function LevelCard({ sessions, onOpenWorking, read }: {
       : t("w.analyze.vol.levelTop").replace("{gap}", fmt(reach.gap));
     return `${why} ${next}`;
   }, [estimate, level, reach, t, units]);
-
-  // One formatter for every endurance figure on the card, so the sentence and
-  // the fine line below it can never quote the same effort in two units.
-  const figure = (e: { discipline?: LevelEvidence["discipline"]; ratio: number }) => {
-    const f = enduranceFigure(e);
-    return `${f.value} ${t(f.unitKey)}`;
-  };
 
   const index = level ? FITNESS_LEVELS.indexOf(level) : -1;
 

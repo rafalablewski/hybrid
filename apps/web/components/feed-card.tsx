@@ -46,6 +46,11 @@ import { C, Avatar } from "./social-ui";
 
 const mono = "var(--font-mono)";
 const display = "var(--font-display)";
+/** The app's TITLE face (globals.css): Archivo under Aurora, the Shippori
+ *  Mincho serif under Kyoto Hour. Every other screen's headings read it —
+ *  a post's headline is a heading, so it reads it too, or the feed is the one
+ *  tab still in sans on the light theme. */
+const heading = "var(--font-heading)";
 
 /** The card's single accent. ALWAYS the AA-guarded `-text` channel: an accent
  *  used as a text/glyph colour must clear contrast on both themes (lib/ui.tsx),
@@ -207,8 +212,8 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   // Moment drives weight. A p0 record interrupts; a Tuesday session does not.
   const headlineStyle: CSSProperties =
     moment === "p0"
-      ? { fontFamily: display, fontWeight: 800, fontSize: fs.headline, letterSpacing: tracking.display, lineHeight: `${leading(fs.headline, "tight")}px` }
-      : { fontFamily: display, fontWeight: 800, fontSize: fs.title, lineHeight: `${leading(fs.title, "snug")}px` };
+      ? { fontFamily: heading, fontWeight: 800, fontSize: fs.headline, letterSpacing: tracking.display, lineHeight: `${leading(fs.headline, "tight")}px` }
+      : { fontFamily: heading, fontWeight: 800, fontSize: fs.title, lineHeight: `${leading(fs.title, "snug")}px` };
 
   // "Why you're seeing this" — a ranked card from someone the viewer doesn't
   // follow must be able to say why it's here, or it shouldn't be here at all.
@@ -239,7 +244,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
           <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta.join(" – ")}</div>
         </div>
         {item.subjectType === "post" && item.mine && onDelete && (
-          <button className="pressable" onClick={onDelete} aria-label={t("w.social.deletePostAria")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>
+          <button className="pressable" onClick={onDelete} aria-label={t("w.social.deletePostAria")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: display, fontSize: fs.title, lineHeight: 1 }}>
             ×
           </button>
         )}

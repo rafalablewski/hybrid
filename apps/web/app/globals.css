@@ -46,6 +46,15 @@ body {
   background: var(--color-ink);
   color: var(--color-chalk);
   margin: 0;
+  /* THE PAGE'S FACE. Tailwind's preflight points `html` at its own
+     `--font-sans` (ui-sans-serif, system-ui, …) and this project never defines
+     that token — it defines --font-display — so any text that didn't name a
+     family itself drew in the PLATFORM UI font. Every aurora screen hid that by
+     setting the face on its own root; the social screens (the feed above all)
+     didn't, which is why the feed's prose read as a different product. The face
+     belongs here, once, so no screen can fall through again. Form controls
+     inherit it — preflight gives them `font: inherit`. */
+  font-family: var(--font-display);
 }
 
 * {
