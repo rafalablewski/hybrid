@@ -10,6 +10,7 @@ import {
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import HistoryStrip from "./history-strip";
+import RailTail from "./rail-tail";
 
 /**
  * SPORT LANES — the Endurance block on Today (web), directly under the "This
@@ -269,26 +270,21 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
   const { t } = useLang();
   return (
     <div style={{ marginTop: 16 }}>
-      {/* Explore-standard head: display-face title left, mono meta right, no
-          marker dot in front of it. */}
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
+      {/* Explore-standard head: display-face title left, no marker dot in front
+          of it — and NOTHING on the right.
+
+          The head used to carry "8 efforts" (which the summary tile below
+          restates verbatim) and then, after that went, the lane's "See all ›".
+          Both are gone: a header NAMES the lane, the rail owns the figures, and
+          the rail's own tail card owns the exit. Three lanes down Today meant
+          three lime links stacked on one screen, each pointing somewhere
+          different, none of them where the thumb actually is when the cards run
+          out. Mirrors mobile. */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note, color: C("chalk"), display: "flex", alignItems: "center", gap: 8 }}>
           <span aria-hidden>{DISCIPLINE_META[lane.discipline].emoji}</span>
           {t(lane.labelKey)}
         </span>
-        {/* Identity on the left, the EXIT on the right — and nothing else. The
-            header used to carry "8 efforts" as well, which is `lane.efforts`
-            read twice 40dp apart: the summary tile directly below is the same
-            field under the same mono face. A header names the lane; the rail
-            owns the figures. Mirrors mobile. */}
-        {onOpen && canOpen && (
-          <button className="pressable"
-            onClick={() => onOpen(lane.discipline)}
-            style={{ background: "none", border: 0, padding: 0, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)" }}
-          >
-            {t("w.explore.seeAll")} ›
-          </button>
-        )}
       </div>
       {/* Full-bleed rail — negative margins the width of the shell gutter pull
           the scroll clip to the true screen edge, with matching inner padding
@@ -304,6 +300,17 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         {lane.paceTrend.length > 1 && <TrendTile lane={lane} t={t} />}
         {zonePercents(lane.zones).any && <ZoneTile lane={lane} t={t} />}
         {lane.last && <LastTile lane={lane} t={t} />}
+        {/* THE EXIT — last card in the rail, so it's found by the same swipe
+            that exhausts the tiles. `radius`/`minHeight` match Tile so it reads
+            as one more card in the row rather than a button parked at the end;
+            no shadow, because these tiles are flat. */}
+        {onOpen && canOpen && (
+          <RailTail
+            onOpen={() => onOpen(lane.discipline)}
+            a11y={`${t("w.explore.seeAll")} – ${t(lane.labelKey)}`}
+            w={112} radius={16} minHeight={118} shadow={false}
+          />
+        )}
       </div>
     </div>
   );

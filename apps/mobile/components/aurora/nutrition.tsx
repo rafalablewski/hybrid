@@ -59,6 +59,7 @@ import { useLang } from "../../lib/i18n";
 import { usePersona } from "../../lib/persona";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
+import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
@@ -1566,13 +1567,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         {/* MORE FROM THIS BUSINESS — a checked item is a way into a checked menu. */}
         {related.length > 0 ? (
           <View style={{ marginTop: 24 }}>
-            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingBottom: 8 }}>
+            {/* Title only — the exit is the LAST ROW of the list, below. Same
+                rule as a rail's tail card in the shape this block actually
+                has: a vertical list ends in a door, not a header link. */}
+            <View style={{ flexDirection: "row", alignItems: "baseline", paddingBottom: 8 }}>
               <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.moreFrom").replace("{source}", src?.name ?? "")}</Text>
-              {src ? (
-                <Pressable onPress={() => openSourcePage(src.id, "food")} accessibilityRole="button">
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.explore.seeAll")}</Text>
-                </Pressable>
-              ) : null}
             </View>
             {related.map((r) => (
               <Pressable key={r.id} onPress={() => openFoodPage(r.id, "food")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 12, paddingHorizontal: 2 }}>
@@ -1586,6 +1585,16 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 <IChevRight size={16} color={C.ash} />
               </Pressable>
             ))}
+            {/* THE DOOR — the list's own last row, carrying on to the whole
+                menu. Same hairline and chevron as the rows above it, mono
+                uppercase in ash so it reads as the way out rather than one
+                more food. */}
+            {src ? (
+              <Pressable onPress={() => openSourcePage(src.id, "food")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 14, paddingHorizontal: 2 }}>
+                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.explore.seeAll")}</Text>
+                <IChevRight size={16} color={C.ash} />
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 
@@ -1966,7 +1975,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               screen-level rail: negative margins the width of AuroraScreen's
               12dp gutter pull the scroll clip to the true screen edge, with
               matching internal padding so resting cards stay on the column. */}
-          <ASection flat title={t("w.recovery.nutrition.recipes")} meta={`${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`} action={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} />
+          {/* Title only — a rail's "see all" lives at the END OF THE RAIL as a
+              tail card (aurora/rail-tail.tsx), where the thumb already is once
+              the cards run out. Mirrors web. */}
+          <ASection flat title={t("w.recovery.nutrition.recipes")} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: GUTTER }}>
             {RECIPES.map((r) => (
               <PressScale key={r.id} onPress={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" accessibilityLabel={r.name} style={{ width: recipeCardW, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: C.ink2 }}>
@@ -1978,13 +1990,21 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 </View>
               </PressScale>
             ))}
+            {/* The rail's exit, at its end — where the thumb lands once the
+                cards run out. Behind Full, so it carries the ✦ and the premium
+                accent the head's link used to. */}
+            <RailTail
+              onOpen={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))}
+              a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.recipes")}`}
+              premium={!recipesUnlocked} w={recipeCardW} radius={RADIUS.card}
+            />
           </ScrollView>
 
           {/* Verified foods — the BUSINESSES, one card each. The verified tier
               was previously only reachable by stumbling into one of its foods
               through search; the rail puts the companies themselves on the
               screen. */}
-          <ASection flat title={t("w.recovery.nutrition.verifiedFoods")} meta={`${t("w.explore.seeAll")} →`} action={() => setView("sources")} />
+          <ASection flat title={t("w.recovery.nutrition.verifiedFoods")} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={sourceCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: GUTTER }}>
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
@@ -2001,6 +2021,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 </PressScale>
               );
             })}
+            <RailTail
+              onOpen={() => setView("sources")}
+              a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.verifiedFoods")}`}
+              w={sourceCardW} radius={RADIUS.card}
+            />
           </ScrollView>
       </>
       ))}

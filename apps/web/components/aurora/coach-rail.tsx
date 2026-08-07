@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-import { ArrowGlyph, CtaLabel } from "./cta-label";
+import RailTail from "./rail-tail";
 
 // "Follow a coach" — a horizontally swipeable rail on Today (its only home now
 // that the Explore tab is gone). Pulls the live
@@ -100,19 +100,21 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
   );
 }
 
-// `headerless` drops the built-in "Follow a coach" title + Browse-all link so a
-// parent can supply its own section head instead — which is how Today mounts it.
-// The built-in header is kept for any caller that has no head of its own.
+// `headerless` drops the built-in "Follow a coach" title so a parent can supply
+// its own section head instead — which is how Today mounts it. The built-in
+// header is kept for any caller that has no head of its own, and it now NAMES
+// the rail and nothing else: the marketplace is reached from the tail card at
+// the end of the scroller (aurora/rail-tail.tsx), which always renders, so the
+// header's old "Browse all →" link was a second door to the same room sitting
+// at the wrong end of the swipe. `seeMore` went with it — a rail always ends in
+// its exit, so there was nothing left for the flag to switch off.
 // `bleed` lets the slider run FULL-BLEED: negative margins the width of the
 // shell's --page-pad-x pull the scroll clip out to the true screen edge (with
 // matching internal padding so resting cards still align with the column), so
 // cards slide under the bezel instead of vanishing at the content column. Only
 // for rails sitting directly on the page (Today) — inside a Sheet the rail must
 // respect the sheet's own padding.
-// `seeMore` appends a trailing "See more" button at the end of the rail (the
-// unified rail affordance — the community rail carries the twin), so the rest of
-// the marketplace is one tap away without an "All →" link up in the header.
-export default function CoachRail({ onOpen, headerless = false, bleed = false, seeMore = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean; seeMore?: boolean }) {
+export default function CoachRail({ onOpen, headerless = false, bleed = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean }) {
   const { t } = useLang();
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
 
@@ -130,12 +132,9 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
   return (
     <div style={{ marginTop: headerless ? 0 : 16 }}>
       {!headerless && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <div>
-            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>{t("w.explore.coaches")}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{t("w.explore.coachSwipe")}</div>
-          </div>
-          <button className="pressable" onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}><CtaLabel size={12}>{`${t("w.explore.browseAll")} →`}</CtaLabel></button>
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 17 }}>{t("w.explore.coaches")}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: C("ash") }}>{t("w.explore.coachSwipe")}</div>
         </div>
       )}
 
@@ -147,18 +146,9 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
           card to the scrollport start — glued to the bezel on a bleed rail. */}
       <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollPadding: bleed ? "0 var(--page-pad-x, 12px)" : "0 4px", scrollbarWidth: "none", padding: bleed ? "8px var(--page-pad-x, 12px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 12px)) -14px" : "-8px -4px -14px" }}>
         {items.map((c, i) => <MarqueeCard key={c.userId ?? c.handle ?? i} c={c} onOpen={onOpen} />)}
-        {/* Trailing "See more" button — the same treatment as the community
-            rail, so the two rails share one end-of-rail affordance. */}
-        {seeMore && (
-          <button className="pressable"
-            onClick={onOpen}
-            aria-label={t("w.explore.seeMore")}
-            style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
-          >
-            <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
-          </button>
-        )}
+        {/* THE EXIT — the SHARED RailTail, so every rail in the app draws its
+            door from one implementation, and always at the end of the scroll. */}
+        <RailTail onOpen={onOpen} label={t("w.explore.seeMore")} />
       </div>
     </div>
   );

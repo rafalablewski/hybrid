@@ -1076,7 +1076,7 @@ export default function AuroraToday({
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{t("w.home.today.rowCoach")}</div>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</div>
       </div>
-      <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} headerless bleed seeMore />
+      <CoachRail onOpen={() => (onNavigate ? onNavigate("coaches") : router.push("/coaches"))} headerless bleed />
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet open={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>

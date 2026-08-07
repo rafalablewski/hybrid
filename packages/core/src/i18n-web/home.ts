@@ -319,7 +319,6 @@ export const web_home = {
     "w.explore.coachCoaching": "coaching",
     "w.explore.coachReview": "athlete review",
     "w.explore.coachOpen": "Open",
-    "w.explore.browseAll": "Browse all",
     "w.explore.seeAll": "See all",
     "w.explore.seeMore": "See more",
     // ── Social / community (feed, discover, leaderboard, profile view). The web
@@ -1327,7 +1326,6 @@ export const web_home = {
     "w.explore.coachCoaching": "trenowania",
     "w.explore.coachReview": "opinia sportowca",
     "w.explore.coachOpen": "Otwórz",
-    "w.explore.browseAll": "Przeglądaj",
     "w.explore.seeAll": "Zobacz wszystko",
     "w.explore.seeMore": "Zobacz więcej",
     "feed.live.title": "Teraz trenują",
@@ -2300,7 +2298,6 @@ export const web_home = {
     "w.explore.coachCoaching": "Coaching",
     "w.explore.coachReview": "Sportler-Bewertung",
     "w.explore.coachOpen": "Öffnen",
-    "w.explore.browseAll": "Alle ansehen",
     "w.explore.seeAll": "Alle ansehen",
     "w.explore.seeMore": "Mehr ansehen",
     "feed.live.title": "Trainiert gerade",

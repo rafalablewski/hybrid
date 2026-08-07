@@ -1158,7 +1158,7 @@ export default function AuroraHome() {
           <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</Text>
         </View>
-        <CoachRail onOpen={() => router.push("/coaches")} headerless bleed seeMore />
+        <CoachRail onOpen={() => router.push("/coaches")} headerless bleed />
 
         </HubDissolve>
         </Animated.View>

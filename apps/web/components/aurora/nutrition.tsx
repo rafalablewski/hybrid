@@ -25,6 +25,7 @@ import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
+import RailTail from "./rail-tail";
 import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
@@ -144,16 +145,22 @@ const railScroller: React.CSSProperties = {
 };
 
 // The head above a rail — the Explore SectionHead anatomy: a bold display-face
-// title with the action as small mono uppercase on the RIGHT of the same row.
-// No marker before the title (the no-decorative-dot rule).
-function RailHead({ title, action }: { title: string; action: { label: string; onClick: () => void; premium?: boolean } }) {
+// title, no marker before it (the no-decorative-dot rule).
+//
+// The right slot is now EMPTY for both callers: a rail's "see all" lives at the
+// END OF THE RAIL as a tail card (aurora/rail-tail.tsx), where the thumb already
+// is once the cards run out. `action` survives only for a head that needs a
+// non-navigational meta or control, and renders nothing when it isn't passed.
+function RailHead({ title, action }: { title: string; action?: { label: string; onClick: () => void; premium?: boolean } }) {
   const C = (v: string) => `var(--color-${v})`;
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "28px 2px 10px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
-      <button className="pressable" onClick={action.onClick} style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: action.premium ? "var(--premium-accent-text)" : C("ash") }}>
-        <CtaLabel size={12}>{action.label}</CtaLabel>
-      </button>
+      {action && (
+        <button className="pressable" onClick={action.onClick} style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: action.premium ? "var(--premium-accent-text)" : C("ash") }}>
+          <CtaLabel size={12}>{action.label}</CtaLabel>
+        </button>
+      )}
     </div>
   );
 }
@@ -1738,9 +1745,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             menu, not a dead end. */}
         {related.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", paddingBottom: 8 }}>
+            {/* Title only — the exit is the LAST ROW of the list, below. Same
+                rule as a rail's tail card in the shape this block actually
+                has: a vertical list ends in a door, not a header link. */}
+            <div style={{ display: "flex", alignItems: "baseline", paddingBottom: 8 }}>
               <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.moreFrom").replace("{source}", src?.name ?? "")}</span>
-              {src && <button className="pressable" onClick={() => openSourcePage(src.id, "food")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{t("w.explore.seeAll")}</button>}
             </div>
             {related.map((r) => (
               <button className="pressable" key={r.id} onClick={() => openFoodPage(r.id, "food")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer" }}>
@@ -1754,6 +1763,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 <IChevRight size={16} color={C("ash")} />
               </button>
             ))}
+            {/* THE DOOR — the list's own last row, carrying on to the whole
+                menu. Same hairline and chevron as the rows above it, mono
+                uppercase in ash so it reads as the way out rather than one
+                more food. */}
+            {src && (
+              <button className="pressable" onClick={() => openSourcePage(src.id, "food")} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "14px 2px", cursor: "pointer" }}>
+                <span style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.explore.seeAll")}</span>
+                <IChevRight size={16} color={C("ash")} />
+              </button>
+            )}
           </div>
         )}
 
@@ -2128,7 +2147,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               screen-level rail: negative margins the width of the shell gutter
               (--page-pad-x) pull the scroll clip to the true screen edge, with
               matching internal padding so resting cards stay on the column. */}
-          <RailHead title={t("w.recovery.nutrition.recipes")} action={{ label: `${recipesUnlocked ? "" : "✦ "}${t("w.explore.seeAll")} →`, onClick: () => (recipesUnlocked ? setView("recipes") : onNavigate?.("upgrade")), premium: !recipesUnlocked }} />
+          <RailHead title={t("w.recovery.nutrition.recipes")} />
           <div style={railScroller}>
             {RECIPES.map((r) => (
               <button key={r.id} onClick={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} className="pressable" style={{ flex: "0 0 min(52%, 196px)", scrollSnapAlign: "center", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
@@ -2140,13 +2159,22 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 </div>
               </button>
             ))}
+            {/* The rail's exit, at its end — where the thumb lands once the
+                cards run out. Behind Full, so it carries the ✦ and the premium
+                accent the head's link used to. */}
+            <RailTail
+              onOpen={() => (recipesUnlocked ? setView("recipes") : onNavigate?.("upgrade"))}
+              a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.recipes")}`}
+              premium={!recipesUnlocked}
+              w="min(52%, 196px)" snapAlign="center"
+            />
           </div>
 
           {/* Verified foods — the BUSINESSES, one card each. The verified tier
               was previously only reachable by stumbling into one of its foods
               through search; the rail puts the companies themselves on the
               screen. */}
-          <RailHead title={t("w.recovery.nutrition.verifiedFoods")} action={{ label: `${t("w.explore.seeAll")} →`, onClick: () => setView("sources") }} />
+          <RailHead title={t("w.recovery.nutrition.verifiedFoods")} />
           <div style={railScroller}>
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
@@ -2163,6 +2191,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 </button>
               );
             })}
+            <RailTail
+              onOpen={() => setView("sources")}
+              a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.verifiedFoods")}`}
+              w="min(72%, 268px)" snapAlign="center"
+            />
           </div>
         </>
       ))}

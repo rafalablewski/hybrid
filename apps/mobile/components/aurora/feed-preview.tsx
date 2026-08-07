@@ -8,7 +8,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { getFeed } from "../../lib/social-api";
 import { Avatar } from "../social-kit";
 import { MetaLine } from "./meta";
-import { ArrowGlyph } from "./cta-label";
+import RailTail from "./rail-tail";
 import { GUTTER } from "./kit";
 
 // The CONNECT feed — post cards (avatar header, prose body, stat pills ·
@@ -131,22 +131,10 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
           </Pressable>
         );
       })}
-      {/* Threads-style trailing "See more" button — the slider caps at 6, so
-          this nudges people into the full feed instead of scrolling an endless
-          rail (unified with the coach rail's end-of-rail affordance). */}
-      {horizontal && (
-        <Pressable
-          onPress={onOpen}
-          accessibilityRole="button"
-          accessibilityLabel={t("w.explore.seeMore")}
-          style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 28, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
-        >
-          <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <ArrowGlyph size={15} color={C.ash} />
-          </View>
-          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
-        </Pressable>
-      )}
+      {/* Threads-style trailing tail card — the slider caps at 6, so this
+          nudges people into the full feed instead of scrolling an endless rail.
+          The SHARED RailTail, so every rail draws its exit the same way. */}
+      {horizontal && <RailTail onOpen={onOpen} label={t("w.explore.seeMore")} />}
     </Wrap>
   );
 }
