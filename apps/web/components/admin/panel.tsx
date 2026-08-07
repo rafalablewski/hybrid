@@ -254,8 +254,14 @@ export default function AdminPanel() {
         </div>
       </aside>
 
-      {/* ---- main ---- */}
-      <main style={{ flex: 1, minWidth: 0, padding: isMobile ? "16px 16px 40px" : "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}>
+      {/* ---- main ----
+          The admin console is its own shell, and it keeps its own 16px mobile
+          gutter — it is a desktop-first tool at maxWidth 1280, not the athlete
+          app's 12. But it must PUBLISH that gutter the way the app shell does:
+          a shared component with a full-bleed rail resolves --page-pad-x from
+          whatever shell it lands in, and an unset variable sent it to the
+          fallback instead of to the padding actually in force here. */}
+      <main style={{ flex: 1, minWidth: 0, padding: isMobile ? "16px 16px 40px" : "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%", position: "relative", zIndex: 1, ...({ "--page-pad-x": isMobile ? "16px" : "32px", "--page-pad-top": isMobile ? "16px" : "24px" } as Record<string, string>) }}>
         {/* mobile top bar — hamburger opens the drawer */}
         {isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: space.md, marginBottom: 16 }}>

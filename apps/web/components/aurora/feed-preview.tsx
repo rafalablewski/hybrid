@@ -44,7 +44,7 @@ export default function FeedPreview({ onOpen, horizontal = false, bleed = false 
   // scroller's own padding, so without it the browser snaps the FIRST card to
   // the scrollport start — glued to the bezel on a bleed rail.
   const wrap = horizontal
-    ? { display: "flex", gap: 12, overflowX: "auto" as const, scrollSnapType: "x mandatory", scrollPadding: bleed ? "0 var(--page-pad-x, 16px)" : "0 4px", scrollbarWidth: "none" as const, padding: bleed ? "8px var(--page-pad-x, 16px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 16px)) -14px" : "-8px -4px -14px" }
+    ? { display: "flex", gap: 12, overflowX: "auto" as const, scrollSnapType: "x mandatory", scrollPadding: bleed ? "0 var(--page-pad-x, 12px)" : "0 4px", scrollbarWidth: "none" as const, padding: bleed ? "8px var(--page-pad-x, 12px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 12px)) -14px" : "-8px -4px -14px" }
     : { display: "flex", flexDirection: "column" as const, gap: 16 };
   const cardWidth = horizontal ? { flex: "0 0 82%", maxWidth: 320, scrollSnapAlign: "start" as const, boxSizing: "border-box" as const } : { width: "100%" };
 

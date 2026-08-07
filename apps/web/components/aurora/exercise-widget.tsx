@@ -126,7 +126,7 @@ export default function ExerciseWidgetRail({
           figure → chart zone → footer meta, radius 16, the shared HistoryStrip
           as the chart. The 340×200 radius-28 sparkline hero retired with it —
           the rail lost theatre and the cluster gained a single voice. */}
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollSnapType: "x proximity", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 16px))", padding: "2px var(--page-pad-x, 16px) 6px" }}>
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollSnapType: "x proximity", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "2px var(--page-pad-x, 12px) 6px" }}>
         {cards.map((card) => {
           const h = headline(card, units, t);
           const stroke = kindStroke(theme, card.kind);

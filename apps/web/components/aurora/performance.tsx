@@ -281,7 +281,7 @@ export default function AuroraPerformance({
         <p style={{ fontSize: fs.body, lineHeight: 1.5, color: hasData ? C("chalk") : C("ash"), margin: "6px 0 0", maxWidth: "46ch" }}>{verdictLine}</p>
         {(phaseBlock || macro?.eventInWeeks != null) && (
           // Full-bleed chip rail — clips at the screen edge, rests on the column.
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", margin: "12px calc(-1 * var(--page-pad-x, 16px)) 0", padding: "0 var(--page-pad-x, 16px)" }}>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", margin: "12px calc(-1 * var(--page-pad-x, 12px)) 0", padding: "0 var(--page-pad-x, 12px)" }}>
             {phaseBlock && <Pill dot={C("lime")}><b>{phaseBlock.label}</b> {t("w.home.today.phase")}</Pill>}
             {macro?.eventInWeeks != null && <Pill><AuroraIcon name="calendar-event" size={13} /> <b>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</b> {t("w.home.cockpit.eventIn")}</Pill>}
           </div>

@@ -174,3 +174,69 @@ describe("the guard can see the screens that actually drifted", () => {
     expect(pad).toBe(gutter);
   });
 });
+
+/**
+ * THE SAME RULE ON WEB.
+ *
+ * Web has the token by construction — a rail bleeds `var(--page-pad-x)`, and
+ * changing the shell moves every rail at once. That is why the 16 -> 12 sweep
+ * left web correct while mobile drifted five ways.
+ *
+ * But the token is written `var(--page-pad-x, 16px)`, and the FALLBACK is a
+ * bare number with all the same problems: it went on saying 16 for as long as
+ * nobody read it, and it is not decoration — it is what a rail resolves to in
+ * any shell that pads a page without publishing the variable. The admin console
+ * was exactly that shell.
+ */
+const WEB = join(__dirname, "..");
+const WEB_FILES = [join(WEB, "components"), join(WEB, "app")].flatMap((d) => walk(d));
+
+function mobileGutterPx(): string {
+  const shell = readFileSync(join(WEB, "components", "app-shell.tsx"), "utf8");
+  return shell.match(/"--page-pad-x":\s*isMobile\s*\?\s*"(\d+px)"/)?.[1] ?? "";
+}
+
+describe("web — the gutter fallback tells the truth", () => {
+  it("finds web source to check", () => {
+    expect(WEB_FILES.length).toBeGreaterThan(50);
+  });
+
+  it("every --page-pad-x fallback matches what the app shell publishes", () => {
+    const want = mobileGutterPx();
+    expect(want, "app-shell must publish --page-pad-x at mobile widths").toMatch(/^\d+px$/);
+    const hits: string[] = [];
+    for (const f of [...WEB_FILES, join(WEB, "app", "globals.css")]) {
+      const src = readFileSync(f, "utf8");
+      for (const [i, line] of src.split("\n").entries()) {
+        for (const m of line.matchAll(/--page-pad-x,\s*(\d+px)/g)) {
+          if (m[1] !== want) hits.push(`${f.slice(WEB.length + 1)}:${i + 1}  var(--page-pad-x, ${m[1]})`);
+        }
+      }
+    }
+    expect(
+      hits,
+      `the shell publishes ${want} on mobile — a stale fallback is what a rail bleeds ` +
+        `in any shell that does not publish the variable:\n${hits.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("every shell that pads a page publishes the gutter it pads by", () => {
+    // A rail is portable; the shell it lands in is not. A <main> whose padding
+    // is viewport-conditional is a SHELL hosting app content — it has to say
+    // what its gutter is, or a shared component's bleed resolves to the
+    // fallback instead of to the padding actually in force (which is how the
+    // admin console came to have rails bleeding a gutter it never set).
+    // A standalone page (invite, login) pads a fixed value around one centred
+    // card and hosts no rails, so it has no gutter to publish.
+    const hits: string[] = [];
+    for (const f of WEB_FILES) {
+      const src = readFileSync(f, "utf8");
+      for (const [i, line] of src.split("\n").entries()) {
+        if (!/<main\b/.test(line)) continue;
+        if (!/padding:\s*isMobile/.test(line)) continue;
+        if (!line.includes("--page-pad-x")) hits.push(`${f.slice(WEB.length + 1)}:${i + 1}  <main> pads responsively without publishing --page-pad-x`);
+      }
+    }
+    expect(hits, hits.join("\n")).toEqual([]);
+  });
+});

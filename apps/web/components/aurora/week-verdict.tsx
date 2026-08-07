@@ -656,8 +656,8 @@ export default function AuroraWeekVerdict({
               style={{
                 display: "flex", gap: 14, marginTop: 12, overflowX: "auto",
                 scrollSnapType: "x proximity",
-                margin: "12px calc(-1 * var(--page-pad-x, 16px)) 0",
-                padding: "0 var(--page-pad-x, 16px) 2px",
+                margin: "12px calc(-1 * var(--page-pad-x, 12px)) 0",
+                padding: "0 var(--page-pad-x, 12px) 2px",
                 "--pr-fade-l": `${fade.l}px`, "--pr-fade-r": `${fade.r}px`,
               } as CSSProperties}
             >
