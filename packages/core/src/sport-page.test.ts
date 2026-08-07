@@ -106,6 +106,18 @@ describe("sportSessions — the slice", () => {
     expect(m.recent[0]!.secPerKm).toBe(Math.round(1181 / 5));
     expect(m.recent[0]!.provider).toBe("apple");
   });
+
+  it("takes the WEEK's pace from the watch's seconds too, so the trend agrees with the effort", () => {
+    // Two measured weeks, each a single effort: 19:41 and 39:20 for 5 and
+    // 10 km. Off the typed minutes the weeks read 240 and 234 s/km; off the
+    // watch they are 236 and 236 — the same figures the effort rows print.
+    const measured = [
+      effort("w1", "Tempo", "running", 2, 5, 20, { durationSec: 1181 }),
+      effort("w2", "Tempo", "running", 9, 10, 39, { durationSec: 2360 }),
+    ];
+    const m = sportPageModel("Running", measured, { now: NOW, weeks: 2 });
+    expect(m.pace!.trend).toEqual([236, 236]);
+  });
 });
 
 describe("sportPageModel — the page configures itself from the catalog", () => {

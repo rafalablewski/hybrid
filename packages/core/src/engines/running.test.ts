@@ -60,6 +60,43 @@ describe("running analytics", () => {
     expect(e.moderate).toBe(0);
   });
 
+  it("paceEffortSplit calls a tightly-clustered move steady rather than guessing", () => {
+    // 4:00 and 4:12 /km — a 5% spread, under the 8% gate, so there is no
+    // meaningful easy↔hard distinction to draw yet.
+    const runs: LoggedSession[] = [
+      run("a", daysAgo(1), "Steady Run", 10, 40),
+      run("b", daysAgo(2), "Steady Run", 10, 42),
+    ];
+    const e = paceEffortSplit(runs);
+    expect(e).toEqual({ easy: 0, moderate: 82, hard: 0 });
+  });
+
+  it("paceEffortSplit zones off the device's seconds, not the display-rounded minutes", () => {
+    // The middle effort was measured at 4:16/km (2560 s over 10 km) but is
+    // typed as "42 min" — 4:12/km. Read off the typed minutes it lands at
+    // +5% and reads HARD; read off the watch it is +6.7% and reads STEADY.
+    const runs: LoggedSession[] = [
+      { id: "h", title: "Run", startedAt: daysAgo(1), blocks: [{ kind: "cardio", name: "Tempo Run", distance: 10, minutes: 40, seconds: 2400 }] },
+      { id: "m", title: "Run", startedAt: daysAgo(2), blocks: [{ kind: "cardio", name: "Tempo Run", distance: 10, minutes: 42, seconds: 2560 }] },
+      { id: "e", title: "Run", startedAt: daysAgo(3), blocks: [{ kind: "cardio", name: "Tempo Run", distance: 10, minutes: 50 }] },
+    ];
+    const e = paceEffortSplit(runs);
+    expect(e.hard).toBe(40);
+    // 2560 s = 42.7 min: the minutes are converted ONCE from the accumulated
+    // seconds, so the effort's own rounding never drifts into the total.
+    expect(e.moderate).toBe(43);
+    expect(e.easy).toBe(50);
+  });
+
+  it("runStats takes its best pace from the device's seconds too", () => {
+    // Same anchor paceEffortSplit measures against: a 7:52 effort typed as
+    // "8 min" must not report an 8:00/km best beside a zone card that used 7:52.
+    const runs: LoggedSession[] = [
+      { id: "w", title: "Run", startedAt: daysAgo(1), blocks: [{ kind: "cardio", name: "Easy Run", distance: 1, minutes: 8, seconds: 472 }] },
+    ];
+    expect(runStats(runs)[0]!.bestPaceSecPerKm).toBe(472);
+  });
+
   it("isRunMove: foot-races are runs; swims, rackets, rides, rows are not", () => {
     // Logged Olympic sports resolve through the catalog.
     expect(isRunMove("Running")).toBe(true);

@@ -92,10 +92,13 @@ const isCardio = (b: { kind: string }): b is CardioBlock => b.kind === "cardio";
 
 /** A week's mean pace, or null when the bucket has no paced volume. Reading the
  *  trend off the SAME buckets the volume bars use is deliberate: two cards in
- *  one lane must never disagree about what a week was. */
+ *  one lane must never disagree about what a week was. The DIVISION takes the
+ *  bucket's exact `seconds` (device-truth), not the whole minutes the bars
+ *  draw — a rate derived from rounded minutes drifts against the zone card and
+ *  the pace printed on the effort itself. */
 function weekPace(w: WeekMileage): number | null {
-  if (w.km <= 0 || w.minutes <= 0) return null;
-  return (w.minutes * 60) / w.km;
+  if (w.km <= 0 || w.seconds <= 0) return null;
+  return w.seconds / w.km;
 }
 
 /** The most recent cardio effort in an already-narrowed discipline slice. */

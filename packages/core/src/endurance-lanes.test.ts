@@ -85,6 +85,24 @@ describe("enduranceLanes", () => {
     expect(Math.round(run!.paceTrend[2]!)).toBe(345);
   });
 
+  it("divides the week by the device's seconds, not the whole minutes it draws", () => {
+    // Two efforts in one week, each measured a shade under the minute they are
+    // typed as: 46:00 + 22:00 logged, 45:20 + 21:30 recorded. Off the typed
+    // minutes the week reads 68 min / 13 km = 313.8 s/km; off the watch it is
+    // 4010 s / 13 km = 308.5 s/km — a five-second-per-km error on a card that
+    // sits beside the efforts' own paces.
+    const week: LoggedSession[] = [
+      { id: "d1", title: "Easy run", startedAt: new Date(NOW - 2 * DAY).toISOString(), blocks: [{ kind: "cardio", name: "Easy run", discipline: "running", distance: 8, minutes: 46, seconds: 2720 }] },
+      { id: "d2", title: "Tempo run", startedAt: new Date(NOW - 3 * DAY).toISOString(), blocks: [{ kind: "cardio", name: "Tempo run", discipline: "running", distance: 5, minutes: 22, seconds: 1290 }] },
+    ] as LoggedSession[];
+    const [run] = enduranceLanes(week, { now: NOW });
+    expect(run!.paceTrend).toHaveLength(1);
+    expect(Math.round(run!.paceTrend[0]!)).toBe(308);
+    // the bars still draw whole minutes — only the DIVISION moved
+    expect(run!.weeks[7]!.minutes).toBe(68);
+    expect(run!.weeks[7]!.seconds).toBe(4010);
+  });
+
   it("picks the most recent effort as the lane's last card", () => {
     const [run] = enduranceLanes(SESSIONS, { now: NOW });
     expect(run!.last?.name).toBe("Easy run");
@@ -252,13 +270,13 @@ describe("paceTrendPoints", () => {
 describe("volumeBars", () => {
   it("scales against the lane's own best week", () => {
     const bars = volumeBars([
-      { weekStart: "", km: 10, minutes: 60, efforts: 1 },
-      { weekStart: "", km: 20, minutes: 120, efforts: 2 },
+      { weekStart: "", km: 10, minutes: 60, seconds: 3600, efforts: 1 },
+      { weekStart: "", km: 20, minutes: 120, seconds: 7200, efforts: 2 },
     ]);
     expect(bars).toEqual([0.5, 1]);
   });
 
   it("is all-zero when nothing has distance", () => {
-    expect(volumeBars([{ weekStart: "", km: 0, minutes: 30, efforts: 1 }])).toEqual([0]);
+    expect(volumeBars([{ weekStart: "", km: 0, minutes: 30, seconds: 1800, efforts: 1 }])).toEqual([0]);
   });
 });
