@@ -68,6 +68,11 @@ const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric:
  *  gone with it; its only consumer was the pace delta, which is a fact about
  *  the chart's window and belongs beside it.
  *
+ *  `foot` is OPTIONAL and stays empty when the chart already shows its window:
+ *  a bar strip draws one countable bar per week, so "8 weeks" under eight bars
+ *  is the axis restated in prose. Only a chart with nothing to count (the
+ *  pace line) needs the window said out loud.
+ *
  *  Fixed width, shared minimum height so a rail's cards sit on one baseline
  *  however differently they're filled. Mirrors mobile. */
 function Tile({ w, label, foot, footRight, children }: {
@@ -120,10 +125,15 @@ function SummaryTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => strin
 
 function VolumeTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string }) {
   // The tile skeleton (wave 2): label row → this week's km as the FIGURE →
-  // the shared HistoryStrip as the chart → the window as the footer. The old
-  // 46px one-off bar block is retired for the cluster's one chart language.
+  // the shared HistoryStrip as the chart. The old 46px one-off bar block is
+  // retired for the cluster's one chart language.
+  //
+  // NO "8 weeks" FOOTER. The strip DRAWS its window: eight discrete bars, one
+  // per week, countable at a glance — so a caption naming the count is the
+  // chart's own axis set in words. It goes where the window is NOT visible
+  // (TrendTile, whose line has no per-week marks to count), and nowhere else.
   return (
-    <Tile w={178} label={t("w.home.end.volumeWeek")} foot={t("w.home.end.window8")}>
+    <Tile w={178} label={t("w.home.end.volumeWeek")}>
       <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
         {lane.thisWeek.km}
         <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>km</span>
