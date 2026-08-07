@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-import { ArrowGlyph, CtaLabel } from "./cta-label";
+import { CtaLabel } from "./cta-label";
+import RailTail from "./rail-tail";
 
 // "Follow a coach" — a horizontally swipeable rail on Today (its only home now
 // that the Explore tab is gone). Pulls the live
@@ -147,18 +148,9 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
           card to the scrollport start — glued to the bezel on a bleed rail. */}
       <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", scrollPadding: bleed ? "0 var(--page-pad-x, 12px)" : "0 4px", scrollbarWidth: "none", padding: bleed ? "8px var(--page-pad-x, 12px) 20px" : "8px 4px 20px", margin: bleed ? "-8px calc(-1 * var(--page-pad-x, 12px)) -14px" : "-8px -4px -14px" }}>
         {items.map((c, i) => <MarqueeCard key={c.userId ?? c.handle ?? i} c={c} onOpen={onOpen} />)}
-        {/* Trailing "See more" button — the same treatment as the community
-            rail, so the two rails share one end-of-rail affordance. */}
-        {seeMore && (
-          <button className="pressable"
-            onClick={onOpen}
-            aria-label={t("w.explore.seeMore")}
-            style={{ flex: "0 0 auto", width: 132, scrollSnapAlign: "start", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, cursor: "pointer", color: C("ash"), boxShadow: "var(--shadow-card)" }}
-          >
-            <span style={{ width: 38, height: 38, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center" }}><ArrowGlyph size={14} /></span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}>{t("w.explore.seeMore")}</span>
-          </button>
-        )}
+        {/* Trailing tail card — now the SHARED RailTail, so every rail in the
+            app draws its exit from one implementation. */}
+        {seeMore && <RailTail onOpen={onOpen} label={t("w.explore.seeMore")} />}
       </div>
     </div>
   );

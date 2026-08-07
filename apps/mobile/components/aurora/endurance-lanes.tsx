@@ -12,6 +12,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
+import RailTail from "./rail-tail";
 
 /**
  * SPORT LANES — the Endurance block on Today, directly under the "This week"
@@ -175,20 +176,17 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
   const zones = zonePercents(lane.zones);
   return (
     <View style={{ marginTop: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 2, marginBottom: 8 }}>
+      {/* Identity and NOTHING else. The head used to carry "8 efforts" (which
+          the summary tile below restates verbatim) and then, after that went,
+          the lane's "See all ›". Both are gone: a header NAMES the lane, the
+          rail owns the figures, and the rail's own tail card owns the exit.
+          Three lanes down Today meant three lime links stacked on one screen,
+          each pointing somewhere different, none of them where the thumb
+          actually is when the cards run out. Mirrors web. */}
+      <View style={{ flexDirection: "row", alignItems: "center", marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.note, color: C.chalk }}>
           {DISCIPLINE_META[lane.discipline].emoji} {t(lane.labelKey)}
         </Text>
-        {/* Identity on the left, the EXIT on the right — and nothing else. The
-            header used to carry "8 efforts" as well, which is `lane.efforts`
-            read twice 40dp apart: the summary tile directly below is the same
-            field under the same mono face. A header names the lane; the rail
-            owns the figures. Mirrors web. */}
-        {onOpen && canOpen && (
-          <Pressable onPress={() => onOpen(lane.discipline)} accessibilityRole="button" hitSlop={10}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.explore.seeAll")} ›</Text>
-          </Pressable>
-        )}
       </View>
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 12dp
           gutter pull the scroll clip to the true screen edge, with matching
@@ -205,6 +203,17 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         {lane.paceTrend.length > 1 && <TrendTile lane={lane} />}
         {zones.any && <ZoneTile lane={lane} />}
         {lane.last && <LastTile lane={lane} />}
+        {/* THE EXIT — last card in the rail, so it's found by the same swipe
+            that exhausts the tiles. `radius`/`minHeight` match Tile so it reads
+            as one more card in the row rather than a button parked at the end;
+            no shadow, because these tiles are flat. */}
+        {onOpen && canOpen && (
+          <RailTail
+            onOpen={() => onOpen(lane.discipline)}
+            a11y={`${t("w.explore.seeAll")} – ${t(lane.labelKey)}`}
+            w={112} radius={RADIUS.field} minHeight={TILE_H} shadow={false}
+          />
+        )}
       </ScrollView>
     </View>
   );

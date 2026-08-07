@@ -1,0 +1,586 @@
+<title>The exit belongs at the end of the rail — seven ways to draw it</title>
+<style>
+  :root{
+    /* product tokens (packages/core brand) — the mocks ARE the app */
+    --ink:#0c0d0c; --ink2:#141614; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
+    --lime:#c6f84f; --lime-text:#c6f84f; --clay:#e08a5f; --amber:#e8b64c; --blue:#6fa8c7;
+
+    /* page chrome — theme-aware */
+    --page:#070806; --page-fg:#eef0e9; --page-dim:#8b8f86; --page-faint:#5f6459;
+    --page-rule:#1e211d; --page-accent:#c6f84f; --page-chip:rgba(198,248,79,.13);
+
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --page:#f2f3ee; --page-fg:#15170f; --page-dim:#5c6154; --page-faint:#8e9285;
+      --page-rule:#dcdfd3; --page-accent:#54700f; --page-chip:rgba(84,112,15,.11);
+    }
+  }
+  :root[data-theme="light"]{
+    --page:#f2f3ee; --page-fg:#15170f; --page-dim:#5c6154; --page-faint:#8e9285;
+    --page-rule:#dcdfd3; --page-accent:#54700f; --page-chip:rgba(84,112,15,.11);
+  }
+  :root[data-theme="dark"]{
+    --page:#070806; --page-fg:#eef0e9; --page-dim:#8b8f86; --page-faint:#5f6459;
+    --page-rule:#1e211d; --page-accent:#c6f84f; --page-chip:rgba(198,248,79,.13);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--page); color:var(--page-fg);
+    font-family:var(--sans); -webkit-font-smoothing:antialiased;
+    padding:56px 20px 110px;
+  }
+  .wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:60px}
+
+  /* ── header ─────────────────────────────────────────────── */
+  .head{display:flex;flex-direction:column;gap:18px;max-width:74ch}
+  .eyebrow{font:600 11px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--page-accent);margin:0}
+  h1{margin:0;font-size:clamp(29px,4.6vw,44px);line-height:1.03;letter-spacing:-.035em;font-weight:800;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--page-dim)}
+  .lede{margin:0;font-size:16px;line-height:1.65;color:var(--page-dim);max-width:74ch}
+  .lede strong{color:var(--page-fg);font-weight:600}
+  .lede code{font-family:var(--mono);font-size:.9em;color:var(--page-fg)}
+
+  /* ── section furniture ──────────────────────────────────── */
+  section{display:flex;flex-direction:column;gap:24px}
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+    border-top:1px solid var(--page-rule);padding-top:16px;flex-wrap:wrap}
+  .sechead h2{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .sechead h2 span{color:var(--page-faint);font-family:var(--mono);font-weight:600;font-size:13px;margin-right:10px}
+  .sechead p{margin:0;font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--page-faint)}
+  .note{margin:0;font-size:14.5px;line-height:1.7;color:var(--page-dim);max-width:74ch}
+  .note strong{color:var(--page-fg);font-weight:600}
+
+  .verdict{display:flex;gap:10px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+  .verdict li{font:600 10.5px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;
+    padding:7px 11px;border-radius:999px;border:1px solid var(--page-rule);color:var(--page-dim)}
+  .verdict li.good{color:var(--page-accent);border-color:color-mix(in srgb,var(--page-accent) 40%,transparent);background:var(--page-chip)}
+  .verdict li.warn{color:var(--clay);border-color:color-mix(in srgb,var(--clay) 40%,transparent)}
+
+  /* ── the phone frame (always dark — it IS the app) ──────── */
+  .frames{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:22px;align-items:start}
+  .phone{
+    background:var(--ink); border:1px solid var(--line); border-radius:26px;
+    padding:18px 0 20px; color:var(--chalk); font-family:var(--sans); overflow:hidden;
+  }
+  .phone .pad{padding:0 12px}
+  .lanehead{display:flex;align-items:baseline;gap:10px;margin:0 2px 8px;font-weight:800;font-size:15px;letter-spacing:-.01em}
+  .lanehead .kick{margin-left:auto;font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
+
+  .rail{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 12px 6px;scroll-snap-type:x proximity}
+  .rail::-webkit-scrollbar{display:none}
+
+  .tile{
+    flex:0 0 auto; min-height:118px; scroll-snap-align:start;
+    display:flex;flex-direction:column;gap:6px;
+    background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:12px;
+  }
+  .tile .lab{font:500 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ash);white-space:nowrap}
+  .tile .fig{font:500 26px/1 var(--mono);letter-spacing:-.03em;color:var(--chalk);margin-top:2px}
+  .tile .fig small{font-size:10px;color:var(--ash);margin-left:4px;letter-spacing:0}
+  .tile .rows{display:grid;gap:3px;margin-top:auto;font:400 11px/1.3 var(--mono)}
+  .tile .rows div{display:flex;justify-content:space-between;gap:8px;color:var(--ash)}
+  .tile .rows b{color:var(--chalk);font-weight:500}
+  .bars{display:flex;gap:3px;align-items:flex-end;height:24px;margin-top:auto}
+  .bars i{flex:1;background:var(--blue);border-radius:2px;opacity:.85}
+  .zbar{display:flex;gap:2px;height:8px;margin-top:auto}
+  .zbar i{display:block;border-radius:2px}
+
+  /* ── the tail treatments ────────────────────────────────── */
+  .tail{
+    flex:0 0 112px;min-height:118px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:8px;padding:12px;text-align:center;
+    background:var(--ink2);border:1px solid var(--line);border-radius:16px;color:var(--ash);cursor:pointer;
+  }
+  .tail .plate{width:38px;height:38px;border-radius:999px;border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  .tail .cap{font:500 11px/1.35 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+  .tail.count{flex-basis:126px;justify-content:flex-start;align-items:stretch;text-align:left;gap:6px}
+  .tail.count .fig{font:500 26px/1 var(--mono);letter-spacing:-.03em;color:var(--chalk)}
+  .tail.count .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--ash)}
+
+  .peekwrap{flex:0 0 140px;position:relative;min-height:118px;cursor:pointer}
+  .peekwrap .tile{position:absolute;inset:0;width:170px;opacity:.32;filter:saturate(.4)}
+  .peekwrap .veil{position:absolute;inset:0;border-radius:16px;
+    background:linear-gradient(90deg,transparent 0%,color-mix(in srgb,var(--ink) 70%,transparent) 45%,var(--ink) 96%)}
+  .peekwrap .cap{position:absolute;right:10px;top:0;bottom:0;display:flex;flex-direction:column;
+    align-items:flex-end;justify-content:center;gap:7px;color:var(--ash);
+    font:500 11px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;text-align:right}
+
+  .pull{flex:0 0 74px;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+    color:var(--ash);font:500 10px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;text-align:center;cursor:pointer}
+  .pull .arc{width:30px;height:30px;border-radius:999px;border:1px dashed var(--ash2);display:grid;place-items:center}
+
+  .endcap{flex:0 0 46px;min-height:118px;display:flex;align-items:center;justify-content:center;gap:0;cursor:pointer;
+    border-left:1px solid var(--line);margin-left:6px}
+  .endcap span{writing-mode:vertical-rl;transform:rotate(180deg);
+    font:600 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+
+  .doorrow{display:flex;align-items:center;gap:12px;margin:12px 2px 0;padding:12px 16px;cursor:pointer;
+    background:var(--ink2);border:1px solid var(--line);border-radius:16px;color:var(--chalk)}
+  .doorrow .glyph{width:32px;height:32px;border-radius:12px;background:var(--ink);border:1px solid var(--line);
+    display:grid;place-items:center;color:var(--ash);flex:none}
+  .doorrow .lab{flex:1;font-weight:700;font-size:15px}
+  .doorrow .n{font:400 11px/1 var(--mono);color:var(--ash)}
+
+  .lastexit{border-top:1px solid var(--line);margin:8px -12px -12px;padding:9px 12px;display:flex;
+    align-items:center;justify-content:space-between;gap:8px;color:var(--ash);
+    font:500 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+
+  .headdoor{cursor:pointer}
+  .headdoor .chev{color:var(--ash);font-family:var(--mono);font-size:15px;font-weight:400;margin-left:6px}
+
+  .edgetab{position:absolute;right:0;top:50%;transform:translateY(-50%);width:26px;height:66px;
+    display:grid;place-items:center;border-radius:13px 0 0 13px;
+    background:color-mix(in srgb,var(--ink2) 92%,transparent);border:1px solid var(--line);border-right:0;
+    color:var(--ash);cursor:pointer;backdrop-filter:blur(8px)}
+  .relwrap{position:relative}
+
+  svg{display:block;flex:none}
+
+  /* ── shipped banner ─────────────────────────────────────── */
+  .shipped{display:flex;flex-direction:column;gap:18px;border:1px solid color-mix(in srgb,var(--page-accent) 34%,transparent);
+    background:var(--page-chip);border-radius:20px;padding:22px 22px 26px}
+  .shipped h2{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .shipped h2 span{color:var(--page-faint);font-family:var(--mono);font-weight:600;font-size:13px;margin-right:10px}
+  .shipped .tagline{margin:0;font:600 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--page-accent)}
+  .shipped .frames{margin-top:2px}
+
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin:0;padding:0;list-style:none}
+  .rules li{border-top:1px solid var(--page-rule);padding-top:13px}
+  .rules h3{margin:0 0 6px;font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .rules p{margin:0;font-size:13.5px;line-height:1.62;color:var(--page-dim)}
+</style>
+
+<div class="wrap">
+
+  <header class="head">
+    <p class="eyebrow">Design — Aug 2026</p>
+    <h1>The exit belongs at the end of the rail <em>— seven ways to draw it</em></h1>
+    <p class="lede">
+      Every rail carried a lime <code>See all ›</code> in its section head. Three endurance lanes stacked down
+      Today put <strong>three identical accent links on one screen</strong>, each pointing somewhere different,
+      and none of them where the thumb actually is: the reader is at the <strong>right edge of the cards</strong>,
+      having just swiped to the end, and the only way to act on “there is more” was to travel back up and left to
+      a link they had already scrolled past. It also spent the head’s right slot — which per the Explore
+      <code>SectionHead</code> standard belongs to the section’s <em>meta</em> — and spent chartreuse, the reserved
+      “go” colour, once per lane, until the accent stopped signalling anything at all.
+    </p>
+    <p class="lede">
+      The rule that replaces it: <strong>an exit belongs at the end of the thing, in the shape of the thing.</strong>
+      A horizontal rail ends in a <strong>tail card</strong>. A vertical list ends in a <strong>door row</strong>.
+      Below: what shipped, then seven other ways it could have been drawn — each measured against the same
+      house rules (full-bleed rails, no decorative markers, accent reserved for “go”, scope stated where the
+      figure is, never a middot).
+    </p>
+  </header>
+
+  <!-- ══ SHIPPED ══════════════════════════════════════════ -->
+  <div class="shipped">
+    <p class="tagline">Shipped — both clients</p>
+    <h2><span>00</span>The tail card</h2>
+    <p class="note">
+      The last card in the scroller, wearing the <strong>card form, not link form</strong>: same ink2 fill, same
+      hairline, the rail’s own radius, so it belongs to the row rather than floating over it. The arrow sits in a
+      ringed plate at card centre; the label is mono uppercase in ash — a destination, not a shout. It is
+      <strong>discovered by the same gesture that exhausts the rail</strong>, and reaching it is how you know
+      you’ve seen everything, which a header link could never tell you.
+    </p>
+    <div class="frames">
+      <div class="phone">
+        <div class="pad"><div class="lanehead">🏊 Swimming</div></div>
+        <div class="rail">
+          <div class="tile" style="flex-basis:126px">
+            <span class="lab">All time</span>
+            <div class="fig">14<small>efforts</small></div>
+            <div class="rows"><div>KM<b>9.4</b></div><div>H<b>3.1</b></div></div>
+          </div>
+          <div class="tile" style="flex-basis:178px">
+            <span class="lab">Volume – this week</span>
+            <div class="fig">1.2<small>km</small></div>
+            <div class="bars"><i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:72%"></i><i style="height:48%"></i><i style="height:90%"></i><i style="height:62%"></i><i style="height:80%"></i></div>
+          </div>
+          <div class="tile" style="flex-basis:152px">
+            <span class="lab">Zones — all time</span>
+            <div class="zbar"><i style="flex:83;background:var(--lime)"></i><i style="flex:17;background:var(--clay)"></i></div>
+            <div class="rows"><div>Easy<b>83%</b></div><div>Hard<b>17%</b></div></div>
+          </div>
+          <div class="tail">
+            <span class="plate"><svg width="14" height="11" viewBox="0 0 17 13" fill="none"><path d="M1 6.5h13.5M9.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="cap">See all</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="verdict">
+      <li class="good">One shared component, both clients</li>
+      <li class="good">No accent spent</li>
+      <li class="good">Header freed for meta</li>
+      <li class="good">Reuses w.explore.seeAll</li>
+    </ul>
+  </div>
+
+  <!-- ══ 1 ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2><span>01</span>The counted tail</h2>
+      <p>A door that states what’s behind it</p>
+    </div>
+    <p class="note">
+      Same position, but the card <strong>earns its 126px by carrying a fact</strong> instead of a button. It
+      prints the size of the destination — <code>14 swims</code> — in the rail’s own figure treatment, with
+      “See all” demoted to the footer beside the arrow. The tail stops being chrome and becomes the last
+      <em>data</em> tile, which is the strongest argument for it existing at that width.
+      <strong>The risk:</strong> in the endurance lanes the count is already the first tile’s figure, so this
+      would restate <code>lane.efforts</code> at both ends of one rail — exactly the redundancy the summary tile
+      was rewritten to kill. It’s the right idea for a rail whose length is <em>not</em> otherwise on screen
+      (recipes, verified businesses, the coach marketplace).
+    </p>
+    <div class="frames">
+      <div class="phone">
+        <div class="pad"><div class="lanehead">🚴 Cycling</div></div>
+        <div class="rail">
+          <div class="tile" style="flex-basis:178px">
+            <span class="lab">Volume – this week</span>
+            <div class="fig">18.4<small>km</small></div>
+            <div class="bars"><i style="height:44%"></i><i style="height:66%"></i><i style="height:30%"></i><i style="height:88%"></i><i style="height:52%"></i><i style="height:70%"></i><i style="height:35%"></i><i style="height:95%"></i></div>
+          </div>
+          <div class="tile" style="flex-basis:184px">
+            <span class="lab">Last effort</span>
+            <div style="font-size:15px;font-weight:600;margin-top:3px">Cycling</div>
+            <div class="rows"><div>3.6 km<span>7.9 km/h</span></div><div>1d ago<span>27 min</span></div></div>
+          </div>
+          <div class="tail count">
+            <span class="cap" style="letter-spacing:.12em">All rides</span>
+            <div class="fig">31</div>
+            <div class="foot">
+              <span class="cap" style="font-size:10px">See all</span>
+              <svg width="14" height="11" viewBox="0 0 17 13" fill="none"><path d="M1 6.5h13.5M9.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="verdict">
+      <li class="good">The tail carries information</li>
+      <li class="good">Matches the tile skeleton exactly</li>
+      <li class="warn">Restates the summary tile in endurance lanes</li>
+    </ul>
+  </section>
+
+  <!-- ══ 2 ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2><span>02</span>The peek tile</h2>
+      <p>Show the next one, don’t announce it</p>
+    </div>
+    <p class="note">
+      Instead of a card that <em>says</em> there is more, the rail ends with the <strong>next real card</strong>,
+      clipped and faded under a gradient veil, with the label set against the fade. It is the most honest
+      possible signal — “more of exactly this” — and it needs no metaphor at all. It’s how a well-made
+      newspaper page turns.
+      <strong>The catch:</strong> it only works where the next item is real and cheap to render. On a lane whose
+      destination is a <em>different shape</em> (the endurance hub is a table and full-size charts, not more
+      tiles) the peek would be a lie about what’s behind the door.
+    </p>
+    <div class="frames">
+      <div class="phone">
+        <div class="pad"><div class="lanehead">🍳 Recipes</div></div>
+        <div class="rail">
+          <div class="tile" style="flex-basis:150px">
+            <span class="lab">Breakfast</span>
+            <div style="font-size:15px;font-weight:600;margin-top:3px">Skyr &amp; oats</div>
+            <div class="rows" style="color:var(--ash)"><div>10 min<b style="color:var(--lime-text)">420 kcal</b></div></div>
+          </div>
+          <div class="tile" style="flex-basis:150px">
+            <span class="lab">Lunch</span>
+            <div style="font-size:15px;font-weight:600;margin-top:3px">Rice &amp; salmon</div>
+            <div class="rows" style="color:var(--ash)"><div>18 min<b style="color:var(--lime-text)">610 kcal</b></div></div>
+          </div>
+          <div class="peekwrap">
+            <div class="tile">
+              <span class="lab">Dinner</span>
+              <div style="font-size:15px;font-weight:600;margin-top:3px">Chicken orzo</div>
+              <div class="rows" style="color:var(--ash)"><div>22 min<b>720 kcal</b></div></div>
+            </div>
+            <div class="veil"></div>
+            <div class="cap">
+              <svg width="14" height="11" viewBox="0 0 17 13" fill="none"><path d="M1 6.5h13.5M9.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>See all<br>21 recipes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="verdict">
+      <li class="good">Zero new vocabulary</li>
+      <li class="good">Strongest “there is more” signal</li>
+      <li class="warn">Lies when the destination isn’t more cards</li>
+    </ul>
+  </section>
+
+  <!-- ══ 3 ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2><span>03</span>The overscroll pull-through</h2>
+      <p>Nothing at rest — the gesture is the control</p>
+    </div>
+    <p class="note">
+      No tail card exists at rest. Drag <strong>past</strong> the last tile and the rubber band reveals a
+      narrowing panel: the arrow rotates as you pull, the label flips from <em>Pull for all swims</em> to
+      <em>Release</em>, and letting go navigates. It costs <strong>zero pixels</strong>, it is the most
+      gesture-native answer on the list (Apple News, Mail, and every iOS list-to-detail transition work this
+      way), and it makes the exit literally continuous with the swipe that reached it.
+      <strong>The catch is discoverability and parity:</strong> a control with no resting state is invisible to
+      a first-time user and to a screen reader, and a mouse has no rubber band — so web would need a separate
+      affordance, which breaks the one-product rule the moment it’s the only exit. Viable as an
+      <em>accelerator</em> layered on top of a tail card; not as a replacement.
+    </p>
+    <div class="frames">
+      <div class="phone">
+        <div class="pad"><div class="lanehead">🏊 Swimming</div></div>
+        <div class="rail" style="padding-right:0">
+          <div class="tile" style="flex-basis:152px">
+            <span class="lab">Zones — all time</span>
+            <div class="zbar"><i style="flex:83;background:var(--lime)"></i><i style="flex:17;background:var(--clay)"></i></div>
+            <div class="rows"><div>Easy<b>83%</b></div><div>Hard<b>17%</b></div></div>
+          </div>
+          <div class="tile" style="flex-basis:184px">
+            <span class="lab">Last effort</span>
+            <div style="font-size:15px;font-weight:600;margin-top:3px">Swimming</div>
+            <div class="rows"><div>0.2 km<span>5:04 /100m</span></div><div>2d ago<span>12 min</span></div></div>
+          </div>
+          <div class="pull">
+            <span class="arc"><svg width="13" height="10" viewBox="0 0 17 13" fill="none" style="transform:rotate(-22deg)"><path d="M1 6.5h13.5M9.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span>Keep<br>pulling</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="verdict">
+      <li class="good">Costs nothing at rest</li>
+      <li class="good">Continuous with the swipe</li>
+      <li class="warn">Invisible to first-timers and to a11y</li>
+      <li class="warn">No web equivalent — breaks parity alone</li>
+    </ul>
+  </section>
+
+  <!-- ══ 4 ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2><span>04</span>The end-cap rule</h2>
+      <p>A margin mark, not a card</p>
+    </div>
+    <p class="note">
+      The rail terminates in a hairline vertical rule with the destination set <strong>rotated in mono</strong>
+      beside it — the typographic idiom of a book’s running head or a chart’s axis label. It costs ~46px, adds
+      no new card shape to the row, and keeps the rail visually a <em>row of data</em> rather than a row of data
+      with a button on the end. It reads beautifully in the display grid.
+      <strong>The catch:</strong> rotated type is a poor tap target and a worse reading experience at
+      accessibility text sizes, and it doesn’t survive translation — <em>Alle ansehen</em> rotated in a 118px
+      column runs out of room. Charming; not robust.
+    </p>
+    <div class="frames">
+      <div class="phone">
+        <div class="pad"><div class="lanehead">🏃 Running</div></div>
+        <div class="rail">
+          <div class="tile" style="flex-basis:178px">
+            <span class="lab">Volume – this week</span>
+            <div class="fig">12.6<small>km</small></div>
+            <div class="bars"><i style="height:52%"></i><i style="height:38%"></i><i style="height:70%"></i><i style="height:44%"></i><i style="height:86%"></i><i style="height:60%"></i><i style="height:74%"></i><i style="height:92%"></i></div>
+          </div>
+          <div class="tile" style="flex-basis:152px">
+            <span class="lab">Zones — all time</span>
+            <div class="zbar"><i style="flex:100;background:#d8d5a8"></i></div>
+            <div class="rows"><div>Steady<b>100%</b></div></div>
+          </div>
+          <div class="endcap"><span>All runs →</span></div>
+        </div>
+      </div>
+    </div>
+    <ul class="verdict">
+      <li class="good">Cheapest possible footprint</li>
+      <li class="good">Keeps the row purely data</li>
+      <li class="warn">Poor tap target</li>
+      <li class="warn">Breaks under PL/DE and large text</li>
+    </ul>
+  </section>
+
+  <!-- ══ 5 ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2><span>05</span>The door row, under the rail</h2>
+      <p>The block’s own existing anatomy</p>
+    </div>
+    <p class="note">
+      The endurance block <em>already</em> owns a door-row: the “All sports +2” expander at its foot, a
+      full-width ink2 card with a 32px glyph plate, a display-face label and a mono count. Idea 05 gives every
+      lane one of those, directly beneath its rail. The great virtue is that <strong>nothing new is
+      invented</strong> — it is the cluster’s established “see more” object, and it is impossible to miss.
+      <strong>The cost is vertical:</strong> three lanes × a 56px row is a whole extra screen of doors, and it
+      breaks the one property that lets the endurance block exist on Today at all — <em>adding to a lane widens
+      its rail, it never lengthens the block</em>. It also puts two nearly identical door rows within 60px of
+      each other at the block’s foot, one meaning “more sports”, one meaning “more of this sport”.
+    </p>
+    <div class="frames">
+      <div class="phone">
+        <div class="pad"><div class="lanehead">🚴 Cycling</div></div>
+        <div class="rail">
+          <div class="tile" style="flex-basis:126px">
+            <span class="lab">All time</span>
+            <div class="fig">31<small>efforts</small></div>
+            <div class="rows"><div>KM<b>212</b></div><div>H<b>14.6</b></div></div>
+          </div>
+          <div class="tile" style="flex-basis:178px">
+            <span class="lab">Volume – this week</span>
+            <div class="fig">18.4<small>km</small></div>
+            <div class="bars"><i style="height:44%"></i><i style="height:66%"></i><i style="height:30%"></i><i style="height:88%"></i><i style="height:52%"></i><i style="height:70%"></i><i style="height:35%"></i><i style="height:95%"></i></div>
+          </div>
+        </div>
+        <div class="pad">
+          <div class="doorrow">
+            <span class="glyph">→</span>
+            <span class="lab">All rides</span>
+            <span class="n">31</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="verdict">
+      <li class="good">Reuses an existing object</li>
+      <li class="good">Impossible to miss</li>
+      <li class="warn">Costs a row per lane — lengthens the block</li>
+      <li class="warn">Collides with the “All sports” expander</li>
+    </ul>
+  </section>
+
+  <!-- ══ 6 ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2><span>06</span>The exit rides the last tile</h2>
+      <p>No extra card exists at all</p>
+    </div>
+    <p class="note">
+      The rail’s final data tile — <em>Last effort</em>, the one tile that is already about a single navigable
+      thing — grows a footer strip under a hairline: <code>All swims →</code>. The rail then <strong>ends on
+      content</strong>, with the door attached to the most navigational card rather than parked beyond it.
+      Nothing is added to the row’s length, and the association (“this effort, and every other one”) is natural.
+      <strong>The catch:</strong> the exit inherits the last tile’s conditional rendering — the Last-effort tile
+      only exists when <code>lane.last</code> does, so a lane with no matched effort silently loses its way out.
+      An exit that can vanish because an unrelated field is missing is not an exit.
+    </p>
+    <div class="frames">
+      <div class="phone">
+        <div class="pad"><div class="lanehead">🏊 Swimming</div></div>
+        <div class="rail">
+          <div class="tile" style="flex-basis:152px">
+            <span class="lab">Zones — all time</span>
+            <div class="zbar"><i style="flex:83;background:var(--lime)"></i><i style="flex:17;background:var(--clay)"></i></div>
+            <div class="rows"><div>Easy<b>83%</b></div><div>Hard<b>17%</b></div></div>
+          </div>
+          <div class="tile" style="flex-basis:190px">
+            <span class="lab">Last effort</span>
+            <div style="font-size:15px;font-weight:600;margin-top:3px">Swimming</div>
+            <div class="rows"><div>0.2 km<span>5:04 /100m</span></div><div>2d ago<span>12 min</span></div></div>
+            <div class="lastexit">
+              <span>All swims</span>
+              <svg width="13" height="10" viewBox="0 0 17 13" fill="none"><path d="M1 6.5h13.5M9.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="verdict">
+      <li class="good">Adds no card and no length</li>
+      <li class="good">Natural association</li>
+      <li class="warn">Vanishes with the tile it rides on</li>
+    </ul>
+  </section>
+
+  <!-- ══ 7 ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2><span>07</span>The title <em>is</em> the door</h2>
+      <p>Delete the control entirely</p>
+    </div>
+    <p class="note">
+      There is no “see all” anywhere. The <strong>lane’s name is the link</strong> — the whole header row is
+      tappable, chalk display face with a quiet ash chevron, exactly as a section title behaves on the App Store
+      or in Music. It is the most honest object on the screen (the thing that names the sport takes you to the
+      sport), it spends no accent, it adds nothing to the rail, and it removes a string from three languages.
+      <strong>The catch is the one that started all this:</strong> the header is at the <em>top-left</em>, and
+      the moment of intent is at the <em>bottom-right</em> of a rail you have just swiped to the end of. A
+      chevron on a title is also a weak affordance — it is easily read as decoration rather than a control,
+      which is precisely why the App Store pairs it with an oversized tap target and a lot of user habit we
+      don’t have. Best as a <em>second</em> route in, alongside the tail card — which is what we may add later.
+    </p>
+    <div class="frames">
+      <div class="phone">
+        <div class="pad">
+          <div class="lanehead headdoor">🏃 Running <span class="chev">›</span></div>
+        </div>
+        <div class="rail">
+          <div class="tile" style="flex-basis:126px">
+            <span class="lab">All time</span>
+            <div class="fig">22<small>efforts</small></div>
+            <div class="rows"><div>KM<b>148</b></div><div>H<b>13.9</b></div></div>
+          </div>
+          <div class="tile" style="flex-basis:176px">
+            <span class="lab">Pace – latest week</span>
+            <div class="fig">5:47<small>/km</small></div>
+            <div class="bars" style="opacity:.55"><i style="height:70%"></i><i style="height:62%"></i><i style="height:78%"></i><i style="height:55%"></i><i style="height:66%"></i><i style="height:48%"></i><i style="height:60%"></i><i style="height:44%"></i></div>
+          </div>
+          <div class="tile" style="flex-basis:152px">
+            <span class="lab">Zones — all time</span>
+            <div class="zbar"><i style="flex:100;background:#d8d5a8"></i></div>
+            <div class="rows"><div>Steady<b>100%</b></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="verdict">
+      <li class="good">Deletes a control and a string</li>
+      <li class="good">Spends no accent, no pixels</li>
+      <li class="warn">Wrong end of the gesture</li>
+      <li class="warn">Chevron-on-title is a weak affordance</li>
+    </ul>
+  </section>
+
+  <!-- ══ THE RULES ════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>What every option was measured against</h2>
+      <p>House rules</p>
+    </div>
+    <ul class="rules">
+      <li>
+        <h3>The exit sits where the intent is</h3>
+        <p>A reader decides they want more <em>at the moment content runs out</em>. Any control that makes them travel back to a point they’ve already passed is asking them to undo their own gesture.</p>
+      </li>
+      <li>
+        <h3>Chartreuse means go, and only go</h3>
+        <p>Repeating the accent once per section is how an accent stops meaning anything. Ash and the card form carry a destination perfectly well; lime is for the thing you’re meant to do <em>now</em>.</p>
+      </li>
+      <li>
+        <h3>A section head names, it does not act</h3>
+        <p>The Explore <code>SectionHead</code> standard: display-face title left, mono meta right, no marker dot. The right slot is for a fact or a state control — not a navigation link duplicated down the screen.</p>
+      </li>
+      <li>
+        <h3>Widening is free, lengthening is not</h3>
+        <p>The whole reason the endurance block fits on Today is that a lane grows sideways. Any exit that adds a row per lane trades that away for something a 112px card already does.</p>
+      </li>
+      <li>
+        <h3>The exit cannot be conditional on unrelated data</h3>
+        <p>A way out that disappears because some other field is empty is not a way out. It renders whenever there is somewhere to go, and never when there isn’t.</p>
+      </li>
+      <li>
+        <h3>One implementation, both clients</h3>
+        <p>A gesture with no web equivalent, or a drawing copied into four files, fails the parity rule before it’s judged on looks. The shipped tail card is one component, imported by five rails, on two clients.</p>
+      </li>
+    </ul>
+  </section>
+
+</div>

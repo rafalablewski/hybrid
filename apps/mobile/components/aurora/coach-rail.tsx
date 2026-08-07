@@ -6,7 +6,8 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
-import { ArrowGlyph, CtaLabel } from "./cta-label";
+import { CtaLabel } from "./cta-label";
+import RailTail from "./rail-tail";
 import { GUTTER } from "./kit";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
@@ -138,21 +139,9 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false, s
             </Pressable>
           );
         })}
-        {/* Trailing "See more" button — the same treatment as the community
-            rail, so the two rails share one end-of-rail affordance. */}
-        {seeMore && (
-          <Pressable
-            onPress={onOpen}
-            accessibilityRole="button"
-            accessibilityLabel={t("w.explore.seeMore")}
-            style={{ width: 132, borderWidth: 1, borderColor: C.line, borderRadius: 28, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", gap: 6, paddingHorizontal: 12, ...cardShadow }}
-          >
-            <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-              <ArrowGlyph size={15} color={C.ash} />
-            </View>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", textAlign: "center" }}>{t("w.explore.seeMore")}</Text>
-          </Pressable>
-        )}
+        {/* Trailing tail card — now the SHARED RailTail, so every rail in the
+            app draws its exit from one implementation. */}
+        {seeMore && <RailTail onOpen={onOpen} label={t("w.explore.seeMore")} />}
       </ScrollView>
     </View>
   );

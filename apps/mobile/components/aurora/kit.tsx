@@ -822,7 +822,11 @@ export function ASection({
   /** Small mono uppercase, right-aligned on the title's row. A NODE is allowed
    *  (a chip, an icon + count) — the meta slot is a slot, not a string field. */
   meta?: ReactNode;
-  /** Makes the meta tappable — the "See all →" affordance. */
+  /** Makes the meta tappable. NOT for a rail's "see all": a rail's exit lives
+   *  at the END OF THE RAIL as a tail card (aurora/rail-tail.tsx), where the
+   *  thumb already is once the cards run out. This is for a head-level CONTROL
+   *  (a filter, a state toggle) or a meta that genuinely opens something the
+   *  section itself isn't a preview of. */
   action?: () => void;
   /** Keep the sans display face even under Kyoto Hour. */
   flat?: boolean;
