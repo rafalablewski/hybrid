@@ -145,11 +145,20 @@ export function pacedRunMoves(sessions: LoggedSession[]): string[] {
 export interface WeekMileage {
   weekStart: string; // ISO, start of the 7-day bucket
   km: number;
+  /** whole minutes — what the volume bars and the time totals DISPLAY. */
   minutes: number;
+  /**
+   * The same duration in exact seconds (the device's where it recorded one).
+   * Anything that DIVIDES by the week — a weekly pace — must read this, never
+   * `minutes`: whole minutes summed across a week can sit tens of seconds off,
+   * which is a visible pace error on a short week and puts the trend at odds
+   * with the zone card built off the same efforts (see paceEffortSplit).
+   */
+  seconds: number;
   efforts: number;
 }
 
-/** Distance/minutes per week for the last `weeks` windows, oldest → newest. */
+/** Distance/duration per week for the last `weeks` windows, oldest → newest. */
 export function weeklyMileage(sessions: LoggedSession[], weeks = 8, now = Date.now()): WeekMileage[] {
   const out: WeekMileage[] = [];
   for (let w = weeks - 1; w >= 0; w--) {
@@ -157,6 +166,7 @@ export function weeklyMileage(sessions: LoggedSession[], weeks = 8, now = Date.n
     const from = to - WEEK;
     let km = 0;
     let minutes = 0;
+    let seconds = 0;
     let efforts = 0;
     for (const s of sessions) {
       const t = ms(s.startedAt);
@@ -166,9 +176,17 @@ export function weeklyMileage(sessions: LoggedSession[], weeks = 8, now = Date.n
           efforts += 1;
           if (b.distance && b.distance > 0) km += b.distance;
           if (b.minutes && b.minutes > 0) minutes += b.minutes;
+          const sec = cardioSeconds(b);
+          if (sec != null) seconds += sec;
         }
     }
-    out.push({ weekStart: new Date(from).toISOString(), km: Math.round(km * 10) / 10, minutes: Math.round(minutes), efforts });
+    out.push({
+      weekStart: new Date(from).toISOString(),
+      km: Math.round(km * 10) / 10,
+      minutes: Math.round(minutes),
+      seconds: Math.round(seconds),
+      efforts,
+    });
   }
   return out;
 }

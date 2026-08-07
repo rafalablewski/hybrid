@@ -381,8 +381,10 @@ export function sportPageModel(
 
   /* ── pace: only for a paced sport, and only once two weeks carry one ── */
   const pacedEfforts = all.filter((e) => e.secPerKm != null);
+  // Divides by the bucket's exact `seconds`, not the whole minutes the volume
+  // bars draw — the same device-truth rule the effort paces above follow.
   const weekPaces = buckets
-    .map((w) => (w.km > 0 && w.minutes > 0 ? (w.minutes * 60) / w.km : null))
+    .map((w) => (w.km > 0 && w.seconds > 0 ? w.seconds / w.km : null))
     .filter((p): p is number => p != null)
     .map((p) => Math.round(p));
   let pace: SportPageModel["pace"] = null;
