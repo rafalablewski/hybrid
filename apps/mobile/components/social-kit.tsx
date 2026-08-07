@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { F, fs, leading, serifIf, PressScale as Pressable, Loading } from "../lib/ui";
+import { F, fs, leading, serifIf, tracking, PressScale as Pressable, Loading } from "../lib/ui";
 import { LEVEL_KEY } from "@hybrid/core";
 import type { PublicProfileResponse, CompareResult, SharedLift, BadgeAccent } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
@@ -110,7 +110,7 @@ export function ProfileModal({ handle, onClose }: { handle: string; onClose: () 
                         ratio behind it. Mirrors web's LevelChip. */}
                     {data?.fitnessLevel ? (
                       <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: levelInk(C, data.fitnessLevel.accent), borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, marginTop: 6 }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: 9, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", color: levelInk(C, data.fitnessLevel.accent) }}>
+                        <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: levelInk(C, data.fitnessLevel.accent) }}>
                           {t(LEVEL_KEY[data.fitnessLevel.level])}
                         </Text>
                       </View>
