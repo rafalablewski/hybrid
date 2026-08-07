@@ -87,6 +87,7 @@ import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
+import { HubMasthead } from "./hub-masthead";
 import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
@@ -644,7 +645,7 @@ export default function AuroraToday({
     return (
       <div style={shell}>
         {hubHeader}
-        <div style={{ marginTop: 16 }}>
+        <div>
           <AuroraPerformance
             sessions={sessions}
             bio={bio}
@@ -665,7 +666,7 @@ export default function AuroraToday({
     return (
       <div style={shell}>
         {hubHeader}
-        <div style={{ marginTop: 16 }}><SocialFeed onNavigate={onNavigate} /></div>
+        <SocialFeed onNavigate={onNavigate} />
       </div>
     );
   }
@@ -674,41 +675,38 @@ export default function AuroraToday({
     <div style={shell}>
       {hubHeader}
 
-      {/* MASTHEAD ("Today" redesign) — caption date + right meta (the
-          chooser's "Free", or the scrub-distance tag) and ONE big headline.
-          The greeting line was retired (ornament sweep): the caption already
-          says the day, and a "Good morning" sentence under the headline was
-          decoration competing with the Start action. The headline NAMES THE
-          VIEWED DAY (masthead() in @hybrid/core): "Today" until the week rail
-          is scrubbed, "Yesterday"/"Tomorrow" at ±1, the weekday name beyond —
-          a static "Today" over Friday's session would lie in the largest type
-          on screen. Off today, a "Back to today" return affordance renders
-          beneath, teal, in the same spot every time. Mirrors mobile home.tsx. */}
-      <div className="motion-masthead" style={{ margin: "16px 0 2px" }}>
-        <div className="motion-masthead-sub" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{mastCaption || " "}</span>
-          {firstRun || (logbookMode && !mastTag) ? (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>{t("w.home.today.badgeFree")}</span>
-          ) : mastTag ? (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--amber-text)", whiteSpace: "nowrap" }}>{mastTag}</span>
-          ) : null}
-        </div>
-        <div className="motion-masthead-title" style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), marginTop: 2 }}>
-          {mastTitle}
-          {/* Kyoto Hour hanko — the app's vermilion seal, stamped beside the true
-              "Today" only (never the scrubbed days). Hidden in Aurora via CSS
-              (.hanko-seal). Mirrors mobile home.tsx. */}
-          {dayIsToday && <span className="hanko-seal" aria-hidden>力</span>}
-        </div>
-        {!dayIsToday && (
-          <button className="pressable"
-            onClick={backToToday}
-            style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--blue-text)" }}
-          >
-            <CtaLabel size={12}>{`${t("w.home.today.backToToday")} →`}</CtaLabel>
-          </button>
-        )}
-      </div>
+      {/* THE MASTHEAD — the SHARED hub head (aurora/hub-masthead.tsx), the same
+          component Performance and Feed render, so the three tabs of one hub can
+          no longer present three different heads. Everything measurable about it
+          lives in @hybrid/core hub-masthead.ts; this screen passes only WORDS.
+          The headline NAMES THE VIEWED DAY (masthead() in @hybrid/core): "Today"
+          until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the
+          weekday name beyond — a static "Today" over Friday's session would lie
+          in the largest type on screen. Off today, a "Back to today" return
+          affordance renders beneath, teal, in the same spot every time. Mirrors
+          mobile home.tsx. */}
+      <HubMasthead
+        eyebrow={mastCaption}
+        meta={firstRun || (logbookMode && !mastTag) ? t("w.home.today.badgeFree") : mastTag}
+        metaTone={!firstRun && !(logbookMode && !mastTag) && mastTag ? "accent" : "plain"}
+        title={mastTitle}
+        mark={
+          // Kyoto Hour hanko — the app's vermilion seal, stamped beside the true
+          // "Today" only (never the scrubbed days). Hidden in Aurora via CSS
+          // (.hanko-seal). Mirrors mobile home.tsx.
+          dayIsToday ? <span className="hanko-seal" aria-hidden>力</span> : null
+        }
+        accessory={
+          !dayIsToday ? (
+            <button className="pressable"
+              onClick={backToToday}
+              style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--blue-text)" }}
+            >
+              <CtaLabel size={12}>{`${t("w.home.today.backToToday")} →`}</CtaLabel>
+            </button>
+          ) : null
+        }
+      />
 
       {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the
           path to one) and, below it, what was actually done. First of the FOUR
@@ -716,8 +714,8 @@ export default function AuroraToday({
           (Train / Recover / Progress / Explore) — each opens with a GroupMark,
           the quiet wayfinding tier above the blocks' own heads, so the page
           reads as four thoughts instead of nine competing cards. ═════ */}
-      <GroupMark label={t("w.home.group.train")} />
-
+      {/* mt={0}: The head emits the gap to the first content row (HUB_MASTHEAD.gap.below), so this block contributes none. RN does not collapse margins and CSS does, so a block that kept its own top margin would sit 16 lower on mobile than on web. */}
+      <GroupMark label={t("w.home.group.train")} mt={0} />
       {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
           eyebrow: the screen is already today's training and the plan names
           itself — the interface shouldn't narrate what the athlete can see.

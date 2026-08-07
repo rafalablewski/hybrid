@@ -10,6 +10,7 @@ import { colors } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
 import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
+import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
 import FeedLiveStrip from "./feed-live-strip";
 import { CosignInbox } from "./pr-attestation";
@@ -124,17 +125,23 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     <>
       {top}
       <Animated.View style={fade} onLayout={startHubFade}>
-      {/* Standing alone the head is the HERO's; as a Today hub tab the head is
-          Today's, handed down through `top`. */}
-      {top && (
-        <View style={{ marginBottom: 10, marginTop: 12 }}>
-          {/* The hub head reads the heading face at the ladder's `headline`
-              rung — the same head the standalone shape gets from its hero
-              (AuroraScreen rank "title"), not a hand-picked 24. */}
-          <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: fs.headline, lineHeight: leading(fs.headline, "snug") }}>{t("w.social.feedTitle")}</Text>
-          <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body }}>{t("w.social.feedSub")}</Text>
-        </View>
-      )}
+      {/* Standing alone the head is the HERO's (a pushed screen has a rail and a
+          back affordance); as a Today hub tab it is the SHARED hub masthead —
+          the same component Dashboard and Performance render, at the same rung.
+          It used to be `fs.headline` 22, a SECTION heading doing a screen
+          title's job, with no eyebrow and a subtitle that restated the title.
+          "What your friends are training" under a title that says Feed told the
+          athlete nothing, so it is cut.
+
+          THE META ROW IS EMPTY HERE, ON PURPOSE. It still renders and still
+          reserves its height — that is what keeps the title's y identical
+          across the three tabs — but Feed has nothing true to put in it yet.
+          The live count would restate the "Now training" strip 30 pt below, and
+          an unread count doesn't exist: FeedResponse carries `feed` and `live`
+          and nothing that says what is NEW since the last look. Tracked as
+          `hub-feed-meta` in capabilities.ts rather than filled with a
+          duplicate. */}
+      {top && <HubMasthead title={t("w.social.feedTitle")} />}
 
       {/* Verified-record witness requests addressed to ME — a person is waiting
           on this answer, so it outranks every piece of content below it, and
@@ -268,7 +275,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   }
   return (
     <AuroraScreen
-      hero={{ rank: "title", title: t("w.social.feedTitle"), meta: [t("w.social.feedSub")] }}
+      hero={{ rank: "title", title: t("w.social.feedTitle") }}
       // GUTTER — the app's screen gutter the rows' full-bleed margins assume;
       // the hub shape above uses the same value.
       scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER }] })}

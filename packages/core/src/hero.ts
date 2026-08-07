@@ -306,14 +306,26 @@ const TITLE_BASE: Record<HeroRank, HeroTitleType> = {
 export function heroTitleType(title: string, rank: HeroRank, scale = 1): HeroTitleType {
   const base = TITLE_BASE[rank];
   if (rank === "bar") return base;
-  const n = title.trim().length;
-  // ≤ 16 chars fits one line at full size ("Swimming", "History").
-  // 17–28 takes two lines at full size ("Olympic Weightlifting").
-  // > 28 steps down a rung rather than running to a third line.
-  const step = n > 28 ? 1 : 0;
+  return { ...titleStepDown(base, title, scale), tracking: base.tracking, maxLines: base.maxLines };
+}
+
+/**
+ * The step-down itself, as its own truth — shared with the HUB MASTHEAD
+ * (hub-masthead.ts), which is not a hero rank but wants the identical rule.
+ *
+ * ≤ 16 chars fits one line at full size ("Swimming", "History").
+ * 17–28 takes two lines at full size ("Olympic Weightlifting").
+ * > 28 steps down a rung rather than running to a third line.
+ */
+export function titleStepDown(
+  base: { size: number; lineHeight: number },
+  title: string,
+  scale = 1,
+): { size: number; lineHeight: number } {
+  const step = title.trim().length > 28 ? 1 : 0;
   const size = step ? Math.round(base.size * 0.82) : base.size;
   const lineHeight = step ? Math.round(base.lineHeight * 0.86) : base.lineHeight;
-  return { size: Math.round(size * scale), lineHeight: Math.round(lineHeight * scale), tracking: base.tracking, maxLines: base.maxLines };
+  return { size: Math.round(size * scale), lineHeight: Math.round(lineHeight * scale) };
 }
 
 /**

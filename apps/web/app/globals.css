@@ -712,11 +712,12 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
   opacity: var(--scroll-collapse);
 }
 .motion-masthead-title {
-  display: inline-block;
   transform-origin: left center;
   /* 34px → ~26px at full collapse; the title stays the same element rather than
-     crossfading with a second copy. */
-  transform: scale(calc(1 - 0.24 * var(--scroll-collapse)));
+     crossfading with a second copy. The floor is HUB_MASTHEAD.collapse.titleScale
+     (@hybrid/core), published as --hub-title-scale by the head component, so the
+     two clients cannot compress at two rates. */
+  transform: scale(calc(1 - (1 - var(--hub-title-scale, 0.76)) * var(--scroll-collapse)));
 }
 /* Secondary lines recede as the title takes over — the compact state is the
    title alone, which is all a header needs once you're reading. */

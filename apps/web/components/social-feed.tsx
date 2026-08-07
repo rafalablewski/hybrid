@@ -8,6 +8,7 @@ import { ProfileDrawer } from "./social-profile";
 import { CosignInbox } from "./pr-attestation";
 import FeedCard from "./feed-card";
 import FeedLiveStrip from "./feed-live-strip";
+import { HubMasthead } from "./aurora/hub-masthead";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -176,6 +177,19 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
     // which is what the feed had been falling through (into the platform UI
     // font) for its captions, comments and empty state.
     <div style={{ maxWidth: 600, fontFamily: "var(--font-display)", color: C("chalk") }}>
+      {/* THE HEAD — the SHARED hub masthead (aurora/hub-masthead.tsx), the same
+          component Dashboard and Performance render. Web had NO head here at
+          all: `w.social.feedTitle` existed and only mobile rendered it, so one
+          client titled this screen and the other simply did not. Mobile's
+          subtitle ("What your friends are training", under a title that says
+          Feed) is cut on both rather than copied over.
+          THE META ROW IS EMPTY, ON PURPOSE — it still reserves its height, which
+          is what keeps the title's y identical across the three tabs, but the
+          feed has nothing true to put in it yet: the live count would restate
+          the strip below, and FeedResponse carries no "new since you last
+          looked". Tracked as `hub-feed-meta` in capabilities.ts. */}
+      <HubMasthead title={t("w.social.feedTitle")} />
+
       {/* Verified-record witness requests addressed to ME. A person is waiting
           on this answer, so it outranks every piece of content below it — and
           every request is also an invite (core/attestation.ts). */}

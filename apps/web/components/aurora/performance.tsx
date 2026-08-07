@@ -28,6 +28,7 @@ import { usePersona, setClientPersona } from "@/lib/persona";
 import { useSession } from "@/lib/session";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { HubMasthead } from "./hub-masthead";
 import { CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
 import FreshnessSheet from "./freshness-sheet";
@@ -272,29 +273,41 @@ export default function AuroraPerformance({
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* 1 · MASTHEAD — the season caption, the title, and the verdict. */}
+      {/* 1 · MASTHEAD — the SHARED hub head (aurora/hub-masthead.tsx), the same
+          component Dashboard and Feed render. It replaces a hand-rolled 34 that
+          disagreed with mobile's 32 on this very screen, and an eyebrow that
+          reserved its line with a space character when there was no season.
+          The PHASE moved into the meta row from the chip rail below, where it
+          was reading twice within 30 pt; the VERDICT sentence moved down into
+          the state card, beside the freshness score it explains. */}
       <div style={{ margin: "0 2px" }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>
-          {macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : " "}
-        </div>
-        <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", lineHeight: 1.1, color: C("chalk"), margin: "2px 0 0" }}>{t("w.home.cockpit.commandCenter")}</h1>
-        <p style={{ fontSize: fs.body, lineHeight: 1.5, color: hasData ? C("chalk") : C("ash"), margin: "6px 0 0", maxWidth: "46ch" }}>{verdictLine}</p>
-        {(phaseBlock || macro?.eventInWeeks != null) && (
+        <HubMasthead
+          eyebrow={macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : null}
+          meta={phaseBlock?.label ?? null}
+          metaTone="accent"
+          title={t("w.home.cockpit.commandCenter")}
+        />
+        {macro?.eventInWeeks != null && (
           // Full-bleed chip rail — clips at the screen edge, rests on the column.
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", margin: "12px calc(-1 * var(--page-pad-x, 12px)) 0", padding: "0 var(--page-pad-x, 12px)" }}>
-            {phaseBlock && <Pill dot={C("lime")}><b>{phaseBlock.label}</b> {t("w.home.today.phase")}</Pill>}
-            {macro?.eventInWeeks != null && <Pill><AuroraIcon name="calendar-event" size={13} /> <b>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</b> {t("w.home.cockpit.eventIn")}</Pill>}
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", margin: "0 calc(-1 * var(--page-pad-x, 12px)) 16px", padding: "0 var(--page-pad-x, 12px)" }}>
+            <Pill><AuroraIcon name="calendar-event" size={13} /> <b>{macro.eventInWeeks} {t("w.home.cockpit.wk")}</b> {t("w.home.cockpit.eventIn")}</Pill>
           </div>
         )}
       </div>
 
-      <div style={{ display: "grid", gap: 16, marginTop: 20 }}>
+      <div style={{ display: "grid", gap: 16 }}>
         {/* 2 · YOUR STATE — the thesis. Freshness + its wearable contribution,
             the limiter as a sentence, the two freshness columns, capability,
             the plot, and readiness. One card, one computation behind every
             figure in it. */}
         <div style={CARD}>
           <SHead title={t("w.home.cockpit.stateTitle")} />
+          {/* THE VERDICT — freshness, then the tissue worth watching. It used to
+              sit at the top of the screen under the title; the hub head has no
+              sub slot, and this sentence reads better beside the number it
+              explains than above the whole page. It still says nothing the card
+              below doesn't say in full — the only licence a summary ever has. */}
+          <p style={{ fontSize: fs.body, lineHeight: 1.5, color: hasData ? C("chalk") : C("ash"), margin: "0 0 12px", maxWidth: "46ch" }}>{verdictLine}</p>
           {hasData ? (
             <>
               {/* THE HEADLINE — three levels, not two grey lines.
