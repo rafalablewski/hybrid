@@ -3,7 +3,7 @@ import { View, Text, Image, Linking, AccessibilityInfo } from "react-native";
 import { exerciseMedia, exerciseThumb, inferBlockKind, type ExerciseMediaAsset } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, tracking, PressScale as Pressable } from "../../lib/ui";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraExerciseMark from "./exercise-mark";
 
@@ -53,7 +53,7 @@ export default function AuroraExerciseMedia({
   const note = m.status === "pending" ? t("w.analyze.exp.media.pending") : m.status === "pattern" ? t("w.analyze.exp.media.pattern") : null;
   const credit = m.asset?.credit;
   const openHref = m.asset?.kind === "link" ? m.asset.href : m.asset?.kind === "clip" ? m.asset.src : null;
-  const tag = { fontFamily: F.mono, fontSize: 10, letterSpacing: 1.1, textTransform: "uppercase" as const, color: C.ash };
+  const tag = { fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase" as const, color: C.ash };
 
   return (
     <View style={{ borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingVertical: 10, paddingHorizontal: 16 }}>
