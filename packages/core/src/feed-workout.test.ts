@@ -76,15 +76,17 @@ describe("the opened post", () => {
     const withDevice = session({
       blocks: [{ kind: "cardio", name: "Easy Run", distance: 5, minutes: 30 }],
       device: {
-        source: "apple_watch",
-        workoutType: "running",
-        startedAt: "2026-03-02T17:30:00.000Z",
+        provider: "apple",
+        uuid: "hk-1",
+        activityLabel: "Running",
+        start: "2026-03-02T17:30:00.000Z",
+        end: "2026-03-02T17:57:52.000Z",
         durationSec: 1_672,
         durationMin: 27.9,
         distanceKm: 5.42,
         avgHr: 148,
       },
-    } as Partial<LoggedSession>);
+    });
     const v = feedWorkoutView(withDevice);
     expect(v.device).toBe(true);
     // The stat row is the card's own — device-measured duration and HR.
