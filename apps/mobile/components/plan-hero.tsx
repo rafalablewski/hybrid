@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HERO, HERO_INK, HERO_INLINE_TITLE, heroGeometry, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { HERO, HERO_INK, HERO_INLINE_TITLE, heroGeometry, heroRailPin, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
@@ -275,11 +275,15 @@ export function CoverScreen({
   const dockFade = clamp([delta * D.dock, delta], [0, 1]);
   const dockRise = clamp([delta * D.dock, delta], [HERO.motion.rise, 0]);
   // The rail docks beneath the collapsed bar: once its natural position would
-  // scroll past `barH`, it translates down to hold there (second sticky layer).
+  // scroll past the bar, it translates down to hold there (second sticky
+  // layer). The rail is a direct child of the content container here, so its
+  // measured y is already in scroll-content space — the space core's pin rule
+  // requires.
+  const railPin = railTop != null ? heroRailPin(railTop, geom) : null;
   const railShift =
-    railTop != null
+    railPin != null
       ? scrollY.interpolate({
-          inputRange: [Math.max(0, railTop - barH), Math.max(0, railTop - barH) + 100000],
+          inputRange: [railPin, railPin + 100000],
           outputRange: [0, 100000],
           extrapolateLeft: "clamp",
         })

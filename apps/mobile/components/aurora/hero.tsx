@@ -18,6 +18,7 @@ import {
   heroMetaLine,
   heroNavAction,
   heroNavMaterial,
+  heroRailPin,
   heroSnapTarget,
   heroStatusBar,
   heroTitleType,
@@ -424,7 +425,9 @@ export function HeroScreen({
   dock?: ReactNode;
   /** Take the scroll props (and the docked sub-rail node) and render your own
    *  scroller — a FlatList, say. The container never requires a screen to give
-   *  up virtualization to get a hero. */
+   *  up virtualization to get a hero. The rail node must go FIRST in the
+   *  scroller's content (the top of a list header): that is where its dock
+   *  point is measured from. */
   scroller?: HeroScrollerFn;
   children?: ReactNode;
 }) {
@@ -516,9 +519,18 @@ export function HeroScreen({
 
   // The sub-rail docks beneath the collapsed bar: once its natural position
   // would scroll past the bar, it translates down to hold there.
+  //
+  // `onLayout` measures y against the rail's PARENT, and in both placements
+  // that parent's top IS the top of the scroll content: the default `body`, and
+  // a custom scroller's list header (both sit directly under the content
+  // container's `paddingTop: geom.height`). So the rail's y in the scroll
+  // content is the hero pad PLUS the measurement — without the pad the pin came
+  // out at 0, the rail held at `geom.height` from the first pixel of scroll, and
+  // the collapsed bar left a whole collapse track of gap above it.
+  const railPin = railTop != null ? heroRailPin(geom.height + railTop, geom) : null;
   const railShift =
-    railTop != null
-      ? scrollY.interpolate({ inputRange: [Math.max(0, railTop - geom.barHeight), Math.max(0, railTop - geom.barHeight) + 100000], outputRange: [0, 100000], extrapolateLeft: "clamp" })
+    railPin != null
+      ? scrollY.interpolate({ inputRange: [railPin, railPin + 100000], outputRange: [0, 100000], extrapolateLeft: "clamp" })
       : 0;
 
   const navMaterial = heroNavMaterial(backdrop, barred);
