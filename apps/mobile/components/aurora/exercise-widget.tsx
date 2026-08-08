@@ -14,13 +14,14 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import HistoryStrip from "./history-strip";
+import RailTail from "./rail-tail";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { GUTTER, RADIUS, withAlpha } from "./kit";
+import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { GUTTER, RADIUS } from "./kit";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
  *  conditioning sand + ticker red ride accentText (parity with the web
@@ -110,7 +111,7 @@ export default function ExerciseWidgetRail({
           and spent the slot on a fact the reader already had — while the one
           they did NOT have, that this rail is a selection rather than their
           whole log, had nowhere to go. A quote must add a fraction. The
-          "All ›" action lives in the rail's trailing ghost tile, per the
+          "All ›" action lives in the rail's trailing tail, per the
           one-exit rule. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
@@ -183,15 +184,15 @@ export default function ExerciseWidgetRail({
             </Pressable>
           );
         })}
-        {/* The rail's exit — the trailing ghost tile, at tile scale. */}
-        <Pressable
-          onPress={onAll}
-          accessibilityRole="button"
-          style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
-        >
-          <Text style={{ fontSize: 18, color: C.ash }}>＋</Text>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.allCard")}</Text>
-        </Pressable>
+        {/* THE EXIT — the SHARED RailTail, like every other rail in the app.
+            This one used to draw its own: a DASHED ghost tile with a ＋ glyph
+            and a lime label. Three things wrong with that. A dashed box is the
+            "empty slot / drop here" idiom, so the rail ended in something that
+            looked unfilled rather than onward. ＋ means ADD, and this goes to a
+            screen. And it spent chartreuse — the reserved "go" colour — on a
+            standing link, which is the exact habit the tail rule retired from
+            every section head. Mirrors web. */}
+        <RailTail onOpen={onAll} label={t("w.home.exw.allCard")} w={132} minHeight={132} />
       </ScrollView>
     </View>
   );
