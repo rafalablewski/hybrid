@@ -304,15 +304,30 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
             explained. Drawn only when the menu would have rows (core decides —
             my own session/PR row has nothing to offer). */}
         {menuRows.length > 0 && (
-          <button
-            className="pressable"
-            onClick={() => setMenu(true)}
-            aria-label={t("feed.menu.title")}
-            aria-haspopup="dialog"
-            style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), padding: 4, display: "inline-flex" }}
-          >
-            <MoreGlyph />
-          </button>
+          // The ANCHOR. The menu is a small card hanging off this glyph's
+          // bottom-right (feed-menu.tsx), so the button needs a positioned box
+          // to hang from — and a stacking context, or the next post in the
+          // stream paints over an open menu.
+          <div style={{ position: "relative", zIndex: menu ? 30 : "auto", display: "inline-flex" }}>
+            <button
+              className="pressable"
+              onClick={() => setMenu((v) => !v)}
+              aria-label={t("feed.menu.title")}
+              aria-haspopup="menu"
+              aria-expanded={menu}
+              style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), padding: 4, display: "inline-flex" }}
+            >
+              <MoreGlyph />
+            </button>
+            <FeedMenu
+              open={menu}
+              onClose={() => setMenu(false)}
+              handle={item.author.handle}
+              mine={item.mine}
+              subjectType={item.subjectType}
+              onDelete={onDelete}
+            />
+          </div>
         )}
       </div>
 
@@ -393,15 +408,6 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       </div>
 
       {children}
-
-      <FeedMenu
-        open={menu}
-        onClose={() => setMenu(false)}
-        handle={item.author.handle}
-        mine={item.mine}
-        subjectType={item.subjectType}
-        onDelete={onDelete}
-      />
     </article>
   );
 }

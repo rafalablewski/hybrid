@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { View, Text, type TextStyle } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import {
@@ -22,7 +22,7 @@ import { useLang } from "../lib/i18n";
 import { runShare, toggleSavedPost, useFeedSaved } from "../lib/feed-actions";
 import { Avatar } from "./social-kit";
 import { GUTTER, RADIUS } from "./aurora/kit";
-import FeedMenu, { feedMenuFor } from "./feed-menu";
+import FeedMenu, { feedMenuFor, type FeedMenuAnchor } from "./feed-menu";
 
 /**
  * THE FEED ROW (mobile) — twin of apps/web/components/feed-card.tsx. Both
@@ -227,8 +227,16 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   // Saving is per-device and optimistic — the store updates before the write,
   // so the glyph fills on the press frame (lib/feed-actions.ts).
   const saved = isFeedSaved(useFeedSaved(), feedSubjectKey(item));
-  const [menu, setMenu] = useState(false);
   const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: !!onDelete });
+  // The menu is a card anchored to the ⋯, and it renders in its own native
+  // window (a Modal) because a card drawn inline would be clipped by the
+  // FlatList — so the glyph's WINDOW rect has to be measured and handed over.
+  // `menu` holds that rect; null is closed.
+  const moreRef = useRef<View>(null);
+  const [menu, setMenu] = useState<FeedMenuAnchor | null>(null);
+  const openMenu = () => {
+    moreRef.current?.measureInWindow((x, y, w, h) => setMenu({ x, y, w, h }));
+  };
 
   const headline = d
     ? d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout"
@@ -274,9 +282,13 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
             explained. Drawn only when the menu would have rows (core decides —
             my own session/PR row has nothing to offer). */}
         {menuRows.length > 0 ? (
-          <Pressable onPress={() => setMenu(true)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("feed.menu.title")}>
-            <More color={C.ash} />
-          </Pressable>
+          // collapsable={false} keeps this View in the native tree — RN prunes
+          // layout-only Views on Android, and a pruned view cannot be measured.
+          <View ref={moreRef} collapsable={false}>
+            <Pressable onPress={openMenu} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("feed.menu.title")}>
+              <More color={C.ash} />
+            </Pressable>
+          </View>
         ) : null}
       </View>
 
@@ -340,8 +352,8 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       {children}
 
       <FeedMenu
-        visible={menu}
-        onClose={() => setMenu(false)}
+        anchor={menu}
+        onClose={() => setMenu(null)}
         handle={item.author.handle}
         mine={item.mine}
         subjectType={item.subjectType}

@@ -159,8 +159,6 @@ export interface FeedMenuAction {
   key: FeedMenuActionKey;
   /** i18n key for the row's label. `{h}` is the author's @handle where present. */
   labelKey: string;
-  /** i18n key for the one-line explanation under it. */
-  subKey: string;
   /** Drawn in the red channel and placed last — leaving and deleting are the
    *  two things you must not hit by accident. */
   destructive?: boolean;
@@ -168,15 +166,22 @@ export interface FeedMenuAction {
   placeholder: boolean;
 }
 
-/** Every row the menu can ever draw, in the order it draws them. Exported so a
- *  test can assert the two clients render exactly this set. */
+/**
+ * Every row the menu can ever draw, in the order it draws them.
+ *
+ * ONE LABEL PER ROW, no explanatory second line. The menu is a small anchored
+ * popover hanging off the ⋯, not a page: at that size a description under each
+ * label doubles the card's height and turns a glance into a read. Every label
+ * here says what it does on its own ("Mute @ada", "Not interested") — a row
+ * that needed a paragraph to be understood would be the wrong row.
+ */
 const MENU: Record<FeedMenuActionKey, Omit<FeedMenuAction, "key">> = {
-  follow: { labelKey: "feed.menu.follow", subKey: "feed.menu.followSub", placeholder: true },
-  mute: { labelKey: "feed.menu.mute", subKey: "feed.menu.muteSub", placeholder: true },
-  notInterested: { labelKey: "feed.menu.notInterested", subKey: "feed.menu.notInterestedSub", placeholder: true },
-  report: { labelKey: "feed.menu.report", subKey: "feed.menu.reportSub", placeholder: true },
-  block: { labelKey: "feed.menu.block", subKey: "feed.menu.blockSub", destructive: true, placeholder: true },
-  delete: { labelKey: "feed.menu.delete", subKey: "feed.menu.deleteSub", destructive: true, placeholder: false },
+  follow: { labelKey: "feed.menu.follow", placeholder: true },
+  mute: { labelKey: "feed.menu.mute", placeholder: true },
+  notInterested: { labelKey: "feed.menu.notInterested", placeholder: true },
+  report: { labelKey: "feed.menu.report", placeholder: true },
+  block: { labelKey: "feed.menu.block", destructive: true, placeholder: true },
+  delete: { labelKey: "feed.menu.delete", destructive: true, placeholder: false },
 };
 
 export interface FeedMenuInput {

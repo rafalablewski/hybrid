@@ -126,7 +126,6 @@ describe("the overflow menu", () => {
   it("names an i18n key for every row — no client invents English", () => {
     for (const a of feedMenuActions({ mine: false, subjectType: "post" })) {
       expect(a.labelKey).toMatch(/^feed\.menu\./);
-      expect(a.subKey).toMatch(/^feed\.menu\./);
     }
   });
 });

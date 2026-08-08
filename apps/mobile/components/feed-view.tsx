@@ -60,7 +60,7 @@ function Comments({ item }: { item: FeedItemView }) {
 }
 
 export default function FeedView({ top }: { top?: ReactNode }) {
-  const { notify } = useConfirm();
+  const { notify, confirm } = useConfirm();
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const units = useLoggerPrefs().units;
@@ -107,7 +107,16 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     if (!feed) return [];
     return tab === "following" ? feed.filter((i) => !i.mine).slice().sort((a, b) => b.at - a.at) : feed;
   }, [feed, tab]);
-  const del = async (item: FeedItemView) => { await deletePost(item.subjectId); load(); };
+  // Delete ASKS FIRST. It used to be a bare × in the row's corner and it
+  // deleted on the first press with nothing in between; web has always put a
+  // confirm in front of it, and moving delete into a small anchored menu makes
+  // a mishit easier, not harder. Same string both clients read.
+  const del = async (item: FeedItemView) => {
+    const ok = await confirm({ title: t("w.social.deletePostConfirm"), confirmLabel: t("common.delete"), destructive: true });
+    if (!ok) return;
+    await deletePost(item.subjectId);
+    load();
+  };
   const padBottom = useScreenBottomPad();
   const navScroll = useNavScrollProps();
 
