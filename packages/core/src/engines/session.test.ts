@@ -481,7 +481,7 @@ describe("sessionMeta", () => {
       "0.2 km – 10 min – 5:00 /100m",
     );
     expect(sessionMeta(cardio([{ kind: "cardio", name: "Rowing", distance: 5, minutes: 20 }]))).toBe(
-      "5.0 km – 20 min – 2:00 /500m",
+      "5 km – 20 min – 2:00 /500m",
     );
   });
 
@@ -490,14 +490,14 @@ describe("sessionMeta", () => {
     // 8 min the row would have read 5:53 — disagreeing with the watch panel.
     expect(
       sessionMeta(cardio([{ kind: "cardio", name: "Running", distance: 1.36, minutes: 8, seconds: 472 }])),
-    ).toBe("1.4 km – 8 min – 5:47 /km");
+    ).toBe("1.36 km – 8 min – 5:47 /km");
   });
 
   it("has NO tail when the session can't be paced", () => {
     // A timed sport (no distance) — duration is the whole truth.
     expect(sessionMeta(cardio([{ kind: "cardio", name: "Tennis", minutes: 75 }]))).toBe("75 min");
     // Distance but no clock.
-    expect(sessionMeta(cardio([{ kind: "cardio", name: "Running", distance: 5 }]))).toBe("5.0 km");
+    expect(sessionMeta(cardio([{ kind: "cardio", name: "Running", distance: 5 }]))).toBe("5 km");
     // Neither — fall back to naming what was done.
     expect(sessionMeta(cardio([{ kind: "cardio", name: "Walk" }]))).toBe("Walk");
   });
@@ -512,7 +512,7 @@ describe("sessionMeta", () => {
           { kind: "cardio", name: "Running", distance: 5, minutes: 25 },
         ]),
       ),
-    ).toBe("6.0 km – 45 min");
+    ).toBe("6 km – 45 min");
     // Same split on both blocks — one honest pace across the session.
     expect(
       sessionMeta(
@@ -521,7 +521,7 @@ describe("sessionMeta", () => {
           { kind: "cardio", name: "Race Walking", distance: 5, minutes: 35 },
         ]),
       ),
-    ).toBe("10.0 km – 60 min – 6:00 /km");
+    ).toBe("10 km – 60 min – 6:00 /km");
   });
 
   it("reads a lift as tonnage and the lifts trained, in the athlete's units", () => {

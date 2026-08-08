@@ -146,7 +146,8 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>
               </Pressable>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 16, paddingBottom: 30 }}>
+            {/* No trailing pad — the Sheet's own bottom pad sits below this. */}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 16 }}>
               <AnatomyBody C={C} a={a} name={name} active={open} t={t} />
             </ScrollView>
       </Sheet>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { pacePerKm, mmss } from "@hybrid/core";
+import { fmtKm, pacePerKm, mmss } from "@hybrid/core";
 import { createSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
@@ -85,7 +85,7 @@ export default function AuroraRunTrack() {
       <ACard style={{ marginBottom: 12 }}>
         <View style={{ flexDirection: "row" }}>
           <Stat label={t("w.train.runTrack.time")} value={mmss(elapsed)} color={C.chalk} C={C} />
-          <Stat label={t("w.train.runTrack.distance")} value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={txt(C, C.blue)} C={C} />
+          <Stat label={t("w.train.runTrack.distance")} value={Number.isFinite(km) && km > 0 ? fmtKm(km) : "—"} color={txt(C, C.blue)} C={C} />
           <Stat label={t("w.train.runTrack.pacePerKm")} value={pace ?? "—"} color={txt(C, C.lime)} C={C} />
         </View>
         <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>

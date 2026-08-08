@@ -208,12 +208,29 @@ function Figure({ detail, units }: { detail: FeedDetail; units: WeightUnit }) {
   );
 }
 
+/** The card's content zones, pressable when there's a workout to open behind
+ *  them and a plain View when there isn't — so a status post never advertises
+ *  a tap that leads nowhere. */
+function Zones({ onPress, children }: { onPress?: () => void; children: ReactNode }) {
+  const { t } = useLang();
+  if (!onPress) return <View>{children}</View>;
+  return (
+    <Pressable onPress={onPress} noScale accessibilityRole="button" accessibilityLabel={t("feed.open")}>
+      <View>{children}</View>
+    </Pressable>
+  );
+}
+
 export interface FeedCardProps {
   item: FeedItemView;
   units: WeightUnit;
   onOpenProfile: (handle: string) => void;
   onKudos: () => void;
   onComments: () => void;
+  /** Open the post — the WHOLE workout behind this row (feed-workout.tsx).
+   *  Absent for cards with no session behind them (a status post), and the
+   *  content zones then aren't pressable. */
+  onOpen?: () => void;
   onDelete?: () => void;
   /** A change the ⋯ menu made to the AUTHOR rather than this row — a follow
    *  (every card by that person now reads differently) or a block (they leave
@@ -222,7 +239,7 @@ export interface FeedCardProps {
   children?: ReactNode;
 }
 
-export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, onAuthorChanged, children }: FeedCardProps) {
+export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onOpen, onDelete, onAuthorChanged, children }: FeedCardProps) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const d = item.detail;
@@ -297,20 +314,26 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         ) : null}
       </View>
 
-      {/* ZONE B — headline */}
-      {headline ? <Text style={{ ...headlineStyle, color: C.chalk, marginTop: 8 }}>{headline}</Text> : null}
+      {/* ZONES B–E are ONE target: the post opens to the whole workout behind
+          it (the top sets are a preview, not the session). The actions row
+          below stays outside it, so a kudos is never an accidental open.
+          noScale — a timeline row is not a button that should shrink. */}
+      <Zones onPress={onOpen}>
+        {/* ZONE B — headline */}
+        {headline ? <Text style={{ ...headlineStyle, color: C.chalk, marginTop: 8 }}>{headline}</Text> : null}
 
-      {/* ZONE C — figures */}
-      {d?.archetype === "stat" ? <Figure detail={d} units={units} /> : null}
-      {d?.prCount ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</Text> : null}
-      {d?.sets && d.sets.length > 0 ? <TopSets sets={d.sets} units={units} /> : null}
-      {d?.stats && d.stats.length > 0 ? <StatRow stats={d.stats} units={units} /> : null}
+        {/* ZONE C — figures */}
+        {d?.archetype === "stat" ? <Figure detail={d} units={units} /> : null}
+        {d?.prCount ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</Text> : null}
+        {d?.sets && d.sets.length > 0 ? <TopSets sets={d.sets} units={units} /> : null}
+        {d?.stats && d.stats.length > 0 ? <StatRow stats={d.stats} units={units} /> : null}
 
-      {/* ZONE E — words */}
-      {/* RN has no inherited font: a Text with no fontFamily draws in the
-          PLATFORM face, not Archivo — which is what set the feed's prose apart
-          from every other screen's. */}
-      {item.body ? <Text style={{ fontFamily: F.reg, color: d?.archetype === "text" ? C.chalk : C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 8 }}>{item.body}</Text> : null}
+        {/* ZONE E — words */}
+        {/* RN has no inherited font: a Text with no fontFamily draws in the
+            PLATFORM face, not Archivo — which is what set the feed's prose apart
+            from every other screen's. */}
+        {item.body ? <Text style={{ fontFamily: F.reg, color: d?.archetype === "text" ? C.chalk : C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 8 }}>{item.body}</Text> : null}
+      </Zones>
 
       {/* Legacy chips — only when core had no structured detail to give. */}
       {!d && (item.chips?.length ?? 0) > 0 ? (

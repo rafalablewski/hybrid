@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import {
   FEED_STAT_LABEL_KEY,
   feedDeltaText,
@@ -235,6 +235,10 @@ export interface FeedCardProps {
   onOpenProfile: (handle: string) => void;
   onKudos: () => void;
   onComments: () => void;
+  /** Open the post — the WHOLE workout behind this row (feed-workout.tsx).
+   *  Absent for cards with no session behind them (a status post), and the
+   *  content zones then aren't a button. */
+  onOpen?: () => void;
   onDelete?: () => void;
   /** A change the ⋯ menu made to the AUTHOR rather than this row — a follow
    *  (every card by that person now reads differently) or a block (they leave
@@ -243,7 +247,7 @@ export interface FeedCardProps {
   children?: ReactNode; // the comment thread, when open
 }
 
-export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, onAuthorChanged, children }: FeedCardProps) {
+export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onOpen, onDelete, onAuthorChanged, children }: FeedCardProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
   const d = item.detail;
@@ -340,18 +344,36 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         )}
       </div>
 
-      {/* ZONE B — headline */}
-      {headline && <div style={{ ...headlineStyle, color: C("chalk"), marginTop: 8 }}>{headline}</div>}
+      {/* ZONES B–E are ONE target: the post opens to the whole workout behind
+          it (the top sets are a preview, not the session). The actions row
+          below stays outside it, so a kudos is never an accidental open. */}
+      <div
+        {...(onOpen
+          ? {
+              role: "button" as const,
+              tabIndex: 0,
+              "aria-label": t("feed.open"),
+              onClick: onOpen,
+              onKeyDown: (e: KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); }
+              },
+              style: { cursor: "pointer" },
+            }
+          : {})}
+      >
+        {/* ZONE B — headline */}
+        {headline && <div style={{ ...headlineStyle, color: C("chalk"), marginTop: 8 }}>{headline}</div>}
 
-      {/* ZONE C — the figures */}
-      {d?.archetype === "stat" && <Figure detail={d} units={units} />}
-      {d?.prCount ? <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</div> : null}
-      {d?.sets && d.sets.length > 0 && <TopSets sets={d.sets} units={units} />}
-      {d?.stats && d.stats.length > 0 && <StatRow stats={d.stats} units={units} />}
+        {/* ZONE C — the figures */}
+        {d?.archetype === "stat" && <Figure detail={d} units={units} />}
+        {d?.prCount ? <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</div> : null}
+        {d?.sets && d.sets.length > 0 && <TopSets sets={d.sets} units={units} />}
+        {d?.stats && d.stats.length > 0 && <StatRow stats={d.stats} units={units} />}
 
-      {/* ZONE E — words. A caption is written FOR the feed; the private session
-          note is owner-only by schema and never arrives here. */}
-      {item.body && <p style={{ color: moment === "p2" && d?.archetype === "text" ? C("chalk") : C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "8px 0 0" }}>{item.body}</p>}
+        {/* ZONE E — words. A caption is written FOR the feed; the private session
+            note is owner-only by schema and never arrives here. */}
+        {item.body && <p style={{ color: moment === "p2" && d?.archetype === "text" ? C("chalk") : C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "8px 0 0" }}>{item.body}</p>}
+      </div>
 
       {/* Legacy chips — only when core had no structured detail to give. */}
       {!d && item.chips.length > 0 && (

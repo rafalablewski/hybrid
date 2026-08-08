@@ -115,10 +115,13 @@ export default function AuroraEnduranceLanes({
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} canOpen={canOpen ? canOpen(lane.discipline) : true} />)}
 
-      {/* The block's exit, in the DOOR-ROW anatomy (the This-week card's
-          idiom): full-width blocks end in a door, rails end in a trailing
-          ghost tile — the cluster's one "see more" rule. The old bare "+N"
-          outline button is retired. Mirrors web endurance-lanes.tsx. */}
+      {/* The block's END CONTROL — an EXPANDER, so it wears the expander
+          grammar, not the door's (see week-verdict's DoorRow): chromeless
+          like every end-of-thing affordance, but a BARE ＋/− with no ring,
+          because the ring is what promises a screen and this only grows the
+          block in place. The count drops chartreuse for ash with the fill —
+          the accent is the "go" colour, and this control never goes
+          anywhere. Mirrors web. */}
       {rest > 0 && (
         <Pressable
           onPress={() => setExpanded(!expanded)}
@@ -126,17 +129,16 @@ export default function AuroraEnduranceLanes({
           accessibilityState={{ expanded }}
           style={{
             flexDirection: "row", alignItems: "center", gap: 12,
-            marginHorizontal: 2, marginTop: 12, paddingHorizontal: 16, paddingVertical: 12,
-            backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
+            marginHorizontal: 2, marginTop: 14, paddingVertical: 4,
           }}
         >
-          <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 13, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
+          <View style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 18, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
           </View>
           <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
             {expanded ? t("w.home.end.fewer") : t("w.home.end.allSports")}
           </Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{expanded ? "−" : "+"}{rest}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{expanded ? "−" : "+"}{rest}</Text>
         </Pressable>
       )}
     </View>
@@ -203,15 +205,16 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         {lane.paceTrend.length > 1 && <TrendTile lane={lane} />}
         {zones.any && <ZoneTile lane={lane} />}
         {lane.last && <LastTile lane={lane} />}
-        {/* THE EXIT — last card in the rail, so it's found by the same swipe
-            that exhausts the tiles. `radius`/`minHeight` match Tile so it reads
-            as one more card in the row rather than a button parked at the end;
-            no shadow, because these tiles are flat. */}
+        {/* THE EXIT — last thing in the rail, so it's found by the same swipe
+            that exhausts the tiles. Chromeless (see rail-tail.tsx): a lane's
+            tiles each carry a metric, the exit carries none, so it must not
+            draw as a sixth tile that turned out to be blank. `minHeight`
+            matches Tile only so the rail keeps one height. */}
         {onOpen && canOpen && (
           <RailTail
             onOpen={() => onOpen(lane.discipline)}
             a11y={`${t("w.explore.seeAll")} – ${t(lane.labelKey)}`}
-            w={112} radius={RADIUS.field} minHeight={TILE_H} shadow={false}
+            w={112} minHeight={TILE_H}
           />
         )}
       </ScrollView>

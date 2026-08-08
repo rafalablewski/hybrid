@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
   fmtWeight, splitFigure, strengthPrProof,
-  resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
+  resolveActivityRange, groupDistanceDisplay, fmtKm, kmValue, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
   figureDeltaPct, figureDirection,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
@@ -115,25 +115,43 @@ function Lead({ template, word }: { template: string; word: string | null }): Re
   );
 }
 
-/** One destination row — the door to everything past this period. Exported
- *  since wave 3: the doors render at the END of the Progress cluster (in
- *  today.tsx), as the whole cluster's single exit point, not under this card. */
-export function DoorRow({ title, sub, glyph, onClick }: { title: string; sub: string; glyph: string; onClick: () => void }) {
+/**
+ * One destination row — the door to everything past this period. Exported
+ * since wave 3: the doors render at the END of the Progress cluster (in
+ * today.tsx), as the whole cluster's single exit point, not under this card.
+ *
+ * CHROMELESS since Aug 2026, the same pass that un-carded the rail tail
+ * (aurora/rail-tail.tsx). A door is not a thing you own, it is the way out of
+ * the things you own — so it stops wearing the ink2 fill, the hairline and the
+ * radius that every CARD on Today wears, and reads as type on the ground. That
+ * also ends the reading where a stack of two of them looked like two more
+ * cards' worth of content below the week.
+ *
+ * THE RING IS THE GRAMMAR. A door carries its glyph in a ringed plate, exactly
+ * as the rail tail carries its arrow; an EXPANDER — something that grows the
+ * thing in place rather than opening a screen — carries a bare ＋/− with no
+ * ring (the Other-sports tail, the endurance block's All-sports control). So
+ * the ring says "this leaves", and nothing in either shape is a bordered box.
+ * The rows separate by whitespace, not a rule: a hairline under a GroupMark is
+ * the label-plus-rule divider the cluster markers deliberately retired.
+ */
+export function DoorRow({ title, sub, glyph, onClick, premium = false }: { title: string; sub: string; glyph: string; onClick: () => void; premium?: boolean }) {
+  const glyphColor = premium ? "var(--premium-accent-text)" : C("ash");
   return (
     <button
       onClick={onClick}
       aria-label={`${title} – ${sub}`}
       className="pressable"
       style={{
-        display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 10,
-        background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
-        padding: "12px 16px", cursor: "pointer", textAlign: "left", color: C("chalk"),
+        display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 14,
+        background: "none", border: "none",
+        padding: "4px 2px", cursor: "pointer", textAlign: "left", color: C("chalk"),
       }}
     >
       <span style={{
-        width: 32, height: 32, borderRadius: 12, background: C("ink"),
-        border: `1px solid ${C("line")}`, display: "flex", alignItems: "center",
-        justifyContent: "center", fontSize: 13, color: C("ash"), flex: "0 0 32px",
+        width: 32, height: 32, borderRadius: 999, background: "none",
+        border: `1px solid ${premium ? "var(--premium-accent-text)" : C("line")}`, display: "flex", alignItems: "center",
+        justifyContent: "center", fontSize: 13, color: glyphColor, flex: "0 0 32px",
       }} aria-hidden>{glyph}</span>
       <span style={{ flex: 1 }}>
         <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg }}>{title}</span>
@@ -296,11 +314,11 @@ export default function AuroraWeekVerdict({
   }, [shownPrs.length]);
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
-  // minutes read as hours to one decimal, distance to one decimal km.
+  // minutes read as hours to one decimal, distance at the shared km precision.
   const fmt = (metric: string, value: number) =>
     metric === "tonnage" ? fmtTonnage(value, units)
       : metric === "hours" ? String(Math.round(value / 6) / 10)
-        : metric === "distance" ? String(Math.round(value * 10) / 10)
+        : metric === "distance" ? kmValue(value)
           : String(Math.round(value));
 
   const fmtMinutes = (m: number) =>
@@ -766,7 +784,7 @@ function MetricDetail({
     } else {
       if (it.minutes > 0) bits.push(fmtMinutes(it.minutes));
       if (it.tonnage > 0) bits.push(fmtTonnage(it.tonnage, units));
-      if (it.distanceKm > 0) bits.push(`${Math.round(it.distanceKm * 10) / 10} km`);
+      if (it.distanceKm > 0) bits.push(fmtKm(it.distanceKm));
     }
     return bits.join(" – ");
   };

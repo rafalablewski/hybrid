@@ -21,6 +21,8 @@
  * two clients offer the same sports with the same parameters.
  */
 
+import { kmValue } from "./distance";
+
 /**
  * A parameter a sport session can carry. `duration` (minutes) applies to every
  * sport; `distance` (km) + `pace` (derived per-km) apply to the endurance sports
@@ -370,11 +372,11 @@ export function sportPacePerMeters(name: string): number {
 /** Stored km → the value shown in the sport's distance unit (e.g. 0.4 → "400" for swimming). */
 export function displaySportDistance(km: number | undefined | null, name: string): string {
   if (km == null || !Number.isFinite(km)) return "";
-  // Metre sports read to the metre; km sports to 10 m (two decimals). The cap
-  // matters now that measured distances reach here unrounded — a watch's 10.234
-  // km would otherwise print all three decimals, and 0.51 km of pool swimming
-  // has to stay 510 m rather than collapse to 500.
-  return sportDistanceUnit(name) === "m" ? String(Math.round(km * 1000)) : String(Math.round(km * 100) / 100);
+  // Metre sports read to the metre; km sports to the shared two decimals (10 m
+  // — see distance.ts). The cap matters now that measured distances reach here
+  // unrounded — a watch's 10.234 km would otherwise print all three decimals,
+  // and 0.51 km of pool swimming has to stay 510 m rather than collapse to 500.
+  return sportDistanceUnit(name) === "m" ? String(Math.round(km * 1000)) : kmValue(km);
 }
 
 /** A typed distance value (in the sport's unit) → stored km, or undefined if blank/NaN. */

@@ -1,5 +1,6 @@
 import { cardioDiscipline, cardioSeconds, type LoggedSession, type CardioBlock, type CardioDiscipline } from "./session";
 import { deviceTrueSessions } from "../device-truth";
+import { roundKm } from "../distance";
 
 // Running / cardio analytics — pure aggregates over logged cardio blocks, so the
 // web/mobile Running screens (and anything else) read one source of truth. A
@@ -89,7 +90,7 @@ export function runTotals(sessions: LoggedSession[]): RunTotals {
         if (b.distance && b.distance > 0) distanceKm += b.distance;
         if (b.minutes && b.minutes > 0) minutes += b.minutes;
       }
-  return { efforts, distanceKm: Math.round(distanceKm * 10) / 10, minutes: Math.round(minutes) };
+  return { efforts, distanceKm: roundKm(distanceKm), minutes: Math.round(minutes) };
 }
 
 export interface RunStat {
@@ -128,7 +129,7 @@ export function runStats(sessions: LoggedSession[]): RunStat[] {
         map.set(b.name, cur);
       }
   return [...map.values()]
-    .map((r) => ({ ...r, distanceKm: Math.round(r.distanceKm * 10) / 10, minutes: Math.round(r.minutes) }))
+    .map((r) => ({ ...r, distanceKm: roundKm(r.distanceKm), minutes: Math.round(r.minutes) }))
     .sort((a, b) => b.distanceKm - a.distanceKm || b.efforts - a.efforts);
 }
 
@@ -182,7 +183,7 @@ export function weeklyMileage(sessions: LoggedSession[], weeks = 8, now = Date.n
     }
     out.push({
       weekStart: new Date(from).toISOString(),
-      km: Math.round(km * 10) / 10,
+      km: roundKm(km),
       minutes: Math.round(minutes),
       seconds: Math.round(seconds),
       efforts,

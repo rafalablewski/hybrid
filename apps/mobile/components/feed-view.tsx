@@ -12,6 +12,7 @@ import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
 import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
 import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
+import FeedWorkoutSheet from "./feed-workout";
 import FeedLiveStrip from "./feed-live-strip";
 import { CosignInbox } from "./pr-attestation";
 import { useLoggerPrefs } from "../lib/logger-prefs";
@@ -70,6 +71,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItemView[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  // The POST, opened — the whole workout behind a card. Held by id (not by the
+  // item) so the sheet keeps reading the live row: a kudos given in the feed
+  // while the sheet is up still shows there.
+  const [opened, setOpened] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<FeedTab>("forYou");
@@ -244,6 +249,20 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         onOpenProfile={(h) => setDrawer(h)}
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
+        // Session and PR cards are both anchored on a Session id, so both open
+        // to the workout. A status post has no workout behind it.
+        // MY OWN session opens MY view of it — the full detail with the
+        // Wrapped, the PRs and the manage row — not the visitor's read.
+        // Otherwise the sheet, and opening COLLAPSES the row's inline thread:
+        // the sheet carries the same thread, and two mounted copies would fetch
+        // the same comments twice and then disagree the moment one posted.
+        onOpen={
+          item.subjectType === "session" || item.subjectType === "pr"
+            ? item.mine
+              ? () => router.push(`/session/${item.subjectId}`)
+              : () => { setOpen(null); setOpened(item.id); }
+            : undefined
+        }
         onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
         onAuthorChanged={authorChanged}
       >
@@ -262,6 +281,16 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         <SButton label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>
     );
+
+  // THE POST, OPENED — the whole workout behind the row, with its thread
+  // underneath (the same Comments component the row expands, so a comment
+  // written here and one written in the stream are one thing).
+  const openedItem = opened ? items.find((i) => i.id === opened) ?? null : null;
+  const postSheet = (
+    <FeedWorkoutSheet item={openedItem} units={units} visible={!!openedItem} onClose={() => setOpened(null)}>
+      {openedItem ? <Comments item={openedItem} /> : null}
+    </FeedWorkoutSheet>
+  );
 
   // The FlatList stays the sole scroller in BOTH shapes — a screen never trades
   // virtualization for a hero.
@@ -304,6 +333,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       // can't reach the physical edge.
       <AuroraScreen scroll={false} hubTab={hub} padding={0}>
         {list({ ...navScroll, contentContainerStyle: { paddingHorizontal: GUTTER, paddingTop: 16, paddingBottom: padBottom } })}
+        {postSheet}
         {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
       </AuroraScreen>
     );
@@ -315,6 +345,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       // the hub shape above uses the same value.
       scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER }] })}
     >
+      {postSheet}
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </AuroraScreen>
   );
