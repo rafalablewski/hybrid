@@ -246,7 +246,7 @@ function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe; onOpen
       <LinearGradient pointerEvents="none" colors={["#0c0d0c00", "#0c0d0ca8", "#0c0d0c"]} locations={[0.34, 0.78, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.9, color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
       <View>
-        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: 18, letterSpacing: -0.5, color: "#fff" }}>{tile.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: leading(16, "tight"), letterSpacing: -0.5, color: "#fff" }}>{tile.title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: "rgba(255,255,255,0.7)", marginTop: 5 }}>{tile.meta}</Text>
       </View>
     </Pressable>
@@ -272,9 +272,9 @@ function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () => void 
       </View>
       <View style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
         <View style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 9, fontWeight: "700", letterSpacing: 0.9, textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "700", letterSpacing: 0.9, textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
         </View>
-        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 26, lineHeight: 28, letterSpacing: -0.8, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: -0.8, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
       </View>
       {/* one tick per step — the method's length, stated by the plate itself */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 2 }}>
@@ -309,13 +309,13 @@ function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => void }) 
           )}
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 }}>
-          <Text style={{ fontSize: 24, lineHeight: 28 }}>{recipe.emoji}</Text>
+          <Text style={{ fontSize: 24 }}>{recipe.emoji}</Text>
           <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, flexShrink: 1 }}>{recipe.name}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
           {stats.map((st) => (
             <View key={st.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.14), paddingTop: 8 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 20, lineHeight: 21, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.heading, lineHeight: leading(fs.heading, "tight"), letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                 {st.value}
                 {!!st.unit && <Text style={{ fontSize: 12, color: C.ash }}>{st.unit}</Text>}
               </Text>
