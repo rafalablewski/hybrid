@@ -157,7 +157,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
       accessory={<HeroAccessory label={t(showArchived ? "w.analyze.hist.backToHistory" : "w.analyze.hist.archivedToggle")} active={showArchived} onClick={toggleArchived} onDark={false} />}
       // The view switcher is a SUB-rail: it docks beneath the collapsed bar
       // rather than scrolling away, so the layout you are in stays addressable.
-      rail={!showArchived ? <div style={{ padding: "10px 0" }}><ViewSwitcher view={view} onChange={pickView} /></div> : undefined}
+      rail={!showArchived ? <ViewSwitcher view={view} onChange={pickView} /> : undefined}
     >
     <div style={{ display: "flex", flexDirection: "column", gap: space.md, maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
       {!showArchived && fetchError && sessions.length === 0 ? (
