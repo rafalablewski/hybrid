@@ -5,14 +5,14 @@ import { Loading, F, fs, leading, serifIf, tracking, useScreenBottomPad, useHubD
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import type { FeedItemView, CommentView, LiveAthlete, Relation } from "@hybrid/core";
-import { colors } from "@hybrid/core";
-import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
-import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
+import type { FeedItemView, LiveAthlete, Relation } from "@hybrid/core";
+import { colors, feedPostPath } from "@hybrid/core";
+import { getFeed, toggleKudos, createPost, deletePost } from "../lib/social-api";
+import { Empty, ProfileModal, SButton } from "./social-kit";
 import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
 import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
-import FeedWorkoutSheet from "./feed-workout";
+import { Comments } from "./feed-comments";
 import FeedLiveStrip from "./feed-live-strip";
 import { CosignInbox } from "./pr-attestation";
 import { useLoggerPrefs } from "../lib/logger-prefs";
@@ -31,39 +31,6 @@ import { useConfirm } from "./aurora/confirm";
  */
 type FeedTab = "forYou" | "following";
 
-/** The comment thread under an open row. EXPORTED because the Saved screen
- *  (app/saved.tsx) renders the same rows and must open the same thread — a
- *  second copy of this would drift the moment either is touched. */
-export function Comments({ item }: { item: FeedItemView }) {
-  const { notify } = useConfirm();
-  const C = useTheme().palette;
-  const { t } = useLang();
-  const [list, setList] = useState<CommentView[]>([]);
-  const [text, setText] = useState("");
-  const load = () => getComments(item.subjectType, item.subjectId).then((r) => setList(r.comments ?? []));
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
-  const send = async () => {
-    if (!text.trim()) return;
-    const r = await postComment({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
-    if (r.error) { notify(t("common.error"), r.error); return; } // don't clear the box on a failed post
-    setText(""); load();
-  };
-  return (
-    <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
-      {list.map((c) => (
-        <View key={c.id} style={{ flexDirection: "row", gap: 8, marginBottom: 8, alignItems: "center" }}>
-          <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
-          <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body) }}><Text style={{ fontFamily: F.semi, color: C.chalk }}>{c.author?.displayName || `@${c.author?.handle}`} </Text><Text style={{ color: C.ash }}>{c.body}</Text></Text>
-        </View>
-      ))}
-      <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
-        <TextInput value={text} onChangeText={setText} placeholder={t("w.social.commentPlaceholder")} placeholderTextColor={C.ash} style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontFamily: F.reg, fontSize: fs.body }} />
-        <SButton label={t("w.social.post")} small onPress={send} />
-      </View>
-    </View>
-  );
-}
-
 export default function FeedView({ top }: { top?: ReactNode }) {
   const { notify, confirm } = useConfirm();
   const { palette: C, scheme } = useTheme();
@@ -71,10 +38,6 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItemView[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
-  // The POST, opened — the whole workout behind a card. Held by id (not by the
-  // item) so the sheet keeps reading the live row: a kudos given in the feed
-  // while the sheet is up still shows there.
-  const [opened, setOpened] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<FeedTab>("forYou");
@@ -249,20 +212,11 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         onOpenProfile={(h) => setDrawer(h)}
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
-        // Session and PR cards are both anchored on a Session id, so both open
-        // to the workout. A status post has no workout behind it.
-        // MY OWN session opens MY view of it — the full detail with the
-        // Wrapped, the PRs and the manage row — not the visitor's read.
-        // Otherwise the sheet, and opening COLLAPSES the row's inline thread:
-        // the sheet carries the same thread, and two mounted copies would fetch
-        // the same comments twice and then disagree the moment one posted.
-        onOpen={
-          item.subjectType === "session" || item.subjectType === "pr"
-            ? item.mine
-              ? () => router.push(`/session/${item.subjectId}`)
-              : () => { setOpen(null); setOpened(item.id); }
-            : undefined
-        }
+        // EVERY post opens its own screen — a workout, a record, a status
+        // update alike. Opening COLLAPSES the row's inline thread: the post
+        // carries the same thread, and two mounted copies would fetch the same
+        // comments twice and then disagree the moment one of them posted.
+        onOpen={() => { setOpen(null); router.push(feedPostPath(item)); }}
         onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
         onAuthorChanged={authorChanged}
       >
@@ -281,16 +235,6 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         <SButton label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>
     );
-
-  // THE POST, OPENED — the whole workout behind the row, with its thread
-  // underneath (the same Comments component the row expands, so a comment
-  // written here and one written in the stream are one thing).
-  const openedItem = opened ? items.find((i) => i.id === opened) ?? null : null;
-  const postSheet = (
-    <FeedWorkoutSheet item={openedItem} units={units} visible={!!openedItem} onClose={() => setOpened(null)}>
-      {openedItem ? <Comments item={openedItem} /> : null}
-    </FeedWorkoutSheet>
-  );
 
   // The FlatList stays the sole scroller in BOTH shapes — a screen never trades
   // virtualization for a hero.
@@ -333,7 +277,6 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       // can't reach the physical edge.
       <AuroraScreen scroll={false} hubTab={hub} padding={0}>
         {list({ ...navScroll, contentContainerStyle: { paddingHorizontal: GUTTER, paddingTop: 16, paddingBottom: padBottom } })}
-        {postSheet}
         {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
       </AuroraScreen>
     );
@@ -345,7 +288,6 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       // the hub shape above uses the same value.
       scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER }] })}
     >
-      {postSheet}
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </AuroraScreen>
   );

@@ -9,6 +9,35 @@ export const tableMissing = (e: unknown) => {
   return code === "P2021" || code === "P2010";
 };
 
+/**
+ * REACTIONS FOLLOW THE POST THEY WERE GIVEN TO.
+ *
+ * A session used to produce TWO cards — the workout and a separate `pr` card
+ * anchored on the same Session id — so kudos and comments were written against
+ * whichever of the two the reader happened to be looking at. There is one post
+ * per workout now (core/social.ts buildSocialFeed), and the records live on it.
+ *
+ * So `session` and `pr` are ONE subject at the reaction layer: every write
+ * canonicalises to `session`, and every read counts both. Nobody's kudos or
+ * comment disappeared when the two cards became one, and the thread under the
+ * post is the whole thread rather than half of it.
+ */
+export const canonicalSubjectType = (subjectType: string): string => (subjectType === "pr" ? "session" : subjectType);
+
+/** Every subject type a read must cover for one canonical subject. */
+export const subjectTypeAliases = (subjectType: string): string[] =>
+  canonicalSubjectType(subjectType) === "session" ? ["session", "pr"] : [subjectType];
+
+/** The (subjectType, subjectId) pairs to query for a set of feed items, and the
+ *  key a returned row counts towards — `pr` rows fold onto their session. */
+export function reactionKeys(items: { subjectType: string; subjectId: string }[]): {
+  pairs: { subjectType: string; subjectId: string }[];
+  keyOf: (row: { subjectType: string; subjectId: string }) => string;
+} {
+  const pairs = items.flatMap((i) => subjectTypeAliases(i.subjectType).map((subjectType) => ({ subjectType, subjectId: i.subjectId })));
+  return { pairs, keyOf: (row) => `${canonicalSubjectType(row.subjectType)}:${row.subjectId}` };
+}
+
 /** Materialize a coach program's weeks into dated Assignments for one client —
  *  the "deliver the program" step shared by accepting a ProgramEnrollment AND
  *  accepting a CoachLink that originated from an enrolment. Idempotent: clears

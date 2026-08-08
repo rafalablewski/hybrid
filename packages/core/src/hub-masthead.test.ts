@@ -124,8 +124,11 @@ describe("the hub head guard — no screen may draw its own", () => {
   it("has retired the subtitle that only restated its own title", () => {
     // "What your friends are training." under a title that says Feed. Cut on
     // both clients, and the string deleted rather than left dangling.
+    // The KEY, not the letters: `feedSubjectKey` (core/feed-actions.ts) is a
+    // different word that happens to start the same way, and the feed screens
+    // read it to address a post.
     for (const file of [...HUB_SCREENS, "packages/core/src/i18n-web/home.ts"]) {
-      expect(read(file), file).not.toContain("feedSub");
+      expect(read(file), file).not.toMatch(/feedSub(?!jectKey)/);
     }
   });
 

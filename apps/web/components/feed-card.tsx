@@ -6,6 +6,9 @@ import {
   feedDeltaText,
   feedFigureText,
   feedSharePayload,
+  cardPrLines,
+  cardSetLines,
+  feedHeadlineText,
   feedStatText,
   feedSubjectKey,
   feedTierChip,
@@ -163,6 +166,47 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
   );
 }
 
+/**
+ * Zone C — THE RECORDS this workout set, listed one after another.
+ *
+ * A record used to be a card of its own that named the heaviest lift and
+ * reduced the others to "3 PRs this session". They are lines on the workout
+ * now: the first two carry their own figure and their delta, and anything past
+ * that is a count that opens (the post has all of them). The tier chip sits on
+ * the LOUDEST line, because provenance belongs to the claim.
+ */
+function PrLines({ prs, tier, units }: { prs: NonNullable<FeedDetail["prs"]>; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+  const { t } = useLang();
+  const chip = feedTierChip(tier);
+  const shown = cardPrLines(prs);
+  const rest = prs.length - shown.length;
+  return (
+    <div style={{ marginTop: 6 }}>
+      {shown.map((pr, i) => {
+        const fig = feedFigureText(pr.topLoadKg, units);
+        return (
+          <div key={`${pr.lift}-${i}`} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "3px 0" }}>
+            <span style={{ fontFamily: display, fontWeight: 700, fontSize: fs.body, color: C("chalk"), minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pr.lift}</span>
+            <span style={{ fontFamily: mono, fontSize: fs.note, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: C("chalk"), whiteSpace: "nowrap" }}>
+              {fig.value} <span style={{ fontSize: fs.micro, color: C("ash") }}>{fig.unit}</span>
+            </span>
+            {pr.deltaPct != null && <span style={{ fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: accentVar("lime") }}>{feedDeltaText(pr.deltaPct)}</span>}
+            {pr.firstEver && <span style={{ fontFamily: mono, fontSize: fs.micro, color: C("ash") }}>{t("feed.firstEver")}</span>}
+            {i === 0 && chip && (
+              <span style={{ marginLeft: "auto" }}>
+                <Chip tone="lime" title={t(`feed.tierExplain.${tier}`)}><b>{chip.short}</b> {t(chip.labelKey)}</Chip>
+              </span>
+            )}
+          </div>
+        );
+      })}
+      {rest > 0 && (
+        <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{t("feed.prCount").replace("{n}", String(prs.length))}</div>
+      )}
+    </div>
+  );
+}
+
 /** Zone C — top sets. Two or three lines worth reading, never the full ledger. */
 function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units: WeightUnit }) {
   if (!sets.length) return null;
@@ -229,6 +273,93 @@ function Figure({ detail, units }: { detail: FeedDetail; units: WeightUnit }) {
   );
 }
 
+/**
+ * ZONE F — the actions row, EXPORTED because the individual post screen
+ * (feed-post.tsx) carries the identical row. Two copies of kudos/comment/save/
+ * share is how the same post comes to offer different verbs depending on
+ * whether you're looking at it in the stream or on its own page.
+ *
+ * The two PRIVATE verbs sit at the far edge, so the row splits into what you
+ * give the author (kudos, comment) and what you do for yourself. Neither
+ * carries a count: a save is nobody else's business and a share isn't a score.
+ */
+export function FeedActions({
+  item,
+  headline,
+  onKudos,
+  onComments,
+}: {
+  item: FeedItemView;
+  /** the row's own headline, already translated — so what you share reads like
+   *  what you tapped. */
+  headline: string;
+  onKudos: () => void;
+  onComments: () => void;
+}) {
+  const { t } = useLang();
+  const saved = isFeedSaved(useFeedSaved(), feedSubjectKey(item));
+  // "Link copied" only ever appears on a browser with no share sheet, where
+  // runShare falls back to the clipboard — silence there reads as a dead button.
+  const [copied, setCopied] = useState(false);
+  // No border of its own — the row's closing hairline is the only line a post
+  // gets, X-style.
+  return (
+  <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 10 }}>
+    <button
+      className="pressable"
+      onClick={onKudos}
+      aria-pressed={item.kudosedByMe}
+      style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: item.kudosedByMe ? accentVar("lime") : C("ash") }}
+    >
+      {/* The bolt, not a heart: given reads across the room. */}
+      <svg width="17" height="17" viewBox="0 0 16 16" fill={item.kudosedByMe ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+        <path d="M8.8 1.5 3.6 9h3.2l-.9 5.5L11.4 7H8.1Z" />
+      </svg>
+      {item.kudos > 0 ? item.kudos : t("feed.kudos")}
+    </button>
+    <button className="pressable" onClick={onComments} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: C("ash") }}>
+      <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+        <path d="M13.5 7.2c0 2.9-2.5 5-5.5 5-.7 0-1.4-.1-2-.3L2.7 13l.6-2.6a5 5 0 0 1-1.3-3.2c0-2.9 2.5-5 5.5-5s6 2.1 6 5Z" />
+      </svg>
+      {item.comments > 0 ? item.comments : t("w.social.comment")}
+    </button>
+
+    {/* THE RIGHT-HAND PAIR — the two PRIVATE verbs, pushed to the far edge
+        so the row splits into what you give the author (kudos, comment) and
+        what you do for yourself. Neither carries a count: a save is nobody
+        else's business and a share isn't a score. */}
+    <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 14 }}>
+      {copied && (
+        <span style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash") }}>{t("feed.linkCopied")}</span>
+      )}
+      <button
+        className="pressable"
+        onClick={() => toggleSavedPost(item)}
+        aria-pressed={saved}
+        aria-label={t(saved ? "feed.unsave" : "feed.save")}
+        // Saved fills in CHALK, not the accent: filled-vs-outline already
+        // carries the state, and lime is spent on the PUBLIC action (the
+        // bolt) — one accent per row, and a save is nobody's business.
+        style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex", color: saved ? C("chalk") : C("ash") }}
+      >
+        <BookmarkGlyph filled={saved} />
+      </button>
+      <button
+        className="pressable"
+        onClick={async () => {
+          const r = await runShare(feedSharePayload(item, headline || item.title));
+          if (r === "copied") { setCopied(true); setTimeout(() => setCopied(false), 1800); }
+        }}
+        aria-label={t("feed.share")}
+        style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex", color: C("ash") }}
+      >
+        <ShareGlyph />
+      </button>
+    </span>
+  </div>
+  );
+}
+
 export interface FeedCardProps {
   item: FeedItemView;
   units: WeightUnit;
@@ -253,24 +384,14 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const d = item.detail;
   const moment = d?.moment ?? "p2";
 
-  // The two PRIVATE verbs (zone F, right) + the overflow menu (zone A, right).
-  // Saving is per-device and optimistic — the store updates before the write,
-  // so the glyph fills on the press frame (lib/feed-actions.ts).
-  const saved = isFeedSaved(useFeedSaved(), feedSubjectKey(item));
+  // The overflow menu (zone A, right). The two PRIVATE verbs live in
+  // FeedActions, which the post screen renders too.
   const [menu, setMenu] = useState(false);
-  // "Link copied" only ever appears on a browser with no share sheet, where
-  // runShare falls back to the clipboard — silence there reads as a dead button.
-  const [copied, setCopied] = useState(false);
   const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: !!onDelete });
 
   // The headline: core names the lift, the client speaks the language.
-  const headline = d
-    ? d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout"
-      ? d.headlineArg || t(d.headlineKey)
-      : d.headlineArg
-        ? t(d.headlineKey).replace("{lift}", d.headlineArg)
-        : t(d.headlineKey)
-    : item.lead || item.title;
+  const headline = feedHeadlineText(item, t);
+  const setLines = cardSetLines(d?.sets, cardPrLines(d?.prs));
 
   // Moment drives weight. A p0 record interrupts; a Tuesday session does not.
   const headlineStyle: CSSProperties =
@@ -366,8 +487,10 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
 
         {/* ZONE C — the figures */}
         {d?.archetype === "stat" && <Figure detail={d} units={units} />}
-        {d?.prCount ? <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</div> : null}
-        {d?.sets && d.sets.length > 0 && <TopSets sets={d.sets} units={units} />}
+        {d?.prs && d.prs.length > 0 && <PrLines prs={d.prs} tier={d.tier} units={units} />}
+        {/* The lifts the records above already named are dropped from the top
+            sets — the same lift twice in one card is noise (core cardSetLines). */}
+        {setLines.length > 0 && <TopSets sets={setLines} units={units} />}
         {d?.stats && d.stats.length > 0 && <StatRow stats={d.stats} units={units} />}
 
         {/* ZONE E — words. A caption is written FOR the feed; the private session
@@ -382,61 +505,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         </div>
       )}
 
-      {/* ZONE F — actions. No border of its own — the row's closing hairline
-          is the only line a post gets, X-style. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 10 }}>
-        <button
-          className="pressable"
-          onClick={onKudos}
-          aria-pressed={item.kudosedByMe}
-          style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: item.kudosedByMe ? accentVar("lime") : C("ash") }}
-        >
-          {/* The bolt, not a heart: given reads across the room. */}
-          <svg width="17" height="17" viewBox="0 0 16 16" fill={item.kudosedByMe ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
-            <path d="M8.8 1.5 3.6 9h3.2l-.9 5.5L11.4 7H8.1Z" />
-          </svg>
-          {item.kudos > 0 ? item.kudos : t("feed.kudos")}
-        </button>
-        <button className="pressable" onClick={onComments} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: C("ash") }}>
-          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path d="M13.5 7.2c0 2.9-2.5 5-5.5 5-.7 0-1.4-.1-2-.3L2.7 13l.6-2.6a5 5 0 0 1-1.3-3.2c0-2.9 2.5-5 5.5-5s6 2.1 6 5Z" />
-          </svg>
-          {item.comments > 0 ? item.comments : t("w.social.comment")}
-        </button>
-
-        {/* THE RIGHT-HAND PAIR — the two PRIVATE verbs, pushed to the far edge
-            so the row splits into what you give the author (kudos, comment) and
-            what you do for yourself. Neither carries a count: a save is nobody
-            else's business and a share isn't a score. */}
-        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 14 }}>
-          {copied && (
-            <span style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash") }}>{t("feed.linkCopied")}</span>
-          )}
-          <button
-            className="pressable"
-            onClick={() => toggleSavedPost(item)}
-            aria-pressed={saved}
-            aria-label={t(saved ? "feed.unsave" : "feed.save")}
-            // Saved fills in CHALK, not the accent: filled-vs-outline already
-            // carries the state, and lime is spent on the PUBLIC action (the
-            // bolt) — one accent per row, and a save is nobody's business.
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex", color: saved ? C("chalk") : C("ash") }}
-          >
-            <BookmarkGlyph filled={saved} />
-          </button>
-          <button
-            className="pressable"
-            onClick={async () => {
-              const r = await runShare(feedSharePayload(item, headline || item.title));
-              if (r === "copied") { setCopied(true); setTimeout(() => setCopied(false), 1800); }
-            }}
-            aria-label={t("feed.share")}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex", color: C("ash") }}
-          >
-            <ShareGlyph />
-          </button>
-        </span>
-      </div>
+      <FeedActions item={item} headline={headline || item.title} onKudos={onKudos} onComments={onComments} />
 
       {children}
     </article>

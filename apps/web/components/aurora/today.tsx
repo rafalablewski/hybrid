@@ -53,6 +53,7 @@ import { fs, space,
   type SessionBlock,
   type ScheduledDay,
   type LogbookDay,
+  type FeedItemView,
 } from "@hybrid/core";
 import { sportForDiscipline } from "@hybrid/core";
 import { CARD_PAD, roleText } from "@/lib/ui";
@@ -130,6 +131,7 @@ export default function AuroraToday({
   onStart,
   onNavigate,
   onOpenSession,
+  onOpenPost,
   onOpenExercise,
   onOpenSport,
   onSaved,
@@ -156,6 +158,9 @@ export default function AuroraToday({
   /** Open one logged session's breakdown (History deep-link) — parity with
    *  mobile's /session/{id}. Falls back to the plain history screen if absent. */
   onOpenSession?: (sessionId: string) => void;
+  /** Open one POST on its own page — the hub's Feed tab hands its rows on to
+   *  the shell, which owns the screen switch (components/feed-post.tsx). */
+  onOpenPost?: (key: string, item: FeedItemView) => void;
   /** Open ONE movement's stats page (the Exercises widget tap-through). */
   onOpenExercise?: (name: string) => void;
   /** Opens one sport's own page — the tile IS the hero, seen small. */
@@ -666,7 +671,7 @@ export default function AuroraToday({
     return (
       <div style={shell}>
         {hubHeader}
-        <SocialFeed onNavigate={onNavigate} onOpenSession={onOpenSession} />
+        <SocialFeed onNavigate={onNavigate} onOpenPost={onOpenPost} />
       </div>
     );
   }

@@ -50,15 +50,26 @@ export interface FeedSubjectRef {
   subjectId: string;
 }
 
+/**
+ * `pr` IS `session`. A record is no longer a card of its own — it is a line on
+ * the workout that set it (feed-card.ts `sessionDetail`) — and both always
+ * pointed at the same Session id. So every key that re-enters the system, from
+ * device storage or from a link somebody was sent months ago, names the post
+ * that exists today rather than the card that used to.
+ */
+export function canonicalFeedSubjectType(subjectType: string): string {
+  return subjectType === "pr" ? "session" : subjectType;
+}
+
 /** `type:id` — the key a saved post is stored under. Stable across sessions,
  *  because the feed's own `id` is derived and the list is rebuilt every load. */
 export function feedSubjectKey(ref: FeedSubjectRef): string {
-  return `${ref.subjectType}:${ref.subjectId}`;
+  return `${canonicalFeedSubjectType(ref.subjectType)}:${ref.subjectId}`;
 }
 
 /** The subject types a saved key may name. `buildSocialFeed` only ever emits
- *  these three, so anything else in a stored key is corruption or someone
- *  probing the resolve endpoint. */
+ *  `session` and `post` now; `pr` is still accepted because devices and links
+ *  from before the merge carry it, and it resolves to its session. */
 export const FEED_SUBJECT_TYPES = ["session", "pr", "post"] as const;
 
 /**
@@ -76,7 +87,7 @@ export function parseFeedSubjectKey(key: unknown): FeedSubjectRef | null {
   const subjectId = key.slice(at + 1);
   if (!(FEED_SUBJECT_TYPES as readonly string[]).includes(subjectType)) return null;
   if (!subjectId || subjectId.length > 64) return null;
-  return { subjectType, subjectId };
+  return { subjectType: canonicalFeedSubjectType(subjectType), subjectId };
 }
 
 /** How many saved keys one request resolves. The store holds up to 500 and
@@ -151,12 +162,18 @@ export function normalizeFeedSaved(raw: unknown): FeedSavedState {
 }
 
 /** Strings only, first occurrence wins, capped. Used on everything that enters
- *  the list — storage, and the server's own list. */
+ *  the list — storage, and the server's own list.
+ *
+ *  Keys are CANONICALISED on the way in: a device that saved a `pr:` card
+ *  before records moved onto the workout keeps its bookmark, on the post that
+ *  card is now part of, and never keeps two entries for one post. */
 function dedupe(input: unknown[]): string[] {
   const seen = new Set<string>();
   const clean: string[] = [];
-  for (const id of input) {
-    if (typeof id !== "string" || !id) continue;
+  for (const raw of input) {
+    if (typeof raw !== "string" || !raw) continue;
+    const ref = parseFeedSubjectKey(raw);
+    const id = ref ? feedSubjectKey(ref) : raw;
     if (seen.has(id)) continue;
     seen.add(id);
     clean.push(id);
@@ -218,13 +235,24 @@ export function reconcileFeedSaved(
  *  so a shared post links the same way as everything else the app hands out. */
 export const FEED_SHARE_ORIGIN = "https://hybrid.app";
 
-/** The link a shared post carries. The app shell addresses screens through the
- *  query string (`?s=<screen>`, see apps/web/lib/deep-link.ts), so this lands
- *  the recipient on the feed with the post named. Landing ON the post — scroll
- *  + highlight — is tracked as `feed-share-deep-link`; the link is correct
- *  either way, it just doesn't scroll yet. */
+/**
+ * The link a shared post carries — and it lands ON THE POST, not near it.
+ *
+ * A post has its own address on both clients now (the individual post screen),
+ * so this is the same address the app itself navigates to: the app shell
+ * addresses screens through the query string (`?s=<screen>`, see
+ * apps/web/lib/deep-link.ts) and `post` names which one. The recipient opens
+ * the workout, its records and its thread — not the top of a ranked stream that
+ * may not even contain the thing they were sent.
+ */
 export function feedShareUrl(ref: FeedSubjectRef): string {
-  return `${FEED_SHARE_ORIGIN}/app?s=feed&post=${encodeURIComponent(feedSubjectKey(ref))}`;
+  return `${FEED_SHARE_ORIGIN}/app?s=post&post=${encodeURIComponent(feedSubjectKey(ref))}`;
+}
+
+/** The same post's route on MOBILE (expo-router). One helper so a deep link, a
+ *  feed row and a saved row can't each invent their own path. */
+export function feedPostPath(ref: FeedSubjectRef): string {
+  return `/post?type=${encodeURIComponent(ref.subjectType)}&id=${encodeURIComponent(ref.subjectId)}`;
 }
 
 /** What the OS share sheet receives. */

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { tableMissing, authorCards, blockedIdsFor } from "@/lib/social";
+import { canonicalSubjectType, subjectTypeAliases, tableMissing, authorCards, blockedIdsFor } from "@/lib/social";
 
 // Comments on a feed subject (same (subjectType, subjectId) anchoring as kudos).
 
@@ -18,7 +18,9 @@ export async function GET(request: Request) {
 
   try {
     const rows = await prisma.comment.findMany({
-      where: { subjectType, subjectId },
+      // `pr` folds onto `session` (lib/social.ts): the workout and the records
+      // it set are one post, so the thread under it is one thread.
+      where: { subjectType: { in: subjectTypeAliases(subjectType) }, subjectId },
       orderBy: { createdAt: "asc" },
       take: 100,
     });
@@ -49,7 +51,7 @@ export async function POST(request: Request) {
 
   const { data: b, error } = await readJsonLimited<{ subjectType?: unknown; subjectId?: unknown; ownerId?: unknown; body?: unknown }>(request);
   if (error) return error;
-  const subjectType = typeof b.subjectType === "string" && TYPES.has(b.subjectType) ? b.subjectType : "";
+  const subjectType = typeof b.subjectType === "string" && TYPES.has(b.subjectType) ? canonicalSubjectType(b.subjectType) : "";
   const subjectId = typeof b.subjectId === "string" ? b.subjectId : "";
   const ownerId = typeof b.ownerId === "string" ? b.ownerId : "";
   const body = typeof b.body === "string" ? b.body.trim().slice(0, 500) : "";

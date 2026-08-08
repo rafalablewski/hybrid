@@ -26,7 +26,6 @@ import {
   feedFigureText,
   feedStatText,
   feedTierChip,
-  prDetail,
   sessionDetail,
   postDetail,
   type FeedDetail,
@@ -223,6 +222,14 @@ export function feedCardView(
       const f = feedFigureText(d.figureKg, units);
       chips.push(`${f.value} ${f.unit}`);
     }
+    // A workout that set records leads with the loudest one — a preview of that
+    // post that opened with its tonnage would bury the reason it exists.
+    const pr = d.prs?.[0];
+    if (pr) {
+      const f = feedFigureText(pr.topLoadKg, units);
+      chips.push(`${pr.lift} ${f.value} ${f.unit}`);
+      if (d.prs && d.prs.length > 1) chips.push(t("feed.prCount").replace("{n}", String(d.prs.length)));
+    }
     const tier = feedTierChip(d.tier);
     if (tier) chips.push(`${tier.short} ${t(tier.labelKey)}`);
     if (d.deltaPct != null) chips.push(feedDeltaText(d.deltaPct));
@@ -249,9 +256,17 @@ export function prPostFigure(d: { topLoad?: unknown; e1rm?: unknown }): { text: 
   return { text: "? kg", value: undefined };
 }
 
-/** Build the cross-athlete activity feed from followees' sessions. Emits a
- *  "completed session" item per session and a "PR" item when that session set a
- *  new best — both anchored by (subjectType, subjectId) for kudos/comments. */
+/**
+ * Build the cross-athlete activity feed from followees' sessions.
+ *
+ * ONE POST PER WORKOUT. A session emits exactly one item, anchored by
+ * (subjectType, subjectId) for kudos/comments — and the records it set are
+ * LINES ON THAT POST (detail.prs), not posts of their own. It used to emit two
+ * items for one training session: the workout, and a PR card that named only
+ * the heaviest lift and reduced the rest to a count. That put the same session
+ * in the stream twice, split its kudos and its comments across two threads, and
+ * still never showed you the second and third records.
+ */
 export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions = {}): FeedItem[] {
   const now = opts.now ?? Date.now();
   const windowMs = (opts.windowDays ?? 14) * 86_400_000;
@@ -279,6 +294,12 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       const moves = blocks.length;
       const sortAt = at + (author.closeFriend ? boostMs : 0);
 
+      // PRs set in THIS session vs everything the athlete did before it. They
+      // ride ON the workout post — heaviest first, all of them.
+      const prs = newPrsInSession(s, ordered.slice(0, idx));
+      // Heaviest actual lift, like every other PR surface (#231).
+      const top = prs.length ? prs.reduce((a, b) => (b.topLoad > a.topLoad ? b : a)) : null;
+
       items.push({
         id: `session-${s.id}`,
         kind: "session",
@@ -288,49 +309,23 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
         title: `${author.displayName || "@" + author.handle} trained`,
         body: null,
         lead: s.title,
+        // The legacy text shape (only rendered when a client can't read
+        // `detail`) leads with the record, because that's what the post is
+        // about the moment there is one.
         chips: [
+          ...(top ? [prs.length === 1 ? `PR ${top.lift} — ${top.topLoad} kg` : `${prs.length} PRs – top ${top.lift} ${top.topLoad} kg`] : []),
           ...(moves ? [`${moves} ${moves === 1 ? "exercise" : "exercises"}`] : []),
           ...(vol ? [`${vol.toLocaleString()} kg`] : []),
         ],
         at,
         when: relativeTime(at, now),
-        metric: vol || undefined,
-        accent: "lime",
-        detail: sessionDetail(s),
+        // A record is the headline figure when there is one; otherwise the
+        // session's tonnage, as before.
+        metric: top ? top.topLoad : vol || undefined,
+        accent: top ? "amber" : "lime",
+        detail: sessionDetail(s, prs),
         _sort: sortAt,
       });
-
-      // PRs set in THIS session vs everything the athlete did before it.
-      const prs = newPrsInSession(s, ordered.slice(0, idx));
-      if (prs.length) {
-        // Heaviest actual lift, like every other PR surface (#231). Derived
-        // live from sessions, so unlike the stored PR posts there is no legacy
-        // { lift, e1rm } shape to keep reading here.
-        const top = prs.reduce((a, b) => (b.topLoad > a.topLoad ? b : a));
-        items.push({
-          id: `pr-${s.id}`,
-          kind: "pr",
-          subjectType: "pr",
-          subjectId: s.id,
-          author,
-          title: `${author.displayName || "@" + author.handle} hit a PR`,
-          body: null,
-          lead: "PR",
-          chips:
-            prs.length === 1
-              ? [`${top.lift} — ${top.topLoad} kg`]
-              : [`${prs.length} PRs`, `top ${top.lift} — ${top.topLoad} kg`],
-          at: at + 1, // tie-break above the session card
-          when: relativeTime(at, now),
-          metric: top.topLoad,
-          accent: "amber",
-          // Tier 1 is EARNED here, not claimed: a matched device recording
-          // corroborates the session the lift was set in (attestation.ts).
-          // Tier 2 needs a witness and is resolved server-side per viewer.
-          detail: prDetail({ ...top, count: prs.length }, { device: !!s.device }),
-          _sort: sortAt + 1,
-        });
-      }
     });
 
     // First-class shared posts (status / PR card / workout card).
