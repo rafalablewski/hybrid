@@ -3,17 +3,23 @@ import { View, Text, TextInput, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
+  MAX_EXERCISE_FAVOURITES,
   exerciseBrowse,
   exerciseBrowseSections,
   exerciseBrowseSummary,
+  exerciseFavouritesFull,
+  isExerciseFavourite,
   type ExerciseBrowseEntry,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
+import { useExerciseFavourites, toggleExerciseFavourite } from "../../lib/exercise-favourites";
+import { haptic } from "../../lib/haptics";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS, ASearch } from "./kit";
+import AuroraExerciseMedia from "./exercise-media";
 import { AuroraIcon } from "./icons";
 
 type SortMode = "smart" | "groups" | "az";
@@ -31,6 +37,8 @@ export default function AuroraExercises() {
   const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<SortMode>("smart");
+  const favourites = useExerciseFavourites();
+  const full = exerciseFavouritesFull(favourites);
 
   // Legacy deep links (/exercises?name=…) land on the canonical page.
   useEffect(() => {
@@ -56,21 +64,49 @@ export default function AuroraExercises() {
 
   const open = (name: string) => router.push({ pathname: "/exercise", params: { name } });
 
-  const Row = ({ e, last }: { e: ExerciseBrowseEntry; last: boolean }) => (
-    <PressScale
-      onPress={() => open(e.name)}
-      accessibilityRole="button"
-      accessibilityLabel={e.name}
-      style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}
-    >
-      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: e.staple ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
+  /* A row is TWO controls, not one: the body opens the movement's page, and the
+     ★ pins it to the Today rail — so the whole rail is editable from the one
+     place that lists every movement. */
+  const Row = ({ e, last }: { e: ExerciseBrowseEntry; last: boolean }) => {
+    const on = isExerciseFavourite(favourites, e.name);
+    const locked = !on && full;
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
+        <PressScale
+          onPress={() => open(e.name)}
+          accessibilityRole="button"
+          accessibilityLabel={e.name}
+          style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }}
+        >
+          {/* the lift's DRAWN demo once it exists (core: exercise-media), and
+              until then its IMPLEMENT mark (core: exercise-marks) */}
+          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={e.staple ? txt(C, C.lime) : C.ash} />
+          </View>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
+        </PressScale>
+        <PressScale
+          onPress={() => {
+            if (locked) return;
+            haptic.light();
+            toggleExerciseFavourite(e.name);
+          }}
+          disabled={locked}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityState={{ selected: on, disabled: locked }}
+          accessibilityLabel={`${on ? t("w.home.exw.unpin") : t("w.home.exw.pin")} – ${e.name}`}
+          accessibilityHint={locked ? t("w.home.exw.addFull").replace("{n}", String(MAX_EXERCISE_FAVOURITES)) : undefined}
+          style={{ paddingVertical: 12, paddingLeft: 12, paddingRight: 2 }}
+        >
+          {/* Amber TEXT tone, not the fill — the fill is 1.57:1 on washi. */}
+          <Text style={{ fontSize: 15, color: on ? txt(C, C.amber) : C.ash, opacity: locked ? 0.25 : on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+        </PressScale>
       </View>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
-    </PressScale>
-  );
+    );
+  };
 
   const Card = ({ list }: { list: ExerciseBrowseEntry[] }) => (
     <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4 }}>

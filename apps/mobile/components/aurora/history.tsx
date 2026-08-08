@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -13,7 +13,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
-import { ACard, APill, GUTTER, RADIUS } from "./kit";
+import { ACard, APill, GUTTER, RADIUS, CARD_PAD } from "./kit";
 import { HeroScreen, HeroAccessory } from "./hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
@@ -149,7 +149,7 @@ export default function AuroraHistory() {
           {sessionShape(s) === "cardio"
             ? (() => {
                 const ct = sessionCardioSummary(s);
-                const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
+                const parts = [ct.distanceKm > 0 ? fmtKm(ct.distanceKm) : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
                 if (parts.length) return chip(C.blue, parts.join(" – "));
                 const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
                 return chip(C.blue, minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}`);
@@ -226,7 +226,7 @@ export default function AuroraHistory() {
       accessory={<HeroAccessory label={t("history.archived")} active={showArchived} onPress={() => setShowArchived((v) => !v)} onDark={false} />}
       // The view switcher is a SUB-rail: it docks beneath the collapsed bar
       // rather than scrolling away, so the layout you are in stays addressable.
-      rail={!showArchived && view !== null ? <View style={{ paddingVertical: 10 }}><ViewSwitcher view={view} onChange={pickView} /></View> : undefined}
+      rail={!showArchived && view !== null ? <ViewSwitcher view={view} onChange={pickView} /> : undefined}
       scroller={(scrollProps, railNode) => (
         <FlatList
           data={showArchived && !loading && !q.isError ? sessions : []}
@@ -304,7 +304,9 @@ function SwipeCard({ C, busy, actions, children }: {
         </View>
         {/* The card itself — opaque so the actions don't bleed through. */}
         <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
-          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: 16 }}>
+          {/* CARD_PAD, not 16: the web twin of this very component has always
+              been inset 20, so one swipe card read two ways by client. */}
+          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: CARD_PAD }}>
             {children}
           </Pressable>
         </Animated.View>

@@ -205,7 +205,8 @@ describe("holding a chart — the figure under the finger", () => {
   it("reads a volume bar in the sport's own unit, with the week's efforts", () => {
     const m = sportPageModel("Running", RUNS, { now: NOW });
     const held = sportVolumeReading(m, m.weeks.length - 1)!;
-    expect(held.value).toBe("26.0");
+    // Formatted by sportDistance, so it inherits its trailing-zero rule.
+    expect(held.value).toBe("26");
     expect(held.unit).toBe("km");
     expect(held.efforts).toBe(2); // the 18 km and the 8 km
     expect(held.weekStart).toBe(m.weeks.at(-1)!.weekStart);
@@ -320,7 +321,7 @@ describe("formatting stays in the sport's own unit", () => {
   it("renders distance in metres for the pool and kilometres for the road", () => {
     expect(sportDistance(2.4, "m")).toBe("2\u2009400");
     expect(sportDistance(74.2, "m")).toBe("74\u2009200");
-    expect(sportDistance(8.25, "km")).toBe("8.3");
+    expect(sportDistance(8.25, "km")).toBe("8.25");
     expect(sportDistance(812.4, "km")).toBe("812");
   });
 

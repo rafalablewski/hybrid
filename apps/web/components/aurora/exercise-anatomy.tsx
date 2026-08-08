@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { exerciseAnatomy, fs, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
+import { exerciseAnatomy, fs, sheetPadBottom, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-import AuroraExerciseAnimation from "./exercise-animation";
+import AuroraExerciseMedia from "./exercise-media";
 import AuroraBodyMap from "./body-map";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -49,14 +49,10 @@ function Group({ label, rows, t }: { label: string; rows: MuscleActivation[]; t:
 function AnatomyBody({ a, name, active, t }: { a: ExerciseAnatomy; name: string; active: boolean; t: (k: string) => string }) {
   return (
     <>
-      {/* the movement demo (swappable: procedural skeleton today, professional
-          sketch later — see exercise-animation.tsx). Loops only while the sheet
-          is open. */}
-      <div style={{ marginTop: 4, borderRadius: 28, border: `1px solid ${C("line")}`, background: C("ink2"), padding: "10px 16px", display: "flex", justifyContent: "center" }}>
-        <div style={{ width: "58%", maxWidth: 220 }}>
-          <AuroraExerciseAnimation name={name} active={active} />
-        </div>
-      </div>
+      {/* the movement demo — whatever exerciseMedia resolves: the hand-drawn
+          sketch once it exists, the procedural skeleton as today's placeholder
+          (see exercise-media.tsx). Loops only while the sheet is open. */}
+      <AuroraExerciseMedia name={name} active={active} />
       <p style={{ margin: "12px 2px 0", fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{a.emphasis}</p>
 
       {/* muscles worked */}
@@ -137,7 +133,7 @@ function BottomSheet({ open, onClose, title, meta, children }: { open: boolean; 
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 560, maxHeight: "86vh", overflowY: "auto", background: C("card"), borderTop: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", boxShadow: "0 -20px 50px -20px rgba(0,0,0,.6)", padding: "10px 20px 30px", transform: shown ? "translateY(0)" : "translateY(101%)", transition: "transform .38s cubic-bezier(.32,.72,0,1)", fontFamily: "var(--font-display)", color: C("chalk") }}
+        style={{ width: "100%", maxWidth: 560, maxHeight: "86vh", overflowY: "auto", background: C("card"), borderTop: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", boxShadow: "0 -20px 50px -20px rgba(0,0,0,.6)", padding: `10px 20px max(${sheetPadBottom()}px, env(safe-area-inset-bottom, 0px))`, transform: shown ? "translateY(0)" : "translateY(101%)", transition: "transform .38s cubic-bezier(.32,.72,0,1)", fontFamily: "var(--font-display)", color: C("chalk") }}
       >
         <div aria-hidden style={{ width: 38, height: 4, borderRadius: 3, background: C("line"), margin: "2px auto 16px" }} />
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>

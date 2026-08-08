@@ -5,16 +5,18 @@ import { Loading, F, fs, leading, serifIf, tracking, useScreenBottomPad, useHubD
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import type { FeedItemView, CommentView, LiveAthlete } from "@hybrid/core";
+import type { FeedItemView, CommentView, LiveAthlete, Relation } from "@hybrid/core";
 import { colors } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
 import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
 import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
+import FeedWorkoutSheet from "./feed-workout";
 import FeedLiveStrip from "./feed-live-strip";
 import { CosignInbox } from "./pr-attestation";
 import { useLoggerPrefs } from "../lib/logger-prefs";
+import { syncSaved } from "../lib/feed-actions";
 import { useNavScrollProps } from "../lib/nav-scroll";
 import { AuroraScreen } from "./aurora/kit";
 import type { HeroScrollProps } from "./aurora/hero";
@@ -29,7 +31,10 @@ import { useConfirm } from "./aurora/confirm";
  */
 type FeedTab = "forYou" | "following";
 
-function Comments({ item }: { item: FeedItemView }) {
+/** The comment thread under an open row. EXPORTED because the Saved screen
+ *  (app/saved.tsx) renders the same rows and must open the same thread — a
+ *  second copy of this would drift the moment either is touched. */
+export function Comments({ item }: { item: FeedItemView }) {
   const { notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
@@ -60,12 +65,16 @@ function Comments({ item }: { item: FeedItemView }) {
 }
 
 export default function FeedView({ top }: { top?: ReactNode }) {
-  const { notify } = useConfirm();
+  const { notify, confirm } = useConfirm();
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItemView[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  // The POST, opened — the whole workout behind a card. Held by id (not by the
+  // item) so the sheet keeps reading the live row: a kudos given in the feed
+  // while the sheet is up still shows there.
+  const [opened, setOpened] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<FeedTab>("forYou");
@@ -84,6 +93,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     [],
   );
   useEffect(() => { load(); }, [load]);
+  // Reconcile the shelf with the server on open, so the bookmarks in the rows
+  // below are this ACCOUNT's, not just this device's. Quiet no-op until
+  // SavedPost is migrated (lib/feed-actions.ts).
+  useEffect(() => { void syncSaved(); }, []);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const cheer = async (item: FeedItemView) => {
@@ -107,7 +120,25 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     if (!feed) return [];
     return tab === "following" ? feed.filter((i) => !i.mine).slice().sort((a, b) => b.at - a.at) : feed;
   }, [feed, tab]);
-  const del = async (item: FeedItemView) => { await deletePost(item.subjectId); load(); };
+  // What the ⋯ menu changed about an AUTHOR. A follow re-labels every card by
+  // that person; a block takes them out of the stream entirely — the server
+  // already made them invisible, so leaving their rows on screen until the next
+  // load would be the one place the app disagreed with itself.
+  const authorChanged = ({ authorId, relation, blocked }: { authorId: string; relation?: Relation; blocked?: boolean }) =>
+    setFeed((f) => (blocked
+      ? f?.filter((x) => x.author.id !== authorId) ?? f
+      : f?.map((x) => (x.author.id === authorId ? { ...x, relation } : x)) ?? f));
+
+  // Delete ASKS FIRST. It used to be a bare × in the row's corner and it
+  // deleted on the first press with nothing in between; web has always put a
+  // confirm in front of it, and moving delete into a small anchored menu makes
+  // a mishit easier, not harder. Same string both clients read.
+  const del = async (item: FeedItemView) => {
+    const ok = await confirm({ title: t("w.social.deletePostConfirm"), confirmLabel: t("common.delete"), destructive: true });
+    if (!ok) return;
+    await deletePost(item.subjectId);
+    load();
+  };
   const padBottom = useScreenBottomPad();
   const navScroll = useNavScrollProps();
 
@@ -160,7 +191,15 @@ export default function FeedView({ top }: { top?: ReactNode }) {
             </View>
           </Pressable>
         ))}
-        <View style={{ marginLeft: "auto" }}>
+        {/* Saved sits FIRST on the right because it is where the bookmark in
+            every row below leads: the glyph that fills on a post is the same
+            glyph that opens the shelf. */}
+        <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Pressable onPress={() => router.push("/saved")} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("w.social.savedTitle")}>
+            <Svg width={18} height={18} viewBox="0 0 18 18" fill="none">
+              <Path d="M4.5 2.8h9v12.4l-4.5-3.4-4.5 3.4Z" stroke={C.ash} strokeWidth={1.6} strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
           <Pressable onPress={() => router.push("/discover")} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("w.social.searchPeople")}>
             <Svg width={18} height={18} viewBox="0 0 18 18" fill="none">
               <Circle cx={8} cy={8} r={5.5} stroke={C.ash} strokeWidth={1.6} />
@@ -210,7 +249,22 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         onOpenProfile={(h) => setDrawer(h)}
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
+        // Session and PR cards are both anchored on a Session id, so both open
+        // to the workout. A status post has no workout behind it.
+        // MY OWN session opens MY view of it — the full detail with the
+        // Wrapped, the PRs and the manage row — not the visitor's read.
+        // Otherwise the sheet, and opening COLLAPSES the row's inline thread:
+        // the sheet carries the same thread, and two mounted copies would fetch
+        // the same comments twice and then disagree the moment one posted.
+        onOpen={
+          item.subjectType === "session" || item.subjectType === "pr"
+            ? item.mine
+              ? () => router.push(`/session/${item.subjectId}`)
+              : () => { setOpen(null); setOpened(item.id); }
+            : undefined
+        }
         onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
+        onAuthorChanged={authorChanged}
       >
         {open === item.id ? <Comments item={item} /> : null}
       </FeedCard>
@@ -227,6 +281,16 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         <SButton label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>
     );
+
+  // THE POST, OPENED — the whole workout behind the row, with its thread
+  // underneath (the same Comments component the row expands, so a comment
+  // written here and one written in the stream are one thing).
+  const openedItem = opened ? items.find((i) => i.id === opened) ?? null : null;
+  const postSheet = (
+    <FeedWorkoutSheet item={openedItem} units={units} visible={!!openedItem} onClose={() => setOpened(null)}>
+      {openedItem ? <Comments item={openedItem} /> : null}
+    </FeedWorkoutSheet>
+  );
 
   // The FlatList stays the sole scroller in BOTH shapes — a screen never trades
   // virtualization for a hero.
@@ -269,6 +333,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       // can't reach the physical edge.
       <AuroraScreen scroll={false} hubTab={hub} padding={0}>
         {list({ ...navScroll, contentContainerStyle: { paddingHorizontal: GUTTER, paddingTop: 16, paddingBottom: padBottom } })}
+        {postSheet}
         {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
       </AuroraScreen>
     );
@@ -280,6 +345,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       // the hub shape above uses the same value.
       scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER }] })}
     >
+      {postSheet}
       {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </AuroraScreen>
   );

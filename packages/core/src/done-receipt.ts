@@ -25,6 +25,7 @@ import { sessionCardioTotals } from "./engines/session";
 import { liveSessionStats } from "./live-stats";
 import { sessionEnergy } from "./energy";
 import { fmtTonnage, type WeightUnit } from "./units";
+import { roundKm } from "./distance";
 
 // NO FINISHING CLOCK. The receipt used to carry the local time the day
 // finished at, rendered as a quiet "finished 16:32" under the headline. A day
@@ -250,15 +251,15 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
     const cut = t.lastIndexOf(" ");
     out.push(stat(cut > 0 ? t.slice(0, cut) : t, cut > 0 ? t.slice(cut + 1) : "", "w.home.today.volume"));
   }
-  // The receipt keeps metre precision; a rail stat reads in tenths of a km —
-  // but only once there IS a kilometre. Under one, tenths round a 34 m pool
-  // swim to "0 km", so anything sub-kilometre reads in metres (the same rule
-  // the device panel and the match picker already use).
+  // The receipt keeps metre precision; a rail stat reads at the shared km
+  // precision (two decimals) — but only once there IS a kilometre. Under one,
+  // a 34 m pool swim would read "0.03 km", so anything sub-kilometre reads in
+  // metres (the same rule the device panel and the match picker already use).
   if (r.distanceKm > 0)
     out.push(
       r.distanceKm < 1
         ? stat(String(Math.round(r.distanceKm * 1000)), "m", "w.home.today.distance")
-        : stat(String(Math.round(r.distanceKm * 10) / 10), "km", "w.home.today.distance"),
+        : stat(String(roundKm(r.distanceKm)), "km", "w.home.today.distance"),
     );
   // Climb sits beside distance — they are the same fact about the ground the
   // day covered, and the receipt has always SUMMED it (device-true, like the

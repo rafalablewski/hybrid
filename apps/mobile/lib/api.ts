@@ -1,5 +1,5 @@
 import type { DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
-import { sanitizePersonaAccess, setExerciseCatalog } from "@hybrid/core";
+import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 
@@ -67,8 +67,14 @@ export async function fetchCustomExercises(): Promise<LibraryMovement[]> {
     const res = await fetchWithTimeout(`${API_URL}/api/exercises`, { headers: await authHeaders() });
     if (!res.ok) return [];
     const data = (await res.json()) as {
-      exercises?: Array<{ name: string; pattern: string; muscles: string[]; baseLoad: number | null; system: string | null; aliases: string[]; category: string | null }>;
+      exercises?: Array<{ name: string; pattern: string; muscles: string[]; baseLoad: number | null; system: string | null; aliases: string[]; category: string | null; videoUrl?: string | null; thumbUrl?: string | null }>;
     };
+    // The same rows carry each lift's admin-set DEMO MEDIA (video/thumb URL).
+    // Publishing it here — global, admin-authored data, exactly like the catalog
+    // — is what lets the exercise demo surface show a real asset instead of the
+    // procedural placeholder (core: exercise-media). Parity with web's
+    // lib/exercise-catalog.ts + lib/use-exercises.ts.
+    setExerciseMediaCatalog((data.exercises ?? []).map((e) => ({ name: e.name, videoUrl: e.videoUrl ?? null, thumbUrl: e.thumbUrl ?? null })));
     return (data.exercises ?? []).map((e) => ({
       name: e.name,
       pattern: e.pattern,

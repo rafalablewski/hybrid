@@ -144,8 +144,27 @@ describe("touch targets", () => {
     // read to know what it will do).
     // Component declarations only — a capitalised name. `toggleTag`,
     // `saveTags` and the like are handlers, not components.
-    const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm);
-    expectAtMost(decls, 9, "chip-shaped component → Chip or AChip");
+    //
+    // DockChip is EXEMPT rather than counted, and the ceiling stays where it
+    // was. This ratchet counts chip IMPLEMENTATIONS — a pill hand-rolled where
+    // the shared one should have been — and DockChip is a shared one: the third
+    // sanctioned primitive beside Chip (a static tag) and AChip (an in-content
+    // filter). It is the RAIL chip, and it is genuinely a different object from
+    // AChip rather than a ninth spelling of it: a rail is chrome, so it speaks
+    // the hero's mono voice, where AChip lives in the content column and speaks
+    // Archivo. Borrowing AChip for the rail is precisely why mobile History drew
+    // Archivo 13 in a band where the other three rails drew mono 12. It arrived
+    // by RETIRING four hand-rolled rails (History and Plans, both clients) and
+    // it carries a stricter guard of its own than this one —
+    // apps/web/__tests__/dock-rail.test.ts, which checks both clients together.
+    const SANCTIONED = /\bDockChip\b/;
+    const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
+      .filter((site) => {
+        const [path, line] = [site.slice(0, site.lastIndexOf(":")), Number(site.slice(site.lastIndexOf(":") + 1))];
+        const text = FILES.find((f) => f.path === path)?.text ?? "";
+        return !SANCTIONED.test(text.split("\n")[line - 1] ?? "");
+      });
+    expectAtMost(decls, 9, "chip-shaped component → Chip, AChip or DockChip");
   });
 });
 
@@ -261,13 +280,30 @@ describe("presentation", () => {
     // release and parent recede, so the gesture a user learns on Today died on
     // the controls they touch most. All eleven now present through Sheet.
     //
-    // tour.tsx is the ONE exemption and it is not a bottom sheet: it is a
-    // full-screen `animationType="fade"` coach-mark overlay, a different
-    // presentation with no panel to drag.
-    const raw = hits(/<Modal\b/g).filter(
-      (h) => !h.startsWith("components/aurora/sheet.tsx") && !h.startsWith("components/tour.tsx"),
-    );
+    // TWO exemptions, and neither is a bottom sheet — each is a different
+    // presentation with no panel to drag:
+    //   • tour.tsx — a full-screen coach-mark overlay.
+    //   • feed-menu.tsx — the post's ⋯ menu, a small card ANCHORED to the glyph
+    //     that opened it. It has to be a Modal for a reason Sheet can't solve:
+    //     drawn inline it would be clipped by the feed's FlatList (and by the
+    //     row itself on Android), so it renders in its own native window and is
+    //     placed from the anchor's measured rect. Presenting it as a sheet is
+    //     what this change REVERSED — see the file header.
+    const EXEMPT = ["components/aurora/sheet.tsx", "components/tour.tsx", "components/feed-menu.tsx"];
+    const raw = hits(/<Modal\b/g).filter((h) => !EXEMPT.some((f) => h.startsWith(f)));
     expect(raw).toEqual([]);
+  });
+
+  it("HARD — and an exempt Modal is not a bottom sheet wearing a different hat", () => {
+    // The exemption above is per FILE, which on its own would let a later edit
+    // quietly grow a hand-rolled sliding panel inside one of them and keep the
+    // suite green. `animationType="slide"` is the tell — it is what all eleven
+    // converted surfaces used, and what neither a fading overlay nor an anchored
+    // card has any use for. Sheet drives its own animation, so it never sets it.
+    const sliding = hits(/animationType=["{']?["']?slide/g).filter(
+      (h) => !h.startsWith("components/aurora/sheet.tsx"),
+    );
+    expect(sliding).toEqual([]);
   });
 
   it("HARD — a Sheet with a flexing body passes `fill`", () => {

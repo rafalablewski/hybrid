@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState, type Dispatch, type PointerEvent as ReactPointerEvent, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats, roomBodyMark } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { AuroraIcon } from "./aurora/icons";
 import { useExercises } from "@/lib/use-exercises";
 import SwipeRow from "@/components/swipe-row";
 import Sheet from "@/components/aurora/sheet";
+import AuroraExerciseMedia from "@/components/aurora/exercise-media";
+import AuroraBodyMark from "@/components/aurora/body-mark";
 import { setLoggerPref } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { useDialog } from "../lib/use-dialog";
@@ -425,9 +427,13 @@ export default function WorkoutBlocks({
                 ⠿
               </span>
             )}
-            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase" }} c={b.kind === "strength" ? LIME : b.kind === "cardio" ? BLUE : VIOLET}>
-              {b.kind}
-            </Mono>
+            {/* The lift's IMPLEMENT, tinted by modality — it carries both what
+                the old mono "STRENGTH" word said (via the tint) and the gear it
+                takes (via the drawing), and becomes the hand-drawn demo once
+                that lift is drawn. */}
+            <span role="img" aria-label={b.kind} style={{ display: "flex", flex: "none" }}>
+              <AuroraExerciseMedia name={b.name} variant="thumb" size={20} tint={txt(b.kind === "strength" ? LIME : b.kind === "cardio" ? BLUE : VIOLET)} />
+            </span>
             {ssLabels[idx] && (
               <span style={{ ...mono, fontSize: fs.micro, fontWeight: 700, color: CHALK, background: INK2, border: `1px solid ${LINE}`, borderRadius: 6, padding: "1px 6px" }}>
                 ⛓ {ssLabels[idx]}
@@ -1179,11 +1185,27 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
   }
   const roomData = room ? rooms.find((r) => r.key === room) : null;
 
-  const tile = (e: { icon?: string; name: string; kind: SessionBlock["kind"] }, label?: string) => (
-    <span style={{ width: 38, height: 38, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "var(--color-ink)", border: `1px solid ${LINE}` }}>
+  // The row tile carries the lift's DRAWN demo once it exists, and until then
+  // its IMPLEMENT (core: exercise-marks) — a barbell, a pair of bells, a cable
+  // handle. Sports keep their catalog glyph.
+  const tileBox = { width: 38, height: 38, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "var(--color-ink)", border: `1px solid ${LINE}`, overflow: "hidden" } as const;
+  const tile = (e: { icon?: string; name: string; kind: SessionBlock["kind"] }) => (
+    <span style={tileBox}>
       {e.icon
         ? <span style={{ fontSize: 16 }}>{e.icon}</span>
-        : <span style={{ ...mono, fontWeight: 700, fontSize: 12, letterSpacing: "-.02em", color: txt(kindColor(e.kind)) }}>{initials(label ?? e.name)}</span>}
+        : <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={txt(kindColor(e.kind))} />}
+    </span>
+  );
+  // A ROOM is a muscle group, not a lift — its mark is the BODY it trains, lit
+  // from the room's own exercise list (core: roomBodyMark). Sports rooms keep
+  // their catalog glyph; a room the DB can't read falls back to its initials.
+  const roomTile = (r: { icon?: string; label: string; kind: SessionBlock["kind"]; names: string[] }) => (
+    <span style={tileBox}>
+      {r.icon
+        ? <span style={{ fontSize: 16 }}>{r.icon}</span>
+        : roomBodyMark(r.names)
+          ? <AuroraBodyMark names={r.names} size={32} color={txt(kindColor(r.kind))} silhouette={LINE} />
+          : <span style={{ ...mono, fontWeight: 700, fontSize: 12, letterSpacing: "-.02em", color: txt(kindColor(r.kind)) }}>{initials(r.label)}</span>}
     </span>
   );
   const row = (e: Entry, last: boolean) => {
@@ -1277,7 +1299,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
                 {rooms.map((r) => (
                   <button className="pressable" key={r.key} type="button" onClick={() => setRoom(r.key)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, padding: "12px 12px", cursor: "pointer", color: CHALK, textAlign: "left" }}>
-                    {tile({ icon: r.icon, name: r.label, kind: r.entries[0]!.kind }, r.label)}
+                    {roomTile({ icon: r.icon, label: r.label, kind: r.entries[0]!.kind, names: r.entries.map((e) => e.name) })}
                     <span style={{ ...disp, fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{r.label}</span>
                     <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: ASH }}>{r.entries.length}</span>
                   </button>

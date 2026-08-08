@@ -5,7 +5,7 @@ import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation } from "@h
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import AuroraExerciseAnimation from "./exercise-animation";
+import AuroraExerciseMedia from "./exercise-media";
 import AuroraBodyMap from "./body-map";
 import Sheet from "./sheet";
 
@@ -52,13 +52,10 @@ function Group({ C, label, rows, t }: { C: Palette; label: string; rows: MuscleA
 function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy; name: string; active: boolean; t: (k: string) => string }) {
   return (
     <>
-      {/* the movement demo (swappable: procedural skeleton today, professional
-          sketch later — see exercise-animation.tsx). Loops only while open. */}
-      <View style={{ borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingVertical: 10, alignItems: "center" }}>
-        <View style={{ width: "58%", maxWidth: 220, aspectRatio: 1 }}>
-          <AuroraExerciseAnimation name={name} active={active} />
-        </View>
-      </View>
+      {/* the movement demo — whatever exerciseMedia resolves: the hand-drawn
+          sketch once it exists, the procedural skeleton as today's placeholder
+          (see exercise-media.tsx). Loops only while open. */}
+      <AuroraExerciseMedia name={name} active={active} />
       <Text style={{ marginTop: 12, marginHorizontal: 2, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{a.emphasis}</Text>
 
       {/* muscles worked */}
@@ -146,7 +143,8 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>
               </Pressable>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 16, paddingBottom: 30 }}>
+            {/* No trailing pad — the Sheet's own bottom pad sits below this. */}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 16 }}>
               <AnatomyBody C={C} a={a} name={name} active={open} t={t} />
             </ScrollView>
       </Sheet>

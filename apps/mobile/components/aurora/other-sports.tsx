@@ -83,11 +83,16 @@ export default function AuroraOtherSports({
         contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 2 }}
       >
         {shown.map((lane) => <SportTile key={lane.sport} lane={lane} onOpen={onOpen} />)}
-        {/* The rail's exit — a trailing ghost tile (the exercises rail's ＋ card
-            idiom): rails end in a ghost tile, full-width blocks end in a door
-            row — the cluster's one "see more" rule. The old full-width "+N"
-            outline button below the rail is retired; its count lives here.
-            Mirrors web other-sports.tsx. */}
+        {/* The rail's END CONTROL — and it is an EXPANDER, not a door: it grows
+            the rail in place rather than opening a screen, which is why it
+            keeps ＋/− instead of taking the shared RailTail's arrow. An arrow
+            here would promise a destination that doesn't exist.
+            CHROMELESS like the tail, though (see rail-tail.tsx): it used to be
+            a DASHED box copied from the exercises rail's ＋ tile, and that tile
+            is gone — a dashed box reads as an empty slot, and chartreuse is the
+            reserved "go" colour, not the colour of a standing control. Glyph
+            and label on the ink, ash like every other end-of-rail affordance;
+            the ring is what separates a door from an expander. Mirrors web. */}
         {rest > 0 && (
           <Pressable
             onPress={() => setExpanded(!expanded)}
@@ -95,12 +100,11 @@ export default function AuroraOtherSports({
             accessibilityState={{ expanded }}
             style={{
               width: 110, minHeight: TILE_H, alignItems: "center", justifyContent: "center", gap: 8,
-              borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}66`, borderRadius: 16,
               paddingHorizontal: 10,
             }}
           >
             <Text style={{ fontSize: 18, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: C.ash, textAlign: "center", lineHeight: leading(fs.micro) }}>
               {expanded ? t("w.home.other.fewer") : t("w.home.other.all")} {expanded ? `−${rest}` : `+${rest}`}
             </Text>
           </Pressable>

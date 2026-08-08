@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { HERO, HERO_INK, HERO_INLINE_TITLE, fs, heroGeometry } from "@hybrid/core";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./hero";
 
@@ -137,7 +137,7 @@ export interface CoverSpec {
  *  columns directly on the ink) + the one-line blurb.
  *  `back` is optional: the Plans root is a top-level screen with nowhere to go
  *  back to, so it renders the bar with the label alone. */
-export function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpec; back?: () => void; backLabel?: string; heroRef: React.RefObject<HTMLDivElement | null> }) {
+export function CoverHero({ cover, back, backLabel, rail, heroRef }: { cover: CoverSpec; back?: () => void; backLabel?: string; rail?: ReactNode; heroRef: React.RefObject<HTMLDivElement | null> }) {
   const accent = cover.accent;
   const library = cover.variant === "library";
   const plate = cover.variant === "recipe";
@@ -243,6 +243,19 @@ export function CoverHero({ cover, back, backLabel, heroRef }: { cover: CoverSpe
         </div>
       )}
       {!blurbOnFace && !!cover.blurb && <p style={{ fontSize: fs.bodyLg, lineHeight: 1.55, color: C("ash"), margin: cover.stats.length ? "0 0 4px" : "16px 0 4px", maxWidth: "62ch" }}>{cover.blurb}</p>}
+
+      {/* THE SUB-RAIL SLOT — a sticky strip that docks beneath the collapsed
+          bar, after the hem and blurb so those scroll under it. It is the exact
+          twin of the mobile cover scaffold's `rail` (CoverScreen in
+          apps/mobile/components/plan-hero.tsx), and its absence here was the
+          ROOT CAUSE of the whole dock-rail divergence: with no slot to sit in,
+          web Plans hand-rolled its own `position: sticky` bar beside the hero,
+          and that hand-roll is where ink 86% / blur 14 / z 29 came from against
+          this scaffold's ink 88% / blur 18 / z 20. Full-bleed and unpadded — the
+          rail owns its own gutter, exactly as in HeroScreen. */}
+      {rail && (
+        <div style={{ position: "sticky", top: COVER_BAR, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 12px))", background: "color-mix(in srgb, var(--color-ink) 88%, transparent)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", borderBottom: `1px solid ${C("line")}` }}>{rail}</div>
+      )}
     </>
   );
 }

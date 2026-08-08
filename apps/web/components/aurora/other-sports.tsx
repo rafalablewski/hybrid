@@ -85,10 +85,16 @@ export default function AuroraOtherSports({
         }}
       >
         {shown.map((lane) => <SportTile key={lane.sport} lane={lane} t={t} onOpen={onOpen} />)}
-        {/* The rail's exit — a trailing ghost tile (the exercises rail's ＋ card
-            idiom): rails end in a ghost tile, full-width blocks end in a door
-            row — the cluster's one "see more" rule. The old full-width "+N"
-            outline button below the rail is retired; its count lives here. */}
+        {/* The rail's END CONTROL — and it is an EXPANDER, not a door: it grows
+            the rail in place rather than opening a screen, which is why it
+            keeps ＋/− instead of taking the shared RailTail's arrow. An arrow
+            here would promise a destination that doesn't exist.
+            CHROMELESS like the tail, though (see rail-tail.tsx): it used to be
+            a DASHED box copied from the exercises rail's ＋ tile, and that tile
+            is gone — a dashed box reads as an empty slot, and chartreuse is the
+            reserved "go" colour, not the colour of a standing control. Glyph
+            and label on the ink, ash like every other end-of-rail affordance;
+            the ring is what separates a door from an expander. Mirrors mobile. */}
         {rest > 0 && (
           <button className="pressable"
             onClick={() => setExpanded(!expanded)}
@@ -96,12 +102,12 @@ export default function AuroraOtherSports({
             style={{
               flex: "0 0 110px", scrollSnapAlign: "start", minHeight: 132, cursor: "pointer",
               display: "grid", placeItems: "center", alignContent: "center", gap: 8,
-              background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 16,
+              background: "none", border: "none",
               fontFamily: "var(--font-mono)", fontSize: fs.micro, textAlign: "center", lineHeight: 1.5,
             }}
           >
             <span style={{ fontSize: 18, color: C("ash") }} aria-hidden>{expanded ? "−" : "＋"}</span>
-            <span style={{ fontWeight: 600, color: "var(--lime-text)" }}>
+            <span style={{ fontWeight: 600, color: C("ash") }}>
               {expanded ? t("w.home.other.fewer") : t("w.home.other.all")} {expanded ? `−${rest}` : `+${rest}`}
             </span>
           </button>

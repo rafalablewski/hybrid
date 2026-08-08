@@ -6,15 +6,18 @@ import {
   olympicSportsByCategory,
   inferBlockKind,
   exerciseProfile,
+  roomBodyMark,
   type BlockKind,
 } from "@hybrid/core";
 import { useExercises } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, space, F, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
+import AuroraExerciseMedia from "./exercise-media";
+import AuroraBodyMark from "./body-mark";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 type Entry = { name: string; kind: BlockKind; icon?: string };
@@ -40,14 +43,15 @@ function shapeHint(e: Entry): string {
 /**
  * The ONE exercise picker sheet (Builder + live logger) — "Rooms, then Things"
  * with an A–Z index, a view the athlete can switch:
- *  - GROUPS (default): a grid of pattern/muscle "rooms" (each a tile with the
- *    room's initials, name and movement count); tapping a room shows just its
- *    movements. Two taps, never a 200-item scroll.
+ *  - GROUPS (default): a grid of muscle "rooms" (each a tile drawing the BODY
+ *    that room trains, with its muscles lit, plus the name and movement count);
+ *    tapping a room shows just its movements. Two taps, never a 200-item scroll.
  *  - A–Z: the typeset index — every movement under display-face letter heads,
  *    with a right-edge letter rail for one-thumb jumps.
- * Rows share the More → Exercises anatomy (40px initials tile tinted by
- * modality, sports keep their glyph; shape hints on the right) — the old
- * 8px-dot list and mono-uppercase category kickers are retired. Search cuts
+ * Rows share the More → Exercises anatomy (40px IMPLEMENT-MARK tile tinted by
+ * modality — a barbell, a pair of bells, a cable handle; sports keep their
+ * glyph; shape hints on the right) — the old 8px-dot list, the mono-uppercase
+ * category kickers and the meaningless two-letter initials are all retired. Search cuts
  * across every room; an unknown name is always offered as a custom add.
  * Twin of the web workout-blocks ExercisePicker.
  */
@@ -136,13 +140,16 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
     const hint = shapeHint(e);
     return (
       <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        {/* The tile carries the lift's DRAWN demo once it exists, and until then
+            its IMPLEMENT (core: exercise-marks) — a barbell, a pair of bells, a
+            cable handle. Sports keep their catalog glyph. */}
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
           {e.icon
             ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
-            : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
+            : <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={txt(C, c)} />}
         </View>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
+        {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
       </Pressable>
     );
   };
@@ -154,7 +161,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   const head = (label: string, count: number) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, marginBottom: 10, marginHorizontal: 2 }}>
       <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{count}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
     </View>
   );
   const customAdd = q.length > 0 && !exact && (
@@ -199,7 +206,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 return (
                   <Pressable key={p.id} onPress={() => { setView(p.id); setRoom(null); }} accessibilityRole="button" accessibilityState={{ selected: on }}
                     style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                   </Pressable>
                 );
               })}
@@ -246,13 +253,20 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                       return (
                         <Pressable key={r.key} onPress={() => setRoom(r.key)} accessibilityRole="button" accessibilityLabel={r.label}
                           style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16 }}>
-                          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+                          {/* A room is a muscle group, not a lift — its mark is
+                              the BODY it trains, lit from the room's own
+                              exercise list (core: roomBodyMark). Sports rooms
+                              keep their catalog glyph; a room the DB can't read
+                              falls back to its initials. */}
+                          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                             {r.icon
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
-                              : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
+                              : roomBodyMark(r.entries.map((e) => e.name))
+                                ? <AuroraBodyMark names={r.entries.map((e) => e.name)} size={32} color={txt(C, c)} silhouette={C.line} />
+                                : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
                           </View>
                           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
                         </Pressable>
                       );
                     })}

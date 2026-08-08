@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { Animated, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from "react-native";
+import { Animated, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, type StyleProp, type ViewStyle } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,6 +18,7 @@ import {
   heroMetaLine,
   heroNavAction,
   heroNavMaterial,
+  heroRailPin,
   heroSnapTarget,
   heroStatusBar,
   heroTitleType,
@@ -367,6 +368,31 @@ export interface HeroSpec {
  *  scroller. Exported so AuroraScreen can pass one straight through. */
 export type HeroScrollerFn = (props: HeroScrollProps, rail: ReactNode) => ReactNode;
 
+declare const __DEV__: boolean;
+
+/**
+ * THE SUB-RAIL'S ONE PLACEMENT RULE, enforced instead of documented.
+ *
+ * The dock point is computed from the geometry on the premise that the rail is
+ * the first thing in the scroll content. A `scroller` screen renders the rail
+ * node itself, so it is the one place that premise can be broken — put content
+ * above the rail inside the same parent and it would dock early, with the page
+ * sliding out from under it. Nothing about that failure is visible in a type,
+ * so it is checked at layout time in dev: y is measured against the rail's
+ * parent, and the parent's top must BE the content's top.
+ */
+function assertRailAtContentTop(e: LayoutChangeEvent) {
+  if (typeof __DEV__ === "undefined" || !__DEV__) return;
+  const y = e.nativeEvent.layout.y;
+  if (y > 0.5) {
+    console.warn(
+      `[hero] The docked sub-rail is ${Math.round(y)}dp below the top of its parent. ` +
+        `HeroScreen pins it as if it were the first thing in the scroll content, so it will dock early. ` +
+        `Render the rail node first in your scroller's content (see HeroScreen's \`scroller\` prop).`,
+    );
+  }
+}
+
 export interface HeroScrollProps {
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onScrollEndDrag: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
@@ -424,7 +450,9 @@ export function HeroScreen({
   dock?: ReactNode;
   /** Take the scroll props (and the docked sub-rail node) and render your own
    *  scroller — a FlatList, say. The container never requires a screen to give
-   *  up virtualization to get a hero. */
+   *  up virtualization to get a hero. The rail node must go FIRST in the
+   *  scroller's content (the top of a list header) — that is where its dock
+   *  point assumes it is; dev warns at layout time if it isn't. */
   scroller?: HeroScrollerFn;
   children?: ReactNode;
 }) {
@@ -442,8 +470,6 @@ export function HeroScreen({
   const dockedRef = useRef(false);
   const [docked, setDocked] = useState(false);
   const [barred, setBarred] = useState(false);
-  const [railTop, setRailTop] = useState<number | null>(null);
-  const railH = useRef(0);
   const ns = useNavScroll();
   const reduced = useReducedMotion();
   const entrance = useEntrance();
@@ -516,10 +542,22 @@ export function HeroScreen({
 
   // The sub-rail docks beneath the collapsed bar: once its natural position
   // would scroll past the bar, it translates down to hold there.
-  const railShift =
-    railTop != null
-      ? scrollY.interpolate({ inputRange: [Math.max(0, railTop - geom.barHeight), Math.max(0, railTop - geom.barHeight) + 100000], outputRange: [0, 100000], extrapolateLeft: "clamp" })
-      : 0;
+  //
+  // NOT MEASURED. This container renders the rail as the FIRST thing in the
+  // scroll content — directly under `paddingTop: geom.height` — so its y in
+  // that content is the hero's height, and the pin is a pure function of the
+  // geometry. It used to read an `onLayout`, which is how it shipped broken:
+  // `onLayout` reports y against the rail's PARENT (0, in both placements),
+  // not against the scroll content, so the pin came out 0, the rail held from
+  // the first pixel of scroll, and the collapsed bar left a whole collapse
+  // track of gap above it. A measurement whose coordinate space depends on how
+  // deep the node happens to be nested cannot be the source of truth for a
+  // position this component itself decides. (The cover screen still measures —
+  // there the rail sits BELOW a hem of variable height, so its position is
+  // genuinely unknown, and it is a direct child of the content container, so
+  // its measured y is already in the right space.)
+  const railPin = heroRailPin(geom.height, geom);
+  const railShift = scrollY.interpolate({ inputRange: [railPin, railPin + 100000], outputRange: [0, 100000], extrapolateLeft: "clamp" });
 
   const navMaterial = heroNavMaterial(backdrop, barred);
   const type = heroTitleType(hero.title, hero.rank);
@@ -528,12 +566,16 @@ export function HeroScreen({
   // Handed to a custom `scroller` too, so a FlatList screen gets the identical
   // behaviour by dropping it at the top of its list header.
   const railNode = rail ? (
-    <Animated.View onLayout={(e) => setRailTop(e.nativeEvent.layout.y)} style={{ zIndex: 10, transform: [{ translateY: railShift }] }}>
+    <Animated.View testID="hero-rail" onLayout={assertRailAtContentTop} style={{ zIndex: 10, transform: [{ translateY: railShift }] }}>
       <View
-        onLayout={(e) => {
-          railH.current = e.nativeEvent.layout.height;
-        }}
-        style={{ marginHorizontal: -HERO.gutter.edge, paddingHorizontal: HERO.gutter.edge, backgroundColor: withAlpha(C.ink, 0.88), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line, overflow: "hidden" }}
+        // Full-bleed, and NO padding of its own: the rail owns its gutter (see
+        // DockRail). This slot used to pad its child and History then
+        // negative-margined straight back out again — the same gutter applied
+        // twice in opposite directions, which is how the two rails ended up
+        // measuring differently. Now identical to the cover scaffold's slot.
+        // (The height measurement that used to sit here is gone with the rest
+        // of this container's measuring — see the dock point above.)
+        style={{ marginHorizontal: -HERO.gutter.edge, backgroundColor: withAlpha(C.ink, 0.88), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line, overflow: "hidden" }}
       >
         <BlurView intensity={26} tint={scheme === "light" ? "light" : "dark"} style={StyleSheet.absoluteFill} />
         {rail}

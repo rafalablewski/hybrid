@@ -7,6 +7,7 @@ import {
   fs,
   space,
   fmtTonnage,
+  fmtKm,
   sessionHeadline,
   sessionsByDay,
   historyStream,
@@ -28,7 +29,9 @@ import {
   type BodyweightLookup,
   type StatRange,
 } from "@hybrid/core";
+import { CARD_PAD } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import { DockRail, DockChip } from "./dock-rail";
 
 // ── AURORA History views (web) ──────────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -42,7 +45,11 @@ import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const MONO = "var(--font-mono)";
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 } as const;
+/* Every card the alternate History views draw — the session cards, the agenda
+   placeholders, the week cards and the trend chart. They sat at 16 while the
+   list view's own swipe card (history.tsx) sat at 20, so switching view on one
+   screen moved every card's content 4px. */
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
 
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -87,7 +94,7 @@ function SessionCard({ s, ctx }: { s: LoggedSession; ctx: ViewCtx }) {
   const prs = ctx.prs(s.id);
   const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
   return (
-    <div onClick={() => ctx.onOpen(s.id)} style={{ ...card, padding: 16, cursor: "pointer" }}>
+    <div onClick={() => ctx.onOpen(s.id)} style={{ ...card, cursor: "pointer" }}>
       <div style={{ fontFamily: MONO, fontSize: fs.display, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
         {h.value}
         <span style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C("ash") }}> {unitOf(h, t)}</span>
@@ -127,24 +134,26 @@ function RestGapRow({ days }: { days: number }) {
 //  Switcher
 // ============================================================
 
+/**
+ * History's view rail — a SCROLLING chip rail, not a segmented control: it is
+ * full-bleed, scrolls past the screen edge, and a fifth layout must be able to
+ * join it without a redesign.
+ *
+ * It rides `DockRail` with `role="mode"`: the chips SELECT (one always on, the
+ * layout below changes), which is what earns them the accent tint. It used to
+ * be a hand-rolled button drawing a SOLID lime pill with dark text at ~29dp —
+ * the loudest object on a screen whose cards are one quiet figure each, and
+ * below the 44dp floor the kit already declares. See
+ * packages/core/src/dock-rail.ts. Mobile twin: the same function name.
+ */
 export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange: (v: HistoryViewId) => void }) {
   const { t } = useLang();
   return (
-    // Full-bleed chip rail — clips at the screen edge, rests on the column.
-    <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", padding: "0 var(--page-pad-x, 12px) 4px", margin: "0 calc(-1 * var(--page-pad-x, 12px))" }}>
-      {HISTORY_VIEWS.map((v) => {
-        const on = v.id === view;
-        return (
-          <button className="pressable"
-            key={v.id}
-            onClick={() => onChange(v.id)}
-            style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 16px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
-          >
-            {t(v.labelKey)}
-          </button>
-        );
-      })}
-    </div>
+    <DockRail label={t("histview.switchView")}>
+      {HISTORY_VIEWS.map((v) => (
+        <DockChip key={v.id} role="mode" label={t(v.labelKey)} selected={v.id === view} onClick={() => onChange(v.id)} />
+      ))}
+    </DockRail>
   );
 }
 
@@ -192,7 +201,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <DayLabel text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
             {chip(u.isToday ? "var(--lime-text)" : C("ash"), t("histview.planned"))}
           </div>
-          <div style={{ ...card, padding: 16, background: "transparent", boxShadow: "none", border: `1.5px dashed color-mix(in srgb, ${u.isToday ? C("lime") : C("ash")} 38%, transparent)` }}>
+          <div style={{ ...card, background: "transparent", boxShadow: "none", border: `1.5px dashed color-mix(in srgb, ${u.isToday ? C("lime") : C("ash")} 38%, transparent)` }}>
             <div style={{ fontWeight: 800, fontSize: fs.note, color: u.isToday ? C("chalk") : C("ash") }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</div>
             {u.blockNames.length > 0 && (
               <div style={{ fontFamily: MONO, fontSize: fs.caption, color: C("ash"), marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}</div>
@@ -351,6 +360,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
   const mini = (label: string, value: string) => (
+    /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
     <div style={{ ...card, flex: 1, padding: 16 }}>
       <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
       <div style={{ fontFamily: MONO, fontVariantNumeric: "tabular-nums", fontSize: fs.heading, letterSpacing: "-.02em", marginTop: 4 }}>{value}</div>
@@ -396,7 +406,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
       <div style={{ display: "flex", gap: 10 }}>
         {mini(t("w.analyze.stats.activeDays"), hasData ? String(buckets.activeDays) : "—")}
-        {mini(t("w.analyze.stats.distance"), hasData ? `${recap.distanceKm.toFixed(1)} km` : "—")}
+        {mini(t("w.analyze.stats.distance"), hasData ? fmtKm(recap.distanceKm) : "—")}
         {mini(t("w.analyze.stats.minutes"), hasData ? String(Math.round(recap.minutes)) : "—")}
       </div>
 

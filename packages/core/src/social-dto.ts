@@ -11,6 +11,7 @@
  *   • any handler may return `{ error }` instead of its success body;
  *   • list/profile endpoints add `unavailable` when a table isn't migrated yet.
  */
+import type { LoggedSession } from "./engines/session";
 import type { FitnessLevel, BadgeAccent } from "./engines/fitness-level";
 import type { FeedReason } from "./feed-rank";
 import type { LiveAthlete } from "./feed-live";
@@ -51,12 +52,50 @@ export interface FeedItemView extends FeedItem {
   /** Why this card is in a RANKED feed, when the viewer doesn't already follow
    *  the author (core/feed-rank.ts). Absent means "no explanation needed". */
   reason?: FeedReason;
+  /** The viewer's relation to the author. The ranker already derives this, and
+   *  the row's ⋯ menu needs it to know whether to offer Follow or Unfollow —
+   *  a menu that offers to follow someone you already follow reads as broken.
+   *  Absent on an older response; the menu then assumes "not following", which
+   *  is the safe direction (a redundant follow no-ops server-side). */
+  relation?: Relation;
 }
 export interface FeedResponse extends Degradable, ApiError {
   feed: FeedItemView[];
   /** Who is mid-session right now (core/feed-live.ts). Absent or empty when
    *  nobody is — the strip hides rather than showing a void. */
   live?: LiveAthlete[];
+}
+
+/**
+ * The Saved screen's payload: the athlete's saved keys, resolved back into
+ * cards. Saving is per-device (feed-actions.ts), so the client holds the KEYS
+ * and the server turns them into rows — privacy re-checked at read time, not
+ * trusted from whenever the save happened.
+ *
+ * The two miss lists are the point. A shelf that just returns fewer cards than
+ * you saved is the swallow-your-bookmarks failure with extra steps, so a key
+ * that didn't come back says WHY:
+ *   • `gone`   — the row no longer exists. The client prunes these.
+ *   • `hidden` — it exists, but you may not see it any more (the author went
+ *     private, or blocked you). KEPT: that state reverses.
+ */
+export interface SavedFeedResponse extends Degradable, ApiError {
+  items: FeedItemView[];
+  gone: string[];
+  hidden: string[];
+}
+
+/** The saved KEYS, newest save first (GET/PUT /api/social/saved/sync).
+ *  `unavailable` means SavedPost isn't migrated yet — the clients treat that as
+ *  "no server shelf" and leave the device's own list alone. */
+export interface SavedSyncResponse extends Degradable, ApiError {
+  ids: string[];
+}
+
+/** The whole workout behind a feed post — GET /api/social/session/[id].
+ *  `session` is absent when the viewer may not see it (403 private / 404). */
+export interface FeedSessionResponse extends Degradable, ApiError {
+  session?: LoggedSession;
 }
 
 export interface KudosResponse extends ApiError {

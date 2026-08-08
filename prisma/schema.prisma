@@ -115,6 +115,7 @@ model User {
   blocksMade       Block[]             @relation("blocker")
   blocksReceived   Block[]             @relation("blocked")
   posts            Post[]
+  savedPosts       SavedPost[]
   enrollments      ProgramEnrollment[] @relation("enrollClient")  // programs I started
   coachEnrollments ProgramEnrollment[] @relation("enrollCoach")   // enrolments into my programs
   reviewsReceived  CoachReview[]       @relation("reviewCoach")    // reviews of me as a coach
@@ -257,6 +258,32 @@ model Kudos {
 
   @@unique([userId, subjectType, subjectId])
   @@index([ownerId, subjectType, subjectId])
+}
+
+// A saved (bookmarked) feed post. Anchored like Kudos — (subjectType,
+// subjectId) — but with ONE party: a save is private, nobody is notified, and
+// the author has no claim on the row, so unlike Kudos there is no ownerId.
+//
+// No FK to Session/Post on purpose: a "pr" row's subjectId is the SESSION the
+// PR was set in, so one id column would need two FK targets, and the feed's
+// subjects are derived rather than one table. The read path re-checks existence
+// and visibility on every load (/api/social/saved), so a dangling row already
+// has a defined outcome — it returns as `gone` and the client drops it.
+//
+// SQL: reference/sql-saved-post.sql.
+model SavedPost {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  subjectType String // session | pr | post
+  subjectId   String
+  savedAt     DateTime @default(now())
+
+  // Saving twice is saving once — which is what makes the cross-device merge a
+  // plain union: a device pushes its whole list without deduping first.
+  @@unique([userId, subjectType, subjectId])
+  // The only read: "my shelf, newest save first."
+  @@index([userId, savedAt])
 }
 
 // A comment on a feed subject (same subject anchoring as Kudos).

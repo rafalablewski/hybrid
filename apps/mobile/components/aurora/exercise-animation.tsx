@@ -1,36 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Image, AccessibilityInfo } from "react-native";
+import { AccessibilityInfo } from "react-native";
 import Svg, { G, Line as SvgLine, Circle, Polyline, Path, Rect } from "react-native-svg";
-import {
-  exerciseAnimation,
-  skeletonAt,
-  type ExerciseAnimation,
-  type LoadGlyph,
-  type Skeleton,
-} from "@hybrid/core";
+import { exerciseAnimation, skeletonAt, type LoadGlyph, type Skeleton } from "@hybrid/core";
 import { useTheme, type Palette } from "../../lib/theme";
 
 /**
- * The exercise-page MOVEMENT DEMO (mobile) — the swappable animation surface.
+ * The PROCEDURAL movement demo (mobile) — the stick figure, and only that.
+ * Parity: apps/web/components/aurora/exercise-animation.tsx.
  *
- * It resolves the animation spec from @hybrid/core (exerciseAnimation) and
- * switches on its `kind`. TODAY only the procedural `skeleton` renderer exists;
- * when professional SKETCH animation lands, register the asset in core's
- * SKETCH_ANIMATIONS and add the `sketch` branch here — the muscle/cues section
- * (exercise-anatomy.tsx) never changes. Parity:
- * apps/web/components/aurora/exercise-animation.tsx. Returns null for a name the
- * DB doesn't know (custom lifts, cardio sports).
+ * Callers wanting "whatever we show for this lift" should use exercise-media.tsx
+ * instead: it renders the hand-drawn art once a lift is drawn and falls back to
+ * this figure until then. Returns null for a name the DB doesn't know (custom
+ * lifts, cardio sports).
  */
 export default function AuroraExerciseAnimation({ name, active = true }: { name: string; active?: boolean }) {
   const { palette: C } = useTheme();
   const anim = exerciseAnimation(name);
   if (!anim) return null;
-  switch (anim.kind) {
-    case "skeleton":
-      return <SkeletonFigure C={C} frames={anim.frames} load={anim.load} cycleMs={anim.cycleMs} active={active} />;
-    case "sketch":
-      return <SketchFigure anim={anim} active={active} />;
-  }
+  return <SkeletonFigure C={C} frames={anim.frames} load={anim.load} cycleMs={anim.cycleMs} active={active} />;
 }
 
 /* ── procedural stick-figure renderer (today's default) ── */
@@ -128,41 +115,5 @@ function LoadSVG({ load, x, y, accent }: { load: LoadGlyph; x: number; y: number
       <Rect x={x - 16} y={y - 4} width={3.4} height={8} rx={1} fill={accent} />
       <Rect x={x + 12.6} y={y - 4} width={3.4} height={8} rx={1} fill={accent} />
     </G>
-  );
-}
-
-/* ── professional sketch renderer (frames cross-faded on a loop) ──
-   Wired but dormant until core's SKETCH_ANIMATIONS is populated. Frame refs are
-   remote URLs (or bundled asset uris) the illustrator's export provides. */
-
-function SketchFigure({ anim, active }: { anim: Extract<ExerciseAnimation, { kind: "sketch" }>; active: boolean }) {
-  const { frames, cycleMs } = anim;
-  const [i, setI] = useState(0);
-
-  useEffect(() => {
-    if (frames.length <= 1 || !active) return;
-    let id: ReturnType<typeof setInterval> | null = null;
-    AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (reduce) return;
-      const per = Math.max(60, cycleMs / frames.length);
-      id = setInterval(() => setI((n) => (n + 1) % frames.length), per);
-    });
-    return () => {
-      if (id) clearInterval(id);
-    };
-  }, [frames.length, cycleMs, active]);
-
-  return (
-    <View style={{ width: "100%", aspectRatio: 1 }}>
-      {frames.map((src, n) => (
-        <Image
-          key={n}
-          source={{ uri: src }}
-          accessibilityIgnoresInvertColors
-          resizeMode="contain"
-          style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0, width: "100%", height: "100%", opacity: n === i ? 1 : 0 }}
-        />
-      ))}
-    </View>
   );
 }

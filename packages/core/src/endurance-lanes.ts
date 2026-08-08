@@ -10,6 +10,7 @@ import {
 } from "./engines/running";
 import type { ChartReading } from "./chart-scrub";
 import { activeDisciplines, DISCIPLINE_META, disciplinePaceFigure, disciplinePaceUnit } from "./endurance";
+import { roundKm } from "./distance";
 
 /**
  * SPORT LANES — the Endurance block that lives at the bottom of Today.
@@ -126,7 +127,7 @@ function lastEffort(sessions: LoggedSession[]): LaneEffort | null {
         name: b.name,
         startedAt: s.startedAt,
         sessionId: s.id,
-        distanceKm: Math.round(distanceKm * 10) / 10,
+        distanceKm: roundKm(distanceKm),
         minutes: Math.round(minutes),
         secPerKm: distanceKm > 0 && sec != null ? Math.round(sec / distanceKm) : null,
       };

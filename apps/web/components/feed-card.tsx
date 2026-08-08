@@ -1,24 +1,30 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import {
   FEED_STAT_LABEL_KEY,
   feedDeltaText,
   feedFigureText,
+  feedSharePayload,
   feedStatText,
+  feedSubjectKey,
   feedTierChip,
   fs,
+  isFeedSaved,
   leading,
   tracking,
   type FeedDetail,
   type FeedItemView,
   type FeedStat,
+  type Relation,
   type WeightUnit,
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { accentText } from "@/lib/ui";
+import { runShare, toggleSavedPost, useFeedSaved } from "@/lib/feed-actions";
 import { useIsMobile } from "@/lib/use-media-query";
 import { C, Avatar } from "./social-ui";
+import FeedMenu, { feedMenuFor } from "./feed-menu";
 
 /**
  * THE FEED ROW (web) — the D3 zones from reference/feed-spec.html, rendered
@@ -66,6 +72,45 @@ export function WatchGlyph({ color }: { color?: string }) {
     <svg width="11" height="13" viewBox="0 0 11 14" fill="none" stroke={color ?? C("ash")} strokeWidth="1.3" aria-label={t("feed.deviceMeasured")} role="img">
       <rect x="1.5" y="3.2" width="8" height="7.6" rx="2.4" />
       <path d="M3.5 3V1.2h4V3M3.5 11v1.8h4V11" />
+    </svg>
+  );
+}
+
+/**
+ * ZONE F's private glyphs. Hand-drawn in the SAME 16-unit box at the same 1.5
+ * stroke as the bolt and the bubble beside them — the Aurora icon set is a
+ * 72-unit box on its own stroke ramp, so a share icon pulled from there would
+ * draw visibly lighter than the two glyphs it sits next to.
+ *
+ * The bookmark FILLS when saved (like the bolt does when cheered): saved state
+ * has to be readable while scrolling past, not on inspection.
+ */
+function BookmarkGlyph({ filled }: { filled: boolean }) {
+  return (
+    <svg width="17" height="17" viewBox="0 0 16 16" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 2.5h8v11l-4-3-4 3Z" />
+    </svg>
+  );
+}
+
+/** An arrow leaving a tray — the universal "take this out of here". */
+function ShareGlyph() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 10.5V2.2M5.3 4.9 8 2.2l2.7 2.7" />
+      <path d="M3.2 8.6v4.2c0 .4.3.7.7.7h8.2c.4 0 .7-.3.7-.7V8.6" />
+    </svg>
+  );
+}
+
+/** The overflow ⋯. Filled dots, not stroked circles — at 1.6px a stroked ring
+ *  reads as three tiny doughnuts. */
+function MoreGlyph() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <circle cx="3.2" cy="8" r="1.35" />
+      <circle cx="8" cy="8" r="1.35" />
+      <circle cx="12.8" cy="8" r="1.35" />
     </svg>
   );
 }
@@ -190,15 +235,33 @@ export interface FeedCardProps {
   onOpenProfile: (handle: string) => void;
   onKudos: () => void;
   onComments: () => void;
+  /** Open the post — the WHOLE workout behind this row (feed-workout.tsx).
+   *  Absent for cards with no session behind them (a status post), and the
+   *  content zones then aren't a button. */
+  onOpen?: () => void;
   onDelete?: () => void;
+  /** A change the ⋯ menu made to the AUTHOR rather than this row — a follow
+   *  (every card by that person now reads differently) or a block (they leave
+   *  the stream). The screen owns the list, so it applies it. */
+  onAuthorChanged?: (change: { authorId: string; relation?: Relation; blocked?: boolean }) => void;
   children?: ReactNode; // the comment thread, when open
 }
 
-export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, children }: FeedCardProps) {
+export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onOpen, onDelete, onAuthorChanged, children }: FeedCardProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
   const d = item.detail;
   const moment = d?.moment ?? "p2";
+
+  // The two PRIVATE verbs (zone F, right) + the overflow menu (zone A, right).
+  // Saving is per-device and optimistic — the store updates before the write,
+  // so the glyph fills on the press frame (lib/feed-actions.ts).
+  const saved = isFeedSaved(useFeedSaved(), feedSubjectKey(item));
+  const [menu, setMenu] = useState(false);
+  // "Link copied" only ever appears on a browser with no share sheet, where
+  // runShare falls back to the clipboard — silence there reads as a dead button.
+  const [copied, setCopied] = useState(false);
+  const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: !!onDelete });
 
   // The headline: core names the lift, the client speaks the language.
   const headline = d
@@ -243,25 +306,74 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
           {/* A spaced en dash joins the meta line — never a middot. */}
           <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta.join(" – ")}</div>
         </div>
-        {item.subjectType === "post" && item.mine && onDelete && (
-          <button className="pressable" onClick={onDelete} aria-label={t("w.social.deletePostAria")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: display, fontSize: fs.title, lineHeight: 1 }}>
-            ×
-          </button>
+        {/* ZONE A, right — the overflow menu. This corner used to hold a bare ×
+            on your own posts: an unlabelled destructive control, and nothing at
+            all on everyone else's, so the stream had no answer to "I don't want
+            to see this". Delete now lives INSIDE the menu, labelled and
+            explained. Drawn only when the menu would have rows (core decides —
+            my own session/PR row has nothing to offer). */}
+        {menuRows.length > 0 && (
+          // The ANCHOR. The menu is a small card hanging off this glyph's
+          // bottom-right (feed-menu.tsx), so the button needs a positioned box
+          // to hang from — and a stacking context, or the next post in the
+          // stream paints over an open menu.
+          <div style={{ position: "relative", zIndex: menu ? 30 : "auto", display: "inline-flex" }}>
+            <button
+              className="pressable"
+              onClick={() => setMenu((v) => !v)}
+              aria-label={t("feed.menu.title")}
+              aria-haspopup="menu"
+              aria-expanded={menu}
+              style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), padding: 4, display: "inline-flex" }}
+            >
+              <MoreGlyph />
+            </button>
+            <FeedMenu
+              open={menu}
+              onClose={() => setMenu(false)}
+              handle={item.author.handle}
+              authorId={item.author.id}
+              mine={item.mine}
+              subjectType={item.subjectType}
+              subjectId={item.subjectId}
+              relation={item.relation}
+              onDelete={onDelete}
+              onAuthorChanged={onAuthorChanged}
+            />
+          </div>
         )}
       </div>
 
-      {/* ZONE B — headline */}
-      {headline && <div style={{ ...headlineStyle, color: C("chalk"), marginTop: 8 }}>{headline}</div>}
+      {/* ZONES B–E are ONE target: the post opens to the whole workout behind
+          it (the top sets are a preview, not the session). The actions row
+          below stays outside it, so a kudos is never an accidental open. */}
+      <div
+        {...(onOpen
+          ? {
+              role: "button" as const,
+              tabIndex: 0,
+              "aria-label": t("feed.open"),
+              onClick: onOpen,
+              onKeyDown: (e: KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); }
+              },
+              style: { cursor: "pointer" },
+            }
+          : {})}
+      >
+        {/* ZONE B — headline */}
+        {headline && <div style={{ ...headlineStyle, color: C("chalk"), marginTop: 8 }}>{headline}</div>}
 
-      {/* ZONE C — the figures */}
-      {d?.archetype === "stat" && <Figure detail={d} units={units} />}
-      {d?.prCount ? <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</div> : null}
-      {d?.sets && d.sets.length > 0 && <TopSets sets={d.sets} units={units} />}
-      {d?.stats && d.stats.length > 0 && <StatRow stats={d.stats} units={units} />}
+        {/* ZONE C — the figures */}
+        {d?.archetype === "stat" && <Figure detail={d} units={units} />}
+        {d?.prCount ? <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t("feed.prCount").replace("{n}", String(d.prCount))}</div> : null}
+        {d?.sets && d.sets.length > 0 && <TopSets sets={d.sets} units={units} />}
+        {d?.stats && d.stats.length > 0 && <StatRow stats={d.stats} units={units} />}
 
-      {/* ZONE E — words. A caption is written FOR the feed; the private session
-          note is owner-only by schema and never arrives here. */}
-      {item.body && <p style={{ color: moment === "p2" && d?.archetype === "text" ? C("chalk") : C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "8px 0 0" }}>{item.body}</p>}
+        {/* ZONE E — words. A caption is written FOR the feed; the private session
+            note is owner-only by schema and never arrives here. */}
+        {item.body && <p style={{ color: moment === "p2" && d?.archetype === "text" ? C("chalk") : C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "8px 0 0" }}>{item.body}</p>}
+      </div>
 
       {/* Legacy chips — only when core had no structured detail to give. */}
       {!d && item.chips.length > 0 && (
@@ -291,6 +403,39 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
           </svg>
           {item.comments > 0 ? item.comments : t("w.social.comment")}
         </button>
+
+        {/* THE RIGHT-HAND PAIR — the two PRIVATE verbs, pushed to the far edge
+            so the row splits into what you give the author (kudos, comment) and
+            what you do for yourself. Neither carries a count: a save is nobody
+            else's business and a share isn't a score. */}
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 14 }}>
+          {copied && (
+            <span style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash") }}>{t("feed.linkCopied")}</span>
+          )}
+          <button
+            className="pressable"
+            onClick={() => toggleSavedPost(item)}
+            aria-pressed={saved}
+            aria-label={t(saved ? "feed.unsave" : "feed.save")}
+            // Saved fills in CHALK, not the accent: filled-vs-outline already
+            // carries the state, and lime is spent on the PUBLIC action (the
+            // bolt) — one accent per row, and a save is nobody's business.
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex", color: saved ? C("chalk") : C("ash") }}
+          >
+            <BookmarkGlyph filled={saved} />
+          </button>
+          <button
+            className="pressable"
+            onClick={async () => {
+              const r = await runShare(feedSharePayload(item, headline || item.title));
+              if (r === "copied") { setCopied(true); setTimeout(() => setCopied(false), 1800); }
+            }}
+            aria-label={t("feed.share")}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex", color: C("ash") }}
+          >
+            <ShareGlyph />
+          </button>
+        </span>
       </div>
 
       {children}

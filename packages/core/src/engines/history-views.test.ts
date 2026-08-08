@@ -221,7 +221,7 @@ describe("sessionHeadline", () => {
       ],
     };
     const h = sessionHeadline(brick, "kg");
-    expect(h).toMatchObject({ kind: "distance", value: "23.1", unit: "km", pace: null, minutes: 55 });
+    expect(h).toMatchObject({ kind: "distance", value: "23.05", unit: "km", pace: null, minutes: 55 });
   });
 
   it("falls back to the block count when a session carries no metric at all", () => {

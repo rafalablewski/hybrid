@@ -127,13 +127,63 @@ cards still align with the content column. `CoachRail`'s
 Sheet or a card respects its container's padding — bleed is only for rails
 sitting directly on a screen.
 
+## RULE: a sheet owns the pad under its last row — content adds none (always)
+The bottom pad of a bottom-sheet is ONE number, `sheetPadBottom(insetBottom)`
+from `packages/core/src/scale.ts` — `max(insetBottom, 24)`, **max, never plus**.
+A sheet's panel sits ON the screen's bottom edge, so the home-indicator inset is
+the FLOOR of the pad, not an addition to it. Apply it on the PANEL: mobile
+`paddingBottom: sheetPadBottom(insets.bottom)`, web
+`max(${sheetPadBottom()}px, env(safe-area-inset-bottom, 0px))`.
+Nothing rendered INSIDE a sheet may trail a pad of its own — no
+`contentContainerStyle={{ paddingBottom }}` on a sheet's scroller, no trailing
+`paddingBottom` on the last block. Those stack on the panel's pad and are what
+put a dead band under every sheet (the web More sheet reserved 110px for a pill
+bar it renders over and hides). A sheet also never reserves clearance for the
+tab bar or the pill nav: it covers them.
+
 ## RULE: no decorative dot/marker before section headers (always)
 A small dot, circle or square placed before a section label reads as AI slop.
 Never render one in front of a heading, kicker, or cluster label, on either
 client. The **golden standard is the Explore tab's `SectionHead`**: a bold
 display-face title in chalk (web `--font-heading` 800/18; mobile
-`serifIf(scheme, F.black)` 18), with any meta or action ("See all →", "Free")
-as small mono uppercase on the RIGHT side of the same row — never a marker on
-the left. SEMANTIC dots are not decoration and stay: status/live dots, mood
-dots, chart legend swatches, calendar event markers, notification badges, and
-the ✦ premium signifier.
+`serifIf(scheme, F.black)` 18), with any META or head-level CONTROL (a count, a
+filter, "Free") as small mono uppercase on the RIGHT side of the same row —
+never a marker on the left. That right slot is NOT where a rail's "See all"
+goes; an exit lives at the end of the thing (see the rule below). SEMANTIC dots
+are not decoration and stay: status/live dots, mood dots, chart legend swatches,
+calendar event markers, notification badges, and the ✦ premium signifier.
+
+## RULE: an exit is never a bordered box — ring = leaves, no ring = grows (always)
+No end-of-thing affordance wears card chrome. Not the "See all"/"See more" at
+the end of a rail, not a destination row, not an explainer glyph — no fill, no
+border, no radius, no shadow, on either client. A card carries a THING (a coach,
+a recipe, a business, a metric); an exit carries none, so a filled bordered box
+at the end of a row of things reads as one more item that turned out to be empty
+— and gets counted ("six verified businesses" where there are five).
+
+Use the shared components, never a local copy — the drift is the whole problem.
+Five rails once drew five different tails because each sized its own:
+- **A rail** ends in `aurora/rail-tail.tsx` (both clients). Its only per-rail
+  prop is `w`, and that is a SCROLL concern, not a decorative one: under a
+  mandatory snap grid (web `scroll-snap`, mobile `snapToInterval`) an odd-width
+  final child puts the content end off the grid and leaves the tail half-cut.
+  `radius`/`shadow` were deleted rather than defaulted so no caller can re-card
+  it. Label is the shared `w.explore.seeAll` / `seeMore` — put the rail's
+  subject in `a11y`, not in a bespoke string.
+- **A full-width block** ends in `week-verdict.tsx`'s `DoorRow`.
+- **A vertical list** ends in a DOOR ROW *of that list* — it takes the list's
+  own hairline and chevron (the food page's "More from this business"), because
+  there the separator belongs to the rows above it.
+
+THE GRAMMAR, and it is the part that must not drift:
+- **Ringed glyph → it LEAVES** (opens a screen or a sheet). The tail's 44px
+  arrow ring, the door row's 32px glyph ring. A glyph that is ALREADY a ring
+  (ⓘ) needs no second one drawn around it.
+- **Bare `＋`/`−`, no ring → it GROWS in place** (the Other-sports tail, the
+  endurance block's All-sports control). An arrow there would promise a
+  destination that does not exist.
+
+Expander counts and labels are **ash, never chartreuse** — the accent is the
+"go" colour, and an expander never goes anywhere. Stacked rows separate by
+whitespace, not a rule: a hairline under a GroupMark is the label-plus-rule
+divider the cluster markers deliberately retired.

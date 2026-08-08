@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import {
   SHARED_ELEMENTS,
@@ -16,7 +16,10 @@ import {
 } from "@hybrid/core";
 import HistoryStrip from "./history-strip";
 import { useChartScrub } from "./chart-scrub";
+import RailTail from "./rail-tail";
+import ExerciseFavouritesSheet from "./exercise-favourites-sheet";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
+import { useExerciseFavourites } from "../../lib/exercise-favourites";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
@@ -164,6 +167,15 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
  * Swipeable full-bleed cards, one per purpose; tap opens the exercise page.
  * Parity: apps/web/components/aurora/exercise-widget.tsx; prototype
  * reference/exercises-widget-preview-ive.html.
+ *
+ * THE RAIL IS PINNABLE. Auto-fill (one card per purpose, most-trained first) is
+ * a guess about what the athlete cares about; the lift they are actually
+ * chasing this block is a choice. The tail carries BOTH doors — a dashed "+"
+ * that opens the pin sheet and changes what this rail shows, and the shared
+ * RailTail that just goes to the exercises list. They used to be one tile
+ * marked "＋ All exercises & favourites", which promised an add and performed a
+ * navigation. Pins live per-device (lib/exercise-favourites) and lead the rail
+ * in pin order; core's exerciseWidgetCards fills the rest.
  */
 export default function ExerciseWidgetRail({
   sessions,
@@ -185,7 +197,12 @@ export default function ExerciseWidgetRail({
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
-  const cards = useMemo(() => exerciseWidgetCards(sessions, { bw, deferToLanes }), [sessions, bw, deferToLanes]);
+  const favourites = useExerciseFavourites();
+  const [adding, setAdding] = useState(false);
+  const cards = useMemo(
+    () => exerciseWidgetCards(sessions, { bw, deferToLanes, favourites }),
+    [sessions, bw, deferToLanes, favourites],
+  );
   // The head's coverage denominator — movements trained inside the rail's OWN
   // 8-week window, so the fraction is a fraction of the same thing the cards
   // are rather than two scopes in one sentence.
@@ -204,7 +221,7 @@ export default function ExerciseWidgetRail({
           and spent the slot on a fact the reader already had — while the one
           they did NOT have, that this rail is a selection rather than their
           whole log, had nowhere to go. A quote must add a fraction. The
-          "All ›" action lives in the rail's trailing ghost tile, per the
+          "All ›" action lives in the rail's trailing tail, per the
           one-exit rule. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
@@ -229,16 +246,39 @@ export default function ExerciseWidgetRail({
         {cards.map((card) => (
           <Card key={card.name} card={card} units={units} C={C} t={t} onOpen={onOpen} armHero={armHero} heroRefs={heroRefs} />
         ))}
-        {/* The rail's exit — the trailing ghost tile, at tile scale. */}
+        {/* THE ADD DOOR — the dashed ghost tile, at tile scale.
+            #365 retired this rail's dashed ＋ for three good reasons: a dashed
+            box is the "empty slot / drop here" idiom, ＋ means ADD while that
+            tile only navigated, and it spent chartreuse — the reserved "go"
+            colour — on a standing link. The second reason is the load-bearing
+            one, and it no longer holds: this ＋ genuinely ADDS, opening the pin
+            sheet so the chosen movement is a card in this rail before the sheet
+            is even closed. Which turns the other two around — "drop here" is
+            exactly what an add slot means, and lime on a real action is the
+            colour doing its job rather than decorating a link. The EXIT beside
+            it is the shared RailTail, per that same rule. Mirrors web. */}
         <Pressable
-          onPress={onAll}
+          onPress={() => setAdding(true)}
           accessibilityRole="button"
+          accessibilityLabel={`${t("w.home.exw.addCard")} – ${t("w.home.exw.title")}`}
           style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
         >
           <Text style={{ fontSize: 18, color: C.ash }}>＋</Text>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.allCard")}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.addCard")}</Text>
         </Pressable>
+        {/* THE SEE-ALL DOOR (#365's exit) — the shared RailTail, so this rail's
+            exit is drawn like every other rail's: chromeless, carrying no thing
+            of its own. It only DISPLAYS the exercises list; it never touches
+            the pins. The ADD tile beside it keeps its box precisely because it
+            DOES carry a thing — an action — which is the distinction #365 drew.
+            Mirrors web. */}
+        <RailTail
+          onOpen={onAll}
+          a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`}
+          w={132} minHeight={132}
+        />
       </ScrollView>
+      <ExerciseFavouritesSheet visible={adding} onClose={() => setAdding(false)} sessions={sessions} />
     </View>
   );
 }

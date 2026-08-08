@@ -19,6 +19,7 @@ import { sessionVolume, sessionShape, sessionCardioTotals, cardioPace } from "./
 import { sessionLoad } from "./load";
 import { kgToUnit, type WeightUnit } from "../units";
 import { displaySportDistance, sportDistanceUnit } from "../olympic-sports";
+import { kmValue } from "../distance";
 import { prsForSession } from "./records";
 import { loadLevel } from "./calendar";
 import { localDayKey, localTodayKey, localMondayMs, addLocalDays, dayKeyDiff } from "../day-key";
@@ -128,7 +129,7 @@ export function sessionHeadline(session: LoggedSession, units: WeightUnit, bwKg?
       const solo = dist.length === 1 ? dist[0]! : null;
       return {
         kind: "distance",
-        value: solo ? displaySportDistance(ct.distanceKm, solo.name) : String(Math.round(ct.distanceKm * 10) / 10),
+        value: solo ? displaySportDistance(ct.distanceKm, solo.name) : kmValue(ct.distanceKm),
         unit: solo ? sportDistanceUnit(solo.name) : "km",
         accent: "cardio",
         pace: solo ? cardioPace(solo) : null,

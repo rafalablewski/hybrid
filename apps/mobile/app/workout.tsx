@@ -102,6 +102,7 @@ function todayFeelingOf(list: { weekOf: string; energy: number | null; sleep: nu
 }
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
+import AuroraExerciseMedia from "../components/aurora/exercise-media";
 import { ArrowGlyph } from "../components/aurora/cta-label";
 import Sheet from "../components/aurora/sheet";
 import { useConfirm } from "../components/aurora/confirm";
@@ -1190,9 +1191,13 @@ export default function Workout() {
           <ACard style={cardStack}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 10 }}>
               <DragHandle onStart={() => beginDrag(x.uid)} onMove={moveDrag} onEnd={endDrag} color={dragging ? C.chalk : C.ash} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: x.kind === "strength" ? txt(C, C.lime) : x.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>
-                {x.kind.toUpperCase()}
-              </Text>
+              {/* The lift's IMPLEMENT, tinted by modality — it carries both
+                  what the old mono "STRENGTH" word said (via the tint) and the
+                  gear it takes (via the drawing), and becomes the hand-drawn
+                  demo once that lift is drawn. */}
+              <View accessibilityRole="image" accessibilityLabel={x.kind}>
+                <AuroraExerciseMedia name={x.name} variant="thumb" size={20} tint={x.kind === "strength" ? txt(C, C.lime) : x.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet)} />
+              </View>
               {ssLabels[xi] && (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
               )}
