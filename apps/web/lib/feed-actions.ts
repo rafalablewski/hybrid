@@ -6,6 +6,7 @@ import {
   FEED_SAVED_STORAGE_KEY,
   feedSubjectKey,
   normalizeFeedSaved,
+  pruneFeedSaved,
   toggleFeedSaved,
   type FeedSavedState,
   type FeedSharePayload,
@@ -41,17 +42,30 @@ function hydrate(): void {
   }
 }
 
-/** Save / unsave one post. Optimistic by construction: the store updates before
- *  the write, so the glyph fills on the same frame as the press. */
-export function toggleSavedPost(ref: FeedSubjectRef): void {
-  hydrate();
-  state = toggleFeedSaved(state, feedSubjectKey(ref));
+function persist(next: FeedSavedState): void {
+  if (next === state) return;
+  state = next;
   try {
     window.localStorage.setItem(FEED_SAVED_STORAGE_KEY, JSON.stringify(state));
   } catch {
     /* a full/blocked store must not break the screen */
   }
   emit();
+}
+
+/** Save / unsave one post. Optimistic by construction: the store updates before
+ *  the write, so the glyph fills on the same frame as the press. */
+export function toggleSavedPost(ref: FeedSubjectRef): void {
+  hydrate();
+  persist(toggleFeedSaved(state, feedSubjectKey(ref)));
+}
+
+/** Forget keys the server reported as GONE — the row was deleted. Only ever
+ *  called with that list: a post that merely turned invisible stays saved (see
+ *  core `pruneFeedSaved`). */
+export function forgetSavedPosts(gone: string[]): void {
+  hydrate();
+  persist(pruneFeedSaved(state, gone));
 }
 
 function subscribe(l: () => void): () => void {

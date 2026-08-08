@@ -8,6 +8,9 @@ import {
   feedSubjectKey,
   isFeedSaved,
   normalizeFeedSaved,
+  orderBySaved,
+  parseFeedSubjectKey,
+  pruneFeedSaved,
   toggleFeedSaved,
 } from "./feed-actions";
 
@@ -47,6 +50,53 @@ describe("saved posts (the bookmark)", () => {
     expect(normalizeFeedSaved("nonsense")).toEqual(DEFAULT_FEED_SAVED);
     expect(normalizeFeedSaved({ ids: "post:1" })).toEqual(DEFAULT_FEED_SAVED);
     expect(normalizeFeedSaved({ ids: ["post:1", 7, "", "post:1", "post:2"] }).ids).toEqual(["post:1", "post:2"]);
+  });
+});
+
+describe("reading the saved list back (the Saved screen)", () => {
+  it("round-trips a key, and refuses anything that isn't one", () => {
+    // This is a TRUST BOUNDARY: these keys live in device storage, which the
+    // user can edit, and the Saved screen posts them to the server to be turned
+    // into database queries.
+    expect(parseFeedSubjectKey("post:abc")).toEqual({ subjectType: "post", subjectId: "abc" });
+    expect(parseFeedSubjectKey("session:s1")).toEqual({ subjectType: "session", subjectId: "s1" });
+    expect(parseFeedSubjectKey("pr:s1")).toEqual({ subjectType: "pr", subjectId: "s1" });
+    expect(parseFeedSubjectKey("user:me")).toBeNull();        // not a feed subject
+    expect(parseFeedSubjectKey("post:")).toBeNull();          // no id
+    expect(parseFeedSubjectKey(":abc")).toBeNull();           // no type
+    expect(parseFeedSubjectKey("postabc")).toBeNull();        // no separator
+    expect(parseFeedSubjectKey(`post:${"x".repeat(65)}`)).toBeNull(); // unbounded id
+    expect(parseFeedSubjectKey(null)).toBeNull();
+  });
+
+  it("keeps an id containing a colon whole", () => {
+    // Split on the FIRST colon only — an id is opaque and may contain one.
+    expect(parseFeedSubjectKey("post:a:b")).toEqual({ subjectType: "post", subjectId: "a:b" });
+  });
+
+  it("prunes rows that are gone, and keeps rows that merely turned invisible", () => {
+    // Deleted → forget it. Author went private or blocked you → KEEP it; that
+    // state reverses, and forgetting is the failure the shelf exists to fix.
+    const s = { ids: ["post:1", "post:2", "post:3"] };
+    expect(pruneFeedSaved(s, ["post:2"]).ids).toEqual(["post:1", "post:3"]);
+    expect(pruneFeedSaved(s, [])).toBe(s); // same object — no needless re-render
+    expect(pruneFeedSaved(s, ["post:9"])).toBe(s); // nothing matched
+  });
+
+  it("orders resolved items by WHEN THEY WERE SAVED, not when they were posted", () => {
+    const state = { ids: ["post:c", "post:a", "post:b"] };
+    const items = [
+      { subjectType: "post", subjectId: "a" },
+      { subjectType: "post", subjectId: "b" },
+      { subjectType: "post", subjectId: "c" },
+    ];
+    expect(orderBySaved(state, items).map((i) => i.subjectId)).toEqual(["c", "a", "b"]);
+  });
+
+  it("puts anything the server returned but the store doesn't know about last", () => {
+    const state = { ids: ["post:b"] };
+    const items = [{ subjectType: "post", subjectId: "a" }, { subjectType: "post", subjectId: "b" }];
+    expect(orderBySaved(state, items).map((i) => i.subjectId)).toEqual(["b", "a"]);
   });
 });
 

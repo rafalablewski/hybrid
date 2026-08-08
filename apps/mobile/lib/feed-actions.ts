@@ -5,6 +5,7 @@ import {
   FEED_SAVED_STORAGE_KEY,
   feedSubjectKey,
   normalizeFeedSaved,
+  pruneFeedSaved,
   toggleFeedSaved,
   type FeedSavedState,
   type FeedSharePayload,
@@ -39,12 +40,24 @@ AsyncStorage.getItem(FEED_SAVED_STORAGE_KEY)
   })
   .catch(() => {});
 
+function persist(next: FeedSavedState): void {
+  if (next === state) return;
+  state = next;
+  AsyncStorage.setItem(FEED_SAVED_STORAGE_KEY, JSON.stringify(state)).catch(() => {});
+  emit();
+}
+
 /** Save / unsave one post. The store updates before the write, so the glyph
  *  fills on the same frame as the press. */
 export function toggleSavedPost(ref: FeedSubjectRef): void {
-  state = toggleFeedSaved(state, feedSubjectKey(ref));
-  AsyncStorage.setItem(FEED_SAVED_STORAGE_KEY, JSON.stringify(state)).catch(() => {});
-  emit();
+  persist(toggleFeedSaved(state, feedSubjectKey(ref)));
+}
+
+/** Forget keys the server reported as GONE — the row was deleted. Only ever
+ *  called with that list: a post that merely turned invisible stays saved (see
+ *  core `pruneFeedSaved`). */
+export function forgetSavedPosts(gone: string[]): void {
+  persist(pruneFeedSaved(state, gone));
 }
 
 function subscribe(l: () => void): () => void {

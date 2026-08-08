@@ -59,6 +59,25 @@ export interface FeedResponse extends Degradable, ApiError {
   live?: LiveAthlete[];
 }
 
+/**
+ * The Saved screen's payload: the athlete's saved keys, resolved back into
+ * cards. Saving is per-device (feed-actions.ts), so the client holds the KEYS
+ * and the server turns them into rows — privacy re-checked at read time, not
+ * trusted from whenever the save happened.
+ *
+ * The two miss lists are the point. A shelf that just returns fewer cards than
+ * you saved is the swallow-your-bookmarks failure with extra steps, so a key
+ * that didn't come back says WHY:
+ *   • `gone`   — the row no longer exists. The client prunes these.
+ *   • `hidden` — it exists, but you may not see it any more (the author went
+ *     private, or blocked you). KEPT: that state reverses.
+ */
+export interface SavedFeedResponse extends Degradable, ApiError {
+  items: FeedItemView[];
+  gone: string[];
+  hidden: string[];
+}
+
 export interface KudosResponse extends ApiError {
   kudos: number;
   kudosedByMe: boolean;

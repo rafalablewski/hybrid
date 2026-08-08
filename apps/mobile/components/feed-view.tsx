@@ -29,7 +29,10 @@ import { useConfirm } from "./aurora/confirm";
  */
 type FeedTab = "forYou" | "following";
 
-function Comments({ item }: { item: FeedItemView }) {
+/** The comment thread under an open row. EXPORTED because the Saved screen
+ *  (app/saved.tsx) renders the same rows and must open the same thread — a
+ *  second copy of this would drift the moment either is touched. */
+export function Comments({ item }: { item: FeedItemView }) {
   const { notify } = useConfirm();
   const C = useTheme().palette;
   const { t } = useLang();
@@ -169,7 +172,15 @@ export default function FeedView({ top }: { top?: ReactNode }) {
             </View>
           </Pressable>
         ))}
-        <View style={{ marginLeft: "auto" }}>
+        {/* Saved sits FIRST on the right because it is where the bookmark in
+            every row below leads: the glyph that fills on a post is the same
+            glyph that opens the shelf. */}
+        <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Pressable onPress={() => router.push("/saved")} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("w.social.savedTitle")}>
+            <Svg width={18} height={18} viewBox="0 0 18 18" fill="none">
+              <Path d="M4.5 2.8h9v12.4l-4.5-3.4-4.5 3.4Z" stroke={C.ash} strokeWidth={1.6} strokeLinejoin="round" />
+            </Svg>
+          </Pressable>
           <Pressable onPress={() => router.push("/discover")} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("w.social.searchPeople")}>
             <Svg width={18} height={18} viewBox="0 0 18 18" fill="none">
               <Circle cx={8} cy={8} r={5.5} stroke={C.ash} strokeWidth={1.6} />

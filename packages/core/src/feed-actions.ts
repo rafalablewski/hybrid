@@ -49,6 +49,63 @@ export function feedSubjectKey(ref: FeedSubjectRef): string {
   return `${ref.subjectType}:${ref.subjectId}`;
 }
 
+/** The subject types a saved key may name. `buildSocialFeed` only ever emits
+ *  these three, so anything else in a stored key is corruption or someone
+ *  probing the resolve endpoint. */
+export const FEED_SUBJECT_TYPES = ["session", "pr", "post"] as const;
+
+/**
+ * The inverse of `feedSubjectKey`, and the ONLY way a stored key should re-enter
+ * the system. It is the trust boundary: the Saved screen posts these keys to the
+ * server to be resolved into rows, and they come from device storage — which
+ * anyone can edit. So the type is checked against the closed set above and the
+ * id is length-bounded; anything else is null, not a query.
+ */
+export function parseFeedSubjectKey(key: unknown): FeedSubjectRef | null {
+  if (typeof key !== "string") return null;
+  const at = key.indexOf(":");
+  if (at <= 0) return null;
+  const subjectType = key.slice(0, at);
+  const subjectId = key.slice(at + 1);
+  if (!(FEED_SUBJECT_TYPES as readonly string[]).includes(subjectType)) return null;
+  if (!subjectId || subjectId.length > 64) return null;
+  return { subjectType, subjectId };
+}
+
+/** How many saved keys one request resolves. The store holds up to 500 and
+ *  resolving one costs the author's session history, so the screen pages
+ *  rather than asking the server to rebuild everything at once. */
+export const FEED_SAVED_PAGE = 40;
+
+/**
+ * Drop keys whose row no longer exists.
+ *
+ * ONLY for rows that are genuinely GONE (deleted). A row that merely turned
+ * invisible — the author went private, or blocked you — must stay saved: that
+ * state reverses, and silently forgetting a post because someone flipped a
+ * privacy switch is the same swallow-your-bookmarks failure as having no shelf
+ * at all. The Saved screen says how many are hidden instead.
+ */
+export function pruneFeedSaved(state: FeedSavedState, gone: string[]): FeedSavedState {
+  if (!gone.length) return state;
+  const drop = new Set(gone);
+  const ids = state.ids.filter((k) => !drop.has(k));
+  return ids.length === state.ids.length ? state : { ids };
+}
+
+/**
+ * Put resolved items back into SAVE order (newest save first), not the order
+ * the server happened to build them in. What the athlete remembers is when they
+ * saved a thing, not when it was posted — a card saved this morning belongs at
+ * the top even if the session is from March.
+ */
+export function orderBySaved<T extends FeedSubjectRef>(state: FeedSavedState, items: T[]): T[] {
+  const rank = new Map(state.ids.map((k, i) => [k, i]));
+  return [...items].sort(
+    (a, b) => (rank.get(feedSubjectKey(a)) ?? Infinity) - (rank.get(feedSubjectKey(b)) ?? Infinity),
+  );
+}
+
 /** The per-device saved set, newest first. An array rather than a Set so it
  *  serialises as-is and keeps its order (a Saved screen wants newest at top). */
 export interface FeedSavedState {

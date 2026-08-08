@@ -31,7 +31,10 @@ import { useIsMobile } from "@/lib/use-media-query";
 type FeedItem = FeedItemView;
 type Tab = "forYou" | "following";
 
-function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
+/** The comment thread under an open row. EXPORTED because the Saved screen
+ *  (social-saved.tsx) renders the same rows and must open the same thread —
+ *  a second copy of this would drift the moment either is touched. */
+export function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
   const { t } = useLang();
   const [list, setList] = useState<CommentView[] | null>(null);
   const [text, setText] = useState("");
@@ -195,17 +198,29 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           every request is also an invite (core/attestation.ts). */}
       <CosignInbox units={units} />
 
-      {/* People-search rides the tab row's right side as a bare icon (the
+      {/* Saved + people-search ride the tab row's right side as bare icons (the
           SectionHead idiom) — a full search bar would spend a row of the
-          stream on a rare action. */}
+          stream on a rare action. Saved sits FIRST because it is where the
+          bookmark in every row below leads: the glyph that fills on a post is
+          the same glyph that opens the shelf. */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         {tabBtn("forYou", t("feed.tab.forYou"))}
         {tabBtn("following", t("feed.tab.following"))}
         <button
           className="pressable"
+          onClick={() => (onNavigate ? onNavigate("saved") : (window.location.href = "/app?s=saved"))}
+          aria-label={t("w.social.savedTitle")}
+          style={{ marginLeft: "auto", background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4.5 2.8h9v12.4l-4.5-3.4-4.5 3.4Z" />
+          </svg>
+        </button>
+        <button
+          className="pressable"
           onClick={() => (onNavigate ? onNavigate("discover") : (window.location.href = "/discover"))}
           aria-label={t("w.social.searchPeople")}
-          style={{ marginLeft: "auto", background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
+          style={{ background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <circle cx="8" cy="8" r="5.5" />
