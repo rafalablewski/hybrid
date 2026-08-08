@@ -13,11 +13,11 @@ import {
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
-import { ADrawer, GUTTER, withAlpha } from "./kit";
+import { ADrawer, GUTTER, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 // The drawer's own motion moved into ADrawer; this is here for the records
 // rail's edge dissolve, which eases in and out on its own.
@@ -113,14 +113,10 @@ const PRS_BLEED = GUTTER;
  *  and shifting its text off the figures above it. Named, the mistake is no
  *  longer expressible.
  *
- *  It is the APP'S ONE CARD INSET (`space.xl`, 20 — the kit's ACard, web's
- *  lib/ui `Card`, the week rail, the logbook rail, every Performance card).
- *  Naming it fixed which container it belonged to but not its VALUE: this card
- *  and two of its neighbours on Today were still hand-rolled at 16, so the
- *  dashboard's stack ran 4dp tighter at every edge than the Performance stack
- *  one tab across — the two screens' cards visibly disagreeing on their top
- *  inset. Mirrors web's CARD_PAD. */
-const CARD_PAD = space.xl;
+ *  The VALUE now comes from the kit (`CARD_PAD`), which is the point: naming it
+ *  fixed which container it belonged to but not what it should be, and it sat
+ *  at 16 while Performance sat at 20. Mirrors web's CARD_PAD. */
+const CARD_PAD = SHARED_CARD_PAD;
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 

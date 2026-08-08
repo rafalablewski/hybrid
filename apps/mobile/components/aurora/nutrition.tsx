@@ -62,7 +62,7 @@ import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, withAlpha, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { CoverScreen } from "../plan-hero";
 import FetchError from "./fetch-error";
@@ -1287,7 +1287,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         })}
 
         {/* Title plate — Name + the personal Subname, one surface. */}
-        <LinearGradient colors={[`${C.lime}12`, C.ink2]} start={{ x: 0.1, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}>
+        <LinearGradient colors={[`${C.lime}12`, C.ink2]} start={{ x: 0.1, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD }}>
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.recovery.nutrition.foodName")}</Text>
           <TextInput value={createForm.name} onChangeText={(v) => setCF({ name: v })} placeholder={t("w.recovery.nutrition.foodNamePh")} placeholderTextColor="#3a3d34" accessibilityLabel={t("w.recovery.nutrition.foodName")} style={{ fontFamily: F.black, fontSize: 27, letterSpacing: -0.5, color: C.chalk, padding: 0 }} />
           <View style={{ height: 1, backgroundColor: C.line, marginVertical: 16 }} />
@@ -1499,7 +1499,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </View>
 
         {/* Macro strip — the same idiom the recipe detail uses. */}
-        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: 16, paddingHorizontal: 6, marginTop: 16 }}>
+        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: CARD_PAD, paddingHorizontal: 6, marginTop: 16 }}>
           {([["w.recovery.nutrition.protein", f.facts.protein, C.blue], ["w.recovery.nutrition.carbs", f.facts.carbs, C.amber], ["w.recovery.nutrition.fat", f.facts.fat, C.violet]] as const).map(([lab, val, col]) => (
             <View key={lab} style={{ flex: 1, alignItems: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: 21, color: C.chalk }}>{val}<Text style={{ fontSize: 12, color: C.ash }}>g</Text></Text>
@@ -2009,6 +2009,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
               return (
+                /* a RAIL item, not a full-width card — it keeps the compact inset. */
                 <PressScale key={src.id} onPress={() => openSourcePage(src.id, "home")} accessibilityRole="button" accessibilityLabel={src.name} style={{ width: sourceCardW, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, backgroundColor: C.ink2, padding: 16 }}>
                   {/* The business's own logo leads the card — this rail IS the
                       businesses, so recognising one at a glance is its whole job. */}

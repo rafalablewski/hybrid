@@ -1,6 +1,6 @@
 "use client";
 
-import { accentText } from "@/lib/ui";
+import { CARD_PAD, accentText } from "@/lib/ui";
 import { useEffect, useRef, useState } from "react";
 import { fs, space, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
@@ -14,7 +14,11 @@ import { MetaLine } from "./meta";
 import { CoverHero, useHeroCollapse, COVER_INK, COVER_BAR } from "./cover-hero";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 } as const;
+/* The plan surfaces — the season card, each plan row, the day cards and the
+   Info blocks. They were hand-rolled at 16 while the mobile twin renders the
+   very same cards through the kit's ACard (20), so one plan detail screen was
+   inset two different ways depending on which client you opened it on. */
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
 /** AURORA Plans (web) — goal grid → plan list → detail + enroll, reusing the

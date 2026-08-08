@@ -28,6 +28,7 @@ import {
   type BodyweightLookup,
   type StatRange,
 } from "@hybrid/core";
+import { CARD_PAD } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
 // ── AURORA History views (web) ──────────────────────────────────────────────
@@ -42,7 +43,11 @@ import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
 const MONO = "var(--font-mono)";
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 } as const;
+/* Every card the alternate History views draw — the session cards, the agenda
+   placeholders, the week cards and the trend chart. They sat at 16 while the
+   list view's own swipe card (history.tsx) sat at 20, so switching view on one
+   screen moved every card's content 4px. */
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
 
 const keyTs = (key: string) => Date.parse(`${key}T00:00:00.000Z`);
 const fmtDayLong = (key: string) => new Date(keyTs(key)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -87,7 +92,7 @@ function SessionCard({ s, ctx }: { s: LoggedSession; ctx: ViewCtx }) {
   const prs = ctx.prs(s.id);
   const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
   return (
-    <div onClick={() => ctx.onOpen(s.id)} style={{ ...card, padding: 16, cursor: "pointer" }}>
+    <div onClick={() => ctx.onOpen(s.id)} style={{ ...card, cursor: "pointer" }}>
       <div style={{ fontFamily: MONO, fontSize: fs.display, letterSpacing: "-.02em", lineHeight: 1.1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
         {h.value}
         <span style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C("ash") }}> {unitOf(h, t)}</span>
@@ -192,7 +197,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <DayLabel text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
             {chip(u.isToday ? "var(--lime-text)" : C("ash"), t("histview.planned"))}
           </div>
-          <div style={{ ...card, padding: 16, background: "transparent", boxShadow: "none", border: `1.5px dashed color-mix(in srgb, ${u.isToday ? C("lime") : C("ash")} 38%, transparent)` }}>
+          <div style={{ ...card, background: "transparent", boxShadow: "none", border: `1.5px dashed color-mix(in srgb, ${u.isToday ? C("lime") : C("ash")} 38%, transparent)` }}>
             <div style={{ fontWeight: 800, fontSize: fs.note, color: u.isToday ? C("chalk") : C("ash") }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</div>
             {u.blockNames.length > 0 && (
               <div style={{ fontFamily: MONO, fontSize: fs.caption, color: C("ash"), marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}</div>
@@ -351,6 +356,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
   const mini = (label: string, value: string) => (
+    /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
     <div style={{ ...card, flex: 1, padding: 16 }}>
       <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{label}</div>
       <div style={{ fontFamily: MONO, fontVariantNumeric: "tabular-nums", fontSize: fs.heading, letterSpacing: "-.02em", marginTop: 4 }}>{value}</div>

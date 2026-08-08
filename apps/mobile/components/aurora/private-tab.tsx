@@ -12,6 +12,7 @@ import {
 import { sapi } from "../../lib/social-api";
 import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
+import { CARD_PAD } from "./kit";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
@@ -79,7 +80,7 @@ export default function PrivateTab({
 function CommandCenterCard({ C, scheme, pa, locked, onPress }: { C: Palette; scheme: "dark" | "light"; pa: ReturnType<typeof usePremiumAccent>; locked: boolean; onPress: () => void }) {
   const { t } = useLang();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-cockpit-t")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 20, backgroundColor: C.ink2, overflow: "hidden" }}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={t("w.account.profile.priv-cockpit-t")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: CARD_PAD, backgroundColor: C.ink2, overflow: "hidden" }}>
       {/* premium-accent glow (admin-set) blooming from the top-right corner */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${pa.fill}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${pa.fill}2b`, `${pa.fill}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
@@ -301,6 +302,10 @@ function IconTile({ C, icon }: { C: Palette; icon: AuroraIconName }) {
   );
 }
 
+/* THE ROW IDIOM — an icon tile, a title + sub, a chevron. It carries the card's
+   radius but not its inset: a row is a list item, not a surface with a header,
+   so it keeps 16 while `CommandCenterCard` above (a real card) takes CARD_PAD.
+   Both BodyBlock's collapsed state and Row below are this idiom. */
 function Row({ C, icon, title, sub, onPress }: { C: Palette; icon: AuroraIconName; title: string; sub: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, backgroundColor: C.ink2 }}>

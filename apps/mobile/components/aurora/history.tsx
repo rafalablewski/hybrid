@@ -13,7 +13,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
-import { ACard, APill, GUTTER, RADIUS } from "./kit";
+import { ACard, APill, GUTTER, RADIUS, CARD_PAD } from "./kit";
 import { HeroScreen, HeroAccessory } from "./hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
@@ -304,7 +304,9 @@ function SwipeCard({ C, busy, actions, children }: {
         </View>
         {/* The card itself — opaque so the actions don't bleed through. */}
         <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
-          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: 16 }}>
+          {/* CARD_PAD, not 16: the web twin of this very component has always
+              been inset 20, so one swipe card read two ways by client. */}
+          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: CARD_PAD }}>
             {children}
           </Pressable>
         </Animated.View>

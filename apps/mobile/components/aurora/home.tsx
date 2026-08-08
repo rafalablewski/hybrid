@@ -72,7 +72,7 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, AuroraField, GUTTER, RADIUS, Ring } from "./kit";
+import { ACard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import ExerciseWidgetRail from "./exercise-widget";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
@@ -111,21 +111,6 @@ type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
 // semantic.ts) via theme.roleColor, so web + mobile can't drift on meaning.
 const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
-
-/**
- * A CARD'S OWN INNER PADDING — the app's one card inset (`space.xl`, 20), the
- * value the kit's ACard is built on and the number web's lib/ui `Card`, the
- * week rail, the logbook rail and every Performance card already use.
- *
- * Today's cards that go through ACard got it for free. The two that are
- * hand-rolled here — the done-floor's own host card on the count-based plan
- * path, and the feeling card — were written with a bare `padding: 16`, as was
- * the week verdict next door, so the dashboard's stack sat 4dp tighter at every
- * edge than the Performance stack one tab across: the same card, two different
- * top insets, depending on which tab you were on. Named, and taken from the
- * scale, a hand-rolled surface can no longer disagree with the kit's.
- */
-const CARD_PAD = space.xl;
 
 /**
  * AURORA home — the rounded Aurora skin of the full classic Today cockpit, at

@@ -13,7 +13,7 @@ import {
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
-import { fs, space, accentText } from "@/lib/ui";
+import { fs, CARD_PAD as SHARED_CARD_PAD, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { useToday } from "@/lib/use-today";
 
@@ -95,13 +95,10 @@ const PRS_RAIL_CAP = 8;
 const PRS_FADE = 24;
 /** The verdict card's own inner padding — what the detail compartment bleeds by
  *  to reach the card's edges. NOT the screen gutter (`--page-pad-x`): the
- *  compartment lives INSIDE the card, so it must follow the card. It is the
- *  app's one card inset (`space.xl`, 20 — the mobile kit's ACard, web's lib/ui
- *  `Card`, the week rail, every Performance card); this card was the last
- *  full-width surface on Today still hand-rolling a 16, which is why the
- *  dashboard's stack sat 4px tighter at every edge than Performance's.
- *  Mirrors mobile's CARD_PAD. */
-const CARD_PAD = space.xl;
+ *  compartment lives INSIDE the card, so it must follow the card. The value is
+ *  the app's one card inset (lib/ui `CARD_PAD`); this alias exists so the bleed
+ *  below can NAME the container it escapes. Mirrors mobile. */
+const CARD_PAD = SHARED_CARD_PAD;
 
 const kicker: CSSProperties = {
   fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",

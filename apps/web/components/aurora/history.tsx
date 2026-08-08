@@ -1,6 +1,6 @@
 "use client";
 
-import { accentText } from "@/lib/ui";
+import { accentText, CARD_PAD } from "@/lib/ui";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type MoodDef } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
@@ -30,7 +30,7 @@ const readView = (): HistoryViewId => {
 
 const C = (v: string) => `var(--color-${v})`;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
 const chip = (color: string, label: ReactNode) => <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{label}</span>;
 const moodColor = (m: MoodDef) => (m.tone === "red" ? C("red") : m.tone === "amber" ? C("amber") : "var(--lime-text)");
 
@@ -277,7 +277,7 @@ function SwipeCard({ actions, busy, children }: { actions: SwipeAction[]; busy: 
           onPointerUp={up}
           onPointerCancel={up}
           onClick={onClick}
-          style={{ transform: `translateX(${tx}px)`, transition: dragging ? "none" : "transform .25s cubic-bezier(.22,1,.36,1)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, cursor: "default", touchAction: "pan-y", userSelect: "none" }}
+          style={{ transform: `translateX(${tx}px)`, transition: dragging ? "none" : "transform .25s cubic-bezier(.22,1,.36,1)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD, cursor: "default", touchAction: "pan-y", userSelect: "none" }}
         >
           {children}
         </div>

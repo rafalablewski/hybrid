@@ -56,7 +56,7 @@ import { fs, space,
   type LogbookDay,
 } from "@hybrid/core";
 import { sportForDiscipline } from "@hybrid/core";
-import { roleText } from "@/lib/ui";
+import { CARD_PAD, roleText } from "@/lib/ui";
 import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
@@ -105,22 +105,6 @@ const roleColor = (role: SemanticRole) => C(ROLE_COLOR[role]);
 // the `amber` FILL is pale sand, which on Kyoto Hour's washi paper is all but
 // invisible — and 40–59 is exactly the band an athlete needs to see.
 const readyColor = (v: number) => roleText(readinessRole(v));
-
-/**
- * THE CARD'S OWN INNER PADDING — the app's one card inset (`space.xl`, 20),
- * the same number the mobile kit's ACard, web's lib/ui `Card`, the week rail,
- * the logbook rail and every Performance card are built on.
- *
- * Today's full-width cards were the last surfaces still hand-rolling it. Three
- * of them (this screen's done-floor host, the feeling card, and the week
- * verdict next door) had been written with a bare `padding: 16` — so the
- * dashboard's stack ran 4px tighter at every edge than the Performance stack
- * the athlete reaches one tab across, which reads as the cards having different
- * top paddings. Named, the number is one thing in one place, and a bleed out of
- * it (`-CARD_PAD`) says which container it is bleeding — the rule
- * apps/web/__tests__/screen-gutter.test.ts enforces on the mobile twins.
- */
-export const CARD_PAD = space.xl;
 
 /**
  * AURORA Today (web) — the DAILY GUIDED LOOP. Today answers "what do I do, how do
