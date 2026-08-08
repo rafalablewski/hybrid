@@ -122,7 +122,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         scroll={false}
         detents={["medium"]}
       >
-        <View style={{ gap: space.md, paddingBottom: space.sm }}>
+        <View style={{ gap: space.md }}>
           {pending?.message ? (
             <Text
               maxFontSizeMultiplier={MAX_FONT_SCALE}

@@ -340,6 +340,10 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   // social + marketplace
   feed: "list-play",
   discover: "user-add",
+  // The same glyph the feed row's bookmark draws — the affordance link matters
+  // more than uniqueness here, and this map already reuses glyphs across groups
+  // (arrow-up four times, list-play three).
+  saved: "bookmark",
   leaderboard: "arrow-up",
   coaches: "store",
   myprofile: "user-circle",

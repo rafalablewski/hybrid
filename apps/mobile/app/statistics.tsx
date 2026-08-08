@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
+  fmtKm,
   sessionBuckets,
   weeklyRecap,
   computePerformanceState,
@@ -99,7 +100,7 @@ export default function Statistics() {
         <Mini icon="heart" label="HPI" value={hasData ? String(state.hpi.score) : "—"} color={C.lime} />
       </View>
       <View style={{ flexDirection: "row", gap: space.md, marginTop: 12 }}>
-        <Mini icon="navigation" label="Distance" value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C.lime} />
+        <Mini icon="navigation" label="Distance" value={hasData ? fmtKm(recap.distanceKm) : "—"} color={C.lime} />
         <Mini icon="play" label="Minutes" value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C.lime} />
       </View>
 

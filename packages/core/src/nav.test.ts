@@ -137,7 +137,7 @@ describe("navForPersona", () => {
     // friends, the friends leaderboard and the coach marketplace. (The public
     // profile lives inside the account Profile screen, not its own nav item.)
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["builder", "calendar", "checkin", "coaches", "discover", "exercises", "feed", "history", "leaderboard", "log", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "settings", "statistics", "timer", "today"],
+      ["builder", "calendar", "checkin", "coaches", "discover", "exercises", "feed", "history", "leaderboard", "log", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "saved", "settings", "statistics", "timer", "today"],
     );
   });
 

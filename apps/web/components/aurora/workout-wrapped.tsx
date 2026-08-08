@@ -52,6 +52,7 @@ import {
   deviceSourceLabel,
   deviceTrueSession,
   sessionEnergy,
+  sheetPadBottom,
   type DeviceWorkout,
   type StoryStyleId,
   type LoggedSession,
@@ -578,7 +579,7 @@ export function WorkoutWrapped({
       {/* ── SHARE SHEET ── */}
       {sheetOpen && (
         <div onClick={() => setSheetOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(4,4,4,.72)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={(e) => e.stopPropagation()} className="win-pop" style={{ background: "#0e100d", borderRadius: "28px 28px 0 0", borderTop: `1px solid ${LINE}`, padding: "16px 16px 24px", maxWidth: 520, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
+          <div onClick={(e) => e.stopPropagation()} className="win-pop" style={{ background: "#0e100d", borderRadius: "28px 28px 0 0", borderTop: `1px solid ${LINE}`, padding: `16px 16px max(${sheetPadBottom()}px, env(safe-area-inset-bottom, 0px))`, maxWidth: 520, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
             <div style={{ width: 38, height: 4, borderRadius: 2, background: LINE, margin: "2px auto 16px" }} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{t("session.wrapped.chooseStory")}</div>

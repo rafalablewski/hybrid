@@ -61,14 +61,14 @@ export default function QuickStartSheet({
   return (
     <Sheet open={open} onClose={onClose} title={t("w.home.quickStart.title")} sub={t("w.home.quickStart.sub")}>
       {routines.length === 0 ? (
-        <div style={{ padding: "16px 2px 8px" }}>
+        <div style={{ padding: "16px 2px 0" }}>
           <div style={{ fontWeight: 700, fontSize: fs.subtitle, color: C("chalk") }}>{t("w.home.quickStart.empty")}</div>
           <div style={{ fontSize: fs.note, color: C("ash"), marginTop: 6, lineHeight: 1.5 }}>{t("w.home.quickStart.emptySub")}</div>
         </div>
       ) : (
         <>
           {favourites.length > 0 && (
-            <div style={{ marginBottom: rediscover.length > 0 ? 16 : 4 }}>
+            <div style={{ marginBottom: rediscover.length > 0 ? 16 : 0 }}>
               <SubHead label={`★ ${t("w.home.quickStart.favourites")}`} />
               {/* Favourites rail — snap slider that RESPECTS the sheet padding
                   (no negative-margin bleed): a rail hosted in a Sheet honours its
@@ -80,7 +80,7 @@ export default function QuickStartSheet({
                   overflowX: "auto",
                   scrollSnapType: "x mandatory",
                   scrollbarWidth: "none",
-                  padding: "2px 0 8px",
+                  padding: "2px 0",
                 }}
               >
                 {favourites.map((r) => (

@@ -10,7 +10,8 @@ import {
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
   nutritionHubSeries,
   fuelToday,
-  RECIPES, RECIPE_FILTERS, filterRecipes, formatIngredient, recipeById, recipeCoverView, localDayKey, localTodayKey,
+  RECIPES, formatIngredient, recipeById, recipeCoverView, localDayKey, localTodayKey,
+  recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats, recipeCookView, DOCK_RAIL,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
@@ -18,9 +19,9 @@ import {
   sourceCheckedOn, sourceMarkDataUri, verifiedFreshness, type SourceMark,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
-  type Recipe, type RecipeMeal, type RecipeFilter, type NutritionMealPart, type MealPartDef,
+  type Recipe, type RecipeMeal, type RecipeCollection, type RecipeCookView, type NutritionMealPart, type MealPartDef,
 } from "@hybrid/core";
-import { fs, space, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
+import { fs, space, CARD_PAD, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
@@ -29,7 +30,9 @@ import RailTail from "./rail-tail";
 import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
-import { CoverHero, useHeroCollapse } from "./cover-hero";
+import { CoverHero, useHeroCollapse, COVER_BAR, COVER_INK } from "./cover-hero";
+import { HeroNav } from "./hero";
+import { DockRail, DockChip } from "./dock-rail";
 import { NutritionHubBento } from "./nutrition-hub";
 
 // The Create Food form's blank state — one constant, so the reset paths can
@@ -49,7 +52,7 @@ const GOALS: { id: NutritionGoal; label: string }[] = [
 // reached from a menu, plus the redesigned add-to-meal / create-food / recipes
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
-type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "recipe" | "cook" | "food" | "source" | "sources";
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "collection" | "recipe" | "cook" | "food" | "source" | "sources";
 // The part of the day a log is attributed to, carried into the Signal `source`
 // so the hub can group today's intake. The four built-ins plus any custom parts
 // a Full user added — so it's a plain key string, not a closed union.
@@ -117,18 +120,6 @@ const IStar = ({ size = 20, color = "currentColor", strokeWidth = 1.8, fill = fa
   <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17.8 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z" /></svg>
 );
 
-// Recipe hero — no photo assets, so a warm gradient keyed to a brand accent
-// carries the card + detail hero, with the dish emoji on top.
-function recipeHeroBg(tint: string): React.CSSProperties {
-  const map: Record<string, string> = {
-    amber: "radial-gradient(120px 90px at 55% 45%, rgba(255,214,102,.5), transparent 70%), linear-gradient(160deg,#2a2b22,#161712)",
-    blue: "radial-gradient(120px 90px at 45% 45%, rgba(108,182,189,.45), transparent 70%), linear-gradient(160deg,#1c2626,#141715)",
-    red: "radial-gradient(120px 90px at 55% 45%, rgba(213,111,62,.5), transparent 70%), linear-gradient(160deg,#26201c,#161311)",
-    lime: "radial-gradient(120px 90px at 45% 55%, rgba(198,248,79,.35), transparent 70%), linear-gradient(160deg,#20240f,#141711)",
-  };
-  return { background: map[tint] ?? map.amber };
-}
-
 // A screen-level left/right rail — the exercise-widget / "Train your way"
 // idiom. FULL-BLEED: negative margins the width of the shell gutter
 // (--page-pad-x) pull the scroll clip to the true screen edge so cards slide
@@ -143,6 +134,10 @@ const railScroller: React.CSSProperties = {
   margin: "0 calc(-1 * var(--page-pad-x, 12px))",
   padding: "4px var(--page-pad-x, 12px) 6px",
 };
+
+// A library SHELF's rail — the same full-bleed scroller without the paging
+// snap: a shelf of covers is browsed by eye, not stepped through card by card.
+const shelfScroller: React.CSSProperties = { ...railScroller, scrollSnapType: "none" };
 
 // The head above a rail — the Explore SectionHead anatomy: a bold display-face
 // title, no marker before it (the no-decorative-dot rule).
@@ -392,8 +387,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const [recipeId, setRecipeId] = useState<string | null>(null);
   const [recipeServes, setRecipeServes] = useState(2);
   const [cookStep, setCookStep] = useState(0);
-  const [recipeFilter, setRecipeFilter] = useState<RecipeFilter>("all");
-  const openRecipe = (r: Recipe) => { setRecipeId(r.id); setRecipeServes(r.baseServes); setCookStep(0); setRecipeMsg(""); setView("recipe"); };
+  // The library is three levels deep, exactly like Plans: root → collection →
+  // recipe. `recipeFrom` remembers which of the two a recipe was opened from,
+  // so its back button returns where you came from rather than always to the
+  // root (the home rail opens one straight from the hub).
+  const [collection, setCollection] = useState<RecipeCollection | null>(null);
+  const [recipeQuery, setRecipeQuery] = useState("");
+  const [recipeFrom, setRecipeFrom] = useState<"recipes" | "collection">("recipes");
+  const openRecipe = (r: Recipe, from: "recipes" | "collection" = "recipes") => { setRecipeFrom(from); setRecipeId(r.id); setRecipeServes(r.baseServes); setCookStep(0); setRecipeMsg(""); setView("recipe"); };
+  const openCollection = (key: RecipeCollection) => { setCollection(key); setView("collection"); };
   const openAdd = (m: MealType) => { setMealType(m); setError(""); setView("add"); };
   const recipe = recipeId ? recipeById(recipeId) : undefined;
   // Recent (MRU) + Favorites — persisted per-device so the picker's tabs work
@@ -1025,7 +1027,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     setScanning(false);
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
   const numField = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, flex: "1 1 70px", minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px", outline: "none", textAlign: "center" as const };
   // A labelled macro field — the colour-coded, big-number input the redesigned
   // meal/product builders are built from (protein=blue, carbs=amber, fat=violet,
@@ -1141,7 +1143,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // chooser so "Add a part" works from either place.
   const renderPartSheet = () => (
     <Sheet open={partSheet} onClose={() => { setPartSheet(false); setNewPart(""); }} title={t("w.recovery.nutrition.addPart")} sub={t("w.recovery.nutrition.addPartSub")}>
-      <div style={{ paddingBottom: 6 }}>
+      <div>
         <div style={{ display: "flex", gap: 8 }}>
           <input value={newPart} onChange={(e) => setNewPart(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addPart(); }} maxLength={32} placeholder={t("w.recovery.nutrition.partNamePh")} aria-label={t("w.recovery.nutrition.addPart")} style={{ ...numField, flex: 1, textAlign: "left" }} />
           <button className="pressable" onClick={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? 0.5 : 1 }}>{t("w.recovery.nutrition.addPartCta")}</button>
@@ -1171,7 +1173,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         const s = (v: number) => Math.round(v * q);
         const stepBtn = { width: 44, height: 44, borderRadius: 12, border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", fontSize: 22, fontWeight: 700, lineHeight: 1, cursor: "pointer", flex: "none" } as const;
         return (
-          <div style={{ paddingBottom: 6 }}>
+          <div>
             {portion.verified && (() => {
               const src = verifiedSource(portion.verified.sourceId);
               return (
@@ -1253,7 +1255,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // fill in from 4·4·9 when left blank (the `add` handler already does this).
   const renderQuickLog = () => (
     <Sheet open={quickLog} onClose={() => setQuickLog(false)} title={t("w.recovery.nutrition.quickLog")} sub={t("w.recovery.nutrition.quickLogSub")}>
-      <div style={{ paddingBottom: 6 }}>
+      <div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {([
             { k: "kcal", label: t("w.recovery.nutrition.calorie"), color: "var(--lime-text)", unit: "kcal" },
@@ -1312,7 +1314,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {/* Meal chooser — the four built-in parts + any custom parts (Full). */}
         <Sheet open={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {partList.map((p) => (
               <button className="pressable" key={p.key} onClick={() => { setMealType(p.key); setMealPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink"), border: `1px solid ${mealType === p.key ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
                 <Glyph name={mealGlyph(p.key)} size={20} color={mealType === p.key ? "var(--lime-text)" : C("ash")} />
@@ -1454,7 +1456,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanIntoCreate(file); e.target.value = ""; }} />
 
         {/* Title plate — Name + the personal Subname, one surface. */}
-        <div style={{ background: "linear-gradient(158deg, color-mix(in srgb, var(--color-lime) 6%, var(--color-ink2)), var(--color-ink2) 72%)", border: `1px solid ${C("line")}`, borderRadius: 28, padding: "16px 16px 20px" }}>
+        <div style={{ background: "linear-gradient(158deg, color-mix(in srgb, var(--color-lime) 6%, var(--color-ink2)), var(--color-ink2) 72%)", border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.recovery.nutrition.foodName")}</div>
           <input value={createForm.name} onChange={(e) => setCF({ name: e.target.value })} placeholder={t("w.recovery.nutrition.foodNamePh")} aria-label={t("w.recovery.nutrition.foodName")} style={{ width: "100%", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", padding: 0 }} />
           <div style={{ height: 1, background: C("line"), margin: "16px 0" }} />
@@ -1555,7 +1557,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </button>
 
         <Sheet open={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {UNIT_OPTIONS.map((u) => (
               <button className="pressable" key={u} onClick={() => { setCF({ unit: u }); setUnitPicker(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C("ink"), border: `1px solid ${createForm.unit === u ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}>
                 {t(`w.recovery.nutrition.unitOpt.${u}`)}{createForm.unit === u && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
@@ -1672,7 +1674,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
 
         {/* Macro strip — the same four-tile idiom the recipe detail uses. */}
-        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "16px 6px", marginTop: 16 }}>
+        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: `${CARD_PAD}px 6px`, marginTop: 16 }}>
           {([["w.recovery.nutrition.protein", f.facts.protein, "var(--blue-text)"], ["w.recovery.nutrition.carbs", f.facts.carbs, "var(--amber-text)"], ["w.recovery.nutrition.fat", f.facts.fat, "var(--violet-text)"]] as const).map(([lab, val, col]) => (
             <div key={lab} style={{ flex: 1, textAlign: "center" }}>
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 21, letterSpacing: "-.01em", fontVariantNumeric: "tabular-nums" }}>{val}<span style={{ fontSize: 12, color: C("ash") }}>g</span></div>
@@ -1882,33 +1884,19 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     );
   }
 
-  // ============ RECIPES — browse ============
+  // ============ RECIPES — the library root ============
+  // The PLANS TAB's root, not a lookalike: the same collapsing cover, the same
+  // docked jump rail, the same search field and the same full-bleed shelves of
+  // covers. A recipe library and a plan library are the same object — a shelf
+  // of things you open and then follow — and they were arriving as two
+  // unrelated screens (a chip filter over a two-column grid).
   if (view === "recipes") {
-    const list = filterRecipes(RECIPES, recipeFilter);
-    return (
-      <div style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-        {screenHead(t("w.recovery.nutrition.recipes"), () => setView("home"), { icon: "back" })}
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 calc(-1 * var(--page-pad-x, 12px))", paddingLeft: "var(--page-pad-x, 12px)", paddingRight: "var(--page-pad-x, 12px)" }}>
-          {RECIPE_FILTERS.map((rf) => (
-            <button className="pressable" key={rf} onClick={() => setRecipeFilter(rf)} style={{ flex: "none", fontFamily: "var(--font-display)", fontWeight: recipeFilter === rf ? 700 : 600, fontSize: fs.body, border: `1px solid ${recipeFilter === rf ? C("lime") : C("line")}`, borderRadius: 999, padding: "8px 16px", color: recipeFilter === rf ? "var(--on-accent)" : C("ash"), background: recipeFilter === rf ? C("lime") : C("ink2"), whiteSpace: "nowrap", cursor: "pointer" }}>
-              {t(`w.recovery.nutrition.recipeFilter.${rf}`)}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
-          {list.map((r) => (
-            <button className="pressable" key={r.id} onClick={() => openRecipe(r)} style={{ textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
-              <div style={{ height: 96, display: "grid", placeItems: "center", fontSize: 40, ...recipeHeroBg(r.tint) }}>{r.emoji}</div>
-              <div style={{ padding: "12px 12px 12px" }}>
-                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.01em" }}>{r.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontWeight: 600, marginTop: 8 }}>{r.macros.kcal} kcal</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
+    return <RecipesLibrary query={recipeQuery} setQuery={setRecipeQuery} openCollection={openCollection} openRecipe={(r) => openRecipe(r, "recipes")} back={() => setView("home")} />;
+  }
+
+  // ============ RECIPES — one collection ("Breakfast") ============
+  if (view === "collection" && collection) {
+    return <RecipeCollectionScreen collection={collection} openRecipe={(r) => openRecipe(r, "collection")} back={() => setView("recipes")} />;
   }
 
   // ============ RECIPE — detail ============
@@ -1922,34 +1910,37 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       serves={recipeServes}
       setServes={setRecipeServes}
       msg={recipeMsg}
-      onBack={() => setView("recipes")}
+      backLabel={recipeFrom === "collection" && collection ? collectionTitle(collection, t) : t("w.recovery.nutrition.recipes")}
+      onBack={() => setView(recipeFrom === "collection" && collection ? "collection" : "recipes")}
       onSaveMeal={() => saveRecipeAsMeal(recipe)}
       onCook={() => { setCookStep(0); setView("cook"); }}
     />;
   }
 
   // ============ COOK — step-through ============
+  // The recipe's PLATE, one compression below the detail cover: same wash, same
+  // full-colour dish, same chip + title, with the step counter in the slot the
+  // cover gives to time and the method's steps as ticks on its bottom edge. Not
+  // the full collapsing cover — this screen doesn't scroll and ends in a sticky
+  // action bar, so a collapsing hero would promise a collapse that never comes.
   if (view === "cook" && recipe) {
-    const step = recipe.steps[cookStep]!;
-    const last = cookStep >= recipe.steps.length - 1;
+    const cook = recipeCookView(recipe, cookStep, {
+      meal: (m) => t(`w.recovery.nutrition.meal.${m}`),
+      stepXofY: (x, y) => t("w.recovery.nutrition.stepXofY").replace("{x}", String(x)).replace("{y}", String(y)),
+    });
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk"), display: "flex", flexDirection: "column", minHeight: "70vh" }}>
-        {screenHead(recipe.name, () => setView("recipe"))}
-        <div style={{ height: 150, display: "grid", placeItems: "center", fontSize: 64, borderRadius: 28, margin: "2px 0 20px", ...recipeHeroBg(recipe.tint) }}>{recipe.emoji}</div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-          {recipe.steps.map((_, i) => <span key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= cookStep ? C("lime") : C("line") }} />)}
-        </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.stepXofY").replace("{x}", String(cookStep + 1)).replace("{y}", String(recipe.steps.length))}</div>
-        <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 23, lineHeight: 1.35, letterSpacing: "-.01em", margin: "12px 0 0" }}>{step.text}</p>
-        {step.timerSec != null && (
+        <CookPlate cook={cook} onBack={() => setView("recipe")} />
+        <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 23, lineHeight: 1.35, letterSpacing: "-.01em", margin: "20px 0 0" }}>{cook.step.text}</p>
+        {cook.step.timerSec != null && (
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 20, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "8px 16px", fontFamily: "var(--font-mono)", fontSize: fs.body, color: "var(--amber-text)", alignSelf: "flex-start" }}>
-            <IClock size={15} color="var(--amber-text)" />{Math.floor(step.timerSec / 60)}:{String(step.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}
+            <IClock size={15} color="var(--amber-text)" />{Math.floor(cook.step.timerSec / 60)}:{String(cook.step.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}
           </div>
         )}
         <div style={{ flex: 1 }} />
-        <div style={{ display: "grid", gridTemplateColumns: cookStep > 0 ? "auto 1fr" : "1fr", gap: 12, marginTop: 24, paddingBottom: 12 }}>
-          {cookStep > 0 && <button className="pressable" onClick={() => setCookStep((s) => s - 1)} style={{ background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "16px 24px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.stepBack")}</button>}
-          <button className="pressable" onClick={() => last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</button>
+        <div style={{ display: "grid", gridTemplateColumns: cook.index > 0 ? "auto 1fr" : "1fr", gap: 12, marginTop: 24, paddingBottom: 12 }}>
+          {cook.index > 0 && <button className="pressable" onClick={() => setCookStep((s) => s - 1)} style={{ background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "16px 24px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.stepBack")}</button>}
+          <button className="pressable" onClick={() => cook.last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{cook.last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</button>
         </div>
       </div>
     );
@@ -2011,7 +2002,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       </button>
 
       <Sheet open={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {GOALS.map((g) => {
             const on = goal === g.id;
             return (
@@ -2149,15 +2140,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               matching internal padding so resting cards stay on the column. */}
           <RailHead title={t("w.recovery.nutrition.recipes")} />
           <div style={railScroller}>
+            {/* the SAME tile the library shelves carry — a recipe reads as one
+                object wherever you meet it, and the hub is where most people
+                meet it first. */}
             {RECIPES.map((r) => (
-              <button key={r.id} onClick={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} className="pressable" style={{ flex: "0 0 min(52%, 196px)", scrollSnapAlign: "center", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
-                <div style={{ height: 96, display: "grid", placeItems: "center", fontSize: 40, ...recipeHeroBg(r.tint) }}>{r.emoji}</div>
-                <div style={{ padding: "12px 12px 12px" }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontWeight: 600, marginTop: 8 }}>{r.macros.kcal} kcal</div>
-                </div>
-              </button>
+              <RecipeTile key={r.id} recipe={r} width="min(52%, 196px)" snap onOpen={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} />
             ))}
             {/* The rail's exit, at its end — where the thumb lands once the
                 cards run out. Behind Full, so it carries the ✦ and the premium
@@ -2179,6 +2166,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
               return (
+                /* a RAIL item, not a full-width card — it keeps the compact inset. */
                 <button key={src.id} onClick={() => openSourcePage(src.id, "home")} className="pressable" style={{ flex: "0 0 min(72%, 268px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "stretch", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 16 }}>
                   {/* The business's own logo leads the card — this rail IS the
                       businesses, so recognising one at a glance is its whole job. */}
@@ -2621,6 +2609,257 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   );
 }
 
+// ── THE RECIPES LIBRARY — the Plans tab, on food ────────────────────────────
+//
+// Three levels, one object at three compressions, exactly as Plans does it:
+// the library root (a soft cover + shelves of covers), a collection (its own
+// cover + the recipes as cards), and the recipe itself (the cover + the
+// method). Each level is its OWN component and that is load-bearing:
+// useHeroCollapse captures the root and hero NODES once, so a level must
+// unmount when you leave it or the cover stops collapsing — the same reason
+// plans.tsx splits Library / List / Detail.
+
+/** A collection's display name — the meals borrow the meal-part vocabulary the
+ *  rest of nutrition uses, the cross-cut borrows the filter chip's. */
+function collectionTitle(key: RecipeCollection, t: (k: string) => string): string {
+  return key === "highProtein" ? t("w.recovery.nutrition.recipeFilter.highProtein") : t(`w.recovery.nutrition.meal.${key}`);
+}
+
+/** Height of the docked chip rail — the offset a jump has to clear on top of
+ *  the collapsed cover bar. DERIVED from the dock-rail contract, like the twin
+ *  in plans.tsx, so the rail can never be a different height than this says. */
+const RECIPE_RAIL_H = DOCK_RAIL.chip.hit + 2 * DOCK_RAIL.padY;
+const shelfId = (key: RecipeCollection) => `recipe-shelf-${key}`;
+
+function RecipesLibrary({ query, setQuery, openCollection, openRecipe, back }: {
+  query: string;
+  setQuery: (v: string) => void;
+  openCollection: (key: RecipeCollection) => void;
+  openRecipe: (r: Recipe) => void;
+  back: () => void;
+}) {
+  const { t } = useLang();
+  const C = (v: string) => `var(--color-${v})`;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  useHeroCollapse(rootRef, heroRef); // no dock at the root — collapse + snap only
+
+  const shelves = recipeShelves(query);
+  // The meta line names what the library HOLDS, so it lists every collection —
+  // not just the ones that survived the current search, which would make the
+  // cover twitch as you type.
+  const lib = recipeLibraryCoverView(RECIPES.length, recipeShelves().map((s) => collectionTitle(s.key, t)), {
+    chip: t("w.recovery.nutrition.recipesLibraryChip"),
+    title: t("w.recovery.nutrition.recipes"),
+    recipe: t("w.recovery.nutrition.recipeCount"),
+    recipes: t("w.recovery.nutrition.recipesCount"),
+  });
+
+  return (
+    <div ref={rootRef} style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <CoverHero
+        cover={{ accent: C("lime"), glyph: lib.glyph, chip: lib.chip, duration: lib.count, title: lib.title, metaParts: lib.metaParts, stats: [], blurb: "", variant: "library" }}
+        back={back}
+        backLabel={t("w.recovery.nutrition.title")}
+        heroRef={heroRef}
+        // The scaffold's rail slot — the same one Plans uses. A hand-rolled
+        // sticky bar here would re-open the drift the dock-rail change closed.
+        rail={shelves.length > 0 ? <CollectionRail keys={shelves.map((s) => s.key)} /> : undefined}
+      />
+      <div style={{ position: "relative", margin: "16px 0 0" }}>
+        <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}><AuroraIcon name="search" size={16} color={C("ash")} /></span>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("w.recovery.nutrition.searchRecipes")}
+          aria-label={t("w.recovery.nutrition.searchRecipes")}
+          style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px 12px 40px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body, outline: "none" }}
+        />
+      </div>
+      {shelves.length === 0 ? (
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), padding: "16px 2px" }}>{t("w.recovery.nutrition.noRecipeMatches")}</p>
+      ) : (
+        shelves.map((shelf) => <RecipeShelf key={shelf.key} shelf={shelf} openCollection={openCollection} openRecipe={openRecipe} />)
+      )}
+    </div>
+  );
+}
+
+/** The collection chips, sticking directly beneath the collapsed cover bar so
+ *  they stay reachable at any scroll position. They JUMP, they don't filter —
+ *  the shelves already ARE the collections, so narrowing to one would just
+ *  empty the screen, which is why they are `role="anchor"` chips that can never
+ *  light up (packages/core/src/dock-rail.ts). Mobile twin: the same name. */
+function CollectionRail({ keys }: { keys: RecipeCollection[] }) {
+  const { t } = useLang();
+  const jump = (key: RecipeCollection) => {
+    const el = document.getElementById(shelfId(key));
+    if (!el) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - COVER_BAR - RECIPE_RAIL_H, behavior: reduced ? "auto" : "smooth" });
+  };
+  return (
+    <DockRail label={t("w.recovery.nutrition.jumpToCollection")}>
+      {keys.map((k) => (
+        <DockChip key={k} role="anchor" label={collectionTitle(k, t)} onClick={() => jump(k)} />
+      ))}
+    </DockRail>
+  );
+}
+
+/** One collection = one full-bleed shelf. The head is the way IN to the
+ *  collection's own screen, and it states the COUNT so a two-card peek is never
+ *  mistaken for the whole shelf. */
+function RecipeShelf({ shelf, openCollection, openRecipe }: { shelf: { key: RecipeCollection; recipes: Recipe[] }; openCollection: (key: RecipeCollection) => void; openRecipe: (r: Recipe) => void }) {
+  const { t } = useLang();
+  const C = (v: string) => `var(--color-${v})`;
+  const n = shelf.recipes.length;
+  return (
+    <section id={shelfId(shelf.key)} style={{ marginTop: 24, scrollMarginTop: COVER_BAR + RECIPE_RAIL_H }}>
+      <button
+        className="pressable"
+        onClick={() => openCollection(shelf.key)}
+        style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, margin: "0 0 10px", padding: 0, background: "none", border: "none", cursor: "pointer", color: C("chalk"), textAlign: "left" }}
+      >
+        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, letterSpacing: "-.01em" }}>{collectionTitle(shelf.key, t)}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap" }}>
+          {n} {n === 1 ? t("w.recovery.nutrition.recipeCount") : t("w.recovery.nutrition.recipesCount")} →
+        </span>
+      </button>
+      <div style={shelfScroller}>
+        {shelf.recipes.map((r) => <RecipeTile key={r.id} recipe={r} onOpen={() => openRecipe(r)} />)}
+      </div>
+    </section>
+  );
+}
+
+/** A recipe as a COVER, not a card — the same tile the Plans shelves carry, so
+ *  tapping one expands it into the same poster at screen scale. The dish emoji
+ *  stays FULL COLOUR (a ghosted emoji is a grey smudge, not a dish), which is
+ *  the one thing that separates a recipe tile from a goal tile. */
+function RecipeTile({ recipe, onOpen, width = "172px", snap = false }: { recipe: Recipe; onOpen: () => void; width?: string; snap?: boolean }) {
+  const { t } = useLang();
+  const tile = recipeTileView(recipe, {
+    mins: (n) => `${n} ${t("w.recovery.nutrition.min")}`,
+    kcal: (n) => `${n} kcal`,
+  });
+  const [pressed, setPressed] = useState(false);
+  const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return (
+    <button className="pressable"
+      onClick={onOpen}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      aria-label={`${tile.title} – ${tile.meta}`}
+      style={{ flex: `0 0 ${width}`, scrollSnapAlign: snap ? "center" : undefined, height: 140, position: "relative", overflow: "hidden", borderRadius: 28, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
+    >
+      <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(202deg, color-mix(in srgb, ${tile.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${tile.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
+      <span aria-hidden style={{ position: "absolute", top: -6, right: -8, fontSize: 88, lineHeight: 1, filter: "drop-shadow(0 12px 26px rgba(0,0,0,.5))", pointerEvents: "none" }}>{tile.glyph}</span>
+      <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${COVER_INK} 0%, color-mix(in srgb, ${COVER_INK} 62%, transparent) 22%, transparent 66%)` }} />
+      <span style={{ position: "relative", alignSelf: "flex-end", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, letterSpacing: ".08em", color: "rgba(255,255,255,.85)" }}>{tile.count}</span>
+      <span style={{ position: "relative" }}>
+        <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 16, lineHeight: 1.1, letterSpacing: "-.02em", color: "#fff" }}>{tile.title}</span>
+        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.7)", marginTop: 5 }}>{tile.meta}</span>
+      </span>
+    </button>
+  );
+}
+
+/** The cook screen's PLATE — the recipe cover compressed into a card: the same
+ *  duotone wash and full-colour dish, the meal as the chip, the dish as the
+ *  title, the step counter where the cover puts its time, and one tick per step
+ *  along the bottom edge. The back button is the cover's own HeroNav, so the
+ *  screen no longer carries a centred title that repeats the plate's. */
+function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () => void }) {
+  return (
+    <div style={{ position: "relative", height: 150, borderRadius: 28, overflow: "hidden", background: COVER_INK, color: "#fff", margin: "2px 0 0" }}>
+      <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(202deg, color-mix(in srgb, ${cook.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${cook.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
+      <span aria-hidden style={{ position: "absolute", top: -14, right: -12, fontSize: 128, lineHeight: 1, filter: "drop-shadow(0 16px 34px rgba(0,0,0,.5))", pointerEvents: "none" }}>{cook.glyph}</span>
+      <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${COVER_INK} 0%, color-mix(in srgb, ${COVER_INK} 55%, transparent) 14%, transparent 62%)` }} />
+      <div style={{ position: "absolute", top: 10, left: 10, right: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <HeroNav onClick={onBack} fromLabel={cook.title} material="glass" onDark />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.85)" }}>{cook.count}</span>
+      </div>
+      <div style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
+        <span style={{ display: "inline-block", background: "var(--color-lime)", color: "var(--on-accent)", borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" }}>{cook.chip}</span>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 26, letterSpacing: "-.03em", lineHeight: 1.05, marginTop: 6, textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cook.title}</div>
+      </div>
+      {/* one tick per step — the method's length, stated by the plate itself */}
+      <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, display: "flex", gap: 2 }}>
+        {Array.from({ length: cook.steps }, (_, i) => (
+          <span key={i} style={{ flex: 1, height: 3, background: i <= cook.index ? "var(--color-lime)" : "rgba(255,255,255,.18)" }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The COLLECTION screen — "Breakfast" with a hero of its own, the way a goal
+ *  gets one in Plans. NO aggregate hem on the cover: macros averaged over a
+ *  shelf say nothing, so each recipe card carries its own three numbers
+ *  (recipeCardStats) where they actually differentiate one dish from the next. */
+function RecipeCollectionScreen({ collection, openRecipe, back }: { collection: RecipeCollection; openRecipe: (r: Recipe) => void; back: () => void }) {
+  const { t } = useLang();
+  const C = (v: string) => `var(--color-${v})`;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  useHeroCollapse(rootRef, heroRef);
+  const list = recipesInCollection(collection);
+  const cover = recipeCollectionCoverView(collection, list, {
+    chip: t("w.recovery.nutrition.recipes"),
+    title: collectionTitle(collection, t),
+    recipe: t("w.recovery.nutrition.recipeCount"),
+    recipes: t("w.recovery.nutrition.recipesCount"),
+    fastest: (n) => t("w.recovery.nutrition.fromMins").replace("{n}", String(n)),
+    upToProtein: (g) => t("w.recovery.nutrition.upToProtein").replace("{n}", String(g)),
+  });
+  const rule = `color-mix(in srgb, ${C("chalk")} 14%, transparent)`;
+  return (
+    <div ref={rootRef} style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
+      <CoverHero cover={{ ...cover, duration: cover.count, stats: [] }} back={back} backLabel={t("w.recovery.nutrition.recipes")} heroRef={heroRef} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg, marginTop: 16 }}>
+        {list.map((r) => {
+          const stats = recipeCardStats(r, {
+            energy: t("w.recovery.nutrition.energy"),
+            protein: t("w.recovery.nutrition.protein"),
+            time: t("w.recovery.nutrition.time"),
+            min: t("w.recovery.nutrition.min"),
+          });
+          return (
+            <button
+              className="pressable"
+              key={r.id}
+              onClick={() => openRecipe(r)}
+              style={{ textAlign: "left", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16, cursor: "pointer", color: C("chalk"), font: "inherit" }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}</span>
+                {r.highProtein && <span style={{ background: `color-mix(in srgb, ${C("lime")} 14%, transparent)`, color: "var(--lime-text)", borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro }}>{t("w.recovery.nutrition.recipeFilter.highProtein")}</span>}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+                <span aria-hidden style={{ fontSize: 26, lineHeight: 1 }}>{r.emoji}</span>
+                <span style={{ fontWeight: 800, fontSize: fs.title }}>{r.name}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "12px 0 10px" }}>
+                {stats.map((s) => (
+                  <div key={s.label} style={{ borderTop: `2px solid ${rule}`, paddingTop: 8 }}>
+                    <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-.02em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                      {s.value}{s.unit && <span style={{ fontSize: 12, color: C("ash"), fontWeight: 700 }}>{s.unit}</span>}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginTop: 4 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: fs.body, lineHeight: 1.5, margin: 0 }}>{r.note}</p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /**
  * RECIPE DETAIL — the plan detail's cover, on a recipe.
  *
@@ -2640,12 +2879,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
  * it is made, which made "Start cooking" a decision taken blind. It also gives
  * the page the length the collapsing cover needs to be worth having.
  */
-function RecipeDetail({ recipe, serves, setServes, msg, onBack, onSaveMeal, onCook }: {
+function RecipeDetail({ recipe, serves, setServes, msg, onBack, backLabel, onSaveMeal, onCook }: {
   recipe: Recipe;
   serves: number;
   setServes: React.Dispatch<React.SetStateAction<number>>;
   msg: string;
   onBack: () => void;
+  /** where back goes — the collection you came through, or the library root. */
+  backLabel: string;
   onSaveMeal: () => void;
   onCook: () => void;
 }) {
@@ -2671,7 +2912,7 @@ function RecipeDetail({ recipe, serves, setServes, msg, onBack, onSaveMeal, onCo
 
   return (
     <div ref={rootRef} style={{ fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <CoverHero cover={cover} back={onBack} backLabel={t("w.recovery.nutrition.recipes")} heroRef={heroRef} />
+      <CoverHero cover={cover} back={onBack} backLabel={backLabel} heroRef={heroRef} />
 
       {/* Ingredients — the stepper scales every quantity live. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 6px" }}>
@@ -2827,7 +3068,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
     [t("w.recovery.nutrition.protein"), summary.avgProtein != null ? `${summary.avgProtein}g` : "—", t("w.recovery.nutrition.perDay").replace("kcal", "avg"), "var(--violet-text)"],
   ];
   return (
-    <div style={{ ...cardStyle(C), marginTop: 16, padding: 20 }}>
+    <div style={{ ...cardStyle(C), marginTop: 16, padding: CARD_PAD }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.summary")}</b>
         <div style={{ display: "flex", gap: 3, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 3, width: 132 }}>
@@ -2905,8 +3146,17 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
     { id: "maintain", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
     { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
   ];
+  /* A wizard OPTION ROW (label + sub + radio) — the app already has a standard
+     for this, in the onboarding wizard (aurora/onboarding.tsx `choice`, and the
+     mobile `Choice`): RADIUS 16 at padding 16, a 1px border that swaps line →
+     lime when picked, and a lime wash at 8% behind it — sitting inside the
+     wizard's own r28/20 card. This row was the only one off it: radius 28 here
+     against 16 on mobile (so the same control was card-shaped on one client and
+     field-shaped on the other), and a `0 0 0 1px` shadow ring faking the second
+     border that mobile drew by widening its own. Both are gone; the row now
+     states selection the way the other three wizards in the app do. */
   const choiceCard = (on: boolean, label: string, sub: string, onClick: () => void) => (
-    <button className="pressable" onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 28, boxShadow: on ? `0 0 0 1px ${C("lime")}, var(--shadow-card)` : "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
+    <button className="pressable" onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: on ? `color-mix(in srgb, ${C("lime")} 8%, transparent)` : C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, boxShadow: "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
       <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: fs.bodyLg }}>{label}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{sub}</div></div>
       <span style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent", display: "grid", placeItems: "center" }}>{on && <AuroraIcon name="check" size={12} color="var(--on-accent)" />}</span>
     </button>
@@ -2936,7 +3186,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, letterSpacing: "-.02em" }}>{t("w.recovery.nutrition.pickActivity")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickActivitySub")}</div>
           {ACTIVITY.map((a) => <div key={a.id}>{choiceCard(activity === a.id, t(a.labelKey), t(a.subKey), () => setActivity(a.id))}</div>)}
-          <div style={{ ...cardStyle(C), padding: 16, marginTop: 4 }}>
+          <div style={{ ...cardStyle(C), padding: CARD_PAD, marginTop: 4 }}>
             {currentWeightKg != null ? (
               /* Profile already has a weight — reuse it (one canonical source),
                  don't ask again. */
@@ -2962,7 +3212,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
 
       {step === 2 && (
         <div style={{ marginTop: 24 }}>
-          <div style={{ ...cardStyle(C), padding: 20, textAlign: "center", background: `color-mix(in srgb, var(--premium-accent) 8%, ${C("ink2")})`, borderColor: `color-mix(in srgb, var(--premium-accent) 30%, ${C("line")})` }}>
+          <div style={{ ...cardStyle(C), padding: CARD_PAD, textAlign: "center", background: `color-mix(in srgb, var(--premium-accent) 8%, ${C("ink2")})`, borderColor: `color-mix(in srgb, var(--premium-accent) 30%, ${C("line")})` }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", background: `color-mix(in srgb, var(--premium-accent) 16%, transparent)`, borderRadius: 999, padding: "6px 12px" }}>✦ {t("w.account.settings.full")}</span>
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", marginTop: 16 }}>{t("w.recovery.nutrition.trialTitle")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8, lineHeight: 1.5 }}>{t("w.recovery.nutrition.trialSub")}</div>
@@ -2975,7 +3225,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
           {/* The FREE alternative — a limited plan the user can start on now,
               no card needed. Full is the trial card above; this is the way out
               that isn't an upgrade. */}
-          <div style={{ ...cardStyle(C), padding: 16, marginTop: 12 }}>
+          <div style={{ ...cardStyle(C), padding: CARD_PAD, marginTop: 12 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.freePlanTitle")}</div>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.nutrition.freePlanSub")}</span>

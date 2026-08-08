@@ -56,6 +56,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "nav.history": "History",
     "nav.feed": "Feed",
     "nav.discover": "Find friends",
+    "nav.saved": "Saved",
     "nav.leaderboard": "Leaderboard",
     "nav.coaches": "Coaches",
     "nav.myprofile": "My profile",
@@ -625,6 +626,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "history.restoreError": "Couldn't restore the session.",
     "history.deleteError": "Couldn't delete the session.",
     // History view switcher (the merged History × Calendar layouts, both clients)
+    "histview.switchView": "Switch layout",
     "histview.agenda": "Agenda",
     "histview.weeks": "Weeks",
     "histview.timeline": "Timeline",
@@ -678,6 +680,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "nav.history": "Historia",
     "nav.feed": "Aktualności",
     "nav.discover": "Znajdź znajomych",
+    "nav.saved": "Zapisane",
     "nav.leaderboard": "Ranking",
     "nav.coaches": "Trenerzy",
     "nav.myprofile": "Mój profil",
@@ -1236,6 +1239,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "history.restoreError": "Nie udało się przywrócić treningu.",
     "history.deleteError": "Nie udało się usunąć treningu.",
     // Przełącznik widoków historii (scalone układy Historia × Kalendarz)
+    "histview.switchView": "Zmień układ",
     "histview.agenda": "Agenda",
     "histview.weeks": "Tygodnie",
     "histview.timeline": "Oś czasu",
@@ -1286,6 +1290,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "nav.history": "Verlauf",
     "nav.feed": "Feed",
     "nav.discover": "Freunde finden",
+    "nav.saved": "Gespeichert",
     "nav.leaderboard": "Rangliste",
     "nav.coaches": "Coaches",
     "nav.myprofile": "Mein Profil",
@@ -1843,6 +1848,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "history.restoreError": "Workout konnte nicht wiederhergestellt werden.",
     "history.deleteError": "Workout konnte nicht gelöscht werden.",
     // History-Ansichten (die zusammengeführten Verlauf × Kalender Layouts)
+    "histview.switchView": "Layout wechseln",
     "histview.agenda": "Agenda",
     "histview.weeks": "Wochen",
     "histview.timeline": "Zeitachse",

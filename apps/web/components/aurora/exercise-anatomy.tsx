@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { exerciseAnatomy, fs, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
+import { exerciseAnatomy, fs, sheetPadBottom, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import AuroraExerciseMedia from "./exercise-media";
 import AuroraBodyMap from "./body-map";
@@ -133,7 +133,7 @@ function BottomSheet({ open, onClose, title, meta, children }: { open: boolean; 
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 560, maxHeight: "86vh", overflowY: "auto", background: C("card"), borderTop: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", boxShadow: "0 -20px 50px -20px rgba(0,0,0,.6)", padding: "10px 20px 30px", transform: shown ? "translateY(0)" : "translateY(101%)", transition: "transform .38s cubic-bezier(.32,.72,0,1)", fontFamily: "var(--font-display)", color: C("chalk") }}
+        style={{ width: "100%", maxWidth: 560, maxHeight: "86vh", overflowY: "auto", background: C("card"), borderTop: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", boxShadow: "0 -20px 50px -20px rgba(0,0,0,.6)", padding: `10px 20px max(${sheetPadBottom()}px, env(safe-area-inset-bottom, 0px))`, transform: shown ? "translateY(0)" : "translateY(101%)", transition: "transform .38s cubic-bezier(.32,.72,0,1)", fontFamily: "var(--font-display)", color: C("chalk") }}
       >
         <div aria-hidden style={{ width: 38, height: 4, borderRadius: 3, background: C("line"), margin: "2px auto 16px" }} />
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>

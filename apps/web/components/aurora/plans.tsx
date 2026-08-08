@@ -1,8 +1,8 @@
 "use client";
 
-import { accentText } from "@/lib/ui";
+import { CARD_PAD, accentText } from "@/lib/ui";
 import { useEffect, useRef, useState } from "react";
-import { fs, space, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
+import { fs, space, DOCK_RAIL, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRevalidate } from "@/lib/use-invalidate";
@@ -12,9 +12,14 @@ import ProgramDays from "../program-days";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { CoverHero, useHeroCollapse, COVER_INK, COVER_BAR } from "./cover-hero";
+import { DockRail, DockChip } from "./dock-rail";
 
 const C = (v: string) => `var(--color-${v})`;
-const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 16 } as const;
+/* The plan surfaces — the season card, each plan row, the day cards and the
+   Info blocks. They were hand-rolled at 16 while the mobile twin renders the
+   very same cards through the kit's ACard (20), so one plan detail screen was
+   inset two different ways depending on which client you opened it on. */
+const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
 const chip = (color: string, label: string) => <span style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color, borderRadius: 999, padding: "3px 12px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 6, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
 /** AURORA Plans (web) — goal grid → plan list → detail + enroll, reusing the
@@ -70,8 +75,12 @@ function Library({ query, setQuery, pick }: { query: string; setQuery: (v: strin
       <CoverHero
         cover={{ accent: C("lime"), glyph: lib.glyph, chip: lib.chip, duration: lib.count, title: lib.title, metaParts: lib.metaParts, stats: [], blurb: "", variant: "library" }}
         heroRef={heroRef}
+        // The scaffold's rail slot, which web gained in the dock-rail change.
+        // This used to be a SIBLING with its own hand-rolled sticky bar, and
+        // that bar is why the Plans rail drew ink 86% / blur 14 against the
+        // scaffold's 88 / 18. Mobile parity: CoverScreen's `rail`.
+        rail={shelves.length > 0 ? <CategoryRail categories={shelves.map((s) => s.category)} /> : undefined}
       />
-      {shelves.length > 0 && <CategoryRail categories={shelves.map((s) => s.category)} />}
       <div style={{ position: "relative", margin: "16px 0 0" }}>
         <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}><AuroraIcon name="search" size={16} color={C("ash")} /></span>
         <input
@@ -92,42 +101,34 @@ function Library({ query, setQuery, pick }: { query: string; setQuery: (v: strin
   );
 }
 
-/** Fallback height of the docked chip rail (it measures itself) — the offset a
- *  jump has to clear on top of the collapsed cover bar. */
-const RAIL_H = 49;
+/** Height of the docked chip rail — the offset a jump has to clear on top of
+ *  the collapsed cover bar. DERIVED from the dock-rail contract rather than
+ *  measured: with the chip's height and the rail's padding both pinned in core,
+ *  the rail can no longer be a different height than the number here says. */
+const RAIL_H = DOCK_RAIL.chip.hit + 2 * DOCK_RAIL.padY;
 /** Where a category's shelf anchors, so the chips can find it. */
 const shelfId = (category: string) => `plan-shelf-${category.toLowerCase().replace(/[^a-z]+/g, "-")}`;
 
-/** The category chips, sticking directly beneath the collapsed cover bar so
- *  they stay reachable at any scroll position (mobile parity: the scaffold's
- *  `rail` slot). They JUMP, they don't filter — the shelves already are the
- *  categories, so narrowing to one would just empty the screen. */
+/** The category chips, riding the cover scaffold's `rail` slot so they dock
+ *  beneath the collapsed bar and stay reachable at any scroll position. They
+ *  JUMP, they don't filter — the shelves already are the categories, so
+ *  narrowing to one would just empty the screen, which is why they are
+ *  `role="anchor"` chips and can never light up. See
+ *  packages/core/src/dock-rail.ts. Mobile twin: the same function name. */
 function CategoryRail({ categories }: { categories: string[] }) {
   const { t } = useLang();
-  const navRef = useRef<HTMLElement>(null);
   const jump = (category: string) => {
     const el = document.getElementById(shelfId(category));
     if (!el) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const railH = navRef.current?.offsetHeight ?? RAIL_H;
-    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - COVER_BAR - railH, behavior: reduced ? "auto" : "smooth" });
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - COVER_BAR - RAIL_H, behavior: reduced ? "auto" : "smooth" });
   };
   return (
-    <nav
-      ref={navRef}
-      aria-label={t("w.train.plans.jumpToCategory")}
-      style={{ position: "sticky", top: COVER_BAR, zIndex: 29, display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "8px var(--page-pad-x, 12px)", background: `color-mix(in srgb, ${C("ink")} 86%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}
-    >
+    <DockRail label={t("w.train.plans.jumpToCategory")}>
       {categories.map((c) => (
-        <button className="pressable"
-          key={c}
-          onClick={() => jump(c)}
-          style={{ flex: "0 0 auto", fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".08em", padding: "8px 12px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap", background: "transparent", color: C("ash"), border: `1px solid ${C("line")}` }}
-        >
-          {c}
-        </button>
+        <DockChip key={c} role="anchor" label={c} onClick={() => jump(c)} />
       ))}
-    </nav>
+    </DockRail>
   );
 }
 
@@ -406,7 +407,11 @@ function PlanWeekRail({ bars, weeks, week, setWeek, wkLabel }: { bars: PlanWeekB
   const max = Math.max(1, ...bars.map((b) => b.value));
   const hasBars = bars.length > 0;
   return (
-    <div style={{ position: "sticky", top: COVER_BAR, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 12px))", background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${C("line")}` }}>
+    /* Same bar material as the scaffold's rail slot — this one is hand-rolled
+       because the waveform sits under its own "Schedule" head mid-content
+       rather than docking straight under the cover, but a second material on
+       the same screen is exactly the drift the dock rail was fixing. */
+    <div style={{ position: "sticky", top: COVER_BAR, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 12px))", background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", borderBottom: `1px solid ${C("line")}` }}>
       <div style={{ display: "flex", gap: 2, overflowX: "auto", scrollbarWidth: "none", padding: "8px var(--page-pad-x, 12px) 8px" }}>
         {weeks.map((w) => {
           const on = w === week;

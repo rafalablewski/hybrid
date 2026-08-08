@@ -221,6 +221,29 @@ export function heroCollapse(scrollY: number, geom: HeroGeometry): number {
   return Math.min(1, Math.max(0, scrollY / geom.delta));
 }
 
+/**
+ * Where a docked SUB-RAIL (the history view switcher, a category rail) pins:
+ * the scroll offset at which its own top edge meets the collapsed bar's bottom
+ * edge. Past that it holds; before it, it scrolls with the page.
+ *
+ * `contentY` is the rail's y in the SCROLL CONTENT — from the top of the
+ * scrollable content, hero pad included — never from whatever wrapper a client
+ * happens to nest it in. Getting that space wrong is what a shipped bug looked
+ * like: mobile read the rail's `onLayout` y, which is relative to its PARENT
+ * (0), so the rail pinned a whole collapse track too low and left a
+ * `delta`-tall gap between the bar and the switcher.
+ *
+ * PREFER A DERIVED contentY TO A MEASURED ONE. A container that decides where
+ * the rail goes already knows this number — mobile's HeroScreen renders the
+ * rail first in the content, so it passes `geom.height` and measures nothing.
+ * Only pass a measurement when the position is genuinely unknown (the cover
+ * screen's rail sits below a hem of variable height). The web twin needs
+ * neither: CSS `position: sticky; top: barHeight` IS this rule.
+ */
+export function heroRailPin(contentY: number, geom: HeroGeometry): number {
+  return Math.max(0, contentY - geom.barHeight);
+}
+
 /** Where a release inside the track should settle. `null` = already at a pole,
  *  leave it alone (so a settled hero never fights a flick). */
 export function heroSnapTarget(scrollY: number, geom: HeroGeometry): number | null {

@@ -12,6 +12,7 @@ import {
   heroMetaLine,
   heroNavAction,
   heroNavMaterial,
+  heroRailPin,
   heroSnapTarget,
   heroStatusBar,
   heroTitleType,
@@ -65,6 +66,35 @@ describe("the collapse track", () => {
     expect(heroSnapTarget(geom.delta, geom)).toBeNull();
     expect(heroSnapTarget(geom.delta * 0.2, geom)).toBe(0);
     expect(heroSnapTarget(geom.delta * 0.8, geom)).toBe(geom.delta);
+  });
+});
+
+describe("the docked sub-rail", () => {
+  const geom = heroGeometry("title", SAFE);
+
+  it("pins a top-of-content rail exactly as the hero finishes collapsing — no gap", () => {
+    // The rail sits directly under the hero pad, so it docks the instant the
+    // bar arrives: pin === the collapse track. Any other answer is a strip of
+    // scrolling page between the bar and the rail (or the rail under the bar).
+    const pin = heroRailPin(geom.height, geom);
+    expect(pin).toBe(geom.delta);
+    // At the pin, the rail's screen y is the bar's bottom edge, and it holds
+    // there for every deeper scroll.
+    for (const y of [pin, pin + 1, pin + 500]) {
+      const shift = Math.max(0, y - pin);
+      expect(geom.height - y + shift).toBe(geom.barHeight);
+    }
+  });
+
+  it("takes the rail's y in SCROLL-CONTENT space, not its parent's", () => {
+    // The regression: measuring against a padded wrapper yields 0, which pins
+    // the rail a whole collapse track too low.
+    expect(heroRailPin(0, geom)).not.toBe(geom.delta);
+    expect(heroRailPin(0, geom)).toBe(0);
+  });
+
+  it("pushes the pin down by whatever content precedes the rail", () => {
+    expect(heroRailPin(geom.height + 120, geom)).toBe(geom.delta + 120);
   });
 });
 

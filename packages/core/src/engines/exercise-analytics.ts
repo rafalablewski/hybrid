@@ -18,6 +18,7 @@ import { periodCutoff, exerciseKind, type ExercisePeriod } from "./exercise";
 import { trainingHeatmap, type HeatCell } from "./calendar";
 import { localMondayMs, addLocalDays, localDayKey } from "../day-key";
 import { deviceTrueSessions } from "../device-truth";
+import { roundKm } from "../distance";
 
 const DAY = 86_400_000;
 /** "Recent" everywhere below = the last 8 weeks (matches the 8w period). */
@@ -449,7 +450,7 @@ export function recentRunDeltas(sessions: LoggedSession[], name: string, count =
   const avg = efforts.reduce((a, e) => a + e.secPerKm, 0) / efforts.length;
   return {
     avgSec: Math.round(avg),
-    runs: efforts.map((e) => ({ date: e.date, km: Math.round(e.km * 10) / 10, secPerKm: Math.round(e.secPerKm), deltaSec: Math.round(e.secPerKm - avg) })),
+    runs: efforts.map((e) => ({ date: e.date, km: roundKm(e.km), secPerKm: Math.round(e.secPerKm), deltaSec: Math.round(e.secPerKm - avg) })),
   };
 }
 
@@ -502,9 +503,9 @@ export function blockCompare(
       if (side.m.bestPaceSec == null || e.secPerKm < side.m.bestPaceSec) side.m.bestPaceSec = Math.round(e.secPerKm);
     }
     for (const side of [cur, prev]) {
-      side.m.distanceKm = Math.round(side.m.distanceKm * 10) / 10;
+      side.m.distanceKm = roundKm(side.m.distanceKm);
       side.m.avgPaceSec = side.paces.length ? Math.round(side.paces.reduce((a, b) => a + b, 0) / side.paces.length) : null;
-      side.weekly = side.weekly.map((v) => Math.round(v * 10) / 10);
+      side.weekly = side.weekly.map(roundKm);
     }
     return { kind: "cardio", weeks, weeklyCur: cur.weekly, weeklyPrev: prev.weekly, cur: cur.m, prev: prev.m };
   }

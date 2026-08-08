@@ -2,15 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fs, leading, tracking } from "@hybrid/core";
+import type { Relation } from "@hybrid/core";
 import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, LiveAthlete, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 import { CosignInbox } from "./pr-attestation";
 import FeedCard from "./feed-card";
+import FeedWorkoutSheet from "./feed-workout";
 import FeedLiveStrip from "./feed-live-strip";
 import { HubMasthead } from "./aurora/hub-masthead";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { syncSaved } from "@/lib/feed-actions";
 import { useIsMobile } from "@/lib/use-media-query";
 
 /**
@@ -31,7 +34,10 @@ import { useIsMobile } from "@/lib/use-media-query";
 type FeedItem = FeedItemView;
 type Tab = "forYou" | "following";
 
-function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
+/** The comment thread under an open row. EXPORTED because the Saved screen
+ *  (social-saved.tsx) renders the same rows and must open the same thread —
+ *  a second copy of this would drift the moment either is touched. */
+export function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
   const { t } = useLang();
   const [list, setList] = useState<CommentView[] | null>(null);
   const [text, setText] = useState("");
@@ -112,13 +118,28 @@ function Composer({ onPosted }: { onPosted: () => void }) {
   );
 }
 
-export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: string) => void } = {}) {
+export default function SocialFeed({
+  onNavigate,
+  onOpenSession,
+}: {
+  onNavigate?: (screen: string) => void;
+  /** Open one of MY OWN sessions in History's full detail (Wrapped, PRs, the
+   *  edit/archive row). The visitor's sheet is the right read of someone
+   *  else's workout, and the wrong one of your own — on your own session you
+   *  own actions the sheet deliberately doesn't carry. Absent (a caller with
+   *  no shell to switch) falls back to the sheet. */
+  onOpenSession?: (id: string) => void;
+} = {}) {
   const { t } = useLang();
   const isMobile = useIsMobile();
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  // The POST, opened — the whole workout behind a card. Held by id (not by the
+  // item) so the sheet keeps reading the live row: a kudos given from the feed
+  // while the sheet is up still shows there.
+  const [opened, setOpened] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("forYou");
   const [live, setLive] = useState<LiveAthlete[]>([]);
 
@@ -128,6 +149,10 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
       setLive(r.live ?? []);
     });
   useEffect(() => { load(); }, []);
+  // Reconcile the shelf with the server on open, so the bookmarks in the rows
+  // below are this ACCOUNT's, not just this browser's. Quiet no-op until
+  // SavedPost is migrated (lib/feed-actions.ts).
+  useEffect(() => { void syncSaved(); }, []);
 
   const cheer = async (item: FeedItem) => {
     // Optimistic: a kudos must never wait on the network to look given.
@@ -135,6 +160,15 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
     const r = await jsend<KudosResponse>("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos ?? x.kudos, kudosedByMe: r.kudosedByMe ?? x.kudosedByMe } : x)) ?? f);
   };
+  // What the ⋯ menu changed about an AUTHOR. A follow re-labels every card by
+  // that person; a block takes them out of the stream entirely — the server
+  // already made them invisible, so leaving their rows on screen until the next
+  // load would be the one place the app disagreed with itself.
+  const authorChanged = ({ authorId, relation, blocked }: { authorId: string; relation?: Relation; blocked?: boolean }) =>
+    setFeed((f) => (blocked
+      ? f?.filter((x) => x.author.id !== authorId) ?? f
+      : f?.map((x) => (x.author.id === authorId ? { ...x, relation } : x)) ?? f));
+
   const del = async (item: FeedItem) => {
     if (!window.confirm(t("w.social.deletePostConfirm"))) return;
     await fetch(`/api/social/posts/${item.subjectId}`, { method: "DELETE" });
@@ -195,17 +229,29 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           every request is also an invite (core/attestation.ts). */}
       <CosignInbox units={units} />
 
-      {/* People-search rides the tab row's right side as a bare icon (the
+      {/* Saved + people-search ride the tab row's right side as bare icons (the
           SectionHead idiom) — a full search bar would spend a row of the
-          stream on a rare action. */}
+          stream on a rare action. Saved sits FIRST because it is where the
+          bookmark in every row below leads: the glyph that fills on a post is
+          the same glyph that opens the shelf. */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         {tabBtn("forYou", t("feed.tab.forYou"))}
         {tabBtn("following", t("feed.tab.following"))}
         <button
           className="pressable"
+          onClick={() => (onNavigate ? onNavigate("saved") : (window.location.href = "/app?s=saved"))}
+          aria-label={t("w.social.savedTitle")}
+          style={{ marginLeft: "auto", background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4.5 2.8h9v12.4l-4.5-3.4-4.5 3.4Z" />
+          </svg>
+        </button>
+        <button
+          className="pressable"
           onClick={() => (onNavigate ? onNavigate("discover") : (window.location.href = "/discover"))}
           aria-label={t("w.social.searchPeople")}
-          style={{ marginLeft: "auto", background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
+          style={{ background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <circle cx="8" cy="8" r="5.5" />
@@ -240,7 +286,23 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
               onOpenProfile={(h) => setDrawer(h)}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
+              // Session and PR cards are both anchored on a Session id, so both
+              // open to the workout. A status post has no workout behind it.
+              // MY OWN session opens MY view of it — the full detail with the
+              // Wrapped, the PRs and the manage row — not the visitor's read.
+              // Otherwise the sheet, and opening COLLAPSES the row's inline
+              // thread: the sheet carries the same thread, and two mounted
+              // copies would fetch the same comments twice and then disagree
+              // the moment one posted.
+              onOpen={
+                item.subjectType === "session" || item.subjectType === "pr"
+                  ? item.mine && onOpenSession
+                    ? () => onOpenSession(item.subjectId)
+                    : () => { setOpen(null); setOpened(item.id); }
+                  : undefined
+              }
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
+              onAuthorChanged={authorChanged}
             >
               {open === item.id && <Comments item={item} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}
             </FeedCard>
@@ -257,6 +319,18 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           </div>
         </>
       )}
+
+      {/* THE POST, OPENED — the whole workout behind the row, with its thread
+          underneath (the same Comments component the row expands, so a comment
+          written here and one written in the stream are one thing). */}
+      {(() => {
+        const it = opened ? items.find((i) => i.id === opened) ?? null : null;
+        return (
+          <FeedWorkoutSheet item={it} units={units} open={!!it} onClose={() => setOpened(null)}>
+            {it && <Comments item={it} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === it.id ? { ...x, comments: n } : x)) ?? f)} />}
+          </FeedWorkoutSheet>
+        );
+      })()}
 
       {drawer && <ProfileDrawer handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </div>

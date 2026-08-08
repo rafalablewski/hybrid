@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { motion, sheetGesture, resolveSheetRelease, rubberBand, type SheetDetent } from "@hybrid/core";
+import { motion, sheetGesture, resolveSheetRelease, rubberBand, sheetPadBottom, type SheetDetent } from "@hybrid/core";
 import { haptic } from "@/lib/haptics";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -29,6 +29,12 @@ const C = (v: string) => `var(--color-${v})`;
  *
  * DETENTS. `detents` defaults to ["large"] (the old single-height behaviour).
  * Pass ["medium","large"] for a sheet that opens short and expands.
+ *
+ * THE BOTTOM PAD IS THE SHEET'S, not the caller's. It comes from @hybrid/core
+ * `sheetPadBottom`, the one number both clients read, and it is MAX'd against
+ * the device's home-indicator inset rather than added to it. Children must not
+ * trail a pad of their own — stacked pads are what put a dead band under every
+ * sheet in the app.
  *
  * PRESENTATION. While a sheet is up, the presenting screen RECEDES — scales to
  * motion.recedeScale with its corner radius growing to a device radius and its
@@ -241,7 +247,10 @@ export default function Sheet({
           border: `1px solid ${C("line")}`,
           borderBottom: "none",
           boxShadow: "0 -10px 44px -14px rgba(0,0,0,.6)",
-          padding: "12px 20px calc(24px + env(safe-area-inset-bottom))",
+          // ONE pad under the last row — @hybrid/core `sheetPadBottom`, MAX'd
+          // against the home-indicator inset rather than added to it. Content
+          // rendered into the sheet must not trail a pad of its own.
+          padding: `12px 20px max(${sheetPadBottom()}px, env(safe-area-inset-bottom, 0px))`,
           display: "flex",
           flexDirection: "column",
           transform: "translateY(100%)",
