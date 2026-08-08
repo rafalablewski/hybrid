@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   LEVELS,
   SPORT_PAGE_WEEKS,
@@ -10,15 +10,23 @@ import {
   fs,
   markerHistory,
   recordMarker,
+  scrubFraction,
+  scrubIndex,
+  scrubPosition,
   space,
   sportDistance,
   sportPace,
   sportMarkPaths,
   sportPageModel,
+  sportPaceReading,
+  sportVolumeReading,
   transferSessionBlocks,
+  type ScrubMode,
   type SessionBlock,
   type SportBest,
+  type SportChartReading,
   type SportPageModel,
+  type SportWeek,
 } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { readSportSelection, writeSportSelection } from "@/lib/sport-store";
@@ -64,12 +72,123 @@ function Provenance({ provider, t }: { provider: string | null; t: (k: string) =
   return <DeviceMark provider={provider} form="lockup" height={9} on="dark" style={{ verticalAlign: "-1px" }} />;
 }
 
+/* ── holding a chart ─────────────────────────────────────────────────────── */
+
+/**
+ * THE HELD CHART — press anywhere on a chart and it states the figure under
+ * your finger, the way a stock chart does. A trend answers "which way", never
+ * "how much on the 12th"; holding is how the second question gets an answer
+ * without a second screen.
+ *
+ * The hit-testing is core's (`scrubIndex`), so the same press reads the same
+ * week here and on the phone. What's per-client is only the GESTURE:
+ *  - `touchAction: pan-y` — a vertical drag still scrolls the page, so the
+ *    chart never traps a finger that meant to scroll past it. A horizontal
+ *    drag, or a still finger, scrubs.
+ *  - a MOUSE reads on hover, with no press at all — that is what a pointer is
+ *    for, and it costs one line.
+ *  - the arrow keys walk the series, so the figures are reachable without a
+ *    pointer at all.
+ */
+const SCRUB_STYLE = { touchAction: "pan-y", userSelect: "none", WebkitUserSelect: "none", cursor: "crosshair" } as const;
+
+function useChartScrub(count: number, mode: ScrubMode, inset?: number) {
+  const [index, setIndex] = useState(-1);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const held = useRef(false);
+  const last = useRef(-1);
+  const geo = useRef({ count, mode, inset });
+  geo.current = { count, mode, inset };
+
+  // `last` mirrors the state so a hovering mouse — which fires a move event per
+  // pixel — only re-renders when the WEEK changes. Every setter goes through
+  // `set`, so releasing a touch cannot leave the mirror pointing at a week the
+  // chart is no longer showing (the next press on that same bar would then read
+  // as "no change" and show nothing).
+  const set = useCallback((i: number) => {
+    if (i === last.current) return;
+    last.current = i;
+    setIndex(i);
+  }, []);
+  const read = useCallback((clientX: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    set(scrubIndex(scrubFraction(clientX - r.left, r.width), geo.current));
+  }, [set]);
+  const clear = useCallback(() => { held.current = false; set(-1); }, [set]);
+
+  const bind = {
+    ref,
+    tabIndex: 0,
+    // A GROUP, not an img: the drawing itself is aria-hidden, and what a screen
+    // reader should reach is the readout — a live region that states the held
+    // figure as the arrow keys walk the series. Inside role="img" its contents
+    // would be presentational and it would never be announced.
+    role: "group" as const,
+    onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
+      held.current = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      read(e.clientX);
+    },
+    onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => {
+      if (held.current || e.pointerType === "mouse") read(e.clientX);
+    },
+    // A mouse keeps its readout after the click — it is still hovering. A
+    // finger has left the glass, so the chart goes back to its own shape.
+    onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => { held.current = false; if (e.pointerType !== "mouse") set(-1); },
+    onPointerCancel: clear,
+    onPointerLeave: clear,
+    onBlur: clear,
+    onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const n = geo.current.count;
+      if (n <= 0) return;
+      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (step) {
+        e.preventDefault();
+        const from = last.current < 0 ? (step > 0 ? -1 : n) : last.current;
+        set(Math.min(n - 1, Math.max(0, from + step)));
+      } else if (e.key === "Home") { e.preventDefault(); set(0); }
+      else if (e.key === "End") { e.preventDefault(); set(n - 1); }
+      else if (e.key === "Escape") set(-1);
+    },
+  };
+  return { index, bind };
+}
+
+/** What a scrubbable chart spreads onto its own root — plus the label the
+ *  screen reader announces for it. */
+type ScrubBind = ReturnType<typeof useChartScrub>["bind"] & { "aria-label"?: string };
+
+/** The held figure itself, pinned to the top of the plot on the side the finger
+ *  is NOT on, so it can never hide the point being read. */
+function ChartReadout({ read, side, sub }: { read: SportChartReading; side: "left" | "right"; sub: ReactNode }) {
+  return (
+    <span
+      aria-live="polite"
+      style={{
+        position: "absolute", top: 0, [side]: 0, display: "flex", flexDirection: "column", gap: 2,
+        alignItems: side === "right" ? "flex-end" : "flex-start",
+        padding: "5px 9px", borderRadius: 12, pointerEvents: "none",
+        background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, border: `1px solid ${C("line")}`,
+      }}
+    >
+      <span style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+        <b style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums", color: read.best ? C("lime") : C("chalk") }}>{read.value}</b>
+        <span style={mono(fs.nano)}>{read.unit}</span>
+      </span>
+      <span style={{ display: "flex", gap: 8, ...label(), fontSize: fs.nano }}>{sub}</span>
+    </span>
+  );
+}
+
 /* ── the two charts ──────────────────────────────────────────────────────── */
 
-function VolumeBars({ weeks, avg }: { weeks: { value: number }[]; avg: number }) {
+function VolumeBars({ weeks, avg, held, bind, readout }: { weeks: SportWeek[]; avg: number; held: number; bind: ScrubBind; readout: ReactNode }) {
   const max = Math.max(...weeks.map((w) => w.value), 1);
+  const pos = scrubPosition(held, { count: weeks.length, mode: "band" });
   return (
-    <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 6, height: 110 }}>
+    <div {...bind} style={{ ...SCRUB_STYLE, position: "relative", display: "flex", alignItems: "flex-end", gap: 6, height: 110 }}>
       {weeks.map((w, i) => (
         <span
           key={i}
@@ -78,13 +197,19 @@ function VolumeBars({ weeks, avg }: { weeks: { value: number }[]; avg: number })
             minHeight: 3,
             height: Math.max(3, (w.value / max) * 110),
             borderRadius: "3px 3px 2px 2px",
-            background: i === weeks.length - 1 ? C("lime") : `color-mix(in srgb, ${C("lime")} 42%, ${C("ink")})`,
+            // Held, the finger's week is the lit one — the "this week" accent
+            // would otherwise compete with the answer the athlete asked for.
+            background: (held >= 0 ? i === held : i === weeks.length - 1) ? C("lime") : `color-mix(in srgb, ${C("lime")} 42%, ${C("ink")})`,
           }}
         />
       ))}
       {avg > 0 && (
         <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: (avg / max) * 110, borderTop: `1px dashed color-mix(in srgb, ${C("ash")} 55%, transparent)` }} />
       )}
+      {held >= 0 && (
+        <span aria-hidden style={{ position: "absolute", left: `${pos * 100}%`, top: 0, bottom: 0, width: 1, background: `color-mix(in srgb, ${C("ash")} 55%, transparent)`, pointerEvents: "none" }} />
+      )}
+      {readout}
     </div>
   );
 }
@@ -92,7 +217,7 @@ function VolumeBars({ weeks, avg }: { weeks: { value: number }[]; avg: number })
 /** The pace trend — reversed, so FASTER sits higher. The personal best carries
  *  a dot, drawn in HTML because the path is stretched to the column's width and
  *  a circle inside a stretched viewBox comes out an ellipse. */
-function PaceTrend({ trend, prIndex }: { trend: number[]; prIndex: number }) {
+function PaceTrend({ trend, prIndex, held, bind, readout }: { trend: number[]; prIndex: number; held: number; bind: ScrubBind; readout: ReactNode }) {
   const W = 326, H = 118, PAD = 10;
   const min = Math.min(...trend), max = Math.max(...trend);
   const span = Math.max(1, max - min);
@@ -100,8 +225,9 @@ function PaceTrend({ trend, prIndex }: { trend: number[]; prIndex: number }) {
   const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
   const area = `${d} L${pts[pts.length - 1]![0].toFixed(1)} ${H} L${pts[0]![0].toFixed(1)} ${H} Z`;
   const pr = pts[Math.min(Math.max(prIndex, 0), pts.length - 1)]!;
+  const hit = held >= 0 ? pts[held] : null;
   return (
-    <div style={{ position: "relative" }}>
+    <div {...bind} style={{ ...SCRUB_STYLE, position: "relative" }}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden style={{ display: "block", width: "100%", height: H }}>
         <defs>
           <linearGradient id="sportPaceFill" x1="0" y1="0" x2="0" y2="1">
@@ -112,14 +238,28 @@ function PaceTrend({ trend, prIndex }: { trend: number[]; prIndex: number }) {
         <path d={area} fill="url(#sportPaceFill)" />
         <path d={d} fill="none" stroke={C("lime")} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </svg>
+      {hit && (
+        <span aria-hidden style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, background: `color-mix(in srgb, ${C("ash")} 55%, transparent)`, pointerEvents: "none" }} />
+      )}
       <span
         aria-hidden
         style={{
           position: "absolute", left: `${(pr[0] / W) * 100}%`, top: `${(pr[1] / H) * 100}%`,
           width: 9, height: 9, borderRadius: 999, background: C("lime"),
-          border: `2px solid ${C("ink")}`, transform: "translate(-50%,-50%)",
+          border: `2px solid ${C("ink")}`, transform: "translate(-50%,-50%)", pointerEvents: "none",
         }}
       />
+      {hit && (
+        <span
+          aria-hidden
+          style={{
+            position: "absolute", left: `${(hit[0] / W) * 100}%`, top: `${(hit[1] / H) * 100}%`,
+            width: 13, height: 13, borderRadius: 999, background: C("chalk"),
+            border: `2px solid ${C("ink")}`, transform: "translate(-50%,-50%)", pointerEvents: "none",
+          }}
+        />
+      )}
+      {readout}
     </div>
   );
 }
@@ -155,6 +295,13 @@ export default function AuroraSportPage({
     [name, sessions, levelIdx, markers],
   );
 
+  // The two held charts. Both hooks run every render — a sport with no pace
+  // simply holds a series of zero points, which reads as "nothing held".
+  const volumeScrub = useChartScrub(m.weeks.length, "band");
+  const paceScrub = useChartScrub(m.pace?.trend.length ?? 0, "point", 10 / 326);
+  const volumeRead = volumeScrub.index >= 0 ? sportVolumeReading(m, volumeScrub.index) : null;
+  const paceRead = paceScrub.index >= 0 ? sportPaceReading(m, paceScrub.index) : null;
+
   const persist = (next: ReturnType<typeof readSportSelection>) => {
     setStore(next);
     writeSportSelection(next ?? {});
@@ -188,6 +335,21 @@ export default function AuroraSportPage({
   const weeksMeta = t("w.train.sportPage.weeksAvg")
     .replace("{weeks}", String(SPORT_PAGE_WEEKS))
     .replace("{avg}", m.hasDistance ? `${sportDistance(m.distanceUnit === "m" ? m.weekAvg / 1000 : m.weekAvg, m.distanceUnit)} ${m.distanceUnit}` : `${Math.round(m.weekAvg)} min`);
+
+  /** The held figure, placed on the side of the plot the finger is not on. */
+  const chartReadout = (read: SportChartReading | null, count: number) =>
+    read ? (
+      <ChartReadout
+        read={read}
+        side={read.index * 2 >= count - 1 ? "left" : "right"}
+        sub={
+          <>
+            <span>{t("w.train.sportPage.weekOf").replace("{date}", fmtDate(read.weekStart))}</span>
+            {read.efforts != null && <span>{t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts))}</span>}
+          </>
+        }
+      />
+    ) : null;
 
   const sectionStyle = { marginTop: space.xxl } as const;
   const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: space.md, padding: `${space.md}px 0`, borderTop: `1px solid ${C("line")}` } as const;
@@ -300,7 +462,13 @@ export default function AuroraSportPage({
             {/* ── VOLUME ── */}
             <div style={sectionStyle}>
               <SectionHead title={t("w.train.sportPage.volume")} meta={weeksMeta} />
-              <VolumeBars weeks={m.weeks} avg={m.weekAvg} />
+              <VolumeBars
+                weeks={m.weeks}
+                avg={m.weekAvg}
+                held={volumeScrub.index}
+                bind={{ ...volumeScrub.bind, "aria-label": t("w.train.sportPage.volume") }}
+                readout={chartReadout(volumeRead, m.weeks.length)}
+              />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: space.sm }}>
                 <span style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</span>
                 <span style={mono(fs.nano)}>{t("w.train.sportPage.thisWeek")}</span>
@@ -322,7 +490,13 @@ export default function AuroraSportPage({
                     </div>
                   ))}
                 </div>
-                <PaceTrend trend={m.pace.trend} prIndex={m.pace.prIndex} />
+                <PaceTrend
+                  trend={m.pace.trend}
+                  prIndex={m.pace.prIndex}
+                  held={paceScrub.index}
+                  bind={{ ...paceScrub.bind, "aria-label": t("w.train.sportPage.pace") }}
+                  readout={chartReadout(paceRead, m.pace.trend.length)}
+                />
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: space.sm }}>
                   <span style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</span>
                   <span style={mono(fs.nano)}>{t("w.train.sportPage.fasterHigher")}</span>

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, ScrollView } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { View, Text, TextInput, ScrollView, PanResponder } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,18 +10,27 @@ import {
   heroMetaLine,
   markerHistory,
   recordMarker,
+  scrubFraction,
+  scrubIndex,
+  scrubPosition,
   sportDistance,
   sportPace,
   sportFromSlug,
   sportMarkPaths,
   sportPageModel,
+  sportPaceReading,
+  sportVolumeReading,
   transferSessionBlocks,
   type LoggedSession,
+  type ScrubMode,
   type SportBest,
+  type SportChartReading,
   type SportPageModel,
   type SportStore,
+  type SportWeek,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
+import { haptic } from "../../lib/haptics";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
@@ -90,6 +99,13 @@ export default function AuroraSportPage() {
     [name, sessions, levelIdx, markers],
   );
 
+  // The two held charts. Both hooks run every render — a sport with no pace
+  // simply holds a series of zero points, which reads as "nothing held".
+  const volumeScrub = useChartScrub(m.weeks.length, "band");
+  const paceScrub = useChartScrub(m.pace?.trend.length ?? 0, "point", 10 / 326);
+  const volumeRead = volumeScrub.index >= 0 ? sportVolumeReading(m, volumeScrub.index) : null;
+  const paceRead = paceScrub.index >= 0 ? sportPaceReading(m, paceScrub.index) : null;
+
   const persist = (next: SportStore) => {
     setStore(next);
     AsyncStorage.setItem(STORE_KEY, JSON.stringify(next)).catch(() => {});
@@ -147,6 +163,24 @@ export default function AuroraSportPage() {
       : <Text style={label()}>{t("w.train.sportPage.markerTyped")}</Text>;
 
   const dividerTop = { borderTopWidth: 1, borderTopColor: C.line } as const;
+
+  /** The held figure, placed on the side of the plot the finger is not on. */
+  const chartReadout = (read: SportChartReading | null, count: number) =>
+    read ? (
+      <ChartReadout
+        read={read}
+        C={C}
+        side={read.index * 2 >= count - 1 ? "left" : "right"}
+        sub={
+          <>
+            <Text style={{ ...label(), fontSize: fs.nano }}>{t("w.train.sportPage.weekOf").replace("{date}", fmtDate(read.weekStart))}</Text>
+            {read.efforts != null && (
+              <Text style={{ ...label(), fontSize: fs.nano }}>{t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts))}</Text>
+            )}
+          </>
+        }
+      />
+    ) : null;
 
   return (
     <AuroraScreen
@@ -250,7 +284,14 @@ export default function AuroraSportPage() {
           {/* ── VOLUME ── */}
           <View style={{ marginTop: space.xxl }}>
             <SectionHead title={t("w.train.sportPage.volume")} meta={weeksMeta} />
-            <VolumeBars weeks={m.weeks} avg={m.weekAvg} C={C} />
+            <VolumeBars
+              weeks={m.weeks}
+              avg={m.weekAvg}
+              C={C}
+              held={volumeScrub.index}
+              bind={volumeScrub.bind}
+              readout={chartReadout(volumeRead, m.weeks.length)}
+            />
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm }}>
               <Text style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</Text>
               <Text style={mono(fs.nano)}>{t("w.train.sportPage.thisWeek")}</Text>
@@ -272,7 +313,14 @@ export default function AuroraSportPage() {
                   </View>
                 ))}
               </View>
-              <PaceTrend trend={m.pace.trend} prIndex={m.pace.prIndex} C={C} />
+              <PaceTrend
+                trend={m.pace.trend}
+                prIndex={m.pace.prIndex}
+                C={C}
+                held={paceScrub.index}
+                bind={paceScrub.bind}
+                readout={chartReadout(paceRead, m.pace.trend.length)}
+              />
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm }}>
                 <Text style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</Text>
                 <Text style={mono(fs.nano)}>{t("w.train.sportPage.fasterHigher")}</Text>
@@ -424,12 +472,107 @@ export default function AuroraSportPage() {
   );
 }
 
+/* ── holding a chart ─────────────────────────────────────────────────────── */
+
+/**
+ * THE HELD CHART — press anywhere on a chart and it states the figure under
+ * your finger, the way a stock chart does. The exact twin of the web hook in
+ * apps/web/components/aurora/sport-page.tsx: the hit-testing is core's
+ * (`scrubIndex`), so the same press reads the same week in a browser and here.
+ *
+ * The gesture is the only per-client part. It claims the touch on contact —
+ * a still finger IS the gesture, so waiting for movement would mean holding
+ * the chart did nothing — but grants every termination request, which is how
+ * the enclosing ScrollView takes the drag back the moment it turns out to be a
+ * scroll. A chart that traps the finger is a chart the athlete has to scroll
+ * around.
+ *
+ * The x is read from `pageX` against a measured box rather than `locationX`,
+ * because `locationX` is relative to whatever child the finger happens to be
+ * over — which, mid-drag across eight bars, is a different view every few
+ * millimetres.
+ */
+function useChartScrub(count: number, mode: ScrubMode, inset?: number) {
+  const [index, setIndex] = useState(-1);
+  const ref = useRef<View | null>(null);
+  const box = useRef({ x: 0, width: 0 });
+  const geo = useRef({ count, mode, inset });
+  geo.current = { count, mode, inset };
+  const last = useRef(-1);
+
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderGrant: (e) => {
+        ref.current?.measureInWindow((x, _y, w) => { box.current = { x, width: w || box.current.width }; });
+        read(e.nativeEvent.pageX);
+      },
+      onPanResponderMove: (e) => read(e.nativeEvent.pageX),
+      onPanResponderRelease: () => clear(),
+      onPanResponderTerminate: () => clear(),
+    }),
+  ).current;
+
+  // Defined after the responder so both close over the same refs; neither is
+  // re-created, so the responder built once stays correct.
+  function read(pageX: number) {
+    const i = scrubIndex(scrubFraction(pageX - box.current.x, box.current.width), geo.current);
+    if (i === last.current) return;
+    last.current = i;
+    // Crossing into the next week is a discrete step — Apple's own use for
+    // `selection`, and the same feedback the segmented controls give.
+    if (i >= 0) haptic.selection();
+    setIndex(i);
+  }
+  function clear() {
+    last.current = -1;
+    setIndex(-1);
+  }
+
+  const bind = {
+    ref,
+    onLayout: () => ref.current?.measureInWindow((x, _y, w) => { box.current = { x, width: w }; }),
+    ...pan.panHandlers,
+  };
+  return { index, bind };
+}
+
+/** What a scrubbable chart spreads onto its own root. */
+type ScrubBind = ReturnType<typeof useChartScrub>["bind"];
+
+/** The held figure, pinned to the top of the plot on the side the finger is
+ *  NOT on, so it can never hide the point being read. */
+function ChartReadout({ read, side, sub, C }: { read: SportChartReading; side: "left" | "right"; sub: ReactNode; C: Palette }) {
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: "absolute", top: 0,
+        left: side === "left" ? 0 : undefined,
+        right: side === "right" ? 0 : undefined,
+        alignItems: side === "right" ? "flex-end" : "flex-start",
+        gap: 2, paddingHorizontal: 9, paddingVertical: 5,
+        borderRadius: 12, backgroundColor: `${C.ink}e0`, borderWidth: 1, borderColor: C.line,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: read.best ? txt(C, C.lime) : C.chalk }}>{read.value}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 2 }}>{read.unit}</Text>
+      </View>
+      <View style={{ flexDirection: "row", gap: 8 }}>{sub}</View>
+    </View>
+  );
+}
+
 /* ── the charts — the web twin's geometry, drawn with react-native-svg ────── */
 
-function VolumeBars({ weeks, avg, C }: { weeks: { value: number }[]; avg: number; C: Palette }) {
+function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]; avg: number; C: Palette; held: number; bind: ScrubBind; readout: ReactNode }) {
   const max = Math.max(...weeks.map((w) => w.value), 1);
+  const pos = scrubPosition(held, { count: weeks.length, mode: "band" });
   return (
-    <View style={{ height: 110, flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
+    <View {...bind} style={{ height: 110, flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
       {weeks.map((w, i) => (
         <View
           key={i}
@@ -437,19 +580,25 @@ function VolumeBars({ weeks, avg, C }: { weeks: { value: number }[]; avg: number
             flex: 1,
             height: Math.max(3, (w.value / max) * 110),
             borderRadius: 3,
-            backgroundColor: i === weeks.length - 1 ? C.lime : `${C.lime}6b`,
+            // Held, the finger's week is the lit one — the "this week" accent
+            // would otherwise compete with the answer the athlete asked for.
+            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : `${C.lime}6b`,
           }}
         />
       ))}
       {avg > 0 && (
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: (avg / max) * 110, borderTopWidth: 1, borderTopColor: `${C.ash}8c`, borderStyle: "dashed" }} />
       )}
+      {held >= 0 && (
+        <View pointerEvents="none" style={{ position: "absolute", left: `${pos * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: `${C.ash}8c` }} />
+      )}
+      {readout}
     </View>
   );
 }
 
 /** Reversed, so FASTER sits higher. Same viewBox, padding and stroke as web. */
-function PaceTrend({ trend, prIndex, C }: { trend: number[]; prIndex: number; C: Palette }) {
+function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]; prIndex: number; C: Palette; held: number; bind: ScrubBind; readout: ReactNode }) {
   const W = 326, H = 118, PAD = 10;
   const min = Math.min(...trend), max = Math.max(...trend);
   const span = Math.max(1, max - min);
@@ -457,8 +606,9 @@ function PaceTrend({ trend, prIndex, C }: { trend: number[]; prIndex: number; C:
   const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
   const area = `${d} L${pts[pts.length - 1]![0].toFixed(1)} ${H} L${pts[0]![0].toFixed(1)} ${H} Z`;
   const pr = pts[Math.min(Math.max(prIndex, 0), pts.length - 1)]!;
+  const hit = held >= 0 ? pts[held] : null;
   return (
-    <View style={{ height: H }}>
+    <View {...bind} style={{ height: H }}>
       <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         <Defs>
           <LinearGradient id="sportPaceFill" x1="0" y1="0" x2="0" y2="1">
@@ -469,6 +619,9 @@ function PaceTrend({ trend, prIndex, C }: { trend: number[]; prIndex: number; C:
         <Path d={area} fill="url(#sportPaceFill)" />
         <Path d={d} fill="none" stroke={C.lime} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </Svg>
+      {!!hit && (
+        <View pointerEvents="none" style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: `${C.ash}8c` }} />
+      )}
       {/* The PR dot is a View, not a circle: the path is stretched to the
           column's width and a circle inside a stretched viewBox is an ellipse. */}
       <View
@@ -481,6 +634,19 @@ function PaceTrend({ trend, prIndex, C }: { trend: number[]; prIndex: number; C:
           borderRadius: 999, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink,
         }}
       />
+      {!!hit && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: `${(hit[0] / W) * 100}%`,
+            top: `${(hit[1] / H) * 100}%`,
+            width: 13, height: 13, marginLeft: -6.5, marginTop: -6.5,
+            borderRadius: 999, backgroundColor: C.chalk, borderWidth: 2, borderColor: C.ink,
+          }}
+        />
+      )}
+      {readout}
     </View>
   );
 }
