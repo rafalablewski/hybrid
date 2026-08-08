@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import { useRef } from "react";
+import { useMemo, useState } from "react";
 import {
   SHARED_ELEMENTS,
   THEMES,
@@ -18,7 +17,10 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import HistoryStrip from "./history-strip";
+import RailTail from "./rail-tail";
+import ExerciseFavouritesSheet from "./exercise-favourites-sheet";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
+import { useExerciseFavourites } from "@/lib/exercise-favourites";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { useTheme, type Theme } from "@/lib/use-theme";
@@ -75,6 +77,15 @@ function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) =>
  * EXERCISES — the Today favourites rail (variant B, "the chart is the card").
  * Swipeable full-bleed cards, one per purpose; tap opens the exercise page.
  * Prototype: reference/exercises-widget-preview-ive.html.
+ *
+ * THE RAIL IS PINNABLE. Auto-fill (one card per purpose, most-trained first) is
+ * a guess about what the athlete cares about; the lift they are actually
+ * chasing this block is a choice. The tail carries BOTH doors — a dashed "+"
+ * that opens the pin sheet and changes what this rail shows, and the shared
+ * RailTail that just goes to the exercises list. They used to be one tile
+ * marked "＋ All exercises & favourites", which promised an add and performed a
+ * navigation. Pins live per-device (lib/exercise-favourites) and lead the rail
+ * in pin order; core's exerciseWidgetCards fills the rest.
  */
 export default function ExerciseWidgetRail({
   sessions,
@@ -96,7 +107,12 @@ export default function ExerciseWidgetRail({
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
   const { theme } = useTheme();
-  const cards = useMemo(() => exerciseWidgetCards(sessions, { bw, deferToLanes }), [sessions, bw, deferToLanes]);
+  const favourites = useExerciseFavourites();
+  const [adding, setAdding] = useState(false);
+  const cards = useMemo(
+    () => exerciseWidgetCards(sessions, { bw, deferToLanes, favourites }),
+    [sessions, bw, deferToLanes, favourites],
+  );
   // The head's coverage denominator — movements trained inside the rail's OWN
   // 8-week window, so the fraction is a fraction of the same thing the cards
   // are rather than two scopes in one sentence.
@@ -182,9 +198,12 @@ export default function ExerciseWidgetRail({
             </button>
           );
         })}
-        {/* The rail's exit — the trailing ghost tile, at tile scale. */}
+        {/* THE ADD DOOR — the dashed ghost tile, at tile scale. A "＋" must
+            add: this one opens the pin sheet and the chosen movement is a card
+            in this rail before the sheet is even closed. */}
         <button className="pressable"
-          onClick={onAll}
+          onClick={() => setAdding(true)}
+          aria-label={`${t("w.home.exw.addCard")} – ${t("w.home.exw.title")}`}
           style={{
             flex: "0 0 132px", scrollSnapAlign: "start", cursor: "pointer",
             display: "grid", placeItems: "center", alignContent: "center", gap: 8,
@@ -193,9 +212,14 @@ export default function ExerciseWidgetRail({
           }}
         >
           <span style={{ fontSize: 18, color: C("ash") }}>＋</span>
-          <span style={{ fontWeight: 600, color: "var(--lime-text)" }}>{t("w.home.exw.allCard")}</span>
+          <span style={{ fontWeight: 600, color: "var(--lime-text)" }}>{t("w.home.exw.addCard")}</span>
         </button>
+        {/* THE SEE-ALL DOOR — the shared RailTail, so this rail's exit is drawn
+            like every other rail's. It only DISPLAYS the exercises list; it
+            never touches the pins. */}
+        <RailTail onOpen={onAll} a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`} w={132} radius={16} minHeight={132} />
       </div>
+      <ExerciseFavouritesSheet open={adding} onClose={() => setAdding(false)} sessions={sessions} />
     </div>
   );
 }

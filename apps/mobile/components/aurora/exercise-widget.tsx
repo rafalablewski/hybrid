@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import {
   SHARED_ELEMENTS,
@@ -14,7 +14,10 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import HistoryStrip from "./history-strip";
+import RailTail from "./rail-tail";
+import ExerciseFavouritesSheet from "./exercise-favourites-sheet";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
+import { useExerciseFavourites } from "../../lib/exercise-favourites";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
@@ -70,6 +73,15 @@ function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) =>
  * Swipeable full-bleed cards, one per purpose; tap opens the exercise page.
  * Parity: apps/web/components/aurora/exercise-widget.tsx; prototype
  * reference/exercises-widget-preview-ive.html.
+ *
+ * THE RAIL IS PINNABLE. Auto-fill (one card per purpose, most-trained first) is
+ * a guess about what the athlete cares about; the lift they are actually
+ * chasing this block is a choice. The tail carries BOTH doors — a dashed "+"
+ * that opens the pin sheet and changes what this rail shows, and the shared
+ * RailTail that just goes to the exercises list. They used to be one tile
+ * marked "＋ All exercises & favourites", which promised an add and performed a
+ * navigation. Pins live per-device (lib/exercise-favourites) and lead the rail
+ * in pin order; core's exerciseWidgetCards fills the rest.
  */
 export default function ExerciseWidgetRail({
   sessions,
@@ -91,7 +103,12 @@ export default function ExerciseWidgetRail({
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
-  const cards = useMemo(() => exerciseWidgetCards(sessions, { bw, deferToLanes }), [sessions, bw, deferToLanes]);
+  const favourites = useExerciseFavourites();
+  const [adding, setAdding] = useState(false);
+  const cards = useMemo(
+    () => exerciseWidgetCards(sessions, { bw, deferToLanes, favourites }),
+    [sessions, bw, deferToLanes, favourites],
+  );
   // The head's coverage denominator — movements trained inside the rail's OWN
   // 8-week window, so the fraction is a fraction of the same thing the cards
   // are rather than two scopes in one sentence.
@@ -183,16 +200,24 @@ export default function ExerciseWidgetRail({
             </Pressable>
           );
         })}
-        {/* The rail's exit — the trailing ghost tile, at tile scale. */}
+        {/* THE ADD DOOR — the dashed ghost tile, at tile scale. A "＋" must
+            add: this one opens the pin sheet and the chosen movement is a card
+            in this rail before the sheet is even closed. */}
         <Pressable
-          onPress={onAll}
+          onPress={() => setAdding(true)}
           accessibilityRole="button"
+          accessibilityLabel={`${t("w.home.exw.addCard")} – ${t("w.home.exw.title")}`}
           style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
         >
           <Text style={{ fontSize: 18, color: C.ash }}>＋</Text>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.allCard")}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.addCard")}</Text>
         </Pressable>
+        {/* THE SEE-ALL DOOR — the shared RailTail, so this rail's exit is drawn
+            like every other rail's. It only DISPLAYS the exercises list; it
+            never touches the pins. */}
+        <RailTail onOpen={onAll} a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`} w={132} radius={RADIUS.field} minHeight={132} />
       </ScrollView>
+      <ExerciseFavouritesSheet visible={adding} onClose={() => setAdding(false)} sessions={sessions} />
     </View>
   );
 }
