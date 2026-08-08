@@ -24,6 +24,7 @@
  *
  * Pure, so web and mobile render identical tiles.
  */
+import type { ChartReading } from "./chart-scrub";
 import { OLYMPIC_SPORTS } from "./olympic-sports";
 import { cardioDiscipline, type LoggedSession } from "./engines/session";
 
@@ -51,6 +52,10 @@ export interface OtherSportLane {
   thisWeek: { efforts: number; minutes: number };
   /** Minutes per week, oldest → newest, OTHER_SPORT_WEEKS long. */
   weeks: number[];
+  /** ISO start of each of those buckets, aligned with `weeks`. A held bar has
+   *  to be able to name the week it is: a figure that cannot be dated is the
+   *  same class of error as one dated by the wrong series. */
+  weekStarts: string[];
 }
 
 const ms = (iso: string) => new Date(iso).getTime();
@@ -63,6 +68,11 @@ const ms = (iso: string) => new Date(iso).getTime();
  */
 export function otherSportLanes(sessions: LoggedSession[], now = Date.now()): OtherSportLane[] {
   const byName = new Map<string, { efforts: number; minutes: number; lastAt: number; week: { efforts: number; minutes: number }; weeks: number[] }>();
+  // The buckets are trailing 7-day windows off `now` and identical for every
+  // lane, so they are computed once rather than per sport.
+  const weekStarts = Array.from({ length: OTHER_SPORT_WEEKS }, (_, i) =>
+    new Date(now - (OTHER_SPORT_WEEKS - i) * WEEK).toISOString(),
+  );
 
   for (const s of sessions) {
     const t = ms(s.startedAt);
@@ -111,6 +121,7 @@ export function otherSportLanes(sessions: LoggedSession[], now = Date.now()): Ot
         lastAt: new Date(v.lastAt).toISOString(),
         thisWeek: { efforts: v.week.efforts, minutes: Math.round(v.week.minutes) },
         weeks: v.weeks.map((m) => Math.round(m)),
+        weekStarts,
       };
     })
     .sort((a, b) => b.efforts - a.efforts || ms(b.lastAt) - ms(a.lastAt));
@@ -123,6 +134,30 @@ export function sportWeekBars(weeks: number[]): number[] {
   const max = Math.max(...weeks, 0);
   if (max <= 0) return weeks.map(() => 0);
   return weeks.map((m) => m / max);
+}
+
+/**
+ * One held week of a tile's frequency strip.
+ *
+ * The strip draws MINUTES, while the tile's headline figure is all-time
+ * EFFORTS — two different measures — so a held bar answers in the tile's FOOT
+ * (where the hours already live) rather than swapping the headline for a
+ * quantity it never meant. `efforts` is null for the same reason: the buckets
+ * count minutes, and reporting a number this series does not hold would be
+ * inventing one.
+ */
+export function otherSportReading(lane: OtherSportLane, index: number): ChartReading | null {
+  const minutes = lane.weeks[index];
+  if (minutes == null) return null;
+  const peak = Math.max(...lane.weeks);
+  return {
+    index,
+    weekStart: lane.weekStarts[index] ?? "",
+    value: String(minutes),
+    unit: "min",
+    efforts: null,
+    best: minutes > 0 && minutes === peak,
+  };
 }
 
 /** Whole-block totals — what the section head reports without the athlete

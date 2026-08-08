@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import {
-  otherSportLanes, sportWeekBars, OTHER_SPORT_CAP, ago,
+  otherSportLanes, otherSportReading, sportWeekBars, OTHER_SPORT_CAP, ago,
   parentageHours, progressParentage,
   type LoggedSession, type OtherSportLane,
 } from "@hybrid/core";
@@ -9,6 +9,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { GUTTER, RADIUS } from "./kit";
+import { useChartScrub } from "./chart-scrub";
 import HistoryStrip from "./history-strip";
 
 /**
@@ -109,14 +110,35 @@ export default function AuroraOtherSports({
   );
 }
 
+/** How long a finger must rest on a tile's strip before it answers instead of
+ *  opening the sport. The web twin's HOLD_MS. */
+const HOLD_MS = 120;
+
+/** A week bucket's date, as the tile prints it. */
+const fmtWeekDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
+
 /** One sport. Efforts as the headline, hours beneath, an 8-week frequency
  *  strip, and when it was last played — the four things a timed sport can
- *  honestly say about itself. */
+ *  honestly say about itself.
+ *
+ *  The strip HOLDS, and answers in the FOOT rather than the headline: the
+ *  headline is all-time efforts and the strip is minutes per week, so swapping
+ *  it would put a quantity in a slot that never meant it. The hours cell
+ *  becomes the held week's minutes, and "3 days ago" becomes the week itself.
+ *
+ *  The tile is also a button, so the dwell decides which a press meant — a tap
+ *  opens the sport's page, a hold reads the strip. Parity: the Today exercise
+ *  rail's card, where the same dwell separates the two. */
 function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: string) => void }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const bars = sportWeekBars(lane.weeks);
   const hours = Math.round(lane.minutes / 6) / 10;
+  const scrub = useChartScrub(lane.weeks.length, "band", undefined, {
+    holdMs: HOLD_MS,
+    onTap: onOpen ? () => onOpen(lane.sport) : undefined,
+  });
+  const read = scrub.index >= 0 ? otherSportReading(lane, scrub.index) : null;
 
   const body = (
     <>
@@ -135,13 +157,17 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
       {/* Eight weeks of frequency in the cluster's shared HistoryStrip. Violet
           is the app's non-endurance channel — teal already means cardio on the
           lanes directly above this block. */}
-      <View style={{ marginTop: "auto" }}>
-        <HistoryStrip bars={bars} color={C.violet} />
+      <View {...scrub.bind} style={{ marginTop: "auto" }}>
+        <HistoryStrip bars={bars} color={C.violet} held={scrub.index} />
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{hours} h</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{ago(lane.lastAt)}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: read?.best ? txt(C, C.lime) : C.ash }}>
+          {read ? `${read.value} ${read.unit}` : `${hours} h`}
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>
+          {read ? t("chart.weekOf").replace("{date}", fmtWeekDate(read.weekStart)) : ago(lane.lastAt)}
+        </Text>
       </View>
     </>
   );
