@@ -7,23 +7,33 @@ import {
   feedSubjectKey,
   normalizeFeedSaved,
   pruneFeedSaved,
+  reconcileFeedSaved,
   toggleFeedSaved,
   type FeedSavedState,
   type FeedSharePayload,
   type FeedSubjectRef,
+  type SavedSyncResponse,
 } from "@hybrid/core";
+import { jget, jsend } from "@/components/social-ui";
 
 /**
  * SAVED POSTS + SHARING (web). Twin of apps/mobile/lib/feed-actions.ts — the
- * state shape, the storage key and the share payload all come from
- * @hybrid/core (feed-actions.ts), so the two clients cannot drift on what a
- * "saved post" is or on what a shared link says.
+ * state shape, the storage key, the SYNC POLICY and the share payload all come
+ * from @hybrid/core (feed-actions.ts), so the two clients cannot drift on what
+ * a "saved post" is, on what a shared link says, or on what happens when two
+ * devices disagree.
  *
- * PER-DEVICE, same contract as the notification read-state beside it
- * (lib/notif-read.ts): a small idempotent set of ids in localStorage. It needs
- * no migration on a database this sandbox cannot reach, and the worst case is
- * that a post saved on the phone isn't in the laptop's list. Server-side sync
- * is tracked as `feed-save-server-sync` in capabilities.ts.
+ * THE DEVICE COPY IS NOT A CACHE. localStorage is what the UI reads, which is
+ * why a bookmark fills on the press frame and why the shelf still opens with no
+ * network. The server (SavedPost) is the copy that makes it follow you to
+ * another device; `syncSaved()` reconciles the two through core's
+ * `reconcileFeedSaved` — union once per device, server-wins thereafter.
+ *
+ * A FAILED WRITE DOES NOT REVERT THE UI. Before a device has synced, the local
+ * list holds the change and the next sync pushes it. After, a lost write costs
+ * that one toggle at the next reconcile — accepted, because the alternative is
+ * an offline queue for a bookmark, and the cost is re-tapping a glyph whose
+ * state you can see.
  */
 
 let state: FeedSavedState = DEFAULT_FEED_SAVED;
@@ -57,7 +67,12 @@ function persist(next: FeedSavedState): void {
  *  the write, so the glyph fills on the same frame as the press. */
 export function toggleSavedPost(ref: FeedSubjectRef): void {
   hydrate();
-  persist(toggleFeedSaved(state, feedSubjectKey(ref)));
+  const key = feedSubjectKey(ref);
+  const saving = !state.ids.includes(key);
+  persist(toggleFeedSaved(state, key));
+  // Only a device that has already adopted the server's shelf sends ops; one
+  // that hasn't hands its whole list over on the next sync anyway.
+  if (state.synced) void push(saving ? { save: [key] } : { unsave: [key] });
 }
 
 /** Forget keys the server reported as GONE — the row was deleted. Only ever
@@ -65,7 +80,39 @@ export function toggleSavedPost(ref: FeedSubjectRef): void {
  *  core `pruneFeedSaved`). */
 export function forgetSavedPosts(gone: string[]): void {
   hydrate();
+  const before = state;
   persist(pruneFeedSaved(state, gone));
+  if (before !== state && state.synced) void push({ unsave: gone });
+}
+
+async function push(ops: { save?: string[]; unsave?: string[] }): Promise<void> {
+  try {
+    await jsend<SavedSyncResponse>("/api/social/saved/sync", "PUT", ops);
+  } catch {
+    /* see the header: a bookmark does not get an offline queue */
+  }
+}
+
+/**
+ * Reconcile with the server. Called when a screen that shows saved state opens.
+ *
+ * Three outcomes, all quiet: no session or no table -> the device list stands
+ * alone (exactly how saving shipped before SavedPost existed); first sync ->
+ * union, then hand the server what it is missing; after that -> the server's
+ * list wholesale, which is what makes an unsave stick everywhere.
+ */
+export async function syncSaved(): Promise<void> {
+  hydrate();
+  let server: SavedSyncResponse;
+  try {
+    server = await jget<SavedSyncResponse>("/api/social/saved/sync");
+  } catch {
+    return;
+  }
+  if (server.unavailable || server.error || !Array.isArray(server.ids)) return;
+  const { next, push: missing } = reconcileFeedSaved(state, server.ids);
+  persist(next);
+  if (missing.length) await push({ save: missing });
 }
 
 function subscribe(l: () => void): () => void {

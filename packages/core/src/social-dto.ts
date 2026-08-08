@@ -78,6 +78,13 @@ export interface SavedFeedResponse extends Degradable, ApiError {
   hidden: string[];
 }
 
+/** The saved KEYS, newest save first (GET/PUT /api/social/saved/sync).
+ *  `unavailable` means SavedPost isn't migrated yet — the clients treat that as
+ *  "no server shelf" and leave the device's own list alone. */
+export interface SavedSyncResponse extends Degradable, ApiError {
+  ids: string[];
+}
+
 export interface KudosResponse extends ApiError {
   kudos: number;
   kudosedByMe: boolean;

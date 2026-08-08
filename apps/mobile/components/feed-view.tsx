@@ -15,6 +15,7 @@ import FeedCard from "./feed-card";
 import FeedLiveStrip from "./feed-live-strip";
 import { CosignInbox } from "./pr-attestation";
 import { useLoggerPrefs } from "../lib/logger-prefs";
+import { syncSaved } from "../lib/feed-actions";
 import { useNavScrollProps } from "../lib/nav-scroll";
 import { AuroraScreen } from "./aurora/kit";
 import type { HeroScrollProps } from "./aurora/hero";
@@ -87,6 +88,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     [],
   );
   useEffect(() => { load(); }, [load]);
+  // Reconcile the shelf with the server on open, so the bookmarks in the rows
+  // below are this ACCOUNT's, not just this device's. Quiet no-op until
+  // SavedPost is migrated (lib/feed-actions.ts).
+  useEffect(() => { void syncSaved(); }, []);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const cheer = async (item: FeedItemView) => {

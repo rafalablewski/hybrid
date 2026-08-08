@@ -11,6 +11,7 @@ import {
   orderBySaved,
   parseFeedSubjectKey,
   pruneFeedSaved,
+  reconcileFeedSaved,
   toggleFeedSaved,
 } from "./feed-actions";
 
@@ -97,6 +98,48 @@ describe("reading the saved list back (the Saved screen)", () => {
     const state = { ids: ["post:b"] };
     const items = [{ subjectType: "post", subjectId: "a" }, { subjectType: "post", subjectId: "b" }];
     expect(orderBySaved(state, items).map((i) => i.subjectId)).toEqual(["b", "a"]);
+  });
+});
+
+describe("syncing the shelf across devices", () => {
+  it("first sync UNIONS, so turning sync on loses nothing in either direction", () => {
+    // This device saved things before SavedPost existed; another device saved
+    // things this one has never seen. Neither is wrong.
+    const local = { ids: ["post:local", "post:both"] };
+    const { next, push } = reconcileFeedSaved(local, ["post:both", "post:remote"]);
+    expect(next.ids).toEqual(["post:local", "post:both", "post:remote"]); // local leads
+    expect(next.synced).toBe(true);
+    expect(push).toEqual(["post:local"]); // only what the server hasn't got
+  });
+
+  it("every sync after that takes the server's list — which is what makes an unsave stick", () => {
+    // The union cannot tell "you removed this" from "this device hasn't heard
+    // yet", so running it forever would resurrect an unsaved post from any
+    // stale device.
+    const local = { ids: ["post:stale", "post:kept"], synced: true };
+    const { next, push } = reconcileFeedSaved(local, ["post:kept"]);
+    expect(next.ids).toEqual(["post:kept"]);
+    expect(push).toEqual([]);
+  });
+
+  it("survives a server that returns junk", () => {
+    const { next } = reconcileFeedSaved({ ids: ["post:a"], synced: true }, ["", "post:b", "post:b"] as string[]);
+    expect(next.ids).toEqual(["post:b"]);
+  });
+
+  it("keeps the synced flag through a toggle and a prune", () => {
+    // Dropping it would put the device back into first-sync mode and resurrect
+    // whatever it just unsaved.
+    const s = { ids: ["post:1"], synced: true };
+    expect(toggleFeedSaved(s, "post:2").synced).toBe(true);
+    expect(toggleFeedSaved(s, "post:1").synced).toBe(true);
+    expect(pruneFeedSaved(s, ["post:1"]).synced).toBe(true);
+    expect(normalizeFeedSaved(JSON.parse(JSON.stringify(s))).synced).toBe(true);
+  });
+
+  it("a device that has never synced is not marked synced by storage alone", () => {
+    expect(normalizeFeedSaved({ ids: ["post:1"] }).synced).toBeUndefined();
+    expect(normalizeFeedSaved({ ids: [], synced: "yes" }).synced).toBeUndefined();
   });
 });
 

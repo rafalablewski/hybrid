@@ -9,7 +9,7 @@ import FeedCard from "./feed-card";
 import { Comments } from "./social-feed";
 import { HubMasthead } from "./aurora/hub-masthead";
 import { useLang } from "@/lib/i18n";
-import { forgetSavedPosts, useFeedSaved } from "@/lib/feed-actions";
+import { forgetSavedPosts, syncSaved, useFeedSaved } from "@/lib/feed-actions";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useIsMobile } from "@/lib/use-media-query";
 
@@ -63,6 +63,10 @@ export default function SocialSaved({ onNavigate }: { onNavigate?: (screen: stri
     if (r.gone?.length) forgetSavedPosts(r.gone);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keySig]);
+  // The shelf reconciles with the server BEFORE it resolves anything: the list
+  // this screen pages through must be the account's, not just this browser's.
+  // Quiet no-op until SavedPost is migrated (lib/feed-actions.ts).
+  useEffect(() => { void syncSaved(); }, []);
   useEffect(() => { load(); }, [load]);
 
   const cheer = async (item: FeedItemView) => {

@@ -7,7 +7,7 @@ import type { HeroScrollProps } from "../components/aurora/hero";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { getSavedFeed, toggleKudos, deletePost } from "../lib/social-api";
-import { forgetSavedPosts, useFeedSaved } from "../lib/feed-actions";
+import { forgetSavedPosts, syncSaved, useFeedSaved } from "../lib/feed-actions";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScrollProps } from "../lib/nav-scroll";
 import { Empty, ProfileModal, SButton } from "../components/social-kit";
@@ -64,6 +64,10 @@ export default function SavedScreen() {
     if (r.gone?.length) forgetSavedPosts(r.gone);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keySig]);
+  // The shelf reconciles with the server BEFORE it resolves anything: the list
+  // this screen pages through must be the account's, not just this device's.
+  // Quiet no-op until SavedPost is migrated (lib/feed-actions.ts).
+  useEffect(() => { void syncSaved(); }, []);
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 

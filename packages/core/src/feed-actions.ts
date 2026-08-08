@@ -19,12 +19,14 @@
  * CLAUDE.md's parity rule exists to prevent, and the only way to make that
  * structurally impossible is for neither client to own the list.
  *
- * SAVED STATE IS PER-DEVICE, deliberately, and it is the same contract as the
- * notification read-state (lib/notif-read.ts on both clients): a small,
- * idempotent set of ids in localStorage / AsyncStorage. It needs no migration
- * on a database this sandbox cannot reach, and the failure mode is mild — a
- * post saved on the phone isn't in the laptop's list. Server-side sync is
- * tracked as `feed-save-server-sync` in capabilities.ts, NOT quietly assumed.
+ * SAVED STATE IS A LIST OF KEYS, held on the device (localStorage /
+ * AsyncStorage, the notification read-state contract) and MIRRORED to the
+ * server (SavedPost, reference/sql-saved-post.sql) so the shelf follows the
+ * athlete between phone and laptop. The device copy is not a cache — it is what
+ * the UI reads, so a bookmark fills on the press frame and the shelf still
+ * works offline; `reconcileFeedSaved` below is the whole of the sync policy.
+ * Until the table is migrated the sync routes soft-degrade and the device copy
+ * simply stands alone, which is exactly how this shipped first.
  *
  * PLACEHOLDERS ARE MARKED AS SUCH. `placeholder: true` on a menu action means
  * the row is drawn but nothing is wired behind it. The clients render that
@@ -90,7 +92,7 @@ export function pruneFeedSaved(state: FeedSavedState, gone: string[]): FeedSaved
   if (!gone.length) return state;
   const drop = new Set(gone);
   const ids = state.ids.filter((k) => !drop.has(k));
-  return ids.length === state.ids.length ? state : { ids };
+  return ids.length === state.ids.length ? state : { ...state, ids };
 }
 
 /**
@@ -106,10 +108,21 @@ export function orderBySaved<T extends FeedSubjectRef>(state: FeedSavedState, it
   );
 }
 
-/** The per-device saved set, newest first. An array rather than a Set so it
- *  serialises as-is and keeps its order (a Saved screen wants newest at top). */
+/** The saved set, newest first. An array rather than a Set so it serialises
+ *  as-is and keeps its order (the Saved screen wants newest at top). */
 export interface FeedSavedState {
   ids: string[];
+  /**
+   * Has this device handed its pre-sync list to the server yet?
+   *
+   * It exists to make the ONE-TIME adoption safe. A device that saved posts
+   * before SavedPost existed holds a list the server has never seen, so the
+   * first sync UNIONS the two — nothing is lost in either direction. Every sync
+   * after that takes the server's list wholesale, which is what makes an unsave
+   * on one device stick on the others. Without this flag the union would run
+   * forever and an unsaved post would resurrect from any stale device.
+   */
+  synced?: boolean;
 }
 
 export const DEFAULT_FEED_SAVED: FeedSavedState = { ids: [] };
@@ -128,16 +141,23 @@ export function normalizeFeedSaved(raw: unknown): FeedSavedState {
   if (!raw || typeof raw !== "object") return DEFAULT_FEED_SAVED;
   const ids = (raw as { ids?: unknown }).ids;
   if (!Array.isArray(ids)) return DEFAULT_FEED_SAVED;
+  const synced = (raw as { synced?: unknown }).synced === true;
+  return { ids: dedupe(ids), ...(synced ? { synced: true } : {}) };
+}
+
+/** Strings only, first occurrence wins, capped. Used on everything that enters
+ *  the list — storage, and the server's own list. */
+function dedupe(input: unknown[]): string[] {
   const seen = new Set<string>();
   const clean: string[] = [];
-  for (const id of ids) {
+  for (const id of input) {
     if (typeof id !== "string" || !id) continue;
     if (seen.has(id)) continue;
     seen.add(id);
     clean.push(id);
     if (clean.length >= FEED_SAVED_LIMIT) break;
   }
-  return { ids: clean };
+  return clean;
 }
 
 export function isFeedSaved(state: FeedSavedState, key: string): boolean {
@@ -148,8 +168,42 @@ export function isFeedSaved(state: FeedSavedState, key: string): boolean {
  *  it. Pure — the caller persists the result. */
 export function toggleFeedSaved(state: FeedSavedState, key: string): FeedSavedState {
   if (!key) return state;
-  if (isFeedSaved(state, key)) return { ids: state.ids.filter((k) => k !== key) };
-  return { ids: [key, ...state.ids].slice(0, FEED_SAVED_LIMIT) };
+  // `synced` rides along on every derivation — losing it would put the device
+  // back into first-sync mode and resurrect whatever it just unsaved.
+  if (isFeedSaved(state, key)) return { ...state, ids: state.ids.filter((k) => k !== key) };
+  return { ...state, ids: [key, ...state.ids].slice(0, FEED_SAVED_LIMIT) };
+}
+
+/**
+ * Reconcile this device's list with the server's (SavedPost).
+ *
+ * TWO RULES, and the flag on the state decides which applies:
+ *
+ *   FIRST SYNC (this device has never pushed) — UNION. The device may hold
+ *   saves made before the table existed, and the server may hold saves from
+ *   another device. Neither is wrong, so both survive: the local list leads
+ *   (this is the device the athlete is looking at), the server's unknowns
+ *   follow, and everything the server hasn't got is handed back in `push`.
+ *
+ *   EVERY SYNC AFTER — the SERVER WINS, wholesale. This is what makes an unsave
+ *   stick: the union can't tell "you removed this" from "this device hasn't
+ *   heard about it yet", so running it forever would resurrect an unsaved post
+ *   from any stale device. Once a device has pushed, the server has heard
+ *   everything it knows, and disagreement means someone else changed something.
+ *
+ * `push` is the keys the server is missing — empty on every non-first sync,
+ * because by then the server's list IS the answer.
+ */
+export function reconcileFeedSaved(
+  local: FeedSavedState,
+  serverIds: string[],
+): { next: FeedSavedState; push: string[] } {
+  const server = dedupe(serverIds);
+  if (local.synced) return { next: { ids: server, synced: true }, push: [] };
+  const known = new Set(local.ids);
+  const union = dedupe([...local.ids, ...server.filter((k) => !known.has(k))]);
+  const onServer = new Set(server);
+  return { next: { ids: union, synced: true }, push: union.filter((k) => !onServer.has(k)) };
 }
 
 // ------------------------------------------------------------------- share --

@@ -934,6 +934,41 @@ create policy recordattestation_witness_update on "RecordAttestation" for update
 
 
 -- ===========================================================================
+-- SECTION 4c — SavedPost (the feed bookmark, on the server)
+-- Source: sql-saved-post.sql (verbatim). Appended after the Jul 2026 run,
+-- NOT YET APPLIED — re-running the whole bundle adds only this (and the other
+-- not-yet-run appendices), everything above is a no-op.
+--
+-- Depends on public.app_user_id() from section 2. Until this exists the
+-- /api/social/saved/sync routes soft-degrade and each device keeps its own
+-- shelf — which is how the bookmark shipped, so nothing breaks either way.
+-- ===========================================================================
+
+create table if not exists "SavedPost" (
+  "id"          text primary key default gen_random_uuid()::text,
+  "userId"      text not null references "User"("id") on delete cascade,
+  "subjectType" text not null,               -- session | pr | post
+  "subjectId"   text not null,
+  "savedAt"     timestamp(3) not null default now(),
+  -- Saving twice is saving once. This is what makes the merge a plain union:
+  -- a device can push its whole list on every sync without deduping first.
+  unique ("userId", "subjectType", "subjectId")
+);
+
+-- The only read the app performs: "my shelf, newest save first."
+create index if not exists "SavedPost_user_savedAt_idx" on "SavedPost" ("userId", "savedAt" desc);
+
+-- RLS: simpler than Kudos/Comment because a save has exactly one party — the
+-- person who saved it. No owner-read policy, no public read, no exceptions.
+alter table "SavedPost" enable row level security;
+
+drop policy if exists savedpost_owner on "SavedPost";
+create policy savedpost_owner on "SavedPost" for all
+  using ("userId" = public.app_user_id())
+  with check ("userId" = public.app_user_id());
+
+
+-- ===========================================================================
 -- SECTION 5 / 6 — RE-APPLY THE ANON REVOKE (belt and braces)
 --
 -- Section 2 ends with a blanket revoke of PostgREST anon access to every table

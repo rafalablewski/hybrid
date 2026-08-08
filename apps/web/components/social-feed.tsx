@@ -11,6 +11,7 @@ import FeedLiveStrip from "./feed-live-strip";
 import { HubMasthead } from "./aurora/hub-masthead";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { syncSaved } from "@/lib/feed-actions";
 import { useIsMobile } from "@/lib/use-media-query";
 
 /**
@@ -131,6 +132,10 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
       setLive(r.live ?? []);
     });
   useEffect(() => { load(); }, []);
+  // Reconcile the shelf with the server on open, so the bookmarks in the rows
+  // below are this ACCOUNT's, not just this browser's. Quiet no-op until
+  // SavedPost is migrated (lib/feed-actions.ts).
+  useEffect(() => { void syncSaved(); }, []);
 
   const cheer = async (item: FeedItem) => {
     // Optimistic: a kudos must never wait on the network to look given.

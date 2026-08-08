@@ -48,17 +48,17 @@ model User {
   // Billing — the paid "Full" entitlement. entitlement is mirrored into the
   // Supabase auth user_metadata so both clients read it from the session; these
   // columns are the server-side source of truth + the Stripe linkage.
-  entitlement        String   @default("free") // free | paid
-  stripeCustomerId   String?  @unique
-  subscriptionStatus String?  // active | trialing | past_due | canceled | null
+  entitlement                String    @default("free") // free | paid
+  stripeCustomerId           String?   @unique
+  subscriptionStatus         String? // active | trialing | past_due | canceled | null
   // Timestamp (Stripe event.created) of the last applied subscription event, so
   // a delayed/out-of-order webhook can't roll the entitlement back to a stale
   // state (e.g. a late "deleted" landing after a re-subscribe).
-  subscriptionStatusAt DateTime?
+  subscriptionStatusAt       DateTime?
   // The Apple originalTransactionId that granted Full, if via IAP. Unique so a
   // (cryptographically valid) StoreKit transaction can be redeemed by exactly
   // one account — prevents replay / cross-account sharing of one purchase.
-  appleOriginalTransactionId String? @unique
+  appleOriginalTransactionId String?   @unique
 
   // The athlete's training maxes (1RMs) the discipline-shaped plans derive
   // working loads from — a flat { liftKey: 1RM } map keyed by ProgramInput.key
@@ -68,57 +68,58 @@ model User {
   // (reference/sql-plan-maxes.sql).
   planMaxes Json @default("{}")
 
-  sessions      Session[]
-  macrocycles   Macrocycle[]
-  biometrics    Biometric[]
-  signals       Signal[]
-  connections   Connection[]
-  memberships   Membership[]
-  rtpProtocols  RtpProtocol[]
-  videos        VideoAnalysis[]
-  events        Event[]
-  talentProfile TalentProfile?
-  riskOutcomes  RiskOutcome[]
-  checkins      Checkin[]
-  checkinReads  CheckinRead[]
+  sessions         Session[]
+  macrocycles      Macrocycle[]
+  biometrics       Biometric[]
+  signals          Signal[]
+  connections      Connection[]
+  memberships      Membership[]
+  rtpProtocols     RtpProtocol[]
+  videos           VideoAnalysis[]
+  events           Event[]
+  talentProfile    TalentProfile?
+  riskOutcomes     RiskOutcome[]
+  checkins         Checkin[]
+  checkinReads     CheckinRead[]
   // ---- Profile "Private" tab (owner-only self-tracking) ----
   bodyMetrics      BodyMetric[]
   journalEntries   JournalEntry[]
   hiddenHighlights HiddenHighlight[]
   highlightOrder   HighlightOrder?
-  templates       WorkoutTemplate[]
-  savedMeals      SavedMeal[]
-  foodProducts    FoodProduct[]
-  foodLogs        FoodLog[]
+  templates        WorkoutTemplate[]
+  savedMeals       SavedMeal[]
+  foodProducts     FoodProduct[]
+  foodLogs         FoodLog[]
   planDayOverrides PlanDayOverride[]
-  assignments     Assignment[]     @relation("assignmentAthlete")
-  assignmentsMade Assignment[]     @relation("assignmentCoach")
-  coachLinks    CoachLink[]     @relation("asClient")
-  clientLinks   CoachLink[]     @relation("asCoach")
-  coachGroups   CoachGroup[]    @relation("coachGroups")
-  coachPrograms CoachProgram[]  @relation("coachPrograms")
-  coachInvites  CoachInvite[]   @relation("coachInvites")
-  coachDiets    CoachDiet[]     @relation("coachDiets")
-  adminAudits   AdminAudit[]    @relation("adminAuditActor")
+  assignments      Assignment[]      @relation("assignmentAthlete")
+  assignmentsMade  Assignment[]      @relation("assignmentCoach")
+  coachLinks       CoachLink[]       @relation("asClient")
+  clientLinks      CoachLink[]       @relation("asCoach")
+  coachGroups      CoachGroup[]      @relation("coachGroups")
+  coachPrograms    CoachProgram[]    @relation("coachPrograms")
+  coachInvites     CoachInvite[]     @relation("coachInvites")
+  coachDiets       CoachDiet[]       @relation("coachDiets")
+  adminAudits      AdminAudit[]      @relation("adminAuditActor")
 
   // ---- Social layer + coach marketplace ----
-  socialProfile    SocialProfile?
-  coachProfile     CoachProfile?
-  follows          Follow[]            @relation("follower") // people I follow
-  followers        Follow[]            @relation("followee") // people who follow me
-  kudosGiven       Kudos[]             @relation("kudosGiver")
-  kudosReceived    Kudos[]             @relation("kudosOwner")
+  socialProfile         SocialProfile?
+  coachProfile          CoachProfile?
+  follows               Follow[]            @relation("follower") // people I follow
+  followers             Follow[]            @relation("followee") // people who follow me
+  kudosGiven            Kudos[]             @relation("kudosGiver")
+  kudosReceived         Kudos[]             @relation("kudosOwner")
   attestationsOwned     RecordAttestation[] @relation("attestationOwner")
   attestationsWitnessed RecordAttestation[] @relation("attestationWitness")
-  commentsAuthored Comment[]           @relation("commentAuthor")
-  commentsReceived Comment[]           @relation("commentOwner")
-  blocksMade       Block[]             @relation("blocker")
-  blocksReceived   Block[]             @relation("blocked")
-  posts            Post[]
-  enrollments      ProgramEnrollment[] @relation("enrollClient")  // programs I started
-  coachEnrollments ProgramEnrollment[] @relation("enrollCoach")   // enrolments into my programs
-  reviewsReceived  CoachReview[]       @relation("reviewCoach")    // reviews of me as a coach
-  reviewsAuthored  CoachReview[]       @relation("reviewAuthor")   // reviews I wrote
+  commentsAuthored      Comment[]           @relation("commentAuthor")
+  commentsReceived      Comment[]           @relation("commentOwner")
+  blocksMade            Block[]             @relation("blocker")
+  blocksReceived        Block[]             @relation("blocked")
+  posts                 Post[]
+  savedPosts            SavedPost[]
+  enrollments           ProgramEnrollment[] @relation("enrollClient") // programs I started
+  coachEnrollments      ProgramEnrollment[] @relation("enrollCoach") // enrolments into my programs
+  reviewsReceived       CoachReview[]       @relation("reviewCoach") // reviews of me as a coach
+  reviewsAuthored       CoachReview[]       @relation("reviewAuthor") // reviews I wrote
 
   // Admin lists order/filter users by recency (admin/users, admin/stats growth).
   @@index([createdAt])
@@ -130,7 +131,7 @@ model CoachApplication {
   id          String    @id @default(cuid())
   userId      String    @unique
   userEmail   String
-  credentials String    // free-text: who they are / certs / why
+  credentials String // free-text: who they are / certs / why
   status      String    @default("pending") // pending | approved | denied
   createdAt   DateTime  @default(now())
   decidedAt   DateTime?
@@ -179,20 +180,20 @@ model CoachGroup {
 // Assignments. `weeks` is a JSON PlanSample[][] (weeks of days of items), reusing
 // the core plan shape so planDayToBlocks() can turn each day into session blocks.
 model CoachProgram {
-  id        String   @id @default(cuid())
-  coach     User     @relation("coachPrograms", fields: [coachId], references: [id], onDelete: Cascade)
-  coachId   String
-  name      String
-  goal      String?
-  weeks     Json     @default("[]")
+  id         String   @id @default(cuid())
+  coach      User     @relation("coachPrograms", fields: [coachId], references: [id], onDelete: Cascade)
+  coachId    String
+  name       String
+  goal       String?
+  weeks      Json     @default("[]")
   // Marketplace listing: when published, the program appears on the coach's
   // public storefront and any user can start it (client-initiated enrolment →
   // ProgramEnrollment + a CoachLink). summary/level are storefront copy.
-  published  Boolean @default(false)
+  published  Boolean  @default(false)
   summary    String?
   level      String? // "beginner" | "intermediate" | "advanced" | free text
-  visibility String  @default("public") // public | link (unlisted, link-only)
-  createdAt DateTime @default(now())
+  visibility String   @default("public") // public | link (unlisted, link-only)
+  createdAt  DateTime @default(now())
 
   enrollments ProgramEnrollment[]
 
@@ -257,6 +258,32 @@ model Kudos {
 
   @@unique([userId, subjectType, subjectId])
   @@index([ownerId, subjectType, subjectId])
+}
+
+// A saved (bookmarked) feed post. Anchored like Kudos — (subjectType,
+// subjectId) — but with ONE party: a save is private, nobody is notified, and
+// the author has no claim on the row, so unlike Kudos there is no ownerId.
+//
+// No FK to Session/Post on purpose: a "pr" row's subjectId is the SESSION the
+// PR was set in, so one id column would need two FK targets, and the feed's
+// subjects are derived rather than one table. The read path re-checks existence
+// and visibility on every load (/api/social/saved), so a dangling row already
+// has a defined outcome — it returns as `gone` and the client drops it.
+//
+// SQL: reference/sql-saved-post.sql.
+model SavedPost {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  subjectType String // session | pr | post
+  subjectId   String
+  savedAt     DateTime @default(now())
+
+  // Saving twice is saving once — which is what makes the cross-device merge a
+  // plain union: a device pushes its whole list without deduping first.
+  @@unique([userId, subjectType, subjectId])
+  // The only read: "my shelf, newest save first."
+  @@index([userId, savedAt])
 }
 
 // A comment on a feed subject (same subject anchoring as Kudos).
@@ -399,15 +426,15 @@ model CoachReview {
 // claimed client lands on the free plan with read-only access to what the coach
 // assigns. See reference/sql-coach-invites.sql (soft-degrades until run).
 model CoachInvite {
-  id          String    @id @default(cuid())
-  coach       User      @relation("coachInvites", fields: [coachId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  coach       User     @relation("coachInvites", fields: [coachId], references: [id], onDelete: Cascade)
   coachId     String
-  token       String    @unique // random; encodes the link + QR, also the claim key
+  token       String   @unique // random; encodes the link + QR, also the claim key
   email       String? // optional auto-match target (verified email on signup)
   phone       String? // optional auto-match target (future SMS)
-  status      String    @default("PENDING") // PENDING | CLAIMED | REVOKED
+  status      String   @default("PENDING") // PENDING | CLAIMED | REVOKED
   claimedById String? // the user who claimed it
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
   expiresAt   DateTime
 
   @@index([coachId])
@@ -441,32 +468,32 @@ model CoachDiet {
 // A paid athlete may share a check-in with their coach, who then reads/replies
 // via an ACTIVE CoachLink. Authored by the client (userId).
 model Checkin {
-  id           String    @id @default(cuid())
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String
-  weekOf       DateTime // the day this check-in covers (midnight-normalized); legacy name
-  bodyMassKg   Float?
-  energy       Int? // 1–5 self-report
-  sleep        Int? // 1–5
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  weekOf          DateTime // the day this check-in covers (midnight-normalized); legacy name
+  bodyMassKg      Float?
+  energy          Int? // 1–5 self-report
+  sleep           Int? // 1–5
   // MISLEADING NAME, kept for compatibility: this column stores FRESHNESS, not
   // soreness. The guided flow asks "How fresh do your muscles feel?" and every
   // writer follows that sense, so 5 = muscles feel fresh and 1 = wrecked.
   // Read it through core/checkin-scales.ts (sorenessFromCheckin) — reading it
   // by its name is how the volume estimator once shipped inverted.
-  soreness     Int? // 1–5 (5 = FRESH, 1 = very sore)
-  mood         Int? // 1–5
-  adherencePct Int? // self-reported plan adherence 0–100
-  note         String? // client free text
-  coachReply   String? // coach response
-  repliedAt    DateTime?
+  soreness        Int? // 1–5 (5 = FRESH, 1 = very sore)
+  mood            Int? // 1–5
+  adherencePct    Int? // self-reported plan adherence 0–100
+  note            String? // client free text
+  coachReply      String? // coach response
+  repliedAt       DateTime?
   // The daily check-in is for the athlete's own use by default; only a paid
   // athlete may opt to SHARE a check-in with their coach. A coach reads a
   // client's check-ins via an ACTIVE CoachLink AND only where this is true.
-  sharedWithCoach Boolean @default(false)
-  createdAt    DateTime  @default(now())
+  sharedWithCoach Boolean   @default(false)
+  createdAt       DateTime  @default(now())
 
   /// Every readiness answer given on this day, oldest first — see CheckinRead.
-  reads        CheckinRead[]
+  reads CheckinRead[]
 
   // Read as "where userId order by weekOf desc".
   @@index([userId, weekOf])
@@ -491,18 +518,18 @@ model Checkin {
 /// in `energy` — so every existing reader of that column keeps working and needs
 /// no migration. The maths lives in packages/core/src/readiness-reads.ts.
 model CheckinRead {
-  id        String   @id @default(cuid())
-  checkin   Checkin  @relation(fields: [checkinId], references: [id], onDelete: Cascade)
-  checkinId String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+  id            String   @id @default(cuid())
+  checkin       Checkin  @relation(fields: [checkinId], references: [id], onDelete: Cascade)
+  checkinId     String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
   /// Which question this answers. "energy" is the readiness face on Today —
   /// named for the Checkin column it lands in so the two can't drift.
-  metric    String   @default("energy")
+  metric        String   @default("energy")
   /// 1–5 as answered (5 = primed).
-  value     Int
+  value         Int
   /// When it was answered. The whole point of the row.
-  loggedAt  DateTime @default(now())
+  loggedAt      DateTime @default(now())
   /// Hours since the session that ended before it, stamped at write time from
   /// the client's own session list. Null when the athlete hadn't trained, or
   /// when no session carried a usable clock — never a guess.
@@ -639,7 +666,9 @@ model FoodProduct {
   name         String
   subname      String? // the user's personal label ("w/ sushi rice", "the usual way")
   servingLabel String   @default("1 serving")
-  /** the serving's weight in grams when known — enables per-100 g comparison */
+  /**
+   * the serving's weight in grams when known — enables per-100 g comparison
+   */
   servingGrams Float?
   kcal         Int
   protein      Int // grams per serving
@@ -650,7 +679,9 @@ model FoodProduct {
   sugar        Float?
   fiber        Float?
   salt         Float?
-  /** the HYBRID Verified catalog id this was saved from (provenance), if any */
+  /**
+   * the HYBRID Verified catalog id this was saved from (provenance), if any
+   */
   verifiedId   String?
   createdAt    DateTime @default(now())
 
@@ -665,28 +696,30 @@ model FoodProduct {
 // an atomic delete. Owner-scoped (same own-rows RLS as Signal); soft-guarded on
 // the server so logging still works before reference/sql-nutrition-log.sql runs.
 model FoodLog {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  name      String
-  subname   String? // brand / serving label, shown under the name
-  source    String // the part of the day (breakfast | lunch | dinner | snack | custom)
-  kcal      Float // per single serving
-  protein   Float // grams per serving
-  carbs     Float // grams per serving
-  fat       Float // grams per serving
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  name       String
+  subname    String? // brand / serving label, shown under the name
+  source     String // the part of the day (breakfast | lunch | dinner | snack | custom)
+  kcal       Float // per single serving
+  protein    Float // grams per serving
+  carbs      Float // grams per serving
+  fat        Float // grams per serving
   // The LABEL PANEL, per single serving (packages/core/src/food-facts.ts).
   // NULL = the food never stated it — the diary shows "—", not "0 g".
-  satFat    Float?
-  sugar     Float?
-  fiber     Float?
-  salt      Float?
-  /** the HYBRID Verified catalog id this entry came from (provenance), if any */
+  satFat     Float?
+  sugar      Float?
+  fiber      Float?
+  salt       Float?
+  /**
+   * the HYBRID Verified catalog id this entry came from (provenance), if any
+   */
   verifiedId String?
-  qty       Float    @default(1) // number of servings logged
-  signalIds Json     @default("[]") // string[] of the mirrored Signal ids
-  ts        DateTime // the log instant — the client groups these into local days
-  createdAt DateTime @default(now())
+  qty        Float    @default(1) // number of servings logged
+  signalIds  Json     @default("[]") // string[] of the mirrored Signal ids
+  ts         DateTime // the log instant — the client groups these into local days
+  createdAt  DateTime @default(now())
 
   @@index([userId, ts])
 }
@@ -748,27 +781,27 @@ model CoachNote {
 }
 
 model Session {
-  id          String    @id @default(cuid())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  title       String
-  startedAt   DateTime
-  completedAt DateTime?
-  blocks      Json // exercises/sets/reps/load/rpe — matches the prototype block shape
-  readiness   Int?
+  id           String    @id @default(cuid())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  title        String
+  startedAt    DateTime
+  completedAt  DateTime?
+  blocks       Json // exercises/sets/reps/load/rpe — matches the prototype block shape
+  readiness    Int?
   // Private post-workout reflection (owner-only — NEVER serialised to coaches,
   // the Activity feed or social). `mood` is 1..4 (rough → strong, core MOODS);
   // `tags` are short slugs (core SUGGESTED_TAGS). All optional.
-  note        String?
-  mood        Int?
-  tags        String[]  @default([])
+  note         String?
+  mood         Int?
+  tags         String[]  @default([])
   // "How did that feel?" — the post-workout self-report, asked once on the
   // Wrapped. `feel` is perceived effort (1..5, easy → all out) and `fatigue` is
   // how spent the athlete is after (1..5, fresh → wrecked). Effort × duration is
   // the session's internal training load (sRPE); see core/session-feel.ts. Kept
   // owner-only like the note above.
-  feel        Int?
-  fatigue     Int?
+  feel         Int?
+  fatigue      Int?
   // WHEN the athlete answered. Set server-side on every write of feel/fatigue.
   // The lag between completedAt and this is what makes two identical `fatigue`
   // values comparable: 4 an hour after training is an ordinary hard session, 4
@@ -780,11 +813,11 @@ model Session {
   // HealthKit today), attached by the summary's match flow: measured duration,
   // kcal, avg/max HR, distance, frozen at match time. Shape + sanitisation in
   // core/session-device.ts (sanitizeDeviceWorkout); owner-only like the note.
-  device      Json?
+  device       Json?
   // Soft-archive: the athlete can hide a workout from History without losing it
   // (recoverable), or hard-delete it outright. Archived rows are excluded from
   // the default History list + all engines, but kept for the audit trail.
-  archivedAt  DateTime?
+  archivedAt   DateTime?
 
   // History/engine reads are "where userId (+ archivedAt is null) order by
   // startedAt desc". A bare userId index made Postgres sort in memory and
@@ -950,20 +983,20 @@ model Event {
 // An athlete's talent profile + benchmark inputs. Percentiles are computed in
 // @hybrid/core (benchmarks.ts); visibility gates discovery (the talent market).
 model TalentProfile {
-  id         String   @id @default(cuid())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String   @unique
-  sport      String
-  sex        String // "M" | "F"
-  age        Int
-  metrics    Json // { relStrength?, vo2?, durability?, hpi? }
-  visibility String   @default("private") // "private" | "discoverable"
+  id               String   @id @default(cuid())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String   @unique
+  sport            String
+  sex              String // "M" | "F"
+  age              Int
+  metrics          Json // { relStrength?, vo2?, durability?, hpi? }
+  visibility       String   @default("private") // "private" | "discoverable"
   // Moderation gate: a discoverable profile must be approved before it appears
   // in discovery. Existing rows default to approved (grandfathered); a new/edited
   // discoverable profile is set to pending by the API and enters the queue.
-  moderationStatus String  @default("approved") // pending | approved | rejected
+  moderationStatus String   @default("approved") // pending | approved | rejected
   moderationNote   String?
-  updatedAt  DateTime @default(now()) @updatedAt
+  updatedAt        DateTime @default(now()) @updatedAt
 
   @@index([visibility])
   @@index([moderationStatus])
@@ -1071,9 +1104,9 @@ model Announcement {
 // (mergeMovements). Mutations server-only + audited; RLS lets signed-in users
 // read only PUBLISHED rows (reference/sql-exercise.sql).
 model Exercise {
-  id      String @id @default(cuid())
-  slug    String @unique // stable id, e.g. "back-squat"
-  name    String @unique // display name = the engine key, e.g. "Back Squat"
+  id   String @id @default(cuid())
+  slug String @unique // stable id, e.g. "back-squat"
+  name String @unique // display name = the engine key, e.g. "Back Squat"
 
   // engine-critical (mirror core Movement; validated against the core enums)
   pattern  String // squat | hinge | push | pull | lunge | carry | core | cond
@@ -1200,7 +1233,7 @@ model OnboardingQuestion {
   kind         String   @default("single") // persona | goal | single | multi | number | text
   title        String
   subtitle     String?
-  engineKey    String?  // persona | goal | experience | daysPerWeek | equipment | null
+  engineKey    String? // persona | goal | experience | daysPerWeek | equipment | null
   choices      Json? // [{ value, label, blurb? }] for single/multi
   min          Int?
   max          Int?
@@ -1225,31 +1258,31 @@ model OnboardingQuestion {
 // core turns a row into the live prompt. Mutations are server-only (ADMIN-gated
 // + audited); reads are admin-only via the API. JSON columns are arrays.
 model AgentConfig {
-  id                  String   @id @default(cuid())
-  role                String // "CEO" | "CFO" | … | custom label
-  name                String
-  status              String   @default("draft") // draft | active | paused
-  model               String   @default("claude-opus-4-8")
-  effort              String   @default("high") // low | medium | high | xhigh | max
-  authority           String   @default("functional") // executive | functional | advisor
-  reportsTo           String? // supervisor role/name; null = reports to the admin
-  mandate             String
-  responsibilities    Json     @default("[]") // string[]
-  kpis                Json     @default("[]") // { metric, target }[]
-  guardrails          Json     @default("[]") // string[]
-  escalationThreshold String   @default("")
-  tone                String   @default("")
-  collaborators       Json     @default("[]") // string[]
-  tools               Json     @default("[]") // string[]
-  runtime             String   @default("messages") // messages | managed
-  managedAgentId      String? // Claude Managed Agents agent id (created lazily, reused)
-  memoryStoreId       String? // durable memory store id (created lazily, reused)
-  approvalThresholdUsd Float   @default(0) // require 2nd-operator approval when est. run cost ≥ this (0 = off)
-  budgetUsd7d         Float    @default(0) // auto-pause when trailing-7d spend ≥ this (0 = off)
-  updatedById         String?
-  updatedByEmail      String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  role                 String // "CEO" | "CFO" | … | custom label
+  name                 String
+  status               String   @default("draft") // draft | active | paused
+  model                String   @default("claude-opus-4-8")
+  effort               String   @default("high") // low | medium | high | xhigh | max
+  authority            String   @default("functional") // executive | functional | advisor
+  reportsTo            String? // supervisor role/name; null = reports to the admin
+  mandate              String
+  responsibilities     Json     @default("[]") // string[]
+  kpis                 Json     @default("[]") // { metric, target }[]
+  guardrails           Json     @default("[]") // string[]
+  escalationThreshold  String   @default("")
+  tone                 String   @default("")
+  collaborators        Json     @default("[]") // string[]
+  tools                Json     @default("[]") // string[]
+  runtime              String   @default("messages") // messages | managed
+  managedAgentId       String? // Claude Managed Agents agent id (created lazily, reused)
+  memoryStoreId        String? // durable memory store id (created lazily, reused)
+  approvalThresholdUsd Float    @default(0) // require 2nd-operator approval when est. run cost ≥ this (0 = off)
+  budgetUsd7d          Float    @default(0) // auto-pause when trailing-7d spend ≥ this (0 = off)
+  updatedById          String?
+  updatedByEmail       String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@index([status])
 }
@@ -1416,15 +1449,15 @@ model AdminAudit {
 // A one-off broadcast to an audience segment (newsletter, product update,
 // announcement). Authored in the admin Email console, sent now or scheduled.
 model EmailCampaign {
-  id           String    @id @default(cuid())
+  id           String         @id @default(cuid())
   subject      String
   body         String // plain text / light markdown with {{merge}} tags
-  audience     String    @default("all") // all | free | paid | coaches | clients | admins
-  status       String    @default("draft") // draft | scheduled | sending | sent | failed
+  audience     String         @default("all") // all | free | paid | coaches | clients | admins
+  status       String         @default("draft") // draft | scheduled | sending | sent | failed
   scheduledAt  DateTime?
   sentAt       DateTime?
-  sentCount    Int       @default(0)
-  failedCount  Int       @default(0)
+  sentCount    Int            @default(0)
+  failedCount  Int            @default(0)
   // Resumable fan-out: the last recipient userId processed (id-ordered), so a
   // large send continues across cron ticks instead of timing out in one request.
   sendCursor   String?
@@ -1433,8 +1466,8 @@ model EmailCampaign {
   lockedUntil  DateTime?
   createdById  String?
   createdEmail String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now()) @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
   messages     EmailMessage[]
 
   @@index([status, scheduledAt])
@@ -1463,11 +1496,11 @@ model EmailSequence {
 // One email in a sequence, fired `delayHours` after the PREVIOUS step (or after
 // enrollment for the first step).
 model EmailSequenceStep {
-  id         String   @id @default(cuid())
+  id         String        @id @default(cuid())
   sequence   EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   sequenceId String
-  order      Int      @default(0)
-  delayHours Int      @default(0)
+  order      Int           @default(0)
+  delayHours Int           @default(0)
   subject    String
   body       String
 
@@ -1477,15 +1510,15 @@ model EmailSequenceStep {
 // A user's progress through a sequence. `nextSendAt` is when the cron should
 // send `currentStep`; advanced (or completed) after each send.
 model EmailEnrollment {
-  id          String    @id @default(cuid())
+  id          String        @id @default(cuid())
   sequence    EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   sequenceId  String
   userId      String
   email       String
-  status      String    @default("active") // active | completed | cancelled
-  currentStep Int       @default(0)
+  status      String        @default("active") // active | completed | cancelled
+  currentStep Int           @default(0)
   nextSendAt  DateTime?
-  enrolledAt  DateTime  @default(now())
+  enrolledAt  DateTime      @default(now())
 
   @@unique([sequenceId, userId])
   @@index([status, nextSendAt])
@@ -1494,20 +1527,20 @@ model EmailEnrollment {
 // The deliverability ledger — one row per attempted send (campaign, sequence
 // step, or transactional). The single source of truth for "did we email them".
 model EmailMessage {
-  id         String    @id @default(cuid())
+  id         String         @id @default(cuid())
   campaign   EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   campaignId String?
   sequenceId String?
   userId     String?
   email      String
   subject    String
-  kind       String    @default("campaign") // campaign | sequence | transactional | verification
-  status     String    @default("sent") // sent | failed | bounced
+  kind       String         @default("campaign") // campaign | sequence | transactional | verification
+  status     String         @default("sent") // sent | failed | bounced
   providerId String? // Resend message id
   error      String?
   openedAt   DateTime?
   clickedAt  DateTime?
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime       @default(now())
 
   @@index([email])
   @@index([userId])
