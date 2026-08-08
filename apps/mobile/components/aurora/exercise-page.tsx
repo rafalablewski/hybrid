@@ -5,12 +5,16 @@ import { useLocalSearchParams } from "expo-router";
 import {
   SHARED_ELEMENTS,
   exercisePageModel,
+  exerciseSlideGeometry,
+  exerciseSlideReading,
   fmtWeight,
   fmtTonnage,
   paceClock,
   kgToUnit,
+  type ChartReading,
   type ExercisePageSlide,
   type ExercisePeriod,
+  type ScrubMode,
   type WeightUnit,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -21,6 +25,7 @@ import { useLang } from "../../lib/i18n";
 import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { ChartReadout, readoutSide, useChartScrub } from "./chart-scrub";
 import { AuroraScreen } from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
@@ -38,6 +43,22 @@ const PERIODS: { id: ExercisePeriod; key: string }[] = [
 ];
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+/**
+ * What a chart needs to answer a held finger: how many points it has, how they
+ * occupy the width, and — per index — the figure (from core, where the units
+ * live) and the sentence naming it (from here, where the language lives).
+ *
+ * A slide with no series to read (a scatter, a surface, the rep-max grid, the
+ * consistency map, the meter rows) simply gets none, and its chart never binds
+ * the gesture. Parity: the same type in the web twin.
+ */
+interface Held {
+  count: number;
+  mode: ScrubMode;
+  read: (i: number) => ChartReading | null;
+  when: (i: number) => string;
+}
 const splitVal = (s: string): { v: string; u: string } => {
   const i = s.lastIndexOf(" ");
   return i < 0 ? { v: s, u: "" } : { v: s.slice(0, i), u: s.slice(i + 1) };
@@ -113,8 +134,9 @@ function CornerLabels({ C, l, r }: { C: Palette; l?: string; r?: string }) {
   );
 }
 
-function TrendChart({ C, data, stroke, reversed, id }: { C: Palette; data: { x: string; y: number; pr?: boolean }[]; stroke: string; reversed?: boolean; id: string }) {
+function TrendChart({ C, data, stroke, reversed, id, held }: { C: Palette; data: { x: string; y: number; pr?: boolean }[]; stroke: string; reversed?: boolean; id: string; held?: Held }) {
   const W = 353, H = 220, T = 14, B = 8;
+  const scrub = useChartScrub(held?.count ?? 0, held?.mode ?? "point");
   const n = data.length;
   if (n < 2) return null;
   let lo = Math.min(...data.map((d) => d.y)), hi = Math.max(...data.map((d) => d.y));
@@ -127,8 +149,10 @@ function TrendChart({ C, data, stroke, reversed, id }: { C: Palette; data: { x: 
   };
   const line = data.map((d, i) => `${i === 0 ? "M" : "L"}${X(i)},${Y(d.y)}`).join(" ");
   const mid = (lo + hi) / 2;
+  const hit = held && scrub.index >= 0 && scrub.index < n ? scrub.index : -1;
+  const read = hit >= 0 ? held!.read(hit) : null;
   return (
-    <View>
+    <View {...(held ? scrub.bind : {})}>
       <Svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ aspectRatio: W / H }}>
         <Defs>
           <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
@@ -143,28 +167,40 @@ function TrendChart({ C, data, stroke, reversed, id }: { C: Palette; data: { x: 
           d.pr ? <Circle key={i} cx={Math.min(X(i), W - 6)} cy={Y(d.y)} r={4.5} fill={stroke} stroke={C.ink} strokeWidth={2} /> : null,
         )}
         <Circle cx={Math.min(X(n - 1), W - 6)} cy={Y(data[n - 1]!.y)} r={4} fill={stroke} stroke={C.ink} strokeWidth={2} />
+        {hit >= 0 && (
+          <>
+            <SvgLine x1={X(hit)} x2={X(hit)} y1={0} y2={H} stroke={C.ash} strokeWidth={1} strokeOpacity={0.55} />
+            <Circle cx={Math.min(X(hit), W - 6)} cy={Y(data[hit]!.y)} r={5} fill={C.chalk} stroke={C.ink} strokeWidth={2} />
+          </>
+        )}
       </Svg>
       <CornerLabels C={C} l={data[0]?.x} r={data[n - 1]?.x} />
+      {!!read && <ChartReadout read={read} C={C} side={readoutSide(hit, held!.count)} when={held!.when(hit)} />}
     </View>
   );
 }
 
-function TonnageChart({ C, weeks, units, t }: { C: Palette; weeks: { baseKg: number; hardKg: number }[]; units: WeightUnit; t: (k: string) => string }) {
+function TonnageChart({ C, weeks, units, t, held }: { C: Palette; weeks: { baseKg: number; hardKg: number }[]; units: WeightUnit; t: (k: string) => string; held?: Held }) {
   const W = 353, H = 220, T = 14, B = 8;
+  const scrub = useChartScrub(held?.count ?? 0, held?.mode ?? "band");
   const n = weeks.length;
   const totals = weeks.map((w) => kgToUnit(w.baseKg + w.hardKg, units));
   const hi = Math.max(...totals, 1) * 1.08;
   const bw = W / n - 6;
   const Y = (v: number) => H - B - (v / hi) * (H - T - B);
+  const hit = held && scrub.index >= 0 && scrub.index < n ? scrub.index : -1;
+  const read = hit >= 0 ? held!.read(hit) : null;
   return (
-    <View>
+    <View {...(held ? scrub.bind : {})}>
       <Svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ aspectRatio: W / H }}>
         {weeks.map((w, i) => {
           const x = (i + 0.5) * (W / n) - bw / 2;
           const base = kgToUnit(w.baseKg, units), tot = totals[i]!;
           const yb = Y(base), yt = Y(tot);
           return (
-            <G key={i}>
+            // Held, every week but the finger's recedes — the chart answers one
+            // question at a time.
+            <G key={i} opacity={hit >= 0 && i !== hit ? 0.4 : 1}>
               <Rect x={x} y={yb} width={bw} height={H - B - yb} fill={DEEP_BASE} rx={2} />
               {tot > base ? <Rect x={x} y={yt} width={bw} height={Math.max(0, yb - yt - 2)} fill={DEEP_HARD} rx={3} /> : null}
             </G>
@@ -172,6 +208,7 @@ function TonnageChart({ C, weeks, units, t }: { C: Palette; weeks: { baseKg: num
         })}
       </Svg>
       <CornerLabels C={C} l={t("w.analyze.exp.weeksAgo").replace("{n}", String(n))} r={t("w.analyze.exp.now")} />
+      {!!read && <ChartReadout read={read} C={C} side={readoutSide(hit, held!.count)} when={held!.when(hit)} />}
       <View style={{ flexDirection: "row", gap: 16, marginTop: 8 }}>
         {[{ c: DEEP_BASE, l: t("w.analyze.ex.tonnageBase") }, { c: DEEP_HARD, l: t("w.analyze.ex.tonnageHard") }].map((i) => (
           <View key={i.l} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -184,34 +221,42 @@ function TonnageChart({ C, weeks, units, t }: { C: Palette; weeks: { baseKg: num
   );
 }
 
-function MinutesChart({ C, weeks, stroke, t }: { C: Palette; weeks: { minutes: number }[]; stroke: string; t: (k: string) => string }) {
+function MinutesChart({ C, weeks, stroke, t, held }: { C: Palette; weeks: { minutes: number }[]; stroke: string; t: (k: string) => string; held?: Held }) {
   const W = 353, H = 220, T = 14, B = 8;
+  const scrub = useChartScrub(held?.count ?? 0, held?.mode ?? "band");
   const n = weeks.length;
   const hi = Math.max(...weeks.map((w) => w.minutes), 1) * 1.08;
   const bw = W / n - 6;
+  const hit = held && scrub.index >= 0 && scrub.index < n ? scrub.index : -1;
+  const read = hit >= 0 ? held!.read(hit) : null;
   return (
-    <View>
+    <View {...(held ? scrub.bind : {})}>
       <Svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ aspectRatio: W / H }}>
         {weeks.map((w, i) => {
           const x = (i + 0.5) * (W / n) - bw / 2;
           const y = H - B - (w.minutes / hi) * (H - T - B);
-          return <Rect key={i} x={x} y={y} width={bw} height={H - B - y} fill={stroke} rx={2.5} />;
+          return <Rect key={i} x={x} y={y} width={bw} height={H - B - y} fill={stroke} rx={2.5} opacity={hit >= 0 && i !== hit ? 0.4 : 1} />;
         })}
       </Svg>
       <CornerLabels C={C} l={t("w.analyze.exp.weeksAgo").replace("{n}", String(n))} r={t("w.analyze.exp.now")} />
+      {!!read && <ChartReadout read={read} C={C} side={readoutSide(hit, held!.count)} when={held!.when(hit)} />}
     </View>
   );
 }
 
-function DeltasChart({ C, runs }: { C: Palette; runs: { date: string; deltaSec: number }[] }) {
+function DeltasChart({ C, runs, held }: { C: Palette; runs: { date: string; deltaSec: number }[]; held?: Held }) {
   const W = 353, H = 200, T = 26, B = 26;
+  const scrub = useChartScrub(held?.count ?? 0, held?.mode ?? "band");
   const n = runs.length;
   if (n === 0) return null;
   const mid = (H - B + T) / 2;
   const hi = Math.max(...runs.map((r) => Math.abs(r.deltaSec)), 1) * 1.15;
   const bw = W / n - 12;
   const up = txt(C, C.lime), down = txt(C, C.red);
+  const hit = held && scrub.index >= 0 && scrub.index < n ? scrub.index : -1;
+  const read = hit >= 0 ? held!.read(hit) : null;
   return (
+    <View {...(held ? scrub.bind : {})}>
     <Svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ aspectRatio: W / H }}>
       <SvgLine x1={0} x2={W} y1={mid} y2={mid} stroke={C.line} />
       {runs.map((r, i) => {
@@ -219,7 +264,7 @@ function DeltasChart({ C, runs }: { C: Palette; runs: { date: string; deltaSec: 
         const h = (Math.abs(r.deltaSec) / hi) * (mid - T);
         const faster = r.deltaSec < 0;
         return (
-          <G key={i}>
+          <G key={i} opacity={hit >= 0 && i !== hit ? 0.4 : 1}>
             <Rect x={x} y={faster ? mid + 2 : mid - 2 - h} width={bw} height={h} rx={2.5} fill={faster ? up : down} />
             <SvgText
               x={x + bw / 2}
@@ -235,6 +280,8 @@ function DeltasChart({ C, runs }: { C: Palette; runs: { date: string; deltaSec: 
         );
       })}
     </Svg>
+    {!!read && <ChartReadout read={read} C={C} side={readoutSide(hit, held!.count)} when={held!.when(hit)} />}
+    </View>
   );
 }
 
@@ -492,13 +539,29 @@ function ConsistencyDots({ C, weekly, foot }: { C: Palette; weekly: number[]; fo
 }
 
 function SlideChart({ C, slide, stroke, units, t }: { C: Palette; slide: ExercisePageSlide; stroke: string; units: WeightUnit; t: (k: string) => string }) {
+  // What a held finger reads on THIS slide — the figure from core (units), the
+  // sentence from here (language). A slide core reports no geometry for is one
+  // whose cells already name themselves, and it binds no gesture.
+  const geo = exerciseSlideGeometry(slide);
+  const held: Held | undefined = geo
+    ? {
+        count: geo.count,
+        mode: geo.mode,
+        read: (i) => exerciseSlideReading(slide, i, units),
+        when: (i) => {
+          const r = exerciseSlideReading(slide, i, units);
+          const d = r?.weekStart ? fmtDate(r.weekStart) : "";
+          return geo.by === "week" ? t("chart.weekOf").replace("{date}", d) : d;
+        },
+      }
+    : undefined;
   switch (slide.kind) {
     case "weightTrend":
-      return <TrendChart C={C} id="exp-weight" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: Math.round(kgToUnit(p.weightKg, units)), pr: p.pr }))} stroke={stroke} />;
+      return <TrendChart C={C} id="exp-weight" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: Math.round(kgToUnit(p.weightKg, units)), pr: p.pr }))} stroke={stroke} held={held} />;
     case "paceTrend":
-      return <TrendChart C={C} id="exp-pace" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: p.secPerKm }))} stroke={stroke} reversed />;
+      return <TrendChart C={C} id="exp-pace" data={slide.points.map((p) => ({ x: fmtDate(p.date), y: p.secPerKm }))} stroke={stroke} reversed held={held} />;
     case "tonnage":
-      return <TonnageChart C={C} weeks={slide.weeks} units={units} t={t} />;
+      return <TonnageChart C={C} weeks={slide.weeks} units={units} t={t} held={held} />;
     case "zones":
       return <MeterRows C={C} color={stroke} rows={slide.zones.map((z) => ({ label: z.zone === "<60" ? "<60%" : `${z.zone}%+`, pct: z.share, value: `${Math.round(z.share * 100)}%` }))} />;
     case "repMax":
@@ -510,11 +573,11 @@ function SlideChart({ C, slide, stroke, units, t }: { C: Palette; slide: Exercis
     case "compare":
       return <CompareChart C={C} slide={slide} units={units} t={t} />;
     case "weeklyMinutes":
-      return <MinutesChart C={C} weeks={slide.weeks} stroke={stroke} t={t} />;
+      return <MinutesChart C={C} weeks={slide.weeks} stroke={stroke} t={t} held={held} />;
     case "paceCurve":
       return <PaceCurveChart C={C} slide={slide} stroke={stroke} t={t} />;
     case "runDeltas":
-      return <DeltasChart C={C} runs={slide.runs} />;
+      return <DeltasChart C={C} runs={slide.runs} held={held} />;
     case "consistency":
       return <ConsistencyHeat C={C} slide={slide} foot={t("w.analyze.exp.consistencyFoot")} t={t} />;
   }

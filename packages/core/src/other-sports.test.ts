@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { otherSportLanes, sportWeekBars, otherSportTotals, OTHER_SPORT_WEEKS } from "./other-sports";
+import { otherSportLanes, otherSportReading, sportWeekBars, otherSportTotals, OTHER_SPORT_WEEKS } from "./other-sports";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 
 const NOW = Date.parse("2026-07-31T12:00:00.000Z");
@@ -136,5 +136,48 @@ describe("otherSportTotals", () => {
 
   it("is zero for no lanes", () => {
     expect(otherSportTotals([])).toEqual({ sports: 0, efforts: 0, minutes: 0 });
+  });
+});
+
+describe("holding a tile's frequency strip", () => {
+  const lanes = otherSportLanes(
+    [sess(2, "Tennis", 90, "sport"), sess(9, "Tennis", 60, "sport"), sess(11, "Tennis", 45, "sport")],
+    NOW,
+  );
+  const tennis = lanes[0]!;
+
+  it("dates every bucket, aligned with the bars it draws", () => {
+    expect(tennis.weekStarts).toHaveLength(OTHER_SPORT_WEEKS);
+    expect(tennis.weekStarts).toHaveLength(tennis.weeks.length);
+    // The newest bucket starts a week ago; the oldest, eight.
+    expect(Date.parse(tennis.weekStarts.at(-1)!)).toBe(NOW - 7 * DAY);
+    expect(Date.parse(tennis.weekStarts[0]!)).toBe(NOW - 8 * 7 * DAY);
+    // …and each start really does precede the efforts bucketed into it.
+    expect(Date.parse(tennis.weekStarts.at(-1)!)).toBeLessThan(NOW - 2 * DAY);
+  });
+
+  it("reads a held bar in the measure the strip actually draws — minutes", () => {
+    const held = otherSportReading(tennis, tennis.weeks.length - 1)!;
+    expect(held.value).toBe("90");
+    expect(held.unit).toBe("min");
+    expect(held.weekStart).toBe(tennis.weekStarts.at(-1));
+    // NOT the best: the 60 + 45 sessions land in one older bucket, 105 minutes.
+    expect(held.best).toBe(false);
+    expect(otherSportReading(tennis, tennis.weeks.length - 2)!.value).toBe("105");
+    // The buckets count minutes, so the reading claims no effort count.
+    expect(held.efforts).toBeNull();
+  });
+
+  it("marks the busiest week, and never marks an empty one", () => {
+    const busiest = tennis.weeks.indexOf(Math.max(...tennis.weeks));
+    expect(otherSportReading(tennis, busiest)!.best).toBe(true);
+    const empty = tennis.weeks.findIndex((m) => m === 0);
+    expect(otherSportReading(tennis, empty)!.best).toBe(false);
+    expect(otherSportReading(tennis, empty)!.value).toBe("0");
+  });
+
+  it("returns nothing off either end of the series", () => {
+    expect(otherSportReading(tennis, -1)).toBeNull();
+    expect(otherSportReading(tennis, OTHER_SPORT_WEEKS)).toBeNull();
   });
 });

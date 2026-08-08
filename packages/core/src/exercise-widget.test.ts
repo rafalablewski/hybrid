@@ -6,6 +6,9 @@ import {
   movementsTrained,
   exercisePageModel,
   weeklySessionCounts,
+  exerciseCardReading,
+  exerciseSlideGeometry,
+  exerciseSlideReading,
 } from "./exercise-widget";
 import type { LoggedSession, StrengthSet } from "./engines/session";
 import { formatDisciplinePace } from "./endurance";
@@ -258,5 +261,87 @@ describe("movementsTrained — the Exercises head's coverage denominator (M1)", 
 
   it("is zero with nothing in the window, so the head reads 0 of 0 rather than lying", () => {
     expect(movementsTrained([lift(90, [{}])], now)).toBe(0);
+  });
+});
+
+describe("holding an exercise chart", () => {
+  it("dates a widget card's strip by what its points ARE — sessions here", () => {
+    const sessions = [
+      lift(70, [{ load: "180", reps: "5" }]),
+      lift(30, [{ load: "185", reps: "5" }]),
+      lift(5, [{ load: "195", reps: "5" }]),
+    ];
+    const c = exerciseWidgetCard(sessions, "Deadlift", now)!;
+    expect(c.sparkBy).toBe("session");
+    expect(c.sparkAt).toHaveLength(c.spark.length);
+    expect(c.sparkAt[1]).toBe(sessions[2]!.startedAt);
+    const held = exerciseCardReading(c, 1, "kg")!;
+    expect(held.value).toBe("195");
+    expect(held.unit).toBe("kg");
+    expect(held.best).toBe(true);
+    expect(held.weekStart).toBe(sessions[2]!.startedAt);
+  });
+
+  it("dates a WEEKLY strip by its bucket, and says so", () => {
+    const c = exerciseWidgetCard([cond(3, 40), cond(10, 25)], "Assault Bike", now)!;
+    expect(c.metric).toBe("time");
+    expect(c.sparkBy).toBe("week");
+    expect(c.sparkAt).toHaveLength(c.spark.length);
+    const held = exerciseCardReading(c, c.spark.length - 1, "kg")!;
+    expect(held.value).toBe("40");
+    expect(held.unit).toBe("min");
+  });
+
+  it("reads a PACE card at the clock, and calls the fastest point the best", () => {
+    const c = exerciseWidgetCard([run(20, 5, 25), run(6, 5, 24)], "Run", now)!;
+    expect(c.metric).toBe("pace");
+    expect(exerciseCardReading(c, 0, "kg")!.value).toBe("5:00");
+    expect(exerciseCardReading(c, 0, "kg")!.best).toBe(false);
+    expect(exerciseCardReading(c, 1, "kg")!.value).toBe("4:48");
+    expect(exerciseCardReading(c, 1, "kg")!.best).toBe(true);
+  });
+
+  it("offers geometry only for the slides that ARE a series", () => {
+    const sessions = [
+      lift(40, [{ load: "180", reps: "5" }]),
+      lift(20, [{ load: "190", reps: "5" }]),
+      lift(4, [{ load: "200", reps: "5" }]),
+    ];
+    const m = exercisePageModel(sessions, "Deadlift", "8w", { now });
+    const kinds = Object.fromEntries(m.slides.map((s) => [s.kind, exerciseSlideGeometry(s)]));
+    expect(kinds.weightTrend).toEqual({ count: 3, mode: "point", by: "session" });
+    expect(kinds.tonnage?.by).toBe("week");
+    expect(kinds.tonnage?.mode).toBe("band");
+    // A scatter, a surface, a rep-max grid and the consistency map name their
+    // own cells — there is no series under the finger to report.
+    expect(kinds.loadReps ?? null).toBeNull();
+    expect(kinds.consistency ?? null).toBeNull();
+    expect(kinds.zones ?? null).toBeNull();
+  });
+
+  it("reads a weight-trend point in the athlete's unit and keeps the PR flag", () => {
+    const sessions = [
+      lift(40, [{ load: "180", reps: "5" }]),
+      lift(20, [{ load: "190", reps: "5" }]),
+      lift(4, [{ load: "200", reps: "5" }]),
+    ];
+    const m = exercisePageModel(sessions, "Deadlift", "8w", { now });
+    const slide = m.slides.find((s) => s.kind === "weightTrend")!;
+    const held = exerciseSlideReading(slide, 2, "kg")!;
+    expect(held.value).toBe("200");
+    expect(held.unit).toBe("kg");
+    expect(held.best).toBe(true);
+    expect(exerciseSlideReading(slide, 0, "kg")!.best).toBe(false);
+    expect(exerciseSlideReading(slide, 9, "kg")).toBeNull();
+  });
+
+  it("signs a run-delta readout — an unsigned one is the one thing that chart never says", () => {
+    const runs = [run(24, 5, 26, "Run"), run(17, 5, 25, "Run"), run(3, 5, 23, "Run")];
+    const m = exercisePageModel(runs, "Run", "8w", { now });
+    const slide = m.slides.find((s) => s.kind === "runDeltas");
+    if (!slide || slide.kind !== "runDeltas") return; // no deltas without enough runs
+    const held = exerciseSlideReading(slide, slide.runs.length - 1, "kg")!;
+    expect(held.unit).toBe("s/km");
+    expect(held.value.startsWith("+") || held.value.startsWith("−") || held.value === "0").toBe(true);
   });
 });

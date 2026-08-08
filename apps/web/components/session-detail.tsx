@@ -7,7 +7,8 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 import { useLang } from "@/lib/i18n";
@@ -23,7 +24,6 @@ import { fs, space,
   Button,
   disp,
   mono,
-  tip,
   Mono,
   Card,
   ChartFrame,
@@ -35,6 +35,7 @@ import { SessionEditSheet } from "@/components/session-edit";
 import PrAttestationPanel from "@/components/pr-attestation";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useIsMobile } from "@/lib/use-media-query";
+import { ChartReadout, readoutSide, useChartScrub, SCRUB_STYLE } from "@/components/aurora/chart-scrub";
 import { fmtWeight, fmtTonnage, displayLoad, kgToUnit } from "@hybrid/core";
 import {
   blockBestE1rm,
@@ -43,11 +44,13 @@ import {
   prsForSession,
   volumeByMuscle,
   e1rmSeries,
+  e1rmPointReading,
   blockSummary,
   supersetLabels,
   setType,
   setTypeBadge,
   paceSeries,
+  pacePointReading,
   headlineRunMove,
   paceClock,
   formatCardioPr,
@@ -118,11 +121,22 @@ export function SessionDetail({
     .filter((b) => b.kind === "strength")
     .map((b) => ({ name: b.name, e: blockBestE1rm(b, bwHere) }))
     .sort((a, b) => b.e - a.e)[0]?.name;
-  const series = topLift ? e1rmSeries(all, topLift, bw).map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) })) : [];
+  const liftPoints = topLift ? e1rmSeries(all, topLift, bw) : [];
+  const series = liftPoints.map((p) => ({ w: fmtDate(p.date), e1rm: Math.round(kgToUnit(p.e1rm, units)) }));
 
   // The session's headline run → its pace (sec/km) trend across all history.
   const runMove = headlineRunMove(session.blocks);
-  const paceData = runMove ? paceSeries(all, runMove).map((p) => ({ w: fmtDate(p.date), pace: p.secPerKm })) : [];
+  const pacePoints = runMove ? paceSeries(all, runMove) : [];
+  const paceData = pacePoints.map((p) => ({ w: fmtDate(p.date), pace: p.secPerKm }));
+
+  // Both charts hold. They carry labelled axes, so the readout is not the only
+  // way to name a point here — but a hover tooltip was, and half the athletes
+  // reading this page are on a phone. The gesture that answers for both
+  // replaces it, and it is the same one every other chart in the app uses.
+  const liftScrub = useChartScrub(series.length, "point");
+  const paceScrub = useChartScrub(paceData.length, "point");
+  const liftRead = liftScrub.index >= 0 ? e1rmPointReading(liftPoints, liftScrub.index, units) : null;
+  const paceRead = paceScrub.index >= 0 ? pacePointReading(pacePoints, paceScrub.index) : null;
 
   const prLine = (p: { lift: string; topLoad: number; previousTopLoad: number | null }) =>
     formatStrengthPr(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
@@ -193,37 +207,63 @@ export function SessionDetail({
 
         {series.length > 1 && (
           <ChartFrame title={`${topLift} – e1RM`} kicker="Trend across your logs">
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={series}>
-                <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
-                <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
-                <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} domain={["auto", "auto"]} />
-                <Tooltip contentStyle={tip} />
-                <Line type="monotone" dataKey="e1rm" stroke={LIME_HEX} strokeWidth={2.5} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div {...liftScrub.bind} aria-label={`${topLift} e1RM`} style={{ ...SCRUB_STYLE, position: "relative" }}>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={series} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                  <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
+                  <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+                  <YAxis stroke={ASH} style={{ ...mono, fontSize: fs.micro }} domain={["auto", "auto"]} />
+                  <Line type="monotone" dataKey="e1rm" stroke={LIME_HEX} strokeWidth={2.5} dot={{ r: 3 }} />
+                  {liftRead && series[liftRead.index] && (
+                    <ReferenceLine x={series[liftRead.index]!.w} stroke={ASH} strokeOpacity={0.55} strokeWidth={1} />
+                  )}
+                  {liftRead && series[liftRead.index] && (
+                    <ReferenceDot x={series[liftRead.index]!.w} y={series[liftRead.index]!.e1rm} r={5} fill={CHALK} stroke={INK2} strokeWidth={2} />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+              {/* The gesture is measured against the PLOT, not the card: the
+                  y-axis labels take 60px off the left before the first point. */}
+              <div ref={liftScrub.plotRef} aria-hidden style={{ position: "absolute", left: 65, right: 5, top: 0, bottom: 0, pointerEvents: "none" }} />
+              {!!liftRead && (
+                <ChartReadout read={liftRead} side={readoutSide(liftRead.index, series.length)} when={fmtDate(liftRead.weekStart)} />
+              )}
+            </div>
           </ChartFrame>
         )}
       </div>
 
       {paceData.length > 1 && (
         <ChartFrame title={`${runMove} – pace`} kicker="Lower is faster – across your logs">
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={paceData}>
-              <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
-              <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
-              <YAxis
-                stroke={ASH}
-                style={{ ...mono, fontSize: fs.micro }}
-                reversed
-                domain={["auto", "auto"]}
-                tickFormatter={(v: number) => paceClock(v)}
-                width={48}
-              />
-              <Tooltip contentStyle={tip} formatter={(v) => `${paceClock(Number(v))} /km`} />
-              <Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div {...paceScrub.bind} aria-label={`${runMove} pace`} style={{ ...SCRUB_STYLE, position: "relative" }}>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={paceData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
+                <XAxis dataKey="w" stroke={ASH} style={{ ...mono, fontSize: fs.micro }} />
+                <YAxis
+                  stroke={ASH}
+                  style={{ ...mono, fontSize: fs.micro }}
+                  reversed
+                  domain={["auto", "auto"]}
+                  tickFormatter={(v: number) => paceClock(v)}
+                  width={48}
+                />
+                <Line type="monotone" dataKey="pace" name="pace" stroke={BLUE} strokeWidth={2.5} dot={{ r: 3 }} />
+                {paceRead && paceData[paceRead.index] && (
+                  <ReferenceLine x={paceData[paceRead.index]!.w} stroke={ASH} strokeOpacity={0.55} strokeWidth={1} />
+                )}
+                {paceRead && paceData[paceRead.index] && (
+                  <ReferenceDot x={paceData[paceRead.index]!.w} y={paceData[paceRead.index]!.pace} r={5} fill={CHALK} stroke={INK2} strokeWidth={2} />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+            {/* This chart's y-axis is narrower (it prints a clock, not a load),
+                so its plot starts 48px in rather than 60. */}
+            <div ref={paceScrub.plotRef} aria-hidden style={{ position: "absolute", left: 53, right: 5, top: 0, bottom: 0, pointerEvents: "none" }} />
+            {!!paceRead && (
+              <ChartReadout read={paceRead} side={readoutSide(paceRead.index, paceData.length)} when={fmtDate(paceRead.weekStart)} />
+            )}
+          </div>
         </ChartFrame>
       )}
 
