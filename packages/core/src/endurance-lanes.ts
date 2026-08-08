@@ -8,7 +8,8 @@ import {
   type EffortSplit,
   type WeekMileage,
 } from "./engines/running";
-import { activeDisciplines, DISCIPLINE_META, disciplinePaceUnit } from "./endurance";
+import type { ChartReading } from "./chart-scrub";
+import { activeDisciplines, DISCIPLINE_META, disciplinePaceFigure, disciplinePaceUnit } from "./endurance";
 
 /**
  * SPORT LANES — the Endurance block that lives at the bottom of Today.
@@ -85,6 +86,11 @@ export interface EnduranceLane {
    * the card rather than drawing a line through one dot.
    */
   paceTrend: number[];
+  /** ISO week starts aligned with `paceTrend`. The trend SKIPS the weeks with
+   *  nothing paced in them, so a held point can only name its own week if the
+   *  lane says which bucket each point came from — reading `weeks[i]` beside a
+   *  trend point dates it by a different series. */
+  paceTrendWeeks: string[];
   last: LaneEffort | null;
 }
 
@@ -152,6 +158,9 @@ export function enduranceLanes(
     const buckets = weeklyMileage(slice, weeks, now);
     const totals = runTotals(slice);
     const meta = DISCIPLINE_META[d];
+    const paced = buckets
+      .map((w) => ({ weekStart: w.weekStart, secPerKm: weekPace(w) }))
+      .filter((p): p is { weekStart: string; secPerKm: number } => p.secPerKm != null);
     return {
       discipline: d,
       emoji: meta.emoji,
@@ -162,7 +171,8 @@ export function enduranceLanes(
       weeks: buckets,
       thisWeek: buckets[buckets.length - 1]!,
       zones: paceEffortSplit(slice),
-      paceTrend: buckets.map(weekPace).filter((p): p is number => p != null),
+      paceTrend: paced.map((p) => p.secPerKm),
+      paceTrendWeeks: paced.map((p) => p.weekStart),
       last: lastEffort(slice),
     };
   });
@@ -291,6 +301,48 @@ export function paceTrendPoints(trend: number[]): number[] {
   const range = max - min;
   if (range === 0) return trend.map(() => 0.5);
   return trend.map((v) => (v - min) / range);
+}
+
+/* ── HOLDING A LANE'S CHART ──────────────────────────────────────────────── */
+
+/**
+ * One week of a lane's volume strip, held.
+ *
+ * The tile's resting figure is THIS WEEK's km, so the held figure is the same
+ * quantity for another week — the label above it swaps from the scope to the
+ * week, and the number underneath answers for that week instead. The unit stays
+ * km on every discipline, exactly as the resting tile prints it.
+ */
+export function laneVolumeReading(lane: EnduranceLane, index: number): ChartReading | null {
+  const w = lane.weeks[index];
+  if (!w) return null;
+  const max = Math.max(...lane.weeks.map((x) => x.km), 0);
+  return {
+    index,
+    weekStart: w.weekStart,
+    value: String(w.km),
+    unit: "km",
+    efforts: w.efforts,
+    best: w.km > 0 && w.km === max,
+  };
+}
+
+/** One point of a lane's pace trend, held — in the discipline's own reading
+ *  (a pace for a runner, a speed for a cyclist), dated by the trend's OWN
+ *  alignment rather than by the volume strip's index. */
+export function lanePaceReading(lane: EnduranceLane, index: number): ChartReading | null {
+  const sec = lane.paceTrend[index];
+  if (sec == null) return null;
+  return {
+    index,
+    weekStart: lane.paceTrendWeeks[index] ?? "",
+    value: disciplinePaceFigure(sec, lane.discipline),
+    unit: disciplinePaceUnit(lane.discipline),
+    efforts: null,
+    // Fastest is best on every discipline: storage is canonical seconds-per-km,
+    // so the lowest number is the quickest run AND the quickest ride.
+    best: sec === Math.min(...lane.paceTrend),
+  };
 }
 
 /** Bar heights for the volume card, 0 → 1 against the lane's own best week.

@@ -66,7 +66,6 @@ export const web_train = {
     "w.train.sport.exercisePool": "Exercise pool – why it transfers",
     // sport-page.tsx — the per-sport page + its index (BOTH clients, shared keys)
     "w.train.sportPage.effortsMeta": "{n} efforts",
-    "w.train.sportPage.weekOf": "Week of {date}",
     "w.train.sportPage.since": "since {date}",
     "w.train.sportPage.bestPace": "Best pace",
     "w.train.sportPage.totalDistance": "Total distance",
@@ -459,7 +458,6 @@ export const web_train = {
     "w.train.sport.exercisePool": "Pula ćwiczeń – dlaczego się przekłada",
     // sport-page.tsx
     "w.train.sportPage.effortsMeta": "{n} sesji",
-    "w.train.sportPage.weekOf": "Tydzień od {date}",
     "w.train.sportPage.since": "od {date}",
     "w.train.sportPage.bestPace": "Najlepsze tempo",
     "w.train.sportPage.totalDistance": "Łączny dystans",
@@ -844,7 +842,6 @@ export const web_train = {
     "w.train.sport.exercisePool": "Übungspool – warum es sich überträgt",
     // sport-page.tsx
     "w.train.sportPage.effortsMeta": "{n} Einheiten",
-    "w.train.sportPage.weekOf": "Woche ab {date}",
     "w.train.sportPage.since": "seit {date}",
     "w.train.sportPage.bestPace": "Bestes Tempo",
     "w.train.sportPage.totalDistance": "Gesamtdistanz",

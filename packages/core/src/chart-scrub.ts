@@ -22,6 +22,30 @@
 // viewBox on one, a flex row on the other) and a fraction survives both.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * THE FIGURE UNDER A HELD FINGER, formatted in the chart's own unit.
+ *
+ * Formatting it in the CLIENTS would mean two copies of every unit branch, and
+ * a swim week reading "2.4 km" in a browser and "2 400 m" on a phone. So each
+ * chart's model builds this (sportVolumeReading, lanePaceReading, …) and the
+ * clients only place it.
+ *
+ * Nothing here is localized: `unit` is a symbol ("km", "/100m", "min") and the
+ * client localizes the date and the efforts count around it.
+ */
+export interface ChartReading {
+  index: number;
+  /** ISO start of the 7-day bucket the point covers. */
+  weekStart: string;
+  /** Formatted in the chart's own unit. */
+  value: string;
+  unit: string;
+  /** Efforts logged that week, or null on a chart that does not count them. */
+  efforts: number | null;
+  /** True when this point is the series' own best — the biggest week, the PR. */
+  best: boolean;
+}
+
 /** How a chart's points occupy its width. See the file header. */
 export type ScrubMode = "band" | "point";
 

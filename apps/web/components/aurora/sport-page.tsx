@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   LEVELS,
   SPORT_PAGE_WEEKS,
@@ -10,8 +10,6 @@ import {
   fs,
   markerHistory,
   recordMarker,
-  scrubFraction,
-  scrubIndex,
   scrubPosition,
   space,
   sportDistance,
@@ -21,13 +19,13 @@ import {
   sportPaceReading,
   sportVolumeReading,
   transferSessionBlocks,
-  type ScrubMode,
   type SessionBlock,
   type SportBest,
   type SportChartReading,
   type SportPageModel,
   type SportWeek,
 } from "@hybrid/core";
+import { useChartScrub, SCRUB_STYLE, type ScrubBind } from "./chart-scrub";
 import { useSessions } from "@/lib/use-sessions";
 import { readSportSelection, writeSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
@@ -73,92 +71,6 @@ function Provenance({ provider, t }: { provider: string | null; t: (k: string) =
 }
 
 /* ── holding a chart ─────────────────────────────────────────────────────── */
-
-/**
- * THE HELD CHART — press anywhere on a chart and it states the figure under
- * your finger, the way a stock chart does. A trend answers "which way", never
- * "how much on the 12th"; holding is how the second question gets an answer
- * without a second screen.
- *
- * The hit-testing is core's (`scrubIndex`), so the same press reads the same
- * week here and on the phone. What's per-client is only the GESTURE:
- *  - `touchAction: pan-y` — a vertical drag still scrolls the page, so the
- *    chart never traps a finger that meant to scroll past it. A horizontal
- *    drag, or a still finger, scrubs.
- *  - a MOUSE reads on hover, with no press at all — that is what a pointer is
- *    for, and it costs one line.
- *  - the arrow keys walk the series, so the figures are reachable without a
- *    pointer at all.
- */
-const SCRUB_STYLE = { touchAction: "pan-y", userSelect: "none", WebkitUserSelect: "none", cursor: "crosshair" } as const;
-
-function useChartScrub(count: number, mode: ScrubMode, inset?: number) {
-  const [index, setIndex] = useState(-1);
-  const ref = useRef<HTMLDivElement | null>(null);
-  const held = useRef(false);
-  const last = useRef(-1);
-  const geo = useRef({ count, mode, inset });
-  geo.current = { count, mode, inset };
-
-  // `last` mirrors the state so a hovering mouse — which fires a move event per
-  // pixel — only re-renders when the WEEK changes. Every setter goes through
-  // `set`, so releasing a touch cannot leave the mirror pointing at a week the
-  // chart is no longer showing (the next press on that same bar would then read
-  // as "no change" and show nothing).
-  const set = useCallback((i: number) => {
-    if (i === last.current) return;
-    last.current = i;
-    setIndex(i);
-  }, []);
-  const read = useCallback((clientX: number) => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    set(scrubIndex(scrubFraction(clientX - r.left, r.width), geo.current));
-  }, [set]);
-  const clear = useCallback(() => { held.current = false; set(-1); }, [set]);
-
-  const bind = {
-    ref,
-    tabIndex: 0,
-    // A GROUP, not an img: the drawing itself is aria-hidden, and what a screen
-    // reader should reach is the readout — a live region that states the held
-    // figure as the arrow keys walk the series. Inside role="img" its contents
-    // would be presentational and it would never be announced.
-    role: "group" as const,
-    onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
-      held.current = true;
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-      read(e.clientX);
-    },
-    onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => {
-      if (held.current || e.pointerType === "mouse") read(e.clientX);
-    },
-    // A mouse keeps its readout after the click — it is still hovering. A
-    // finger has left the glass, so the chart goes back to its own shape.
-    onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => { held.current = false; if (e.pointerType !== "mouse") set(-1); },
-    onPointerCancel: clear,
-    onPointerLeave: clear,
-    onBlur: clear,
-    onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => {
-      const n = geo.current.count;
-      if (n <= 0) return;
-      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-      if (step) {
-        e.preventDefault();
-        const from = last.current < 0 ? (step > 0 ? -1 : n) : last.current;
-        set(Math.min(n - 1, Math.max(0, from + step)));
-      } else if (e.key === "Home") { e.preventDefault(); set(0); }
-      else if (e.key === "End") { e.preventDefault(); set(n - 1); }
-      else if (e.key === "Escape") set(-1);
-    },
-  };
-  return { index, bind };
-}
-
-/** What a scrubbable chart spreads onto its own root — plus the label the
- *  screen reader announces for it. */
-type ScrubBind = ReturnType<typeof useChartScrub>["bind"] & { "aria-label"?: string };
 
 /** The held figure itself, pinned to the top of the plot on the side the finger
  *  is NOT on, so it can never hide the point being read. */
@@ -344,7 +256,7 @@ export default function AuroraSportPage({
         side={read.index * 2 >= count - 1 ? "left" : "right"}
         sub={
           <>
-            <span>{t("w.train.sportPage.weekOf").replace("{date}", fmtDate(read.weekStart))}</span>
+            <span>{t("chart.weekOf").replace("{date}", fmtDate(read.weekStart))}</span>
             {read.efforts != null && <span>{t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts))}</span>}
           </>
         }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, ScrollView, PanResponder } from "react-native";
+import { View, Text, TextInput, ScrollView } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,8 +10,6 @@ import {
   heroMetaLine,
   markerHistory,
   recordMarker,
-  scrubFraction,
-  scrubIndex,
   scrubPosition,
   sportDistance,
   sportPace,
@@ -22,7 +20,6 @@ import {
   sportVolumeReading,
   transferSessionBlocks,
   type LoggedSession,
-  type ScrubMode,
   type SportBest,
   type SportChartReading,
   type SportPageModel,
@@ -30,10 +27,10 @@ import {
   type SportWeek,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
-import { haptic } from "../../lib/haptics";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { useChartScrub, type ScrubBind } from "./chart-scrub";
 import { AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
 
@@ -173,7 +170,7 @@ export default function AuroraSportPage() {
         side={read.index * 2 >= count - 1 ? "left" : "right"}
         sub={
           <>
-            <Text style={{ ...label(), fontSize: fs.nano }}>{t("w.train.sportPage.weekOf").replace("{date}", fmtDate(read.weekStart))}</Text>
+            <Text style={{ ...label(), fontSize: fs.nano }}>{t("chart.weekOf").replace("{date}", fmtDate(read.weekStart))}</Text>
             {read.efforts != null && (
               <Text style={{ ...label(), fontSize: fs.nano }}>{t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts))}</Text>
             )}
@@ -473,74 +470,6 @@ export default function AuroraSportPage() {
 }
 
 /* ── holding a chart ─────────────────────────────────────────────────────── */
-
-/**
- * THE HELD CHART — press anywhere on a chart and it states the figure under
- * your finger, the way a stock chart does. The exact twin of the web hook in
- * apps/web/components/aurora/sport-page.tsx: the hit-testing is core's
- * (`scrubIndex`), so the same press reads the same week in a browser and here.
- *
- * The gesture is the only per-client part. It claims the touch on contact —
- * a still finger IS the gesture, so waiting for movement would mean holding
- * the chart did nothing — but grants every termination request, which is how
- * the enclosing ScrollView takes the drag back the moment it turns out to be a
- * scroll. A chart that traps the finger is a chart the athlete has to scroll
- * around.
- *
- * The x is read from `pageX` against a measured box rather than `locationX`,
- * because `locationX` is relative to whatever child the finger happens to be
- * over — which, mid-drag across eight bars, is a different view every few
- * millimetres.
- */
-function useChartScrub(count: number, mode: ScrubMode, inset?: number) {
-  const [index, setIndex] = useState(-1);
-  const ref = useRef<View | null>(null);
-  const box = useRef({ x: 0, width: 0 });
-  const geo = useRef({ count, mode, inset });
-  geo.current = { count, mode, inset };
-  const last = useRef(-1);
-
-  const pan = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => true,
-      onPanResponderGrant: (e) => {
-        ref.current?.measureInWindow((x, _y, w) => { box.current = { x, width: w || box.current.width }; });
-        read(e.nativeEvent.pageX);
-      },
-      onPanResponderMove: (e) => read(e.nativeEvent.pageX),
-      onPanResponderRelease: () => clear(),
-      onPanResponderTerminate: () => clear(),
-    }),
-  ).current;
-
-  // Defined after the responder so both close over the same refs; neither is
-  // re-created, so the responder built once stays correct.
-  function read(pageX: number) {
-    const i = scrubIndex(scrubFraction(pageX - box.current.x, box.current.width), geo.current);
-    if (i === last.current) return;
-    last.current = i;
-    // Crossing into the next week is a discrete step — Apple's own use for
-    // `selection`, and the same feedback the segmented controls give.
-    if (i >= 0) haptic.selection();
-    setIndex(i);
-  }
-  function clear() {
-    last.current = -1;
-    setIndex(-1);
-  }
-
-  const bind = {
-    ref,
-    onLayout: () => ref.current?.measureInWindow((x, _y, w) => { box.current = { x, width: w }; }),
-    ...pan.panHandlers,
-  };
-  return { index, bind };
-}
-
-/** What a scrubbable chart spreads onto its own root. */
-type ScrubBind = ReturnType<typeof useChartScrub>["bind"];
 
 /** The held figure, pinned to the top of the plot on the side the finger is
  *  NOT on, so it can never hide the point being read. */

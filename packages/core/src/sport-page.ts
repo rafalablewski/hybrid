@@ -36,6 +36,7 @@
 // two clients cannot branch differently on what a sport shows.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { ChartReading } from "./chart-scrub";
 import { deviceTrueSessions } from "./device-truth";
 import { DISCIPLINE_META } from "./endurance";
 import {
@@ -554,26 +555,11 @@ export function sportPageModel(
  *
  * The charts on this page draw NUMBERS, not labels — the volume bars are km or
  * minutes depending on the sport, and the pace trend is seconds-per-km rendered
- * at the sport's own split. Formatting that readout in the clients would mean
- * two copies of the same branch, and a swim reading "2.4 km" on one client and
- * "2400 m" on the other. So the model formats it, once, exactly as it formats
- * every other figure on the page.
- *
- * Nothing here is localized: `unit` is a symbol ("km", "/100m", "min") and the
- * client localizes the date and the efforts count around it.
+ * at the sport's own split. The shape is the one every held chart uses
+ * (chart-scrub.ts `ChartReading`); this alias is here so a reader of the sport
+ * page finds it under the name the page's own functions return.
  */
-export interface SportChartReading {
-  index: number;
-  /** ISO start of the 7-day bucket the point covers. */
-  weekStart: string;
-  /** Formatted in the sport's own unit. */
-  value: string;
-  unit: string;
-  /** Efforts logged that week, or null on a chart that does not count them. */
-  efforts: number | null;
-  /** True when this point is the series' own best — the biggest week, the PR. */
-  best: boolean;
-}
+export type SportChartReading = ChartReading;
 
 /** One week of the volume bars, held. Null when the index is off the series. */
 export function sportVolumeReading(m: SportPageModel, index: number): SportChartReading | null {
