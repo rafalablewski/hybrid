@@ -843,6 +843,25 @@ export async function createCheckin(payload: Partial<Checkin>): Promise<CreateCh
   }
 }
 
+/**
+ * Take back the readiness read just given — the one write in this area that
+ * REMOVES a read instead of appending one, and only the day's last one, only
+ * within READ_UNDO_MIN of the tap (the server re-checks that on its own clock).
+ * Mirrors web POST /api/checkins/undo. See core/readiness-reads.ts.
+ */
+export async function undoCheckinRead(weekOf: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/checkins/undo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ weekOf }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ---- assignments (workouts a coach scheduled for the athlete) ----
 export type Assignment = { id: string; name: string; date: string; status: string; blocks: unknown[]; athleteId?: string; assignedById?: string; createdAt?: string };
 

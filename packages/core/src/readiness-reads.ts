@@ -187,6 +187,48 @@ export const READ_GATE_KEY: Record<ReadGateReason, string | null> = {
   dayFull: "w.home.today.gateDayFull",
 };
 
+/* ── THE MIS-TAP ──────────────────────────────────────────────────────────── */
+
+/**
+ * How long a read may still be WITHDRAWN after it was given, in minutes.
+ *
+ * The faces are a one-tap target sitting in a scrolling card, so the row will
+ * be hit by accident — and every other property of this card conspires to make
+ * that permanent: the read is appended (nothing is ever overwritten), the gate
+ * shuts behind it for four hours, and the follow-up sheet opens on top. An
+ * athlete who brushed "wrecked" on the way past had no way back, and the
+ * reading they never gave went on to scale the next session's load.
+ *
+ * The answer is a withdrawal window, not a confirm step. A confirm taxes every
+ * honest tap — the many — to protect against the few, and turns the card's one
+ * gesture into two. Undo leaves the gesture alone and admits the mistake
+ * afterwards, which is when the athlete actually notices it.
+ *
+ * It is deliberately SHORT. This is not an edit facility: a read the athlete
+ * stands behind is a measurement, and the record's whole worth is that it is
+ * append-only. Ten minutes covers "I just did that" and nothing else — long
+ * enough to close the follow-up sheet and look again, far too short to launder
+ * a morning you didn't like. Past the window the read stays, and the honest
+ * move is a NEW read once the gate opens.
+ */
+export const READ_UNDO_MIN = 10;
+
+/**
+ * The read the athlete may still take back — the day's LAST one, while it is
+ * still inside `READ_UNDO_MIN` of having been given. Null otherwise.
+ *
+ * Only the last: withdrawing an earlier read would rewrite a sequence the pair
+ * model has already measured against, and "the one I just tapped" is the only
+ * mis-tap this exists for.
+ */
+export function undoableRead<T extends { at: number }>(reads: readonly T[], now: number = Date.now()): T | null {
+  const last = reads.length ? reads[reads.length - 1]! : null;
+  if (!last || !Number.isFinite(last.at)) return null;
+  const age = now - last.at;
+  // A clock skew that puts the read slightly in the future is still "just now".
+  return age < READ_UNDO_MIN * 60_000 ? last : null;
+}
+
 /* ── THE PLACEMENT ────────────────────────────────────────────────────────── */
 
 /** One readiness answer, as stored. */

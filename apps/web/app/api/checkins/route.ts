@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkinPatchFields, readGate, placeReads, decisiveRead, QUICK_CHECKIN_METRIC } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
+import { readsFor, lastSessionEnd, dayWindow } from "@/lib/checkin-reads";
 
 /**
  * READS ARE APPENDED, NOT OVERWRITTEN.
@@ -17,35 +18,10 @@ import { prisma } from "@/lib/db";
  * yet as "no extra reads": the gate falls back to open, the day column keeps the
  * submitted value, and nothing 500s. Run reference/sql-checkin-reads.sql to
  * switch the second read on.
+ *
+ * A read given by mistake is taken back at ./undo — the one write that removes
+ * a read rather than adding one, and only within minutes of the tap.
  */
-type StoredRead = { value: number; loggedAt: Date };
-
-async function readsFor(checkinId: string): Promise<StoredRead[] | null> {
-  try {
-    return await prisma.checkinRead.findMany({
-      where: { checkinId, metric: QUICK_CHECKIN_METRIC },
-      orderBy: { loggedAt: "asc" },
-      select: { value: true, loggedAt: true },
-    });
-  } catch {
-    return null; // table not migrated yet — degrade, don't fail
-  }
-}
-
-/** When the athlete's most recent session ended — the clock the gate and the
- *  lag are measured from. Server-side so a client can't move it. */
-async function lastSessionEnd(userId: string): Promise<number | null> {
-  const s = await prisma.session
-    .findFirst({
-      where: { userId, startedAt: { lte: new Date() } },
-      orderBy: { startedAt: "desc" },
-      select: { startedAt: true, completedAt: true },
-    })
-    .catch(() => null);
-  if (!s) return null;
-  const end = (s.completedAt ?? s.startedAt).getTime();
-  return Number.isFinite(end) ? end : null;
-}
 
 // The athlete's own daily check-ins. GET lists newest-first; POST submits one.
 export async function GET(request: Request) {
@@ -80,8 +56,7 @@ export async function POST(request: Request) {
   // row — so the coarse one-tap read is replaced by the detailed one, with no
   // duplicate and no cooldown block. Only a check-in for a NEW day is subject to
   // the 6h cooldown. Same-day is a UTC-calendar-day window around weekOf.
-  const dayStart = new Date(Date.UTC(weekOf.getUTCFullYear(), weekOf.getUTCMonth(), weekOf.getUTCDate()));
-  const dayEnd = new Date(dayStart.getTime() + 86_400_000);
+  const { dayStart, dayEnd } = dayWindow(weekOf);
   const sameDay = await prisma.checkin.findFirst({
     where: { userId: me.id, weekOf: { gte: dayStart, lt: dayEnd } },
     orderBy: { createdAt: "desc" },
