@@ -1,0 +1,976 @@
+<title>The dock rail — History vs Plans</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   TOKENS
+
+   This sheet is about HYBRID's own controls, so it is painted in HYBRID's own
+   tokens — read straight out of apps/web/app/globals.css. The two themes are
+   the product's two themes (Aurora dark, Kyoto Hour light), not a decorative
+   inversion, which means every specimen below doubles as a Kyoto Hour check.
+   `--sheet` is deliberately a shade off `--app-ink` so a specimen bench reads
+   as an inset of the app rather than as more page.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* app tokens — Kyoto Hour (light) */
+  --app-ink:   #f6f3ea;
+  --app-ink2:  #faf7ef;
+  --app-line:  #e6e1d2;
+  --app-chalk: #2b2a26;
+  --app-ash:   #6f6b5e;
+  --app-lime:  #44584c;          /* pine — the light theme's primary fill */
+  --app-limetext: #3c4f43;
+  --app-onaccent: #f2f5ef;
+  --app-amber: #885c00;
+  --app-red:   #a3442f;
+  --app-blue:  #5f6d4b;
+
+  /* sheet chrome */
+  --sheet:     #efebe0;
+  --sheet-2:   #f7f4ec;
+  --rule:      #ddd7c6;
+  --rule-soft: #e7e2d4;
+  --fg:        #24231f;
+  --fg-dim:    #66625a;
+  --fg-faint:  #8d8879;
+  --accent:    #44584c;
+  --accent-wash: #dfe3d8;
+
+  --defect:    #a3442f;
+  --drift:     #8a6a12;
+  --bydesign:  #566b53;
+
+  --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --measure: 68ch;
+  --pad: clamp(20px, 5vw, 56px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --app-ink:   #0c0d0c;
+    --app-ink2:  #141614;
+    --app-line:  #242724;
+    --app-chalk: #f3f4ef;
+    --app-ash:   #8b8f86;
+    --app-lime:  #c6f84f;
+    --app-limetext: #c6f84f;
+    --app-onaccent: #0c0d0c;
+    --app-amber: #d0cd94;
+    --app-red:   #d56f3e;
+    --app-blue:  #3c787e;
+
+    --sheet:     #111311;
+    --sheet-2:   #171a17;
+    --rule:      #2a2e29;
+    --rule-soft: #202320;
+    --fg:        #ecefe8;
+    --fg-dim:    #9ba296;
+    --fg-faint:  #6d746a;
+    --accent:    #c6f84f;
+    --accent-wash: #1d2418;
+
+    --defect:    #e58a5c;
+    --drift:     #d0cd94;
+    --bydesign:  #8fb28a;
+  }
+}
+:root[data-theme="dark"] {
+  --app-ink:   #0c0d0c;
+  --app-ink2:  #141614;
+  --app-line:  #242724;
+  --app-chalk: #f3f4ef;
+  --app-ash:   #8b8f86;
+  --app-lime:  #c6f84f;
+  --app-limetext: #c6f84f;
+  --app-onaccent: #0c0d0c;
+  --app-amber: #d0cd94;
+  --app-red:   #d56f3e;
+  --app-blue:  #3c787e;
+
+  --sheet:     #111311;
+  --sheet-2:   #171a17;
+  --rule:      #2a2e29;
+  --rule-soft: #202320;
+  --fg:        #ecefe8;
+  --fg-dim:    #9ba296;
+  --fg-faint:  #6d746a;
+  --accent:    #c6f84f;
+  --accent-wash: #1d2418;
+
+  --defect:    #e58a5c;
+  --drift:     #d0cd94;
+  --bydesign:  #8fb28a;
+}
+
+/* ── base ─────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--sheet);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 var(--pad) 96px; }
+p { margin: 0; }
+.prose { max-width: var(--measure); display: flex; flex-direction: column; gap: 14px; }
+.prose p + p { margin: 0; }
+strong { font-weight: 700; color: var(--fg); }
+code, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+code {
+  font-size: .86em; background: var(--sheet-2); border: 1px solid var(--rule-soft);
+  border-radius: 4px; padding: .08em .38em; color: var(--fg-dim); white-space: nowrap;
+}
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+.label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--fg-faint); font-weight: 500;
+}
+
+/* ── masthead ─────────────────────────────────────────────────────────── */
+header.top { padding: clamp(48px, 9vw, 104px) 0 0; }
+.kicker { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: baseline; }
+h1 {
+  font-size: clamp(32px, 6.4vw, 62px); line-height: 1.02; letter-spacing: -.035em;
+  font-weight: 800; margin: 20px 0 0; max-width: 15ch; text-wrap: balance;
+}
+h1 em { font-style: normal; color: var(--fg-faint); }
+.standfirst { margin-top: 22px; font-size: clamp(17px, 2.1vw, 20px); line-height: 1.5; color: var(--fg-dim); max-width: 56ch; }
+.runin { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--rule);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px 26px; }
+.runin div { display: flex; flex-direction: column; gap: 5px; }
+.runin b { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--fg); }
+
+/* ── sections ─────────────────────────────────────────────────────────── */
+section { padding-top: clamp(56px, 8vw, 96px); }
+.sechead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  border-top: 2px solid var(--fg); padding-top: 14px; margin-bottom: 26px; }
+h2 { font-size: clamp(22px, 3.4vw, 31px); line-height: 1.12; letter-spacing: -.025em; font-weight: 800; margin: 0; max-width: 22ch; text-wrap: balance; }
+h3 { font-size: 18px; letter-spacing: -.012em; font-weight: 700; margin: 0; }
+h4 { font-size: 15px; font-weight: 700; margin: 0; letter-spacing: -.005em; }
+
+/* ── the specimen bench ───────────────────────────────────────────────── */
+/* A slice of the real screen: the collapsed hero bar, the docked rail under
+   it, and a ghost of the content scrolling beneath. Chips render at TRUE size
+   (12–13px type, real padding), so the benches are comparable at 1:1. */
+.bench {
+  background: var(--app-ink);
+  border: 1px solid var(--app-line);
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+.bench-bar {
+  height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 12px;
+  background: color-mix(in srgb, var(--app-ink) 88%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--app-chalk) 8%, transparent);
+}
+.bench-nav {
+  width: 30px; height: 30px; border-radius: 999px; flex: none; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--app-chalk) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--app-chalk) 12%, transparent);
+  color: var(--app-chalk); font-size: 13px; line-height: 1;
+}
+.bench-title { font-family: var(--sans); font-weight: 800; font-size: 16px; letter-spacing: -.01em; color: var(--app-chalk); }
+.bench-rail {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--app-line);
+}
+.bench-rail::-webkit-scrollbar { display: none; }
+.bench-body { padding: 14px 12px 18px; display: flex; flex-direction: column; gap: 8px; }
+.ghost { border-radius: 12px; background: var(--app-ink2); border: 1px solid var(--app-line); padding: 12px 14px; }
+.ghost .g1 { font-family: var(--mono); font-size: 22px; letter-spacing: -.02em; color: var(--app-chalk); font-variant-numeric: tabular-nums; }
+.ghost .g1 span { font-size: 12px; color: var(--app-ash); letter-spacing: 0; }
+.ghost .g2 { font-family: var(--mono); font-size: 11px; color: var(--app-ash); margin-top: 4px; }
+.bench-fade { height: 26px; background: linear-gradient(to bottom, transparent, var(--app-ink)); margin-top: -26px; position: relative; }
+
+/* the chips themselves — one class per shipped/proposed treatment */
+.chip { flex: 0 0 auto; white-space: nowrap; cursor: pointer; font-family: var(--mono); border-radius: 999px; }
+
+/* A — History, web (shipped) */
+.rail-hw { padding: 10px 12px 14px; }
+.chip-hw { font-size: 12px; padding: 6px 16px; border: 1px solid var(--app-line); background: var(--app-ink2); color: var(--app-ash); font-weight: 400; }
+.chip-hw[aria-pressed="true"] { background: var(--app-lime); border-color: var(--app-lime); color: var(--app-onaccent); font-weight: 700; }
+
+/* B — History, mobile (shipped) */
+.rail-hm { padding: 10px 12px 14px; }
+.chip-hm { font-family: var(--sans); font-weight: 700; font-size: 13px; padding: 0 16px; min-height: 44px; display: inline-flex; align-items: center;
+  border: 1px solid var(--app-line); background: transparent; color: var(--app-ash); }
+.chip-hm[aria-pressed="true"] { border-color: var(--app-limetext); background: color-mix(in srgb, var(--app-limetext) 16%, transparent); color: var(--app-limetext); }
+
+/* C — Plans, web + mobile (shipped) */
+.rail-pw { padding: 8px 12px; }
+.chip-pw { font-size: 12px; letter-spacing: .08em; padding: 8px 12px; border: 1px solid var(--app-line); background: transparent; color: var(--app-ash); }
+.chip-pw-nolsp { letter-spacing: 0; }
+
+/* ── option chips ─────────────────────────────────────────────────────── */
+/* UNIFY */
+.chip-u { font-size: 12px; padding: 0 16px; min-height: 44px; display: inline-flex; align-items: center;
+  border: 1px solid var(--app-line); background: transparent; color: var(--app-ash); font-weight: 500; }
+.chip-u[aria-pressed="true"] { border-color: var(--app-limetext); background: color-mix(in srgb, var(--app-limetext) 16%, transparent); color: var(--app-limetext); }
+
+/* CODIFY — mode (filled) vs anchor (ghost), identical geometry */
+.chip-mode, .chip-anchor {
+  font-size: 12px; letter-spacing: .04em; padding: 0 16px; min-height: 44px;
+  display: inline-flex; align-items: center; border: 1px solid var(--app-line);
+  background: transparent; color: var(--app-ash); font-weight: 500;
+}
+.chip-mode[aria-pressed="true"] {
+  border-color: var(--app-limetext);
+  background: color-mix(in srgb, var(--app-limetext) 16%, transparent);
+  color: var(--app-limetext);
+}
+.chip-anchor[data-here="true"] { color: var(--app-chalk); border-color: color-mix(in srgb, var(--app-chalk) 26%, transparent); }
+
+/* UNDERLINE */
+.rail-ul { padding: 0 12px; gap: 0; }
+.tab-ul {
+  flex: 1 1 0; min-width: 0; cursor: pointer; background: none; border: 0; border-bottom: 2px solid transparent;
+  font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--app-ash); min-height: 44px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tab-ul[aria-selected="true"] { color: var(--app-chalk); border-bottom-color: var(--app-limetext); }
+
+/* SEGMENT */
+.rail-seg { padding: 8px 12px 12px; }
+.seg { display: flex; width: 100%; gap: 0; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--app-chalk) 7%, transparent); }
+.seg button {
+  flex: 1 1 0; min-width: 0; cursor: pointer; border: 0; background: transparent; border-radius: 999px;
+  font-family: var(--mono); font-size: 12px; color: var(--app-ash); min-height: 36px; padding: 0 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background .22s cubic-bezier(.22,1,.36,1), color .22s;
+}
+.seg button[aria-pressed="true"] { background: var(--app-ink2); color: var(--app-chalk); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.28); }
+
+/* QUIET */
+.rail-q { padding: 12px; gap: 20px; }
+.q {
+  cursor: pointer; border: 0; background: none; padding: 0 0 4px; min-height: 34px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--app-ash); position: relative; white-space: nowrap;
+}
+.q[aria-pressed="true"] { color: var(--app-chalk); font-weight: 700; }
+.q[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--app-limetext); }
+
+/* LEDGER */
+.rail-l { padding: 8px 12px 10px; }
+.chip-l {
+  cursor: pointer; border: 1px solid var(--app-line); background: transparent; border-radius: 14px;
+  padding: 6px 14px; min-height: 44px; display: inline-flex; flex-direction: column; justify-content: center; gap: 1px;
+  flex: 0 0 auto; white-space: nowrap;
+}
+.chip-l .lv { font-family: var(--mono); font-size: 14px; color: var(--app-chalk); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.chip-l .ll { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--app-ash); line-height: 1.1; }
+.chip-l[aria-pressed="true"] { border-color: var(--app-limetext); background: color-mix(in srgb, var(--app-limetext) 12%, transparent); }
+.chip-l[aria-pressed="true"] .lv, .chip-l[aria-pressed="true"] .ll { color: var(--app-limetext); }
+
+/* ── measurement strip ────────────────────────────────────────────────── */
+.measure {
+  display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+.measure span { display: inline-flex; gap: 5px; align-items: baseline; }
+.measure span b { color: var(--fg-dim); font-weight: 500; }
+.measure .bad { color: var(--defect); }
+
+/* ── comparison / findings ────────────────────────────────────────────── */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 26px; }
+.spec { display: flex; flex-direction: column; gap: 12px; }
+.spec-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.spec-head .label { color: var(--fg-dim); }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet-2); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 13.5px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+thead th { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-faint); font-weight: 500;
+  background: var(--sheet); position: sticky; top: 0; border-bottom: 1px solid var(--rule); }
+tbody tr:last-child td { border-bottom: 0; }
+td.k { font-weight: 600; white-space: nowrap; }
+td.m { font-family: var(--mono); font-size: 12px; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+.matrix td.m { white-space: nowrap; }
+.yes { color: var(--bydesign); font-weight: 700; }
+.no  { color: var(--defect); }
+.part { color: var(--drift); }
+
+.tag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 8px; border-radius: 4px; white-space: nowrap; font-weight: 600; }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 2px; background: currentColor; }
+.tag.d { color: var(--defect); background: color-mix(in srgb, var(--defect) 14%, transparent); }
+.tag.r { color: var(--drift);  background: color-mix(in srgb, var(--drift) 16%, transparent); }
+.tag.b { color: var(--bydesign); background: color-mix(in srgb, var(--bydesign) 15%, transparent); }
+
+/* ── option cards ─────────────────────────────────────────────────────── */
+.opt { padding-top: clamp(40px, 5vw, 62px); }
+.opt + .opt { border-top: 1px solid var(--rule-soft); }
+.opt-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+.opt-key { font-family: var(--mono); font-size: 12px; letter-spacing: .18em; font-weight: 700; color: var(--accent); }
+.opt-grid { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(280px, .82fr); gap: 30px; align-items: start; margin-top: 22px; }
+@media (max-width: 820px) { .opt-grid { grid-template-columns: 1fr; } }
+.verdict { display: flex; flex-direction: column; gap: 16px; }
+.vblock { display: flex; flex-direction: column; gap: 6px; }
+.vblock ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 14.5px; line-height: 1.5; color: var(--fg-dim); }
+.vblock li::marker { color: var(--fg-faint); }
+.vblock li b { color: var(--fg); font-weight: 600; }
+
+.callout {
+  border-left: 3px solid var(--accent); background: var(--sheet-2);
+  padding: 16px 20px; border-radius: 0 8px 8px 0; display: flex; flex-direction: column; gap: 10px;
+  max-width: var(--measure);
+}
+.rec { border-left-width: 4px; background: var(--accent-wash); }
+
+.files { display: flex; flex-direction: column; gap: 3px; font-family: var(--mono); font-size: 12px; color: var(--fg-dim); }
+.files span::before { content: "› "; color: var(--fg-faint); }
+
+footer { margin-top: clamp(60px, 8vw, 100px); padding-top: 20px; border-top: 1px solid var(--rule); }
+.foot { display: flex; flex-wrap: wrap; gap: 10px 30px; font-size: 13px; color: var(--fg-faint); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span class="label">HYBRID — Aurora design sheet</span>
+    <span class="label">branch claude/sticky-tab-menu-design-09tved</span>
+    <span class="label">8 Aug 2026</span>
+  </div>
+  <h1>The dock rail: History and Plans <em>are not the same control</em></h1>
+  <p class="standfirst">
+    Two screens dock a strip of chips beneath the collapsed hero. They look different because
+    twelve properties were decided four separate times — and because one of the two has no rail
+    slot to sit in. Here is the audit, six ways out, and a recommendation.
+  </p>
+  <div class="runin">
+    <div><span class="label">Surfaces</span><b>History · Plans</b></div>
+    <div><span class="label">Clients</span><b>web + mobile</b></div>
+    <div><span class="label">Implementations</span><b>4 (1 from the kit)</b></div>
+    <div><span class="label">Options</span><b>6</b></div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════ FINDING ═══ -->
+<section>
+  <div class="sechead">
+    <h2>What's actually on screen</h2>
+    <span class="label">Specimens render at 1:1</span>
+  </div>
+
+  <div class="prose" style="margin-bottom:30px">
+    <p>
+      Both rails are sticky strips of pill-shaped buttons docked under the collapsed hero bar.
+      Below are the two as they ship today, rendered from the real values in
+      <code>history-views.tsx</code> and <code>plans.tsx</code>. Click the chips — the selected
+      state is live.
+    </p>
+  </div>
+
+  <div class="two">
+    <div class="spec">
+      <div class="spec-head"><h3>History</h3><span class="label">web — ViewSwitcher</span></div>
+      <div class="bench">
+        <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">History</span></div>
+        <div class="bench-rail rail-hw" data-group>
+          <button class="chip chip-hw" aria-pressed="true">Agenda</button>
+          <button class="chip chip-hw" aria-pressed="false">Weeks</button>
+          <button class="chip chip-hw" aria-pressed="false">Timeline</button>
+          <button class="chip chip-hw" aria-pressed="false">Trend</button>
+        </div>
+        <div class="bench-body">
+          <div class="ghost"><div class="g1">12.4 <span>t</span></div><div class="g2">Upper push – 6 lifts – 58 min</div></div>
+          <div class="ghost"><div class="g1">10.2 <span>km</span></div><div class="g2">Easy run – 52 min – 5:06 /km</div></div>
+        </div>
+        <div class="bench-fade"></div>
+      </div>
+      <div class="measure">
+        <span><b>fill</b> solid lime</span><span><b>text</b> on-accent</span>
+        <span><b>face</b> mono 12</span><span><b>pad</b> 6×16</span>
+        <span class="bad"><b>hit</b> ≈29px</span><span><b>weight</b> 400→700</span>
+      </div>
+    </div>
+
+    <div class="spec">
+      <div class="spec-head"><h3>History</h3><span class="label">mobile — ViewSwitcher → AChip</span></div>
+      <div class="bench">
+        <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">History</span></div>
+        <div class="bench-rail rail-hm" data-group>
+          <button class="chip chip-hm" aria-pressed="true">Agenda</button>
+          <button class="chip chip-hm" aria-pressed="false">Weeks</button>
+          <button class="chip chip-hm" aria-pressed="false">Timeline</button>
+          <button class="chip chip-hm" aria-pressed="false">Trend</button>
+        </div>
+        <div class="bench-body">
+          <div class="ghost"><div class="g1">12.4 <span>t</span></div><div class="g2">Upper push – 6 lifts – 58 min</div></div>
+          <div class="ghost"><div class="g1">10.2 <span>km</span></div><div class="g2">Easy run – 52 min – 5:06 /km</div></div>
+        </div>
+        <div class="bench-fade"></div>
+      </div>
+      <div class="measure">
+        <span><b>fill</b> lime @16%</span><span><b>text</b> lime</span>
+        <span><b>face</b> Archivo bold 13</span><span><b>pad</b> —×16</span>
+        <span><b>hit</b> 44px</span><span><b>weight</b> constant</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="two" style="margin-top:30px">
+    <div class="spec">
+      <div class="spec-head"><h3>Plans</h3><span class="label">web — CategoryRail</span></div>
+      <div class="bench">
+        <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">Plans</span></div>
+        <div class="bench-rail rail-pw" style="background:color-mix(in srgb, var(--app-ink) 86%, transparent)">
+          <button class="chip chip-pw">Strength</button>
+          <button class="chip chip-pw">Endurance</button>
+          <button class="chip chip-pw">Hybrid</button>
+          <button class="chip chip-pw">Skill</button>
+        </div>
+        <div class="bench-body">
+          <div class="ghost"><div class="g1" style="font-size:15px;letter-spacing:0">Strength</div><div class="g2">4 goals</div></div>
+          <div class="ghost"><div class="g1" style="font-size:15px;letter-spacing:0">Endurance</div><div class="g2">6 goals</div></div>
+        </div>
+        <div class="bench-fade"></div>
+      </div>
+      <div class="measure">
+        <span><b>fill</b> none</span><span><b>text</b> ash</span>
+        <span><b>face</b> mono 12 <b>+.08em</b></span><span><b>pad</b> 8×12</span>
+        <span class="bad"><b>hit</b> ≈33px</span><span class="bad"><b>chrome</b> ink 86% / blur 14</span>
+      </div>
+    </div>
+
+    <div class="spec">
+      <div class="spec-head"><h3>Plans</h3><span class="label">mobile — CategoryRail</span></div>
+      <div class="bench">
+        <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">Plans</span></div>
+        <div class="bench-rail rail-pw">
+          <button class="chip chip-pw chip-pw-nolsp">Strength</button>
+          <button class="chip chip-pw chip-pw-nolsp">Endurance</button>
+          <button class="chip chip-pw chip-pw-nolsp">Hybrid</button>
+          <button class="chip chip-pw chip-pw-nolsp">Skill</button>
+        </div>
+        <div class="bench-body">
+          <div class="ghost"><div class="g1" style="font-size:15px;letter-spacing:0">Strength</div><div class="g2">4 goals</div></div>
+          <div class="ghost"><div class="g1" style="font-size:15px;letter-spacing:0">Endurance</div><div class="g2">6 goals</div></div>
+        </div>
+        <div class="bench-fade"></div>
+      </div>
+      <div class="measure">
+        <span><b>fill</b> none</span><span><b>text</b> ash</span>
+        <span><b>face</b> mono 12 <b>+0</b></span><span><b>pad</b> 8×12</span>
+        <span class="bad"><b>hit</b> ≈33px</span><span><b>chrome</b> ink 88% / blur 26</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:34px">
+    <h4>The root cause is structural, not cosmetic</h4>
+    <p style="color:var(--fg-dim); font-size:15px">
+      Mobile's <code>CoverScreen</code> takes a <code>rail</code> prop; web's <code>CoverHero</code>
+      does not. So on web, Plans hand-rolls its own <code>position:&nbsp;sticky</code> bar next to the
+      hero — and that hand-roll is where <em>ink 86% / blur 14 / z 29</em> comes from, against the
+      scaffold's <em>ink 88% / blur 18 / z 20</em>. Every other difference below is downstream of
+      four call sites each deciding their own chip.
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════ AUDIT ═══ -->
+<section>
+  <div class="sechead">
+    <h2>The divergence audit</h2>
+    <span class="label">12 properties · 4 implementations</span>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th><th>History · web</th><th>History · mobile</th><th>Plans · web</th><th>Plans · mobile</th><th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="k">Owner</td>
+          <td class="m">hand-rolled</td><td class="m">kit AChip</td><td class="m">hand-rolled</td><td class="m">hand-rolled</td>
+          <td><span class="tag d">defect</span></td>
+        </tr>
+        <tr>
+          <td class="k">Rail chrome</td>
+          <td class="m">ink 88 / blur 18</td><td class="m">ink 88 / blur 26</td><td class="m">ink 86 / blur 14</td><td class="m">ink 88 / blur 26</td>
+          <td><span class="tag d">defect</span></td>
+        </tr>
+        <tr>
+          <td class="k">Selected fill</td>
+          <td class="m">lime · solid</td><td class="m">lime @16%</td><td class="m">—</td><td class="m">—</td>
+          <td><span class="tag d">defect</span></td>
+        </tr>
+        <tr>
+          <td class="k">Selected text</td>
+          <td class="m">on-accent #0c0d0c</td><td class="m">lime</td><td class="m">—</td><td class="m">—</td>
+          <td><span class="tag d">defect</span></td>
+        </tr>
+        <tr>
+          <td class="k">Chip face</td>
+          <td class="m">mono 12</td><td class="m">Archivo bold 13</td><td class="m">mono 12</td><td class="m">mono 12</td>
+          <td><span class="tag d">defect</span></td>
+        </tr>
+        <tr>
+          <td class="k">Hit target</td>
+          <td class="m">≈29px</td><td class="m">44px</td><td class="m">≈33px</td><td class="m">≈33px</td>
+          <td><span class="tag d">defect</span></td>
+        </tr>
+        <tr>
+          <td class="k">Rest fill</td>
+          <td class="m">ink2</td><td class="m">transparent</td><td class="m">transparent</td><td class="m">transparent</td>
+          <td><span class="tag r">drift</span></td>
+        </tr>
+        <tr>
+          <td class="k">Tracking</td>
+          <td class="m">0</td><td class="m">0</td><td class="m">+.08em</td><td class="m">0</td>
+          <td><span class="tag r">drift</span></td>
+        </tr>
+        <tr>
+          <td class="k">Weight on select</td>
+          <td class="m">400 → 700</td><td class="m">constant</td><td class="m">—</td><td class="m">—</td>
+          <td><span class="tag r">drift</span></td>
+        </tr>
+        <tr>
+          <td class="k">Chip padding</td>
+          <td class="m">6 × 16</td><td class="m">44h × 16</td><td class="m">8 × 12</td><td class="m">8 × 12</td>
+          <td><span class="tag r">drift</span></td>
+        </tr>
+        <tr>
+          <td class="k">Rail padding</td>
+          <td class="m">10 / 14</td><td class="m">10 / 14</td><td class="m">8 / 8</td><td class="m">8 / 8</td>
+          <td><span class="tag r">drift</span></td>
+        </tr>
+        <tr>
+          <td class="k">What a press does</td>
+          <td class="m">selects a view</td><td class="m">selects a view</td><td class="m">jumps to a shelf</td><td class="m">jumps to a shelf</td>
+          <td><span class="tag b">by design</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prose" style="margin-top:26px">
+    <p>
+      Six of the twelve are outright defects: four break the web↔mobile parity rule, one breaks
+      the kit's own 44px floor on three of four rails, and one is a rail that isn't in the rail slot.
+      Five are drift — small, arbitrary, and cheap to pin.
+    </p>
+    <p>
+      <strong>Exactly one difference is real.</strong> History's chips <em>select</em>: one is always
+      on, and the panel below changes. Plans' chips <em>jump</em>: nothing is ever "on", the shelves
+      already are the categories, and the mobile source is explicit that these are deliberately
+      <em>not</em> a tablist. Any option that erases that distinction is making the control lie.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════ OPTIONS ═══ -->
+<section>
+  <div class="sechead">
+    <h2>Six ways out</h2>
+    <span class="label">Chips are live — click them</span>
+  </div>
+
+  <div class="prose" style="margin-bottom:8px">
+    <p>
+      Each option is rendered on the same bench, at the same scale, so they are comparable by eye.
+      All six assume the structural fix — web's <code>CoverHero</code> gains the <code>rail</code>
+      slot mobile already has — because none of them survive without it.
+    </p>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────── UNIFY ── -->
+  <article class="opt">
+    <div class="opt-head"><span class="opt-key">UNIFY</span><h3>One rail, one skin</h3></div>
+    <p class="prose">
+      Both rails become the same component with the same chip. Plans' categories gain a selected
+      state driven by scroll position, so the chip you're standing in lights up as you scroll —
+      the dead jump chips become a live position readout.
+    </p>
+    <div class="opt-grid">
+      <div>
+        <div class="bench">
+          <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">Plans</span></div>
+          <div class="bench-rail rail-hm" data-group>
+            <button class="chip chip-u" aria-pressed="true">Strength</button>
+            <button class="chip chip-u" aria-pressed="false">Endurance</button>
+            <button class="chip chip-u" aria-pressed="false">Hybrid</button>
+            <button class="chip chip-u" aria-pressed="false">Skill</button>
+          </div>
+          <div class="bench-body">
+            <div class="ghost"><div class="g1" style="font-size:15px;letter-spacing:0">Strength</div><div class="g2">4 goals</div></div>
+            <div class="ghost"><div class="g1" style="font-size:15px;letter-spacing:0">Endurance</div><div class="g2">6 goals</div></div>
+          </div>
+          <div class="bench-fade"></div>
+        </div>
+        <div class="measure"><span><b>chip</b> one class</span><span><b>hit</b> 44px</span><span><b>state</b> scroll-spy</span></div>
+      </div>
+      <div class="verdict">
+        <div class="vblock"><span class="label">Fixes</span><ul>
+          <li>Every row of the audit at once — there is only one chip left to diverge.</li>
+          <li>Plans gains a <b>position indicator</b> it currently lacks entirely.</li>
+        </ul></div>
+        <div class="vblock"><span class="label">Costs</span><ul>
+          <li>A filled chip reads as <b>a filter</b>. Pressing "Endurance" and still seeing Strength above it is a broken promise.</li>
+          <li>Needs scroll-spy on both clients (IntersectionObserver / onScroll + layout y), and it fights smooth-scroll during a jump.</li>
+          <li>Reverses an explicit decision recorded in the mobile source.</li>
+        </ul></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ────────────────────────────────────────────────────── CODIFY ── -->
+  <article class="opt">
+    <div class="opt-head"><span class="opt-key">CODIFY</span><h3>Two roles, one vocabulary</h3></div>
+    <p class="prose">
+      Keep the visual difference, but make it a <em>rule</em> rather than an accident: a chip that
+      <strong>selects</strong> is tint-filled; a chip that <strong>jumps</strong> is ghost. Then pin
+      everything else — geometry, height, face, tracking, padding, hit target, rail chrome — so the
+      fill is the <em>only</em> thing that differs, and it differs for a reason a reader can learn once.
+    </p>
+    <div class="opt-grid">
+      <div>
+        <div class="bench">
+          <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">History</span></div>
+          <div class="bench-rail rail-hm" data-group>
+            <button class="chip chip-mode" aria-pressed="true">Agenda</button>
+            <button class="chip chip-mode" aria-pressed="false">Weeks</button>
+            <button class="chip chip-mode" aria-pressed="false">Timeline</button>
+            <button class="chip chip-mode" aria-pressed="false">Trend</button>
+          </div>
+          <div class="bench-body">
+            <div class="ghost"><div class="g1">12.4 <span>t</span></div><div class="g2">Upper push – 6 lifts – 58 min</div></div>
+          </div>
+          <div class="bench-fade"></div>
+        </div>
+        <div class="measure"><span><b>role</b> mode — tint fill</span></div>
+
+        <div class="bench" style="margin-top:16px">
+          <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">Plans</span></div>
+          <div class="bench-rail rail-hm">
+            <button class="chip chip-anchor">Strength</button>
+            <button class="chip chip-anchor">Endurance</button>
+            <button class="chip chip-anchor">Hybrid</button>
+            <button class="chip chip-anchor">Skill</button>
+          </div>
+          <div class="bench-body">
+            <div class="ghost"><div class="g1" style="font-size:15px;letter-spacing:0">Strength</div><div class="g2">4 goals</div></div>
+          </div>
+          <div class="bench-fade"></div>
+        </div>
+        <div class="measure"><span><b>role</b> anchor — ghost, never "on"</span><span><b>hit</b> 44px both</span></div>
+      </div>
+      <div class="verdict">
+        <div class="vblock"><span class="label">Fixes</span><ul>
+          <li>All six defects and all five drifts.</li>
+          <li>Retires three hand-rolled chips into <b>one shared primitive</b> with a <code>role</code> prop, so a fifth rail can't invent a fifth look.</li>
+          <li>Settles the selected-fill parity bug in mobile's favour — the solid-lime pill is the loudest object on the History screen and it isn't the subject.</li>
+        </ul></div>
+        <div class="vblock"><span class="label">Costs</span><ul>
+          <li>The two rails still don't look identical. That's the point, but it must be <b>documented</b> or it re-reads as drift in six months.</li>
+          <li>Two states to keep honest in the guard test rather than one.</li>
+        </ul></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────────────── UNDERLINE ── -->
+  <article class="opt">
+    <div class="opt-head"><span class="opt-key">UNDERLINE</span><h3>Tabs that look like tabs</h3></div>
+    <p class="prose">
+      History's four views are a fixed, exclusive, permanent set — the textbook case for an
+      underline tab bar. Give it one: equal-width labels, chalk when active, a 2px accent rule
+      beneath. Plans keeps the ghost chip rail. The two controls stop being confusable because
+      they stop being the same <em>kind of object</em>.
+    </p>
+    <div class="opt-grid">
+      <div>
+        <div class="bench">
+          <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">History</span></div>
+          <div class="bench-rail rail-ul" role="tablist" data-group-tabs>
+            <button class="tab-ul" role="tab" aria-selected="true">Agenda</button>
+            <button class="tab-ul" role="tab" aria-selected="false">Weeks</button>
+            <button class="tab-ul" role="tab" aria-selected="false">Timeline</button>
+            <button class="tab-ul" role="tab" aria-selected="false">Trend</button>
+          </div>
+          <div class="bench-body">
+            <div class="ghost"><div class="g1">12.4 <span>t</span></div><div class="g2">Upper push – 6 lifts – 58 min</div></div>
+            <div class="ghost"><div class="g1">10.2 <span>km</span></div><div class="g2">Easy run – 52 min – 5:06 /km</div></div>
+          </div>
+          <div class="bench-fade"></div>
+        </div>
+        <div class="measure"><span><b>hit</b> 44px</span><span><b>fill</b> none</span><span><b>marker</b> 2px rule</span><span class="bad"><b>width</b> fixed 4-up</span></div>
+      </div>
+      <div class="verdict">
+        <div class="vblock"><span class="label">Fixes</span><ul>
+          <li>The strongest semantic separation on offer — nobody mistakes an underline tab for a filter chip.</li>
+          <li>No lime blob competing with the hero and the content beneath it.</li>
+        </ul></div>
+        <div class="vblock"><span class="label">Costs</span><ul>
+          <li><b>Translation risk.</b> Four equal columns at ~90px each: German "Zeitstrahl" and Polish "Oś czasu" ellipsize where English doesn't. The bench above shows the English best case.</li>
+          <li>Adds a <b>third</b> selection form to an app whose own kit notes an audit that found eight and collapsed them to two.</li>
+          <li>Underline tabs read as top-level navigation; this is a sub-rail under a hero that already carries the screen name.</li>
+        </ul></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ───────────────────────────────────────────────────── SEGMENT ── -->
+  <article class="opt">
+    <div class="opt-head"><span class="opt-key">SEGMENT</span><h3>Reuse the Liquid segment</h3></div>
+    <p class="prose">
+      The app already owns a high-craft exclusive-selection primitive: <code>LiquidSeg</code>, built
+      to the iOS 26 spec on a shared spring, shipped on both clients, currently used by the Today hub
+      switcher and the week filter. History's four views are exactly its brief. Adopt it instead of
+      maintaining a ninth hand-rolled selector; Plans keeps chips.
+    </p>
+    <div class="opt-grid">
+      <div>
+        <div class="bench">
+          <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">History</span></div>
+          <div class="bench-rail rail-seg" style="display:block">
+            <div class="seg" data-group>
+              <button aria-pressed="true">Agenda</button>
+              <button aria-pressed="false">Weeks</button>
+              <button aria-pressed="false">Timeline</button>
+              <button aria-pressed="false">Trend</button>
+            </div>
+          </div>
+          <div class="bench-body">
+            <div class="ghost"><div class="g1">12.4 <span>t</span></div><div class="g2">Upper push – 6 lifts – 58 min</div></div>
+            <div class="ghost"><div class="g1">10.2 <span>km</span></div><div class="g2">Easy run – 52 min – 5:06 /km</div></div>
+          </div>
+          <div class="bench-fade"></div>
+        </div>
+        <div class="measure"><span><b>primitive</b> shipped</span><span><b>seg</b> 36h + 4 pad</span><span><b>drag</b> scrub to select</span><span class="bad"><b>width</b> fixed 4-up</span></div>
+      </div>
+      <div class="verdict">
+        <div class="vblock"><span class="label">Fixes</span><ul>
+          <li>Zero new primitives. The parity story is free — <code>LiquidSeg</code> is already twinned across clients on a shared spring token.</li>
+          <li>Unmistakably a mode switch, and it brings drag-to-scrub with it.</li>
+        </ul></div>
+        <div class="vblock"><span class="label">Costs</span><ul>
+          <li>Same translation squeeze as UNDERLINE, and worse — segments can't scroll.</li>
+          <li>A full-width track is a <b>heavy</b> object to dock permanently under a hero on a scrolling list; the control was designed for a hub head, not a sub-rail.</li>
+          <li>Locks History's view set at four. A fifth view would force a redesign; a chip rail just scrolls.</li>
+        </ul></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────────────────── QUIET ── -->
+  <article class="opt">
+    <div class="opt-head"><span class="opt-key">QUIET</span><h3>Strip the box off both</h3></div>
+    <p class="prose">
+      Neither rail is the subject of its screen. Delete the pill entirely: mono uppercase labels in
+      ash, the active one in chalk with a short accent rule under it, and nothing else. The
+      "two kinds of pill" problem dissolves because there is no pill. The rail also gets ~14px
+      shorter, which is 14px of History back.
+    </p>
+    <div class="opt-grid">
+      <div>
+        <div class="bench">
+          <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">History</span></div>
+          <div class="bench-rail rail-q" data-group>
+            <button class="q" aria-pressed="true">Agenda</button>
+            <button class="q" aria-pressed="false">Weeks</button>
+            <button class="q" aria-pressed="false">Timeline</button>
+            <button class="q" aria-pressed="false">Trend</button>
+          </div>
+          <div class="bench-body">
+            <div class="ghost"><div class="g1">12.4 <span>t</span></div><div class="g2">Upper push – 6 lifts – 58 min</div></div>
+            <div class="ghost"><div class="g1">10.2 <span>km</span></div><div class="g2">Easy run – 52 min – 5:06 /km</div></div>
+          </div>
+          <div class="bench-fade"></div>
+        </div>
+        <div class="measure"><span><b>height</b> −14px</span><span><b>fill</b> none</span><span><b>border</b> none</span><span class="bad"><b>afford</b> reads as text</span></div>
+      </div>
+      <div class="verdict">
+        <div class="vblock"><span class="label">Fixes</span><ul>
+          <li>The lightest rail of the six, and the least competition with the hero above and the headline figures below.</li>
+          <li>Sits naturally in the app's mono-uppercase metadata voice.</li>
+        </ul></div>
+        <div class="vblock"><span class="label">Costs</span><ul>
+          <li><b>Weak affordance.</b> Under the collapsed bar this looks like a caption row, and Plans' version — which has no active state at all — would look like four unrelated words.</li>
+          <li>Leans on colour + weight alone to report state; needs a real focus/press treatment to stay usable.</li>
+          <li>Doesn't remove the divergence so much as hide it, since the two rails still behave differently with nothing to signal it.</li>
+        </ul></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ────────────────────────────────────────────────────── LEDGER ── -->
+  <article class="opt">
+    <div class="opt-head"><span class="opt-key">LEDGER</span><h3>Put the figure in the chip</h3></div>
+    <p class="prose">
+      Every chip carries the number behind it — History's views show the session count they render,
+      Plans' categories show goals per shelf. This is the only option that also absorbs the
+      <em>third</em> rail on the Plans stack: <code>PlanWeekRail</code>, the waveform week picker,
+      is already a label-plus-figure object. Make that the family, and it stops being the odd one out.
+    </p>
+    <div class="opt-grid">
+      <div>
+        <div class="bench">
+          <div class="bench-bar"><span class="bench-nav">‹</span><span class="bench-title">History</span></div>
+          <div class="bench-rail rail-l" data-group>
+            <button class="chip-l" aria-pressed="true"><span class="lv">128</span><span class="ll">Agenda</span></button>
+            <button class="chip-l" aria-pressed="false"><span class="lv">31</span><span class="ll">Weeks</span></button>
+            <button class="chip-l" aria-pressed="false"><span class="lv">128</span><span class="ll">Timeline</span></button>
+            <button class="chip-l" aria-pressed="false"><span class="lv">12mo</span><span class="ll">Trend</span></button>
+          </div>
+          <div class="bench-body">
+            <div class="ghost"><div class="g1">12.4 <span>t</span></div><div class="g2">Upper push – 6 lifts – 58 min</div></div>
+            <div class="ghost"><div class="g1">10.2 <span>km</span></div><div class="g2">Easy run – 52 min – 5:06 /km</div></div>
+          </div>
+          <div class="bench-fade"></div>
+        </div>
+        <div class="measure"><span><b>hit</b> 44px</span><span><b>rows</b> figure + label</span><span><b>radius</b> 14 (not pill)</span><span class="bad"><b>height</b> +6px</span></div>
+      </div>
+      <div class="verdict">
+        <div class="vblock"><span class="label">Fixes</span><ul>
+          <li>Unifies <b>all three</b> rails on the Plans/History surface, including the waveform week picker, on "label + figure".</li>
+          <li>Echoes the History card redesign — one large mono figure, one small label — so the rail speaks the screen's own language.</li>
+        </ul></div>
+        <div class="vblock"><span class="label">Costs</span><ul>
+          <li>Two of History's four figures are <b>the same number</b> (Agenda and Timeline both render every session), which makes the ledger look broken.</li>
+          <li>Trend has no count, only a range — the fourth chip has to lie or blank.</li>
+          <li>Taller, busier, and every count must be cheap enough to compute on each render.</li>
+        </ul></div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ MATRIX ══════ -->
+<section>
+  <div class="sechead">
+    <h2>Scored against what matters</h2>
+    <span class="label">6 options · 7 criteria</span>
+  </div>
+  <div class="tablewrap">
+    <table class="matrix">
+      <thead>
+        <tr><th>Criterion</th><th>Unify</th><th>Codify</th><th>Underline</th><th>Segment</th><th>Quiet</th><th>Ledger</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="k">Closes the 6 defects</td>
+          <td class="m yes">yes</td><td class="m yes">yes</td><td class="m part">History only</td><td class="m part">History only</td><td class="m yes">yes</td><td class="m yes">yes</td></tr>
+        <tr><td class="k">44px hit target</td>
+          <td class="m yes">yes</td><td class="m yes">yes</td><td class="m yes">yes</td><td class="m no">36px</td><td class="m part">34px</td><td class="m yes">yes</td></tr>
+        <tr><td class="k">Honest to the two jobs</td>
+          <td class="m no">no</td><td class="m yes">yes</td><td class="m yes">yes</td><td class="m yes">yes</td><td class="m no">no</td><td class="m part">partly</td></tr>
+        <tr><td class="k">New primitives</td>
+          <td class="m yes">0</td><td class="m yes">0</td><td class="m no">1</td><td class="m yes">0</td><td class="m no">1</td><td class="m no">1</td></tr>
+        <tr><td class="k">Survives PL / DE</td>
+          <td class="m yes">scrolls</td><td class="m yes">scrolls</td><td class="m no">clips</td><td class="m no">clips</td><td class="m yes">scrolls</td><td class="m yes">scrolls</td></tr>
+        <tr><td class="k">Survives a 5th view</td>
+          <td class="m yes">yes</td><td class="m yes">yes</td><td class="m part">tight</td><td class="m no">no</td><td class="m yes">yes</td><td class="m yes">yes</td></tr>
+        <tr><td class="k">Blast radius</td>
+          <td class="m part">6 files + spy</td><td class="m yes">6 files</td><td class="m part">5 files</td><td class="m part">4 files</td><td class="m yes">5 files</td><td class="m no">8 files + counts</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ RECOMMENDATION ══ -->
+<section>
+  <div class="sechead">
+    <h2>Recommendation</h2>
+    <span class="label">CODIFY, then LEDGER as a follow-on</span>
+  </div>
+
+  <div class="callout rec">
+    <h4>Ship CODIFY as one shared <code>DockRail</code> primitive</h4>
+    <p style="font-size:15.5px">
+      It is the only option that closes every defect and every drift without asking a control to lie
+      about what pressing it does. The rails <em>should</em> differ — one selects, one jumps — and the
+      fix is to make that the single deliberate difference instead of one of twelve accidental ones.
+    </p>
+  </div>
+
+  <div class="prose" style="margin-top:26px">
+    <p>Concretely, in one change across both clients:</p>
+  </div>
+
+  <div class="opt-grid" style="margin-top:18px">
+    <div class="verdict">
+      <div class="vblock"><span class="label">The change</span><ul>
+        <li><b>Web <code>CoverHero</code> gains the <code>rail</code> slot</b> mobile's <code>CoverScreen</code> already has, and Plans stops hand-rolling its sticky bar. This alone fixes the chrome divergence and the z-index.</li>
+        <li><b>One <code>DockRail</code> + <code>DockChip</code></b> in the kit, twinned, taking <code>role: "mode" | "anchor"</code>. It owns the full-bleed margins, gap, rail padding, radius, face and the 44px floor.</li>
+        <li><b>Selected = tint,</b> not solid: <code>lime @16%</code> fill, lime text, lime border — mobile's <code>AChip</code> treatment wins, and web's solid-lime pill goes.</li>
+        <li><b>Weight stays constant</b> across states so selecting a chip doesn't reflow the row.</li>
+        <li><b>Anchor chips keep no persistent selection,</b> and keep <code>role="button"</code> rather than a tablist.</li>
+        <li>Guard it the way <code>card-foot</code> is guarded: one test over <b>both</b> client trees that fails on a hand-rolled chip in a rail, a sub-44px target, or a solid accent fill.</li>
+      </ul></div>
+    </div>
+    <div class="verdict">
+      <div class="vblock"><span class="label">Touchpoints</span>
+        <div class="files">
+          <span>apps/web/components/aurora/cover-hero.tsx</span>
+          <span>apps/web/components/aurora/hero.tsx</span>
+          <span>apps/web/components/aurora/history-views.tsx</span>
+          <span>apps/web/components/aurora/plans.tsx</span>
+          <span>apps/mobile/components/aurora/kit.tsx</span>
+          <span>apps/mobile/components/aurora/history-views.tsx</span>
+          <span>apps/mobile/components/aurora/plans.tsx</span>
+          <span>packages/core/src/capabilities.ts</span>
+        </div>
+      </div>
+      <div class="vblock"><span class="label">Deliberately not in scope</span><ul>
+        <li><code>PlanWeekRail</code>'s waveform stays as it is — it encodes weekly volume, which is data, not decoration. LEDGER is the path that would fold it in later.</li>
+        <li>No scroll-spy on Plans. If a position readout is wanted, it belongs to the shelf heads, not the chips.</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="prose" style="margin-top:30px">
+    <p>
+      <strong>Why not the others.</strong> UNIFY makes a jump chip claim a selection it doesn't have.
+      UNDERLINE and SEGMENT both add a selection form to an app that already audited eight and
+      collapsed them to two, and both clip under German and Polish. QUIET removes the affordance
+      along with the divergence. LEDGER is the most interesting of the six and the right
+      <em>second</em> move — but two of History's four counts are the same number, so it needs the
+      view registry to carry its own figure before it can ship honestly.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="foot">
+    <span class="mono">Specimens use system faces — the Artifact CSP blocks font CDNs, so Archivo and JetBrains Mono fall back to the nearest grotesque and mono stacks. Sizes, spacing and colour are exact.</span>
+  </div>
+  <div class="foot" style="margin-top:12px">
+    <span class="mono">Colour reads live tokens — switch your OS theme to check this sheet against Kyoto Hour.</span>
+  </div>
+</footer>
+
+</div>
+
+<script>
+// Chips are live so a reviewer can feel each selected state rather than read
+// about it. One delegated handler; groups are marked on the rail.
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  const group = btn.closest("[data-group]");
+  if (group) {
+    for (const b of group.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b === btn));
+    return;
+  }
+  const tabs = btn.closest("[data-group-tabs]");
+  if (tabs) {
+    for (const b of tabs.querySelectorAll("button")) b.setAttribute("aria-selected", String(b === btn));
+  }
+});
+</script>
