@@ -261,13 +261,30 @@ describe("presentation", () => {
     // release and parent recede, so the gesture a user learns on Today died on
     // the controls they touch most. All eleven now present through Sheet.
     //
-    // tour.tsx is the ONE exemption and it is not a bottom sheet: it is a
-    // full-screen `animationType="fade"` coach-mark overlay, a different
-    // presentation with no panel to drag.
-    const raw = hits(/<Modal\b/g).filter(
-      (h) => !h.startsWith("components/aurora/sheet.tsx") && !h.startsWith("components/tour.tsx"),
-    );
+    // TWO exemptions, and neither is a bottom sheet — each is a different
+    // presentation with no panel to drag:
+    //   • tour.tsx — a full-screen coach-mark overlay.
+    //   • feed-menu.tsx — the post's ⋯ menu, a small card ANCHORED to the glyph
+    //     that opened it. It has to be a Modal for a reason Sheet can't solve:
+    //     drawn inline it would be clipped by the feed's FlatList (and by the
+    //     row itself on Android), so it renders in its own native window and is
+    //     placed from the anchor's measured rect. Presenting it as a sheet is
+    //     what this change REVERSED — see the file header.
+    const EXEMPT = ["components/aurora/sheet.tsx", "components/tour.tsx", "components/feed-menu.tsx"];
+    const raw = hits(/<Modal\b/g).filter((h) => !EXEMPT.some((f) => h.startsWith(f)));
     expect(raw).toEqual([]);
+  });
+
+  it("HARD — and an exempt Modal is not a bottom sheet wearing a different hat", () => {
+    // The exemption above is per FILE, which on its own would let a later edit
+    // quietly grow a hand-rolled sliding panel inside one of them and keep the
+    // suite green. `animationType="slide"` is the tell — it is what all eleven
+    // converted surfaces used, and what neither a fading overlay nor an anchored
+    // card has any use for. Sheet drives its own animation, so it never sets it.
+    const sliding = hits(/animationType=["{']?["']?slide/g).filter(
+      (h) => !h.startsWith("components/aurora/sheet.tsx"),
+    );
+    expect(sliding).toEqual([]);
   });
 
   it("HARD — a Sheet with a flexing body passes `fill`", () => {
