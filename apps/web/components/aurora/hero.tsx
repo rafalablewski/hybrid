@@ -450,7 +450,14 @@ export function HeroScreen({
           negative-margined straight back out again — the same gutter applied
           twice in opposite directions, which is how the two rails ended up
           measuring differently. Mobile parity: the twin slot in mobile hero.tsx
-          and the cover scaffold's, which never padded. */}
+          and the cover scaffold's, which never padded.
+
+          WHERE IT DOCKS: `top: barHeight` IS core's `heroRailPin` expressed in
+          viewport terms — the hero pins with its bottom edge exactly there
+          (sticky constrains the BORDER box, so the hero's negative page-pad
+          margin doesn't shift it), which is why the rail meets the bar flush
+          with no gap. Mobile has no sticky, so it derives the same pin from
+          the hero's geometry. */}
       {rail && (
         <div style={{ position: "sticky", top: geom.barHeight, zIndex: 20, margin: "0 calc(-1 * var(--page-pad-x, 12px))", background: "color-mix(in srgb, var(--color-ink) 88%, transparent)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", borderBottom: `1px solid ${C("line")}` }}>{rail}</div>
       )}
