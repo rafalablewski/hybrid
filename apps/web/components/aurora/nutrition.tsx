@@ -2906,11 +2906,17 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
     { id: "maintain", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
     { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
   ];
-  /* A wizard OPTION ROW (label + sub + radio), not a card: it keeps 16, as its
-     mobile twin does. They still disagree on RADIUS (28 here, 16 there) — a
-     separate defect, logged rather than silently swept in a padding pass. */
+  /* A wizard OPTION ROW (label + sub + radio) — the app already has a standard
+     for this, in the onboarding wizard (aurora/onboarding.tsx `choice`, and the
+     mobile `Choice`): RADIUS 16 at padding 16, a 1px border that swaps line →
+     lime when picked, and a lime wash at 8% behind it — sitting inside the
+     wizard's own r28/20 card. This row was the only one off it: radius 28 here
+     against 16 on mobile (so the same control was card-shaped on one client and
+     field-shaped on the other), and a `0 0 0 1px` shadow ring faking the second
+     border that mobile drew by widening its own. Both are gone; the row now
+     states selection the way the other three wizards in the app do. */
   const choiceCard = (on: boolean, label: string, sub: string, onClick: () => void) => (
-    <button className="pressable" onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 28, boxShadow: on ? `0 0 0 1px ${C("lime")}, var(--shadow-card)` : "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
+    <button className="pressable" onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: on ? `color-mix(in srgb, ${C("lime")} 8%, transparent)` : C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, boxShadow: "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
       <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: fs.bodyLg }}>{label}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{sub}</div></div>
       <span style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent", display: "grid", placeItems: "center" }}>{on && <AuroraIcon name="check" size={12} color="var(--on-accent)" />}</span>
     </button>
