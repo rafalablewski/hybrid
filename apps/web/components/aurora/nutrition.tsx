@@ -2148,15 +2148,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               matching internal padding so resting cards stay on the column. */}
           <RailHead title={t("w.recovery.nutrition.recipes")} />
           <div style={railScroller}>
+            {/* the SAME tile the library shelves carry — a recipe reads as one
+                object wherever you meet it, and the hub is where most people
+                meet it first. */}
             {RECIPES.map((r) => (
-              <button key={r.id} onClick={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} className="pressable" style={{ flex: "0 0 min(52%, 196px)", scrollSnapAlign: "center", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, overflow: "hidden", background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 0 }}>
-                <div style={{ height: 96, display: "grid", placeItems: "center", fontSize: 40, ...recipeHeroBg(r.tint) }}>{r.emoji}</div>
-                <div style={{ padding: "12px 12px 12px" }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: "var(--lime-text)", fontWeight: 600, marginTop: 8 }}>{r.macros.kcal} kcal</div>
-                </div>
-              </button>
+              <RecipeTile key={r.id} recipe={r} width="min(52%, 196px)" snap onOpen={() => (recipesUnlocked ? openRecipe(r) : onNavigate?.("upgrade"))} />
             ))}
             {/* The rail's exit, at its end — where the thumb lands once the
                 cards run out. Behind Full, so it carries the ✦ and the premium
@@ -2753,7 +2749,7 @@ function RecipeShelf({ shelf, openCollection, openRecipe }: { shelf: { key: Reci
  *  tapping one expands it into the same poster at screen scale. The dish emoji
  *  stays FULL COLOUR (a ghosted emoji is a grey smudge, not a dish), which is
  *  the one thing that separates a recipe tile from a goal tile. */
-function RecipeTile({ recipe, onOpen }: { recipe: Recipe; onOpen: () => void }) {
+function RecipeTile({ recipe, onOpen, width = "172px", snap = false }: { recipe: Recipe; onOpen: () => void; width?: string; snap?: boolean }) {
   const { t } = useLang();
   const tile = recipeTileView(recipe, {
     mins: (n) => `${n} ${t("w.recovery.nutrition.min")}`,
@@ -2768,7 +2764,7 @@ function RecipeTile({ recipe, onOpen }: { recipe: Recipe; onOpen: () => void }) 
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       aria-label={`${tile.title} – ${tile.meta}`}
-      style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 28, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
+      style={{ flex: `0 0 ${width}`, scrollSnapAlign: snap ? "center" : undefined, height: 140, position: "relative", overflow: "hidden", borderRadius: 28, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
     >
       <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(202deg, color-mix(in srgb, ${tile.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${tile.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
       <span aria-hidden style={{ position: "absolute", top: -6, right: -8, fontSize: 88, lineHeight: 1, filter: "drop-shadow(0 12px 26px rgba(0,0,0,.5))", pointerEvents: "none" }}>{tile.glyph}</span>

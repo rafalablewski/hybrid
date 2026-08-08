@@ -247,7 +247,7 @@ function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
  *  tapping one expands it into the same poster at screen scale. The dish emoji
  *  stays FULL COLOUR (a ghosted emoji is a grey smudge, not a dish), which is
  *  the one thing separating a recipe tile from a goal tile. */
-function RecipeTile({ recipe, onOpen }: { recipe: Recipe; onOpen: () => void }) {
+function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe; onOpen: () => void; width?: number }) {
   const { scheme } = useTheme();
   const { t } = useLang();
   const tile = recipeTileView(recipe, { mins: (n) => `${n} ${t("w.recovery.nutrition.min")}`, kcal: (n) => `${n} kcal` });
@@ -256,7 +256,7 @@ function RecipeTile({ recipe, onOpen }: { recipe: Recipe; onOpen: () => void }) 
       onPress={onOpen}
       accessibilityRole="button"
       accessibilityLabel={`${tile.title} – ${tile.meta}`}
-      style={{ width: TILE_W, height: TILE_H, borderRadius: RADIUS.card, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.07)", backgroundColor: TILE_INK, padding: 12, justifyContent: "space-between" }}
+      style={{ width, height: TILE_H, borderRadius: RADIUS.card, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.07)", backgroundColor: TILE_INK, padding: 12, justifyContent: "space-between" }}
     >
       {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
           15% @ 46% → 0x26, then ink) — web parity: nutrition.tsx RecipeTile */}
@@ -2191,15 +2191,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               the cards run out. Mirrors web. */}
           <ASection flat title={t("w.recovery.nutrition.recipes")} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: GUTTER }}>
+            {/* the SAME tile the library shelves carry — a recipe reads as one
+                object wherever you meet it, and the hub is where most people
+                meet it first. */}
             {RECIPES.map((r) => (
-              <PressScale key={r.id} onPress={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} accessibilityRole="button" accessibilityLabel={r.name} style={{ width: recipeCardW, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: C.ink2 }}>
-                <RecipeHero tint={r.tint} emoji={r.emoji} height={96} fontSize={40} />
-                <View style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12 }}>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{t(`w.recovery.nutrition.meal.${r.meal}`)}  –  {r.timeMins} {t("w.recovery.nutrition.min")}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 8 }}>{r.macros.kcal} kcal</Text>
-                </View>
-              </PressScale>
+              <RecipeTile key={r.id} recipe={r} width={recipeCardW} onOpen={() => (recipesUnlocked ? openRecipe(r) : (onUpgrade ? onUpgrade() : router.push("/upgrade")))} />
             ))}
             {/* The rail's exit, at its end — where the thumb lands once the
                 cards run out. Behind Full, so it carries the ✦ and the premium
