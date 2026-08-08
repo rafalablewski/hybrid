@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   FEED_STAT_LABEL_KEY,
   feedFigureText,
@@ -151,29 +152,29 @@ export default function FeedWorkoutSheet({
   children?: ReactNode;
 }) {
   const { t } = useLang();
-  const [session, setSession] = useState<LoggedSession | null>(null);
-  const [error, setError] = useState<string | null>(null);
   // The panel outlives the close by one animation, so it keeps rendering the
   // post it was showing — clearing on close would empty the sheet mid-slide.
   const [shown, setShown] = useState<FeedItemView | null>(item);
   useEffect(() => { if (item) setShown(item); }, [item]);
   const id = item?.subjectId ?? null;
 
-  useEffect(() => {
-    if (!open || !id) return;
-    let live = true;
-    setSession(null);
-    setError(null);
-    jget<FeedSessionResponse>(`/api/social/session/${id}`)
-      .then((r) => {
-        if (!live) return;
-        if (r.session) setSession(r.session);
-        else setError(r.error === "private" ? t("feed.session.private") : t("feed.session.missing"));
-      })
-      .catch(() => live && setError(t("feed.session.missing")));
-    return () => { live = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, id]);
+  // CACHED per session id (the app's react-query layer, same as every other
+  // read): a logged workout is immutable to a viewer, so re-opening the same
+  // post is instant and costs no request. `enabled` keeps a closed sheet from
+  // fetching anything at all.
+  const q = useQuery({
+    queryKey: ["feed-session", id],
+    queryFn: () => jget<FeedSessionResponse>(`/api/social/session/${id}`),
+    enabled: open && !!id,
+    staleTime: 5 * 60_000,
+  });
+  const session = q.data?.session ?? null;
+  const error =
+    q.data && !q.data.session
+      ? q.data.error === "private" ? t("feed.session.private") : t("feed.session.missing")
+      : q.isError
+        ? t("feed.session.missing")
+        : null;
 
   return (
     <Sheet open={open} onClose={onClose} label={t("feed.open")} detents={["medium", "large"]}>

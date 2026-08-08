@@ -113,7 +113,18 @@ function Composer({ onPosted }: { onPosted: () => void }) {
   );
 }
 
-export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: string) => void } = {}) {
+export default function SocialFeed({
+  onNavigate,
+  onOpenSession,
+}: {
+  onNavigate?: (screen: string) => void;
+  /** Open one of MY OWN sessions in History's full detail (Wrapped, PRs, the
+   *  edit/archive row). The visitor's sheet is the right read of someone
+   *  else's workout, and the wrong one of your own — on your own session you
+   *  own actions the sheet deliberately doesn't carry. Absent (a caller with
+   *  no shell to switch) falls back to the sheet. */
+  onOpenSession?: (id: string) => void;
+} = {}) {
   const { t } = useLang();
   const isMobile = useIsMobile();
   const units = useLoggerPrefs().units;
@@ -247,12 +258,17 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
               onComments={() => setOpen(open === item.id ? null : item.id)}
               // Session and PR cards are both anchored on a Session id, so both
               // open to the workout. A status post has no workout behind it.
-              // Opening COLLAPSES the row's inline thread: the sheet carries the
-              // same thread, and two mounted copies of it would fetch the same
-              // comments twice and then disagree the moment one posted.
+              // MY OWN session opens MY view of it — the full detail with the
+              // Wrapped, the PRs and the manage row — not the visitor's read.
+              // Otherwise the sheet, and opening COLLAPSES the row's inline
+              // thread: the sheet carries the same thread, and two mounted
+              // copies would fetch the same comments twice and then disagree
+              // the moment one posted.
               onOpen={
                 item.subjectType === "session" || item.subjectType === "pr"
-                  ? () => { setOpen(null); setOpened(item.id); }
+                  ? item.mine && onOpenSession
+                    ? () => onOpenSession(item.subjectId)
+                    : () => { setOpen(null); setOpened(item.id); }
                   : undefined
               }
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}

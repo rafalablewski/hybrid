@@ -666,7 +666,7 @@ export default function AuroraToday({
     return (
       <div style={shell}>
         {hubHeader}
-        <SocialFeed onNavigate={onNavigate} />
+        <SocialFeed onNavigate={onNavigate} onOpenSession={onOpenSession} />
       </div>
     );
   }

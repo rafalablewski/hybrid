@@ -216,13 +216,17 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
         // Session and PR cards are both anchored on a Session id, so both open
-        // to the workout. A status post has no workout behind it. Opening
-        // COLLAPSES the row's inline thread: the sheet carries the same thread,
-        // and two mounted copies of it would fetch the same comments twice and
-        // then disagree the moment one posted.
+        // to the workout. A status post has no workout behind it.
+        // MY OWN session opens MY view of it — the full detail with the
+        // Wrapped, the PRs and the manage row — not the visitor's read.
+        // Otherwise the sheet, and opening COLLAPSES the row's inline thread:
+        // the sheet carries the same thread, and two mounted copies would fetch
+        // the same comments twice and then disagree the moment one posted.
         onOpen={
           item.subjectType === "session" || item.subjectType === "pr"
-            ? () => { setOpen(null); setOpened(item.id); }
+            ? item.mine
+              ? () => router.push(`/session/${item.subjectId}`)
+              : () => { setOpen(null); setOpened(item.id); }
             : undefined
         }
         onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
