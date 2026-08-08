@@ -382,29 +382,31 @@ export default function AuroraEnduranceLanes({
 
       {shown.map((lane) => <Lane key={lane.discipline} lane={lane} onOpen={onOpen} canOpen={canOpen ? canOpen(lane.discipline) : true} />)}
 
-      {/* The block's exit, in the DOOR-ROW anatomy (the This-week card's
-          idiom): full-width blocks end in a door, rails end in a trailing
-          ghost tile — the cluster's one "see more" rule. The old bare "+N"
-          outline button is retired. */}
+      {/* The block's END CONTROL — an EXPANDER, so it wears the expander
+          grammar, not the door's (see week-verdict's DoorRow): chromeless
+          like every end-of-thing affordance, but a BARE ＋/− with no ring,
+          because the ring is what promises a screen and this only grows the
+          block in place. The count drops chartreuse for ash with the fill —
+          the accent is the "go" colour, and this control never goes
+          anywhere. Mirrors mobile. */}
       {rest > 0 && (
         <button className="pressable"
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
           style={{
-            display: "flex", width: "calc(100% - 4px)", margin: "12px 2px 0", alignItems: "center",
+            display: "flex", width: "calc(100% - 4px)", margin: "14px 2px 0", alignItems: "center",
             gap: 12, cursor: "pointer", textAlign: "left", color: C("chalk"),
-            background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px",
+            background: "none", border: "none", padding: "4px 0",
           }}
         >
           <span style={{
-            width: 32, height: 32, borderRadius: 12, background: C("ink"),
-            border: `1px solid ${C("line")}`, display: "flex", alignItems: "center",
-            justifyContent: "center", fontSize: 13, color: C("ash"), flex: "0 0 32px",
+            width: 32, display: "flex", alignItems: "center",
+            justifyContent: "center", fontSize: 18, color: C("ash"), flex: "0 0 32px",
           }} aria-hidden>{expanded ? "−" : "＋"}</span>
           <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg }}>
             {expanded ? t("w.home.end.fewer") : t("w.home.end.allSports")}
           </span>
-          <span style={{ ...num, fontSize: fs.micro, color: "var(--lime-text)" }}>{expanded ? "−" : "+"}{rest}</span>
+          <span style={{ ...num, fontSize: fs.micro, color: C("ash") }}>{expanded ? "−" : "+"}{rest}</span>
         </button>
       )}
     </div>

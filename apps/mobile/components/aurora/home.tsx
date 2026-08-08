@@ -1114,27 +1114,20 @@ export default function AuroraHome() {
         <GroupMark label={t("w.home.group.explore")} />
 
         {/* ───── GO FULL — demoted from two display-weight AccessCards to ONE
-            compact quiet row (the DoorRow idiom: r16, small glyph tile, bold
-            title + mono micro sub, chevron). The row carries the "Go Full"
-            label itself, so the old "✦ Go Full" section head is gone with it.
-            The ✦ stays as the tile glyph — the semantic premium signifier,
-            the ONLY thing wearing the premium accent. Routes where the first
-            AccessCard (Cockpit) routed. Mirrors web today.tsx. ───── */}
-        <PressScale
+            compact quiet row. It is the SHARED DoorRow now (Aug 2026): it had
+            been a hand-rolled copy of that anatomy, so when the doors went
+            chromeless this one would have stayed a filled card sitting between
+            two flat ones — the same drift that let five rails draw five
+            different tails. `premium` carries the ✦ in the accent; the ✦ is
+            the semantic premium signifier and still the ONLY thing wearing it.
+            Routes where the first AccessCard (Cockpit) routed. Mirrors web. */}
+        <DoorRow
+          glyph="✦"
+          premium
+          title={t("w.home.today.goFull")}
+          sub={t("w.home.today.goFullRowSub")}
           onPress={() => (isAthlete ? router.push("/performance") : goUpgrade("today-cockpit"))}
-          accessibilityRole="button"
-          accessibilityLabel={`${t("w.home.today.goFull")} – ${t("w.home.today.goFullRowSub")}`}
-          style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}
-        >
-          <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 13, color: pa.text }}>✦</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.home.today.goFull")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.home.today.goFullRowSub")}</Text>
-          </View>
-          <Text style={{ fontSize: fs.note, color: C.ash }}>›</Text>
-        </PressScale>
+        />
 
         {/* ───── FOLLOW A COACH — Today's last block, and the only thing left
             below the premium cards. Nutrition is NOT summarised here: Today is
