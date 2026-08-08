@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { View, Text, Image, Linking, AccessibilityInfo } from "react-native";
-import { exerciseMedia, exerciseThumb, type ExerciseMediaAsset } from "@hybrid/core";
+import { exerciseMedia, exerciseThumb, inferBlockKind, type ExerciseMediaAsset } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import AuroraExerciseAnimation from "./exercise-animation";
+import AuroraExerciseMark from "./exercise-mark";
 
 /**
  * The exercise DEMO MEDIA surface (mobile) — one component for every place a
@@ -18,9 +19,10 @@ import AuroraExerciseAnimation from "./exercise-animation";
  * (registerSketchMedia) or pointed at from the admin library, this switches over
  * with no change here.
  *
- * Variants: "hero" (the framed demo in the How-it's-done sheet) and "thumb" (a
- * small square for rows — renders NOTHING until real art exists, so rows keep
- * their initials tile instead of 200 identical stick figures).
+ * Variants: "hero" (the framed demo in the How-it's-done sheet) and "thumb" (the
+ * contents of a row/card's tile: the drawn art once it exists, and until then
+ * the lift's IMPLEMENT MARK — core: exercise-marks. It renders the glyph only;
+ * the calling surface owns the tile's box, border and background).
  *
  * mp4 CLIPS don't play inline here — the app carries no native video player
  * (see capabilities: exercise-media-video-mobile) — so a clip shows its poster
@@ -30,19 +32,22 @@ export default function AuroraExerciseMedia({
   name,
   active = true,
   variant = "hero",
-  size = 40,
+  size = 22,
+  tint,
 }: {
   name: string;
   /** Loops only while the surface is visible (sheet open). */
   active?: boolean;
   variant?: "hero" | "thumb";
-  /** Square edge for the thumb variant. */
+  /** Glyph size for the thumb variant (the tile's box is the caller's). */
   size?: number;
+  /** Mark colour; defaults to the lift's modality accent. */
+  tint?: string;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const m = exerciseMedia(name);
-  if (variant === "thumb") return <Thumb name={name} size={size} C={C} />;
+  if (variant === "thumb") return <Thumb name={name} size={size} tint={tint ?? modalityTint(name, C)} />;
   if (!m.asset && !m.fallback) return null; // a name the DB doesn't know
 
   const note = m.status === "pending" ? t("w.analyze.exp.media.pending") : m.status === "pattern" ? t("w.analyze.exp.media.pattern") : null;
@@ -139,17 +144,25 @@ function Loop({ frames, cycleMs, poster, alt, active }: { frames: string[]; cycl
   );
 }
 
-/* ── the row thumbnail (nothing until the art exists) ── */
+/* ── the row tile: the drawing if we have it, the implement mark if we don't ── */
 
-function Thumb({ name, size, C }: { name: string; size: number; C: Palette }) {
+/** The modality accent a lift's mark is drawn in — the same three-way tint the
+ *  rows already used for their initials (strength / cardio / conditioning). */
+export function modalityTint(name: string, C: Palette): string {
+  const kind = inferBlockKind(name);
+  return txt(C, kind === "strength" ? C.lime : kind === "cardio" ? C.blue : C.violet);
+}
+
+function Thumb({ name, size, tint }: { name: string; size: number; tint: string }) {
   const src = exerciseThumb(name);
-  if (!src) return null;
-  return (
-    <Image
-      source={{ uri: src }}
-      accessibilityIgnoresInvertColors
-      resizeMode="contain"
-      style={{ width: size, height: size, borderRadius: 12, backgroundColor: C.ink2 }}
-    />
-  );
+  if (src)
+    return (
+      <Image
+        source={{ uri: src }}
+        accessibilityIgnoresInvertColors
+        resizeMode="contain"
+        style={{ width: "100%", height: "100%" }}
+      />
+    );
+  return <AuroraExerciseMark name={name} size={size} color={tint} />;
 }

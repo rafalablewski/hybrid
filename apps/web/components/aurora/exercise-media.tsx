@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { exerciseMedia, exerciseThumb, fs, type ExerciseMediaAsset } from "@hybrid/core";
+import { exerciseMedia, exerciseThumb, fs, inferBlockKind, type ExerciseMediaAsset } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import AuroraExerciseAnimation from "./exercise-animation";
+import AuroraExerciseMark from "./exercise-mark";
 
 const C = (v: string) => `var(--color-${v})`;
 const monoTag = {
@@ -28,9 +29,10 @@ const monoTag = {
  *
  * Two variants:
  *  - "hero" — the framed demo on the exercise page's How-it's-done sheet.
- *  - "thumb" — a small square for rows/cards. Renders NOTHING until real art
- *    exists, so a row keeps whatever it draws today (its initials tile) instead
- *    of showing 200 identical stick figures.
+ *  - "thumb" — the contents of a row/card's tile: the drawn art once it exists,
+ *    and until then the lift's IMPLEMENT MARK (core: exercise-marks) — a barbell,
+ *    a pair of bells, a cable handle. It renders the glyph only; the calling
+ *    surface owns the tile's box, border and background.
  *
  * Parity: apps/mobile/components/aurora/exercise-media.tsx.
  */
@@ -38,18 +40,21 @@ export default function AuroraExerciseMedia({
   name,
   active = true,
   variant = "hero",
-  size = 40,
+  size = 22,
+  tint,
 }: {
   name: string;
   /** Loops only while the surface is visible (sheet open, row on screen). */
   active?: boolean;
   variant?: "hero" | "thumb";
-  /** Square edge for the thumb variant. */
+  /** Glyph size for the thumb variant (the tile's box is the caller's). */
   size?: number;
+  /** Mark colour; defaults to the lift's modality accent. */
+  tint?: string;
 }) {
   const { t } = useLang();
   const m = exerciseMedia(name);
-  if (variant === "thumb") return <Thumb name={name} size={size} />;
+  if (variant === "thumb") return <Thumb name={name} size={size} tint={tint ?? modalityTint(name)} />;
   if (!m.asset && !m.fallback) return null; // a name the DB doesn't know
 
   const note = m.status === "pending" ? t("w.analyze.exp.media.pending") : m.status === "pattern" ? t("w.analyze.exp.media.pattern") : null;
@@ -149,18 +154,19 @@ function Loop({ frames, cycleMs, poster, alt, active }: { frames: string[]; cycl
   );
 }
 
-/* ── the row thumbnail (nothing until the art exists) ── */
+/* ── the row tile: the drawing if we have it, the implement mark if we don't ── */
 
-function Thumb({ name, size }: { name: string; size: number }) {
+/** The modality accent a lift's mark is drawn in — the same three-way tint the
+ *  rows already used for their initials (strength / cardio / conditioning). */
+function modalityTint(name: string): string {
+  const kind = inferBlockKind(name);
+  return kind === "strength" ? "var(--lime-text)" : kind === "cardio" ? "var(--blue-text)" : "var(--violet-text)";
+}
+
+function Thumb({ name, size, tint }: { name: string; size: number; tint: string }) {
   const src = exerciseThumb(name);
-  if (!src) return null;
-  return (
+  if (src)
     // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt=""
-      aria-hidden
-      style={{ width: size, height: size, borderRadius: 12, objectFit: "contain", background: C("ink2"), display: "block" }}
-    />
-  );
+    return <img src={src} alt="" aria-hidden style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />;
+  return <AuroraExerciseMark name={name} size={size} color={tint} />;
 }

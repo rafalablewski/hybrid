@@ -59,6 +59,7 @@ export * from "./exercise-profile";
 export * from "./exercise-animation";
 export * from "./exercise-anatomy";
 export * from "./exercise-media";
+export * from "./exercise-marks";
 export * from "./body-map";
 export * from "./injury-body";
 export * from "./rtp-view";

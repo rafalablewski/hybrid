@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, StyleSheet, Image } from "react-native";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   exerciseBrowse,
   exerciseBrowseSections,
   exerciseBrowseSummary,
-  exerciseThumb,
   type ExerciseBrowseEntry,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -15,6 +14,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS, ASearch } from "./kit";
+import AuroraExerciseMedia from "./exercise-media";
 import { AuroraIcon } from "./icons";
 
 type SortMode = "smart" | "groups" | "az";
@@ -64,14 +64,10 @@ export default function AuroraExercises() {
       accessibilityLabel={e.name}
       style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}
     >
+      {/* the lift's DRAWN demo once it exists (core: exercise-media), and until
+          then its IMPLEMENT mark (core: exercise-marks) */}
       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-        {/* the lift's DRAWN demo once it exists (core: exercise-media); the
-            initials stand in while nothing is drawn. */}
-        {exerciseThumb(e.name) ? (
-          <Image source={{ uri: exerciseThumb(e.name)! }} accessibilityIgnoresInvertColors resizeMode="contain" style={{ width: "100%", height: "100%" }} />
-        ) : (
-          <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: e.staple ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
-        )}
+        <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={e.staple ? txt(C, C.lime) : C.ash} />
       </View>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>

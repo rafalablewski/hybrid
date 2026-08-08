@@ -5,11 +5,11 @@ import {
   exerciseBrowse,
   exerciseBrowseSections,
   exerciseBrowseSummary,
-  exerciseThumb,
   type ExerciseBrowseEntry,
   type LoggedSession,
 } from "@hybrid/core";
 import { HeroScreen } from "./hero";
+import AuroraExerciseMedia from "./exercise-media";
 import { fs, space } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
@@ -53,13 +53,10 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
       className="pressable"
       style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: last ? "none" : `1px solid ${C("line")}`, padding: "12px 0", cursor: "pointer", color: C("chalk") }}
     >
-      <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", fontWeight: 900, fontSize: 13, letterSpacing: -0.3, color: e.staple ? "var(--lime-text)" : C("ash") }}>
-        {/* the lift's DRAWN demo once it exists (core: exercise-media); the
-            initials stand in while nothing is drawn. */}
-        {exerciseThumb(e.name)
-          // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={exerciseThumb(e.name)!} alt="" aria-hidden style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-          : e.initials}
+      {/* the lift's DRAWN demo once it exists (core: exercise-media), and until
+          then its IMPLEMENT mark (core: exercise-marks) */}
+      <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+        <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={e.staple ? "var(--lime-text)" : C("ash")} />
       </span>
       <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: fs.bodyLg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span>
       <span style={mono(9, e.stale ? "var(--amber-text)" : C("ash"))}>{days(e)}</span>

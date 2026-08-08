@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, ScrollView, Image } from "react-native";
+import { View, Text, TextInput, ScrollView } from "react-native";
 import {
   MOVEMENTS,
   exercisesByCategory,
   olympicSportsByCategory,
   inferBlockKind,
   exerciseProfile,
-  exerciseThumb,
   type BlockKind,
 } from "@hybrid/core";
 import { useExercises } from "../../lib/queries";
@@ -16,6 +15,7 @@ import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../l
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
+import AuroraExerciseMedia from "./exercise-media";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 type Entry = { name: string; kind: BlockKind; icon?: string };
@@ -46,9 +46,10 @@ function shapeHint(e: Entry): string {
  *    movements. Two taps, never a 200-item scroll.
  *  - A–Z: the typeset index — every movement under display-face letter heads,
  *    with a right-edge letter rail for one-thumb jumps.
- * Rows share the More → Exercises anatomy (40px initials tile tinted by
- * modality, sports keep their glyph; shape hints on the right) — the old
- * 8px-dot list and mono-uppercase category kickers are retired. Search cuts
+ * Rows share the More → Exercises anatomy (40px IMPLEMENT-MARK tile tinted by
+ * modality — a barbell, a pair of bells, a cable handle; sports keep their
+ * glyph; shape hints on the right) — the old 8px-dot list, the mono-uppercase
+ * category kickers and the meaningless two-letter initials are all retired. Search cuts
  * across every room; an unknown name is always offered as a custom add.
  * Twin of the web workout-blocks ExercisePicker.
  */
@@ -135,18 +136,15 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   const row = (e: Entry, last: boolean) => {
     const c = kindColor(e.kind, C);
     const hint = shapeHint(e);
-    // The tile prefers the lift's DRAWN demo (core: exercise-media) and keeps
-    // the initials/glyph while nothing is drawn — so rows upgrade to the
-    // hand-sketched art the moment it's registered, and show no placeholder now.
-    const sketch = exerciseThumb(e.name);
     return (
       <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
+        {/* The tile carries the lift's DRAWN demo once it exists, and until then
+            its IMPLEMENT (core: exercise-marks) — a barbell, a pair of bells, a
+            cable handle. Sports keep their catalog glyph. */}
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-          {sketch
-            ? <Image source={{ uri: sketch }} accessibilityIgnoresInvertColors resizeMode="contain" style={{ width: "100%", height: "100%" }} />
-            : e.icon
-              ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
-              : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
+          {e.icon
+            ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
+            : <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={txt(C, c)} />}
         </View>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
