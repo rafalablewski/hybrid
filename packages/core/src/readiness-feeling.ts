@@ -58,6 +58,17 @@ export function checkinRating(c: CheckinScores | null | undefined): number | nul
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
+/**
+ * The rating a feeling is WRITTEN as — the inverse of `feelingFromRating` for
+ * the four the picker can produce. It is the picker's own map stated once
+ * (`READINESS_FEELINGS` index + 2, which is what both clients tap through), so
+ * anything that has a feeling but not the row it came from — an optimistic tap,
+ * a legacy check-in — can still place it on the 1–5 scale the engine speaks.
+ */
+export function ratingForFeeling(feeling: ReadinessFeeling): number {
+  return READINESS_FEELINGS.indexOf(feeling) + 2;
+}
+
 /** Map a 1–5 rating to the nearest readiness feeling. */
 export function feelingFromRating(rating: number): ReadinessFeeling {
   if (rating >= 4.5) return "primed";
