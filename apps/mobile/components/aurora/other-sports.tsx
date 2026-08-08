@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import {
   otherSportLanes, sportWeekBars, OTHER_SPORT_CAP, ago,
-  parentageHours, progressParentage,
+  durationUnits, formatDuration,
+  parentageDuration, progressParentage,
   type LoggedSession, type OtherSportLane,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -49,6 +50,7 @@ export default function AuroraOtherSports({
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const [expanded, setExpanded] = useState(false);
+  const u = durationUnits(t);
 
   const lanes = useMemo(() => otherSportLanes(sessions), [sessions]);
   // WAVE-3 PARENTAGE: the head quotes the sports' share of the This-week
@@ -65,12 +67,12 @@ export default function AuroraOtherSports({
   return (
     <View style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, ONE mono fact right —
-          the wave-3 parentage quote ("3.1 of 5.2 h this week"), naming the
+          the wave-3 parentage quote ("3h 6min of 5h 12min this week"), naming the
           slice of the verdict's hours column this block decomposes. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.other.title")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-          {t("w.home.group.metaOf").replace("{a}", String(parentageHours(parentage.sportMinutes))).replace("{b}", String(parentageHours(parentage.totalMinutes)))}
+          {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.totalMinutes, u))}
         </Text>
       </View>
 
@@ -120,7 +122,7 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
   const { palette: C } = useTheme();
   const { t } = useLang();
   const bars = sportWeekBars(lane.weeks);
-  const hours = Math.round(lane.minutes / 6) / 10;
+  const time = formatDuration(lane.minutes, durationUnits(t));
 
   const body = (
     <>
@@ -144,7 +146,7 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{hours} h</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{time}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{ago(lane.lastAt)}</Text>
       </View>
     </>

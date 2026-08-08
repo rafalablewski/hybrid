@@ -23,6 +23,7 @@ export * from "./readiness-reads";
 export * from "./readiness-read-explain";
 export * from "./day-key";
 export * from "./day-stamp";
+export * from "./duration";
 export * from "./masthead";
 export * from "./motion";
 export * from "./spark";

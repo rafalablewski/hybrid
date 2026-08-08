@@ -3,7 +3,8 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import {
   otherSportLanes, sportWeekBars, OTHER_SPORT_CAP, ago,
-  parentageHours, progressParentage,
+  durationUnits, formatDuration,
+  parentageDuration, progressParentage,
   type LoggedSession, type OtherSportLane,
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
@@ -52,6 +53,7 @@ export default function AuroraOtherSports({
 }) {
   const { t } = useLang();
   const [expanded, setExpanded] = useState(false);
+  const u = durationUnits(t);
 
   const lanes = useMemo(() => otherSportLanes(sessions), [sessions]);
   // WAVE-3 PARENTAGE: the head quotes the sports' share of the This-week
@@ -68,12 +70,12 @@ export default function AuroraOtherSports({
   return (
     <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, ONE mono fact right —
-          the wave-3 parentage quote ("3.1 of 5.2 h this week"), naming the
+          the wave-3 parentage quote ("3h 6min of 5h 12min this week"), naming the
           slice of the verdict's hours column this block decomposes. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.other.title")}</span>
         <span style={kicker}>
-          {t("w.home.group.metaOf").replace("{a}", String(parentageHours(parentage.sportMinutes))).replace("{b}", String(parentageHours(parentage.totalMinutes)))}
+          {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.totalMinutes, u))}
         </span>
       </div>
 
@@ -121,7 +123,7 @@ export default function AuroraOtherSports({
  *  honestly say about itself. */
 function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) => string; onOpen?: (sport: string) => void }) {
   const bars = sportWeekBars(lane.weeks);
-  const hours = Math.round(lane.minutes / 6) / 10;
+  const time = formatDuration(lane.minutes, durationUnits(t));
   const interactive = !!onOpen;
 
   return (
@@ -158,7 +160,7 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
       </span>
 
       <span style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 10, color: C("ash") }}>
-        <span>{hours} h</span>
+        <span>{time}</span>
         <span>{ago(lane.lastAt)}</span>
       </span>
     </button>

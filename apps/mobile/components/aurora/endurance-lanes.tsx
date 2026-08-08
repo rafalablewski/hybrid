@@ -4,7 +4,7 @@ import Svg, { Polyline, Polygon, Circle, Defs, LinearGradient, Stop } from "reac
 import {
   enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
-  DISCIPLINE_META, LANE_CAP, ago,
+  DISCIPLINE_META, LANE_CAP, ago, durationUnits, formatDuration,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -298,7 +298,9 @@ function SummaryTile({ lane }: { lane: EnduranceLane }) {
       </View>
       <View style={{ gap: 3, marginTop: "auto" }}>
         <MetaRow l="KM" r={String(lane.distanceKm)} strong />
-        <MetaRow l="H" r={String(Math.round(lane.minutes / 6) / 10)} strong />
+        {/* TIME, not "H": the figure is hours AND minutes now, so the row's
+            label names the quantity rather than repeating the unit inside it. */}
+        <MetaRow l="TIME" r={formatDuration(lane.minutes, durationUnits(t))} strong />
       </View>
     </Tile>
   );
