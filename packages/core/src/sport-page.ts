@@ -37,6 +37,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { deviceTrueSessions } from "./device-truth";
+import { roundKm } from "./distance";
 import { DISCIPLINE_META } from "./endurance";
 import {
   cardioSeconds,
@@ -296,7 +297,7 @@ function grouped(n: number): string {
 /** The distance FIGURE alone, in the sport's natural unit (storage is km). */
 export function sportDistance(km: number, unit: "km" | "m"): string {
   if (unit === "m") return grouped(km * 1000);
-  return km >= 100 ? String(Math.round(km)) : (Math.round(km * 10) / 10).toFixed(1);
+  return km >= 100 ? String(Math.round(km)) : String(roundKm(km));
 }
 
 /** The pace split a sport reads in, in metres — 1000 (/km), 100 (/100m). */
@@ -374,7 +375,7 @@ export function sportPageModel(
   /* ── the week series, in the sport's own measure ── */
   const weeks: SportWeek[] = buckets.map((w) => ({
     weekStart: w.weekStart,
-    value: hasDistance ? (distanceUnit === "m" ? Math.round(w.km * 1000) : Math.round(w.km * 10) / 10) : w.minutes,
+    value: hasDistance ? (distanceUnit === "m" ? Math.round(w.km * 1000) : roundKm(w.km)) : w.minutes,
     efforts: w.efforts,
   }));
   const weekAvg = weeks.length ? weeks.reduce((a, w) => a + w.value, 0) / weeks.length : 0;
@@ -528,7 +529,10 @@ export function sportPageModel(
     markerPrompt: sc ? { label: sc.marker.label, ph: sc.marker.ph } : null,
     totals,
     weeks,
-    weekAvg: Math.round(weekAvg * 10) / 10,
+    // In the sport's own unit — metres for the pool, km for the road. Rounded
+    // to the same two decimals the km figures show, so the average never
+    // arrives coarser than the weeks it was taken over.
+    weekAvg: roundKm(weekAvg),
     pace,
     split,
     bests,
@@ -626,7 +630,7 @@ export function sportIndex(sessions: LoggedSession[]): { yours: SportIndexEntry[
       hasTransfer: !!cat?.sc,
       efforts: v?.efforts ?? 0,
       minutes: Math.round(v?.minutes ?? 0),
-      distanceKm: Math.round((v?.km ?? 0) * 10) / 10,
+      distanceKm: roundKm(v?.km ?? 0),
       lastAt: v?.lastAt ? new Date(v.lastAt).toISOString() : null,
     };
   };

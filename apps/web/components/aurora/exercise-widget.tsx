@@ -18,6 +18,7 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import HistoryStrip from "./history-strip";
+import RailTail from "./rail-tail";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
@@ -112,7 +113,7 @@ export default function ExerciseWidgetRail({
           and spent the slot on a fact the reader already had — while the one
           they did NOT have, that this rail is a selection rather than their
           whole log, had nowhere to go. A quote must add a fraction. The
-          "All ›" action lives in the rail's trailing ghost tile, per the
+          "All ›" action lives in the rail's trailing tail, per the
           one-exit rule. Mirrors mobile. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.exw.title")}</span>
@@ -182,19 +183,19 @@ export default function ExerciseWidgetRail({
             </button>
           );
         })}
-        {/* The rail's exit — the trailing ghost tile, at tile scale. */}
-        <button className="pressable"
-          onClick={onAll}
-          style={{
-            flex: "0 0 132px", scrollSnapAlign: "start", cursor: "pointer",
-            display: "grid", placeItems: "center", alignContent: "center", gap: 8,
-            background: "none", border: `1px dashed color-mix(in srgb, ${C("ash")} 40%, transparent)`, borderRadius: 16,
-            fontFamily: "var(--font-mono)", fontSize: fs.micro, textAlign: "center", lineHeight: 1.6, minHeight: 132,
-          }}
-        >
-          <span style={{ fontSize: 18, color: C("ash") }}>＋</span>
-          <span style={{ fontWeight: 600, color: "var(--lime-text)" }}>{t("w.home.exw.allCard")}</span>
-        </button>
+        {/* THE EXIT — the SHARED RailTail, like every other rail in the app.
+            This one used to draw its own: a DASHED ghost tile with a ＋ glyph
+            and a lime label. Three things wrong with that. A dashed box is the
+            "empty slot / drop here" idiom, so the rail ended in something that
+            looked unfilled rather than onward. ＋ means ADD, and this goes to a
+            screen. And it spent chartreuse — the reserved "go" colour — on a
+            standing link, which is the exact habit the tail rule retired from
+            every section head. Mirrors mobile. */}
+        <RailTail
+          onOpen={onAll}
+          a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`}
+          w={132} minHeight={132}
+        />
       </div>
     </div>
   );

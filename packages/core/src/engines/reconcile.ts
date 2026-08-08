@@ -13,6 +13,7 @@ import { prescribeSession, type PrescribeExperience, type PrescribeEquipment } f
 import type { LoadVelocityProfile } from "./velocity";
 import type { SessionBlock } from "./session";
 import type { SportPrescription, SportBlock, SportMeasure } from "../sports";
+import { kmValue } from "../distance";
 
 /**
  * The reconciler — one session out of three engines.
@@ -237,7 +238,7 @@ export function reconcilePlan(input: ReconcileInput): ReconciledPlan {
         reps: 0,
         format: dailyCond.kind === "conditioning" ? dailyCond.format : "Steady",
         scheme: distance
-          ? `${distance} km${paceTarget ? ` @ ${paceTarget}` : ""} – ${minutes} min`
+          ? `${kmValue(distance)} km${paceTarget ? ` @ ${paceTarget}` : ""} – ${minutes} min`
           : `${minutes} min`,
       });
     }

@@ -23,6 +23,7 @@
 // apps/mobile/lib/healthkit.ts and only the phone can perform a match (web
 // renders the result and can unlink).
 
+import { kmOrMeters } from "./distance";
 import { sportDistanceUnit, sportPacePerMeters, displaySportDistance } from "./olympic-sports";
 
 /** A workout as read from the athlete's device, frozen at match time. Stored
@@ -251,7 +252,7 @@ export function sanitizeDeviceWorkout(input: unknown): DeviceWorkout | null {
  */
 export function deviceDistanceLabel(km: number, activityLabel: string): string {
   if (sportDistanceUnit(activityLabel) === "m") return `${displaySportDistance(km, activityLabel)} m`;
-  return km < 1 ? `${Math.round(km * 1000)} m` : `${Math.round(km * 100) / 100} km`;
+  return kmOrMeters(km);
 }
 
 /** How far around the session's start the device store is searched for

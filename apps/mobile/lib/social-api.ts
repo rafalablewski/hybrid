@@ -5,6 +5,7 @@ import type {
   SuggestionsResponse,
   ConnectionsResponse,
   FeedResponse,
+  FeedSessionResponse,
   KudosResponse,
   CommentsResponse,
   LeaderboardResponse,
@@ -53,6 +54,9 @@ export const respondFollow = (b: unknown) => sapi<MutationResult>("/api/social/f
 export const setCloseFriend = (b: unknown) => sapi<MutationResult>("/api/social/close-friend", "POST", b);
 export const getConnections = () => sapi<ConnectionsResponse>("/api/social/connections");
 export const getFeed = () => sapi<FeedResponse>("/api/social/feed");
+/** The whole workout behind a feed post (the opened card) — privacy-gated
+ *  server-side, so a session the viewer may not see never arrives. */
+export const getFeedSession = (id: string) => sapi<FeedSessionResponse>(`/api/social/session/${id}`);
 export const createPost = (b: unknown) => sapi<MutationResult>("/api/social/posts", "POST", b);
 export const deletePost = (id: string) => sapi<MutationResult>(`/api/social/posts/${id}`, "DELETE");
 export const toggleKudos = (b: unknown) => sapi<KudosResponse>("/api/social/kudos", "POST", b);
