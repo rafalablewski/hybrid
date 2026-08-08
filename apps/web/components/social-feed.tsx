@@ -7,6 +7,7 @@ import { C, useSocialTheme, card, Avatar, Btn, EmptyState, jget, jsend } from ".
 import { ProfileDrawer } from "./social-profile";
 import { CosignInbox } from "./pr-attestation";
 import FeedCard from "./feed-card";
+import FeedWorkoutSheet from "./feed-workout";
 import FeedLiveStrip from "./feed-live-strip";
 import { HubMasthead } from "./aurora/hub-masthead";
 import { useLang } from "@/lib/i18n";
@@ -119,6 +120,10 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  // The POST, opened — the whole workout behind a card. Held by id (not by the
+  // item) so the sheet keeps reading the live row: a kudos given from the feed
+  // while the sheet is up still shows there.
+  const [opened, setOpened] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("forYou");
   const [live, setLive] = useState<LiveAthlete[]>([]);
 
@@ -240,6 +245,9 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
               onOpenProfile={(h) => setDrawer(h)}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
+              // Session and PR cards are both anchored on a Session id, so both
+              // open to the workout. A status post has no workout behind it.
+              onOpen={item.subjectType === "session" || item.subjectType === "pr" ? () => setOpened(item.id) : undefined}
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
             >
               {open === item.id && <Comments item={item} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}
@@ -257,6 +265,18 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
           </div>
         </>
       )}
+
+      {/* THE POST, OPENED — the whole workout behind the row, with its thread
+          underneath (the same Comments component the row expands, so a comment
+          written here and one written in the stream are one thing). */}
+      {(() => {
+        const it = opened ? items.find((i) => i.id === opened) ?? null : null;
+        return (
+          <FeedWorkoutSheet item={it} units={units} open={!!it} onClose={() => setOpened(null)}>
+            {it && <Comments item={it} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === it.id ? { ...x, comments: n } : x)) ?? f)} />}
+          </FeedWorkoutSheet>
+        );
+      })()}
 
       {drawer && <ProfileDrawer handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </div>
