@@ -192,7 +192,11 @@ export default function ExerciseWidgetRail({
             screen. And it spent chartreuse — the reserved "go" colour — on a
             standing link, which is the exact habit the tail rule retired from
             every section head. Mirrors web. */}
-        <RailTail onOpen={onAll} label={t("w.home.exw.allCard")} w={132} minHeight={132} />
+        <RailTail
+          onOpen={onAll}
+          a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`}
+          w={132} minHeight={132}
+        />
       </ScrollView>
     </View>
   );
