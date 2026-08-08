@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, setExerciseCatalog, type Movement, type MuscleGroup, type LibraryMovement } from "@hybrid/core";
+import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, setExerciseCatalog, setExerciseMediaCatalog, type Movement, type MuscleGroup, type LibraryMovement } from "@hybrid/core";
 
 type ApiExercise = {
   name: string;
@@ -12,6 +12,8 @@ type ApiExercise = {
   system: string | null;
   aliases: string[];
   category: string | null;
+  videoUrl: string | null;
+  thumbUrl: string | null;
 };
 
 /** Query key for the admin-managed exercise library. */
@@ -21,6 +23,10 @@ async function fetchCustomMovements(): Promise<LibraryMovement[]> {
   const res = await fetch("/api/exercises");
   if (!res.ok) return [];
   const d = (await res.json()) as { exercises?: ApiExercise[] };
+  // The rows also carry each lift's admin-set DEMO MEDIA — published to core's
+  // media resolver here so the exercise demo shows the real asset (see
+  // lib/exercise-catalog.ts, which does the same on the engine path).
+  setExerciseMediaCatalog((d.exercises ?? []).map((e) => ({ name: e.name, videoUrl: e.videoUrl, thumbUrl: e.thumbUrl })));
   return (d.exercises ?? []).map((e) => ({
     name: e.name,
     pattern: e.pattern,

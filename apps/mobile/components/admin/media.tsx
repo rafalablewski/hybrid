@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, Share } from "react-native";
+import { sketchBrief, sketchCoverage } from "@hybrid/core";
 import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn } from "./_kit";
@@ -99,18 +100,24 @@ export default function AdminMedia() {
 
   if (list === null && !failed) return <Loading />;
   if (failed) return <ErrorNote error="Couldn't load the media library. Pull to retry." />;
+  // The sketch backlog is computed from the shipped catalog, so it stands even
+  // when the media table/bucket isn't initialized yet.
   if (unavailable)
     return (
-      <Banner tone="amber" title="Media library not initialized">
-        The MediaAsset table + media bucket don&apos;t exist yet. Run reference/sql-media-library.sql in the Supabase SQL
-        Editor, then reload.
-      </Banner>
+      <View>
+        <SketchCoverage />
+        <Banner tone="amber" title="Media library not initialized">
+          The MediaAsset table + media bucket don&apos;t exist yet. Run reference/sql-media-library.sql in the Supabase SQL
+          Editor, then reload.
+        </Banner>
+      </View>
     );
 
   const statusColor = (s: Status) => (s === "published" ? palette.lime : s === "archived" ? palette.amber : palette.ash);
 
   return (
     <View>
+      <SketchCoverage />
       <Mono color={palette.ash} style={{ marginBottom: 6, lineHeight: 18 }}>
         {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} – public CDN URLs
       </Mono>
@@ -189,5 +196,56 @@ export default function AdminMedia() {
         </Mono>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * EXERCISE DEMO SKETCHES — how much of the exercise catalog has real hand-drawn
+ * art, and the commissioning brief for what's left. Everything not yet drawn
+ * falls back to the procedural stick-figure demo in the app, so this is the
+ * backlog that retires the placeholder. Numbers come from core (exercise-media):
+ * the registry of delivered art plus any library row pointed at an uploaded
+ * asset. Web twin: apps/web/components/admin/media.tsx (which also copies the
+ * brief to the clipboard — here it goes out through the share sheet).
+ */
+function SketchCoverage() {
+  const { palette } = useTheme();
+  const cov = sketchCoverage();
+  const worst = cov.byArchetype.filter((a) => a.pending > 0).slice(0, 10);
+
+  return (
+    <ACard style={cardStack}>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>Exercise demo sketches</Text>
+      <Mono color={palette.ash} style={{ marginTop: 6, lineHeight: 18 }}>
+        {cov.drawn} of {cov.total} lifts drawn{cov.pattern > 0 ? `, ${cov.pattern} on a pattern stand-in` : ""} – {cov.pct}% covered.
+        Every undrawn lift shows the procedural stick-figure demo until its sketch lands.
+      </Mono>
+      <View style={{ height: 6, borderRadius: 3, backgroundColor: palette.ink, overflow: "hidden", marginTop: 12 }}>
+        <View style={{ height: "100%", width: `${cov.pct}%`, backgroundColor: palette.lime, borderRadius: 3 }} />
+      </View>
+
+      {worst.length > 0 ? (
+        <View style={{ marginTop: 12 }}>
+          <Mono color={palette.ash} style={{ marginBottom: 6 }}>Still to draw, by movement pattern</Mono>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
+            {worst.map((a) => <Chip key={a.archetype} color={palette.ash}>{`${a.archetype} ${a.pending}`}</Chip>)}
+          </View>
+        </View>
+      ) : null}
+
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 14 }}>
+        <PillBtn
+          label="Share illustrator brief"
+          outline
+          color={palette.ash}
+          onPress={() => { void Share.share({ message: sketchBrief() }).catch(() => {}); }}
+        />
+      </View>
+      <Mono color={palette.ash} style={{ marginTop: 10, lineHeight: 18 }}>
+        The brief carries the drawing spec and every remaining lift with the filename slot to deliver it under. Upload the
+        finished art from the web console, then either register it in core (registerSketchMedia) or paste a URL into the
+        exercise&apos;s demo-video field.
+      </Mono>
+    </ACard>
   );
 }

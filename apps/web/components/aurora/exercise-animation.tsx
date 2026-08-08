@@ -1,35 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  exerciseAnimation,
-  skeletonAt,
-  type ExerciseAnimation,
-  type LoadGlyph,
-  type Skeleton,
-} from "@hybrid/core";
+import { exerciseAnimation, skeletonAt, type LoadGlyph, type Skeleton } from "@hybrid/core";
 
 const C = (v: string) => `var(--color-${v})`;
 
 /**
- * The exercise-page MOVEMENT DEMO (web) — the swappable animation surface.
+ * The PROCEDURAL movement demo (web) — the stick figure, and only that.
  *
- * It resolves the animation spec from @hybrid/core (exerciseAnimation) and
- * switches on its `kind`. TODAY only the procedural `skeleton` renderer exists;
- * when professional SKETCH animation lands, register the asset in core's
- * SKETCH_ANIMATIONS and add the `sketch` branch here — the muscle/cues section
- * (exercise-anatomy.tsx) never changes. Returns null for a name the DB doesn't
- * know (custom lifts, cardio sports).
+ * Callers wanting "whatever we show for this lift" should use exercise-media.tsx
+ * instead: it renders the hand-drawn art once a lift is drawn and falls back to
+ * this figure until then. Returns null for a name the DB doesn't know (custom
+ * lifts, cardio sports).
  */
 export default function AuroraExerciseAnimation({ name, active = true }: { name: string; active?: boolean }) {
   const anim = exerciseAnimation(name);
   if (!anim) return null;
-  switch (anim.kind) {
-    case "skeleton":
-      return <SkeletonFigure frames={anim.frames} load={anim.load} cycleMs={anim.cycleMs} active={active} />;
-    case "sketch":
-      return <SketchFigure anim={anim} active={active} />;
-  }
+  return <SkeletonFigure frames={anim.frames} load={anim.load} cycleMs={anim.cycleMs} active={active} />;
 }
 
 /* ── procedural stick-figure renderer (today's default) ── */
@@ -119,39 +106,5 @@ function LoadSVG({ load, x, y, accent }: { load: LoadGlyph; x: number; y: number
       <rect x={x - 16} y={y - 4} width={3.4} height={8} rx={1} fill={accent} stroke="none" />
       <rect x={x + 12.6} y={y - 4} width={3.4} height={8} rx={1} fill={accent} stroke="none" />
     </g>
-  );
-}
-
-/* ── professional sketch renderer (frames cross-faded on a loop) ──
-   Wired but dormant until core's SKETCH_ANIMATIONS is populated. Frame refs are
-   URLs/data-URIs the illustrator's export provides. */
-
-function SketchFigure({ anim, active }: { anim: Extract<ExerciseAnimation, { kind: "sketch" }>; active: boolean }) {
-  const { frames, cycleMs } = anim;
-  const [i, setI] = useState(0);
-
-  useEffect(() => {
-    if (frames.length <= 1 || !active) return;
-    const reduce =
-      typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    const per = Math.max(60, cycleMs / frames.length);
-    const id = setInterval(() => setI((n) => (n + 1) % frames.length), per);
-    return () => clearInterval(id);
-  }, [frames.length, cycleMs, active]);
-
-  return (
-    <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1" }}>
-      {frames.map((src, n) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={n}
-          src={src}
-          alt=""
-          aria-hidden
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: n === i ? 1 : 0, transition: "opacity .12s linear" }}
-        />
-      ))}
-    </div>
   );
 }

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, TextInput, ScrollView } from "react-native";
+import { View, Text, TextInput, ScrollView, Image } from "react-native";
 import {
   MOVEMENTS,
   exercisesByCategory,
   olympicSportsByCategory,
   inferBlockKind,
   exerciseProfile,
+  exerciseThumb,
   type BlockKind,
 } from "@hybrid/core";
 import { useExercises } from "../../lib/queries";
@@ -134,12 +135,18 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   const row = (e: Entry, last: boolean) => {
     const c = kindColor(e.kind, C);
     const hint = shapeHint(e);
+    // The tile prefers the lift's DRAWN demo (core: exercise-media) and keeps
+    // the initials/glyph while nothing is drawn — so rows upgrade to the
+    // hand-sketched art the moment it's registered, and show no placeholder now.
+    const sketch = exerciseThumb(e.name);
     return (
       <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          {e.icon
-            ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
-            : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          {sketch
+            ? <Image source={{ uri: sketch }} accessibilityIgnoresInvertColors resizeMode="contain" style={{ width: "100%", height: "100%" }} />
+            : e.icon
+              ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
+              : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(e.name)}</Text>}
         </View>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}

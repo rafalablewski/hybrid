@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type Dispatch, type PointerEvent as ReactPointerEvent, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats, exerciseThumb } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { AuroraIcon } from "./aurora/icons";
 import { useExercises } from "@/lib/use-exercises";
@@ -1179,13 +1179,22 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
   }
   const roomData = room ? rooms.find((r) => r.key === room) : null;
 
-  const tile = (e: { icon?: string; name: string; kind: SessionBlock["kind"] }, label?: string) => (
-    <span style={{ width: 38, height: 38, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "var(--color-ink)", border: `1px solid ${LINE}` }}>
-      {e.icon
-        ? <span style={{ fontSize: 16 }}>{e.icon}</span>
-        : <span style={{ ...mono, fontWeight: 700, fontSize: 12, letterSpacing: "-.02em", color: txt(kindColor(e.kind)) }}>{initials(label ?? e.name)}</span>}
-    </span>
-  );
+  // The row tile prefers the lift's DRAWN demo (core: exercise-media) and keeps
+  // the initials/glyph while nothing is drawn — so rows upgrade to the
+  // hand-sketched art the moment it's registered, and show no placeholder now.
+  const tile = (e: { icon?: string; name: string; kind: SessionBlock["kind"] }, label?: string) => {
+    const sketch = exerciseThumb(e.name);
+    return (
+      <span style={{ width: 38, height: 38, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "var(--color-ink)", border: `1px solid ${LINE}`, overflow: "hidden" }}>
+        {sketch
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={sketch} alt="" aria-hidden style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+          : e.icon
+            ? <span style={{ fontSize: 16 }}>{e.icon}</span>
+            : <span style={{ ...mono, fontWeight: 700, fontSize: 12, letterSpacing: "-.02em", color: txt(kindColor(e.kind)) }}>{initials(label ?? e.name)}</span>}
+      </span>
+    );
+  };
   const row = (e: Entry, last: boolean) => {
     const hint = shapeHint(e.name, e.kind);
     return (

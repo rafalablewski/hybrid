@@ -125,7 +125,7 @@ export const muscleRegion = (m: Muscle): Pt[][] => REGION_OF[m] ?? [];
 
 // ── the swap seam: schematic today, professional sketch later ────────────────
 //
-// Mirrors exercise-animation's SketchAnimation seam. The schematic mannequin is
+// Mirrors exercise-media's sketch-registry seam. The schematic mannequin is
 // the zero-asset default; when commissioned ANATOMICAL ILLUSTRATION exists,
 // populate SKETCH_BODY_ART and exerciseBodyMap() flips every lift to the sketch
 // renderer — the muscle-activation / cues section never changes, and the SAME

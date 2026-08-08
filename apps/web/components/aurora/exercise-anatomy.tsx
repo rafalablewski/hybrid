@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { exerciseAnatomy, fs, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-import AuroraExerciseAnimation from "./exercise-animation";
+import AuroraExerciseMedia from "./exercise-media";
 import AuroraBodyMap from "./body-map";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -49,14 +49,10 @@ function Group({ label, rows, t }: { label: string; rows: MuscleActivation[]; t:
 function AnatomyBody({ a, name, active, t }: { a: ExerciseAnatomy; name: string; active: boolean; t: (k: string) => string }) {
   return (
     <>
-      {/* the movement demo (swappable: procedural skeleton today, professional
-          sketch later — see exercise-animation.tsx). Loops only while the sheet
-          is open. */}
-      <div style={{ marginTop: 4, borderRadius: 28, border: `1px solid ${C("line")}`, background: C("ink2"), padding: "10px 16px", display: "flex", justifyContent: "center" }}>
-        <div style={{ width: "58%", maxWidth: 220 }}>
-          <AuroraExerciseAnimation name={name} active={active} />
-        </div>
-      </div>
+      {/* the movement demo — whatever exerciseMedia resolves: the hand-drawn
+          sketch once it exists, the procedural skeleton as today's placeholder
+          (see exercise-media.tsx). Loops only while the sheet is open. */}
+      <AuroraExerciseMedia name={name} active={active} />
       <p style={{ margin: "12px 2px 0", fontSize: fs.body, lineHeight: 1.5, color: C("ash") }}>{a.emphasis}</p>
 
       {/* muscles worked */}

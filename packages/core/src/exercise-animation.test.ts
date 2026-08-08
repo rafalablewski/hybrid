@@ -4,7 +4,6 @@ import {
   exerciseAnimation,
   exerciseArchetype,
   skeletonAt,
-  SKETCH_ANIMATIONS,
   type Skeleton,
 } from "./exercise-animation";
 
@@ -64,19 +63,8 @@ describe("exercise animation", () => {
     expect(arch("Clean")).toBe("olympic");
   });
 
-  it("prefers a registered sketch animation over the procedural skeleton (the swap seam)", () => {
-    // The registry is empty by default; register one, confirm the resolver
-    // returns it, then restore so the suite stays isolated.
-    const sketch = { kind: "sketch" as const, archetype: "pressH" as const, frames: ["a", "b"], cycleMs: 2000 };
-    SKETCH_ANIMATIONS["Bench Press"] = sketch;
-    try {
-      const anim = exerciseAnimation("Bench Press");
-      expect(anim!.kind).toBe("sketch");
-      expect(anim).toBe(sketch);
-      // an unregistered lift still falls back to the skeleton
-      expect(exerciseAnimation("Back Squat")!.kind).toBe("skeleton");
-    } finally {
-      delete SKETCH_ANIMATIONS["Bench Press"];
-    }
+  it("draws the procedural figure for every lift — drawn art is resolved by exercise-media, not here", () => {
+    expect(exerciseAnimation("Bench Press")!.kind).toBe("skeleton");
+    expect(exerciseAnimation("Back Squat")!.kind).toBe("skeleton");
   });
 });

@@ -22,6 +22,7 @@ export async function GET(request: Request) {
     description: string | null;
     cues: string[];
     videoUrl: string | null;
+    thumbUrl: string | null;
   }> = [];
 
   // Global published library — cached (short TTL, busted on admin edits).
