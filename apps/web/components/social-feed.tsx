@@ -247,7 +247,14 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
               onComments={() => setOpen(open === item.id ? null : item.id)}
               // Session and PR cards are both anchored on a Session id, so both
               // open to the workout. A status post has no workout behind it.
-              onOpen={item.subjectType === "session" || item.subjectType === "pr" ? () => setOpened(item.id) : undefined}
+              // Opening COLLAPSES the row's inline thread: the sheet carries the
+              // same thread, and two mounted copies of it would fetch the same
+              // comments twice and then disagree the moment one posted.
+              onOpen={
+                item.subjectType === "session" || item.subjectType === "pr"
+                  ? () => { setOpen(null); setOpened(item.id); }
+                  : undefined
+              }
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
             >
               {open === item.id && <Comments item={item} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}
