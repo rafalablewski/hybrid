@@ -141,6 +141,7 @@ h1 {
 }
 h1 em { font-style: normal; color: var(--fg-faint); }
 .standfirst { margin-top: 22px; font-size: clamp(17px, 2.1vw, 20px); line-height: 1.5; color: var(--fg-dim); max-width: 56ch; }
+.shipped-flag { margin-top: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14.5px; color: var(--fg-dim); }
 .runin { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--rule);
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px 26px; }
 .runin div { display: flex; flex-direction: column; gap: 5px; }
@@ -344,6 +345,7 @@ footer { margin-top: clamp(60px, 8vw, 100px); padding-top: 20px; border-top: 1px
     <span class="label">8 Aug 2026</span>
   </div>
   <h1>The dock rail: History and Plans <em>are not the same control</em></h1>
+  <p class="shipped-flag"><span class="tag b">shipped</span> CODIFY was built. See <a href="#asbuilt">As built</a> for what changed on the way in.</p>
   <p class="standfirst">
     Two screens dock a strip of chips beneath the collapsed hero. They look different because
     twelve properties were decided four separate times — and because one of the two has no rail
@@ -943,6 +945,90 @@ footer { margin-top: clamp(60px, 8vw, 100px); padding-top: 20px; border-top: 1px
       <em>second</em> move — but two of History's four counts are the same number, so it needs the
       view registry to carry its own figure before it can ship honestly.
     </p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════ AS BUILT ══ -->
+<section id="asbuilt">
+  <div class="sechead">
+    <h2>As built</h2>
+    <span class="label">Seven decisions the bench didn't settle</span>
+  </div>
+
+  <div class="prose" style="margin-bottom:30px">
+    <p>
+      CODIFY shipped as <code>DockRail</code> + <code>DockChip</code>, twinned across clients over one
+      contract in <code>packages/core/src/dock-rail.ts</code>. A caller passes data and a role and
+      cannot pass a colour, size, radius, face or padding. Seven things the design bench left open had
+      to be decided at the keyboard:
+    </p>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Question</th><th>Shipped</th><th>Because</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="k">Which face wins?</td>
+          <td class="m">mono 12</td>
+          <td>A rail is chrome — same band as the hero's eyebrow, meta and accessory, all mono. Three of four rails were already mono; mobile History was Archivo only because it borrowed <code>AChip</code>, which is an in-content filter and stays as it is for its 37 other sites.</td>
+        </tr>
+        <tr>
+          <td class="k">Tracking?</td>
+          <td class="m">0</td>
+          <td>The bench sketched +.04em; there is no token between 0 and the label tracking, and a rail label is a word, not a kicker. Plans web's +.08em was the outlier.</td>
+        </tr>
+        <tr>
+          <td class="k">Who owns the gutter?</td>
+          <td class="m">the rail</td>
+          <td>Both scaffolds' rail slots now bleed full-width and add no padding. The web hero slot used to pad its child and History negative-margined straight back out — the same gutter applied twice, in opposite directions.</td>
+        </tr>
+        <tr>
+          <td class="k">Which column do chips rest on?</td>
+          <td class="m">the screen's own</td>
+          <td>The cover scaffold pads children at 16 where the hero pads at 12, so <code>gutter</code> is a prop and Plans passes the newly exported <code>COVER_GUTTER</code>. Its chips had been resting 4dp left of the shelf heads under them.</td>
+        </tr>
+        <tr>
+          <td class="k">The jump offset?</td>
+          <td class="m">derived</td>
+          <td><code>RAIL_H</code> now comes from the contract instead of a hand-typed 49px fallback sitting beside a runtime measurement. The rail can no longer be a height the constant doesn't know about.</td>
+        </tr>
+        <tr>
+          <td class="k">PlanWeekRail?</td>
+          <td class="m">material only</td>
+          <td>The waveform stays exactly as it was — its bar heights encode weekly volume, which is data. But its hand-rolled bar drew blur 14 against the scaffold's 18, so one screen was painting two bar materials. Aligned.</td>
+        </tr>
+        <tr>
+          <td class="k">The chip ratchet?</td>
+          <td class="m">exempt, not raised</td>
+          <td>The mobile token ratchet caps chip-shaped components at nine and may only ever go down. <code>DockChip</code> is exempted by name rather than the ceiling being raised: the ratchet counts hand-rolled implementations, and this is the third sanctioned primitive beside <code>Chip</code> and <code>AChip</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="opt-grid" style="margin-top:30px">
+    <div class="verdict">
+      <div class="vblock"><span class="label">Guarded by</span><ul>
+        <li><code>apps/web/__tests__/dock-rail.test.ts</code> — 35 cases over <b>both</b> client trees, because the failure it guards against is the two drifting apart. Fails on a rail off the primitive, a chip with no explicit role, a <code>selected</code> passed to an anchor, a second hand-rolled sticky bar beside the cover, a solid accent fill, a weight swap on select, a rail component that sets any geometry of its own, a client restating a number core owns, a scaffold missing its rail slot, or a slot that pads the child that has to bleed past it.</li>
+        <li><code>packages/core/src/dock-rail.test.ts</code> — the 44dp floor, the scale-derived numbers, and that an anchor can <b>never</b> be on.</li>
+      </ul></div>
+    </div>
+    <div class="verdict">
+      <div class="vblock"><span class="label">The guarantee, in code</span>
+        <div class="files" style="font-size:12.5px; line-height:1.55">
+          <span style="white-space:pre-wrap">dockChipOn("anchor", true) === false</span>
+        </div>
+        <p style="font-size:14.5px; color:var(--fg-dim)">
+          An anchor cannot light up, whatever a call site passes. The distinction the two rails exist
+          to express is enforced in core rather than left to convention — which is the difference
+          between a decision and a comment.
+        </p>
+      </div>
+      <div class="vblock"><span class="label">Still open</span><ul>
+        <li><b>LEDGER</b> is logged as the second move, blocked on data rather than effort: Agenda and Timeline render the same count and Trend has none, so <code>HISTORY_VIEWS</code> must carry a per-view figure first.</li>
+      </ul></div>
+    </div>
   </div>
 </section>
 

@@ -29,6 +29,7 @@ import {
   type StatRange,
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
+import { DockRail, DockChip } from "./dock-rail";
 
 // ── AURORA History views (web) ──────────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -127,24 +128,26 @@ function RestGapRow({ days }: { days: number }) {
 //  Switcher
 // ============================================================
 
+/**
+ * History's view rail — a SCROLLING chip rail, not a segmented control: it is
+ * full-bleed, scrolls past the screen edge, and a fifth layout must be able to
+ * join it without a redesign.
+ *
+ * It rides `DockRail` with `role="mode"`: the chips SELECT (one always on, the
+ * layout below changes), which is what earns them the accent tint. It used to
+ * be a hand-rolled button drawing a SOLID lime pill with dark text at ~29dp —
+ * the loudest object on a screen whose cards are one quiet figure each, and
+ * below the 44dp floor the kit already declares. See
+ * packages/core/src/dock-rail.ts. Mobile twin: the same function name.
+ */
 export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange: (v: HistoryViewId) => void }) {
   const { t } = useLang();
   return (
-    // Full-bleed chip rail — clips at the screen edge, rests on the column.
-    <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", padding: "0 var(--page-pad-x, 12px) 4px", margin: "0 calc(-1 * var(--page-pad-x, 12px))" }}>
-      {HISTORY_VIEWS.map((v) => {
-        const on = v.id === view;
-        return (
-          <button className="pressable"
-            key={v.id}
-            onClick={() => onChange(v.id)}
-            style={{ fontFamily: MONO, fontSize: fs.caption, whiteSpace: "nowrap", borderRadius: 999, padding: "6px 16px", cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, color: on ? "var(--on-accent)" : C("ash"), background: on ? C("lime") : C("ink2"), fontWeight: on ? 700 : 400 }}
-          >
-            {t(v.labelKey)}
-          </button>
-        );
-      })}
-    </div>
+    <DockRail label={t("histview.switchView")}>
+      {HISTORY_VIEWS.map((v) => (
+        <DockChip key={v.id} role="mode" label={t(v.labelKey)} selected={v.id === view} onClick={() => onChange(v.id)} />
+      ))}
+    </DockRail>
   );
 }
 

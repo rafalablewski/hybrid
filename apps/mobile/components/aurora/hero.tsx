@@ -533,7 +533,12 @@ export function HeroScreen({
         onLayout={(e) => {
           railH.current = e.nativeEvent.layout.height;
         }}
-        style={{ marginHorizontal: -HERO.gutter.edge, paddingHorizontal: HERO.gutter.edge, backgroundColor: withAlpha(C.ink, 0.88), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line, overflow: "hidden" }}
+        // Full-bleed, and NO padding of its own: the rail owns its gutter (see
+        // DockRail). This slot used to pad its child and History then
+        // negative-margined straight back out again — the same gutter applied
+        // twice in opposite directions, which is how the two rails ended up
+        // measuring differently. Now identical to the cover scaffold's slot.
+        style={{ marginHorizontal: -HERO.gutter.edge, backgroundColor: withAlpha(C.ink, 0.88), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line, overflow: "hidden" }}
       >
         <BlurView intensity={26} tint={scheme === "light" ? "light" : "dark"} style={StyleSheet.absoluteFill} />
         {rail}

@@ -121,6 +121,7 @@ export * from "./full-benefits";
 export * from "./scale";
 export * from "./hero";
 export * from "./hub-masthead";
+export * from "./dock-rail";
 export * from "./email";
 export * from "./format";
 export * from "./social-dto";
