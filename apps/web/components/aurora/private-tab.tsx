@@ -8,6 +8,7 @@ import {
   latestHeightCm, fmtHeight, displayHeight, storeHeightCm, heightUnitFor,
   type AuroraIconName, type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
 } from "@hybrid/core";
+import { CARD_PAD } from "@/lib/ui";
 import { refreshBodyweight } from "@/lib/use-bodyweight";
 import { useLang } from "@/lib/i18n";
 import { track } from "@/lib/track";
@@ -78,7 +79,7 @@ function CommandCenterCard({ locked, onClick }: { locked: boolean; onClick: () =
     <button className="pressable"
       onClick={onClick}
       aria-label={t("w.account.profile.priv-cockpit-t")}
-      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: 20, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, var(--premium-accent) 14%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--premium-accent) 5%, ${C("ink2")}), ${C("ink2")})`, boxShadow: "var(--shadow-card)" }}
+      style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD, background: `radial-gradient(120% 80% at 88% -10%, color-mix(in srgb, var(--premium-accent) 14%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--premium-accent) 5%, ${C("ink2")}), ${C("ink2")})`, boxShadow: "var(--shadow-card)" }}
     >
       <span style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <span style={{ width: 48, height: 48, borderRadius: 12, flex: "none", display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--premium-accent) 14%, transparent)", border: "1px solid color-mix(in srgb, var(--premium-accent) 35%, transparent)" }}>
@@ -292,6 +293,10 @@ function IconTile({ icon }: { icon: AuroraIconName }) {
   );
 }
 
+/* THE ROW IDIOM — an icon tile, a title + sub, a chevron. It carries the card's
+   radius but not its inset: a row is a list item, not a surface with a header,
+   so it keeps 16 while `CommandCenterCard` above (a real card) takes CARD_PAD.
+   Both BodyBlock's collapsed state and Row below are this idiom. */
 function Row({ icon, title, sub, onClick }: { icon: AuroraIconName; title: string; sub: string; onClick: () => void }) {
   return (
     <button className="pressable" onClick={onClick} aria-label={title} style={{ display: "flex", alignItems: "center", gap: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), width: "100%", textAlign: "left", cursor: "pointer" }}>

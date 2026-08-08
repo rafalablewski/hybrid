@@ -29,7 +29,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS, withAlpha, DockRail, DockChip } from "./kit";
+import { RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -81,7 +81,7 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
   return (
     <Pressable
       onPress={() => ctx.onOpen(s.id)}
-      style={{ borderRadius: RADIUS.card, padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
+      style={{ borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
     >
       <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: -0.5, color: C.chalk }}>
         {h.value}
@@ -189,7 +189,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <DayLabel C={C} text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
             <Chip color={u.isToday ? C.lime : C.ash}>{t("histview.planned")}</Chip>
           </View>
-          <View style={{ borderRadius: RADIUS.card, padding: 16, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
+          <View style={{ borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
             {u.blockNames.length > 0 && (
               <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
@@ -240,7 +240,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
   return (
     <View style={{ gap: 12, marginTop: 12 }}>
       {weeks.map((w) => (
-        <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: RADIUS.card, padding: 16, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, 0.3) : C.line }}>
+        <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, 0.3) : C.line }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
             {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: 1.2, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
@@ -357,8 +357,9 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const hasData = ctx.sessions.length > 0;
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
-  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16 } as const;
+  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD } as const;
   const Mini = ({ label, value }: { label: string; value: string }) => (
+    /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
     <View style={{ ...cardStyle, flex: 1, padding: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.5, marginTop: 4, color: C.chalk }}>{value}</Text>

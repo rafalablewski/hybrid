@@ -71,7 +71,7 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, AuroraField, GUTTER, RADIUS, Ring } from "./kit";
+import { ACard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import ExerciseWidgetRail from "./exercise-widget";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
@@ -984,7 +984,7 @@ export default function AuroraHome() {
             chooser above owns that state, and an empty card under it would be a
             second competing log CTA. */}
         {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
-          <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
+          <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
             <DoneFloor
               rows={doneOnDay}
               planIds={fulfilledIds}
@@ -992,7 +992,7 @@ export default function AuroraHome() {
               dayLabel={dayLabel}
               units={units}
               bw={bw}
-              pad={16}
+              pad={CARD_PAD}
               rule={false}
               onOpen={(id) => router.push(`/session/${id}`)}
               onLog={() => setQuickOpen(true)}
@@ -1467,7 +1467,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     }
   };
   return (
-    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
+    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same

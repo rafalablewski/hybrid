@@ -3,7 +3,11 @@ import { getOrCreateDbUser } from "@/lib/server-auth";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
-const TARGET_TYPES = ["talentProfile", "socialProfile", "comment"];
+// "post" is the feed's first-class Post row — reportable from the row's ⋯ menu.
+// A session/PR card is DERIVED, not a content row anyone can file against, so
+// the menu reports the ATHLETE (socialProfile) there instead; see core
+// feed-actions.ts, which picks the label to match.
+const TARGET_TYPES = ["talentProfile", "socialProfile", "comment", "post"];
 const REASONS = ["inappropriate", "fake", "spam", "other"];
 
 // File a content report (flagged content) — any signed-in user. Feeds the admin
@@ -37,6 +41,9 @@ export async function POST(request: Request) {
     if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
   } else if (b.targetType === "comment") {
     const exists = await prisma.comment.findUnique({ where: { id: targetId }, select: { id: true } }).catch(() => null);
+    if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
+  } else if (b.targetType === "post") {
+    const exists = await prisma.post.findUnique({ where: { id: targetId }, select: { id: true } }).catch(() => null);
     if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
   }
 

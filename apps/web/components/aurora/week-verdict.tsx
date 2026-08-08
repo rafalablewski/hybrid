@@ -13,7 +13,7 @@ import {
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
-import { fs, accentText } from "@/lib/ui";
+import { fs, CARD_PAD as SHARED_CARD_PAD, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { useToday } from "@/lib/use-today";
 
@@ -93,6 +93,12 @@ const PRS_HEAD_KEY: Record<string, string> = {
 const PRS_RAIL_CAP = 8;
 /** The width of the edge dissolve, in px. Mirrored on mobile. */
 const PRS_FADE = 24;
+/** The verdict card's own inner padding — what the detail compartment bleeds by
+ *  to reach the card's edges. NOT the screen gutter (`--page-pad-x`): the
+ *  compartment lives INSIDE the card, so it must follow the card. The value is
+ *  the app's one card inset (lib/ui `CARD_PAD`); this alias exists so the bleed
+ *  below can NAME the container it escapes. Mirrors mobile. */
+const CARD_PAD = SHARED_CARD_PAD;
 
 const kicker: CSSProperties = {
   fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
@@ -467,10 +473,10 @@ export default function AuroraWeekVerdict({
 
       <div style={{
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28,
-        boxShadow: "var(--shadow-card)", padding: 16,
+        boxShadow: "var(--shadow-card)", padding: CARD_PAD,
         // The compartment below supplies the bottom padding while it is open,
         // so the card gives its own up rather than fencing the panel in.
-        paddingBottom: open ? 0 : 16,
+        paddingBottom: open ? 0 : CARD_PAD,
         transition: "padding-bottom .34s cubic-bezier(.2,.7,.3,1)",
       }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
@@ -576,7 +582,7 @@ export default function AuroraWeekVerdict({
                   // drops its bottom padding while this is open — the panel's own
                   // padding is the card's bottom now.
                   background: C("ink"), borderTop: `1px solid ${C("line")}`,
-                  margin: "12px -16px 0", padding: "14px 16px 16px",
+                  margin: `12px -${CARD_PAD}px 0`, padding: `14px ${CARD_PAD}px ${CARD_PAD}px`,
                   borderRadius: "0 0 27px 27px",
                   animation: "hb-act-in .34s cubic-bezier(.2,.7,.3,1)",
                 }}

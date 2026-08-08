@@ -1,6 +1,6 @@
 "use client";
 
-import { accentText } from "@/lib/ui";
+import { CARD_PAD, accentText } from "@/lib/ui";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -261,6 +261,8 @@ export default function AuroraProfile({
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)" }}>
       {/* SET UP YOUR PROFILE — owner-only nudge; hides once photo + bio exist. */}
       {socialP && !sComplete && (
+        /* an icon-tile ROW (tile + text + chevron), not a full-width card — it
+           keeps the compact inset. See CARD_PAD for the variants that stay 16. */
         <button className="pressable"
           onClick={go("settings", "/settings")}
           style={{ width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 16, border: `1px solid ${C("lime")}`, background: "linear-gradient(135deg, color-mix(in srgb, var(--color-lime) 12%, transparent), transparent)", borderRadius: 28, padding: 16, display: "flex", alignItems: "center", gap: 16, color: C("chalk") }}
@@ -456,7 +458,7 @@ export default function AuroraProfile({
       {tab === "activity" && (
         <div style={{ marginTop: 16 }}>
           {/* 26-week training heatmap */}
-          <div style={{ border: `1px solid ${C("line")}`, borderRadius: 28, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))", padding: 16 }}>
+          <div style={{ border: `1px solid ${C("line")}`, borderRadius: 28, background: "linear-gradient(180deg, var(--color-ink2), var(--color-ink))", padding: CARD_PAD }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash"), letterSpacing: ".08em", marginBottom: 8, padding: "0 2px" }}>
               {monthLabels.map((m, i) => <span key={i}>{m}</span>)}
             </div>

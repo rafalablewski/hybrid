@@ -55,7 +55,7 @@ import { fs, space,
   type LogbookDay,
 } from "@hybrid/core";
 import { sportForDiscipline } from "@hybrid/core";
-import { roleText } from "@/lib/ui";
+import { CARD_PAD, roleText } from "@/lib/ui";
 import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
@@ -557,7 +557,7 @@ export default function AuroraToday({
       : null;
 
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 12, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
 
   // The shell every hub tab wears: the profile header, then the three pills.
   // Hoisted so the non-dashboard tabs render the SAME masthead chrome without
@@ -922,7 +922,7 @@ export default function AuroraToday({
           that state, and an empty card under it would be a second competing log
           CTA. */}
       {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
-        <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
+        <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
           <DoneFloor
             rows={doneOnDay}
             planIds={fulfilledIds}
@@ -930,7 +930,7 @@ export default function AuroraToday({
             dayLabel={dayLabel}
             units={units}
             bw={bw}
-            pad={16}
+            pad={CARD_PAD}
             rule={false}
             onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
             onLog={() => setQuickOpen(true)}
@@ -1398,7 +1398,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
     }
   };
   return (
-    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same

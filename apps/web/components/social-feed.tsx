@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fs, leading, tracking } from "@hybrid/core";
+import type { Relation } from "@hybrid/core";
 import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, LiveAthlete, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
@@ -12,6 +13,7 @@ import FeedLiveStrip from "./feed-live-strip";
 import { HubMasthead } from "./aurora/hub-masthead";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { syncSaved } from "@/lib/feed-actions";
 import { useIsMobile } from "@/lib/use-media-query";
 
 /**
@@ -32,7 +34,10 @@ import { useIsMobile } from "@/lib/use-media-query";
 type FeedItem = FeedItemView;
 type Tab = "forYou" | "following";
 
-function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
+/** The comment thread under an open row. EXPORTED because the Saved screen
+ *  (social-saved.tsx) renders the same rows and must open the same thread —
+ *  a second copy of this would drift the moment either is touched. */
+export function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
   const { t } = useLang();
   const [list, setList] = useState<CommentView[] | null>(null);
   const [text, setText] = useState("");
@@ -144,6 +149,10 @@ export default function SocialFeed({
       setLive(r.live ?? []);
     });
   useEffect(() => { load(); }, []);
+  // Reconcile the shelf with the server on open, so the bookmarks in the rows
+  // below are this ACCOUNT's, not just this browser's. Quiet no-op until
+  // SavedPost is migrated (lib/feed-actions.ts).
+  useEffect(() => { void syncSaved(); }, []);
 
   const cheer = async (item: FeedItem) => {
     // Optimistic: a kudos must never wait on the network to look given.
@@ -151,6 +160,15 @@ export default function SocialFeed({
     const r = await jsend<KudosResponse>("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos ?? x.kudos, kudosedByMe: r.kudosedByMe ?? x.kudosedByMe } : x)) ?? f);
   };
+  // What the ⋯ menu changed about an AUTHOR. A follow re-labels every card by
+  // that person; a block takes them out of the stream entirely — the server
+  // already made them invisible, so leaving their rows on screen until the next
+  // load would be the one place the app disagreed with itself.
+  const authorChanged = ({ authorId, relation, blocked }: { authorId: string; relation?: Relation; blocked?: boolean }) =>
+    setFeed((f) => (blocked
+      ? f?.filter((x) => x.author.id !== authorId) ?? f
+      : f?.map((x) => (x.author.id === authorId ? { ...x, relation } : x)) ?? f));
+
   const del = async (item: FeedItem) => {
     if (!window.confirm(t("w.social.deletePostConfirm"))) return;
     await fetch(`/api/social/posts/${item.subjectId}`, { method: "DELETE" });
@@ -211,17 +229,29 @@ export default function SocialFeed({
           every request is also an invite (core/attestation.ts). */}
       <CosignInbox units={units} />
 
-      {/* People-search rides the tab row's right side as a bare icon (the
+      {/* Saved + people-search ride the tab row's right side as bare icons (the
           SectionHead idiom) — a full search bar would spend a row of the
-          stream on a rare action. */}
+          stream on a rare action. Saved sits FIRST because it is where the
+          bookmark in every row below leads: the glyph that fills on a post is
+          the same glyph that opens the shelf. */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         {tabBtn("forYou", t("feed.tab.forYou"))}
         {tabBtn("following", t("feed.tab.following"))}
         <button
           className="pressable"
+          onClick={() => (onNavigate ? onNavigate("saved") : (window.location.href = "/app?s=saved"))}
+          aria-label={t("w.social.savedTitle")}
+          style={{ marginLeft: "auto", background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4.5 2.8h9v12.4l-4.5-3.4-4.5 3.4Z" />
+          </svg>
+        </button>
+        <button
+          className="pressable"
           onClick={() => (onNavigate ? onNavigate("discover") : (window.location.href = "/discover"))}
           aria-label={t("w.social.searchPeople")}
-          style={{ marginLeft: "auto", background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
+          style={{ background: "none", border: "none", padding: 4, cursor: "pointer", color: C("ash"), display: "inline-flex" }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
             <circle cx="8" cy="8" r="5.5" />
@@ -272,6 +302,7 @@ export default function SocialFeed({
                   : undefined
               }
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
+              onAuthorChanged={authorChanged}
             >
               {open === item.id && <Comments item={item} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}
             </FeedCard>
