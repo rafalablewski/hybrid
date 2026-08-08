@@ -581,6 +581,50 @@ export function recipeCardStats(
   ];
 }
 
+/** The COOK screen's plate — the recipe cover at one more compression.
+ *
+ *  The cook flow is NOT a cover screen: it doesn't scroll, and it ends in a
+ *  sticky action bar, so a collapsing full-bleed cover would promise a collapse
+ *  that never comes. What it gets instead is the cover's MATERIAL at plate
+ *  scale — the same wash accent, the same full-colour dish art, the same chip
+ *  and title — with the step counter in the slot the detail cover gives to
+ *  time, and the method's steps as ticks along its bottom edge. One view-model
+ *  so both clients count, clamp and label identically. */
+export interface RecipeCookView {
+  accent: string;
+  glyph: string;
+  chip: string;
+  title: string;
+  /** top-right mono label — "STEP 2 OF 5". */
+  count: string;
+  /** clamped 0-based position, and the total — the clients draw one tick each. */
+  index: number;
+  steps: number;
+  step: RecipeStep;
+  /** true on the last step: the CTA finishes instead of advancing. */
+  last: boolean;
+}
+
+export function recipeCookView(
+  recipe: Recipe,
+  stepIndex: number,
+  t: { meal: (meal: RecipeMeal) => string; stepXofY: (x: number, y: number) => string },
+): RecipeCookView {
+  const steps = recipe.steps.length;
+  const index = Math.min(Math.max(0, Math.trunc(stepIndex) || 0), Math.max(0, steps - 1));
+  return {
+    accent: RECIPE_TINT_COLOR[recipe.tint],
+    glyph: recipe.emoji,
+    chip: t.meal(recipe.meal),
+    title: recipe.name,
+    count: t.stepXofY(index + 1, steps).toUpperCase(),
+    index,
+    steps,
+    step: recipe.steps[index] ?? { text: "" },
+    last: index >= steps - 1,
+  };
+}
+
 /** A saveable meal draft (name + emoji + single-number macros) — the shape the
  *  SavedMeal library POST accepts. */
 export interface RecipeMealDraft {

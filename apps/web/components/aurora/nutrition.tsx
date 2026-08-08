@@ -11,7 +11,7 @@ import {
   nutritionHubSeries,
   fuelToday,
   RECIPES, formatIngredient, recipeById, recipeCoverView, localDayKey, localTodayKey,
-  recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats,
+  recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats, recipeCookView,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
@@ -19,7 +19,7 @@ import {
   sourceCheckedOn, sourceMarkDataUri, verifiedFreshness, type SourceMark,
   type NutritionGoal, type Signal, type MealPreset, type NutritionNudge, type NutritionSummary, type NutritionGlyphName, type FoodHit,
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
-  type Recipe, type RecipeMeal, type RecipeCollection, type NutritionMealPart, type MealPartDef,
+  type Recipe, type RecipeMeal, type RecipeCollection, type RecipeCookView, type NutritionMealPart, type MealPartDef,
 } from "@hybrid/core";
 import { fs, space, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
@@ -31,6 +31,7 @@ import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
 import { CoverHero, useHeroCollapse, COVER_BAR, COVER_INK } from "./cover-hero";
+import { HeroNav } from "./hero";
 import { NutritionHubBento } from "./nutrition-hub";
 
 // The Create Food form's blank state — one constant, so the reset paths can
@@ -117,18 +118,6 @@ const IPlusBox = (p: IconProps) => (
 const IStar = ({ size = 20, color = "currentColor", strokeWidth = 1.8, fill = false }: IconProps & { fill?: boolean }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17.8 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z" /></svg>
 );
-
-// Recipe hero — no photo assets, so a warm gradient keyed to a brand accent
-// carries the card + detail hero, with the dish emoji on top.
-function recipeHeroBg(tint: string): React.CSSProperties {
-  const map: Record<string, string> = {
-    amber: "radial-gradient(120px 90px at 55% 45%, rgba(255,214,102,.5), transparent 70%), linear-gradient(160deg,#2a2b22,#161712)",
-    blue: "radial-gradient(120px 90px at 45% 45%, rgba(108,182,189,.45), transparent 70%), linear-gradient(160deg,#1c2626,#141715)",
-    red: "radial-gradient(120px 90px at 55% 45%, rgba(213,111,62,.5), transparent 70%), linear-gradient(160deg,#26201c,#161311)",
-    lime: "radial-gradient(120px 90px at 45% 55%, rgba(198,248,79,.35), transparent 70%), linear-gradient(160deg,#20240f,#141711)",
-  };
-  return { background: map[tint] ?? map.amber };
-}
 
 // A screen-level left/right rail — the exercise-widget / "Train your way"
 // idiom. FULL-BLEED: negative margins the width of the shell gutter
@@ -1928,27 +1917,29 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   }
 
   // ============ COOK — step-through ============
+  // The recipe's PLATE, one compression below the detail cover: same wash, same
+  // full-colour dish, same chip + title, with the step counter in the slot the
+  // cover gives to time and the method's steps as ticks on its bottom edge. Not
+  // the full collapsing cover — this screen doesn't scroll and ends in a sticky
+  // action bar, so a collapsing hero would promise a collapse that never comes.
   if (view === "cook" && recipe) {
-    const step = recipe.steps[cookStep]!;
-    const last = cookStep >= recipe.steps.length - 1;
+    const cook = recipeCookView(recipe, cookStep, {
+      meal: (m) => t(`w.recovery.nutrition.meal.${m}`),
+      stepXofY: (x, y) => t("w.recovery.nutrition.stepXofY").replace("{x}", String(x)).replace("{y}", String(y)),
+    });
     return (
       <div style={{ fontFamily: "var(--font-display)", color: C("chalk"), display: "flex", flexDirection: "column", minHeight: "70vh" }}>
-        {screenHead(recipe.name, () => setView("recipe"))}
-        <div style={{ height: 150, display: "grid", placeItems: "center", fontSize: 64, borderRadius: 28, margin: "2px 0 20px", ...recipeHeroBg(recipe.tint) }}>{recipe.emoji}</div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-          {recipe.steps.map((_, i) => <span key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= cookStep ? C("lime") : C("line") }} />)}
-        </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{t("w.recovery.nutrition.stepXofY").replace("{x}", String(cookStep + 1)).replace("{y}", String(recipe.steps.length))}</div>
-        <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 23, lineHeight: 1.35, letterSpacing: "-.01em", margin: "12px 0 0" }}>{step.text}</p>
-        {step.timerSec != null && (
+        <CookPlate cook={cook} onBack={() => setView("recipe")} />
+        <p style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 23, lineHeight: 1.35, letterSpacing: "-.01em", margin: "20px 0 0" }}>{cook.step.text}</p>
+        {cook.step.timerSec != null && (
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 20, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "8px 16px", fontFamily: "var(--font-mono)", fontSize: fs.body, color: "var(--amber-text)", alignSelf: "flex-start" }}>
-            <IClock size={15} color="var(--amber-text)" />{Math.floor(step.timerSec / 60)}:{String(step.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}
+            <IClock size={15} color="var(--amber-text)" />{Math.floor(cook.step.timerSec / 60)}:{String(cook.step.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}
           </div>
         )}
         <div style={{ flex: 1 }} />
-        <div style={{ display: "grid", gridTemplateColumns: cookStep > 0 ? "auto 1fr" : "1fr", gap: 12, marginTop: 24, paddingBottom: 12 }}>
-          {cookStep > 0 && <button className="pressable" onClick={() => setCookStep((s) => s - 1)} style={{ background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "16px 24px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.stepBack")}</button>}
-          <button className="pressable" onClick={() => last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</button>
+        <div style={{ display: "grid", gridTemplateColumns: cook.index > 0 ? "auto 1fr" : "1fr", gap: 12, marginTop: 24, paddingBottom: 12 }}>
+          {cook.index > 0 && <button className="pressable" onClick={() => setCookStep((s) => s - 1)} style={{ background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "16px 24px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.stepBack")}</button>}
+          <button className="pressable" onClick={() => cook.last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{cook.last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</button>
         </div>
       </div>
     );
@@ -2775,6 +2766,35 @@ function RecipeTile({ recipe, onOpen, width = "172px", snap = false }: { recipe:
         <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.7)", marginTop: 5 }}>{tile.meta}</span>
       </span>
     </button>
+  );
+}
+
+/** The cook screen's PLATE — the recipe cover compressed into a card: the same
+ *  duotone wash and full-colour dish, the meal as the chip, the dish as the
+ *  title, the step counter where the cover puts its time, and one tick per step
+ *  along the bottom edge. The back button is the cover's own HeroNav, so the
+ *  screen no longer carries a centred title that repeats the plate's. */
+function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () => void }) {
+  return (
+    <div style={{ position: "relative", height: 150, borderRadius: 28, overflow: "hidden", background: COVER_INK, color: "#fff", margin: "2px 0 0" }}>
+      <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(202deg, color-mix(in srgb, ${cook.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${cook.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
+      <span aria-hidden style={{ position: "absolute", top: -14, right: -12, fontSize: 128, lineHeight: 1, filter: "drop-shadow(0 16px 34px rgba(0,0,0,.5))", pointerEvents: "none" }}>{cook.glyph}</span>
+      <span aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(0deg, ${COVER_INK} 0%, color-mix(in srgb, ${COVER_INK} 55%, transparent) 14%, transparent 62%)` }} />
+      <div style={{ position: "absolute", top: 10, left: 10, right: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <HeroNav onClick={onBack} fromLabel={cook.title} material="glass" onDark />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.85)" }}>{cook.count}</span>
+      </div>
+      <div style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
+        <span style={{ display: "inline-block", background: "var(--color-lime)", color: "var(--on-accent)", borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" }}>{cook.chip}</span>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 26, letterSpacing: "-.03em", lineHeight: 1.05, marginTop: 6, textShadow: "0 2px 18px rgba(0,0,0,.35)" }}>{cook.title}</div>
+      </div>
+      {/* one tick per step — the method's length, stated by the plate itself */}
+      <div aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: 0, display: "flex", gap: 2 }}>
+        {Array.from({ length: cook.steps }, (_, i) => (
+          <span key={i} style={{ flex: 1, height: 3, background: i <= cook.index ? "var(--color-lime)" : "rgba(255,255,255,.18)" }} />
+        ))}
+      </div>
+    </div>
   );
 }
 

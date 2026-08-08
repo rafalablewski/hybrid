@@ -13,7 +13,7 @@ import { ACard, AField, GUTTER, RADIUS, withAlpha } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
 import MeasuredOutcome from "../measured-outcome";
-import PlanCoverScreen, { CoverScreen, PlanDockPill, type CoverScreenApi } from "../plan-hero";
+import PlanCoverScreen, { CoverScreen, PlanDockPill, COVER_CONTENT_PAD, type CoverScreenApi } from "../plan-hero";
 
 /** Cover ink — the goal tiles are dark in BOTH themes, exactly like the covers
  *  they expand into (Explore's PlanCover recipe). */
@@ -174,8 +174,11 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
         onContentSizeChange={(w) => setRail((r) => ({ ...r, content: w }))}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
-        style={{ marginHorizontal: -GUTTER }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: GUTTER }}
+        // Cancel the SCAFFOLD's child padding, not the screen gutter — a
+        // shelf lives inside CoverScreen, so bleeding by GUTTER left the cards
+        // 4px short of the true edge.
+        style={{ marginHorizontal: -COVER_CONTENT_PAD }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_CONTENT_PAD }}
       >
         {group.goals.map((g) => (
           <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />

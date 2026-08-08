@@ -12,6 +12,7 @@ import {
   recipeCollectionCoverView,
   recipeTileView,
   recipeCardStats,
+  recipeCookView,
   RECIPE_COLLECTIONS,
   RECIPE_COLLECTION_META,
   type Recipe,
@@ -200,5 +201,39 @@ describe("the recipes library — the Plans tab's three levels, on food", () => 
       { value: "32", unit: "g", label: "Protein" },
       { value: "10", unit: "min", label: "Time" },
     ]);
+  });
+});
+
+describe("recipeCookView — the plate the cook screen wears", () => {
+  const CK = {
+    meal: (m: RecipeMeal) => ({ breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" })[m],
+    stepXofY: (x: number, y: number) => `Step ${x} of ${y}`,
+  };
+  const ramen = recipeById("ramen") as Recipe;
+
+  it("wears the recipe's own cover slots, with the counter where time sits", () => {
+    const c = recipeCookView(ramen, 1, CK);
+    expect(c.accent).toBe(RECIPE_TINT_COLOR.amber);
+    expect(c.glyph).toBe("🍜");
+    expect(c.chip).toBe("Lunch");
+    expect(c.title).toBe("Ramen");
+    expect(c.count).toBe("STEP 2 OF 5");
+    expect(c.step).toBe(ramen.steps[1]);
+    expect(c.last).toBe(false);
+  });
+
+  it("clamps a step index that has run past either end", () => {
+    expect(recipeCookView(ramen, -3, CK).index).toBe(0);
+    expect(recipeCookView(ramen, 99, CK).index).toBe(ramen.steps.length - 1);
+    // clamping to the end also means the CTA finishes rather than advancing
+    expect(recipeCookView(ramen, 99, CK).last).toBe(true);
+  });
+
+  it("marks the last step for every recipe, so the CTA can never advance off the end", () => {
+    for (const r of RECIPES) {
+      expect(recipeCookView(r, r.steps.length - 1, CK).last).toBe(true);
+      expect(recipeCookView(r, 0, CK).steps).toBe(r.steps.length);
+      expect(recipeCookView(r, 0, CK).last).toBe(r.steps.length === 1);
+    }
   });
 });

@@ -29,7 +29,7 @@ import {
   sumMealComponents, recipeToMeal,
   nutritionHubSeries,
   RECIPES, formatIngredient, recipeById, recipeCoverView,
-  recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats,
+  recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats, recipeCookView,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   type NutritionMealPart, type MealPartDef,
   type NutritionGoal,
@@ -44,7 +44,7 @@ import {
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
   sourceCheckedOn, kj, verifiedFreshness, type SourceMark, 
-  type Recipe, type RecipeCollection,
+  type Recipe, type RecipeCollection, type RecipeCookView,
 } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -65,7 +65,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
 import { HeroNav } from "./hero";
-import { CoverScreen, type CoverScreenApi } from "../plan-hero";
+import { CoverScreen, COVER_CONTENT_PAD, type CoverScreenApi } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
@@ -139,22 +139,6 @@ function IPlusBox({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Rect x="3" y="3" width="18" height="18" rx="5" stroke={color} strokeWidth={strokeWidth} /><Path d="M12 8v8M8 12h8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" /></Svg>;
 }
 
-// Recipe hero — no photo assets, so a warm accent-tinted gradient over a dark
-// base carries the card + detail hero, with the dish emoji on top (mirrors the
-// web recipeHeroBg). Fixed dark base so it reads as a photo stand-in in either
-// theme, with the brand accent (amber/blue/red/lime) glowing through low-alpha.
-function RecipeHero({ tint, emoji, height, fontSize, style, children }: { tint: string; emoji: string; height: number; fontSize: number; style?: object; children?: ReactNode }) {
-  const { palette: C } = useTheme();
-  const accent = tint === "blue" ? C.blue : tint === "red" ? C.red : tint === "lime" ? C.lime : C.amber;
-  return (
-    <View style={[{ height, alignItems: "center", justifyContent: "center", backgroundColor: "#181a12", overflow: "hidden" }, style]}>
-      <LinearGradient pointerEvents="none" colors={[`${accent}5c`, `${accent}12`, "transparent"]} start={{ x: 0.45, y: 0.35 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      <Text style={{ fontSize }}>{emoji}</Text>
-      {children}
-    </View>
-  );
-}
-
 // ── THE RECIPES LIBRARY — the Plans tab, on food ────────────────────────────
 //
 // Three levels, one object at three compressions, exactly as Plans does it:
@@ -168,9 +152,6 @@ function collectionTitle(key: RecipeCollection, t: (k: string) => string): strin
   return key === "highProtein" ? t("w.recovery.nutrition.recipeFilter.highProtein") : t(`w.recovery.nutrition.meal.${key}`);
 }
 
-/** CoverScreen pads its children by 16 (not the screen GUTTER), so THIS is the
- *  number a rail inside it has to cancel to reach the true screen edge. */
-const COVER_PAD = 16;
 /** One recipe tile — cover ink in both themes, like the covers they expand into. */
 const TILE_INK = "#0c0d0c";
 const TILE_W = 172;
@@ -234,8 +215,8 @@ function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -COVER_PAD }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_PAD }}
+        style={{ marginHorizontal: -COVER_CONTENT_PAD }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_CONTENT_PAD }}
       >
         {shelf.recipes.map((r) => <RecipeTile key={r.id} recipe={r} onOpen={() => openRecipe(r)} />)}
       </ScrollView>
@@ -269,6 +250,39 @@ function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe; onOpen
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: "rgba(255,255,255,0.7)", marginTop: 5 }}>{tile.meta}</Text>
       </View>
     </Pressable>
+  );
+}
+
+/** The cook screen's PLATE — the recipe cover compressed into a card: the same
+ *  duotone wash and full-colour dish, the meal as the chip, the dish as the
+ *  title, the step counter where the cover puts its time, and one tick per step
+ *  along the bottom edge. The back button is the cover's own HeroNav, so the
+ *  screen no longer carries a centred title that repeats the plate's. */
+function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () => void }) {
+  const { palette: C, scheme } = useTheme();
+  return (
+    <View style={{ height: 150, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: TILE_INK, marginTop: 2 }}>
+      {/* alpha-over-ink stops matching web's color-mix wash — web parity */}
+      <LinearGradient pointerEvents="none" colors={[`${cook.accent}85`, `${cook.accent}26`, `${cook.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
+      <Text pointerEvents="none" style={{ position: "absolute", top: -16, right: -10, fontSize: 118, lineHeight: 126 }}>{cook.glyph}</Text>
+      <LinearGradient pointerEvents="none" colors={["#0c0d0c00", "#0c0d0c8c", "#0c0d0c"]} locations={[0.38, 0.8, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+      <View style={{ position: "absolute", top: 10, left: 10, right: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <HeroNav onPress={onBack} fromLabel={cook.title} material="glass" />
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: "rgba(255,255,255,0.85)" }}>{cook.count}</Text>
+      </View>
+      <View style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
+        <View style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 9, fontWeight: "700", letterSpacing: 0.9, textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
+        </View>
+        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 26, lineHeight: 28, letterSpacing: -0.8, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
+      </View>
+      {/* one tick per step — the method's length, stated by the plate itself */}
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 2 }}>
+        {Array.from({ length: cook.steps }, (_, i) => (
+          <View key={i} style={{ flex: 1, height: 3, backgroundColor: i <= cook.index ? C.lime : "rgba(255,255,255,0.18)" }} />
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -2024,26 +2038,29 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   }
 
   // ============ COOK — step-through ============
+  // The recipe's PLATE, one compression below the detail cover: same wash, same
+  // full-colour dish, same chip + title, with the step counter in the slot the
+  // cover gives to time and the method's steps as ticks on its bottom edge. Not
+  // the full collapsing cover — this screen doesn't scroll and ends in a sticky
+  // action bar, so a collapsing hero would promise a collapse that never comes.
+  // Web parity: aurora/nutrition.tsx CookPlate.
   if (view === "cook" && recipe) {
-    const cstep = recipe.steps[cookStep]!;
-    const last = cookStep >= recipe.steps.length - 1;
+    const cook = recipeCookView(recipe, cookStep, {
+      meal: (m) => t(`w.recovery.nutrition.meal.${m}`),
+      stepXofY: (x, y) => t("w.recovery.nutrition.stepXofY").replace("{x}", String(x)).replace("{y}", String(y)),
+    });
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        {screenHead(recipe.name, () => setView("recipe"))}
-        <RecipeHero tint={recipe.tint} emoji={recipe.emoji} height={150} fontSize={64} style={{ borderRadius: RADIUS.card, marginTop: 2, marginBottom: 20 }} />
-        <View style={{ flexDirection: "row", gap: 6, marginBottom: 16 }}>
-          {recipe.steps.map((_, i) => <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= cookStep ? C.lime : C.line }} />)}
-        </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepXofY").replace("{x}", String(cookStep + 1)).replace("{y}", String(recipe.steps.length))}</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: 23, lineHeight: 31, letterSpacing: -0.3, color: C.chalk, marginTop: 12 }}>{cstep.text}</Text>
-        {cstep.timerSec != null ? (
+        <CookPlate cook={cook} onBack={() => setView("recipe")} />
+        <Text style={{ fontFamily: F.bold, fontSize: 23, lineHeight: 31, letterSpacing: -0.3, color: C.chalk, marginTop: 20 }}>{cook.step.text}</Text>
+        {cook.step.timerSec != null ? (
           <View style={{ flexDirection: "row", alignSelf: "flex-start", alignItems: "center", gap: 8, marginTop: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16 }}>
-            <IClock size={15} color={txt(C, C.amber)} /><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber) }}>{Math.floor(cstep.timerSec / 60)}:{String(cstep.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}</Text>
+            <IClock size={15} color={txt(C, C.amber)} /><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber) }}>{Math.floor(cook.step.timerSec / 60)}:{String(cook.step.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}</Text>
           </View>
         ) : null}
         <View style={{ flexDirection: "row", gap: 12, marginTop: 28 }}>
-          {cookStep > 0 ? <Pressable onPress={() => setCookStep((s) => s - 1)} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 24, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.stepBack")}</Text></Pressable> : null}
-          <Pressable onPress={() => last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</Text></Pressable>
+          {cook.index > 0 ? <Pressable onPress={() => setCookStep((s) => s - 1)} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 24, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.stepBack")}</Text></Pressable> : null}
+          <Pressable onPress={() => cook.last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{cook.last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</Text></Pressable>
         </View>
       </AuroraScreen>
     );

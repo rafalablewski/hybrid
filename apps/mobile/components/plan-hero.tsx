@@ -115,6 +115,14 @@ export interface CoverSpec {
   variant?: "plan" | "goal" | "library" | "recipe";
 }
 
+/** The scaffold's own side padding on its CHILDREN — NOT the screen gutter
+ *  (AuroraScreen's 12dp). Exported because a full-bleed rail inside a cover
+ *  screen has to cancel exactly this number to reach the true screen edge:
+ *  bleeding by the gutter instead leaves the house rule's forbidden 4px sliver
+ *  beside a cut card. Both consumers (the Plans shelves, the recipe shelves)
+ *  import it rather than writing 16 twice. */
+export const COVER_CONTENT_PAD = 16;
+
 /** Imperative handle onto the scaffold's scroll, for a `rail` that navigates
  *  the content beneath it (the Plans root's category chips). */
 export interface CoverScreenApi {
@@ -371,7 +379,7 @@ export function CoverScreen({
               onLayout={(e) => {
                 childrenTop.current = e.nativeEvent.layout.y;
               }}
-              style={{ paddingHorizontal: 16 }}
+              style={{ paddingHorizontal: COVER_CONTENT_PAD }}
             >
               {children}
             </View>
