@@ -26,9 +26,8 @@ import {
   stepAnswered,
   type CheckinMetrics,
   type CheckinSessionRef,
-  readinessContext,
-  readinessNoteKey,
   hoursSince,
+  readinessReadExplain,
   readGate,
   placeReads,
   decisiveFeeling,
@@ -85,6 +84,7 @@ import { useDeviceAutoImport } from "../../lib/use-device-import";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
+import ReadinessSheet from "./readiness-sheet";
 import FetchError from "./fetch-error";
 import AuroraEnduranceLanes from "./endurance-lanes";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
@@ -1114,27 +1114,20 @@ export default function AuroraHome() {
         <GroupMark label={t("w.home.group.explore")} />
 
         {/* ───── GO FULL — demoted from two display-weight AccessCards to ONE
-            compact quiet row (the DoorRow idiom: r16, small glyph tile, bold
-            title + mono micro sub, chevron). The row carries the "Go Full"
-            label itself, so the old "✦ Go Full" section head is gone with it.
-            The ✦ stays as the tile glyph — the semantic premium signifier,
-            the ONLY thing wearing the premium accent. Routes where the first
-            AccessCard (Cockpit) routed. Mirrors web today.tsx. ───── */}
-        <PressScale
+            compact quiet row. It is the SHARED DoorRow now (Aug 2026): it had
+            been a hand-rolled copy of that anatomy, so when the doors went
+            chromeless this one would have stayed a filled card sitting between
+            two flat ones — the same drift that let five rails draw five
+            different tails. `premium` carries the ✦ in the accent; the ✦ is
+            the semantic premium signifier and still the ONLY thing wearing it.
+            Routes where the first AccessCard (Cockpit) routed. Mirrors web. */}
+        <DoorRow
+          glyph="✦"
+          premium
+          title={t("w.home.today.goFull")}
+          sub={t("w.home.today.goFullRowSub")}
           onPress={() => (isAthlete ? router.push("/performance") : goUpgrade("today-cockpit"))}
-          accessibilityRole="button"
-          accessibilityLabel={`${t("w.home.today.goFull")} – ${t("w.home.today.goFullRowSub")}`}
-          style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}
-        >
-          <View style={{ width: 32, height: 32, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 13, color: pa.text }}>✦</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.home.today.goFull")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("w.home.today.goFullRowSub")}</Text>
-          </View>
-          <Text style={{ fontSize: fs.note, color: C.ash }}>›</Text>
-        </PressScale>
+        />
 
         {/* ───── FOLLOW A COACH — Today's last block, and the only thing left
             below the premium cards. Nutrition is NOT summarised here: Today is
@@ -1336,10 +1329,13 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   // rather than asking "does the row have an answer yet" is what makes this
   // work for the second and third read of a day, where it always did.
   const [picked, setPicked] = useState<{ day: number | null; rating: number; reads: number } | null>(null);
-  // WHAT THE READING IS WORTH, ON REQUEST. This sentence used to sit under the
-  // faces on every render — an explanation the athlete has read a hundred times,
-  // occupying the place where the card says what is happening NOW. It is
-  // reference, not news, so it moves behind an ⓘ on the reading it describes.
+  // WHAT THE READING IS WORTH, ON REQUEST. This used to be ONE grey sentence an
+  // ⓘ toggled in and out under the faces — while every figure on the Performance
+  // tab opened onto its measured inputs, its arithmetic and its caveat. The
+  // reading in Recover governs the day (it scales the next session's load, it
+  // decides whether a second read is wanted, it is half of the pair that
+  // measures this athlete's clearance) and it now gets the SAME door: the
+  // freshness/wearable sheet idiom, off `readinessReadExplain` in @hybrid/core.
   const [whyOpen, setWhyOpen] = useState(false);
   // ONE NUMBER (design/readiness-one-number-states.html). The card leads with
   // the reading that governs the day at display weight; the day's record lives
@@ -1379,15 +1375,26 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   // yet, and a blank row of faces is the only honest way to ask it.
   const inviting = isToday && gate.open && dayReads.length > 0 && !justPicked;
   const selected = inviting ? null : shownFeeling;
-  // The clock's effect on the meaning of today's answer, from core so both
-  // clients say the same thing. `low` is the two negative feelings — the only
-  // ones whose reading genuinely turns on how long ago you trained.
-  const ctxLow = shownFeeling === "flat" || shownFeeling === "wrecked";
-  // …read against the DECISIVE read's own clock, not the clock right now: the
-  // sentence describes the answer on the card ("hours after training and still
-  // flat"), and dating it to this instant would relabel a morning reading as an
-  // evening one just because the athlete opened the app again.
-  const ctxNote = readinessNoteKey(decisive?.context ?? readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
+  // THE EXPLANATION, computed only while the sheet is up — from the SAME engine
+  // the prescription reads, so the load figure in the sheet and the load the
+  // session is given are one value read twice. It is placed against the DECISIVE
+  // read's own clock, not the clock right now: the answer being explained was
+  // given at a moment, and dating it to this instant would relabel a morning
+  // reading as an evening one just because the athlete opened the app again.
+  // With no read behind the reading, the time since training classifies it (and
+  // nothing more — see readinessReadExplain).
+  const explain = useMemo(
+    () => (whyOpen && shownFeeling
+      ? readinessReadExplain({
+          feeling: shownFeeling,
+          read: decisive,
+          reads: dayReads,
+          gate: isToday ? gate : null,
+          hoursSinceSession: hoursSince(lastSessionEnd, Date.now()),
+        })
+      : null),
+    [whyOpen, shownFeeling, decisive, dayReads, gate, isToday, lastSessionEnd],
+  );
   // ONE LINE OF MEANING, not four stacked greys. A context note, an invitation,
   // a gate reason and a countdown chip were all queueing under the faces — the
   // triple narration the Builder critique killed, in a smaller box. Only one of
@@ -1409,17 +1416,15 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
       : heroAt.hoursSinceSession != null
         ? `${heroClock} — +${Math.round(heroAt.hoursSinceSession)}h ${t("w.home.today.heroAfterTraining")}`
         : `${heroClock} — ${t("w.home.today.readNoSession")}`;
-  const line = whyOpen && ctxNote
-    ? { key: ctxNote, sub: null as string | null, tone: ctxLow ? ("amber" as const) : ("ash" as const) }
-    : gateNote
-      ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
-      : inviting
-        ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
-        : !shownFeeling && isToday
-          ? { key: "w.home.today.heroAsk", sub: null as string | null, tone: "ash" as const }
-          : trend
-            ? { key: READ_TREND_KEY[trend.trend], sub: null as string | null, tone: trend.trend === "sinking" ? ("amber" as const) : ("ash" as const) }
-            : null;
+  const line = gateNote
+    ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
+    : inviting
+      ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
+      : !shownFeeling && isToday
+        ? { key: "w.home.today.heroAsk", sub: null as string | null, tone: "ash" as const }
+        : trend
+          ? { key: READ_TREND_KEY[trend.trend], sub: null as string | null, tone: trend.trend === "sinking" ? ("amber" as const) : ("ash" as const) }
+          : null;
   const lineColor = line?.tone === "chalk" ? C.chalk : C.ash;
   // THE CARD'S ONE FILL. Two lime-tinted surfaces were competing — the recovery
   // ask and the follow-up trigger. The ask wins whenever it is showing: it is
@@ -1510,19 +1515,27 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{heroStamp}</Text>
-        {shownFeeling && ctxNote && isToday ? (
+        {/* THE DOOR — the Performance tab's affordance exactly: the ⓘ glyph
+            bare, at 13, riding the row of the figure it explains. It used to be
+            an 11px glyph inside a second bordered circle, which is the noise
+            the freshness columns dropped for the same reason (the glyph IS a
+            ring), and it used to toggle one sentence in place rather than open
+            the derivation. It also showed only on a day the note existed for;
+            the sheet has something to say about EVERY reading, so it shows
+            whenever there is one. */}
+        {shownFeeling ? (
           <Pressable
-            onPress={() => setWhyOpen((v) => !v)}
+            onPress={() => setWhyOpen(true)}
             accessibilityRole="button"
-            accessibilityState={{ expanded: whyOpen }}
             accessibilityLabel={t("w.home.today.readWhy")}
-            hitSlop={8}
-            style={{ width: 18, height: 18, borderRadius: 999, borderWidth: 1, borderColor: whyOpen ? C.ash : C.line, alignItems: "center", justifyContent: "center" }}
+            hitSlop={10}
+            style={{ width: 22, height: 22, alignItems: "center", justifyContent: "center" }}
           >
-            <AuroraIcon name="info" size={11} color={C.ash} />
+            <AuroraIcon name="info" size={13} color={C.ash} />
           </Pressable>
         ) : null}
       </View>
+      <ReadinessSheet explain={explain} stamp={heroStamp} onClose={() => setWhyOpen(false)} />
 
       {line ? (
         <Text style={{ marginTop: 10, fontFamily: line.sub ? F.bold : F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: lineColor }}>

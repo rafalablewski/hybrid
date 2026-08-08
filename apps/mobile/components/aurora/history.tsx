@@ -226,7 +226,7 @@ export default function AuroraHistory() {
       accessory={<HeroAccessory label={t("history.archived")} active={showArchived} onPress={() => setShowArchived((v) => !v)} onDark={false} />}
       // The view switcher is a SUB-rail: it docks beneath the collapsed bar
       // rather than scrolling away, so the layout you are in stays addressable.
-      rail={!showArchived && view !== null ? <View style={{ paddingVertical: 10 }}><ViewSwitcher view={view} onChange={pickView} /></View> : undefined}
+      rail={!showArchived && view !== null ? <ViewSwitcher view={view} onChange={pickView} /> : undefined}
       scroller={(scrollProps, railNode) => (
         <FlatList
           data={showArchived && !loading && !q.isError ? sessions : []}

@@ -17,6 +17,7 @@ import { ADrawer, GUTTER, withAlpha } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 // The drawer's own motion moved into ADrawer; this is here for the records
@@ -131,27 +132,45 @@ function Lead({ template, word, color }: { template: string; word: string | null
   );
 }
 
-/** One destination row — the door to everything past this period. Exported
- *  since wave 3: the doors render at the END of the Progress cluster (in
- *  home.tsx), as the whole cluster's single exit point, not under this card. */
-export function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: string; glyph: string; onPress: () => void }) {
+/**
+ * One destination row — the door to everything past this period. Exported
+ * since wave 3: the doors render at the END of the Progress cluster (in
+ * home.tsx), as the whole cluster's single exit point, not under this card.
+ *
+ * CHROMELESS since Aug 2026, the same pass that un-carded the rail tail
+ * (aurora/rail-tail.tsx). A door is not a thing you own, it is the way out of
+ * the things you own — so it stops wearing the ink2 fill, the hairline and the
+ * radius that every CARD on Today wears, and reads as type on the ground. That
+ * also ends the reading where a stack of two of them looked like two more
+ * cards' worth of content below the week.
+ *
+ * THE RING IS THE GRAMMAR. A door carries its glyph in a ringed plate, exactly
+ * as the rail tail carries its arrow; an EXPANDER — something that grows the
+ * thing in place rather than opening a screen — carries a bare ＋/− with no
+ * ring (the Other-sports tail, the endurance block's All-sports control). So
+ * the ring says "this leaves", and nothing in either shape is a bordered box.
+ * The rows separate by whitespace, not a rule: a hairline under a GroupMark is
+ * the label-plus-rule divider the cluster markers deliberately retired.
+ */
+export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title: string; sub: string; glyph: string; onPress: () => void; premium?: boolean }) {
   const { palette: C } = useTheme();
+  const pa = usePremiumAccent();
+  const glyphColor = premium ? pa.text : C.ash;
   return (
     <PressScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title} – ${sub}`}
       style={{
-        flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10,
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-        paddingHorizontal: 16, paddingVertical: 12,
+        flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14,
+        paddingHorizontal: 2, paddingVertical: 4,
       }}
     >
       <View style={{
-        width: 32, height: 32, borderRadius: 12, backgroundColor: C.ink,
-        borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center",
+        width: 32, height: 32, borderRadius: 16,
+        borderWidth: 1, borderColor: premium ? pa.text : C.line, alignItems: "center", justifyContent: "center",
       }}>
-        <Text style={{ fontSize: 13, color: C.ash }}>{glyph}</Text>
+        <Text style={{ fontSize: 13, color: glyphColor }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>

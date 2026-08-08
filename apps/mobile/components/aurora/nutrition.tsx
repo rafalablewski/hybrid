@@ -1996,7 +1996,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <RailTail
               onOpen={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))}
               a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.recipes")}`}
-              premium={!recipesUnlocked} w={recipeCardW} radius={RADIUS.card}
+              premium={!recipesUnlocked} w={recipeCardW}
             />
           </ScrollView>
 
@@ -2024,7 +2024,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <RailTail
               onOpen={() => setView("sources")}
               a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.verifiedFoods")}`}
-              w={sourceCardW} radius={RADIUS.card}
+              w={sourceCardW}
             />
           </ScrollView>
       </>

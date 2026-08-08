@@ -127,7 +127,7 @@ export default function ExerciseWidgetRail({
           and spent the slot on a fact the reader already had — while the one
           they did NOT have, that this rail is a selection rather than their
           whole log, had nowhere to go. A quote must add a fraction. The
-          "All ›" action lives in the rail's trailing ghost tile, per the
+          "All ›" action lives in the rail's trailing tail, per the
           one-exit rule. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
@@ -200,9 +200,17 @@ export default function ExerciseWidgetRail({
             </Pressable>
           );
         })}
-        {/* THE ADD DOOR — the dashed ghost tile, at tile scale. A "＋" must
-            add: this one opens the pin sheet and the chosen movement is a card
-            in this rail before the sheet is even closed. */}
+        {/* THE ADD DOOR — the dashed ghost tile, at tile scale.
+            #365 retired this rail's dashed ＋ for three good reasons: a dashed
+            box is the "empty slot / drop here" idiom, ＋ means ADD while that
+            tile only navigated, and it spent chartreuse — the reserved "go"
+            colour — on a standing link. The second reason is the load-bearing
+            one, and it no longer holds: this ＋ genuinely ADDS, opening the pin
+            sheet so the chosen movement is a card in this rail before the sheet
+            is even closed. Which turns the other two around — "drop here" is
+            exactly what an add slot means, and lime on a real action is the
+            colour doing its job rather than decorating a link. The EXIT beside
+            it is the shared RailTail, per that same rule. Mirrors web. */}
         <Pressable
           onPress={() => setAdding(true)}
           accessibilityRole="button"
@@ -212,10 +220,17 @@ export default function ExerciseWidgetRail({
           <Text style={{ fontSize: 18, color: C.ash }}>＋</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.addCard")}</Text>
         </Pressable>
-        {/* THE SEE-ALL DOOR — the shared RailTail, so this rail's exit is drawn
-            like every other rail's. It only DISPLAYS the exercises list; it
-            never touches the pins. */}
-        <RailTail onOpen={onAll} a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`} w={132} radius={RADIUS.field} minHeight={132} />
+        {/* THE SEE-ALL DOOR (#365's exit) — the shared RailTail, so this rail's
+            exit is drawn like every other rail's. It only DISPLAYS the
+            exercises list; it never touches the pins. `radius` matches the
+            rail's RADIUS.field cards, which is what the prop is for — at the
+            default 28 the two tail tiles would round differently from the row
+            they sit in. */}
+        <RailTail
+          onOpen={onAll}
+          a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`}
+          w={132} radius={RADIUS.field} minHeight={132}
+        />
       </ScrollView>
       <ExerciseFavouritesSheet visible={adding} onClose={() => setAdding(false)} sessions={sessions} />
     </View>

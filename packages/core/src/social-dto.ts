@@ -11,6 +11,7 @@
  *   • any handler may return `{ error }` instead of its success body;
  *   • list/profile endpoints add `unavailable` when a table isn't migrated yet.
  */
+import type { LoggedSession } from "./engines/session";
 import type { FitnessLevel, BadgeAccent } from "./engines/fitness-level";
 import type { FeedReason } from "./feed-rank";
 import type { LiveAthlete } from "./feed-live";
@@ -57,6 +58,12 @@ export interface FeedResponse extends Degradable, ApiError {
   /** Who is mid-session right now (core/feed-live.ts). Absent or empty when
    *  nobody is — the strip hides rather than showing a void. */
   live?: LiveAthlete[];
+}
+
+/** The whole workout behind a feed post — GET /api/social/session/[id].
+ *  `session` is absent when the viewer may not see it (403 private / 404). */
+export interface FeedSessionResponse extends Degradable, ApiError {
+  session?: LoggedSession;
 }
 
 export interface KudosResponse extends ApiError {
