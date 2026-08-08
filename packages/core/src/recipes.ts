@@ -405,6 +405,182 @@ export function recipeCoverView(
   };
 }
 
+// ── The recipes LIBRARY — collections, shelves, and the two covers above the
+//    recipe ────────────────────────────────────────────────────────────────
+//
+// The library is shaped exactly like the Plans tab, because it is the same
+// object: a shelf of covers you browse, a collection you open, a thing you
+// commit to and then follow. Plans is library → goal → plan; recipes is
+// library → collection → recipe, and all three levels ride the SAME cover
+// scaffold (plan-program.ts libraryCoverView / goalCoverView ↔ the views
+// below), so neither client re-decides what a level looks like.
+
+/** A browsable collection — the meals, plus the one cross-cut the library
+ *  keeps ("high protein"). The same job a goal category does for plans. A
+ *  recipe can sit on two shelves (its meal and, if it qualifies, high
+ *  protein): the cross-cut is an editorial shelf, not a taxonomy. */
+export type RecipeCollection = RecipeMeal | "highProtein";
+
+export const RECIPE_COLLECTIONS: RecipeCollection[] = ["breakfast", "lunch", "dinner", "snack", "highProtein"];
+
+/** A collection's cover art + its one-line blurb. Plain text like the rest of
+ *  the recipe content (names, ingredients, method); only the chrome around it
+ *  (the title, the counts, the meta labels) is localized by the caller. */
+export const RECIPE_COLLECTION_META: Record<RecipeCollection, { tint: RecipeTint; glyph: string; note: string }> = {
+  breakfast: { tint: "lime", glyph: "🍳", note: "The meals that decide how the rest of the day eats — quick, protein-forward, and mostly assembled rather than cooked." },
+  lunch: { tint: "amber", glyph: "🥗", note: "Built around a working day: everything here is on the table inside twenty minutes and travels in a box." },
+  dinner: { tint: "blue", glyph: "🍲", note: "The bigger plate at the end of the day, sized to refill what a hard session emptied." },
+  snack: { tint: "red", glyph: "🍎", note: "Small, deliberate, and worth logging — the gap-fillers between the three plates." },
+  highProtein: { tint: "red", glyph: "🥚", note: "Every dish in the library that carries real protein, wherever in the day it lands." },
+};
+
+/** The recipes on one shelf, in library order. */
+export function recipesInCollection(key: RecipeCollection, recipes: Recipe[] = RECIPES): Recipe[] {
+  return key === "highProtein" ? recipes.filter((r) => r.highProtein) : recipes.filter((r) => r.meal === key);
+}
+
+/** Free-text search over what a cook would actually type — the dish, what it
+ *  is, and what's IN it (searching "avocado" has to find the toast). */
+export function searchRecipes(recipes: Recipe[], query: string): Recipe[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return recipes;
+  return recipes.filter((r) =>
+    r.name.toLowerCase().includes(q) ||
+    r.note.toLowerCase().includes(q) ||
+    r.ingredients.some((i) => i.name.toLowerCase().includes(q)),
+  );
+}
+
+export interface RecipeShelf {
+  key: RecipeCollection;
+  recipes: Recipe[];
+}
+
+/** One shelf per non-empty collection — the library root's whole body. Empty
+ *  collections are dropped rather than rendered as an empty rail (the same
+ *  reason the plan shelves never print "0 plans"). */
+export function recipeShelves(query = "", recipes: Recipe[] = RECIPES): RecipeShelf[] {
+  const matched = searchRecipes(recipes, query);
+  return RECIPE_COLLECTIONS
+    .map((key) => ({ key, recipes: recipesInCollection(key, matched) }))
+    .filter((s) => s.recipes.length > 0);
+}
+
+/** The LIBRARY-level cover — "Recipes" itself, the level above the
+ *  collections. Structurally the Plans root's cover (plan-program.ts
+ *  `libraryCoverView`) so the two roots are one object: a geometric glyph (an
+ *  emoji ghosted to 9% white is a grey smudge), the level named in the chip,
+ *  the count top-right, the collections on the meta line. `◉` is a plate seen
+ *  from above — the same geometric family as Plans' `◈`, and not it. */
+export interface RecipeLibraryCoverView {
+  glyph: string;
+  chip: string;
+  count: string;
+  title: string;
+  metaParts: (string | null)[];
+}
+
+export function recipeLibraryCoverView(
+  recipeCount: number,
+  collectionTitles: string[],
+  labels: { chip: string; title: string; recipe: string; recipes: string },
+): RecipeLibraryCoverView {
+  return {
+    glyph: "◉",
+    chip: labels.chip,
+    count: `${recipeCount} ${recipeCount === 1 ? labels.recipe : labels.recipes}`.toUpperCase(),
+    title: labels.title,
+    metaParts: collectionTitles,
+  };
+}
+
+/** The COLLECTION-level cover — "Breakfast" as its own screen, the way a goal
+ *  gets one in Plans. It rides the `recipe` (plate) variant rather than the
+ *  goal's emblem: the cover art here is a dish emoji, and full colour is the
+ *  only way that reads. NO aggregate hem, for the plan library's reason —
+ *  macros averaged across a shelf say nothing; each recipe card carries its
+ *  own numbers instead (`recipeCardStats`). */
+export interface RecipeCollectionCoverView {
+  accent: string;
+  glyph: string;
+  chip: string;
+  /** top-right label — "3 RECIPES". */
+  count: string;
+  title: string;
+  metaParts: (string | null)[];
+  blurb: string;
+  variant: "recipe";
+}
+
+export function recipeCollectionCoverView(
+  key: RecipeCollection,
+  recipes: Recipe[],
+  t: {
+    chip: string;
+    title: string;
+    recipe: string;
+    recipes: string;
+    /** "From 5 min" — the quickest thing on the shelf. */
+    fastest: (mins: number) => string;
+    /** "Up to 40 g protein" — the biggest hit on the shelf. */
+    upToProtein: (grams: number) => string;
+  },
+): RecipeCollectionCoverView {
+  const meta = RECIPE_COLLECTION_META[key];
+  const n = recipes.length;
+  return {
+    accent: RECIPE_TINT_COLOR[meta.tint],
+    glyph: meta.glyph,
+    chip: t.chip,
+    count: `${n} ${n === 1 ? t.recipe : t.recipes}`.toUpperCase(),
+    title: t.title,
+    metaParts: n === 0 ? [] : [
+      t.fastest(Math.min(...recipes.map((r) => r.timeMins))),
+      t.upToProtein(Math.max(...recipes.map((r) => r.macros.protein))),
+    ],
+    blurb: meta.note,
+    variant: "recipe",
+  };
+}
+
+/** A recipe at TILE scale — the cover it expands into, shrunk. The emoji stays
+ *  full colour (it is the dish, not a watermark), the time reads top-right the
+ *  way a plan tile prints its plan count, and the energy sits under the name. */
+export interface RecipeTileView {
+  accent: string;
+  glyph: string;
+  title: string;
+  /** top-right mono label — "15 MIN". */
+  count: string;
+  /** the line under the name — "540 kcal". */
+  meta: string;
+}
+
+export function recipeTileView(recipe: Recipe, t: { mins: (n: number) => string; kcal: (n: number) => string }): RecipeTileView {
+  return {
+    accent: RECIPE_TINT_COLOR[recipe.tint],
+    glyph: recipe.emoji,
+    title: recipe.name,
+    count: t.mins(recipe.timeMins).toUpperCase(),
+    meta: t.kcal(recipe.macros.kcal),
+  };
+}
+
+/** The three-column hem on a recipe CARD (the collection screen's list), the
+ *  same rule-topped columns a plan card carries. Three, not the cover's four:
+ *  a card is scanned against its neighbours, so it states what separates one
+ *  dish from the next — how much food, how much protein, how long it takes. */
+export function recipeCardStats(
+  recipe: Recipe,
+  t: { energy: string; protein: string; time: string; min: string },
+): { value: string; unit: string | null; label: string }[] {
+  return [
+    { value: String(recipe.macros.kcal), unit: null, label: t.energy },
+    { value: String(recipe.macros.protein), unit: "g", label: t.protein },
+    { value: String(recipe.timeMins), unit: t.min, label: t.time },
+  ];
+}
+
 /** A saveable meal draft (name + emoji + single-number macros) — the shape the
  *  SavedMeal library POST accepts. */
 export interface RecipeMealDraft {

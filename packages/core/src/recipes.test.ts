@@ -5,6 +5,15 @@ import {
   recipeCoverView,
   recipeById,
   filterRecipes,
+  searchRecipes,
+  recipeShelves,
+  recipesInCollection,
+  recipeLibraryCoverView,
+  recipeCollectionCoverView,
+  recipeTileView,
+  recipeCardStats,
+  RECIPE_COLLECTIONS,
+  RECIPE_COLLECTION_META,
   type Recipe,
   type RecipeMeal,
 } from "./recipes";
@@ -97,5 +106,99 @@ describe("filterRecipes", () => {
   it("filters by meal and by the high-protein flag", () => {
     expect(filterRecipes(RECIPES, "breakfast").every((r) => r.meal === "breakfast")).toBe(true);
     expect(filterRecipes(RECIPES, "highProtein").every((r) => r.highProtein)).toBe(true);
+  });
+});
+
+describe("the recipes library — the Plans tab's three levels, on food", () => {
+  const L = {
+    chip: "Library",
+    title: "Recipes",
+    recipe: "recipe",
+    recipes: "recipes",
+  };
+  const CT = {
+    ...L,
+    chip: "Recipes",
+    title: "Breakfast",
+    fastest: (n: number) => `From ${n} min`,
+    upToProtein: (g: number) => `Up to ${g} g protein`,
+  };
+
+  it("puts every recipe on at least one shelf", () => {
+    const shelved = new Set(recipeShelves().flatMap((s) => s.recipes.map((r) => r.id)));
+    for (const r of RECIPES) expect(shelved.has(r.id), `${r.id} is on no shelf`).toBe(true);
+  });
+
+  it("never renders an empty shelf — a collection with nothing in it is dropped", () => {
+    // nothing in the library is a snack today; the shelf must not appear
+    expect(recipeShelves().map((s) => s.key)).not.toContain("snack");
+    for (const s of recipeShelves()) expect(s.recipes.length).toBeGreaterThan(0);
+  });
+
+  it("keeps the collections in library order, cross-cut last", () => {
+    expect(recipeShelves().map((s) => s.key)).toEqual(["breakfast", "lunch", "dinner", "highProtein"]);
+  });
+
+  it("searches what a cook types — the dish, what it is, and what's in it", () => {
+    expect(searchRecipes(RECIPES, "avocado").map((r) => r.id)).toContain("avocado-toast");
+    // an INGREDIENT that isn't in any name still finds its dish
+    expect(searchRecipes(RECIPES, "lentils").map((r) => r.id)).toEqual(["lentil-stew"]);
+    expect(searchRecipes(RECIPES, "  RAMEN ").map((r) => r.id)).toEqual(["ramen"]);
+    expect(searchRecipes(RECIPES, "")).toHaveLength(RECIPES.length);
+    expect(searchRecipes(RECIPES, "zzzz")).toEqual([]);
+  });
+
+  it("narrows the shelves by the search, dropping the ones left empty", () => {
+    const shelves = recipeShelves("lentils");
+    expect(shelves).toHaveLength(1);
+    expect(shelves[0]!.key).toBe("dinner");
+  });
+
+  it("counts the library on its cover and lists what it holds", () => {
+    const lib = recipeLibraryCoverView(RECIPES.length, ["Breakfast", "Lunch"], L);
+    expect(lib.count).toBe(`${RECIPES.length} RECIPES`);
+    expect(lib.metaParts).toEqual(["Breakfast", "Lunch"]);
+    expect(lib.title).toBe("Recipes");
+    // a geometric glyph, not an emoji: the library cover ghosts its mark to 9%
+    // white, where a colour emoji is a grey smudge
+    expect(lib.glyph).toBe("◉");
+    expect(recipeLibraryCoverView(1, [], L).count).toBe("1 RECIPE");
+  });
+
+  it("gives a collection its own cover — a plate, with no aggregate hem", () => {
+    const list = recipesInCollection("breakfast");
+    const c = recipeCollectionCoverView("breakfast", list, CT);
+    expect(c.title).toBe("Breakfast");
+    expect(c.chip).toBe("Recipes");
+    expect(c.count).toBe(`${list.length} RECIPES`);
+    expect(c.variant).toBe("recipe");
+    expect(c.blurb.length).toBeGreaterThan(20);
+    // the numbers on the cover are the shelf's EXTREMES, not averages
+    expect(c.metaParts).toEqual(["From 5 min", "Up to 22 g protein"]);
+  });
+
+  it("has cover art and a blurb for every collection, including the empty one", () => {
+    for (const key of RECIPE_COLLECTIONS) {
+      const meta = RECIPE_COLLECTION_META[key];
+      expect(meta.glyph).toBeTruthy();
+      expect(meta.note.length).toBeGreaterThan(20);
+      expect(RECIPE_TINT_COLOR[meta.tint]).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+    // an empty collection still builds a cover — it just has no meta to state
+    expect(recipeCollectionCoverView("snack", [], { ...CT, title: "Snacks" }).metaParts).toEqual([]);
+  });
+
+  it("shrinks a recipe to a tile without losing its numbers", () => {
+    const tile = recipeTileView(recipeById("ramen") as Recipe, { mins: (n) => `${n} min`, kcal: (n) => `${n} kcal` });
+    expect(tile).toEqual({ accent: RECIPE_TINT_COLOR.amber, glyph: "🍜", title: "Ramen", count: "15 MIN", meta: "540 kcal" });
+  });
+
+  it("gives a recipe card the three numbers that separate it from its neighbours", () => {
+    const stats = recipeCardStats(recipeById("power-salad") as Recipe, { energy: "Energy", protein: "Protein", time: "Time", min: "min" });
+    expect(stats).toEqual([
+      { value: "380", unit: null, label: "Energy" },
+      { value: "32", unit: "g", label: "Protein" },
+      { value: "10", unit: "min", label: "Time" },
+    ]);
   });
 });
