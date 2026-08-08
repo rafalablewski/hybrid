@@ -223,15 +223,15 @@ export default function ExerciseWidgetRail({
           <span style={{ fontWeight: 600, color: "var(--lime-text)" }}>{t("w.home.exw.addCard")}</span>
         </button>
         {/* THE SEE-ALL DOOR (#365's exit) — the shared RailTail, so this rail's
-            exit is drawn like every other rail's. It only DISPLAYS the
-            exercises list; it never touches the pins. `radius` matches the
-            rail's 16px cards, which is what the prop is for — at the default 28
-            the two tail tiles would round differently from the row they sit
-            in. */}
+            exit is drawn like every other rail's: chromeless, carrying no thing
+            of its own. It only DISPLAYS the exercises list; it never touches
+            the pins. The ADD tile beside it keeps its box precisely because it
+            DOES carry a thing — an action — which is the distinction #365 drew.
+            Mirrors mobile. */}
         <RailTail
           onOpen={onAll}
           a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`}
-          w={132} radius={16} minHeight={132}
+          w={132} minHeight={132}
         />
       </div>
       <ExerciseFavouritesSheet open={adding} onClose={() => setAdding(false)} sessions={sessions} />
