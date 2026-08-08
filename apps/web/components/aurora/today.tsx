@@ -1039,25 +1039,20 @@ export default function AuroraToday({
       <GroupMark label={t("w.home.group.explore")} />
 
       {/* ───── GO FULL — demoted from two display-weight AccessCards to ONE
-          compact quiet row (the DoorRow idiom: r16, small glyph tile, bold
-          title + mono micro sub, chevron). The row carries the "Go Full"
-          label itself, so the old "✦ Go Full" section head is gone with it.
-          The ✦ stays as the tile glyph — the semantic premium signifier, the
-          ONLY thing wearing the premium accent. Routes where the first
-          AccessCard (Cockpit) routed. Mirrors mobile home.tsx. ───── */}
-      <button
+          compact quiet row. It is the SHARED DoorRow now (Aug 2026): it had
+          been a hand-rolled copy of that anatomy, so when the doors went
+          chromeless this one would have stayed a filled card sitting between
+          two flat ones — the same drift that let five rails draw five
+          different tails. `premium` carries the ✦ in the accent; the ✦ is the
+          semantic premium signifier and still the ONLY thing wearing it.
+          Routes where the first AccessCard (Cockpit) routed. Mirrors mobile. */}
+      <DoorRow
+        glyph="✦"
+        premium
+        title={t("w.home.today.goFull")}
+        sub={t("w.home.today.goFullRowSub")}
         onClick={() => (isAthlete ? (onNavigate ? onNavigate("performance") : router.push("/performance")) : upsell("today-cockpit"))}
-        aria-label={`${t("w.home.today.goFull")} – ${t("w.home.today.goFullRowSub")}`}
-        className="pressable"
-        style={{ display: "flex", width: "100%", alignItems: "center", gap: 12, marginTop: 16, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", cursor: "pointer", textAlign: "left", color: C("chalk") }}
-      >
-        <span aria-hidden style={{ width: 32, height: 32, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "var(--premium-accent-text)", flex: "0 0 32px" }}>✦</span>
-        <span style={{ flex: 1 }}>
-          <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg }}>{t("w.home.today.goFull")}</span>
-          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2 }}>{t("w.home.today.goFullRowSub")}</span>
-        </span>
-        <span style={{ fontSize: fs.note, color: C("ash") }} aria-hidden>›</span>
-      </button>
+      />
 
       {/* ───── FOLLOW A COACH — Today's last block, and the only thing left
           below the premium cards. Nutrition is NOT summarised here: Today is the

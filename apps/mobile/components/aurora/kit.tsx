@@ -838,7 +838,8 @@ export function ASegment<T extends string>({
  * micro, tracking 0.9 vs 1.2, top margin 6 / 16 / 24 / 28. A standard that lives
  * in prose gets re-derived; a standard that lives in a component gets used.
  *
- * `action` makes the meta a button (the "See all →" affordance). `flat` drops
+ * `action` makes the meta a button — a head-level CONTROL (a filter, a state
+ * toggle), never a rail's "see all", which lives in the tail. `flat` drops
  * the serif swap for screens whose other heads are all sans — nutrition made
  * that call deliberately and it was right: one serif head among sans siblings
  * reads as a different screen.
