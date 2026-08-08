@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text } from "react-native";
 import {
   fmtTonnage,
+  fmtKm,
   sessionHeadline,
   sessionsByDay,
   historyStream,
@@ -28,7 +29,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
-import { GUTTER, RADIUS, CARD_PAD, withAlpha, AChip } from "./kit";
+import { RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -120,23 +121,26 @@ function RestGapRow({ C, days }: { C: Palette; days: number }) {
 // ============================================================
 
 /**
- * History's view rail — a SCROLLING chip rail, which is why it is AChip rows
- * and not ASegment. A segmented control is equal-width and lives in a track;
- * this rail is full-bleed, scrolls past the screen edge, and its items are
- * independent filters. Naming that correctly is what kept it out of the
- * segmented-control merge.
+ * History's view rail — a SCROLLING chip rail, which is why it is chips and not
+ * ASegment. A segmented control is equal-width and lives in a track; this rail
+ * is full-bleed, scrolls past the screen edge, and a fifth layout must be able
+ * to join it without a redesign. Naming that correctly is what kept it out of
+ * the segmented-control merge.
  *
- * Its hand-rolled pills also sat at ~27dp. AChip declares the 44dp floor.
+ * It rides `DockRail` with `role="mode"`: the chips SELECT (one always on, the
+ * layout below changes), which is what earns them the accent tint. It used to
+ * borrow `AChip` — the in-content filter — and that is why mobile History drew
+ * Archivo bold 13 in a band where all three other rails drew mono 12. See
+ * packages/core/src/dock-rail.ts.
  */
 export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange: (v: HistoryViewId) => void }) {
   const { t } = useLang();
   return (
-    // Full-bleed chip rail — clips at the screen edge, rests on the column.
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 8, paddingBottom: 4, paddingHorizontal: GUTTER }}>
+    <DockRail label={t("histview.switchView")}>
       {HISTORY_VIEWS.map((v) => (
-        <AChip key={v.id} label={t(v.labelKey)} selected={v.id === view} onPress={() => onChange(v.id)} />
+        <DockChip key={v.id} role="mode" label={t(v.labelKey)} selected={v.id === view} onPress={() => onChange(v.id)} />
       ))}
-    </ScrollView>
+    </DockRail>
   );
 }
 
@@ -402,7 +406,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Mini label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} />
-        <Mini label={t("w.analyze.stats.distance")} value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} />
+        <Mini label={t("w.analyze.stats.distance")} value={hasData ? fmtKm(recap.distanceKm) : "—"} />
         <Mini label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} />
       </View>
 

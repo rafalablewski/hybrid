@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
   fmtWeight, splitFigure, strengthPrProof,
-  resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
+  resolveActivityRange, groupDistanceDisplay, fmtKm, kmValue, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
   figureDeltaPct, figureDirection,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
@@ -302,11 +302,11 @@ export default function AuroraWeekVerdict({
   }, [shownPrs.length]);
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
-  // minutes read as hours to one decimal, distance to one decimal km.
+  // minutes read as hours to one decimal, distance at the shared km precision.
   const fmt = (metric: string, value: number) =>
     metric === "tonnage" ? fmtTonnage(value, units)
       : metric === "hours" ? String(Math.round(value / 6) / 10)
-        : metric === "distance" ? String(Math.round(value * 10) / 10)
+        : metric === "distance" ? kmValue(value)
           : String(Math.round(value));
 
   const fmtMinutes = (m: number) =>
@@ -772,7 +772,7 @@ function MetricDetail({
     } else {
       if (it.minutes > 0) bits.push(fmtMinutes(it.minutes));
       if (it.tonnage > 0) bits.push(fmtTonnage(it.tonnage, units));
-      if (it.distanceKm > 0) bits.push(`${Math.round(it.distanceKm * 10) / 10} km`);
+      if (it.distanceKm > 0) bits.push(fmtKm(it.distanceKm));
     }
     return bits.join(" – ");
   };

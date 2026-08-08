@@ -1141,7 +1141,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // chooser so "Add a part" works from either place.
   const renderPartSheet = () => (
     <Sheet open={partSheet} onClose={() => { setPartSheet(false); setNewPart(""); }} title={t("w.recovery.nutrition.addPart")} sub={t("w.recovery.nutrition.addPartSub")}>
-      <div style={{ paddingBottom: 6 }}>
+      <div>
         <div style={{ display: "flex", gap: 8 }}>
           <input value={newPart} onChange={(e) => setNewPart(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addPart(); }} maxLength={32} placeholder={t("w.recovery.nutrition.partNamePh")} aria-label={t("w.recovery.nutrition.addPart")} style={{ ...numField, flex: 1, textAlign: "left" }} />
           <button className="pressable" onClick={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? 0.5 : 1 }}>{t("w.recovery.nutrition.addPartCta")}</button>
@@ -1171,7 +1171,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         const s = (v: number) => Math.round(v * q);
         const stepBtn = { width: 44, height: 44, borderRadius: 12, border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", fontSize: 22, fontWeight: 700, lineHeight: 1, cursor: "pointer", flex: "none" } as const;
         return (
-          <div style={{ paddingBottom: 6 }}>
+          <div>
             {portion.verified && (() => {
               const src = verifiedSource(portion.verified.sourceId);
               return (
@@ -1253,7 +1253,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // fill in from 4·4·9 when left blank (the `add` handler already does this).
   const renderQuickLog = () => (
     <Sheet open={quickLog} onClose={() => setQuickLog(false)} title={t("w.recovery.nutrition.quickLog")} sub={t("w.recovery.nutrition.quickLogSub")}>
-      <div style={{ paddingBottom: 6 }}>
+      <div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {([
             { k: "kcal", label: t("w.recovery.nutrition.calorie"), color: "var(--lime-text)", unit: "kcal" },
@@ -1312,7 +1312,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
         {/* Meal chooser — the four built-in parts + any custom parts (Full). */}
         <Sheet open={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {partList.map((p) => (
               <button className="pressable" key={p.key} onClick={() => { setMealType(p.key); setMealPicker(false); }} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink"), border: `1px solid ${mealType === p.key ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk") }}>
                 <Glyph name={mealGlyph(p.key)} size={20} color={mealType === p.key ? "var(--lime-text)" : C("ash")} />
@@ -1555,7 +1555,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </button>
 
         <Sheet open={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {UNIT_OPTIONS.map((u) => (
               <button className="pressable" key={u} onClick={() => { setCF({ unit: u }); setUnitPicker(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C("ink"), border: `1px solid ${createForm.unit === u ? C("lime") : C("line")}`, borderRadius: 16, padding: 16, cursor: "pointer", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}>
                 {t(`w.recovery.nutrition.unitOpt.${u}`)}{createForm.unit === u && <AuroraIcon name="check" size={16} color="var(--lime-text)" />}
@@ -2011,7 +2011,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       </button>
 
       <Sheet open={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {GOALS.map((g) => {
             const on = goal === g.id;
             return (

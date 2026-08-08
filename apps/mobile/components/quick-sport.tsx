@@ -120,7 +120,8 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
               <AuroraIcon name="search" size={18} color={C.ash} />
               <TextInput value={query} onChangeText={setQuery} placeholder={t("w.home.quickSport.search")} placeholderTextColor={C.ash} autoFocus style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }} />
             </View>
-            <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 28 }}>
+            {/* paddingVertical only — the Sheet's own bottom pad sits below. */}
+            <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8 }}>
               {filtered.map((g) => (
                 <View key={g.category} style={{ marginBottom: 6 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>

@@ -27,9 +27,8 @@ import { fs, space,
   stepAnswered,
   type CheckinMetrics,
   type CheckinSessionRef,
-  readinessContext,
-  readinessNoteKey,
   hoursSince,
+  readinessReadExplain,
   readGate,
   placeReads,
   decisiveFeeling,
@@ -85,6 +84,7 @@ import GroupMark from "./group-mark";
 import { AuroraIcon } from "./icons";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
+import ReadinessSheet from "./readiness-sheet";
 import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
 import { HubMasthead } from "./hub-masthead";
@@ -1260,10 +1260,13 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
   // rather than asking "does the row have an answer yet" is what makes this
   // work for the second and third read of a day, where it always did.
   const [picked, setPicked] = useState<{ day: number | null; rating: number; reads: number } | null>(null);
-  // WHAT THE READING IS WORTH, ON REQUEST. This sentence used to sit under the
-  // faces on every render — an explanation the athlete has read a hundred times,
-  // occupying the place where the card says what is happening NOW. It is
-  // reference, not news, so it moves behind an ⓘ on the reading it describes.
+  // WHAT THE READING IS WORTH, ON REQUEST. This used to be ONE grey sentence an
+  // ⓘ toggled in and out under the faces — while every figure on the Performance
+  // tab opened onto its measured inputs, its arithmetic and its caveat. The
+  // reading in Recover governs the day (it scales the next session's load, it
+  // decides whether a second read is wanted, it is half of the pair that
+  // measures this athlete's clearance) and it now gets the SAME door: the
+  // freshness/wearable sheet idiom, off `readinessReadExplain` in @hybrid/core.
   const [whyOpen, setWhyOpen] = useState(false);
   // ONE NUMBER (design/readiness-one-number-states.html). The card leads with
   // the reading that governs the day at display weight; the day's record lives
@@ -1303,15 +1306,26 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
   // yet, and a blank row of faces is the only honest way to ask it.
   const inviting = isToday && gate.open && dayReads.length > 0 && !justPicked;
   const selected = inviting ? null : shownFeeling;
-  // The clock's effect on the meaning of today's answer, from core so both
-  // clients say the same thing. `low` is the two negative feelings — the only
-  // ones whose reading genuinely turns on how long ago you trained.
-  const ctxLow = shownFeeling === "flat" || shownFeeling === "wrecked";
-  // …read against the DECISIVE read's own clock, not the clock right now: the
-  // sentence describes the answer on the card ("hours after training and still
-  // flat"), and dating it to this instant would relabel a morning reading as an
-  // evening one just because the athlete opened the app again.
-  const ctxNote = readinessNoteKey(decisive?.context ?? readinessContext(hoursSince(lastSessionEnd, Date.now())), ctxLow);
+  // THE EXPLANATION, computed only while the sheet is up — from the SAME engine
+  // the prescription reads, so the load figure in the sheet and the load the
+  // session is given are one value read twice. It is placed against the DECISIVE
+  // read's own clock, not the clock right now: the answer being explained was
+  // given at a moment, and dating it to this instant would relabel a morning
+  // reading as an evening one just because the athlete opened the app again.
+  // With no read behind the reading, the time since training classifies it (and
+  // nothing more — see readinessReadExplain).
+  const explain = useMemo(
+    () => (whyOpen && shownFeeling
+      ? readinessReadExplain({
+          feeling: shownFeeling,
+          read: decisive,
+          reads: dayReads,
+          gate: isToday ? gate : null,
+          hoursSinceSession: hoursSince(lastSessionEnd, Date.now()),
+        })
+      : null),
+    [whyOpen, shownFeeling, decisive, dayReads, gate, isToday, lastSessionEnd],
+  );
   // ONE LINE OF MEANING, not four stacked greys. A context note, an invitation,
   // a gate reason and a countdown chip were all queueing under the faces — the
   // triple narration the Builder critique killed, in a smaller box. Only one of
@@ -1333,17 +1347,15 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
       : heroAt.hoursSinceSession != null
         ? `${heroClock} — +${Math.round(heroAt.hoursSinceSession)}h ${t("w.home.today.heroAfterTraining")}`
         : `${heroClock} — ${t("w.home.today.readNoSession")}`;
-  const line = whyOpen && ctxNote
-    ? { key: ctxNote, sub: null as string | null, tone: ctxLow ? ("amber" as const) : ("ash" as const) }
-    : gateNote
-      ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
-      : inviting
-        ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
-        : !shownFeeling && isToday
-          ? { key: "w.home.today.heroAsk", sub: null as string | null, tone: "ash" as const }
-          : trend
-            ? { key: READ_TREND_KEY[trend.trend], sub: null as string | null, tone: trend.trend === "sinking" ? ("amber" as const) : ("ash" as const) }
-            : null;
+  const line = gateNote
+    ? { key: gateNote, sub: null as string | null, tone: "ash" as const }
+    : inviting
+      ? { key: "w.home.today.readInvite", sub: "w.home.today.readInviteSub", tone: "chalk" as const }
+      : !shownFeeling && isToday
+        ? { key: "w.home.today.heroAsk", sub: null as string | null, tone: "ash" as const }
+        : trend
+          ? { key: READ_TREND_KEY[trend.trend], sub: null as string | null, tone: trend.trend === "sinking" ? ("amber" as const) : ("ash" as const) }
+          : null;
   const lineColor = line?.tone === "chalk" ? C("chalk") : C("ash");
   // THE CARD'S ONE FILL. Two lime-tinted surfaces were competing — the recovery
   // ask and the follow-up trigger. The ask wins whenever it is showing: it is
@@ -1440,17 +1452,25 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
           {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}
         </span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash") }}>{heroStamp}</span>
-        {shownFeeling && ctxNote && isToday && (
+        {/* THE DOOR — the Performance tab's affordance exactly: the ⓘ glyph
+            bare, at 13, riding the row of the figure it explains. It used to be
+            an 11px glyph inside a second bordered circle, which is the noise
+            the freshness columns dropped for the same reason (the glyph IS a
+            ring), and it used to toggle one sentence in place rather than open
+            the derivation. It also showed only on a day the note existed for;
+            the sheet has something to say about EVERY reading, so it shows
+            whenever there is one. */}
+        {shownFeeling && (
           <button className="pressable"
-            onClick={() => setWhyOpen((v) => !v)}
-            aria-expanded={whyOpen}
+            onClick={() => setWhyOpen(true)}
             aria-label={t("w.home.today.readWhy")}
-            style={{ display: "grid", placeItems: "center", width: 18, height: 18, flexShrink: 0, borderRadius: 999, border: `1px solid ${whyOpen ? C("ash") : C("line")}`, background: "none", cursor: "pointer", color: C("ash"), padding: 0 }}
+            style={{ display: "grid", placeItems: "center", width: 22, height: 22, flexShrink: 0, borderRadius: 999, border: 0, background: "none", cursor: "pointer", color: C("ash"), padding: 0 }}
           >
-            <AuroraIcon name="info" size={11} color={C("ash")} />
+            <AuroraIcon name="info" size={13} color={C("ash")} />
           </button>
         )}
       </div>
+      <ReadinessSheet explain={explain} stamp={heroStamp} onClose={() => setWhyOpen(false)} />
 
       {line && (
         <p style={{ margin: "10px 0 0", fontSize: fs.body, lineHeight: 1.5, color: lineColor, fontWeight: line.sub ? 600 : 400 }}>
