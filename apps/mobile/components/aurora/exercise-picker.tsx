@@ -6,6 +6,7 @@ import {
   olympicSportsByCategory,
   inferBlockKind,
   exerciseProfile,
+  roomBodyMark,
   type BlockKind,
 } from "@hybrid/core";
 import { useExercises } from "../../lib/queries";
@@ -16,6 +17,7 @@ import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import AuroraExerciseMedia from "./exercise-media";
+import AuroraBodyMark from "./body-mark";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 type Entry = { name: string; kind: BlockKind; icon?: string };
@@ -41,9 +43,9 @@ function shapeHint(e: Entry): string {
 /**
  * The ONE exercise picker sheet (Builder + live logger) — "Rooms, then Things"
  * with an A–Z index, a view the athlete can switch:
- *  - GROUPS (default): a grid of pattern/muscle "rooms" (each a tile with the
- *    room's initials, name and movement count); tapping a room shows just its
- *    movements. Two taps, never a 200-item scroll.
+ *  - GROUPS (default): a grid of muscle "rooms" (each a tile drawing the BODY
+ *    that room trains, with its muscles lit, plus the name and movement count);
+ *    tapping a room shows just its movements. Two taps, never a 200-item scroll.
  *  - A–Z: the typeset index — every movement under display-face letter heads,
  *    with a right-edge letter rail for one-thumb jumps.
  * Rows share the More → Exercises anatomy (40px IMPLEMENT-MARK tile tinted by
@@ -251,10 +253,17 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                       return (
                         <Pressable key={r.key} onPress={() => setRoom(r.key)} accessibilityRole="button" accessibilityLabel={r.label}
                           style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16 }}>
-                          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+                          {/* A room is a muscle group, not a lift — its mark is
+                              the BODY it trains, lit from the room's own
+                              exercise list (core: roomBodyMark). Sports rooms
+                              keep their catalog glyph; a room the DB can't read
+                              falls back to its initials. */}
+                          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                             {r.icon
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
-                              : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
+                              : roomBodyMark(r.entries.map((e) => e.name))
+                                ? <AuroraBodyMark names={r.entries.map((e) => e.name)} size={32} color={txt(C, c)} silhouette={C.line} />
+                                : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
                           </View>
                           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
                           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>

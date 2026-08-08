@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { GYM_EXERCISES, type Muscle } from "./exercise-db";
+import { GYM_EXERCISES, gymExercisesByCategory, type GymCategory, type Muscle } from "./exercise-db";
 import { MUSCLE_SHORT } from "./exercise-anatomy";
 import {
   BODY_FIGURES,
   MUSCLE_SIDE,
   muscleRegion,
   exerciseBodyMap,
+  roomBodyMark,
   SKETCH_BODY_ART,
 } from "./body-map";
 
@@ -115,5 +116,48 @@ describe("body-map swap seam (schematic → sketch)", () => {
     } finally {
       SKETCH_BODY_ART.art = null;
     }
+  });
+});
+
+describe("room body marks", () => {
+  const namesIn = (category: GymCategory) => gymExercisesByCategory(category).map((e) => e.name);
+
+  it("lights the muscle a room is named for, on the side that carries it", () => {
+    const chest = roomBodyMark(namesIn("Chest"))!;
+    expect(chest.side).toBe("front");
+    expect(chest.top).toBe("chest");
+    expect(chest.intensityOf.chest).toBe(1);
+
+    const back = roomBodyMark(namesIn("Back"))!;
+    expect(back.side).toBe("back");
+    expect(back.top).toBe("lats");
+
+    // Triceps live on the back view, biceps on the front — the mark follows the
+    // geometry, not the room's position in the list.
+    expect(roomBodyMark(namesIn("Triceps"))!.side).toBe("back");
+    expect(roomBodyMark(namesIn("Biceps"))!.side).toBe("front");
+    expect(roomBodyMark(namesIn("Calves"))!.top).toBe("calves");
+  });
+
+  it("keeps the mark legible: only muscles near the top mover are lit", () => {
+    for (const category of [...new Set(GYM_EXERCISES.map((e) => e.category))]) {
+      const mark = roomBodyMark(namesIn(category));
+      expect(mark, category).not.toBeNull();
+      const lit = Object.values(mark!.intensityOf).filter((v) => v > 0);
+      expect(lit.length, category).toBeGreaterThan(0);
+      // a dozen faint regions would read as a smudge at tile size
+      expect(lit.length, category).toBeLessThanOrEqual(6);
+      for (const v of lit) expect(v).toBeGreaterThanOrEqual(0.25);
+      expect(Math.max(...lit), category).toBe(1);
+      // every lit muscle actually lives on the figure being drawn
+      for (const [m, v] of Object.entries(mark!.intensityOf)) {
+        if (v > 0) expect(MUSCLE_SIDE[m as Muscle], `${category}/${m}`).toBe(mark!.side);
+      }
+    }
+  });
+
+  it("returns null when a room holds no lift the database knows", () => {
+    expect(roomBodyMark([])).toBeNull();
+    expect(roomBodyMark(["Trail Running", "Padel"])).toBeNull();
   });
 });

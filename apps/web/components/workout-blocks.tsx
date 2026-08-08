@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState, type Dispatch, type PointerEvent as ReactPointerEvent, type SetStateAction } from "react";
 import type { SessionBlock, StrengthSet, WeightUnit } from "@hybrid/core";
-import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats } from "@hybrid/core";
+import { RPE_SCALE, RPE_INTRO, cardioPace, supersetLabels, toggleSuperset as toggleSupersetGroup, isSupersettedWithPrev, setType, cycleSetType, setTypeBadge, setFocus, addSetIsNext, rpeRirSwap, displayLoad, storeLoad, fmtTonnage, platesPerSide, warmupRamp, moveItemTo, olympicSportsByCategory, timedSportOnly, sportDistanceUnit, displaySportDistance, parseSportDistance, exercisesByCategory, inferBlockKind, MOVEMENTS, exerciseProfile, strengthBlockStats, blockSignalSummary, estimateBlockMinutes, DEFAULT_REST_SEC, loadUnitCount, exerciseLiveStats, roomBodyMark } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, cond, mono, txt, Mono, Card } from "@/lib/ui";
 import { AuroraIcon } from "./aurora/icons";
 import { useExercises } from "@/lib/use-exercises";
 import SwipeRow from "@/components/swipe-row";
 import Sheet from "@/components/aurora/sheet";
 import AuroraExerciseMedia from "@/components/aurora/exercise-media";
+import AuroraBodyMark from "@/components/aurora/body-mark";
 import { setLoggerPref } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { useDialog } from "../lib/use-dialog";
@@ -1195,13 +1196,16 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
         : <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={txt(kindColor(e.kind))} />}
     </span>
   );
-  // A ROOM is a muscle group, not a lift — it has no implement to draw, so it
-  // keeps its glyph/initials. (A muscle-map mark for rooms is tracked separately.)
-  const roomTile = (r: { icon?: string; label: string; kind: SessionBlock["kind"] }) => (
+  // A ROOM is a muscle group, not a lift — its mark is the BODY it trains, lit
+  // from the room's own exercise list (core: roomBodyMark). Sports rooms keep
+  // their catalog glyph; a room the DB can't read falls back to its initials.
+  const roomTile = (r: { icon?: string; label: string; kind: SessionBlock["kind"]; names: string[] }) => (
     <span style={tileBox}>
       {r.icon
         ? <span style={{ fontSize: 16 }}>{r.icon}</span>
-        : <span style={{ ...mono, fontWeight: 700, fontSize: 12, letterSpacing: "-.02em", color: txt(kindColor(r.kind)) }}>{initials(r.label)}</span>}
+        : roomBodyMark(r.names)
+          ? <AuroraBodyMark names={r.names} size={32} color={txt(kindColor(r.kind))} silhouette={LINE} />
+          : <span style={{ ...mono, fontWeight: 700, fontSize: 12, letterSpacing: "-.02em", color: txt(kindColor(r.kind)) }}>{initials(r.label)}</span>}
     </span>
   );
   const row = (e: Entry, last: boolean) => {
@@ -1295,7 +1299,7 @@ function ExercisePicker({ catalog, aliases, categoryByName, onPick, onClose }: {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
                 {rooms.map((r) => (
                   <button className="pressable" key={r.key} type="button" onClick={() => setRoom(r.key)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8, background: INK2, border: `1px solid ${LINE}`, borderRadius: 16, padding: "12px 12px", cursor: "pointer", color: CHALK, textAlign: "left" }}>
-                    {roomTile({ icon: r.icon, label: r.label, kind: r.entries[0]!.kind })}
+                    {roomTile({ icon: r.icon, label: r.label, kind: r.entries[0]!.kind, names: r.entries.map((e) => e.name) })}
                     <span style={{ ...disp, fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{r.label}</span>
                     <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: ASH }}>{r.entries.length}</span>
                   </button>

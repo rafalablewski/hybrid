@@ -215,3 +215,92 @@ export function exerciseBodyMap(name: string): ExerciseBodyMap | null {
   const sketch = SKETCH_BODY_ART.art;
   return { name: e.name, kind: sketch ? "sketch" : "schematic", glow, intensityOf, figures: BODY_FIGURES, sketch };
 }
+
+// ── the ROOM mark: one figure, this group's muscles lit ─────────────────────
+//
+// The exercise picker's "rooms" grid (Chest, Back, Quads & Glutes, …) used to
+// tile each room with its INITIALS — the same noise the lift rows carried
+// before they took implement marks (exercise-marks.ts). A room has no implement
+// to draw: it's a muscle group, so its mark is the BODY, with the muscles that
+// room trains lit on it.
+//
+// Driven by the room's own exercise list rather than a hand-typed
+// category→muscles table, so it cannot drift from the catalog and works for any
+// room — the built-ins' pattern buckets, the admin library's muscle groups, and
+// whatever an admin adds later.
+//
+// ONE figure, not two: at tile size a front/back pair would be ~12px each. The
+// side carrying more of the room's work wins, which is the side an athlete
+// pictures anyway (Chest → front, Back → back). The room's label says the rest.
+
+/** A room's body mark: which figure to draw, and how brightly each muscle on it
+ *  glows. */
+export interface BodyMark {
+  side: BodySide;
+  figure: BodyFigure;
+  /** muscle → glow in [0, 1]; 0 for muscles this room barely touches. */
+  intensityOf: Record<Muscle, number>;
+  /** the room's top mover on that figure — the mark's accessible label. */
+  top: Muscle | null;
+}
+
+/** Below this share of the room's top mover a muscle stays dark: at tile size a
+ *  dozen faintly-lit regions read as a smudge, not as a group. */
+const ROOM_GLOW_FLOOR = 0.25;
+
+/** How much a lift's own muscles count toward its room: prime movers by their
+ *  order of importance, assisting muscles at a fraction. Cheap by design — this
+ *  runs for every room in a grid, not for one exercise page. */
+const PRIMARY_WEIGHT = [2, 1.5, 1];
+const SECONDARY_WEIGHT = 0.5;
+
+const roomCache = new Map<string, BodyMark | null>();
+
+/**
+ * The body mark for a room, from the lifts it holds. Null when none of the
+ * names are gym lifts the DB knows (a sports room, an empty room) — the caller
+ * keeps whatever glyph it draws today rather than showing an unlit body.
+ */
+export function roomBodyMark(names: string[]): BodyMark | null {
+  const key = names.join("|");
+  const hit = roomCache.get(key);
+  if (hit !== undefined) return hit;
+
+  const weight = new Map<Muscle, number>();
+  let known = 0;
+  for (const name of names) {
+    const e = gymExercise(name);
+    if (!e) continue;
+    known++;
+    e.primary.forEach((m, i) => weight.set(m, (weight.get(m) ?? 0) + (PRIMARY_WEIGHT[i] ?? 1)));
+    for (const m of e.secondary) weight.set(m, (weight.get(m) ?? 0) + SECONDARY_WEIGHT);
+  }
+
+  if (known === 0 || weight.size === 0) {
+    roomCache.set(key, null);
+    return null;
+  }
+
+  // The side that carries more of the room's work is the one worth drawing.
+  let front = 0, back = 0;
+  for (const [m, w] of weight) (MUSCLE_SIDE[m] === "front" ? (front += w) : (back += w));
+  const side: BodySide = back > front ? "back" : "front";
+  const figure = side === "front" ? BODY_FRONT : BODY_BACK;
+
+  const onSide = [...weight].filter(([m]) => MUSCLE_SIDE[m] === side);
+  const max = Math.max(...onSide.map(([, w]) => w));
+  const intensityOf = Object.fromEntries(
+    (Object.keys(MUSCLE_SHORT) as Muscle[]).map((m) => [m, 0]),
+  ) as Record<Muscle, number>;
+  let top: Muscle | null = null;
+  for (const [m, w] of onSide) {
+    const intensity = w / max;
+    if (intensity < ROOM_GLOW_FLOOR) continue;
+    intensityOf[m] = intensity;
+    if (w === max) top = m;
+  }
+
+  const mark: BodyMark = { side, figure, intensityOf, top };
+  roomCache.set(key, mark);
+  return mark;
+}
