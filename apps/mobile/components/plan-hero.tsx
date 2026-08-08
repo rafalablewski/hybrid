@@ -20,7 +20,9 @@ import { haptic } from "../lib/haptics";
  *  full-bleed and unpadded, so a rail has to be told which column its resting
  *  chips must line up with — and this screen's is 16, not the app's GUTTER of
  *  12. Writing the number in both places is how the Plans chips came to rest
- *  4dp left of the shelf heads beneath them. */
+ *  4dp left of the shelf heads beneath them. A full-bleed SHELF inside the
+ *  scaffold cancels the same number to reach the true screen edge — bleeding
+ *  by GUTTER leaves the 4dp sliver the house rule forbids. */
 export const COVER_GUTTER = 16;
 
 /** The Explore PlanCover's fixed-dark base — the cover is dark in BOTH themes,

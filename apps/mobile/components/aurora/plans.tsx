@@ -160,8 +160,11 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
         onContentSizeChange={(w) => setRail((r) => ({ ...r, content: w }))}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
-        style={{ marginHorizontal: -GUTTER }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: GUTTER }}
+        // Cancel the SCAFFOLD's child padding, not the screen gutter — a
+        // shelf lives inside CoverScreen, so bleeding by GUTTER left the cards
+        // 4px short of the true edge.
+        style={{ marginHorizontal: -COVER_GUTTER }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_GUTTER }}
       >
         {group.goals.map((g) => (
           <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />
