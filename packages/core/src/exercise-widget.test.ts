@@ -116,6 +116,17 @@ describe("exerciseWidgetCards", () => {
     expect(cards).toHaveLength(3);
   });
 
+  it("never truncates the pins below the number pinned", () => {
+    const cards = exerciseWidgetCards(sessions, { now, favourites: ["Run", "Bench Press", "Assault Bike", "Deadlift"] });
+    expect(cards.map((c) => c.name)).toEqual(["Run", "Bench Press", "Assault Bike", "Deadlift"]);
+  });
+
+  it("drops a pin with no logged history — there is no card to draw", () => {
+    const cards = exerciseWidgetCards(sessions, { now, favourites: ["Never Done This"] });
+    expect(cards.map((c) => c.name)).not.toContain("Never Done This");
+    expect(cards).toHaveLength(3);
+  });
+
   it("is empty with no history", () => {
     expect(exerciseWidgetCards([], { now })).toEqual([]);
   });

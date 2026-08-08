@@ -2,15 +2,20 @@
 
 import { useMemo, useState } from "react";
 import {
+  MAX_EXERCISE_FAVOURITES,
   exerciseBrowse,
   exerciseBrowseSections,
   exerciseBrowseSummary,
+  exerciseFavouritesFull,
+  isExerciseFavourite,
   type ExerciseBrowseEntry,
   type LoggedSession,
 } from "@hybrid/core";
 import { HeroScreen } from "./hero";
 import AuroraExerciseMedia from "./exercise-media";
 import { fs, space } from "@/lib/ui";
+import { haptic } from "@/lib/haptics";
+import { useExerciseFavourites, toggleExerciseFavourite } from "@/lib/exercise-favourites";
 import { useLang } from "@/lib/i18n";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -28,6 +33,8 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
   const { t } = useLang();
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<SortMode>("smart");
+  const favourites = useExerciseFavourites();
+  const full = exerciseFavouritesFull(favourites);
 
   const entries = useMemo(() => exerciseBrowse(sessions), [sessions]);
   const summary = useMemo(() => exerciseBrowseSummary(entries, sessions), [entries, sessions]);
@@ -47,22 +54,48 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
 
   const input = { fontFamily: "var(--font-mono)", fontSize: fs.body, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "10px 12px", width: "100%", boxSizing: "border-box" as const };
 
-  const Row = ({ e, last }: { e: ExerciseBrowseEntry; last: boolean }) => (
-    <button
-      onClick={() => onOpen(e.name)}
-      className="pressable"
-      style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: last ? "none" : `1px solid ${C("line")}`, padding: "12px 0", cursor: "pointer", color: C("chalk") }}
-    >
-      {/* the lift's DRAWN demo once it exists (core: exercise-media), and until
-          then its IMPLEMENT mark (core: exercise-marks) */}
-      <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-        <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={e.staple ? "var(--lime-text)" : C("ash")} />
-      </span>
-      <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: fs.bodyLg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span>
-      <span style={mono(9, e.stale ? "var(--amber-text)" : C("ash"))}>{days(e)}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}>›</span>
-    </button>
-  );
+  /* A row is TWO controls, not one: the body opens the movement's page, and the
+     ★ pins it to the Today rail. The star is a sibling button (not nested —
+     invalid HTML, and the click would open the page as well), so the whole rail
+     is editable from the one place that lists every movement. */
+  const Row = ({ e, last }: { e: ExerciseBrowseEntry; last: boolean }) => {
+    const on = isExerciseFavourite(favourites, e.name);
+    const locked = !on && full;
+    return (
+      <div style={{ display: "flex", alignItems: "center", borderBottom: last ? "none" : `1px solid ${C("line")}` }}>
+        <button
+          onClick={() => onOpen(e.name)}
+          className="pressable"
+          style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: "12px 0", cursor: "pointer", color: C("chalk") }}
+        >
+          {/* the lift's DRAWN demo once it exists (core: exercise-media), and
+              until then its IMPLEMENT mark (core: exercise-marks) */}
+          <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+            <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={e.staple ? "var(--lime-text)" : C("ash")} />
+          </span>
+          <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: fs.bodyLg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span>
+          <span style={mono(9, e.stale ? "var(--amber-text)" : C("ash"))}>{days(e)}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}>›</span>
+        </button>
+        <button
+          onClick={() => {
+            if (locked) return;
+            haptic.light();
+            toggleExerciseFavourite(e.name);
+          }}
+          disabled={locked}
+          className="pressable"
+          aria-pressed={on}
+          aria-label={`${on ? t("w.home.exw.unpin") : t("w.home.exw.pin")} – ${e.name}`}
+          title={locked ? t("w.home.exw.addFull").replace("{n}", String(MAX_EXERCISE_FAVOURITES)) : undefined}
+          /* Amber TEXT tone, not the fill — the fill is 1.57:1 on washi. */
+          style={{ background: "none", border: "none", cursor: locked ? "default" : "pointer", padding: "12px 2px 12px 12px", lineHeight: 1, fontSize: 15, color: on ? "var(--amber-text)" : C("ash"), opacity: locked ? 0.25 : on ? 1 : 0.55 }}
+        >
+          {on ? "★" : "☆"}
+        </button>
+      </div>
+    );
+  };
 
   const Card = ({ list }: { list: ExerciseBrowseEntry[] }) => (
     <div style={card}>

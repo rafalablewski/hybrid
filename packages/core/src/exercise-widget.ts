@@ -33,6 +33,7 @@ import {
   type BlockCompare,
 } from "./engines/exercise-analytics";
 import type { BodyweightInput } from "./bodyweight";
+import { MAX_EXERCISE_FAVOURITES } from "./exercise-favourites";
 import { deviceTrueSessions } from "./device-truth";
 
 // The Today-tab EXERCISES widget + the individual exercise page ("variant B"):
@@ -275,6 +276,13 @@ export function movementsTrained(sessions: LoggedSession[], now = Date.now()): n
  * has no lanes at all) — but the lane SET is derived here, from the same
  * `activeDisciplines` the lanes themselves are built from, so the two can't
  * disagree about which disciplines have a home.
+ *
+ * PINS ARE NEVER TRUNCATED. `max` (3) is the size of the GUESS — how far the
+ * auto-fill goes when the athlete has said nothing. Pinning a fourth movement
+ * that then failed to appear would read as the pin not working, so the ceiling
+ * lifts to the number pinned (up to MAX_EXERCISE_FAVOURITES, the cap the pin
+ * list itself enforces). A pin for a movement with no history is still dropped:
+ * there is no card to draw.
  */
 export function exerciseWidgetCards(
   sessions: LoggedSession[],
@@ -294,14 +302,16 @@ export function exerciseWidgetCards(
     return d != null && owned.has(d);
   };
 
-  const picked: string[] = favourites.filter((f) => history.some((e) => e.name === f)).slice(0, max);
+  const pinned = favourites.filter((f) => history.some((e) => e.name === f)).slice(0, MAX_EXERCISE_FAVOURITES);
+  const cap = Math.max(max, pinned.length);
+  const picked: string[] = [...pinned];
   for (const kind of ["strength", "cardio", "conditioning"] as const) {
-    if (picked.length >= max) break;
+    if (picked.length >= cap) break;
     const top = ranked.find((e) => e.kind === kind && !picked.includes(e.name) && !hasLane(e));
     if (top) picked.push(top.name);
   }
   for (const e of ranked) {
-    if (picked.length >= max) break;
+    if (picked.length >= cap) break;
     if (!picked.includes(e.name) && !hasLane(e)) picked.push(e.name);
   }
 
