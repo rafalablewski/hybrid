@@ -935,13 +935,13 @@ create policy recordattestation_witness_update on "RecordAttestation" for update
 
 -- ===========================================================================
 -- SECTION 4c — SavedPost (the feed bookmark, on the server)
--- Source: sql-saved-post.sql (verbatim). Appended after the Jul 2026 run,
--- NOT YET APPLIED — re-running the whole bundle adds only this (and the other
--- not-yet-run appendices), everything above is a no-op.
+-- Source: sql-saved-post.sql (verbatim). APPLIED in production (run in the
+-- Supabase SQL Editor, Aug 2026) — kept here so the bundle stays complete and
+-- re-runnable; re-running it is a no-op.
 --
--- Depends on public.app_user_id() from section 2. Until this exists the
--- /api/social/saved/sync routes soft-degrade and each device keeps its own
--- shelf — which is how the bookmark shipped, so nothing breaks either way.
+-- Depends on public.app_user_id() from section 2. Before it existed the
+-- /api/social/saved/sync routes soft-degraded and each device kept its own
+-- shelf — which is how the bookmark shipped, so nothing broke either way.
 -- ===========================================================================
 
 create table if not exists "SavedPost" (
