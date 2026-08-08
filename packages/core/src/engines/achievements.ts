@@ -12,6 +12,7 @@ import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sessionVolume } from "./session";
 import { bestE1rmMap, lifetimePrCount } from "./records";
 import { deviceTrueSessions } from "../device-truth";
+import { fmtKm } from "../distance";
 
 const DAY = 86_400_000;
 
@@ -136,7 +137,7 @@ export function computeAchievements(sessions: LoggedSession[], bw?: BodyweightIn
       value: runKm,
       tiers: [5, 10, 21, 42],
       label: (t) => (t >= 42 ? "Marathon" : t >= 21 ? "Half marathon" : `${t}K run`),
-      detail: (v) => (v > 0 ? `furthest ${v.toFixed(1)} km` : "no runs yet"),
+      detail: (v) => (v > 0 ? `furthest ${fmtKm(v)}` : "no runs yet"),
     },
   ];
 

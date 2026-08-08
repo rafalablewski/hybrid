@@ -178,7 +178,7 @@ const levelFromPace = (secPerKm: number, thresholds: number[]): FitnessLevel => 
 export interface LevelEvidence {
   /** Which half of the athlete this came from. */
   kind: "strength" | "endurance";
-  /** Display name — the lift, or the run's distance ("10.0 km"). */
+  /** Display name — the lift, or the run's distance ("10.21 km"). */
   lift: string;
   /** STRENGTH ONLY: best e1RM seen in the window, kg. */
   e1rm?: number;

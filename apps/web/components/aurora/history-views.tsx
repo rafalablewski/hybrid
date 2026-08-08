@@ -7,6 +7,7 @@ import {
   fs,
   space,
   fmtTonnage,
+  fmtKm,
   sessionHeadline,
   sessionsByDay,
   historyStream,
@@ -396,7 +397,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
       <div style={{ display: "flex", gap: 10 }}>
         {mini(t("w.analyze.stats.activeDays"), hasData ? String(buckets.activeDays) : "—")}
-        {mini(t("w.analyze.stats.distance"), hasData ? `${recap.distanceKm.toFixed(1)} km` : "—")}
+        {mini(t("w.analyze.stats.distance"), hasData ? fmtKm(recap.distanceKm) : "—")}
         {mini(t("w.analyze.stats.minutes"), hasData ? String(Math.round(recap.minutes)) : "—")}
       </div>
 

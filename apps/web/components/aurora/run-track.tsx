@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fs, space, pacePerKm, mmss } from "@hybrid/core";
+import { fs, space, fmtKm, pacePerKm, mmss } from "@hybrid/core";
 import { HeroScreen } from "./hero";
 import { useLang } from "@/lib/i18n";
 
@@ -94,7 +94,7 @@ export default function AuroraRunTrack({ onSaved }: { onSaved?: () => void }) {
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 100px), 1fr))", gap: space.md }}>
           <Stat label={t("w.train.runTrack.time")} value={mmss(elapsed)} color={C("chalk")} />
-          <Stat label={t("w.train.runTrack.distance")} value={Number.isFinite(km) && km > 0 ? `${km} km` : "—"} color={C("blue")} />
+          <Stat label={t("w.train.runTrack.distance")} value={Number.isFinite(km) && km > 0 ? fmtKm(km) : "—"} color={C("blue")} />
           <Stat label={t("w.train.runTrack.pacePerKm")} value={pace ?? "—"} color={C("lime")} />
         </div>
         <div style={{ display: "flex", gap: space.ms, marginTop: 16, flexWrap: "wrap" }}>
