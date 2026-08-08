@@ -23,6 +23,13 @@ const stub = (p: string) => fileURLToPath(new URL(`./test/stubs/${p}`, import.me
  *   so measured geometry (onLayout, ResizeObserver) is out of reach; a
  *   position that depends on a measurement is a position this gate cannot
  *   check, which is its own argument for deriving positions instead.
+ *
+ * JSDOM IS PINNED TO THE MAJOR CI CAN RUN. jsdom 30 depends on undici 8, whose
+ * engines are `>=22.19.0`; .github/workflows/ci.yml runs Node 20, so every
+ * render file died there with `webidl.util.markAsUncloneable is not a function`
+ * while passing locally on Node 22. jsdom 29 keeps undici 7 (`>=20.18.1`).
+ * Before bumping it, check the transitive undici's engines against CI's Node —
+ * the failure surfaces as a worker that won't start, not as a version error.
  */
 export default defineConfig({
   test: {
