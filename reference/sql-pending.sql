@@ -1,11 +1,16 @@
 -- ===========================================================================
 -- HYBRID — every outstanding migration, in one script, in dependency order.
 --
--- STATUS: applied in production up to and including Session.device (the bundle
--- was run in the Supabase SQL Editor, Jul 2026). The NUTRITION LABEL PANEL at
--- the end of section 1 is APPENDED BUT NOT YET RUN — re-running the whole file
--- is a no-op for everything already applied and adds only that, so the safe
--- move is to paste the whole thing again. Future migrations append here.
+-- STATUS: FULLY APPLIED. The whole file was run in the Supabase SQL Editor
+-- (Aug 2026), which cleared the three appendices that were still outstanding at
+-- the time — the nutrition LABEL PANEL at the end of section 1, SECTION 4b
+-- (RecordAttestation) and SECTION 4c (SavedPost). Re-running it now is a no-op
+-- from top to bottom.
+--
+-- Future migrations append here, and the rule stays the same: append the new
+-- block, mark it not-yet-applied in its own header, and paste the WHOLE file
+-- again — everything above is idempotent, so the bundle is always the safe
+-- thing to run and there is never a question of which pieces you already have.
 --
 -- Paste the WHOLE file into the Supabase SQL Editor and Run once.
 --
@@ -889,9 +894,9 @@ create policy review_read on "CoachReview" for select using (true);
 
 -- ===========================================================================
 -- SECTION 4b — Verified Strength Record (RecordAttestation)
--- Source: sql-verified-record.sql (verbatim). Appended after the Jul 2026 run,
--- NOT YET APPLIED — re-running the whole bundle adds only this (and the other
--- not-yet-run appendices), everything above is a no-op.
+-- Source: sql-verified-record.sql (verbatim). APPLIED in production (the full
+-- bundle was run in the Supabase SQL Editor, Aug 2026) — kept here so the
+-- bundle stays complete and re-runnable; re-running it is a no-op.
 --
 -- Depends on public.app_user_id() from section 2. Until this exists the
 -- /api/records/attest routes soft-degrade and PR badges read Claimed/Sensed.
