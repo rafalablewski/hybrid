@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, Linking, Animated, Easing, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FUNNEL, FULL_BENEFITS } from "@hybrid/core";
+import { FUNNEL, FULL_BENEFITS, sheetPadBottom } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull, restorePurchases, fetchFullPrice } from "../../lib/iap";
@@ -117,7 +117,8 @@ export default function AuroraUpgrade() {
           position: "absolute", left: 0, right: 0, bottom: 0,
           backgroundColor: C.ink2, borderTopLeftRadius: 28, borderTopRightRadius: 28,
           borderWidth: 1, borderColor: C.line, maxHeight: "90%",
-          paddingHorizontal: 20, paddingTop: 12, paddingBottom: insets.bottom + 22,
+          // The shared sheet pad (@hybrid/core), not a third hand-picked number.
+          paddingHorizontal: 20, paddingTop: 12, paddingBottom: sheetPadBottom(insets.bottom),
           transform: [{ translateY }],
           shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 24,
         }}

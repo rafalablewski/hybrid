@@ -127,6 +127,20 @@ cards still align with the content column. `CoachRail`'s
 Sheet or a card respects its container's padding — bleed is only for rails
 sitting directly on a screen.
 
+## RULE: a sheet owns the pad under its last row — content adds none (always)
+The bottom pad of a bottom-sheet is ONE number, `sheetPadBottom(insetBottom)`
+from `packages/core/src/scale.ts` — `max(insetBottom, 24)`, **max, never plus**.
+A sheet's panel sits ON the screen's bottom edge, so the home-indicator inset is
+the FLOOR of the pad, not an addition to it. Apply it on the PANEL: mobile
+`paddingBottom: sheetPadBottom(insets.bottom)`, web
+`max(${sheetPadBottom()}px, env(safe-area-inset-bottom, 0px))`.
+Nothing rendered INSIDE a sheet may trail a pad of its own — no
+`contentContainerStyle={{ paddingBottom }}` on a sheet's scroller, no trailing
+`paddingBottom` on the last block. Those stack on the panel's pad and are what
+put a dead band under every sheet (the web More sheet reserved 110px for a pill
+bar it renders over and hides). A sheet also never reserves clearance for the
+tab bar or the pill nav: it covers them.
+
 ## RULE: no decorative dot/marker before section headers (always)
 A small dot, circle or square placed before a section label reads as AI slop.
 Never render one in front of a heading, kicker, or cluster label, on either

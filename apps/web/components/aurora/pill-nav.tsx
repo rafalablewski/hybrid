@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   fs,
   space,
+  sheetPadBottom,
   groupedNavWithLocks,
   sanitizePersonaAccess,
   AURORA_NAV_ICONS,
@@ -273,7 +274,12 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     <>
       {moreOpen && (
         <div onClick={closeMore} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "var(--font-display)" }}>
-          <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "80vh", overflowY: "auto", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", padding: "20px 20px 110px" }}>
+          {/* The pad under the last row is the SHEET pad (@hybrid/core
+              `sheetPadBottom`), not clearance for the bar. This reserved 110px
+              for the floating pill bar — which is z-50 UNDER this z-60 panel and
+              fully hidden behind it while the sheet is up, so the reservation
+              bought nothing and left ~86px of dead panel under Sign out. */}
+          <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "80vh", overflowY: "auto", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", padding: `20px 20px max(${sheetPadBottom()}px, env(safe-area-inset-bottom, 0px))` }}>
             <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
 
             {/* Identity — avatar + name + role/entitlement (tap → profile) with a
