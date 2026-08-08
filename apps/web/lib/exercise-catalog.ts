@@ -1,4 +1,4 @@
-import { setExerciseCatalog, type LibraryMovement, type Movement, type MuscleGroup } from "@hybrid/core";
+import { setExerciseCatalog, setExerciseMediaCatalog, type LibraryMovement, type Movement, type MuscleGroup } from "@hybrid/core";
 
 // Publishes the admin-managed exercise library to the ENGINES (core's movement
 // registry), which is a different job from `useExercises()` — that hook feeds the
@@ -20,6 +20,8 @@ type ApiExercise = {
   system: string | null;
   aliases: string[];
   category: string | null;
+  videoUrl: string | null;
+  thumbUrl: string | null;
 };
 
 /** In-flight/settled load, so concurrent callers share ONE request. */
@@ -40,6 +42,11 @@ async function load(): Promise<void> {
       category: e.category ?? null,
     }));
     setExerciseCatalog(custom);
+    // The same rows carry the library's DEMO MEDIA (an admin-set video/thumb
+    // URL per lift). Publishing it here — global, admin-authored data, exactly
+    // like the catalog — is what lets the exercise demo surface show a real
+    // asset instead of the procedural placeholder (core: exercise-media).
+    setExerciseMediaCatalog((d.exercises ?? []).map((e) => ({ name: e.name, videoUrl: e.videoUrl, thumbUrl: e.thumbUrl })));
   } catch {
     // Offline / API down: the engines keep resolving against the built-ins.
   }

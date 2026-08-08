@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { sketchBrief, sketchCoverage } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space,
   INK,
@@ -153,19 +154,25 @@ export default function AdminMedia() {
     setEdit(a.id);
   }
 
+  // The sketch backlog is computed from the shipped catalog, so it stands even
+  // when the media table/bucket isn't initialized yet.
   if (unavailable)
     return (
-      <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
-        <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Media library not initialized</div>
-        <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.6, display: "block" }} c={CHALK}>
-          The <b>MediaAsset</b> table + <b>media</b> bucket don&apos;t exist yet. Run{" "}
-          <span style={{ color: txt(AMBER) }}>reference/sql-media-library.sql</span> in the Supabase SQL Editor, then reload.
-        </Mono>
-      </Card>
+      <div>
+        <SketchCoverage />
+        <Card style={{ borderLeft: `3px solid ${AMBER}` }}>
+          <div style={{ ...disp, fontWeight: 800, fontSize: 17, marginBottom: 8 }}>Media library not initialized</div>
+          <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.6, display: "block" }} c={CHALK}>
+            The <b>MediaAsset</b> table + <b>media</b> bucket don&apos;t exist yet. Run{" "}
+            <span style={{ color: txt(AMBER) }}>reference/sql-media-library.sql</span> in the Supabase SQL Editor, then reload.
+          </Mono>
+        </Card>
+      </div>
     );
 
   return (
     <div>
+      <SketchCoverage />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 10 }}>
         <Mono s={{ fontSize: fs.body }} c={ASH}>
           {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} – public CDN URLs
@@ -262,6 +269,60 @@ export default function AdminMedia() {
         </Card>
       )}
     </div>
+  );
+}
+
+/**
+ * EXERCISE DEMO SKETCHES — how much of the exercise catalog has real hand-drawn
+ * art, and the commissioning brief for what's left. Everything not yet drawn
+ * falls back to the procedural stick-figure demo in the app, so this is the
+ * backlog that retires the placeholder. Numbers come from core
+ * (exercise-media): the registry of delivered art plus any library row pointed
+ * at an uploaded asset. Mobile twin: apps/mobile/components/admin/media.tsx.
+ */
+function SketchCoverage() {
+  const [copied, setCopied] = useState(false);
+  const cov = sketchCoverage();
+  const worst = cov.byArchetype.filter((a) => a.pending > 0).slice(0, 10);
+
+  return (
+    <Card style={{ marginBottom: space.md }}>
+      <div style={{ ...disp, fontWeight: 800, fontSize: 17 }}>Exercise demo sketches</div>
+      <Mono s={{ fontSize: fs.body, lineHeight: 1.6, display: "block", marginTop: 6 }} c={ASH}>
+        {cov.drawn} of {cov.total} lifts drawn{cov.pattern > 0 ? `, ${cov.pattern} on a pattern stand-in` : ""} – {cov.pct}% covered.
+        Every undrawn lift shows the procedural stick-figure demo until its sketch lands.
+      </Mono>
+      <div style={{ height: 6, borderRadius: 3, background: INK, overflow: "hidden", margin: "12px 0 4px" }}>
+        <div style={{ height: "100%", width: `${cov.pct}%`, background: LIME, borderRadius: 3 }} />
+      </div>
+
+      {worst.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 6 }} c={ASH}>Still to draw, by movement pattern</Mono>
+          <div>{worst.map((a) => <Chip key={a.archetype} c={ASH}>{a.archetype} {a.pending}</Chip>)}</div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginTop: 14 }}>
+        <button
+          className="pressable"
+          onClick={() => {
+            navigator.clipboard?.writeText(sketchBrief()).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            });
+          }}
+          style={miniBtn}
+        >
+          {copied ? "Copied ✓" : "Copy illustrator brief"}
+        </button>
+      </div>
+      <Mono s={{ fontSize: fs.caption, lineHeight: 1.6, display: "block", marginTop: 10 }} c={ASH}>
+        The brief carries the drawing spec and every remaining lift with the filename slot to deliver it under. Upload the
+        finished art here, then either register it in core (registerSketchMedia) or paste a URL into the exercise&apos;s
+        demo-video field.
+      </Mono>
+    </Card>
   );
 }
 

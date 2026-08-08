@@ -12,6 +12,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import { HeroScreen } from "./hero";
+import AuroraExerciseMedia from "./exercise-media";
 import { fs, space } from "@/lib/ui";
 import { haptic } from "@/lib/haptics";
 import { useExerciseFavourites, toggleExerciseFavourite } from "@/lib/exercise-favourites";
@@ -67,7 +68,11 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
           className="pressable"
           style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: "12px 0", cursor: "pointer", color: C("chalk") }}
         >
-          <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 900, fontSize: 13, letterSpacing: -0.3, color: e.staple ? "var(--lime-text)" : C("ash") }}>{e.initials}</span>
+          {/* the lift's DRAWN demo once it exists (core: exercise-media), and
+              until then its IMPLEMENT mark (core: exercise-marks) */}
+          <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+            <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={e.staple ? "var(--lime-text)" : C("ash")} />
+          </span>
           <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: fs.bodyLg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span>
           <span style={mono(9, e.stale ? "var(--amber-text)" : C("ash"))}>{days(e)}</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.subtitle, color: `color-mix(in srgb, ${C("ash")} 55%, transparent)` }}>›</span>

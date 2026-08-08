@@ -59,6 +59,7 @@ export const getCachedPublishedExercises = unstable_cache(
           description: true,
           cues: true,
           videoUrl: true,
+          thumbUrl: true,
         },
       });
     } catch {

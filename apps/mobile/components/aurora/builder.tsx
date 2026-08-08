@@ -40,6 +40,7 @@ import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import ExercisePickerSheet from "./exercise-picker";
+import AuroraExerciseMedia from "./exercise-media";
 import SwipeRow from "../swipe-row";
 import { animateListChange } from "../../lib/list-motion";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
@@ -285,7 +286,13 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
       {/* header */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
         {grip}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, c) }}>{b.kind.toUpperCase()}</Text>
+        {/* The lift's IMPLEMENT, tinted by modality — it carries both what the
+            old mono "STRENGTH" word said (via the tint) and the gear it takes
+            (via the drawing), and becomes the hand-drawn demo once that lift is
+            drawn. */}
+        <View accessibilityRole="image" accessibilityLabel={b.kind}>
+          <AuroraExerciseMedia name={b.name} variant="thumb" size={20} tint={txt(C, c)} />
+        </View>
         <TextInput
           value={b.name}
           onChangeText={(v) => builder.setField(b.uid, "name", v)}

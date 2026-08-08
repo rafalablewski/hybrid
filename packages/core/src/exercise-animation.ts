@@ -4,21 +4,15 @@ import { gymExercise, type GymExercise } from "./exercise-db";
 // OWN module (separate from exercise-anatomy's muscles/cues) so the way the rep
 // is DRAWN can be swapped without touching anything else.
 //
-// Today the demo is a procedural side-profile stick figure: each lift maps to a
+// The demo here is a procedural side-profile stick figure: each lift maps to a
 // movement ARCHETYPE (squat, hinge, press, pull, curl, …), the archetype carries
 // 2-3 skeleton keyframes, and `skeletonAt()` interpolates them into a looping
-// rep. This is the unblocked, zero-asset stand-in while the licensed demo-clip /
-// professional sketch animation is unavailable (see capabilities:
-// exercise-video-library).
+// rep. Zero assets, every lift covered.
 //
-// THE SWAP SEAM: `exerciseAnimation(name)` returns a discriminated union —
-// `SkeletonAnimation` (procedural) OR `SketchAnimation` (commissioned frames).
-// When professional sketch animation is ready, register the asset per exercise
-// (or per archetype) in `SKETCH_ANIMATIONS` and the resolver returns the sketch
-// spec instead, with the procedural skeleton as the automatic fallback for any
-// lift not yet drawn. The clients switch on `kind`, so the ONLY change to ship
-// sketches is: (1) populate the registry, (2) add the sketch renderer branch —
-// the muscle-activation / cues section never changes.
+// This module is ONLY the procedural figure. The hand-drawn demos — and the one
+// registry they are delivered into — live in exercise-media.ts, which resolves
+// what a surface actually shows and falls back to this figure until a lift is
+// drawn. Register art there, never here, so there is exactly one place to look.
 
 // ── movement taxonomy ───────────────────────────────────────────────────────
 
@@ -279,46 +273,23 @@ export interface SkeletonAnimation {
   cycleMs: number;
 }
 
-/** A commissioned professional sketch animation — ordered frame assets the
- *  client flips/cross-fades through. Not used yet; the shape the registry + the
- *  future sketch renderer share. `frames` are asset references (bundled require
- *  ids, remote URLs, or a sprite manifest) resolved by the client. */
-export interface SketchAnimation {
-  kind: "sketch";
-  archetype: AnimArchetype;
-  frames: string[];
-  /** milliseconds for one full loop through the frames. */
-  cycleMs: number;
-  /** optional credit for the illustrator/source. */
-  credit?: string;
-}
-
-export type ExerciseAnimation = SkeletonAnimation | SketchAnimation;
-
-/**
- * Professional sketch animations, keyed by exact exercise name OR by archetype
- * (name wins). EMPTY today — every lift falls back to the procedural skeleton.
- *
- * To ship sketches, register them here (or hydrate this from an asset manifest):
- *   SKETCH_ANIMATIONS["Bench Press"] = { kind: "sketch", archetype: "pressH",
- *     frames: [...frameRefs], cycleMs: 2200, credit: "…" };
- * `exerciseAnimation()` then returns the sketch for that lift and the skeleton
- * for everything not yet drawn — no other code changes on the data side.
- */
-export const SKETCH_ANIMATIONS: Record<string, SketchAnimation> = {};
+/** The animation a lift resolves to. A one-member union today: the procedural
+ *  figure is the only thing this module draws, and drawn art is resolved by
+ *  exercise-media.ts instead. Kept as a named type so the clients' renderers
+ *  read the same either way. */
+export type ExerciseAnimation = SkeletonAnimation;
 
 /** Cardio/plyo reps are quicker; grinding barbell reps are slower. */
 const cycleMsFor = (a: AnimArchetype): number =>
   a === "jump" || a === "twist" || a === "carry" ? 1600 : a === "olympic" ? 2600 : a === "plank" ? 3200 : 2200;
 
-/** The animation spec for a lift, or null for a name the DB doesn't know. A
- *  registered sketch wins; otherwise the procedural skeleton is returned. This
- *  is the single swap point — the clients render whichever `kind` comes back. */
+/** The procedural animation for a lift, or null for a name the DB doesn't know
+ *  (custom lifts, cardio sports). Callers that want "whatever we show for this
+ *  lift" should ask exerciseMedia() instead — it returns the drawn art when it
+ *  exists and this figure when it doesn't. */
 export function exerciseAnimation(name: string): ExerciseAnimation | null {
   const e = gymExercise(name);
   if (!e) return null;
   const archetype = exerciseArchetype(e);
-  const sketch = SKETCH_ANIMATIONS[e.name] ?? SKETCH_ANIMATIONS[archetype];
-  if (sketch) return sketch;
   return { kind: "skeleton", archetype, frames: KEYFRAMES[archetype], load: LOAD_GLYPH(e), cycleMs: cycleMsFor(archetype) };
 }
