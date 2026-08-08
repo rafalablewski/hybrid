@@ -85,6 +85,7 @@ const NotificationsScreen = dynamic(() => import("./notifications"), { ssr: fals
 const StatisticsScreen = dynamic(() => import("./statistics"), { ssr: false });
 const SocialFeed = dynamic(() => import("./social-feed"), { ssr: false });
 const SocialDiscover = dynamic(() => import("./social-discover"), { ssr: false });
+const SocialSaved = dynamic(() => import("./social-saved"), { ssr: false });
 const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: false });
 const CoachesScreen = dynamic(() => import("./coaches"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
@@ -1029,6 +1030,7 @@ export default function AppShell() {
             on Today and each destination below is reached from More. */}
         {screen === "feed" && <SocialFeed onNavigate={setScreen} onOpenSession={openSession} />}
         {screen === "discover" && <SocialDiscover />}
+        {screen === "saved" && <SocialSaved onNavigate={setScreen} />}
         {screen === "leaderboard" && <SocialLeaderboard />}
         {screen === "coaches" && <CoachesScreen />}
 

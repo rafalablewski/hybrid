@@ -158,6 +158,11 @@ export const NAV_ITEMS: NavItem[] = [
   // ---- Social (everyone) — follow friends, browse results, find a coach ----
   { id: "feed", label: "Feed", group: "social" },
   { id: "discover", label: "Find friends", group: "social" },
+  // The shelf behind the feed's bookmark. Also reached from a glyph on the
+  // feed's own tab row (the same pattern Find friends uses) — but it is a real
+  // destination, so it is listed here too rather than only being findable by
+  // remembering which icon it was behind.
+  { id: "saved", label: "Saved", group: "social" },
   { id: "leaderboard", label: "Leaderboard", group: "social" },
   { id: "coaches", label: "Coaches", group: "social" },
 

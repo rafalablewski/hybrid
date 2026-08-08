@@ -62,6 +62,7 @@ const HREF: Record<string, Href> = {
   longevity: "/longevity",
   feed: "/feed",
   discover: "/discover",
+  saved: "/saved",
   leaderboard: "/leaderboard",
   coaches: "/coaches",
   coach: "/coach",

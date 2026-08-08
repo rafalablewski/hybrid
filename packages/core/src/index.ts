@@ -86,6 +86,7 @@ export * from "./activity";
 export * from "./feed-live";
 export * from "./feed-rank";
 export * from "./feed-card";
+export * from "./feed-actions";
 export * from "./feed-workout";
 export * from "./social";
 export * from "./stats";
