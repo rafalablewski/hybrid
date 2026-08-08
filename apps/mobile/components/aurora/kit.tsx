@@ -34,6 +34,31 @@ import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
  */
 export const RADIUS = { mark: 3, inner: 12, field: 16, card: 28, pill: 999 } as const;
 
+/**
+ * THE CARD'S INNER PADDING — one number for the whole app.
+ *
+ * ACard is built on it, and so is every full-width card a screen hand-rolls
+ * because it needs a gradient, a border colour or a Pressable that ACard does
+ * not take. A bleed out of one is written `-CARD_PAD` so it names the container
+ * it is escaping (see apps/web/__tests__/screen-gutter.test.ts). The web twin
+ * is `CARD_PAD` in apps/web/lib/ui.tsx and both read `space.xl`, so neither
+ * client can move alone.
+ *
+ * Why it is a token and not a literal: it drifted twice. Today's feeling card,
+ * done-floor host and week verdict were hand-rolled at 16 against Performance's
+ * 20; the sweep for that then found History, Plans, Nutrition and Profile
+ * carrying their own mixture — including two SIBLING cards, stacked, at 20 and
+ * 16, and one component (History's swipe card, Plans' detail cards) inset
+ * differently on web than on mobile.
+ *
+ * WHAT DOES NOT TAKE IT — the deliberate variants, so the next sweep does not
+ * "fix" them: a rail item or grid tile (its own compact inset), a media card
+ * whose image is flush and only the text block is padded, an icon-tile ROW
+ * (`IconTile` + text + chevron, inset 16), a card whose interior is banded rows
+ * that pad themselves, and a sheet (its own 20, a different container).
+ */
+export const CARD_PAD = space.xl;
+
 /** The screen's side gutter, in dp — matches the web app-shell's mobile
  *  --page-pad-x (12px) so content fills the same share of the screen on both
  *  clients. Full-bleed rails bleed by exactly this (see the slider rule in
@@ -382,7 +407,7 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
           borderColor: palette.line,
           borderWidth: 1,
           borderRadius: RADIUS.card,
-          padding: 20,
+          padding: CARD_PAD,
           // A touch of depth — soft, low, lifted off the field (not the heavy
           // classic glass shadow), warm-toned on the light washi (cardShadow).
           ...cardShadow(scheme),

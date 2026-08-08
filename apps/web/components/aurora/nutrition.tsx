@@ -20,7 +20,7 @@ import {
   type MicroFacts, type NutritionFacts, type VerifiedStamp,
   type Recipe, type RecipeMeal, type RecipeFilter, type NutritionMealPart, type MealPartDef,
 } from "@hybrid/core";
-import { fs, space, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
+import { fs, space, CARD_PAD, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { AuroraIcon } from "./icons";
@@ -1025,7 +1025,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     setScanning(false);
   };
 
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
   const numField = { fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, flex: "1 1 70px", minWidth: 0, boxSizing: "border-box" as const, background: C("ink"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 12px", outline: "none", textAlign: "center" as const };
   // A labelled macro field — the colour-coded, big-number input the redesigned
   // meal/product builders are built from (protein=blue, carbs=amber, fat=violet,
@@ -1454,7 +1454,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => { const file = e.target.files?.[0]; if (file) scanIntoCreate(file); e.target.value = ""; }} />
 
         {/* Title plate — Name + the personal Subname, one surface. */}
-        <div style={{ background: "linear-gradient(158deg, color-mix(in srgb, var(--color-lime) 6%, var(--color-ink2)), var(--color-ink2) 72%)", border: `1px solid ${C("line")}`, borderRadius: 28, padding: "16px 16px 20px" }}>
+        <div style={{ background: "linear-gradient(158deg, color-mix(in srgb, var(--color-lime) 6%, var(--color-ink2)), var(--color-ink2) 72%)", border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 8 }}>{t("w.recovery.nutrition.foodName")}</div>
           <input value={createForm.name} onChange={(e) => setCF({ name: e.target.value })} placeholder={t("w.recovery.nutrition.foodNamePh")} aria-label={t("w.recovery.nutrition.foodName")} style={{ width: "100%", border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 27, letterSpacing: "-.02em", padding: 0 }} />
           <div style={{ height: 1, background: C("line"), margin: "16px 0" }} />
@@ -1672,7 +1672,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
 
         {/* Macro strip — the same four-tile idiom the recipe detail uses. */}
-        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: "16px 6px", marginTop: 16 }}>
+        <div style={{ display: "flex", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: `${CARD_PAD}px 6px`, marginTop: 16 }}>
           {([["w.recovery.nutrition.protein", f.facts.protein, "var(--blue-text)"], ["w.recovery.nutrition.carbs", f.facts.carbs, "var(--amber-text)"], ["w.recovery.nutrition.fat", f.facts.fat, "var(--violet-text)"]] as const).map(([lab, val, col]) => (
             <div key={lab} style={{ flex: 1, textAlign: "center" }}>
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 21, letterSpacing: "-.01em", fontVariantNumeric: "tabular-nums" }}>{val}<span style={{ fontSize: 12, color: C("ash") }}>g</span></div>
@@ -2179,6 +2179,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
               return (
+                /* a RAIL item, not a full-width card — it keeps the compact inset. */
                 <button key={src.id} onClick={() => openSourcePage(src.id, "home")} className="pressable" style={{ flex: "0 0 min(72%, 268px)", scrollSnapAlign: "center", display: "flex", flexDirection: "column", alignItems: "stretch", textAlign: "left", border: `1px solid ${C("line")}`, borderRadius: 28, background: C("ink2"), cursor: "pointer", color: C("chalk"), padding: 16 }}>
                   {/* The business's own logo leads the card — this rail IS the
                       businesses, so recognising one at a glance is its whole job. */}
@@ -2827,7 +2828,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
     [t("w.recovery.nutrition.protein"), summary.avgProtein != null ? `${summary.avgProtein}g` : "—", t("w.recovery.nutrition.perDay").replace("kcal", "avg"), "var(--violet-text)"],
   ];
   return (
-    <div style={{ ...cardStyle(C), marginTop: 16, padding: 20 }}>
+    <div style={{ ...cardStyle(C), marginTop: 16, padding: CARD_PAD }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.summary")}</b>
         <div style={{ display: "flex", gap: 3, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 3, width: 132 }}>
@@ -2905,8 +2906,17 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
     { id: "maintain", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
     { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
   ];
+  /* A wizard OPTION ROW (label + sub + radio) — the app already has a standard
+     for this, in the onboarding wizard (aurora/onboarding.tsx `choice`, and the
+     mobile `Choice`): RADIUS 16 at padding 16, a 1px border that swaps line →
+     lime when picked, and a lime wash at 8% behind it — sitting inside the
+     wizard's own r28/20 card. This row was the only one off it: radius 28 here
+     against 16 on mobile (so the same control was card-shaped on one client and
+     field-shaped on the other), and a `0 0 0 1px` shadow ring faking the second
+     border that mobile drew by widening its own. Both are gone; the row now
+     states selection the way the other three wizards in the app do. */
   const choiceCard = (on: boolean, label: string, sub: string, onClick: () => void) => (
-    <button className="pressable" onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 28, boxShadow: on ? `0 0 0 1px ${C("lime")}, var(--shadow-card)` : "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
+    <button className="pressable" onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: on ? `color-mix(in srgb, ${C("lime")} 8%, transparent)` : C("ink2"), border: `1px solid ${on ? C("lime") : C("line")}`, borderRadius: 16, boxShadow: "var(--shadow-card)", padding: 16, marginBottom: 10, cursor: "pointer", color: C("chalk") }}>
       <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: fs.bodyLg }}>{label}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 3 }}>{sub}</div></div>
       <span style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent", display: "grid", placeItems: "center" }}>{on && <AuroraIcon name="check" size={12} color="var(--on-accent)" />}</span>
     </button>
@@ -2936,7 +2946,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.heading, letterSpacing: "-.02em" }}>{t("w.recovery.nutrition.pickActivity")}</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickActivitySub")}</div>
           {ACTIVITY.map((a) => <div key={a.id}>{choiceCard(activity === a.id, t(a.labelKey), t(a.subKey), () => setActivity(a.id))}</div>)}
-          <div style={{ ...cardStyle(C), padding: 16, marginTop: 4 }}>
+          <div style={{ ...cardStyle(C), padding: CARD_PAD, marginTop: 4 }}>
             {currentWeightKg != null ? (
               /* Profile already has a weight — reuse it (one canonical source),
                  don't ask again. */
@@ -2962,7 +2972,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
 
       {step === 2 && (
         <div style={{ marginTop: 24 }}>
-          <div style={{ ...cardStyle(C), padding: 20, textAlign: "center", background: `color-mix(in srgb, var(--premium-accent) 8%, ${C("ink2")})`, borderColor: `color-mix(in srgb, var(--premium-accent) 30%, ${C("line")})` }}>
+          <div style={{ ...cardStyle(C), padding: CARD_PAD, textAlign: "center", background: `color-mix(in srgb, var(--premium-accent) 8%, ${C("ink2")})`, borderColor: `color-mix(in srgb, var(--premium-accent) 30%, ${C("line")})` }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--premium-accent-text)", background: `color-mix(in srgb, var(--premium-accent) 16%, transparent)`, borderRadius: 999, padding: "6px 12px" }}>✦ {t("w.account.settings.full")}</span>
             <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 22, letterSpacing: "-.02em", marginTop: 16 }}>{t("w.recovery.nutrition.trialTitle")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8, lineHeight: 1.5 }}>{t("w.recovery.nutrition.trialSub")}</div>
@@ -2975,7 +2985,7 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
           {/* The FREE alternative — a limited plan the user can start on now,
               no card needed. Full is the trial card above; this is the way out
               that isn't an upgrade. */}
-          <div style={{ ...cardStyle(C), padding: 16, marginTop: 12 }}>
+          <div style={{ ...cardStyle(C), padding: CARD_PAD, marginTop: 12 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
               <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.freePlanTitle")}</div>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em", color: C("ash") }}>{t("w.recovery.nutrition.freePlanSub")}</span>

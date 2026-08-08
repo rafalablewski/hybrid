@@ -13,7 +13,7 @@ import {
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
-import { ADrawer, GUTTER, withAlpha } from "./kit";
+import { ADrawer, GUTTER, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -111,9 +111,13 @@ const PRS_BLEED = GUTTER;
  *  inside the card, so it must follow the card. The two were both written as
  *  bare numbers, which is how the 16 -> 12 gutter sweep came to "fix" this one
  *  into 12 as well, insetting the compartment 4dp from the card on both sides
- *  and shifting its text off the figures above it (web, still 16, was right).
- *  Named, the mistake is no longer expressible. */
-const CARD_PAD = 16;
+ *  and shifting its text off the figures above it. Named, the mistake is no
+ *  longer expressible.
+ *
+ *  The VALUE now comes from the kit (`CARD_PAD`), which is the point: naming it
+ *  fixed which container it belonged to but not what it should be, and it sat
+ *  at 16 while Performance sat at 20. Mirrors web's CARD_PAD. */
+const CARD_PAD = SHARED_CARD_PAD;
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -493,7 +497,7 @@ export default function AuroraWeekVerdict({
           the card gives its own up rather than fencing the panel in. */}
       <View style={{
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28,
-        paddingHorizontal: CARD_PAD, paddingTop: 16, paddingBottom: open ? 0 : 16, ...cardShadow(scheme),
+        paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD, ...cardShadow(scheme),
       }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
@@ -595,7 +599,7 @@ export default function AuroraWeekVerdict({
               // the card's bottom now.
               backgroundColor: C.ink, borderTopWidth: 1, borderTopColor: C.line,
               marginHorizontal: -CARD_PAD, marginTop: 12,
-              paddingHorizontal: CARD_PAD, paddingTop: 14, paddingBottom: 16,
+              paddingHorizontal: CARD_PAD, paddingTop: 14, paddingBottom: CARD_PAD,
               borderBottomLeftRadius: 27, borderBottomRightRadius: 27,
             }}>
               <MetricDetail
