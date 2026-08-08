@@ -58,6 +58,7 @@ export function FeelPrompt({
   sessionEnd = null,
   compact = false,
   eyebrow,
+  onAnswered,
 }: {
   /** null for a guest / unsaved session — the taps are then read-only local. */
   sessionId: string | null;
@@ -73,6 +74,9 @@ export function FeelPrompt({
   /** card chrome for the finish screen instead of the Wrapped's panel chrome. */
   compact?: boolean;
   eyebrow?: (label: string) => ReactNode;
+  /** Fired after a tap is SAVED, so a host that is waiting on the answer (the
+   *  import sheet's rate step) can stop offering to skip it. */
+  onAnswered?: () => void;
 }) {
   const C = useTheme().palette;
   const { t } = useLang();
@@ -87,7 +91,10 @@ export function FeelPrompt({
     if (!sessionId) return;
     const ok = await patchSessionFeel(sessionId, patch);
     setFailed(!ok);
-    if (ok) void qc.invalidateQueries({ queryKey: qk.sessions });
+    if (ok) {
+      void qc.invalidateQueries({ queryKey: qk.sessions });
+      onAnswered?.();
+    }
   };
 
   // The lag is measured at the moment of the tap, which is exactly what the

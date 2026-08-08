@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DEVICE_IMPORT_PROVIDERS,
   deviceImportMeta,
   deviceSourceLabel,
+  isRated,
   type LoggedSession,
 } from "@hybrid/core";
 import { fs, INK, INK2, LINE, LIME, CHALK, ASH, disp, mono, Mono } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { setLoggerPref, useLoggerPrefs } from "@/lib/logger-prefs";
 import { DeviceMark } from "./aurora/device-mark";
+import FeelSheet from "./aurora/feel-sheet";
 
 /**
  * DEVICE IMPORT (web) — the parity half of "I trained on my watch".
@@ -25,6 +27,13 @@ import { DeviceMark } from "./aurora/device-mark";
  * training here, and can turn the automatic pull on or off from either client.
  * The mobile sheet (apps/mobile/components/device-import.tsx) is where the
  * recordings are actually chosen and imported.
+ *
+ * The receipt is also where the web CAN do the half the phone does at import
+ * time: a watch measures everything about a session except how hard it felt,
+ * and an imported row therefore lands unrated — worth nothing to the load model
+ * until someone answers. The phone asks the moment the import lands; here the
+ * same question hangs off the row it belongs to, because the alternative (open
+ * the session, scroll its summary to the last panel) is a thing nobody does.
  */
 export default function DeviceImportPanel({
   sessions,
@@ -35,12 +44,16 @@ export default function DeviceImportPanel({
 }) {
   const { t } = useLang();
   const prefs = useLoggerPrefs();
+  // The imported session whose rating sheet is up. Null when it's closed.
+  const [rating, setRating] = useState<LoggedSession | null>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    // Escape belongs to the TOP surface: with the rating sheet up it dismisses
+    // that, not the panel underneath it.
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !rating) onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, rating]);
 
   // Every session the log holds that carries a device's read, newest first —
   // imported outright or matched by hand, they are the same thing here: what
@@ -54,6 +67,7 @@ export default function DeviceImportPanel({
     new Date(isoTs).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
   return (
+    <>
     <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
       <div
         role="dialog"
@@ -85,6 +99,20 @@ export default function DeviceImportPanel({
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <DeviceMark provider={s.device!.provider} form="mark" height={11} on="dark" label={deviceSourceLabel(s.device) ?? undefined} />
                 <span style={{ ...disp, fontWeight: 700, fontSize: fs.body, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</span>
+                {/* THE ONE FIGURE THE WATCH DIDN'T MEASURE. Bare lime type, no
+                    chip: a bordered box here would read as one more measured
+                    value in a card full of them. */}
+                {!isRated(s) && (
+                  <button
+                    className="pressable"
+                    onClick={() => setRating(s)}
+                    title={t("session.feel.rateUnrated")}
+                    aria-label={t("session.feel.rateA11y").replace("{title}", s.title)}
+                    style={{ ...mono, flexShrink: 0, background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)" }}
+                  >
+                    {t("session.feel.rate")}
+                  </button>
+                )}
               </div>
               <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 5 }} c={ASH}>
                 {when(s.device!.start)} – {deviceImportMeta(s.device!).join(" – ")}
@@ -128,5 +156,12 @@ export default function DeviceImportPanel({
         </div>
       </div>
     </div>
+
+    {/* The rating, over the receipt — a SIBLING of the scrim, not a child of
+        it. The sheet portals to <body>, but React events still travel the
+        component tree, so nested inside the scrim every tap on a face would
+        also register as a click on "dismiss the panel". */}
+    <FeelSheet session={rating} sessions={sessions} open={rating != null} onClose={() => setRating(null)} />
+    </>
   );
 }

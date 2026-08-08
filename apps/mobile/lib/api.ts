@@ -310,15 +310,39 @@ export async function patchSessionDevice(id: string, device: DeviceWorkout | nul
   }
 }
 
+/**
+ * A row an import put into the log (or joined), named — so the client can ask
+ * about it while the athlete is still standing in front of the import. A watch
+ * measures everything about a session except how hard it felt, and that is the
+ * one value session load is built from; without these the only way to supply it
+ * is to go find the session and scroll its summary.
+ */
+export type DeviceImportLanded = {
+  id: string;
+  title: string;
+  startedAt: string;
+  completedAt: string;
+  /** The device's own moving time — the trusted duration for the load figure. */
+  minutes: number;
+  /** True for an attach onto a session the athlete had already rated. */
+  rated: boolean;
+};
+
 /** What an import changed, as the server counted it. */
-export type DeviceImportResult = { created: number; attached: number; linked: number; skipped: number };
+export type DeviceImportResult = {
+  created: number;
+  attached: number;
+  linked: number;
+  skipped: number;
+  landed: DeviceImportLanded[];
+};
 
 // Hand the device's recordings to the backend, which decides what each one
 // means against the database and writes the sessions — see the route's header
 // and core/device-import.ts. Null on any failure so a silent auto-sync can tell
 // "nothing to do" (zeros) from "didn't happen".
 export async function importDeviceWorkouts(workouts: DeviceWorkout[]): Promise<DeviceImportResult | null> {
-  if (workouts.length === 0) return { created: 0, attached: 0, linked: 0, skipped: 0 };
+  if (workouts.length === 0) return { created: 0, attached: 0, linked: 0, skipped: 0, landed: [] };
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/sessions/import-device`, {
       method: "POST",
@@ -327,7 +351,15 @@ export async function importDeviceWorkouts(workouts: DeviceWorkout[]): Promise<D
     });
     if (!res.ok) return null;
     const d = (await res.json().catch(() => ({}))) as Partial<DeviceImportResult>;
-    return { created: d.created ?? 0, attached: d.attached ?? 0, linked: d.linked ?? 0, skipped: d.skipped ?? 0 };
+    return {
+      created: d.created ?? 0,
+      attached: d.attached ?? 0,
+      linked: d.linked ?? 0,
+      skipped: d.skipped ?? 0,
+      // A build talking to an older deployment simply gets no rows to ask
+      // about — the import still lands, the ask just falls back to the row.
+      landed: Array.isArray(d.landed) ? d.landed : [],
+    };
   } catch {
     return null;
   }
