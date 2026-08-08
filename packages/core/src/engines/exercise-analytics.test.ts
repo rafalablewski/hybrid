@@ -10,6 +10,8 @@ import {
   paceCurve,
   recentRunDeltas,
   blockCompare,
+  e1rmPointReading,
+  pacePointReading,
 } from "./exercise-analytics";
 import type { LoggedSession, StrengthSet } from "./session";
 
@@ -191,3 +193,29 @@ describe("blockCompare", () => {
   });
 });
 
+describe("holding a session's per-lift trend", () => {
+  const lifts = [
+    { date: "2026-05-04T10:00:00.000Z", e1rm: 182.5 },
+    { date: "2026-05-18T10:00:00.000Z", e1rm: 195 },
+    { date: "2026-06-01T10:00:00.000Z", e1rm: 190 },
+  ];
+  const paces = [
+    { date: "2026-05-04T10:00:00.000Z", secPerKm: 342 },
+    { date: "2026-05-18T10:00:00.000Z", secPerKm: 318 },
+    { date: "2026-06-01T10:00:00.000Z", secPerKm: 327 },
+  ];
+
+  it("reads an e1RM point in the athlete's unit and calls the PEAK the best", () => {
+    expect(e1rmPointReading(lifts, 1, "kg")).toMatchObject({ value: "195", unit: "kg", best: true });
+    expect(e1rmPointReading(lifts, 2, "kg")!.best).toBe(false);
+    expect(e1rmPointReading(lifts, 0, "lb")!.unit).toBe("lb");
+    expect(e1rmPointReading(lifts, 3, "kg")).toBeNull();
+  });
+
+  it("reads a pace point at the clock — FASTEST is the best, not latest", () => {
+    expect(pacePointReading(paces, 1)).toMatchObject({ value: "5:18", unit: "/km", best: true });
+    expect(pacePointReading(paces, 2)!.best).toBe(false);
+    expect(pacePointReading(paces, 0)!.weekStart).toBe(paces[0]!.date);
+    expect(pacePointReading([], 0)).toBeNull();
+  });
+});

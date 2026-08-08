@@ -10,7 +10,10 @@
  * is deliberately not built, see capabilities).
  */
 
-import type { LoggedSession } from "./session";
+import type { E1rmPoint, LoggedSession, PacePoint } from "./session";
+import type { ChartReading } from "../chart-scrub";
+import { fmtWeight, splitFigure, type WeightUnit } from "../units";
+import { mmss } from "../format";
 import { e1rm, effectiveSetLoadKg, isCardio, isWorkingSet } from "./session";
 import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
@@ -532,3 +535,35 @@ export function blockCompare(
   return { kind: "strength", weeks, weeklyCur: cur.weekly, weeklyPrev: prev.weekly, cur: cur.m, prev: prev.m };
 }
 
+/* ── HOLDING A SESSION'S PER-LIFT TRENDS ─────────────────────────────────── */
+
+/**
+ * One held point of an e1RM trend — the strip the session summary draws under
+ * each lift, and the line the web twin draws for its heaviest one.
+ *
+ * The strip has no x-axis of its own (it is 30dp tall and sits under the sets
+ * it belongs to), so the date has to come from the point rather than from a
+ * label beside it. `best` is the series' own peak, which is the bar the strip
+ * would otherwise only distinguish by being tallest.
+ */
+export function e1rmPointReading(points: E1rmPoint[], index: number, units: WeightUnit): ChartReading | null {
+  const p = points[index];
+  if (!p) return null;
+  const [value, unit] = splitFigure(fmtWeight(p.e1rm, units));
+  return { index, weekStart: p.date, value, unit, efforts: null, best: p.e1rm === Math.max(...points.map((x) => x.e1rm)) };
+}
+
+/** One held point of a pace trend — FASTEST is the best, on every discipline,
+ *  because storage is canonical seconds per km. */
+export function pacePointReading(points: PacePoint[], index: number): ChartReading | null {
+  const p = points[index];
+  if (!p) return null;
+  return {
+    index,
+    weekStart: p.date,
+    value: mmss(p.secPerKm),
+    unit: "/km",
+    efforts: null,
+    best: p.secPerKm === Math.min(...points.map((x) => x.secPerKm)),
+  };
+}
