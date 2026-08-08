@@ -96,7 +96,12 @@
     align-items:center;justify-content:center;gap:8px;padding:12px;text-align:center;
     background:var(--ink2);border:1px solid var(--line);border-radius:16px;color:var(--ash);cursor:pointer;
   }
-  .tail .plate{width:38px;height:38px;border-radius:999px;border:1px solid var(--line);display:grid;place-items:center;flex:none}
+  /* SHIPPED REVISION (Aug 2026) — the tail lost its card chrome. See the note
+     on 00: the exit carries no THING, so a filled bordered box at the end of a
+     rail of things read as one more item that turned out to be empty. The other
+     options keep the card fill so they read as they were proposed. */
+  .tail.plain{background:none;border:none;border-radius:0}
+  .tail .plate{width:44px;height:44px;border-radius:999px;border:1px solid var(--line);display:grid;place-items:center;flex:none}
   .tail .cap{font:500 11px/1.35 var(--mono);letter-spacing:.12em;text-transform:uppercase}
   .tail.count{flex-basis:126px;justify-content:flex-start;align-items:stretch;text-align:left;gap:6px}
   .tail.count .fig{font:500 26px/1 var(--mono);letter-spacing:-.03em;color:var(--chalk)}
@@ -181,13 +186,22 @@
   <!-- ══ SHIPPED ══════════════════════════════════════════ -->
   <div class="shipped">
     <p class="tagline">Shipped — both clients</p>
-    <h2><span>00</span>The tail card</h2>
+    <h2><span>00</span>The tail</h2>
     <p class="note">
-      The last card in the scroller, wearing the <strong>card form, not link form</strong>: same ink2 fill, same
-      hairline, the rail’s own radius, so it belongs to the row rather than floating over it. The arrow sits in a
-      ringed plate at card centre; the label is mono uppercase in ash — a destination, not a shout. It is
-      <strong>discovered by the same gesture that exhausts the rail</strong>, and reaching it is how you know
-      you’ve seen everything, which a header link could never tell you.
+      The last thing in the scroller: a ringed arrow plate with a mono-uppercase label in ash beneath it — a
+      destination, not a shout. It is <strong>discovered by the same gesture that exhausts the rail</strong>, and
+      reaching it is how you know you’ve seen everything, which a header link could never tell you.
+    </p>
+    <p class="note">
+      <strong>Revised Aug 2026 — it is no longer a card.</strong> It first shipped wearing the card form (ink2
+      fill, hairline, the rail’s own radius and shadow) on the theory that it should “belong to the row”. That was
+      wrong twice over. Every card in a rail carries a <em>thing</em> — a coach, a recipe, a business, a metric —
+      and the exit carries none, so a filled bordered box at the end read as one more item that turned out to be
+      empty, and people <em>counted</em> it: six verified businesses where there are five. Worse, each rail sized
+      its tail to its own cards, so the same door was drawn at five different widths, radii and shadows — a
+      component built to make the exit consistent whose props made it inconsistent. Chromeless fixes both: one
+      drawing everywhere, and the only per-rail prop left is the slot <em>width</em>, which exists for the snap
+      grid (an odd-width final child leaves the last snap short and the tail half-cut), not for looks.
     </p>
     <div class="frames">
       <div class="phone">
@@ -208,7 +222,7 @@
             <div class="zbar"><i style="flex:83;background:var(--lime)"></i><i style="flex:17;background:var(--clay)"></i></div>
             <div class="rows"><div>Easy<b>83%</b></div><div>Hard<b>17%</b></div></div>
           </div>
-          <div class="tail">
+          <div class="tail plain">
             <span class="plate"><svg width="14" height="11" viewBox="0 0 17 13" fill="none"><path d="M1 6.5h13.5M9.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             <span class="cap">See all</span>
           </div>

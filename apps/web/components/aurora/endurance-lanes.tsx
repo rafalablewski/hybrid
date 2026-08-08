@@ -300,15 +300,16 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         {lane.paceTrend.length > 1 && <TrendTile lane={lane} t={t} />}
         {zonePercents(lane.zones).any && <ZoneTile lane={lane} t={t} />}
         {lane.last && <LastTile lane={lane} t={t} />}
-        {/* THE EXIT — last card in the rail, so it's found by the same swipe
-            that exhausts the tiles. `radius`/`minHeight` match Tile so it reads
-            as one more card in the row rather than a button parked at the end;
-            no shadow, because these tiles are flat. */}
+        {/* THE EXIT — last thing in the rail, so it's found by the same swipe
+            that exhausts the tiles. Chromeless (see rail-tail.tsx): a lane's
+            tiles each carry a metric, the exit carries none, so it must not
+            draw as a sixth tile that turned out to be blank. `minHeight`
+            matches Tile only so the rail keeps one height. */}
         {onOpen && canOpen && (
           <RailTail
             onOpen={() => onOpen(lane.discipline)}
             a11y={`${t("w.explore.seeAll")} – ${t(lane.labelKey)}`}
-            w={112} radius={16} minHeight={118} shadow={false}
+            w={112} minHeight={118}
           />
         )}
       </div>
