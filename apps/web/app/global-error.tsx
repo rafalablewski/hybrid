@@ -41,6 +41,30 @@ export default function GlobalError({
           The app failed to start. Please retry.
           {error.digest ? ` (ref: ${error.digest})` : ""}
         </p>
+        {/* Same detail block as error.tsx and the mobile boundary: a crash you
+            cannot read is a crash you cannot report. */}
+        <pre
+          style={{
+            maxWidth: 520,
+            maxHeight: 190,
+            overflow: "auto",
+            margin: 0,
+            padding: 14,
+            textAlign: "left",
+            borderRadius: 16,
+            border: "1px solid #2a2d2a",
+            background: "#141614",
+            color: "#8b8f86",
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            fontSize: 11,
+            lineHeight: 1.55,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        >
+          {[error.name, error.message].filter(Boolean).join(": ")}
+          {error.stack ? `\n\n${error.stack.split("\n").slice(1, 5).join("\n")}` : ""}
+        </pre>
         <button className="pressable"
           onClick={reset}
           style={{
