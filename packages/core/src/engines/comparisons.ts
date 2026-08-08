@@ -1,4 +1,5 @@
 import { fmtTonnage, type WeightUnit } from "../units";
+import { roundKm } from "../distance";
 import { isWorkingSet, sessionVolume, type SessionBlock } from "./session";
 
 /**
@@ -101,7 +102,7 @@ export function sessionFunFact(blocks: SessionBlock[], bodyweightKg?: number | n
       if (typeof b.distance === "number" && Number.isFinite(b.distance)) distanceKm += b.distance;
     }
   }
-  return workoutFunFact({ volume: sessionVolume(blocks, false, bodyweightKg), reps, distanceKm: Math.round(distanceKm * 10) / 10 });
+  return workoutFunFact({ volume: sessionVolume(blocks, false, bodyweightKg), reps, distanceKm: roundKm(distanceKm) });
 }
 
 /** The formatted amount for a fun fact (tonnage for volume, km, or a rep count). */

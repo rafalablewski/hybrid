@@ -9,11 +9,11 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { ACard, AField, GUTTER, RADIUS, withAlpha } from "./kit";
+import { ACard, AField, GUTTER, RADIUS, withAlpha, DockRail, DockChip } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
 import MeasuredOutcome from "../measured-outcome";
-import PlanCoverScreen, { CoverScreen, PlanDockPill, COVER_CONTENT_PAD, type CoverScreenApi } from "../plan-hero";
+import PlanCoverScreen, { CoverScreen, PlanDockPill, COVER_GUTTER, type CoverScreenApi } from "../plan-hero";
 
 /** Cover ink — the goal tiles are dark in BOTH themes, exactly like the covers
  *  they expand into (Explore's PlanCover recipe). */
@@ -115,36 +115,22 @@ export default function AuroraPlans() {
 /** The category chips, riding the scaffold's `rail` slot so they dock beneath
  *  the collapsed bar and stay reachable at any scroll position. They JUMP, they
  *  don't filter — the shelves already are the categories, so narrowing to one
- *  would just empty the screen. Full-bleed per the house rule. */
+ *  would just empty the screen, which is why they are `role="anchor"` chips and
+ *  can never light up. See packages/core/src/dock-rail.ts. Web twin: the same
+ *  function name.
+ *
+ *  The gutter is the COVER scaffold's (16), not the app's GUTTER (12): a
+ *  resting chip has to line up with the column it sits above, and this screen's
+ *  children are padded at 16. That mismatch is why the chips used to rest 4dp
+ *  to the left of the shelf heads beneath them. */
 function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c: string) => void }) {
-  const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <ScrollView
-      horizontal
-      // Labelled, but deliberately NOT role="tablist" — these scroll to a
-      // section, they don't switch panels, and the chips are buttons already.
-      accessibilityLabel={t("w.train.plans.jumpToCategory")}
-      showsHorizontalScrollIndicator={false}
-      // CoverScreen's rail slot spans the full width and adds NO padding of its
-      // own (unlike the hero scaffold's, which re-pads its child) — so this
-      // padding IS the screen gutter, and a negative margin here would drag the
-      // first chip under the bezel. Full-bleed by construction; the only thing
-      // that was wrong was writing the number instead of the token.
-      contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 8 }}
-    >
+    <DockRail label={t("w.train.plans.jumpToCategory")} gutter={COVER_GUTTER}>
       {categories.map((c) => (
-        <Pressable
-          key={c}
-          onPress={() => onJump(c)}
-          accessibilityRole="button"
-          hitSlop={6}
-          style={({ pressed }) => ({ backgroundColor: pressed ? withAlpha(C.chalk, 0.1) : "transparent", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 })}
-        >
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c}</Text>
-        </Pressable>
+        <DockChip key={c} role="anchor" label={c} onPress={() => onJump(c)} />
       ))}
-    </ScrollView>
+    </DockRail>
   );
 }
 
@@ -177,8 +163,8 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
         // Cancel the SCAFFOLD's child padding, not the screen gutter — a
         // shelf lives inside CoverScreen, so bleeding by GUTTER left the cards
         // 4px short of the true edge.
-        style={{ marginHorizontal: -COVER_CONTENT_PAD }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_CONTENT_PAD }}
+        style={{ marginHorizontal: -COVER_GUTTER }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_GUTTER }}
       >
         {group.goals.map((g) => (
           <GoalTile key={g.id} goal={g} onOpen={() => pick(g.id)} />

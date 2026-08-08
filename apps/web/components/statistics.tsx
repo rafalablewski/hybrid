@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { fs, space, sessionBuckets, weeklyRecap, type StatRange } from "@hybrid/core";
+import { fs, space, fmtKm, sessionBuckets, weeklyRecap, type StatRange } from "@hybrid/core";
 import { useSessions } from "@/lib/use-sessions";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { AuroraIcon } from "@/components/aurora/icons";
@@ -83,7 +83,7 @@ export default function StatisticsScreen({ embedded = false }: { embedded?: bool
 
         <div style={{ display: "flex", gap: space.md, marginTop: 16 }}>
           <Mini icon="verified" label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} color={C("lime")} radius={r.card} />
-          <Mini icon="navigation" label={t("w.analyze.stats.distance")} value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} color={C("lime")} radius={r.card} />
+          <Mini icon="navigation" label={t("w.analyze.stats.distance")} value={hasData ? fmtKm(recap.distanceKm) : "—"} color={C("lime")} radius={r.card} />
           <Mini icon="play" label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C("lime")} radius={r.card} />
         </div>
 

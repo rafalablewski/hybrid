@@ -9,6 +9,7 @@ import {
   sheetGesture,
   resolveSheetRelease,
   rubberBand,
+  sheetPadBottom,
   type SheetDetent,
 } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
@@ -42,6 +43,11 @@ import { F } from "../../lib/ui";
  *
  * DETENTS. `detents` defaults to ["large"], which is the old single-height
  * behaviour. Pass ["medium","large"] for a sheet that opens short and expands.
+ *
+ * THE BOTTOM PAD IS THE SHEET'S, not the caller's. It comes from @hybrid/core
+ * `sheetPadBottom`, the one number both clients read, and it is MAX'd against
+ * the home-indicator inset rather than added to it. Children must not trail a
+ * pad of their own — stacked pads are what put a dead band under every sheet.
  *
  * PRESENTATION. While the sheet is up the presenting screen RECEDES (scales
  * back, corners round, dims) — see lib/sheet-recede.tsx. A Modal renders in its
@@ -249,7 +255,11 @@ export default function Sheet({
             borderColor: C.line,
             paddingHorizontal: 20,
             paddingTop: 12,
-            paddingBottom: insets.bottom + 20,
+            // ONE pad under the last row — @hybrid/core `sheetPadBottom`. The
+            // home-indicator inset is its FLOOR, not an addition: `insets.bottom
+            // + 20` was 54dp on any notched iPhone against the web twin's 24,
+            // and every child that trailed its own pad stacked on top of that.
+            paddingBottom: sheetPadBottom(insets.bottom),
             transform: [{ translateY: y }],
             opacity: panelOpacity,
             shadowColor: "#000",
@@ -264,8 +274,10 @@ export default function Sheet({
           <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Drag to resize or dismiss">
             {header}
           </View>
+          {/* No contentContainer pad on the scroller: the panel's own
+              paddingBottom sits BELOW it, so anything here is a second pad. */}
           {scroll ? (
-            <ScrollView style={fixedH ? { flex: 1 } : undefined} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 4 }}>
+            <ScrollView style={fixedH ? { flex: 1 } : undefined} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               {children}
             </ScrollView>
           ) : (

@@ -63,9 +63,9 @@ import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
+import { AuroraScreen, ACard, AField, APill, AHeading, DockRail, DockChip, GUTTER, RADIUS, CARD_PAD, Ring, withAlpha, ASection } from "./kit";
 import { HeroNav } from "./hero";
-import { CoverScreen, COVER_CONTENT_PAD, type CoverScreenApi } from "../plan-hero";
+import { CoverScreen, COVER_GUTTER, type CoverScreenApi } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
@@ -160,31 +160,19 @@ const TILE_H = 140;
 /** The collection chips, riding the scaffold's `rail` slot so they dock beneath
  *  the collapsed bar and stay reachable at any scroll position. They JUMP, they
  *  don't filter — the shelves already ARE the collections, so narrowing to one
- *  would just empty the screen. */
+ *  would just empty the screen, which is why they are `role="anchor"` chips
+ *  that can never light up (packages/core/src/dock-rail.ts). Web twin: the
+ *  same name. */
 function CollectionRail({ keys, onJump }: { keys: RecipeCollection[]; onJump: (key: RecipeCollection) => void }) {
-  const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <ScrollView
-      horizontal
-      accessibilityLabel={t("w.recovery.nutrition.jumpToCollection")}
-      showsHorizontalScrollIndicator={false}
-      // The rail slot spans the full width and adds no padding of its own, so
-      // this padding IS the screen gutter (aurora/plans.tsx CategoryRail).
-      contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 8 }}
-    >
+    // The gutter is the COVER scaffold's (16), not the app's GUTTER (12): a
+    // resting chip has to line up with the shelf heads it sits above.
+    <DockRail label={t("w.recovery.nutrition.jumpToCollection")} gutter={COVER_GUTTER}>
       {keys.map((k) => (
-        <Pressable
-          key={k}
-          onPress={() => onJump(k)}
-          accessibilityRole="button"
-          hitSlop={6}
-          style={({ pressed }) => ({ backgroundColor: pressed ? withAlpha(C.chalk, 0.1) : "transparent", borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 })}
-        >
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{collectionTitle(k, t)}</Text>
-        </Pressable>
+        <DockChip key={k} role="anchor" label={collectionTitle(k, t)} onPress={() => onJump(k)} />
       ))}
-    </ScrollView>
+    </DockRail>
   );
 }
 
@@ -215,8 +203,8 @@ function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -COVER_CONTENT_PAD }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_CONTENT_PAD }}
+        style={{ marginHorizontal: -COVER_GUTTER }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_GUTTER }}
       >
         {shelf.recipes.map((r) => <RecipeTile key={r.id} recipe={r} onOpen={() => openRecipe(r)} />)}
       </ScrollView>
@@ -1471,7 +1459,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         })}
 
         {/* Title plate — Name + the personal Subname, one surface. */}
-        <LinearGradient colors={[`${C.lime}12`, C.ink2]} start={{ x: 0.1, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}>
+        <LinearGradient colors={[`${C.lime}12`, C.ink2]} start={{ x: 0.1, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD }}>
           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.recovery.nutrition.foodName")}</Text>
           <TextInput value={createForm.name} onChangeText={(v) => setCF({ name: v })} placeholder={t("w.recovery.nutrition.foodNamePh")} placeholderTextColor="#3a3d34" accessibilityLabel={t("w.recovery.nutrition.foodName")} style={{ fontFamily: F.black, fontSize: 27, letterSpacing: -0.5, color: C.chalk, padding: 0 }} />
           <View style={{ height: 1, backgroundColor: C.line, marginVertical: 16 }} />
@@ -1683,7 +1671,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </View>
 
         {/* Macro strip — the same idiom the recipe detail uses. */}
-        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: 16, paddingHorizontal: 6, marginTop: 16 }}>
+        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingVertical: CARD_PAD, paddingHorizontal: 6, marginTop: 16 }}>
           {([["w.recovery.nutrition.protein", f.facts.protein, C.blue], ["w.recovery.nutrition.carbs", f.facts.carbs, C.amber], ["w.recovery.nutrition.fat", f.facts.fat, C.violet]] as const).map(([lab, val, col]) => (
             <View key={lab} style={{ flex: 1, alignItems: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: 21, color: C.chalk }}>{val}<Text style={{ fontSize: 12, color: C.ash }}>g</Text></Text>
@@ -2220,7 +2208,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <RailTail
               onOpen={() => (recipesUnlocked ? setView("recipes") : (onUpgrade ? onUpgrade() : router.push("/upgrade")))}
               a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.recipes")}`}
-              premium={!recipesUnlocked} w={recipeCardW} radius={RADIUS.card}
+              premium={!recipesUnlocked} w={recipeCardW}
             />
           </ScrollView>
 
@@ -2233,6 +2221,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;
               return (
+                /* a RAIL item, not a full-width card — it keeps the compact inset. */
                 <PressScale key={src.id} onPress={() => openSourcePage(src.id, "home")} accessibilityRole="button" accessibilityLabel={src.name} style={{ width: sourceCardW, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, backgroundColor: C.ink2, padding: 16 }}>
                   {/* The business's own logo leads the card — this rail IS the
                       businesses, so recognising one at a glance is its whole job. */}
@@ -2248,7 +2237,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <RailTail
               onOpen={() => setView("sources")}
               a11y={`${t("w.explore.seeAll")} – ${t("w.recovery.nutrition.verifiedFoods")}`}
-              w={sourceCardW} radius={RADIUS.card}
+              w={sourceCardW}
             />
           </ScrollView>
       </>
@@ -2661,7 +2650,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       )}
 
       <Sheet visible={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
-        <View style={{ gap: 10, paddingBottom: 8 }}>
+        <View style={{ gap: 10 }}>
           {GOALS.map((g) => {
             const on = goal === g.id;
             return (
@@ -2864,8 +2853,16 @@ function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, c
     { id: "maintain", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
     { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
   ];
+  /* The wizard OPTION ROW — the app's standard for this lives in the onboarding
+     wizard (aurora/onboarding.tsx `Choice`, and the web twin): RADIUS.field at
+     padding 16, a 1px border that swaps line → lime when picked, and a lime wash
+     at 8% behind it. This row drew its selected state by widening its own border
+     to 2 and taking a pixel off the padding to compensate — so picking an option
+     nudged its label; web meanwhile faked the same second border with a shadow
+     ring, on a row it had built at the CARD radius. One control, two shapes and
+     two techniques. Now both read the standard. */
   const choice = (on: boolean, label: string, sub: string, onPress: () => void) => (
-    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink2, borderWidth: on ? 2 : 1, borderColor: on ? C.lime : C.line, borderRadius: 16, padding: on ? 15 : 16, marginBottom: 10 }}>
+    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: on ? withAlpha(C.lime, 0.08) : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16, marginBottom: 10 }}>
       <View style={{ flex: 1 }}><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{sub}</Text></View>
       <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={C.onAccent} /> : null}</View>
     </Pressable>

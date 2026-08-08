@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
   fmtWeight, splitFigure, strengthPrProof,
-  resolveActivityRange, groupDistanceDisplay, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
+  resolveActivityRange, groupDistanceDisplay, fmtKm, kmValue, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage, durations,
   figureDeltaPct, figureDirection,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
@@ -13,10 +13,11 @@ import {
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import Sheet from "./sheet";
-import { ADrawer, GUTTER, withAlpha } from "./kit";
+import { ADrawer, GUTTER, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
+import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 // The drawer's own motion moved into ADrawer; this is here for the records
@@ -110,9 +111,13 @@ const PRS_BLEED = GUTTER;
  *  inside the card, so it must follow the card. The two were both written as
  *  bare numbers, which is how the 16 -> 12 gutter sweep came to "fix" this one
  *  into 12 as well, insetting the compartment 4dp from the card on both sides
- *  and shifting its text off the figures above it (web, still 16, was right).
- *  Named, the mistake is no longer expressible. */
-const CARD_PAD = 16;
+ *  and shifting its text off the figures above it. Named, the mistake is no
+ *  longer expressible.
+ *
+ *  The VALUE now comes from the kit (`CARD_PAD`), which is the point: naming it
+ *  fixed which container it belonged to but not what it should be, and it sat
+ *  at 16 while Performance sat at 20. Mirrors web's CARD_PAD. */
+const CARD_PAD = SHARED_CARD_PAD;
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -131,27 +136,45 @@ function Lead({ template, word, color }: { template: string; word: string | null
   );
 }
 
-/** One destination row — the door to everything past this period. Exported
- *  since wave 3: the doors render at the END of the Progress cluster (in
- *  home.tsx), as the whole cluster's single exit point, not under this card. */
-export function DoorRow({ title, sub, glyph, onPress }: { title: string; sub: string; glyph: string; onPress: () => void }) {
+/**
+ * One destination row — the door to everything past this period. Exported
+ * since wave 3: the doors render at the END of the Progress cluster (in
+ * home.tsx), as the whole cluster's single exit point, not under this card.
+ *
+ * CHROMELESS since Aug 2026, the same pass that un-carded the rail tail
+ * (aurora/rail-tail.tsx). A door is not a thing you own, it is the way out of
+ * the things you own — so it stops wearing the ink2 fill, the hairline and the
+ * radius that every CARD on Today wears, and reads as type on the ground. That
+ * also ends the reading where a stack of two of them looked like two more
+ * cards' worth of content below the week.
+ *
+ * THE RING IS THE GRAMMAR. A door carries its glyph in a ringed plate, exactly
+ * as the rail tail carries its arrow; an EXPANDER — something that grows the
+ * thing in place rather than opening a screen — carries a bare ＋/− with no
+ * ring (the Other-sports tail, the endurance block's All-sports control). So
+ * the ring says "this leaves", and nothing in either shape is a bordered box.
+ * The rows separate by whitespace, not a rule: a hairline under a GroupMark is
+ * the label-plus-rule divider the cluster markers deliberately retired.
+ */
+export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title: string; sub: string; glyph: string; onPress: () => void; premium?: boolean }) {
   const { palette: C } = useTheme();
+  const pa = usePremiumAccent();
+  const glyphColor = premium ? pa.text : C.ash;
   return (
     <PressScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title} – ${sub}`}
       style={{
-        flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10,
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-        paddingHorizontal: 16, paddingVertical: 12,
+        flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14,
+        paddingHorizontal: 2, paddingVertical: 4,
       }}
     >
       <View style={{
-        width: 32, height: 32, borderRadius: 12, backgroundColor: C.ink,
-        borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center",
+        width: 32, height: 32, borderRadius: 16,
+        borderWidth: 1, borderColor: premium ? pa.text : C.line, alignItems: "center", justifyContent: "center",
       }}>
-        <Text style={{ fontSize: 13, color: C.ash }}>{glyph}</Text>
+        <Text style={{ fontSize: 13, color: glyphColor }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
@@ -325,11 +348,11 @@ export default function AuroraWeekVerdict({
   const prCellW = Math.max(120, Math.round((railWidth - PRS_BLEED * 2 - PRS_GAP) / 2));
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
-  // minutes read as hours to one decimal, distance to one decimal km.
+  // minutes read as hours to one decimal, distance at the shared km precision.
   const fmt = (metric: string, value: number) =>
     metric === "tonnage" ? fmtTonnage(value, units)
       : metric === "hours" ? String(Math.round(value / 6) / 10)
-        : metric === "distance" ? String(Math.round(value * 10) / 10)
+        : metric === "distance" ? kmValue(value)
           : String(Math.round(value));
 
   const fmtMinutes = (m: number) =>
@@ -474,7 +497,7 @@ export default function AuroraWeekVerdict({
           the card gives its own up rather than fencing the panel in. */}
       <View style={{
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28,
-        paddingHorizontal: CARD_PAD, paddingTop: 16, paddingBottom: open ? 0 : 16, ...cardShadow(scheme),
+        paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD, ...cardShadow(scheme),
       }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
@@ -576,7 +599,7 @@ export default function AuroraWeekVerdict({
               // the card's bottom now.
               backgroundColor: C.ink, borderTopWidth: 1, borderTopColor: C.line,
               marginHorizontal: -CARD_PAD, marginTop: 12,
-              paddingHorizontal: CARD_PAD, paddingTop: 14, paddingBottom: 16,
+              paddingHorizontal: CARD_PAD, paddingTop: 14, paddingBottom: CARD_PAD,
               borderBottomLeftRadius: 27, borderBottomRightRadius: 27,
             }}>
               <MetricDetail
@@ -778,7 +801,7 @@ function MetricDetail({
     } else {
       if (it.minutes > 0) bits.push(fmtMinutes(it.minutes));
       if (it.tonnage > 0) bits.push(fmtTonnage(it.tonnage, units));
-      if (it.distanceKm > 0) bits.push(`${Math.round(it.distanceKm * 10) / 10} km`);
+      if (it.distanceKm > 0) bits.push(fmtKm(it.distanceKm));
     }
     return bits.join(" – ");
   };

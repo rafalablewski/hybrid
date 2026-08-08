@@ -3,6 +3,7 @@ import { localDayKey } from "../day-key";
 import { sessionVolume } from "./session";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { deviceTrueSessions } from "../device-truth";
+import { roundKm } from "../distance";
 import {
   newPrsInSession,
   newCardioPrsInSession,
@@ -162,7 +163,7 @@ export function weeklyRecap(sessions: LoggedSession[], now = Date.now(), bw?: Bo
     minutes,
     activeDays: days.size,
     lifts: lifts.size,
-    distanceKm: Math.round(distanceKm * 10) / 10,
+    distanceKm: roundKm(distanceKm),
     prs,
     cardioPrs,
     // The week's blocks span several dates; the current weight is a fair basis

@@ -21,28 +21,36 @@ import { F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
  * for the section's meta, and spends chartreuse — the "go" colour — on a link
  * repeated once per lane.
  *
- * A tail card puts the door where the corridor ends. It is the last card in the
+ * A tail puts the door where the corridor ends. It is the last thing in the
  * scroller, so it is DISCOVERED by the same gesture that exhausts the rail: you
  * swipe, you run out of content, and the next thing under your thumb is the way
  * in. It also self-documents the rail's length — reaching the tail is how you
  * know you've seen everything — which the header link could never do.
  *
- * It wears the CARD form, not link form: same ink2 fill, same hairline, the
- * rail's own radius, so it belongs to the row rather than floating over it. The
- * arrow sits in a ringed plate at card centre (the coach rail's drawing, which
- * this component now supplies to every rail so there is one implementation
- * rather than four copies), and the label is mono uppercase in ash — a
- * destination, not a shout.
+ * IT IS NOT A CARD (Aug 2026). It first shipped wearing the card form — ink2
+ * fill, hairline, the rail's own radius — on the theory that it should "belong
+ * to the row". That was wrong twice over. A rail's cards each carry a THING (a
+ * coach, a recipe, a business, a metric); the exit carries no thing, so a
+ * filled bordered box at the end reads as one more item that turned out to be
+ * empty, and the athlete counts it — "six verified businesses" when there are
+ * five. And every rail sized its own tail to its own card, so the same door was
+ * drawn at five different widths, radii and shadows: the component existed to
+ * make the exit consistent while its props made it inconsistent.
+ *
+ * So the tail is now CHROMELESS on every rail: no fill, no border, no shadow —
+ * the ringed arrow plate and a mono-uppercase label in ash, centred on the ink.
+ * The slot still matches the host rail's card width (`w`), because that is a
+ * SCROLL concern, not a decorative one: under `snapToInterval` an odd-width
+ * final child puts the content end off the grid and the last snap leaves the
+ * tail half-cut. Width is where a rail may differ; the drawing is not.
  */
 export default function RailTail({
   onOpen,
   label,
   a11y,
   w = 132,
-  radius = 28,
   minHeight,
   premium = false,
-  shadow = true,
 }: {
   onOpen: () => void;
   /** Defaults to the shared "See all". Pass a destination-specific label where
@@ -55,41 +63,28 @@ export default function RailTail({
    *  cosmetic: an odd-width final child puts the content end off the snap grid,
    *  so the last snap lands short and leaves the tail half-cut. */
   w?: number;
-  /** Match the rail's card radius. */
-  radius?: number;
   /** Floor for rails whose cards size themselves (the tail has no content to
    *  give it height). */
   minHeight?: number;
   /** ✦ — the destination is behind Full. Carries the premium accent, not lime. */
   premium?: boolean;
-  /** Off inside dense rails whose cards are flat (the endurance lanes). */
-  shadow?: boolean;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const pa = usePremiumAccent();
   const text = label ?? t("w.explore.seeAll");
   const color = premium ? pa.text : C.ash;
-  // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
-  // Kyoto Hour, the usual black bloom on Aurora — never black on washi.
-  const cardShadow = !shadow
-    ? null
-    : scheme === "light"
-      ? ({ shadowColor: "#584934", shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const)
-      : ({ shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const);
   return (
     <Pressable
       onPress={onOpen}
       accessibilityRole="button"
       accessibilityLabel={a11y ?? text}
       style={{
-        width: w, minHeight, alignItems: "center", justifyContent: "center", gap: 8, padding: 12,
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: radius,
-        ...(cardShadow ?? {}),
+        width: w, minHeight, alignItems: "center", justifyContent: "center", gap: 10, padding: 12,
       }}
     >
-      <View style={{ width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: premium ? pa.text : C.line, alignItems: "center", justifyContent: "center" }}>
-        <ArrowGlyph size={14} color={color} />
+      <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: premium ? pa.text : C.line, alignItems: "center", justifyContent: "center" }}>
+        <ArrowGlyph size={15} color={color} />
       </View>
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}

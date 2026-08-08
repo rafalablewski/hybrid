@@ -1027,7 +1027,7 @@ export default function AppShell() {
             soften under Aurora), like the tools below. Everyone (casual+). The
             Explore screen that used to front these is gone: its coach rail sits
             on Today and each destination below is reached from More. */}
-        {screen === "feed" && <SocialFeed onNavigate={setScreen} />}
+        {screen === "feed" && <SocialFeed onNavigate={setScreen} onOpenSession={openSession} />}
         {screen === "discover" && <SocialDiscover />}
         {screen === "leaderboard" && <SocialLeaderboard />}
         {screen === "coaches" && <CoachesScreen />}

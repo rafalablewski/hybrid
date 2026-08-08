@@ -39,6 +39,7 @@ import type { CardioBlock, CardioDiscipline, LoggedSession, StrengthBlock } from
 import { cardioDiscipline, sessionVolume, workingSets } from "./engines/session";
 import { bwAt, type BodyweightInput } from "./bodyweight";
 import { deviceTrueSessions } from "./device-truth";
+import { roundKm } from "./distance";
 import { DISCIPLINE_META } from "./endurance";
 import { OLYMPIC_SPORTS, sportDistanceUnit } from "./olympic-sports";
 import { addLocalDays, localMidnightMs, localMondayMs } from "./day-key";
@@ -560,5 +561,5 @@ export const activityDetailKey = (m: ActivityMetric) =>
  * distance metric has per-group units; everything else is already canonical.
  */
 export function groupDistanceDisplay(km: number, unit: "km" | "m"): string {
-  return unit === "m" ? String(Math.round(km * 1000)) : String(Math.round(km * 100) / 100);
+  return unit === "m" ? String(Math.round(km * 1000)) : String(roundKm(km));
 }

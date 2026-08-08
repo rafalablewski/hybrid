@@ -32,7 +32,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { useFitnessLevel } from "../../lib/use-fitness-level";
 import { leading, fs, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { AuroraScreen, RADIUS, ASection } from "./kit";
+import { AuroraScreen, RADIUS, CARD_PAD, ASection } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
 import PrivateTab from "./private-tab";
 import { AuroraIcon } from "./icons";
@@ -219,6 +219,8 @@ export default function AuroraProfile() {
       {/* SET UP YOUR PROFILE — owner-only nudge at the very top; hides once the
           profile has a photo + bio. (This screen is always your own.) */}
       {socialP && !sComplete && (
+        /* an icon-tile ROW (tile + text + chevron), not a full-width card — it
+           keeps the compact inset. See CARD_PAD for the variants that stay 16. */
         <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.card, padding: 16, marginBottom: 16 }}>
           <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
@@ -416,7 +418,7 @@ export default function AuroraProfile() {
       {tab === "activity" && (
         <View style={{ marginTop: 16 }}>
           {/* 26-week training heatmap */}
-          <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, backgroundColor: C.ink2, padding: 16 }}>
+          <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, backgroundColor: C.ink2, padding: CARD_PAD }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8, paddingHorizontal: 2 }}>
               {monthLabels(heat).map((m, i) => (
                 <Text key={i} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>{m}</Text>

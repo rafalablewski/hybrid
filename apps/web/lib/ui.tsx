@@ -8,6 +8,31 @@ import { colors, ROLE_COLOR, type AccentKey, type SemanticRole, fs, space } from
 //   import { fs, space } from "@/lib/ui"  →  fontSize: fs.body, gap: space.lg
 export { fs, space };
 
+/**
+ * THE CARD'S INNER PADDING — one number for the whole app.
+ *
+ * The FULL-WIDTH card (ink2, 1px line, r28, shadow-card) is inset by this on
+ * every edge, and a bleed out of one is written `-CARD_PAD` so it names the
+ * container it is escaping. The mobile twin is `CARD_PAD` in
+ * aurora/kit.tsx — the value ACard is built on — and both read `space.xl`, so
+ * neither client can move alone.
+ *
+ * Why it is a token and not a literal: it drifted twice. Today's feeling card,
+ * done-floor host and week verdict were hand-rolled at 16 against Performance's
+ * 20; then the sweep for that found the whole History, Plans, Nutrition and
+ * Profile side of the app carrying its own mixture — including two SIBLING
+ * cards, stacked, at 20 and 16, and one component (History's swipe card, Plans'
+ * detail cards) inset differently on web than on mobile. A number nobody can
+ * grep for the meaning of gets typed again every time.
+ *
+ * WHAT DOES NOT TAKE IT — the deliberate variants, so the next sweep does not
+ * "fix" them: a rail item or grid tile (its own compact inset), a media card
+ * whose image is flush and only the text block is padded, an icon-tile ROW
+ * (`IconTile` + text + chevron, inset 16), a card whose interior is banded rows
+ * that pad themselves, and a sheet (its own 20, a different container).
+ */
+export const CARD_PAD = space.xl;
+
 // Tokens come from @hybrid/core (the shared identity). Surface + primary-text
 // tokens resolve through CSS variables (globals.css @theme + [data-theme])
 // so the app re-themes (dark ⇄ light) without touching inline styles. LINE is

@@ -710,7 +710,7 @@ export default function AuroraLogger({
           phone the lower button is the one under a resting thumb, and that must
           never be the irreversible one. Mirrors the mobile ConfirmProvider. */}
       <Sheet open={discardOpen} onClose={() => setDiscardOpen(false)} title={t("workout.discardTitle")} detents={["medium"]}>
-        <div style={{ display: "grid", gap: space.md, paddingBottom: space.sm }}>
+        <div style={{ display: "grid", gap: space.md }}>
           <p style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: fs.note, lineHeight: 1.55, color: C("ash") }}>
             {t("workout.discardBody")}
           </p>
