@@ -79,6 +79,30 @@ export const space: Record<SpaceToken, number> = {
   huge: 40,
 };
 
+/**
+ * THE PAD UNDER A SHEET'S LAST ROW — one number, both clients, once.
+ *
+ * A presented sheet's panel sits ON the screen's bottom edge, so the device's
+ * home-indicator inset is the FLOOR of that pad, never an addition to it. Both
+ * clients had this wrong in opposite directions and nothing reconciled them:
+ * mobile wrote `insets.bottom + 20` (54dp on any notched iPhone) while its web
+ * twin wrote a flat 24, so the same sheet ended 30px taller on the phone.
+ *
+ * Worse, the pad was never OWNED, so surfaces added their own on top of it: the
+ * exercise anatomy sheet trailed another 30, the sport picker another 28, the
+ * sheet's own scroller another 4, and the web More sheet a full 110 — reserving
+ * room for a floating pill bar that the sheet itself renders over and hides.
+ * Stacked, those read exactly as reported: a dead band under every sheet.
+ *
+ * `max`, not `+`. Pass the safe-area inset (0 on web, or on a phone without a
+ * home indicator) and the pad never falls below the comfortable 24, never
+ * doubles the inset, and never differs between the two clients.
+ *
+ * THE RULE: content inside a sheet does not add a trailing pad of its own —
+ * this is the pad, and the sheet applies it.
+ */
+export const sheetPadBottom = (insetBottom = 0) => Math.max(insetBottom, space.xxl);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LEADING + TRACKING — the two axes that had no token, and therefore no limit.
 //

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -149,7 +149,7 @@ export default function AuroraHistory() {
           {sessionShape(s) === "cardio"
             ? (() => {
                 const ct = sessionCardioSummary(s);
-                const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
+                const parts = [ct.distanceKm > 0 ? fmtKm(ct.distanceKm) : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
                 if (parts.length) return chip(C.blue, parts.join(" – "));
                 const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
                 return chip(C.blue, minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}`);

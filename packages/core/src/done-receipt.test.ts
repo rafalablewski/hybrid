@@ -164,10 +164,10 @@ describe("doneReceiptStats", () => {
     // The model keeps the measurement…
     expect(swim.distanceKm).toBe(10.234567);
     // …the rail stat is the one that rounds.
-    expect(doneReceiptStats(swim, "kg").find((s) => s.labelKey === "w.home.today.distance")!.value).toBe("10.2 km");
+    expect(doneReceiptStats(swim, "kg").find((s) => s.labelKey === "w.home.today.distance")!.value).toBe("10.23 km");
   });
 
-  it("reads a sub-kilometre distance in metres — tenths of a km round it to nothing", () => {
+  it("reads a sub-kilometre distance in metres — a km figure makes it unreadable", () => {
     const swim = doneReceipt(
       session({
         title: "Swimming",

@@ -104,10 +104,10 @@ describe("deviceTrueSession", () => {
 describe("the engines read the measurement", () => {
   it("weekly mileage and totals count the measured distance", () => {
     const sessions = runningSessions([run()]);
-    expect(runTotals(sessions).distanceKm).toBe(10.4);
+    expect(runTotals(sessions).distanceKm).toBe(10.42);
     expect(runTotals(sessions).minutes).toBe(55);
     const wk = weeklyMileage(sessions, 1, Date.parse("2026-07-29T20:00:00.000Z"));
-    expect(wk[0]!.km).toBe(10.4);
+    expect(wk[0]!.km).toBe(10.42);
   });
 
   it("a PR is set by the measured distance, not the typed one", () => {

@@ -1,5 +1,6 @@
 import type { LoggedSession, CardioBlock } from "./session";
 import { developmentFraction, type Sex } from "../benchmarks";
+import { fmtKm } from "../distance";
 
 /**
  * THE ENDURANCE HALF — one read, six disciplines.
@@ -458,7 +459,7 @@ export function enduranceEfforts(
       if (!n) continue;
       push({
         discipline: d,
-        label: `${Math.round((b.distance ?? 0) * 10) / 10} km`,
+        label: fmtKm(b.distance ?? 0),
         value: n.value,
         equivSec: n.equivSec,
         score: engineScore(n.value, thresholds, false),

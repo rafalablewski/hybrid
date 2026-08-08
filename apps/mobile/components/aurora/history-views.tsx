@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import {
   fmtTonnage,
+  fmtKm,
   sessionHeadline,
   sessionsByDay,
   historyStream,
@@ -401,7 +402,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Mini label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} />
-        <Mini label={t("w.analyze.stats.distance")} value={hasData ? `${recap.distanceKm.toFixed(1)} km` : "—"} />
+        <Mini label={t("w.analyze.stats.distance")} value={hasData ? fmtKm(recap.distanceKm) : "—"} />
         <Mini label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} />
       </View>
 
