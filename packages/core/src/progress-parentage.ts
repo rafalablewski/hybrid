@@ -27,6 +27,20 @@ export interface ProgressParentage {
   distanceKm: number;
   /** This week's minutes attributed to `sport` groups (tennis, squash, …). */
   sportMinutes: number;
+  /**
+   * This week's minutes attributed to the whole ENDURANCE SECTION — every
+   * `endurance` and `sport` group, which is what the endurance summary card
+   * prints as its TIME figure.
+   *
+   * This is the denominator Other sports quotes against, and it changed when
+   * the section split. Under the old single Progress cluster the sports tiles
+   * sat beneath a card whose hours column WAS the whole week, so "3.1 of 5.2 h"
+   * named its parent correctly. Inside an Endurance section headed by a card
+   * reading "3.2 h", a denominator of 5.2 (lifting included) reads as that
+   * card's total and contradicts it. The tiles' parent is now the block
+   * directly above them.
+   */
+  enduranceMinutes: number;
   /** This week's total minutes — the verdict's hours column. */
   totalMinutes: number;
 }
@@ -39,10 +53,14 @@ export function progressParentage(
   const sportMinutes = sum.details.hours.groups
     .filter((g) => g.kind === "sport")
     .reduce((n, g) => n + g.value, 0);
+  const enduranceMinutes = sum.details.hours.groups
+    .filter((g) => g.kind === "sport" || g.kind === "endurance")
+    .reduce((n, g) => n + g.value, 0);
   return {
     tonnageKg: sum.totals.tonnage,
     distanceKm: sum.totals.distance,
     sportMinutes,
+    enduranceMinutes,
     totalMinutes: sum.totals.hours,
   };
 }

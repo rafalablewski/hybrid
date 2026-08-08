@@ -55,6 +55,18 @@ describe("progressParentage", () => {
     expect(p.sportMinutes).toBe(sportShare);
   });
 
+  it("the sports' denominator is the ENDURANCE section's time, not the whole week's", () => {
+    // The tiles sit under the endurance summary card now, so quoting a
+    // lifting-inclusive total beside a card printing endurance time alone
+    // would contradict the card directly above them.
+    const p = progressParentage(SESSIONS, { now: NOW });
+    // 60 running (the 50-minute block plus the run session's 10 minutes of
+    // leftover wall-clock, which lands on its only activity) + 90 tennis.
+    expect(p.enduranceMinutes).toBe(150);
+    expect(p.enduranceMinutes).toBeLessThan(p.totalMinutes);
+    expect(p.sportMinutes).toBeLessThanOrEqual(p.enduranceMinutes);
+  });
+
   it("keeps last week's training out of this week's quotes", () => {
     const p = progressParentage(SESSIONS, { now: NOW });
     expect(p.tonnageKg).toBe(240); // 100 + 140; the 500 kg session is outside the week

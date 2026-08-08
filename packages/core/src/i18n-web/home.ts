@@ -240,6 +240,19 @@ export const web_home = {
     "w.home.act.vsBase": "{d} vs {b}",
     "w.home.act.empty": "Nothing logged in this period.",
     "w.home.act.hint": "Open a figure for the sessions behind it",
+    // RECORDS — the Progress cluster's own block, promoted out of the verdict
+    // card's foot into a section head of its own. The head names the block and
+    // the meta beside it names the window, so the old "New PRs this week"
+    // phrasing (title and window in one string) is no longer needed.
+    "w.home.act.recordsTitle": "Records",
+    // ENDURANCE — the section's own summary card and everything its filter
+    // turns it into. Scoped w.home.endw.* so it can never be mistaken for the
+    // w.home.end.* lane strings.
+    "w.home.endw.lEfforts": "Efforts",
+    "w.home.endw.lDistance": "Distance",
+    "w.home.endw.lTime": "Time",
+    "w.home.endw.mix": "What it was made of",
+    "w.home.endw.empty": "No endurance logged in this period.",
     "w.home.act.close": "Close",
     "w.home.act.allGroups": "All",
     "w.home.act.showAll": "Show all {n}",
@@ -260,11 +273,6 @@ export const web_home = {
     // localized month name through {m} rather than an inflected phrase: "in
     // July" declines in Polish (w lipcu) and a nominative month name in that
     // slot would be wrong, so a spaced en dash carries it in every locale.
-    "w.home.act.prsWeek": "Records this week",
-    "w.home.act.prsD7": "Records in the last 7 days",
-    "w.home.act.prsD30": "Records in the last 30 days",
-    "w.home.act.prsYtd": "Records this year",
-    "w.home.act.prsMonth": "Records – {m}",
     // The proof under each record. The value is bare — the unit is on the
     // figure directly above it.
     "w.home.act.prFrom": "from {v}",
@@ -1348,6 +1356,12 @@ export const web_home = {
     "w.home.act.vsBase": "{d} wobec {b}",
     "w.home.act.empty": "Nic nie zapisano w tym okresie.",
     "w.home.act.hint": "Otwórz liczbę, żeby zobaczyć sesje za nią",
+    "w.home.act.recordsTitle": "Rekordy",
+    "w.home.endw.lEfforts": "Wysiłki",
+    "w.home.endw.lDistance": "Dystans",
+    "w.home.endw.lTime": "Czas",
+    "w.home.endw.mix": "Z czego się składa",
+    "w.home.endw.empty": "Brak wytrzymałości w tym okresie.",
     "w.home.act.close": "Zamknij",
     "w.home.act.allGroups": "Wszystko",
     "w.home.act.showAll": "Pokaż wszystkie ({n})",
@@ -1363,11 +1377,6 @@ export const web_home = {
     "w.home.act.uMin": "min",
     "w.home.act.uH": "h",
     "w.home.act.uSets": "serie",
-    "w.home.act.prsWeek": "Rekordy w tym tygodniu",
-    "w.home.act.prsD7": "Rekordy z ostatnich 7 dni",
-    "w.home.act.prsD30": "Rekordy z ostatnich 30 dni",
-    "w.home.act.prsYtd": "Rekordy w tym roku",
-    "w.home.act.prsMonth": "Rekordy – {m}",
     "w.home.act.prFrom": "z {v}",
     "w.home.act.prFirst": "pierwszy raz",
     "w.home.act.prReps": "więcej powtórzeń",
@@ -2394,6 +2403,12 @@ export const web_home = {
     "w.home.act.vsBase": "{d} vs. {b}",
     "w.home.act.empty": "In diesem Zeitraum nichts geloggt.",
     "w.home.act.hint": "Öffne eine Zahl für die Sessions dahinter",
+    "w.home.act.recordsTitle": "Rekorde",
+    "w.home.endw.lEfforts": "Einheiten",
+    "w.home.endw.lDistance": "Distanz",
+    "w.home.endw.lTime": "Zeit",
+    "w.home.endw.mix": "Woraus es bestand",
+    "w.home.endw.empty": "Keine Ausdauer in diesem Zeitraum erfasst.",
     "w.home.act.close": "Schließen",
     "w.home.act.allGroups": "Alle",
     "w.home.act.showAll": "Alle {n} zeigen",
@@ -2409,11 +2424,6 @@ export const web_home = {
     "w.home.act.uMin": "min",
     "w.home.act.uH": "h",
     "w.home.act.uSets": "Sätze",
-    "w.home.act.prsWeek": "Rekorde diese Woche",
-    "w.home.act.prsD7": "Rekorde der letzten 7 Tage",
-    "w.home.act.prsD30": "Rekorde der letzten 30 Tage",
-    "w.home.act.prsYtd": "Rekorde in diesem Jahr",
-    "w.home.act.prsMonth": "Rekorde – {m}",
     "w.home.act.prFrom": "von {v}",
     "w.home.act.prFirst": "zum ersten Mal",
     "w.home.act.prReps": "mehr Wiederholungen",
