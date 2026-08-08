@@ -17,7 +17,7 @@ import { ADrawer, GUTTER, withAlpha } from "./kit";
 import { LiquidSeg } from "./liquid-seg";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 // The drawer's own motion moved into ADrawer; this is here for the records
 // rail's edge dissolve, which eases in and out on its own.
@@ -110,9 +110,17 @@ const PRS_BLEED = GUTTER;
  *  inside the card, so it must follow the card. The two were both written as
  *  bare numbers, which is how the 16 -> 12 gutter sweep came to "fix" this one
  *  into 12 as well, insetting the compartment 4dp from the card on both sides
- *  and shifting its text off the figures above it (web, still 16, was right).
- *  Named, the mistake is no longer expressible. */
-const CARD_PAD = 16;
+ *  and shifting its text off the figures above it. Named, the mistake is no
+ *  longer expressible.
+ *
+ *  It is the APP'S ONE CARD INSET (`space.xl`, 20 — the kit's ACard, web's
+ *  lib/ui `Card`, the week rail, the logbook rail, every Performance card).
+ *  Naming it fixed which container it belonged to but not its VALUE: this card
+ *  and two of its neighbours on Today were still hand-rolled at 16, so the
+ *  dashboard's stack ran 4dp tighter at every edge than the Performance stack
+ *  one tab across — the two screens' cards visibly disagreeing on their top
+ *  inset. Mirrors web's CARD_PAD. */
+const CARD_PAD = space.xl;
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -474,7 +482,7 @@ export default function AuroraWeekVerdict({
           the card gives its own up rather than fencing the panel in. */}
       <View style={{
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28,
-        paddingHorizontal: CARD_PAD, paddingTop: 16, paddingBottom: open ? 0 : 16, ...cardShadow(scheme),
+        paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD, ...cardShadow(scheme),
       }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
@@ -576,7 +584,7 @@ export default function AuroraWeekVerdict({
               // the card's bottom now.
               backgroundColor: C.ink, borderTopWidth: 1, borderTopColor: C.line,
               marginHorizontal: -CARD_PAD, marginTop: 12,
-              paddingHorizontal: CARD_PAD, paddingTop: 14, paddingBottom: 16,
+              paddingHorizontal: CARD_PAD, paddingTop: 14, paddingBottom: CARD_PAD,
               borderBottomLeftRadius: 27, borderBottomRightRadius: 27,
             }}>
               <MetricDetail

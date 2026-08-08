@@ -113,6 +113,21 @@ type P = ReturnType<typeof useTheme>["palette"];
 const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
 
 /**
+ * A CARD'S OWN INNER PADDING — the app's one card inset (`space.xl`, 20), the
+ * value the kit's ACard is built on and the number web's lib/ui `Card`, the
+ * week rail, the logbook rail and every Performance card already use.
+ *
+ * Today's cards that go through ACard got it for free. The two that are
+ * hand-rolled here — the done-floor's own host card on the count-based plan
+ * path, and the feeling card — were written with a bare `padding: 16`, as was
+ * the week verdict next door, so the dashboard's stack sat 4dp tighter at every
+ * edge than the Performance stack one tab across: the same card, two different
+ * top insets, depending on which tab you were on. Named, and taken from the
+ * scale, a hand-rolled surface can no longer disagree with the kit's.
+ */
+const CARD_PAD = space.xl;
+
+/**
  * AURORA home — the rounded Aurora skin of the full classic Today cockpit, at
  * parity (no feature loss): a horizontally-swipeable Plan today + AI coach pair,
  * the season phase timeline, the reconciled "This week" plan (with schedule /
@@ -984,7 +999,7 @@ export default function AuroraHome() {
             chooser above owns that state, and an empty card under it would be a
             second competing log CTA. */}
         {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
-          <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
+          <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
             <DoneFloor
               rows={doneOnDay}
               planIds={fulfilledIds}
@@ -992,7 +1007,7 @@ export default function AuroraHome() {
               dayLabel={dayLabel}
               units={units}
               bw={bw}
-              pad={16}
+              pad={CARD_PAD}
               rule={false}
               onOpen={(id) => router.push(`/session/${id}`)}
               onLog={() => setQuickOpen(true)}
@@ -1462,7 +1477,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     }
   };
   return (
-    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
+    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same

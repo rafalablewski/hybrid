@@ -107,6 +107,22 @@ const roleColor = (role: SemanticRole) => C(ROLE_COLOR[role]);
 const readyColor = (v: number) => roleText(readinessRole(v));
 
 /**
+ * THE CARD'S OWN INNER PADDING — the app's one card inset (`space.xl`, 20),
+ * the same number the mobile kit's ACard, web's lib/ui `Card`, the week rail,
+ * the logbook rail and every Performance card are built on.
+ *
+ * Today's full-width cards were the last surfaces still hand-rolling it. Three
+ * of them (this screen's done-floor host, the feeling card, and the week
+ * verdict next door) had been written with a bare `padding: 16` — so the
+ * dashboard's stack ran 4px tighter at every edge than the Performance stack
+ * the athlete reaches one tab across, which reads as the cards having different
+ * top paddings. Named, the number is one thing in one place, and a bleed out of
+ * it (`-CARD_PAD`) says which container it is bleeding — the rule
+ * apps/web/__tests__/screen-gutter.test.ts enforces on the mobile twins.
+ */
+export const CARD_PAD = space.xl;
+
+/**
  * AURORA Today (web) — the DAILY GUIDED LOOP. Today answers "what do I do, how do
  * I feel, where is it going?" and walks the athlete through it top to bottom in
  * FOUR NAMED CLUSTERS, each opened by a GroupMark (the quiet mono wayfinding
@@ -557,7 +573,7 @@ export default function AuroraToday({
       : null;
 
   const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 12, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
-  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
+  const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
 
   // The shell every hub tab wears: the profile header, then the three pills.
   // Hoisted so the non-dashboard tabs render the SAME masthead chrome without
@@ -922,7 +938,7 @@ export default function AuroraToday({
           that state, and an empty card under it would be a second competing log
           CTA. */}
       {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
-        <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
+        <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
           <DoneFloor
             rows={doneOnDay}
             planIds={fulfilledIds}
@@ -930,7 +946,7 @@ export default function AuroraToday({
             dayLabel={dayLabel}
             units={units}
             bw={bw}
-            pad={16}
+            pad={CARD_PAD}
             rule={false}
             onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
             onLog={() => setQuickOpen(true)}
@@ -1391,7 +1407,7 @@ function FeelingCard({ feeling, dayMetrics, daySessions, recoveryDue, lastSessio
     }
   };
   return (
-    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: 16, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
+    <div style={{ marginTop: 16, border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD, background: C("ink2"), boxShadow: "var(--shadow-card)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same
