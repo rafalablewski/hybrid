@@ -255,7 +255,7 @@ describe("formatting stays in the sport's own unit", () => {
   it("renders distance in metres for the pool and kilometres for the road", () => {
     expect(sportDistance(2.4, "m")).toBe("2\u2009400");
     expect(sportDistance(74.2, "m")).toBe("74\u2009200");
-    expect(sportDistance(8.25, "km")).toBe("8.3");
+    expect(sportDistance(8.25, "km")).toBe("8.25");
     expect(sportDistance(812.4, "km")).toBe("812");
   });
 

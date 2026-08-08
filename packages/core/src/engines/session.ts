@@ -4,6 +4,7 @@ import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
 import { fmtWeight, fmtTonnage, splitFigure, type WeightUnit } from "../units";
+import { fmtKm } from "../distance";
 import type { DeviceWorkout } from "../session-device";
 import { deviceTrueSession, deviceTrueSessions } from "../device-truth";
 
@@ -712,7 +713,7 @@ export function sessionMeta(session: LoggedSession, units: WeightUnit = "kg", bo
     const parts: string[] = [];
     // Aggregate distance stays in KILOMETRES even for metre sports — per-effort
     // distances render in the sport's own unit, totals never do (olympic-sports.ts).
-    if (ct.distanceKm) parts.push(`${ct.distanceKm.toFixed(1)} km`);
+    if (ct.distanceKm) parts.push(fmtKm(ct.distanceKm));
     if (ct.minutes) parts.push(`${ct.minutes} min`);
     const pace = sessionPaceTail(session, ct.secPerKm);
     if (pace) parts.push(pace);

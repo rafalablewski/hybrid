@@ -2437,7 +2437,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       )}
 
       <Sheet visible={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
-        <View style={{ gap: 10, paddingBottom: 8 }}>
+        <View style={{ gap: 10 }}>
           {GOALS.map((g) => {
             const on = goal === g.id;
             return (

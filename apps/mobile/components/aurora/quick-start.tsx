@@ -63,14 +63,14 @@ export default function QuickStartSheet({
     <Sheet visible={visible} onClose={onClose} title={t("w.home.quickStart.title")} sub={t("w.home.quickStart.sub")}>
       <View style={{ marginTop: 16 }}>
         {routines.length === 0 ? (
-          <View style={{ paddingVertical: 10 }}>
+          <View style={{ paddingTop: 10 }}>
             <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: C.chalk }}>{t("w.home.quickStart.empty")}</Text>
             <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "snug") }}>{t("w.home.quickStart.emptySub")}</Text>
           </View>
         ) : (
           <>
             {favourites.length > 0 && (
-              <View style={{ marginBottom: rediscover.length > 0 ? 16 : 2 }}>
+              <View style={{ marginBottom: rediscover.length > 0 ? 16 : 0 }}>
                 <ASection title={`★ ${t("w.home.quickStart.favourites")}`} />
                 {/* Favourites rail — snap slider that RESPECTS the sheet padding
                     (no negative-margin bleed): a rail hosted in a Sheet honours

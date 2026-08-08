@@ -16,6 +16,13 @@ import { AuroraField, withAlpha } from "./aurora/kit";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./aurora/hero";
 import { haptic } from "../lib/haptics";
 
+/** The cover scaffold's content gutter. Exported because the `rail` slot is
+ *  full-bleed and unpadded, so a rail has to be told which column its resting
+ *  chips must line up with — and this screen's is 16, not the app's GUTTER of
+ *  12. Writing the number in both places is how the Plans chips came to rest
+ *  4dp left of the shelf heads beneath them. */
+export const COVER_GUTTER = 16;
+
 /** The Explore PlanCover's fixed-dark base — the cover is dark in BOTH themes,
  *  exactly like the Explore cards it grows out of. Now the HERO SYSTEM's ink
  *  (packages/core/src/hero.ts), so the cover, the Wrapped takeover and every
@@ -371,7 +378,7 @@ export function CoverScreen({
               onLayout={(e) => {
                 childrenTop.current = e.nativeEvent.layout.y;
               }}
-              style={{ paddingHorizontal: 16 }}
+              style={{ paddingHorizontal: COVER_GUTTER }}
             >
               {children}
             </View>

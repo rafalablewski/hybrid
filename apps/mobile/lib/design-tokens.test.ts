@@ -144,8 +144,27 @@ describe("touch targets", () => {
     // read to know what it will do).
     // Component declarations only — a capitalised name. `toggleTag`,
     // `saveTags` and the like are handlers, not components.
-    const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm);
-    expectAtMost(decls, 9, "chip-shaped component → Chip or AChip");
+    //
+    // DockChip is EXEMPT rather than counted, and the ceiling stays where it
+    // was. This ratchet counts chip IMPLEMENTATIONS — a pill hand-rolled where
+    // the shared one should have been — and DockChip is a shared one: the third
+    // sanctioned primitive beside Chip (a static tag) and AChip (an in-content
+    // filter). It is the RAIL chip, and it is genuinely a different object from
+    // AChip rather than a ninth spelling of it: a rail is chrome, so it speaks
+    // the hero's mono voice, where AChip lives in the content column and speaks
+    // Archivo. Borrowing AChip for the rail is precisely why mobile History drew
+    // Archivo 13 in a band where the other three rails drew mono 12. It arrived
+    // by RETIRING four hand-rolled rails (History and Plans, both clients) and
+    // it carries a stricter guard of its own than this one —
+    // apps/web/__tests__/dock-rail.test.ts, which checks both clients together.
+    const SANCTIONED = /\bDockChip\b/;
+    const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
+      .filter((site) => {
+        const [path, line] = [site.slice(0, site.lastIndexOf(":")), Number(site.slice(site.lastIndexOf(":") + 1))];
+        const text = FILES.find((f) => f.path === path)?.text ?? "";
+        return !SANCTIONED.test(text.split("\n")[line - 1] ?? "");
+      });
+    expectAtMost(decls, 9, "chip-shaped component → Chip, AChip or DockChip");
   });
 });
 

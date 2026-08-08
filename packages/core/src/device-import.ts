@@ -26,6 +26,7 @@
 import { doneReceipt } from "./done-receipt";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 import { cardioDiscipline } from "./engines/session";
+import { kmValue } from "./distance";
 import { displaySportDistance, olympicSport, sportDistanceUnit } from "./olympic-sports";
 import type { DeviceWorkout } from "./session-device";
 
@@ -353,7 +354,7 @@ export function deviceImportMeta(w: DeviceWorkout): string[] {
       ? `${displaySportDistance(km, w.activityLabel)} m`
       : km < 1
         ? `${Math.round(km * 1000)} m`
-        : `${km} km`;
+        : `${kmValue(km)} km`;
   return [
     `${w.durationMin} min`,
     ...(w.distanceKm != null ? [dist(w.distanceKm)] : []),

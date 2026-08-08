@@ -32,6 +32,7 @@ import {
   type FeedDetail,
 } from "./feed-card";
 import type { WeightUnit } from "./units";
+import { roundKm } from "./distance";
 import { isLive } from "./feed-live";
 
 // ---------------------------------------------------------------- handles ----
@@ -437,7 +438,7 @@ function metricValue(metric: LeaderboardMetric, sessions: LoggedSession[], now: 
     case "sessions":
       return r.sessions;
     case "distance":
-      return Math.round(r.distanceKm * 10) / 10;
+      return roundKm(r.distanceKm);
     case "activeDays":
       return r.activeDays;
     case "streak":
@@ -539,7 +540,7 @@ export function compareAthletes(
   const lines: CompareLine[] = [
     { key: "volume", label: "Weekly volume", a: Math.round(ra.volume), b: Math.round(rb.volume), unit: "kg", leader: lead(ra.volume, rb.volume) },
     { key: "sessions", label: "Weekly sessions", a: ra.sessions, b: rb.sessions, unit: "", leader: lead(ra.sessions, rb.sessions) },
-    { key: "distance", label: "Weekly distance", a: Math.round(ra.distanceKm * 10) / 10, b: Math.round(rb.distanceKm * 10) / 10, unit: "km", leader: lead(ra.distanceKm, rb.distanceKm) },
+    { key: "distance", label: "Weekly distance", a: roundKm(ra.distanceKm), b: roundKm(rb.distanceKm), unit: "km", leader: lead(ra.distanceKm, rb.distanceKm) },
     { key: "activeDays", label: "Active days", a: ra.activeDays, b: rb.activeDays, unit: "", leader: lead(ra.activeDays, rb.activeDays) },
     { key: "streak", label: "Current streak", a: sa.current, b: sb.current, unit: "d", leader: lead(sa.current, sb.current) },
   ];

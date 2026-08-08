@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, serifIf, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -545,6 +545,107 @@ export function AChip({
       >
         {label}
         {count != null ? `  ${count}` : ""}
+      </Text>
+    </PressScale>
+  );
+}
+
+/* ── the dock rail ───────────────────────────────────────────────────────── */
+
+/**
+ * THE DOCK RAIL — the strip of chips that docks beneath the collapsed hero.
+ *
+ * The exact twin of apps/web/components/aurora/dock-rail.tsx. Both clients
+ * import every number from packages/core/src/dock-rail.ts, which also carries
+ * the diagnosis this replaces: the rail was authored four separate times
+ * (History web, History mobile, Plans web, Plans mobile) and twelve properties
+ * were decided independently in each. Design sheet:
+ * reference/dock-rail-design.html.
+ *
+ * NOT `AChip`, which mobile History used to borrow. AChip is an IN-CONTENT
+ * filter — it lives in the content column, in the content face (Archivo bold),
+ * and 37 other call sites want it exactly as it is. A rail is CHROME: it sits
+ * in the same band as the hero's eyebrow, meta line and accessory, all of which
+ * speak the app's mono voice. Borrowing the content chip for the rail is why
+ * mobile History drew Archivo 13 while all three other rails drew mono 12.
+ *
+ * FULL-BLEED is the rail's own job, per the house rule: the scaffolds' rail
+ * slots reach the true screen edge and add NO padding, and this supplies the
+ * gutter back so resting chips align with the content column. `gutter` is a
+ * prop because the two scaffolds do not agree on one — AuroraScreen/HeroScreen
+ * pad at GUTTER (12) and the cover scaffold pads its children at 16, and a chip
+ * must line up with the column it is sitting above, not with a constant.
+ */
+export function DockRail({ label, gutter = GUTTER, children }: { label: string; gutter?: number; children: ReactNode }) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      // Labelled, but deliberately NOT a tablist on either role: the mode chips
+      // switch a rendered layout rather than tab panels, and the anchors are
+      // buttons that scroll. Both are already buttons carrying their own state.
+      accessibilityLabel={label}
+      contentContainerStyle={{ gap: DOCK_RAIL.gap, paddingHorizontal: gutter, paddingVertical: DOCK_RAIL.padY }}
+    >
+      {children}
+    </ScrollView>
+  );
+}
+
+/**
+ * One chip in the rail.
+ *
+ * THE ROLE is the one difference the two rails are allowed to have: a `mode`
+ * chip SELECTS (one always on, the panel below changes) and wears the accent
+ * tint; an `anchor` chip JUMPS to a section and can never light up, because a
+ * jump chip claiming a selection it does not have is a lie about what pressing
+ * it did. `dockChipOn` enforces that in core rather than here, so no call site
+ * can reintroduce it by passing the wrong prop.
+ *
+ * The selected state carries a tinted fill, a coloured border AND a coloured
+ * label — never hue alone (WCAG 1.4.1) — plus `accessibilityState.selected`.
+ */
+export function DockChip({
+  role,
+  label,
+  selected,
+  onPress,
+}: {
+  role: DockChipRole;
+  label: string;
+  /** Ignored for `anchor` — see dockChipOn. */
+  selected?: boolean;
+  onPress: () => void;
+}) {
+  const { palette } = useTheme();
+  const on = dockChipOn(role, selected);
+  const accent = txt(palette, palette.lime) ?? palette.lime;
+  return (
+    <PressScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      // Only a mode chip has a selection to report. Announcing `selected: false`
+      // on an anchor would tell VoiceOver there is a selection here to be had.
+      accessibilityState={role === "mode" ? { selected: on } : undefined}
+      style={{
+        minHeight: DOCK_RAIL.chip.hit,
+        justifyContent: "center",
+        paddingHorizontal: DOCK_RAIL.chip.padX,
+        borderRadius: DOCK_RAIL.chip.radius,
+        borderWidth: 1,
+        borderColor: on ? accent : palette.line,
+        backgroundColor: on ? withAlpha(accent, DOCK_RAIL.tint) : "transparent",
+      }}
+    >
+      <Text
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        numberOfLines={1}
+        // CONSTANT weight across states — web used to go 400 -> 700 on select,
+        // which widened the chip and reflowed every chip after it mid-tap.
+        style={{ fontFamily: F.mono, fontSize: DOCK_RAIL.chip.size, letterSpacing: DOCK_RAIL.chip.tracking, color: on ? accent : palette.ash }}
+      >
+        {label}
       </Text>
     </PressScale>
   );

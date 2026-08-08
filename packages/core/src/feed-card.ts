@@ -29,6 +29,7 @@
  */
 import { type AttestationTier } from "./attestation";
 import { deviceTrueSession } from "./device-truth";
+import { roundKm } from "./distance";
 import { sessionMinutes, sessionVolume, workingSets, type LoggedSession, type StrengthBlock } from "./engines";
 import { fmtWeight, type WeightUnit } from "./units";
 
@@ -121,7 +122,7 @@ export function feedStatText(stat: FeedStat, units: WeightUnit): string {
       return Math.round(v).toLocaleString();
     }
     case "distance":
-      return (Math.round(stat.value * 10) / 10).toLocaleString();
+      return roundKm(stat.value).toLocaleString();
     default:
       return Math.round(stat.value).toLocaleString();
   }
