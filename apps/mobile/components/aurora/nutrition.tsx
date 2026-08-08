@@ -58,6 +58,7 @@ import { useSignalsQuery, useSessionsQuery, useRevalidate } from "../../lib/quer
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { usePersona } from "../../lib/persona";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
@@ -71,6 +72,7 @@ import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { useConfirm } from "./confirm";
 import { NutritionHubBento } from "./nutrition-hub";
+import BodyProgress from "./body-progress";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -487,6 +489,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const sourceCardW = Math.min(268, Math.round(winW * 0.72));
   const { data: signals = [], isFetching: refreshing, refetch, isError: signalsError } = useSignalsQuery();
   const revalidate = useRevalidate();
+  // The athlete's display unit — Body & progress logs weight in it (kg or lb),
+  // the same preference the logger and every tonnage figure read.
+  const units = useLoggerPrefs().units;
   const [goal, setGoal] = useState<NutritionGoal>("maintain");
   // The goal is changed through a deliberate Sheet (opened from a card), never a
   // live top-of-screen toggle — switching it recomputes every target.
@@ -556,7 +561,6 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const pushRecent = (q: QuickFood) => setRecent((xs) => { const next = [q, ...xs.filter((x) => x.key !== q.key)].slice(0, 20); AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {}); return next; });
   const isFavorite = (key: string) => favorites.some((x) => x.key === key);
   const toggleFavorite = (q: QuickFood) => setFavorites((xs) => { const next = xs.some((x) => x.key === q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; AsyncStorage.setItem("hybrid.nutrition.favorites", JSON.stringify(next)).catch(() => {}); return next; });
-  const [weighIn, setWeighIn] = useState("");
   const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -2249,37 +2253,30 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </View>
       )}
 
+      {/* BODY — the athlete's measurements, rehomed here from the retired
+          Profile → Private tab. It belongs on Nutrition: the weigh-in IS the
+          input the intake targets are steered by (a bodyMass signal drives
+          maintenance and every kcal target), so the number and the thing it
+          feeds now share a screen instead of sitting two tabs apart. The panel
+          owns the whole log — height, weight, tape and body fat — so the old
+          kg-only weigh-in card is gone rather than sitting beside it asking for
+          the same number in a second place. The EWMA trend rides in the panel's
+          `trend` slot, directly under the report that names the same weight. */}
       {view === "body" && (
-        <ACard solid style={{ marginTop: 16 }}>
-          {/* Weight is a PROFILE attribute — one canonical source. This reads the
-              latest profile weigh-in; updating here writes straight to the
-              profile (no separate nutrition weight silo). */}
-          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.currentWeight")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.recovery.nutrition.weightFromProfile")}</Text>
-          </View>
-          {bodyMassKg != null ? (
-            <Text style={{ fontFamily: F.black, fontSize: 30, letterSpacing: -0.5, color: C.chalk, marginTop: 6 }}>{bodyMassKg}<Text style={{ fontFamily: F.mono, fontSize: 15, color: C.ash }}> kg</Text></Text>
-          ) : (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8 }}>{t("w.recovery.nutrition.noWeightYet")}</Text>
-          )}
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8 }}>{t("w.recovery.nutrition.weightProfileSub")}</Text>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-            <TextInput value={weighIn} onChangeText={setWeighIn} keyboardType="decimal-pad" placeholder="kg" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.updateWeight")} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 12, textAlign: "center" }} />
-            <Pressable onPress={() => { const kg = parseFloat(weighIn); if (Number.isFinite(kg) && kg > 0) { logWeighIn(kg); setWeighIn(""); } }} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.field, paddingHorizontal: 16, justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.updateWeight")}</Text></Pressable>
-          </View>
-        </ACard>
-      )}
-
-      {/* Bodyweight trend — EWMA-smoothed weight line + weekly rate. */}
-      {view === "body" && weight.points.length > 0 && (
-        <ACard solid style={{ marginTop: 16 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.bodyweightTrend")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, weight.ratePerWeek <= 0 ? C.lime : C.amber) }}>{weight.ratePerWeek > 0 ? "+" : ""}{weight.ratePerWeek} kg/wk</Text>
-          </View>
-          <WeightTrend points={weight.points} color={C.lime} />
-        </ACard>
+        <BodyProgress
+          units={units}
+          onPhotos={() => router.push("/progress")}
+          onSaved={() => { revalidate.recovery(); load(); }}
+          trend={weight.points.length > 0 ? (
+            <ACard solid style={{ marginTop: 16 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.bodyweightTrend")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, weight.ratePerWeek <= 0 ? C.lime : C.amber) }}>{weight.ratePerWeek > 0 ? "+" : ""}{weight.ratePerWeek} kg/wk</Text>
+              </View>
+              <WeightTrend points={weight.points} color={C.lime} />
+            </ACard>
+          ) : null}
+        />
       )}
 
       {/* LOG — the unified manual entry + scan + one-tap premade meals. */}
