@@ -96,6 +96,7 @@ export * from "./nav";
 export * from "./access";
 export * from "./analytics";
 export * from "./units";
+export * from "./distance";
 export * from "./plates";
 export * from "./logger-prefs";
 export * from "./set-focus";

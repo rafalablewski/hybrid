@@ -8,6 +8,7 @@ import {
   personalTrainingLog,
   velocityProfiles,
   sessionVolume,
+  kmValue,
   runTotals,
   runningSessions,
   enduranceSessions,
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
       b.kind === "strength"
         ? `${b.name} ${b.sets.length}×${b.sets[0]?.reps ?? ""} @ ${b.sets[0]?.load ?? ""}kg`
         : b.kind === "cardio"
-          ? `${b.name} ${b.distance ?? "?"}km${b.paceTarget ? ` @ ${b.paceTarget}` : ""}`
+          ? `${b.name} ${b.distance != null ? kmValue(b.distance) : "?"}km${b.paceTarget ? ` @ ${b.paceTarget}` : ""}`
           : `${b.name} (${b.format})`,
     )
     .join("; ");

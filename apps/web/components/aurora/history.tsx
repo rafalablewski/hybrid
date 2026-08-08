@@ -2,7 +2,7 @@
 
 import { accentText } from "@/lib/ui";
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { fs, space, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type MoodDef } from "@hybrid/core";
+import { fs, space, fmtKm, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type MoodDef } from "@hybrid/core";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { usePlanOverrides } from "@/lib/plan-overrides";
@@ -195,7 +195,7 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
                   {sessionShape(s) === "cardio"
                     ? (() => {
                         const ct = sessionCardioSummary(s);
-                        const parts = [ct.distanceKm > 0 ? `${ct.distanceKm.toFixed(1)} km` : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
+                        const parts = [ct.distanceKm > 0 ? fmtKm(ct.distanceKm) : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
                         if (parts.length) return chip(C("blue"), parts.join(" – "));
                         const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
                         return chip(C("blue"), minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("w.analyze.hist.blocks")}`);
