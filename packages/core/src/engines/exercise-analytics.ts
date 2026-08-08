@@ -531,3 +531,4 @@ export function blockCompare(
   }
   return { kind: "strength", weeks, weeklyCur: cur.weekly, weeklyPrev: prev.weekly, cur: cur.m, prev: prev.m };
 }
+

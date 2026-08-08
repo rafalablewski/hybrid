@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import { View, Text, ScrollView } from "react-native";
 import {
   SHARED_ELEMENTS,
+  exerciseCardReading,
   exerciseStripBars,
   exerciseWidgetCards,
   fmtWeight,
@@ -14,6 +15,7 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import HistoryStrip from "./history-strip";
+import { useChartScrub } from "./chart-scrub";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
@@ -27,6 +29,13 @@ import { GUTTER, RADIUS, withAlpha } from "./kit";
  *  kindStroke(theme, kind), which resolves the same channels per theme). */
 export const kindStroke = (C: Palette, kind: ExerciseWidgetCard["kind"]): string =>
   kind === "strength" ? C.lime : kind === "cardio" ? txt(C, C.blue) : txt(C, C.amber);
+
+/** How long a finger must rest on a card's strip before it answers instead of
+ *  opening the page. The web twin's HOLD_MS. */
+const HOLD_MS = 120;
+
+/** A strip point's date, in the card's own quiet voice. */
+const fmtStripDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
 /** "213 kg" → parts so the number can lead and the unit recede. */
 const splitVal = (s: string): { v: string; u: string } => {
@@ -63,6 +72,91 @@ function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) =>
   if (card.metric === "weight") return { ...splitVal(fmtWeight(card.value, units)), label: t("w.home.exw.heaviest") };
   if (card.metric === "time") return { v: String(card.value), u: "min", label: t("w.home.exw.time") };
   return { ...splitVal(fmtTonnage(card.value, units)), label: t("w.home.exw.volume") };
+}
+
+
+/**
+ * One favourite's card — name, the window's headline figure, its eight-week
+ * strip, then the metric and its delta.
+ *
+ * The card is a BUTTON that opens the movement's page, and the strip inside it
+ * is a chart you can hold. A press therefore has to declare which it meant, and
+ * the dwell does it: a tap ends before the hold and opens the page, a hold
+ * passes it and reads the strip instead. Parity: the web twin's `Card`, where
+ * the same dwell separates a tap from a read (and a mouse gets both at once —
+ * hover to read, click to open).
+ *
+ * Held, the card answers in the slots it already has: the FIGURE becomes that
+ * point's, and the footer's metric name becomes its date. The strip is 24dp
+ * tall; a pinned pill would cover the card.
+ */
+function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
+  card: ExerciseWidgetCard;
+  units: WeightUnit;
+  C: Palette;
+  t: (k: string) => string;
+  onOpen: (name: string) => void;
+  armHero: ReturnType<typeof useSharedElementSource>;
+  heroRefs: { current: Record<string, Text | null> };
+}) {
+  const h = headline(card, units, t);
+  const stroke = kindStroke(C, card.kind);
+  const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk } as const;
+  const open = () => {
+    armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
+    onOpen(card.name);
+  };
+  const scrub = useChartScrub(card.spark.length, "band", undefined, { holdMs: HOLD_MS, onTap: open });
+  const read = scrub.index >= 0 ? exerciseCardReading(card, scrub.index, units) : null;
+  const when = read?.weekStart
+    ? card.sparkBy === "week"
+      ? t("chart.weekOf").replace("{date}", fmtStripDate(read.weekStart))
+      : fmtStripDate(read.weekStart)
+    : "";
+  return (
+    <Pressable
+      // SHARED ELEMENT: the headline figure flies into the exercise
+      // page's hero rather than the page re-rendering it. Measured at
+      // press time; if the destination never claims it the arm expires
+      // and the ordinary screen transition carries the change.
+      onPress={open}
+      accessibilityRole="button"
+      accessibilityLabel={`${card.name} — ${h.v} ${h.u}`}
+      style={{
+        width: 200, minHeight: 132, gap: 8,
+        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
+        paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
+      }}
+    >
+      {/* The name gets the whole row. The delta used to sit beside it
+          and cost "Standing Overhead Press" its last words on a narrow
+          device; it reads as well from the footer, where the kind word
+          used to be. */}
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+        <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={[heroStyle, read?.best ? { color: txt(C, C.lime) } : null]}>
+          {read ? read.value : h.v}
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? read.unit : h.u}</Text>
+      </View>
+      <View {...scrub.bind} style={{ marginTop: "auto" }}>
+        <HistoryStrip bars={exerciseStripBars(card)} color={stroke} held={scrub.index} />
+      </View>
+      {/* The footer says the metric and its window, then the delta.
+          The KIND word ("Strength") is gone: the purpose was already
+          encoded twice — the strip is drawn in kindStroke's chartreuse
+          for a lift and teal for cardio, and the metric name entails it
+          ("Heaviest" is only ever a lift, "Best pace" only ever
+          cardio). Three channels for one fact is not reinforcement; it
+          is the slot a real fact could have used. Colour keeps the
+          visual channel and the metric name the text one, so nothing
+          here is colour-only. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? when : h.label}</Text>
+        {!read && <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />}
+      </View>
+    </Pressable>
+  );
 }
 
 /**
@@ -132,57 +226,9 @@ export default function ExerciseWidgetRail({
         style={{ marginHorizontal: -GUTTER }}
         contentContainerStyle={{ gap: 8, paddingVertical: 2, paddingHorizontal: GUTTER }}
       >
-        {cards.map((card) => {
-          const h = headline(card, units, t);
-          const stroke = kindStroke(C, card.kind);
-          const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk } as const;
-          return (
-            <Pressable
-              key={card.name}
-              // SHARED ELEMENT: the headline figure flies into the exercise
-              // page's hero rather than the page re-rendering it. Measured at
-              // press time; if the destination never claims it the arm expires
-              // and the ordinary screen transition carries the change.
-              onPress={() => {
-                armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
-                onOpen(card.name);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={`${card.name} — ${h.v} ${h.u}`}
-              style={{
-                width: 200, minHeight: 132, gap: 8,
-                backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-                paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
-              }}
-            >
-              {/* The name gets the whole row. The delta used to sit beside it
-                  and cost "Standing Overhead Press" its last words on a narrow
-                  device; it reads as well from the footer, where the kind word
-                  used to be. */}
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
-              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-                <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.u}</Text>
-              </View>
-              <View style={{ marginTop: "auto" }}>
-                <HistoryStrip bars={exerciseStripBars(card)} color={stroke} />
-              </View>
-              {/* The footer says the metric and its window, then the delta.
-                  The KIND word ("Strength") is gone: the purpose was already
-                  encoded twice — the strip is drawn in kindStroke's chartreuse
-                  for a lift and teal for cardio, and the metric name entails it
-                  ("Heaviest" is only ever a lift, "Best pace" only ever
-                  cardio). Three channels for one fact is not reinforcement; it
-                  is the slot a real fact could have used. Colour keeps the
-                  visual channel and the metric name the text one, so nothing
-                  here is colour-only. */}
-              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{h.label}</Text>
-                <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />
-              </View>
-            </Pressable>
-          );
-        })}
+        {cards.map((card) => (
+          <Card key={card.name} card={card} units={units} C={C} t={t} onOpen={onOpen} armHero={armHero} heroRefs={heroRefs} />
+        ))}
         {/* The rail's exit — the trailing ghost tile, at tile scale. */}
         <Pressable
           onPress={onAll}

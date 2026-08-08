@@ -30,7 +30,7 @@ import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
-import { useChartScrub, type ScrubBind } from "./chart-scrub";
+import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
 
@@ -167,15 +167,9 @@ export default function AuroraSportPage() {
       <ChartReadout
         read={read}
         C={C}
-        side={read.index * 2 >= count - 1 ? "left" : "right"}
-        sub={
-          <>
-            <Text style={{ ...label(), fontSize: fs.nano }}>{t("chart.weekOf").replace("{date}", fmtDate(read.weekStart))}</Text>
-            {read.efforts != null && (
-              <Text style={{ ...label(), fontSize: fs.nano }}>{t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts))}</Text>
-            )}
-          </>
-        }
+        side={readoutSide(read.index, count)}
+        when={t("chart.weekOf").replace("{date}", fmtDate(read.weekStart))}
+        note={read.efforts != null ? t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts)) : undefined}
       />
     ) : null;
 
@@ -470,30 +464,6 @@ export default function AuroraSportPage() {
 }
 
 /* ── holding a chart ─────────────────────────────────────────────────────── */
-
-/** The held figure, pinned to the top of the plot on the side the finger is
- *  NOT on, so it can never hide the point being read. */
-function ChartReadout({ read, side, sub, C }: { read: SportChartReading; side: "left" | "right"; sub: ReactNode; C: Palette }) {
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: "absolute", top: 0,
-        left: side === "left" ? 0 : undefined,
-        right: side === "right" ? 0 : undefined,
-        alignItems: side === "right" ? "flex-end" : "flex-start",
-        gap: 2, paddingHorizontal: 9, paddingVertical: 5,
-        borderRadius: 12, backgroundColor: `${C.ink}e0`, borderWidth: 1, borderColor: C.line,
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: read.best ? txt(C, C.lime) : C.chalk }}>{read.value}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 2 }}>{read.unit}</Text>
-      </View>
-      <View style={{ flexDirection: "row", gap: 8 }}>{sub}</View>
-    </View>
-  );
-}
 
 /* ── the charts — the web twin's geometry, drawn with react-native-svg ────── */
 

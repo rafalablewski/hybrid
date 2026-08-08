@@ -25,7 +25,7 @@ import {
   type SportPageModel,
   type SportWeek,
 } from "@hybrid/core";
-import { useChartScrub, SCRUB_STYLE, type ScrubBind } from "./chart-scrub";
+import { ChartReadout, readoutSide, useChartScrub, SCRUB_STYLE, type ScrubBind } from "./chart-scrub";
 import { useSessions } from "@/lib/use-sessions";
 import { readSportSelection, writeSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
@@ -71,28 +71,6 @@ function Provenance({ provider, t }: { provider: string | null; t: (k: string) =
 }
 
 /* ── holding a chart ─────────────────────────────────────────────────────── */
-
-/** The held figure itself, pinned to the top of the plot on the side the finger
- *  is NOT on, so it can never hide the point being read. */
-function ChartReadout({ read, side, sub }: { read: SportChartReading; side: "left" | "right"; sub: ReactNode }) {
-  return (
-    <span
-      aria-live="polite"
-      style={{
-        position: "absolute", top: 0, [side]: 0, display: "flex", flexDirection: "column", gap: 2,
-        alignItems: side === "right" ? "flex-end" : "flex-start",
-        padding: "5px 9px", borderRadius: 12, pointerEvents: "none",
-        background: `color-mix(in srgb, ${C("ink")} 88%, transparent)`, border: `1px solid ${C("line")}`,
-      }}
-    >
-      <span style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-        <b style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.note, letterSpacing: "-.02em", fontVariantNumeric: "tabular-nums", color: read.best ? C("lime") : C("chalk") }}>{read.value}</b>
-        <span style={mono(fs.nano)}>{read.unit}</span>
-      </span>
-      <span style={{ display: "flex", gap: 8, ...label(), fontSize: fs.nano }}>{sub}</span>
-    </span>
-  );
-}
 
 /* ── the two charts ──────────────────────────────────────────────────────── */
 
@@ -253,13 +231,9 @@ export default function AuroraSportPage({
     read ? (
       <ChartReadout
         read={read}
-        side={read.index * 2 >= count - 1 ? "left" : "right"}
-        sub={
-          <>
-            <span>{t("chart.weekOf").replace("{date}", fmtDate(read.weekStart))}</span>
-            {read.efforts != null && <span>{t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts))}</span>}
-          </>
-        }
+        side={readoutSide(read.index, count)}
+        when={t("chart.weekOf").replace("{date}", fmtDate(read.weekStart))}
+        note={read.efforts != null ? t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts)) : undefined}
       />
     ) : null;
 

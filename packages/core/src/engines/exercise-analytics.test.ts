@@ -190,3 +190,4 @@ describe("blockCompare", () => {
     expect(c.cur.bestPaceSec).toBe(290);
   });
 });
+

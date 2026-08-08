@@ -33,6 +33,9 @@ import {
   type BlockCompare,
 } from "./engines/exercise-analytics";
 import type { BodyweightInput } from "./bodyweight";
+import type { ChartReading } from "./chart-scrub";
+import { fmtTonnage, fmtWeight, splitFigure, type WeightUnit } from "./units";
+import { mmss } from "./format";
 import { deviceTrueSessions } from "./device-truth";
 
 // The Today-tab EXERCISES widget + the individual exercise page ("variant B"):
@@ -74,6 +77,17 @@ export interface ExerciseWidgetCard {
   /** sparkline series inside the window, oldest → newest (falls back to the
    *  last few all-time points when the window is too thin to draw) */
   spark: number[];
+  /**
+   * What each `spark` point IS — a SESSION's own reading, or a WEEK's bucket.
+   * The series is built one way for a lift with parseable loads (one point per
+   * session) and the other for a movement measured by volume or minutes (one
+   * point per week), and a held point cannot name itself without knowing
+   * which. A readout that says "Week of 12 Jul" over a single session's lift
+   * is the same class of lie as dating a trend point by the wrong bucket.
+   */
+  sparkBy: "session" | "week";
+  /** ISO date per `spark` point — the session's date, or the week's start. */
+  sparkAt: string[];
   /** sessions that trained this movement inside the window */
   sessions: number;
 }
@@ -185,10 +199,13 @@ export function exerciseWidgetCard(
       const value = cur.length ? best(cur) : best(all.slice(-1));
       // pace: sign of the raw change, improvement = got faster (negative change)
       const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
-      const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.secPerKm);
+      const points = cur.length >= 2 ? cur : all.slice(-8);
       return {
         name, kind, discipline: moveDiscipline(sessions, name), metric: "pace", value, deltaPct,
-        improving: deltaPct == null ? null : deltaPct < 0, spark, sessions: count,
+        improving: deltaPct == null ? null : deltaPct < 0,
+        spark: points.map((p) => p.secPerKm),
+        sparkBy: "session", sparkAt: points.map((p) => p.date),
+        sessions: count,
       };
     }
     // minutes-only cardio (a match, a swim without distance) → time metric
@@ -201,22 +218,33 @@ export function exerciseWidgetCard(
       const best = (pts: { weightKg: number }[]) => (pts.length ? Math.max(...pts.map((p) => p.weightKg)) : NaN);
       const value = cur.length ? best(cur) : best(all.slice(-1));
       const deltaPct = cur.length && prev.length ? pctChange(best(cur), best(prev)) : null;
-      const spark = (cur.length >= 2 ? cur : all.slice(-8)).map((p) => p.weightKg);
-      return { name, kind, metric: "weight", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark, sessions: count };
+      const points = cur.length >= 2 ? cur : all.slice(-8);
+      return {
+        name, kind, metric: "weight", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0,
+        spark: points.map((p) => p.weightKg),
+        sparkBy: "session", sparkAt: points.map((p) => p.date),
+        sessions: count,
+      };
     }
     // strength logged without parseable loads: weekly tonnage as the fallback
-    const weeks = weeklyTonnage(sessions, name, 16, now, bw).map((w) => w.baseKg + w.hardKg);
+    const buckets = weeklyTonnage(sessions, name, 16, now, bw);
+    const weeks = buckets.map((w) => w.baseKg + w.hardKg);
     const curW = weeks.slice(8), prevW = weeks.slice(0, 8);
     const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
     if (sum(curW) > 0) {
       const deltaPct = pctChange(sum(curW), sum(prevW));
-      return { name, kind, metric: "volume", value: sum(curW), deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count };
+      return {
+        name, kind, metric: "volume", value: sum(curW), deltaPct, improving: deltaPct == null ? null : deltaPct > 0,
+        spark: curW, sparkBy: "week", sparkAt: buckets.slice(8).map((w) => w.weekStart),
+        sessions: count,
+      };
     }
     return null;
   }
 
   // conditioning + minutes-only cardio: 8-week minutes vs the 8 before
-  const weeks = weeklyMinutes(sessions, name, 16, now).map((w) => w.minutes);
+  const minuteWeeks = weeklyMinutes(sessions, name, 16, now);
+  const weeks = minuteWeeks.map((w) => w.minutes);
   const curW = weeks.slice(8), prevW = weeks.slice(0, 8);
   const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
   const value = sum(curW);
@@ -224,7 +252,9 @@ export function exerciseWidgetCard(
   const deltaPct = pctChange(value, sum(prevW));
   return {
     name, kind, discipline: kind === "cardio" ? moveDiscipline(sessions, name) : undefined,
-    metric: "time", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0, spark: curW, sessions: count,
+    metric: "time", value, deltaPct, improving: deltaPct == null ? null : deltaPct > 0,
+    spark: curW, sparkBy: "week", sparkAt: minuteWeeks.slice(8).map((w) => w.weekStart),
+    sessions: count,
   };
 }
 
@@ -496,4 +526,110 @@ export function exercisePageModel(
 
   slides.push(consistency);
   return { name, kind, period, stats, sessionsInPeriod, slides };
+}
+
+// ────────────────────────────────────────────────────────────────────
+// HOLDING A CHART — what one held point on these surfaces says.
+// ────────────────────────────────────────────────────────────────────
+
+/**
+ * The geometry a slide's chart is hit-tested with, or null when the slide is
+ * not a series over an x-axis and holding it would answer nothing.
+ *
+ * The clients draw these at different widths (recharts on web, a react-native-
+ * svg viewBox on mobile) but they must agree on WHICH POINT a press reads, so
+ * the count and the mode are decided once, here. A scatter, a surface, a
+ * rep-max grid, a consistency heat map and the meter rows are all deliberately
+ * absent: their cells already name themselves, and there is no single series
+ * under the finger to report.
+ *
+ * `by` says what one point IS, so a client can pick the right sentence for the
+ * date it prints: a SESSION ("12 Jul") or a WEEK ("Week of 12 Jul"). Getting
+ * that wrong reads as a rounding error in the data rather than in the copy.
+ */
+export function exerciseSlideGeometry(
+  slide: ExercisePageSlide,
+): { count: number; mode: "band" | "point"; by: "session" | "week" } | null {
+  switch (slide.kind) {
+    case "weightTrend": return slide.points.length >= 2 ? { count: slide.points.length, mode: "point", by: "session" } : null;
+    case "paceTrend": return slide.points.length >= 2 ? { count: slide.points.length, mode: "point", by: "session" } : null;
+    case "tonnage": return slide.weeks.length >= 2 ? { count: slide.weeks.length, mode: "band", by: "week" } : null;
+    case "weeklyMinutes": return slide.weeks.length >= 2 ? { count: slide.weeks.length, mode: "band", by: "week" } : null;
+    case "runDeltas": return slide.runs.length >= 2 ? { count: slide.runs.length, mode: "band", by: "session" } : null;
+    default: return null;
+  }
+}
+
+/**
+ * The figure under a held finger on one of the exercise page's charts, in the
+ * athlete's own weight unit. Null for a slide that has no series to read, or an
+ * index off the end of the one it has.
+ *
+ * `best` marks the point the chart already draws differently — the PR on the
+ * weight trend, the fastest run, the biggest week — so a held readout and the
+ * dot beside it can never disagree about which point was the best one.
+ */
+export function exerciseSlideReading(slide: ExercisePageSlide, index: number, units: WeightUnit): ChartReading | null {
+  const reading = (at: string, value: string, unit: string, best: boolean): ChartReading =>
+    ({ index, weekStart: at, value, unit, efforts: null, best });
+
+  switch (slide.kind) {
+    case "weightTrend": {
+      const p = slide.points[index];
+      if (!p) return null;
+      const [v, u] = splitFigure(fmtWeight(p.weightKg, units));
+      return reading(p.date, v, u, p.pr);
+    }
+    case "paceTrend": {
+      const p = slide.points[index];
+      if (!p) return null;
+      return reading(p.date, mmss(p.secPerKm), "/km", slide.bestSec != null && p.secPerKm === slide.bestSec);
+    }
+    case "tonnage": {
+      const w = slide.weeks[index];
+      if (!w) return null;
+      const total = w.baseKg + w.hardKg;
+      const peak = Math.max(...slide.weeks.map((x) => x.baseKg + x.hardKg));
+      const [v, u] = splitFigure(fmtTonnage(total, units));
+      return reading(w.weekStart, v, u, total > 0 && total === peak);
+    }
+    case "weeklyMinutes": {
+      const w = slide.weeks[index];
+      if (!w) return null;
+      const peak = Math.max(...slide.weeks.map((x) => x.minutes));
+      return reading(w.weekStart, String(w.minutes), "min", w.minutes > 0 && w.minutes === peak);
+    }
+    case "runDeltas": {
+      const r = slide.runs[index];
+      if (!r) return null;
+      // The bar IS the delta, so the delta is what the readout states — signed,
+      // because "12 s" without its sign is the one thing this chart never says.
+      const best = Math.min(...slide.runs.map((x) => x.deltaSec));
+      return reading(r.date, `${r.deltaSec > 0 ? "+" : r.deltaSec < 0 ? "−" : ""}${Math.abs(r.deltaSec)}`, "s/km", r.deltaSec === best);
+    }
+    default: return null;
+  }
+}
+
+/**
+ * One held point of a Today widget card's strip.
+ *
+ * The strip is built two ways — one point per SESSION for a lift with parseable
+ * loads, one per WEEK for a movement measured in volume or minutes — so the
+ * card carries `sparkBy` and the reading passes it through as `efforts`-free
+ * data the client uses to pick its sentence ("12 Jul" vs "Week of 12 Jul").
+ */
+export function exerciseCardReading(card: ExerciseWidgetCard, index: number, units: WeightUnit): ChartReading | null {
+  const v = card.spark[index];
+  if (v == null) return null;
+  const at = card.sparkAt[index] ?? "";
+  const best = card.metric === "pace" ? Math.min(...card.spark) : Math.max(...card.spark);
+  const figure = (): [string, string] => {
+    if (card.metric === "pace") return [mmss(v), "/km"];
+    if (card.metric === "weight") return splitFigure(fmtWeight(v, units));
+    if (card.metric === "time") return [String(Math.round(v)), "min"];
+    return splitFigure(fmtTonnage(v, units));
+  };
+  const [value, unit] = figure();
+  return { index, weekStart: at, value, unit, efforts: null, best: v === best };
 }
