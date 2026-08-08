@@ -13,6 +13,7 @@ import {
   type FeedDetail,
   type FeedItemView,
   type FeedStat,
+  type Relation,
   type WeightUnit,
 } from "@hybrid/core";
 import { colors } from "@hybrid/core";
@@ -214,10 +215,14 @@ export interface FeedCardProps {
   onKudos: () => void;
   onComments: () => void;
   onDelete?: () => void;
+  /** A change the ⋯ menu made to the AUTHOR rather than this row — a follow
+   *  (every card by that person now reads differently) or a block (they leave
+   *  the stream). The screen owns the list, so it applies it. */
+  onAuthorChanged?: (change: { authorId: string; relation?: Relation; blocked?: boolean }) => void;
   children?: ReactNode;
 }
 
-export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, children }: FeedCardProps) {
+export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onDelete, onAuthorChanged, children }: FeedCardProps) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const d = item.detail;
@@ -355,9 +360,13 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         anchor={menu}
         onClose={() => setMenu(null)}
         handle={item.author.handle}
+        authorId={item.author.id}
         mine={item.mine}
         subjectType={item.subjectType}
+        subjectId={item.subjectId}
+        relation={item.relation}
         onDelete={onDelete}
+        onAuthorChanged={onAuthorChanged}
       />
     </View>
   );

@@ -106,18 +106,25 @@ export async function GET(request: Request) {
     for (const r of iGave as { ownerId: string; _count: { _all: number } }[]) interactions.set(r.ownerId, (interactions.get(r.ownerId) ?? 0) + r._count._all);
     for (const r of iGot as { userId: string; _count: { _all: number } }[]) interactions.set(r.userId, (interactions.get(r.userId) ?? 0) + r._count._all);
 
-    const signalsFor = (authorId: string): FeedSignals => {
-      if (authorId === me.id) return { relation: "self", mine: true };
+    const relationOf = (authorId: string): Relation => {
+      if (authorId === me.id) return "self";
       const out = iFollow.has(authorId);
       const back = followsMe.has(authorId);
-      const relation: Relation = closeSet.has(authorId) ? "close" : out && back ? "friend" : out ? "following" : back ? "follower" : "none";
-      return { relation, coach: coachOf.has(authorId), interactions: interactions.get(authorId) ?? 0 };
+      return closeSet.has(authorId) ? "close" : out && back ? "friend" : out ? "following" : back ? "follower" : "none";
+    };
+    const signalsFor = (authorId: string): FeedSignals => {
+      if (authorId === me.id) return { relation: "self", mine: true };
+      return { relation: relationOf(authorId), coach: coachOf.has(authorId), interactions: interactions.get(authorId) ?? 0 };
     };
 
     // The RANKED order ships as the feed; the clients' Following tab re-sorts
     // chronologically from the same payload, so the unranked exit never needs
     // a second round trip.
-    const ranked = rankFeed(enriched, (i) => signalsFor(i.author.id), { limit: 50 });
+    const ranked = rankFeed(enriched, (i) => signalsFor(i.author.id), { limit: 50 })
+      // The row's ⋯ menu needs to know whether to offer Follow or Unfollow, and
+      // the relation is already derived here — recomputing it client-side would
+      // be a second round trip per row for something the ranker just used.
+      .map((i) => ({ ...i, relation: relationOf(i.author.id) }));
 
     // NOW TRAINING — presence, from the SAME subjects, so the strip costs no
     // extra query. Only people I follow are in `subjects` and the block list is

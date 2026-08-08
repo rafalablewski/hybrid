@@ -29,12 +29,17 @@
  * simply stands alone, which is exactly how this shipped first.
  *
  * PLACEHOLDERS ARE MARKED AS SUCH. `placeholder: true` on a menu action means
- * the row is drawn but nothing is wired behind it. The clients render that
- * honestly (a SOON tag on tap) rather than firing a no-op that reads as a bug.
- * Follow/mute/block DO have working endpoints elsewhere in the product
- * (/api/social/follow, /api/social/block) — wiring the menu to them is its own
- * change, tracked in capabilities.
+ * the row is drawn but nothing is wired behind it, and the clients render that
+ * honestly (a SOON tag on press) rather than firing a no-op that reads as a
+ * bug. Follow, block and report are now REAL — they hit /api/social/follow,
+ * /api/social/block and /api/reports. Mute and "not interested" are still
+ * placeholders because each needs state that does not exist yet: mute needs a
+ * column on Follow and a filter in buildSocialFeed, and "not interested" is a
+ * ranking signal that should feed feed-rank.ts rather than hard-hide a row.
+ * Flip the flag as each lands — the unit test asserts on exactly this set.
  */
+
+import type { Relation } from "./social";
 
 // --------------------------------------------------------- saved (bookmark) --
 
@@ -285,13 +290,18 @@ export interface FeedMenuAction {
  * label doubles the card's height and turns a glance into a read. Every label
  * here says what it does on its own ("Mute @ada", "Not interested") — a row
  * that needed a paragraph to be understood would be the wrong row.
+ *
+ * `follow` and `report` carry only their DEFAULT label; both are rewritten
+ * below, because what they say depends on what you're looking at (whether you
+ * already follow this person, and whether the row is a real post or a derived
+ * session). Everything else says one thing always.
  */
 const MENU: Record<FeedMenuActionKey, Omit<FeedMenuAction, "key">> = {
-  follow: { labelKey: "feed.menu.follow", placeholder: true },
+  follow: { labelKey: "feed.menu.follow", placeholder: false },
   mute: { labelKey: "feed.menu.mute", placeholder: true },
   notInterested: { labelKey: "feed.menu.notInterested", placeholder: true },
-  report: { labelKey: "feed.menu.report", placeholder: true },
-  block: { labelKey: "feed.menu.block", destructive: true, placeholder: true },
+  report: { labelKey: "feed.menu.report", placeholder: false },
+  block: { labelKey: "feed.menu.block", destructive: true, placeholder: false },
   delete: { labelKey: "feed.menu.delete", destructive: true, placeholder: false },
 };
 
@@ -302,7 +312,19 @@ export interface FeedMenuInput {
   subjectType: string;
   /** whether a delete handler was actually supplied by the screen. */
   canDelete?: boolean;
+  /**
+   * The viewer's relation to the author, as the feed already computes it. A
+   * follow row that says "Follow" to someone you already follow is worse than
+   * no row: it makes the menu look like it doesn't know who you are.
+   * Absent = treat as not following, which is the safe direction (the worst
+   * case is a follow that no-ops server-side).
+   */
+  relation?: Relation;
 }
+
+/** Relations that mean "I already follow this person", so the row offers the
+ *  way OUT rather than the way in. */
+const FOLLOWING: Relation[] = ["following", "friend", "close"];
 
 /**
  * The menu for one row.
@@ -321,7 +343,7 @@ export interface FeedMenuInput {
  * it would also need a native clipboard module this build doesn't carry.)
  *
  * An EMPTY list is a valid answer — my own session or PR row has nothing to
- * offer — and the clients then draw no ⋯ at all rather than an empty sheet.
+ * offer — and the clients then draw no ⋯ at all rather than an empty card.
  */
 export function feedMenuActions(input: FeedMenuInput): FeedMenuAction[] {
   const keys: FeedMenuActionKey[] = input.mine
@@ -330,5 +352,16 @@ export function feedMenuActions(input: FeedMenuInput): FeedMenuAction[] {
   // Delete only exists for a first-class Post — a session or a derived PR row
   // isn't deletable from the feed, and offering it would be a lie.
   if (input.mine && input.subjectType === "post" && input.canDelete) keys.push("delete");
-  return keys.map((key) => ({ key, ...MENU[key] }));
+
+  const following = FOLLOWING.includes(input.relation ?? "none");
+  return keys.map((key) => {
+    const base = { key, ...MENU[key] };
+    // The follow row is a TOGGLE, so it names the thing pressing it will do.
+    if (key === "follow" && following) return { ...base, labelKey: "feed.menu.unfollow" };
+    // Reporting a POST reports that post. On a derived session/PR row there is
+    // no content row to file against — what you are reporting is the athlete —
+    // so the label says so rather than pointing at a "post" that isn't one.
+    if (key === "report" && input.subjectType !== "post") return { ...base, labelKey: "feed.menu.reportAuthor" };
+    return base;
+  });
 }

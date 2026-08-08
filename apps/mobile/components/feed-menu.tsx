@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Modal, Pressable, Animated, useWindowDimensions } from "react-native";
-import { colors, durations, feedMenuActions, type FeedMenuAction } from "@hybrid/core";
+import { colors, durations, feedMenuActions, type FeedMenuAction, type Relation } from "@hybrid/core";
 import { F, fs, tracking, PressScale } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { GUTTER, RADIUS } from "./aurora/kit";
+import { follow as apiFollow, unfollow as apiUnfollow, blockUser, reportTarget } from "../lib/social-api";
 
 /**
  * THE POST OVERFLOW MENU (mobile) — twin of apps/web/components/feed-menu.tsx.
@@ -33,10 +34,16 @@ import { GUTTER, RADIUS } from "./aurora/kit";
  * above the glyph when there isn't room below — a menu that opens off the
  * bottom of the screen is a menu you cannot use.
  *
- * PLACEHOLDERS SAY SO. Mute, block, follow, report and "not interested" are
- * drawn but nothing is wired behind them yet; pressing one tags that row SOON
- * and leaves the card open, rather than firing a silent no-op the athlete
- * reads as a broken button. Delete is real, so it closes and deletes.
+ * FOLLOW, REPORT AND BLOCK ARE REAL, and each one reports its OUTCOME in place
+ * rather than closing on you: the row swaps to a past-tense tag (Following /
+ * Reported / Blocked) so the press has a visible result. Only block closes the
+ * card, because after it there is nothing left to act on — the author's rows
+ * leave the stream in the same beat.
+ *
+ * MUTE AND "NOT INTERESTED" ARE STILL PLACEHOLDERS, and say so: pressing one
+ * tags that row SOON and leaves the card open, rather than firing a silent
+ * no-op the athlete reads as a broken button. Each needs state that doesn't
+ * exist yet (core feed-actions.ts spells out which).
  */
 
 /** The ⋯'s rect in WINDOW coordinates, from `measureInWindow`. */
@@ -48,16 +55,30 @@ export interface FeedMenuProps {
   onClose: () => void;
   /** For the {h} interpolation in follow/mute/block. */
   handle: string;
+  /** The author, for the follow/block/report calls. */
+  authorId: string;
   mine: boolean;
   subjectType: string;
+  /** The row's own id — what "Report post" files against. */
+  subjectId: string;
+  /** The viewer's relation to the author, so the follow row names the right
+   *  direction. Undefined means "not following" (the safe assumption). */
+  relation?: Relation;
   /** Supplied only when the screen can actually delete this row. */
   onDelete?: () => void;
+  /**
+   * What the screen must do about a change to the AUTHOR, not this row: a
+   * follow changes every card by that person, and a block removes them from
+   * the stream entirely. One callback rather than three props, because the
+   * screen's job is the same either way — patch or drop by author id.
+   */
+  onAuthorChanged?: (change: { authorId: string; relation?: Relation; blocked?: boolean }) => void;
 }
 
 /** The rows this post would show — exported so the card can decide whether to
  *  draw a ⋯ at all. An empty menu behind a button is worse than no button. */
-export function feedMenuFor(p: { mine: boolean; subjectType: string; canDelete: boolean }): FeedMenuAction[] {
-  return feedMenuActions({ mine: p.mine, subjectType: p.subjectType, canDelete: p.canDelete });
+export function feedMenuFor(p: { mine: boolean; subjectType: string; canDelete: boolean; relation?: Relation }): FeedMenuAction[] {
+  return feedMenuActions({ mine: p.mine, subjectType: p.subjectType, canDelete: p.canDelete, relation: p.relation });
 }
 
 /** One row's height at this type size, used only to decide whether the card
@@ -67,15 +88,23 @@ const ROW_H = 40;
 const CARD_PAD = 5;
 const GAP = 6;
 
-export default function FeedMenu({ anchor, onClose, handle, mine, subjectType, onDelete }: FeedMenuProps) {
+export default function FeedMenu({
+  anchor, onClose, handle, authorId, mine, subjectType, subjectId, relation, onDelete, onAuthorChanged,
+}: FeedMenuProps) {
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
   const { width: screenW, height: screenH } = useWindowDimensions();
   const reduced = useReducedMotion();
-  // Which placeholder rows have been pressed this opening. Reset on close, so
-  // the card doesn't reopen wearing the last visit's tags.
-  const [tagged, setTagged] = useState<string[]>([]);
-  const actions = feedMenuFor({ mine, subjectType, canDelete: !!onDelete });
+  // What each pressed row is now showing: "soon" for a placeholder, or the
+  // past-tense outcome of a real action. Reset on close, so the card doesn't
+  // reopen wearing the last visit's tags.
+  const [tag, setTag] = useState<Record<string, string>>({});
+  // The follow row is a toggle, so the menu holds the live relation while it is
+  // open — the screen gets told too, but the row must not wait on a re-render
+  // from above to stop saying "Follow" after you pressed it.
+  const [rel, setRel] = useState<Relation | undefined>(relation);
+  const [busy, setBusy] = useState(false);
+  const actions = feedMenuFor({ mine, subjectType, canDelete: !!onDelete, relation: rel });
   const open = anchor != null;
 
   // Drops from the glyph rather than appearing: 6dp of travel and a fade, over
@@ -87,8 +116,41 @@ export default function FeedMenu({ anchor, onClose, handle, mine, subjectType, o
     Animated.timing(enter, { toValue: 1, duration: reduced ? 90 : durations.fast, useNativeDriver: true }).start();
   }, [open, enter, reduced]);
 
-  const close = () => { setTagged([]); onClose(); };
+  const close = () => { setTag({}); onClose(); };
   const label = (key: string) => t(key).replace("{h}", handle ? `@${handle}` : t("w.social.you"));
+
+  const act = async (key: string) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (key === "follow") {
+        const following = rel === "following" || rel === "friend" || rel === "close";
+        await (following ? apiUnfollow({ followeeId: authorId }) : apiFollow({ followeeId: authorId }));
+        const next: Relation = following ? "none" : "following";
+        setRel(next);
+        setTag((s) => ({ ...s, follow: following ? "" : t("feed.menu.followed") }));
+        onAuthorChanged?.({ authorId, relation: next });
+      } else if (key === "report") {
+        // A POST is a content row and is filed against directly; a session or
+        // PR card is derived, so what gets reported there is the athlete. The
+        // label already says which (core feed-actions.ts).
+        const target = subjectType === "post"
+          ? { targetType: "post", targetId: subjectId }
+          : { targetType: "socialProfile", targetId: authorId };
+        await reportTarget({ ...target, reason: "inappropriate" });
+        setTag((s) => ({ ...s, report: t("feed.menu.reported") }));
+      } else if (key === "block") {
+        await blockUser({ userId: authorId });
+        // Nothing left to act on: the author's rows leave the stream now.
+        onAuthorChanged?.({ authorId, blocked: true });
+        close();
+      }
+    } catch {
+      /* the row simply doesn't tag — no alert for a menu action */
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (!open || actions.length === 0) return null;
 
@@ -137,13 +199,14 @@ export default function FeedMenu({ anchor, onClose, handle, mine, subjectType, o
         }}
       >
         {actions.map((a) => {
-          const isTagged = tagged.includes(a.key);
+          const shown = tag[a.key];
           return (
             <PressScale
               key={a.key}
               onPress={() => {
-                if (a.placeholder) { setTagged((s) => (s.includes(a.key) ? s : [...s, a.key])); return; }
-                if (a.key === "delete") { close(); onDelete?.(); }
+                if (a.placeholder) { setTag((s) => (s[a.key] ? s : { ...s, [a.key]: t("feed.menu.soon") })); return; }
+                if (a.key === "delete") { close(); onDelete?.(); return; }
+                void act(a.key);
               }}
               accessibilityRole="menuitem"
             >
@@ -153,10 +216,12 @@ export default function FeedMenu({ anchor, onClose, handle, mine, subjectType, o
                 <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.body, color: a.destructive ? txt(C, colors.red) : C.chalk }}>
                   {label(a.labelKey)}
                 </Text>
-                {/* The honest tag: pressed, and there is nothing behind it yet. */}
-                {isTagged ? (
+                {/* What the press did. SOON on a placeholder — pressed,
+                    nothing behind it yet — and the past tense on a real one, so
+                    an action that leaves the card open still has a result. */}
+                {shown ? (
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>
-                    {t("feed.menu.soon").toUpperCase()}
+                    {shown.toUpperCase()}
                   </Text>
                 ) : null}
               </View>

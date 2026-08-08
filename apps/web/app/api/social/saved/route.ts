@@ -189,6 +189,9 @@ export async function POST(request: Request) {
           comments: cCount.get(key) ?? 0,
           kudosedByMe: cheered.has(key),
           mine: i.author.id === me.id,
+          // Same as the feed: the ⋯ menu needs it, and `edges` is already
+          // loaded here for the visibility check above.
+          relation: relationTo(me.id, i.author.id, edges),
         };
       }),
       gone: [...gone, ...alsoGone],

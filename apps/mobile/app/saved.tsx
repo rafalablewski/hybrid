@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, RefreshControl } from "react-native";
-import { FEED_SAVED_PAGE, orderBySaved, type FeedItemView, type KudosResponse } from "@hybrid/core";
+import { FEED_SAVED_PAGE, orderBySaved, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
 import { Loading, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
 import { AuroraScreen, GUTTER } from "../components/aurora/kit";
 import type { HeroScrollProps } from "../components/aurora/hero";
@@ -77,6 +77,14 @@ export default function SavedScreen() {
     const r: KudosResponse = await toggleKudos({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setItems((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos ?? x.kudos, kudosedByMe: r.kudosedByMe ?? x.kudosedByMe } : x)) ?? f);
   };
+  // The same author change the feed applies — a blocked author's saved rows go
+  // too, because the resolve endpoint would return them as `hidden` on the very
+  // next load anyway.
+  const authorChanged = ({ authorId, relation, blocked }: { authorId: string; relation?: Relation; blocked?: boolean }) =>
+    setItems((f) => (blocked
+      ? f?.filter((x) => x.author.id !== authorId) ?? f
+      : f?.map((x) => (x.author.id === authorId ? { ...x, relation } : x)) ?? f));
+
   const del = async (item: FeedItemView) => {
     const ok = await confirm({ title: t("w.social.deletePostConfirm"), confirmLabel: t("common.delete"), destructive: true });
     if (!ok) return;
@@ -95,6 +103,7 @@ export default function SavedScreen() {
       onKudos={() => cheer(item)}
       onComments={() => setOpen(open === item.id ? null : item.id)}
       onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
+      onAuthorChanged={authorChanged}
     >
       {open === item.id ? <Comments item={item} /> : null}
     </FeedCard>

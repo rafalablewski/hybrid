@@ -5,7 +5,7 @@ import { Loading, F, fs, leading, serifIf, tracking, useScreenBottomPad, useHubD
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import type { FeedItemView, CommentView, LiveAthlete } from "@hybrid/core";
+import type { FeedItemView, CommentView, LiveAthlete, Relation } from "@hybrid/core";
 import { colors } from "@hybrid/core";
 import { getFeed, toggleKudos, getComments, postComment, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, ProfileModal, SButton } from "./social-kit";
@@ -115,6 +115,15 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     if (!feed) return [];
     return tab === "following" ? feed.filter((i) => !i.mine).slice().sort((a, b) => b.at - a.at) : feed;
   }, [feed, tab]);
+  // What the ⋯ menu changed about an AUTHOR. A follow re-labels every card by
+  // that person; a block takes them out of the stream entirely — the server
+  // already made them invisible, so leaving their rows on screen until the next
+  // load would be the one place the app disagreed with itself.
+  const authorChanged = ({ authorId, relation, blocked }: { authorId: string; relation?: Relation; blocked?: boolean }) =>
+    setFeed((f) => (blocked
+      ? f?.filter((x) => x.author.id !== authorId) ?? f
+      : f?.map((x) => (x.author.id === authorId ? { ...x, relation } : x)) ?? f));
+
   // Delete ASKS FIRST. It used to be a bare × in the row's corner and it
   // deleted on the first press with nothing in between; web has always put a
   // confirm in front of it, and moving delete into a small anchored menu makes
@@ -236,6 +245,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
         onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
+        onAuthorChanged={authorChanged}
       >
         {open === item.id ? <Comments item={item} /> : null}
       </FeedCard>

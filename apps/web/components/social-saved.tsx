@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { FEED_SAVED_PAGE, fs, leading, orderBySaved, tracking } from "@hybrid/core";
-import type { FeedItemView, KudosResponse, SavedFeedResponse } from "@hybrid/core";
+import type { FeedItemView, KudosResponse, Relation, SavedFeedResponse } from "@hybrid/core";
 import { C, Btn, EmptyState, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 import FeedCard from "./feed-card";
@@ -75,6 +75,14 @@ export default function SocialSaved({ onNavigate }: { onNavigate?: (screen: stri
     const r = await jsend<KudosResponse>("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setItems((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos ?? x.kudos, kudosedByMe: r.kudosedByMe ?? x.kudosedByMe } : x)) ?? f);
   };
+  // The same author change the feed applies — a blocked author's saved rows go
+  // too, because the resolve endpoint would return them as `hidden` on the very
+  // next load anyway.
+  const authorChanged = ({ authorId, relation, blocked }: { authorId: string; relation?: Relation; blocked?: boolean }) =>
+    setItems((f) => (blocked
+      ? f?.filter((x) => x.author.id !== authorId) ?? f
+      : f?.map((x) => (x.author.id === authorId ? { ...x, relation } : x)) ?? f));
+
   const del = async (item: FeedItemView) => {
     if (!window.confirm(t("w.social.deletePostConfirm"))) return;
     await fetch(`/api/social/posts/${item.subjectId}`, { method: "DELETE" });
@@ -109,6 +117,7 @@ export default function SocialSaved({ onNavigate }: { onNavigate?: (screen: stri
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
+              onAuthorChanged={authorChanged}
             >
               {open === item.id && <Comments item={item} onCount={(n) => setItems((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}
             </FeedCard>

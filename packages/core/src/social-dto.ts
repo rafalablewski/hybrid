@@ -51,6 +51,12 @@ export interface FeedItemView extends FeedItem {
   /** Why this card is in a RANKED feed, when the viewer doesn't already follow
    *  the author (core/feed-rank.ts). Absent means "no explanation needed". */
   reason?: FeedReason;
+  /** The viewer's relation to the author. The ranker already derives this, and
+   *  the row's ⋯ menu needs it to know whether to offer Follow or Unfollow —
+   *  a menu that offers to follow someone you already follow reads as broken.
+   *  Absent on an older response; the menu then assumes "not following", which
+   *  is the safe direction (a redundant follow no-ops server-side). */
+  relation?: Relation;
 }
 export interface FeedResponse extends Degradable, ApiError {
   feed: FeedItemView[];

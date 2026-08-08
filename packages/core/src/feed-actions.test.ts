@@ -201,12 +201,37 @@ describe("the overflow menu", () => {
 
   it("marks which rows are real and which are drawn-but-unwired", () => {
     // The clients render `placeholder` honestly instead of firing a no-op that
-    // reads as a bug. If one of these gets wired up, this test is the reminder.
+    // reads as a bug. Mute and "not interested" are the two still waiting on
+    // state that doesn't exist; when one lands, this test is the reminder.
     const rows = feedMenuActions({ mine: false, subjectType: "post" });
-    expect(rows.every((a) => a.placeholder)).toBe(true);
+    expect(rows.filter((a) => a.placeholder).map((a) => a.key)).toEqual(["mute", "notInterested"]);
+    expect(rows.filter((a) => !a.placeholder).map((a) => a.key)).toEqual(["follow", "report", "block"]);
     const own = feedMenuActions({ mine: true, subjectType: "post", canDelete: true });
     expect(own.map((a) => a.key)).toEqual(["delete"]);
     expect(own.every((a) => !a.placeholder)).toBe(true);
+  });
+
+  it("the follow row names what pressing it will DO", () => {
+    // A row that says "Follow" to someone you already follow makes the menu
+    // look like it doesn't know who you are.
+    const label = (relation?: Parameters<typeof feedMenuActions>[0]["relation"]) =>
+      feedMenuActions({ mine: false, subjectType: "post", relation }).find((a) => a.key === "follow")?.labelKey;
+    expect(label("none")).toBe("feed.menu.follow");
+    expect(label("follower")).toBe("feed.menu.follow"); // they follow me, I don't follow back
+    expect(label(undefined)).toBe("feed.menu.follow"); // unknown → the safe direction
+    expect(label("following")).toBe("feed.menu.unfollow");
+    expect(label("friend")).toBe("feed.menu.unfollow");
+    expect(label("close")).toBe("feed.menu.unfollow");
+  });
+
+  it("reports the POST on a post, and the ATHLETE on a derived row", () => {
+    // A session or PR card isn't a content row anyone can file against — what
+    // you're reporting there is the person, so the label must not say "post".
+    const label = (subjectType: string) =>
+      feedMenuActions({ mine: false, subjectType }).find((a) => a.key === "report")?.labelKey;
+    expect(label("post")).toBe("feed.menu.report");
+    expect(label("session")).toBe("feed.menu.reportAuthor");
+    expect(label("pr")).toBe("feed.menu.reportAuthor");
   });
 
   it("returns nothing for my own session or PR row, so no ⋯ is drawn", () => {

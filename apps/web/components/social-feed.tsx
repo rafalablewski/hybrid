@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fs, leading, tracking } from "@hybrid/core";
+import type { Relation } from "@hybrid/core";
 import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, LiveAthlete, MutationResult } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, EmptyState, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
@@ -143,6 +144,15 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
     const r = await jsend<KudosResponse>("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, kudos: r.kudos ?? x.kudos, kudosedByMe: r.kudosedByMe ?? x.kudosedByMe } : x)) ?? f);
   };
+  // What the ⋯ menu changed about an AUTHOR. A follow re-labels every card by
+  // that person; a block takes them out of the stream entirely — the server
+  // already made them invisible, so leaving their rows on screen until the next
+  // load would be the one place the app disagreed with itself.
+  const authorChanged = ({ authorId, relation, blocked }: { authorId: string; relation?: Relation; blocked?: boolean }) =>
+    setFeed((f) => (blocked
+      ? f?.filter((x) => x.author.id !== authorId) ?? f
+      : f?.map((x) => (x.author.id === authorId ? { ...x, relation } : x)) ?? f));
+
   const del = async (item: FeedItem) => {
     if (!window.confirm(t("w.social.deletePostConfirm"))) return;
     await fetch(`/api/social/posts/${item.subjectId}`, { method: "DELETE" });
@@ -261,6 +271,7 @@ export default function SocialFeed({ onNavigate }: { onNavigate?: (screen: strin
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
+              onAuthorChanged={authorChanged}
             >
               {open === item.id && <Comments item={item} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === item.id ? { ...x, comments: n } : x)) ?? f)} />}
             </FeedCard>
