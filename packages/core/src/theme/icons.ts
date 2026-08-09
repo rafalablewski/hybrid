@@ -336,9 +336,14 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   profile: "user-circle",
   connections: "share",
   settings: "settings",
+  // Support — the kit has no life-ring/question glyph, and `info` is already
+  // the "explain this" mark everywhere else in the app.
+  help: "info",
   upgrade: "offer",
   // social + marketplace
   feed: "list-play",
+  // Direct messages — the envelope, the same mark the bottom bar draws.
+  messages: "mail",
   discover: "user-add",
   // The same glyph the feed row's bookmark draws — the affordance link matters
   // more than uniqueness here, and this map already reuses glyphs across groups

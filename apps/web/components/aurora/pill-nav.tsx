@@ -2,30 +2,18 @@
 
 import { accentText } from "@/lib/ui";
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
   fs,
-  space,
-  sheetPadBottom,
-  groupedNavWithLocks,
-  sanitizePersonaAccess,
-  AURORA_NAV_ICONS,
   AURORA_NAV_TABS,
   AURORA_NAV_GEOMETRY,
   AURORA_NAV_MATERIAL,
   AURORA_TRAIN_GLYPH,
   formatSessionElapsed,
-  FUNNEL,
   type AuroraIconName,
 } from "@hybrid/core";
 import { loadWorkoutDraft, type WorkoutDraft } from "@/lib/workout-draft";
-import { usePersona } from "@/lib/persona";
-import { useSession } from "@/lib/session";
-import { useFlags } from "@/lib/use-flags";
 import { useLang } from "@/lib/i18n";
 import { useTemplate } from "@/lib/use-template";
-import { track } from "@/lib/track";
-import { useDialog } from "@/lib/use-dialog";
 import { AuroraIcon } from "./icons";
 
 /**
@@ -46,17 +34,21 @@ import { AuroraIcon } from "./icons";
  * Persistent session state lives in the accessory above the bar (the system's
  * mini-player slot), never as a tab.
  *
- * On web it COEXISTS with the left sidebar (the sidebar is the full nav; this
- * is quick-access to the funnel destinations). Self-gates to Aurora (renders
- * null in Classic). Glyphs are the design-kit line icons, plus the shared
- * inline dumbbell for Train. "More" opens a sheet with the full persona-
- * filtered nav.
+ * On web it COEXISTS with the left sidebar on desktop (the sidebar is the full
+ * nav; this is quick-access to the funnel destinations). Self-gates to Aurora
+ * (renders null in Classic). Glyphs are the design-kit line icons, plus the
+ * shared inline dumbbell for Train.
+ *
+ * The bar carries NO menu of its own any more. It used to end in a "More" tab
+ * that opened a springboard sheet of every screen; that sheet is now the SIDE
+ * MENU behind the Today header's avatar (aurora/side-menu.tsx), which is one
+ * tap from every hub tab and does not spend a bar slot on a directory.
  */
-// The bar reads Today, Nutrition, Train, More, Profile — five, which is Apple's
-// ceiling for iPhone. Nutrition holds the slot Explore used to (see @hybrid/core
-// nav-bar.ts: discovery is not a daily destination, eating is); Profile also
-// lives in the Today header. Plans/History/Cockpit/Feed stay reachable from the
-// More sheet.
+// The bar reads Today, Nutrition, Train, Messages, Profile — five, which is
+// Apple's ceiling for iPhone. Nutrition holds the slot Explore used to (see
+// @hybrid/core nav-bar.ts: discovery is not a daily destination, eating is);
+// Messages holds the one More used to. Plans/History/Performance/Feed and the
+// rest of the toolkit live in the side menu.
 const TABS = AURORA_NAV_TABS;
 
 // Geometry + material are shared with mobile via @hybrid/core so the two
@@ -68,15 +60,7 @@ const C = (v: string) => `var(--color-${v})`;
 
 export default function AuroraPillNav({ activeId, onSelect }: { activeId?: string; onSelect: (id: string) => void }) {
   const aurora = useTemplate().template === "aurora";
-  const persona = usePersona();
-  const { session, logout } = useSession();
-  const router = useRouter();
-  const { isEnabled, value } = useFlags();
   const { t } = useLang();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const closeMore = () => { setMoreOpen(false); setQuery(""); };
-  const dialogRef = useDialog<HTMLDivElement>(closeMore, moreOpen);
 
   // Sliding selection indicator (the glass lens): a single translucent highlight
   // that SPRINGS to the active slot and STRETCHES mid-travel (scaled by travel
@@ -116,19 +100,17 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  // Which of the five slots is lit. Train is a real slot now (it was the
-  // detached circle, which mapped to none and made the lens fade out), so every
-  // bar destination lights one — the lens no longer has a hidden state.
-  // "more" lights when its sheet is open or the active screen isn't a bar slot.
+  // Which of the five slots is lit. Train is a real slot (it was the detached
+  // circle, which mapped to none and made the lens fade out), so every bar
+  // destination lights one. A screen that is NOT on the bar lights nothing and
+  // the lens fades out where it stands — the state the retired "more" slot used
+  // to absorb by claiming every unlisted screen as its own.
   const slotIds = new Set<string>([...TABS.map((tb) => tb.id), "log"]);
-  const moreLit = moreOpen || (activeId != null && !slotIds.has(activeId));
-  const activeFlat = moreLit
-    ? "more"
-    : activeId === "log"
-      ? "train"
-      : activeId != null && slotIds.has(activeId)
-        ? activeId
-        : null;
+  const activeFlat = activeId === "log"
+    ? "train"
+    : activeId != null && slotIds.has(activeId)
+      ? activeId
+      : null;
 
   // Reposition the indicator whenever the active slot changes (and on resize).
   // On the first paint it snaps into place; after that it springs, stretching
@@ -243,137 +225,15 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
 
   if (!aurora) return null;
 
-  const initials = ((session?.name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
-  const signOut = () => { closeMore(); logout(); router.replace("/login"); };
-
-  const access = sanitizePersonaAccess(value("access.personaNav"));
   const label = (id: string, fallback: string) => (t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`));
-  const go = (id: string) => { closeMore(); onSelect(id); };
+  const go = (id: string) => onSelect(id);
 
   // The accessory is redundant once you're already in the Train launcher or the
   // live logger, so it stands down there.
   const showAccessory = draft != null && activeId !== "train" && activeId !== "log";
-  // Premium (Full) items a free user hasn't unlocked show LOCKED (🔒) here rather
-  // than hidden, so the whole toolkit is visible; a locked tile upsells.
-  const groups = groupedNavWithLocks(persona, access)
-    .map((g) => ({ ...g, items: g.items.filter((x) => isEnabled(`nav.${x.item.id}`)) }))
-    .filter((g) => g.items.length > 0);
-
-  // Springboard search — filters the launcher tiles by (localized) label and
-  // drops clusters left empty by the filter, so the grid stays tight. Parity
-  // with the mobile More tab's search-first springboard.
-  const totalTools = groups.reduce((n, g) => n + g.items.length, 0);
-  const q = query.trim().toLowerCase();
-  const shown = q
-    ? groups
-        .map((g) => ({ ...g, items: g.items.filter(({ item }) => label(item.id, item.label).toLowerCase().includes(q)) }))
-        .filter((g) => g.items.length > 0)
-    : groups;
 
   return (
     <>
-      {moreOpen && (
-        <div onClick={closeMore} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", fontFamily: "var(--font-display)" }}>
-          {/* The pad under the last row is the SHEET pad (@hybrid/core
-              `sheetPadBottom`), not clearance for the bar. This reserved 110px
-              for the floating pill bar — which is z-50 UNDER this z-60 panel and
-              fully hidden behind it while the sheet is up, so the reservation
-              bought nothing and left ~86px of dead panel under Sign out. */}
-          <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 720, maxHeight: "80vh", overflowY: "auto", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: "28px 28px 0 0", padding: `20px 20px max(${sheetPadBottom()}px, env(safe-area-inset-bottom, 0px))` }}>
-            <div style={{ width: 40, height: 4, borderRadius: 999, background: C("line"), margin: "0 auto 16px" }} />
-
-            {/* Identity — avatar + name + role/entitlement (tap → profile) with a
-                Settings cog, matching the mobile More tab's identity card. */}
-            {session && (
-              <div style={{ display: "flex", alignItems: "center", gap: 12, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16, marginBottom: 16 }}>
-                <button className="pressable" onClick={() => go("profile")} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
-                  <span style={{ width: 42, height: 42, borderRadius: 999, flexShrink: 0, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--color-lime) 13%, transparent)", border: `1px solid ${C("lime")}`, fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.note, color: accentText("lime") }}>{initials}</span>
-                  <span style={{ minWidth: 0 }}>
-                    <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session.name || t("nav.you")}</span>
-                    <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 3 }}>{[session.role.toUpperCase(), session.entitlement === "paid" ? "FULL" : "FREE"].join(" – ")}</span>
-                  </span>
-                </button>
-                <button className="pressable" onClick={() => go("settings")} aria-label={label("settings", "Settings")} style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", background: C("ink2"), border: `1px solid ${C("line")}`, cursor: "pointer" }}>
-                  <AuroraIcon name="settings" size={19} strokeWidth={2.6} color={C("chalk")} />
-                </button>
-              </div>
-            )}
-
-            {/* Unlock Full — the one accent in the hub (parity with the mobile
-                More tab's membership card). Casual users only. */}
-            {persona === "casual" && isEnabled("nav.upgrade") && (
-              <button className="pressable"
-                onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "more" }); go("upgrade"); }}
-                style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 16, padding: 16, borderRadius: 28, background: C("ink"), border: `1px solid color-mix(in srgb, var(--premium-accent) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--premium-accent) 32%, transparent)" }}
-              >
-                <span style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--premium-accent) 16%, transparent)", pointerEvents: "none" }} />
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: "var(--premium-accent-text)" }}>{t("w.home.pillnav.upgradeKicker")}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk"), marginTop: 8, letterSpacing: "-.02em" }}>{t("nav.upgrade")}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 5, maxWidth: 240 }}>{t("w.home.pillnav.upgradeBlurb")}</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 16, background: "var(--premium-accent)", color: "var(--premium-accent-ink)", borderRadius: 999, padding: "8px 16px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
-              </button>
-            )}
-
-            {/* Search — filters the springboard tiles by label (parity with the mobile More tab). */}
-            <div style={{ display: "flex", alignItems: "center", gap: space.sm, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "0 16px", marginBottom: 16 }}>
-              <AuroraIcon name="search" size={18} strokeWidth={2.4} color={C("ash")} />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={`Search ${totalTools} tools & screens`}
-                aria-label="Search tools"
-                autoCapitalize="none"
-                autoCorrect="off"
-                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.body, padding: "12px 0" }}
-              />
-              {query.length > 0 && (
-                <button className="pressable" onClick={() => setQuery("")} aria-label="Clear search" style={{ background: "transparent", border: "none", cursor: "pointer", color: C("ash"), fontSize: 18, lineHeight: 1 }}>×</button>
-              )}
-            </div>
-
-            {shown.map((g) => {
-              const groupName = t(`nav.group.${g.group}`) === `nav.group.${g.group}` ? g.group : t(`nav.group.${g.group}`);
-              return (
-              <div key={g.group} style={{ marginBottom: 16 }}>
-                {/* Cluster header — label only, no marker (decorative dots/squares
-                    before text are banned; parity with the mobile More tab). */}
-                <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{groupName}</span>
-                </div>
-                {/* Springboard grid — 4-col neutral bordered cells (icon + label
-                    inside), sand lock for premium. */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: space.xs }}>
-                  {g.items.map(({ item: { id, label: fb }, locked }) => {
-                    const name = label(id, fb);
-                    const openItem = () => { if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); go("upgrade"); } else go(id); };
-                    return (
-                      <button className="pressable" key={id} onClick={openItem} title={locked ? `${name} (Full)` : name} aria-label={locked ? `${name} (Full)` : name} style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 4px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, cursor: "pointer", opacity: locked ? 0.6 : 1 }}>
-                        <AuroraIcon name={AURORA_NAV_ICONS[id] ?? "info"} size={22} strokeWidth={2.4} color={locked ? C("ash") : C("chalk")} />
-                        <span style={{ fontFamily: "var(--font-display)", fontSize: fs.micro, fontWeight: 600, color: locked ? C("ash") : C("chalk"), textAlign: "center", lineHeight: 1.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{name}</span>
-                        {locked && (
-                          <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>
-                            <AuroraIcon name="lock" size={11} strokeWidth={2.4} color="var(--amber-text)" />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              );
-            })}
-            {q.length > 0 && shown.length === 0 && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), textAlign: "center", padding: "20px 0 10px" }}>{`No tools match “${query}”.`}</div>
-            )}
-
-            {/* Sign out — matching the mobile More tab's bottom action. */}
-            {session && (
-              <button className="pressable" onClick={signOut} style={{ display: "block", width: "100%", textAlign: "center", marginTop: 10, padding: "16px 0", background: "none", border: "none", cursor: "pointer", color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.body }}>{t("common.signout")}</button>
-            )}
-          </div>
-        </div>
-      )}
-
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none" }}>
         {/* The bar stack: [session accessory] over [glass capsule with the five
             tabs], shrinking together on scroll. */}
@@ -412,7 +272,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 }}
               />
             )}
-            {/* Today, Nutrition, Train, More, Profile */}
+            {/* Today, Nutrition, Train, Messages, Profile */}
             {TABS.map((tab) => (
               <PillButton
                 key={tab.id}
@@ -422,7 +282,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 active={activeFlat === tab.id}
                 reduced={reduced}
                 mini={mini}
-                onClick={() => (tab.id === "more" ? setMoreOpen((v) => !v) : go(tab.id))}
+                onClick={() => go(tab.id)}
               />
             ))}
           </div>

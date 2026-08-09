@@ -57,7 +57,10 @@ const ICONS = {
   // fill pair. The Android/fallback PNG is the kit's own fork-knife glyph.
   nutrition: { sf: "fork.knife", src: require("../../assets/icons/fork-knife.png") },
   train: { sf: { default: "dumbbell", selected: "dumbbell.fill" }, src: require("../../assets/icons/list-add.png") },
-  more: { sf: { default: "square.grid.2x2", selected: "square.grid.2x2.fill" }, src: require("../../assets/icons/grid.png") },
+  // Messages took the slot the More springboard used to hold — see
+  // @hybrid/core nav-bar.ts. The envelope is the platform's DM mark and the
+  // kit's own `mail` glyph carries the house style off iOS.
+  messages: { sf: { default: "envelope", selected: "envelope.fill" }, src: require("../../assets/icons/mail.png") },
   profile: { sf: { default: "person.crop.circle", selected: "person.crop.circle.fill" }, src: require("../../assets/icons/user-circle.png") },
 } as const;
 
@@ -66,7 +69,7 @@ const ROUTE: Record<string, string> = {
   today: "index",
   nutrition: "nutrition",
   train: "log",
-  more: "more",
+  messages: "messages",
   profile: "you",
 };
 

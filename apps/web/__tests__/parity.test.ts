@@ -17,7 +17,7 @@ import { NAV_ITEMS, CAPABILITIES } from "@hybrid/core";
 // This test makes the rule mechanical. Every canonical nav id must resolve to a
 // real surface on BOTH clients:
 //   • web    — an app-shell `screen === "<id>"` branch
-//   • mobile — an entry in the More springboard's HREF route map
+//   • mobile — an entry in lib/nav-href.ts, the id → route table
 //
 // A deliberate, temporary gap is allowed ONLY if it is recorded in
 // capabilities.ts as `planned` or `blocked` (per the capabilities rule), and the
@@ -29,7 +29,10 @@ const APP_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = join(APP_ROOT, "..", "..");
 
 const shell = readFileSync(join(APP_ROOT, "components", "app-shell.tsx"), "utf8");
-const more = readFileSync(join(REPO_ROOT, "apps", "mobile", "app", "(tabs)", "more.tsx"), "utf8");
+// The mobile route table used to live inside the More tab's springboard; when
+// More was replaced by the side menu the table moved to lib/nav-href.ts, which
+// is where a routing table belonged all along.
+const navHref = readFileSync(join(REPO_ROOT, "apps", "mobile", "lib", "nav-href.ts"), "utf8");
 
 /** Nav ids the web app-shell renders a screen for.
  *  The id class must include the HYPHEN: `volume-model` is a real nav id, and
@@ -38,12 +41,12 @@ const more = readFileSync(join(REPO_ROOT, "apps", "mobile", "app", "(tabs)", "mo
  *  springboard entry it should have caught went unnoticed as a result. */
 const webScreens = new Set([...shell.matchAll(/screen === "([a-z-]+)"/g)].map((m) => m[1]!));
 
-/** Nav ids the mobile springboard has a route for. An id absent from this map is
- *  treated by More as "web-only" and OPENS THE BROWSER — which is precisely the
+/** Nav ids the mobile app has a route for. An id absent from this map is treated
+ *  by the side menu as "web-only" and OPENS THE BROWSER — which is precisely the
  *  dead-end this test exists to prevent. */
 const mobileRoutes = new Set(
   // Hyphenated ids must be QUOTED as object keys, so the quotes are optional here.
-  [...more.slice(more.indexOf("const HREF"), more.indexOf("const GROUP_LABEL")).matchAll(/^\s*"?([a-z-]+)"?:\s*"/gm)].map((m) => m[1]!),
+  [...navHref.slice(navHref.indexOf("export const NAV_HREF")).matchAll(/^\s*"?([a-z-]+)"?:\s*"/gm)].map((m) => m[1]!),
 );
 
 /**
@@ -101,7 +104,7 @@ describe("web ↔ mobile parity", () => {
     // name so a future "make it mobile-only" change has to face this test.
     for (const id of ["analytics", "endurance"]) {
       expect(webScreens.has(id), `${id} missing from web app-shell`).toBe(true);
-      expect(mobileRoutes.has(id), `${id} missing from the mobile springboard`).toBe(true);
+      expect(mobileRoutes.has(id), `${id} missing from the mobile route table`).toBe(true);
     }
   });
 });
