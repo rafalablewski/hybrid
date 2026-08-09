@@ -3,13 +3,15 @@
 import { createElement, useMemo, useState, type CSSProperties } from "react";
 import {
   weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
-  type LoggedSession, type ExercisePeriod, type TrendDir, type ExerciseTableRow,
+  volumeTrendReading, scrubPosition,
+  type LoggedSession, type ExercisePeriod, type TrendDir, type ExerciseTableRow, type WeekVolume,
 } from "@hybrid/core";
 import { HeroScreen } from "./hero";
-import { fs, space, LINE_HEX, LIME_HEX, BLUE } from "@/lib/ui";
+import { fs, space, LINE_HEX, LIME_HEX, BLUE, ASH } from "@/lib/ui";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
+import { useChartScrub, SCRUB_STYLE } from "./chart-scrub";
 
 const C = (v: string) => `var(--color-${v})`;
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
@@ -23,7 +25,10 @@ const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.anal
 const PAD_X = 20;
 // Wider than the phone's 112 because the band is wider — the SHAPE is identical,
 // because both clients get it from the same sparkline().
-const SPARK = { width: 160, height: 46 };
+const SPARK = { width: 160, height: 46, pad: 4 };
+
+/** A week bucket's date, as the bands print it. */
+const fmtWeekDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
 const sheet: CSSProperties = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", overflow: "hidden" };
 const bandLabel: CSSProperties = { fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.caption, color: C("ash") };
@@ -81,26 +86,43 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
 
   /** A measure band: label, the week's figure, its eight-week average, and the
    *  eight-week line — drawn on a TRUE zero baseline, so a week with nothing
-   *  logged sits on the line instead of being floored into a phantom bar. */
-  const Measure = ({ label, value, unit, avg, series, color }: {
+   *  logged sits on the line instead of being floored into a phantom bar.
+   *
+   *  HELD, the band answers for another week in the slots it already has: the
+   *  FIGURE becomes that week's, and the average line underneath becomes the
+   *  week it belongs to. A pinned pill would cover a 160×46 spark whole. */
+  const Measure = ({ label, value, unit, avg, series, color, measure }: {
     label: string; value: string; unit?: string; avg: string; series: number[]; color: string;
+    measure: "sets" | "tonnage";
   }) => {
     const s = sparkline(series, SPARK);
+    // sparkline() insets its points by `pad` at each end (the endpoint dot must
+    // not clip), so the hit-testing has to know about the same inset.
+    const geo = { count: series.length, mode: "point" as const, inset: (SPARK.pad ?? 4) / SPARK.width };
+    const scrub = useChartScrub(geo.count, geo.mode, geo.inset);
+    const read = scrub.index >= 0 ? volumeTrendReading(weeks, scrub.index, measure, units) : null;
+    const hit = read ? s.points[read.index] : null;
     return (
       <div style={{ display: "flex", alignItems: "center", gap: space.lg, padding: `17px ${PAD_X}px`, borderBottom: `1px solid ${C("line")}` }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0 }} aria-live="polite">
           <div style={bandLabel}>{label}</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginTop: 9 }}>
-            <span style={figure}>{value}</span>
-            {!!unit && <span style={{ ...bandLabel, fontSize: fs.caption }}>{unit}</span>}
+            <span style={{ ...figure, color: read?.best ? "var(--lime-text)" : C("chalk") }}>{read ? read.value : value}</span>
+            {!!(read ? read.unit : unit) && <span style={{ ...bandLabel, fontSize: fs.caption }}>{read ? read.unit : unit}</span>}
           </div>
-          <div style={{ ...metaTxt, marginTop: 8 }}>{avg}</div>
+          <div style={{ ...metaTxt, marginTop: 8 }}>
+            {read ? t("chart.weekOf").replace("{date}", fmtWeekDate(read.weekStart)) : avg}
+          </div>
         </div>
-        <svg width={SPARK.width} height={SPARK.height} aria-hidden="true" style={{ flex: "none" }}>
-          <line x1={0} y1={s.baselineY} x2={SPARK.width} y2={s.baselineY} stroke={LINE_HEX} strokeWidth={1} />
-          <path d={s.d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
-          <circle cx={s.last.x} cy={s.last.y} r={3.2} fill={color} />
-        </svg>
+        <div {...scrub.bind} aria-label={label} style={{ ...SCRUB_STYLE, position: "relative", flex: "none", lineHeight: 0 }}>
+          <svg width={SPARK.width} height={SPARK.height} aria-hidden="true" style={{ display: "block" }}>
+            <line x1={0} y1={s.baselineY} x2={SPARK.width} y2={s.baselineY} stroke={LINE_HEX} strokeWidth={1} />
+            <path d={s.d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
+            <circle cx={s.last.x} cy={s.last.y} r={3.2} fill={color} />
+            {!!hit && <line x1={hit.x} x2={hit.x} y1={0} y2={SPARK.height} stroke={ASH} strokeOpacity={0.55} strokeWidth={1} />}
+            {!!hit && <circle cx={hit.x} cy={hit.y} r={4} fill={C("chalk")} stroke={C("ink2")} strokeWidth={1.5} />}
+          </svg>
+        </div>
       </div>
     );
   };
@@ -138,6 +160,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
           avg={`${t("w.analyze.trends.avg8w")} ${Number(avgSets.toFixed(1))}`}
           series={setSeries}
           color={LIME_HEX}
+          measure="sets"
         />
         <Measure
           label={t("w.analyze.trends.tonnageMeasure")}
@@ -146,6 +169,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
           avg={`${t("w.analyze.trends.avg8w")} ${fmtTonnage(avgTonnage, units)}`}
           series={tonneSeries}
           color={BLUE}
+          measure="tonnage"
         />
 
         {/* The quiet band — the sheet's one recessive surface, carrying the

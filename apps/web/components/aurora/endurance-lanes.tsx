@@ -4,11 +4,13 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
   enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
+  laneVolumeReading, lanePaceReading,
   DISCIPLINE_META, LANE_CAP, ago, durationUnits, formatDuration,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import { useChartScrub, SCRUB_STYLE_IN_RAIL, type ScrubBind } from "./chart-scrub";
 import HistoryStrip from "./history-strip";
 import RailTail from "./rail-tail";
 
@@ -54,6 +56,15 @@ const kicker: CSSProperties = {
   textTransform: "uppercase", color: C("ash"), whiteSpace: "nowrap",
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
+/** The tile's one big number. Shared by the resting figure and the held one, so
+ *  a held week can't quietly render at a different size than the week it
+ *  replaced. */
+const figure: CSSProperties = { ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1 };
+const figureUnit: CSSProperties = { fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 };
+
+/** The week a held point covers, in the tile's own label voice. */
+const weekLabel = (t: (k: string) => string, iso: string) =>
+  t("chart.weekOf").replace("{date}", iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
 /** One rail tile — the cluster's shared skeleton (name row → figure → chart →
  *  footer), and the place the SCOPE RULE is enforced rather than merely
@@ -75,13 +86,27 @@ const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric:
  *  pace line) needs the window said out loud.
  *
  *  Fixed width, shared minimum height so a rail's cards sit on one baseline
- *  however differently they're filled. Mirrors mobile. */
-function Tile({ w, label, foot, footRight, children }: {
-  w: number; label: string; foot?: string; footRight?: ReactNode; children: ReactNode;
+ *  however differently they're filled. Mirrors mobile.
+ *
+ *  `bind` makes the WHOLE TILE the target of its own held chart. The strip
+ *  inside is 24px tall — a fair chart and an unfair touch target — so the press
+ *  lands anywhere on the card while the fraction is still measured against the
+ *  drawing (the hook's `plotRef`). Holding swaps the LABEL for the week and the
+ *  FIGURE for that week's value, which is the stock-app reading and costs the
+ *  tile no extra row: nothing moves, because nothing was added. */
+function Tile({ w, label, foot, footRight, bind, children }: {
+  w: number; label: string; foot?: string; footRight?: ReactNode; bind?: ScrubBind; children: ReactNode;
 }) {
   return (
     <div
+      {...(bind ?? {})}
+      // One live region for the whole tile, not one per slot: holding changes
+      // the LABEL and the FIGURE together ("Week of 27 Jul" / "12.4 km"), and a
+      // reader that announces the number without the week has announced half an
+      // answer.
+      aria-live={bind ? "polite" : undefined}
       style={{
+        ...(bind ? SCRUB_STYLE_IN_RAIL : null),
         flex: `0 0 ${w}px`, scrollSnapAlign: "start", minHeight: 118,
         display: "flex", flexDirection: "column", gap: 6,
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
@@ -112,9 +137,9 @@ function SummaryTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => strin
       {/* The figure carries "efforts" as its UNIT — the same shape the Other
           sports tile uses — because the label is now saying the scope. The
           header above the rail used to print this same count. */}
-      <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
+      <div style={{ ...figure, color: C("chalk") }}>
         {lane.efforts}
-        <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>{t("endurance.efforts").toLowerCase()}</span>
+        <span style={figureUnit}>{t("endurance.efforts").toLowerCase()}</span>
       </div>
       <div style={{ display: "grid", gap: 3, marginTop: "auto" }}>
         {row("KM", String(lane.distanceKm))}
@@ -135,14 +160,24 @@ function VolumeTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string
   // per week, countable at a glance — so a caption naming the count is the
   // chart's own axis set in words. It goes where the window is NOT visible
   // (TrendTile, whose line has no per-week marks to count), and nowhere else.
+  //
+  // HELD, the same two slots answer for another week: the label says which, the
+  // figure says how much. The strip's eight bars were the whole point of the
+  // tile and the only thing on it that named no numbers.
+  const scrub = useChartScrub(lane.weeks.length, "band");
+  const read = scrub.index >= 0 ? laneVolumeReading(lane, scrub.index) : null;
   return (
-    <Tile w={178} label={t("w.home.end.volumeWeek")}>
-      <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
-        {lane.thisWeek.km}
-        <span style={{ fontSize: 10, fontWeight: 400, color: C("ash"), marginLeft: 4 }}>km</span>
+    <Tile
+      w={178}
+      label={read ? weekLabel(t, read.weekStart) : t("w.home.end.volumeWeek")}
+      bind={{ ...scrub.bind, "aria-label": t("w.home.end.volumeWeek") }}
+    >
+      <div style={{ ...figure, color: read?.best ? "var(--lime-text)" : C("chalk") }}>
+        {read ? read.value : lane.thisWeek.km}
+        <span style={figureUnit}>{read ? read.unit : "km"}</span>
       </div>
-      <div style={{ marginTop: "auto" }}>
-        <HistoryStrip bars={volumeBars(lane.weeks)} color={C("blue")} />
+      <div ref={scrub.plotRef} style={{ marginTop: "auto" }}>
+        <HistoryStrip bars={volumeBars(lane.weeks)} color={C("blue")} held={scrub.index} />
       </div>
     </Tile>
   );
@@ -161,40 +196,60 @@ function TrendTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string 
   const xy = pts.map((p, i) => [(i / (pts.length - 1)) * 100, 3 + p * (H - 6)] as const);
   const line = xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const end = xy[xy.length - 1]!;
+  // The line runs edge to edge, so its points carry no inset — the first is at
+  // 0 and the last at the full width.
+  const scrub = useChartScrub(pts.length, "point");
+  const read = scrub.index >= 0 ? lanePaceReading(lane, scrub.index) : null;
+  const hit = scrub.index >= 0 ? xy[scrub.index] : null;
   return (
     <Tile
       w={176}
-      label={t("w.home.end.paceLatest")}
+      label={read ? weekLabel(t, read.weekStart) : t("w.home.end.paceLatest")}
       foot={t("w.home.end.window8")}
+      bind={{ ...scrub.bind, "aria-label": t("w.home.end.paceLatest") }}
       footRight={delta ? (
         <span style={{ ...num, fontSize: 10, whiteSpace: "nowrap", color: delta.faster ? "var(--lime-text)" : "var(--red-text)" }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </span>
       ) : undefined}
     >
-      <div style={{ ...num, fontSize: 26, fontWeight: 500, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk"), whiteSpace: "nowrap" }}>
-        {formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
+      <div style={{ ...figure, color: read?.best ? "var(--lime-text)" : C("chalk"), whiteSpace: "nowrap" }}>
+        {read ? `${read.value} ${read.unit}` : formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
       </div>
       {/* Colours go through `style`, NOT presentation attributes: a var() in
           stroke="…" / stop-color="…" does not resolve (it computes to none /
           black), which is the same trap lib/ui.tsx flags for recharts. */}
-      <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: H, marginTop: "auto", overflow: "visible" }} aria-hidden>
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" style={{ stopColor: C("blue"), stopOpacity: 0.22 }} />
-            <stop offset="100%" style={{ stopColor: C("blue"), stopOpacity: 0 }} />
-          </linearGradient>
-        </defs>
-        <polygon points={`0,${H} ${line} 100,${H}`} fill={`url(#${id})`} />
-        <polyline
-          points={line} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round"
-          vectorEffect="non-scaling-stroke" style={{ fill: "none", stroke: C("blue") }}
-        />
-        <circle
-          cx={end[0]} cy={end[1]} r={2.4} strokeWidth={1.4} vectorEffect="non-scaling-stroke"
-          style={{ fill: C("blue"), stroke: C("ink2") }}
-        />
-      </svg>
+      <div ref={scrub.plotRef} style={{ marginTop: "auto" }}>
+        <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{ display: "block", width: "100%", height: H, overflow: "visible" }} aria-hidden>
+          <defs>
+            <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" style={{ stopColor: C("blue"), stopOpacity: 0.22 }} />
+              <stop offset="100%" style={{ stopColor: C("blue"), stopOpacity: 0 }} />
+            </linearGradient>
+          </defs>
+          <polygon points={`0,${H} ${line} 100,${H}`} fill={`url(#${id})`} />
+          <polyline
+            points={line} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round"
+            vectorEffect="non-scaling-stroke" style={{ fill: "none", stroke: C("blue") }}
+          />
+          {hit && (
+            <line
+              x1={hit[0]} x2={hit[0]} y1={0} y2={H} strokeWidth={1}
+              vectorEffect="non-scaling-stroke" style={{ stroke: C("ash"), opacity: 0.55 }}
+            />
+          )}
+          <circle
+            cx={end[0]} cy={end[1]} r={2.4} strokeWidth={1.4} vectorEffect="non-scaling-stroke"
+            style={{ fill: C("blue"), stroke: C("ink2") }}
+          />
+          {hit && (
+            <circle
+              cx={hit[0]} cy={hit[1]} r={2.8} strokeWidth={1.4} vectorEffect="non-scaling-stroke"
+              style={{ fill: C("chalk"), stroke: C("ink2") }}
+            />
+          )}
+        </svg>
+      </div>
     </Tile>
   );
 }

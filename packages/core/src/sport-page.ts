@@ -36,6 +36,7 @@
 // two clients cannot branch differently on what a sport shows.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { ChartReading } from "./chart-scrub";
 import { deviceTrueSessions } from "./device-truth";
 import { roundKm } from "./distance";
 import { durationParts, formatDuration } from "./duration";
@@ -211,8 +212,11 @@ export interface SportPageModel {
   weeks: SportWeek[];
   /** Mean of `weeks`, in the same measure. */
   weekAvg: number;
-  /** Null unless the sport is paced AND something paced is logged. */
-  pace: { avgSecPerKm: number; bestSecPerKm: number; trend: number[]; prIndex: number } | null;
+  /** Null unless the sport is paced AND something paced is logged.
+   *  `weekStarts` is aligned with `trend` — the trend SKIPS the weeks with
+   *  nothing paced in them, so a held point can only name its own week if the
+   *  model says which week each point came from. */
+  pace: { avgSecPerKm: number; bestSecPerKm: number; trend: number[]; weekStarts: string[]; prIndex: number } | null;
   /** Null unless the sport is paced and the split has minutes in it. */
   split: EffortSplit | null;
   bests: SportBest[];
@@ -386,17 +390,23 @@ export function sportPageModel(
   const pacedEfforts = all.filter((e) => e.secPerKm != null);
   // Divides by the bucket's exact `seconds`, not the whole minutes the volume
   // bars draw — the same device-truth rule the effort paces above follow.
-  const weekPaces = buckets
-    .map((w) => (w.km > 0 && w.seconds > 0 ? w.seconds / w.km : null))
-    .filter((p): p is number => p != null)
-    .map((p) => Math.round(p));
+  const pacedWeeks = buckets
+    .map((w) => (w.km > 0 && w.seconds > 0 ? { weekStart: w.weekStart, secPerKm: Math.round(w.seconds / w.km) } : null))
+    .filter((p): p is { weekStart: string; secPerKm: number } => p != null);
+  const weekPaces = pacedWeeks.map((p) => p.secPerKm);
   let pace: SportPageModel["pace"] = null;
   if (hasPace && pacedEfforts.length > 0 && weekPaces.length >= 2) {
     const best = Math.min(...pacedEfforts.map((e) => e.secPerKm!));
     const avg = Math.round(
       pacedEfforts.reduce((a, e) => a + e.secPerKm!, 0) / pacedEfforts.length,
     );
-    pace = { avgSecPerKm: avg, bestSecPerKm: best, trend: weekPaces, prIndex: weekPaces.indexOf(Math.min(...weekPaces)) };
+    pace = {
+      avgSecPerKm: avg,
+      bestSecPerKm: best,
+      trend: weekPaces,
+      weekStarts: pacedWeeks.map((p) => p.weekStart),
+      prIndex: weekPaces.indexOf(Math.min(...weekPaces)),
+    };
   }
 
   /* ── effort split: the shared zone engine, hidden when it has no minutes ── */
@@ -545,6 +555,54 @@ export function sportPageModel(
     transfer,
     pool,
     recent: all.slice(0, SPORT_PAGE_RECENT),
+  };
+}
+
+/* ── 5b. HOLDING A CHART — what one held point says ──────────────────────── */
+
+/**
+ * The figure under a held finger, in the sport's own unit.
+ *
+ * The charts on this page draw NUMBERS, not labels — the volume bars are km or
+ * minutes depending on the sport, and the pace trend is seconds-per-km rendered
+ * at the sport's own split. The shape is the one every held chart uses
+ * (chart-scrub.ts `ChartReading`); this alias is here so a reader of the sport
+ * page finds it under the name the page's own functions return.
+ */
+export type SportChartReading = ChartReading;
+
+/** One week of the volume bars, held. Null when the index is off the series. */
+export function sportVolumeReading(m: SportPageModel, index: number): SportChartReading | null {
+  const w = m.weeks[index];
+  if (!w) return null;
+  const max = Math.max(...m.weeks.map((x) => x.value), 0);
+  return {
+    index,
+    weekStart: w.weekStart,
+    // A timed sport's week is a DURATION, so it brings its own units and the
+    // readout adds none — the same string the totals row prints.
+    value: m.hasDistance
+      ? sportDistance(m.distanceUnit === "m" ? w.value / 1000 : w.value, m.distanceUnit)
+      : formatDuration(w.value),
+    unit: m.hasDistance ? m.distanceUnit : "",
+    efforts: w.efforts,
+    best: w.value > 0 && w.value === max,
+  };
+}
+
+/** One week of the pace trend, held. The trend skips the weeks with nothing
+ *  paced in them, so the week named here comes from the trend's OWN alignment
+ *  (`pace.weekStarts`), never from the volume bars' index. */
+export function sportPaceReading(m: SportPageModel, index: number): SportChartReading | null {
+  const sec = m.pace?.trend[index];
+  if (m.pace == null || sec == null) return null;
+  return {
+    index,
+    weekStart: m.pace.weekStarts[index] ?? "",
+    value: sportPace(sec, m.pacePer),
+    unit: m.paceUnit,
+    efforts: null,
+    best: index === m.pace.prIndex,
   };
 }
 

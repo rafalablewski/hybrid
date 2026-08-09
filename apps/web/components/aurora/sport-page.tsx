@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   LEVELS,
   SPORT_PAGE_WEEKS,
@@ -11,16 +11,22 @@ import {
   durationUnits, formatDuration,
   markerHistory,
   recordMarker,
+  scrubPosition,
   space,
   sportDistance,
   sportPace,
   sportMarkPaths,
   sportPageModel,
+  sportPaceReading,
+  sportVolumeReading,
   transferSessionBlocks,
   type SessionBlock,
   type SportBest,
+  type SportChartReading,
   type SportPageModel,
+  type SportWeek,
 } from "@hybrid/core";
+import { ChartReadout, readoutSide, useChartScrub, SCRUB_STYLE, type ScrubBind } from "./chart-scrub";
 import { useSessions } from "@/lib/use-sessions";
 import { readSportSelection, writeSportSelection } from "@/lib/sport-store";
 import { useLang } from "@/lib/i18n";
@@ -65,12 +71,15 @@ function Provenance({ provider, t }: { provider: string | null; t: (k: string) =
   return <DeviceMark provider={provider} form="lockup" height={9} on="dark" style={{ verticalAlign: "-1px" }} />;
 }
 
+/* ── holding a chart ─────────────────────────────────────────────────────── */
+
 /* ── the two charts ──────────────────────────────────────────────────────── */
 
-function VolumeBars({ weeks, avg }: { weeks: { value: number }[]; avg: number }) {
+function VolumeBars({ weeks, avg, held, bind, readout }: { weeks: SportWeek[]; avg: number; held: number; bind: ScrubBind; readout: ReactNode }) {
   const max = Math.max(...weeks.map((w) => w.value), 1);
+  const pos = scrubPosition(held, { count: weeks.length, mode: "band" });
   return (
-    <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 6, height: 110 }}>
+    <div {...bind} style={{ ...SCRUB_STYLE, position: "relative", display: "flex", alignItems: "flex-end", gap: 6, height: 110 }}>
       {weeks.map((w, i) => (
         <span
           key={i}
@@ -79,13 +88,19 @@ function VolumeBars({ weeks, avg }: { weeks: { value: number }[]; avg: number })
             minHeight: 3,
             height: Math.max(3, (w.value / max) * 110),
             borderRadius: "3px 3px 2px 2px",
-            background: i === weeks.length - 1 ? C("lime") : `color-mix(in srgb, ${C("lime")} 42%, ${C("ink")})`,
+            // Held, the finger's week is the lit one — the "this week" accent
+            // would otherwise compete with the answer the athlete asked for.
+            background: (held >= 0 ? i === held : i === weeks.length - 1) ? C("lime") : `color-mix(in srgb, ${C("lime")} 42%, ${C("ink")})`,
           }}
         />
       ))}
       {avg > 0 && (
         <span aria-hidden style={{ position: "absolute", left: 0, right: 0, bottom: (avg / max) * 110, borderTop: `1px dashed color-mix(in srgb, ${C("ash")} 55%, transparent)` }} />
       )}
+      {held >= 0 && (
+        <span aria-hidden style={{ position: "absolute", left: `${pos * 100}%`, top: 0, bottom: 0, width: 1, background: `color-mix(in srgb, ${C("ash")} 55%, transparent)`, pointerEvents: "none" }} />
+      )}
+      {readout}
     </div>
   );
 }
@@ -93,7 +108,7 @@ function VolumeBars({ weeks, avg }: { weeks: { value: number }[]; avg: number })
 /** The pace trend — reversed, so FASTER sits higher. The personal best carries
  *  a dot, drawn in HTML because the path is stretched to the column's width and
  *  a circle inside a stretched viewBox comes out an ellipse. */
-function PaceTrend({ trend, prIndex }: { trend: number[]; prIndex: number }) {
+function PaceTrend({ trend, prIndex, held, bind, readout }: { trend: number[]; prIndex: number; held: number; bind: ScrubBind; readout: ReactNode }) {
   const W = 326, H = 118, PAD = 10;
   const min = Math.min(...trend), max = Math.max(...trend);
   const span = Math.max(1, max - min);
@@ -101,8 +116,9 @@ function PaceTrend({ trend, prIndex }: { trend: number[]; prIndex: number }) {
   const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
   const area = `${d} L${pts[pts.length - 1]![0].toFixed(1)} ${H} L${pts[0]![0].toFixed(1)} ${H} Z`;
   const pr = pts[Math.min(Math.max(prIndex, 0), pts.length - 1)]!;
+  const hit = held >= 0 ? pts[held] : null;
   return (
-    <div style={{ position: "relative" }}>
+    <div {...bind} style={{ ...SCRUB_STYLE, position: "relative" }}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden style={{ display: "block", width: "100%", height: H }}>
         <defs>
           <linearGradient id="sportPaceFill" x1="0" y1="0" x2="0" y2="1">
@@ -113,14 +129,28 @@ function PaceTrend({ trend, prIndex }: { trend: number[]; prIndex: number }) {
         <path d={area} fill="url(#sportPaceFill)" />
         <path d={d} fill="none" stroke={C("lime")} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </svg>
+      {hit && (
+        <span aria-hidden style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, background: `color-mix(in srgb, ${C("ash")} 55%, transparent)`, pointerEvents: "none" }} />
+      )}
       <span
         aria-hidden
         style={{
           position: "absolute", left: `${(pr[0] / W) * 100}%`, top: `${(pr[1] / H) * 100}%`,
           width: 9, height: 9, borderRadius: 999, background: C("lime"),
-          border: `2px solid ${C("ink")}`, transform: "translate(-50%,-50%)",
+          border: `2px solid ${C("ink")}`, transform: "translate(-50%,-50%)", pointerEvents: "none",
         }}
       />
+      {hit && (
+        <span
+          aria-hidden
+          style={{
+            position: "absolute", left: `${(hit[0] / W) * 100}%`, top: `${(hit[1] / H) * 100}%`,
+            width: 13, height: 13, borderRadius: 999, background: C("chalk"),
+            border: `2px solid ${C("ink")}`, transform: "translate(-50%,-50%)", pointerEvents: "none",
+          }}
+        />
+      )}
+      {readout}
     </div>
   );
 }
@@ -155,6 +185,13 @@ export default function AuroraSportPage({
     () => sportPageModel(name, sessions, { levelIdx, markers }),
     [name, sessions, levelIdx, markers],
   );
+
+  // The two held charts. Both hooks run every render — a sport with no pace
+  // simply holds a series of zero points, which reads as "nothing held".
+  const volumeScrub = useChartScrub(m.weeks.length, "band");
+  const paceScrub = useChartScrub(m.pace?.trend.length ?? 0, "point", 10 / 326);
+  const volumeRead = volumeScrub.index >= 0 ? sportVolumeReading(m, volumeScrub.index) : null;
+  const paceRead = paceScrub.index >= 0 ? sportPaceReading(m, paceScrub.index) : null;
 
   const persist = (next: ReturnType<typeof readSportSelection>) => {
     setStore(next);
@@ -193,6 +230,17 @@ export default function AuroraSportPage({
   const weeksMeta = t("w.train.sportPage.weeksAvg")
     .replace("{weeks}", String(SPORT_PAGE_WEEKS))
     .replace("{avg}", m.hasDistance ? `${sportDistance(m.distanceUnit === "m" ? m.weekAvg / 1000 : m.weekAvg, m.distanceUnit)} ${m.distanceUnit}` : formatDuration(m.weekAvg, u));
+
+  /** The held figure, placed on the side of the plot the finger is not on. */
+  const chartReadout = (read: SportChartReading | null, count: number) =>
+    read ? (
+      <ChartReadout
+        read={read}
+        side={readoutSide(read.index, count)}
+        when={t("chart.weekOf").replace("{date}", fmtDate(read.weekStart))}
+        note={read.efforts != null ? t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts)) : undefined}
+      />
+    ) : null;
 
   const sectionStyle = { marginTop: space.xxl } as const;
   const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: space.md, padding: `${space.md}px 0`, borderTop: `1px solid ${C("line")}` } as const;
@@ -305,7 +353,13 @@ export default function AuroraSportPage({
             {/* ── VOLUME ── */}
             <div style={sectionStyle}>
               <SectionHead title={t("w.train.sportPage.volume")} meta={weeksMeta} />
-              <VolumeBars weeks={m.weeks} avg={m.weekAvg} />
+              <VolumeBars
+                weeks={m.weeks}
+                avg={m.weekAvg}
+                held={volumeScrub.index}
+                bind={{ ...volumeScrub.bind, "aria-label": t("w.train.sportPage.volume") }}
+                readout={chartReadout(volumeRead, m.weeks.length)}
+              />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: space.sm }}>
                 <span style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</span>
                 <span style={mono(fs.nano)}>{t("w.train.sportPage.thisWeek")}</span>
@@ -327,7 +381,13 @@ export default function AuroraSportPage({
                     </div>
                   ))}
                 </div>
-                <PaceTrend trend={m.pace.trend} prIndex={m.pace.prIndex} />
+                <PaceTrend
+                  trend={m.pace.trend}
+                  prIndex={m.pace.prIndex}
+                  held={paceScrub.index}
+                  bind={{ ...paceScrub.bind, "aria-label": t("w.train.sportPage.pace") }}
+                  readout={chartReadout(paceRead, m.pace.trend.length)}
+                />
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: space.sm }}>
                   <span style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</span>
                   <span style={mono(fs.nano)}>{t("w.train.sportPage.fasterHigher")}</span>

@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import Svg, { Path, Circle, Line as SvgLine } from "react-native-svg";
 import {
   weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
+  volumeTrendReading,
   type ExercisePeriod, type TrendDir, type ExerciseTableRow,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -13,6 +14,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, tracking, F, PressScale as Pressable } from "../../lib/ui";
+import { useChartScrub } from "./chart-scrub";
 import { AuroraScreen, ACard, AHeading, ASub } from "./kit";
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
@@ -24,7 +26,10 @@ const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.anal
 // FIGURE; the eight-week line supports it at the size a supporting mark
 // deserves. See design/trend-cards-redesign-ideas.html (idea 7).
 const PAD_X = 18;
-const SPARK = { width: 112, height: 46 };
+const SPARK = { width: 112, height: 46, pad: 4 };
+
+/** A week bucket's date, as the bands print it. */
+const fmtWeekDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
 export default function AuroraTrends({ top, unified = false }: {
   top?: ReactNode;
@@ -79,25 +84,43 @@ export default function AuroraTrends({ top, unified = false }: {
   /** A measure band: label, the week's figure, its eight-week average, and the
    *  eight-week line — drawn on a TRUE zero baseline, so a week with nothing
    *  logged sits on the line instead of being floored into a phantom bar. */
-  const Measure = ({ label, value, unit, avg, series, color }: {
+  const Measure = ({ label, value, unit, avg, series, color, measure }: {
     label: string; value: string; unit?: string; avg: string; series: number[]; color: string;
+    measure: "sets" | "tonnage";
   }) => {
     const s = sparkline(series, SPARK);
+    // sparkline() insets its points by `pad` at each end (the endpoint dot must
+    // not clip), so the hit-testing has to know about the same inset.
+    const scrub = useChartScrub(series.length, "point", SPARK.pad / SPARK.width);
+    const read = scrub.index >= 0 ? volumeTrendReading(weeks, scrub.index, measure, units) : null;
+    const hit = read ? s.points[read.index] : null;
     return (
       <View style={[{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingHorizontal: PAD_X, paddingVertical: 17 }, divider]}>
+        {/* HELD, the band answers for another week in the slots it already has:
+            the FIGURE becomes that week's, and the average line underneath
+            becomes the week it belongs to. A pinned pill would cover a 112×46
+            spark whole. */}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={bandLabel}>{label}</Text>
           <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 9 }}>
-            <Text style={figure}>{value}</Text>
-            {!!unit && <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash, marginLeft: 4 }}>{unit}</Text>}
+            <Text style={[figure, read?.best ? { color: txt(C, C.lime) } : null]}>{read ? read.value : value}</Text>
+            {!!(read ? read.unit : unit) && (
+              <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash, marginLeft: 4 }}>{read ? read.unit : unit}</Text>
+            )}
           </View>
-          <Text style={[meta, { marginTop: 8 }]}>{avg}</Text>
+          <Text style={[meta, { marginTop: 8 }]}>
+            {read ? t("chart.weekOf").replace("{date}", fmtWeekDate(read.weekStart)) : avg}
+          </Text>
         </View>
-        <Svg width={SPARK.width} height={SPARK.height}>
-          <SvgLine x1={0} y1={s.baselineY} x2={SPARK.width} y2={s.baselineY} stroke={C.line} strokeWidth={1} />
-          <Path d={s.d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
-          <Circle cx={s.last.x} cy={s.last.y} r={3.2} fill={color} />
-        </Svg>
+        <View {...scrub.bind} accessibilityLabel={label}>
+          <Svg width={SPARK.width} height={SPARK.height}>
+            <SvgLine x1={0} y1={s.baselineY} x2={SPARK.width} y2={s.baselineY} stroke={C.line} strokeWidth={1} />
+            <Path d={s.d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.6} />
+            <Circle cx={s.last.x} cy={s.last.y} r={3.2} fill={color} />
+            {!!hit && <SvgLine x1={hit.x} x2={hit.x} y1={0} y2={SPARK.height} stroke={C.ash} strokeWidth={1} strokeOpacity={0.55} />}
+            {!!hit && <Circle cx={hit.x} cy={hit.y} r={4} fill={C.chalk} stroke={C.ink2} strokeWidth={1.5} />}
+          </Svg>
+        </View>
       </View>
     );
   };
@@ -130,6 +153,7 @@ export default function AuroraTrends({ top, unified = false }: {
             avg={`${t("w.analyze.trends.avg8w")} ${Number(avgSets.toFixed(1))}`}
             series={setSeries}
             color={C.lime}
+            measure="sets"
           />
           <Measure
             label={t("w.analyze.trends.tonnageMeasure")}
@@ -138,6 +162,7 @@ export default function AuroraTrends({ top, unified = false }: {
             avg={`${t("w.analyze.trends.avg8w")} ${fmtTonnage(avgTonnage, units)}`}
             series={tonneSeries}
             color={C.blue}
+            measure="tonnage"
           />
 
           {/* The quiet band — the sheet's one recessive surface, carrying the

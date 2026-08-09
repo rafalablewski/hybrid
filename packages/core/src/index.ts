@@ -27,6 +27,7 @@ export * from "./duration";
 export * from "./masthead";
 export * from "./motion";
 export * from "./spark";
+export * from "./chart-scrub";
 export * from "./nutrition-hub";
 export * from "./trajectory-plot";
 export * from "./engines";

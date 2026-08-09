@@ -11,12 +11,16 @@
  * decorative to a screen reader — the tile's figures carry the meaning.
  * TWIN: apps/mobile/components/aurora/history-strip.tsx.
  */
-export default function HistoryStrip({ bars, color, height = 24 }: {
+export default function HistoryStrip({ bars, color, height = 24, held = -1 }: {
   /** 0..1 bar heights, oldest → newest (core-normalized). */
   bars: number[];
   /** The block's semantic hue — a resolved color value or CSS var() expression. */
   color: string;
   height?: number;
+  /** The bar under a held finger, when the strip is being scrubbed (−1 for
+   *  none). It takes full strength INSTEAD of the current period: the "latest"
+   *  accent would otherwise compete with the answer that was asked for. */
+  held?: number;
 }) {
   if (bars.length < 2) return null;
   return (
@@ -27,7 +31,7 @@ export default function HistoryStrip({ bars, color, height = 24 }: {
           style={{
             flex: 1, display: "block", borderRadius: 2,
             height: Math.max(3, Math.round(h * height)),
-            background: i === bars.length - 1 ? color : `color-mix(in srgb, ${color} 34%, transparent)`,
+            background: (held >= 0 ? i === held : i === bars.length - 1) ? color : `color-mix(in srgb, ${color} 34%, transparent)`,
           }}
         />
       ))}
