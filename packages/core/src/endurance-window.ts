@@ -33,9 +33,21 @@
  * not open with a card reading zero. The slices keep their kind, so a client can
  * still say how much of the window was lanes and how much was other sports.
  *
+ * WHAT THE CLIENTS ACTUALLY RENDER, and why the rest still belongs here. The
+ * section's opener is a STRIP — the three totals and their deltas, nothing more
+ * — because every `slices` row is a discipline with a whole rail of its own
+ * directly beneath it, and printing the breakdown above them was a table of
+ * contents that pushed its own contents off the screen. `slices` (and the
+ * `disciplines` / `sports` counts drawn from it) stay in the model regardless:
+ * they are what the window IS, they carry rules worth keeping proven (a brick
+ * session counts once; shares run on time so a timed sport is never dropped),
+ * and the Endurance screen is the obvious next reader. A model is complete; a
+ * client picks from it — the same contract activity-window.ts has, whose detail
+ * groups no single surface renders whole either.
+ *
  * Canonical units throughout, never formatted here: minutes for time, km for
  * distance. Clients format through their own preference, which is what lets web
- * and mobile render the identical card.
+ * and mobile render the identical strip.
  */
 import { activitySummary, activityBaselineWindows, type ActivityGroupKind, type ActivityRange } from "./activity-window";
 import type { BodyweightInput } from "./bodyweight";

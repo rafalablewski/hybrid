@@ -1099,13 +1099,16 @@ export default function AuroraHome() {
             <SectionSeam />
             <GroupMark label={t("endurance.title")} mt={24} />
 
-            {/* ───── (a) THIS WEEK — the section's own summary card, under a
-                second view of the SCREEN's filter (both read core's
-                TODAY_RANGE_STORE_KEY, so scrubbing either moves both): efforts
-                / distance / time for the period, each against its own
-                baseline, then what the time was made of. The figures are a
-                SLICE of the verdict card's above (core endurance-window.ts
-                reads the same activitySummary), never a second opinion. ── */}
+            {/* ───── (a) THE STRIP — the section's opener, and deliberately
+                SMALL: efforts / distance / time for the period, each against
+                its own baseline, and nothing else. It carries no filter (it
+                reads the screen's period, which the verdict card's control
+                writes) and no per-discipline breakdown — that breakdown is the
+                lanes directly below, and printing it here was a table of
+                contents that pushed its own contents off the screen. The
+                figures are a SLICE of the verdict card's above (core
+                endurance-window.ts reads the same activitySummary), never a
+                second opinion. ───── */}
             <AuroraEnduranceSummary sessions={sessions} bw={bw} />
 
             {/* ───── (b…) ONE LANE PER SPORT — a full-bleed rail per logged
