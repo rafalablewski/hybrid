@@ -15,6 +15,7 @@ import {
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   canSaveRecipe, emptyUserRecipe, recipeToLog, type UserRecipe, type RecipeSource,
   type QuickAddCandidate, type QuickAddDraft, type QuickAddMatch,
+  resolveTargets, targetMismatch, hasOverride, type TargetOverride,
   type CopyPlan, type CopyableEntry,
   nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
@@ -44,6 +45,7 @@ import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type Rec
 import CopyDaySheet from "./copy-day";
 import NutritionTrends from "./nutrition-trends";
 import QuickAdd from "./quick-add";
+import TargetSheet, { TargetMismatchLine } from "./target-sheet";
 
 // The Create Food form's blank state — one constant, so the reset paths can
 // never fall out of step with the fields the form actually has.
@@ -467,7 +469,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // local cache; the derived `hasNutritionData` below is the final safety net.
   const [onboarded, setOnboarded] = useState(() => { try { return typeof window !== "undefined" && localStorage.getItem("hybrid.nutrition.onboarded") === "1"; } catch { return false; } });
   // Persist a slice of the Nutrition prefs (best-effort — never blocks the UI).
-  const saveNutritionPrefs = useCallback((patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[] }) => {
+  const saveNutritionPrefs = useCallback((patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[]; targets?: TargetOverride | null }) => {
     fetch("/api/nutrition/prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) }).catch(() => {});
   }, []);
   const finishOnboarding = useCallback(() => {
@@ -478,8 +480,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Choose the goal AND remember it (server + the onboarding gate). The goal is a
   // saved preference, not a per-session default — switching it recomputes targets.
   const chooseGoal = useCallback((g: NutritionGoal) => { setGoal(g); saveNutritionPrefs({ goal: g }); }, [saveNutritionPrefs]);
+  // Optimistic: the ring must move on save, not on the round-trip.
+  const saveTargets = useCallback((next: TargetOverride | null) => {
+    setTargetOverride(next);
+    saveNutritionPrefs({ targets: next });
+  }, [saveNutritionPrefs]);
   // Custom parts of the day (Full only) — e.g. "Pre-workout". Persisted in prefs
   // so they appear on every device alongside the four built-ins.
+  // MANUAL TARGETS — per field; null/absent means that figure keeps adapting.
+  const [targetOverride, setTargetOverride] = useState<TargetOverride | null>(null);
+  const [targetSheet, setTargetSheet] = useState(false);
   const [customParts, setCustomParts] = useState<NutritionMealPart[]>([]);
   const [partSheet, setPartSheet] = useState(false);
   const [newPart, setNewPart] = useState("");
@@ -508,6 +518,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       if (!alive || !d?.prefs) return;
       if (d.prefs.goal) setGoal(d.prefs.goal as NutritionGoal);
       if (Array.isArray(d.prefs.mealParts)) setCustomParts(d.prefs.mealParts as NutritionMealPart[]);
+      if (d.prefs.targets) setTargetOverride(d.prefs.targets as TargetOverride);
       if (d.prefs.onboardedAt) { setOnboarded(true); try { localStorage.setItem("hybrid.nutrition.onboarded", "1"); } catch { /* ignore */ } }
     }).catch(() => {});
     return () => { alive = false; };
@@ -1143,7 +1154,12 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const [y, m, d] = diaryDay.split("-").map(Number);
     return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   }, [diaryDay]);
-  const targets = useMemo(() => adaptiveTargets(signals, { goal, trainingKcal }), [signals, goal, trainingKcal]);
+  // The engine's own figures, WITHOUT the training bump — resolveTargets is the
+  // single place that decides whether the bump applies, so the adaptive and the
+  // manual path cannot add it two different ways.
+  const adaptiveBase = useMemo(() => adaptiveTargets(signals, { goal, trainingKcal: 0 }), [signals, goal]);
+  const targets = useMemo(() => resolveTargets(adaptiveBase, targetOverride, trainingKcal), [adaptiveBase, targetOverride, trainingKcal]);
+  const mismatch = useMemo(() => targetMismatch(targets), [targets]);
   // Over-budget grace: the ring AND the centre number flip red past the SAME
   // 5% threshold, so the two can never disagree.
   const KCAL_OVER_FACTOR = 1.05;
@@ -2312,6 +2328,37 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
         <Glyph name="chevron" size={16} color={C("ash")} />
       </button>
+
+      {/* TARGETS — a door row under the goal, because the goal is what DERIVES
+          the targets and setting them by hand is the exception to that. It is
+          not a card: it carries no figure of its own, it opens a sheet. */}
+      <button
+        className="pressable"
+        onClick={() => setTargetSheet(true)}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "14px 2px 0", marginTop: 14, cursor: "pointer", color: C("chalk") }}
+      >
+        <span style={{ width: 32, height: 32, borderRadius: 999, border: `1.4px solid ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <AuroraIcon name="edit" size={14} color={C("ash")} />
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>{t("w.recovery.nutrition.tg.title")}</span>
+          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: hasOverride(targetOverride) ? "var(--amber-text)" : C("ash"), marginTop: 3 }}>
+            {hasOverride(targetOverride) ? t("w.recovery.nutrition.tg.manual") : t("w.recovery.nutrition.tg.adaptive")}
+          </span>
+        </span>
+      </button>
+      {/* The four numbers can disagree once they are hand-set. Say so once. */}
+      {hasOverride(targetOverride) && mismatch.material && (
+        <TargetMismatchLine macroKcal={mismatch.macroKcal} deltaKcal={mismatch.deltaKcal} />
+      )}
+
+      <TargetSheet
+        open={targetSheet}
+        onClose={() => setTargetSheet(false)}
+        adaptive={adaptiveBase}
+        override={targetOverride}
+        onSave={saveTargets}
+      />
 
       <Sheet open={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import { cleanTargetOverride, hasOverride, type TargetOverride } from "@hybrid/core";
 
 // Per-user Nutrition preferences — the small bits of state the Nutrition hub
 // must remember ACROSS devices + the email-confirm round-trip (the old
@@ -19,6 +20,9 @@ type NutritionPrefs = {
   goal?: "lose" | "maintain" | "gain" | null;
   // Custom parts of the day (Full only) — keys carried on the log `source`.
   mealParts?: { key: string; label: string }[];
+  // MANUAL TARGETS. Per-field: a field absent here keeps adapting. Null clears
+  // the whole override and returns every figure to the engine.
+  targets?: TargetOverride | null;
 };
 
 const GOALS = new Set(["lose", "maintain", "gain"]);
@@ -76,6 +80,16 @@ export async function POST(request: Request) {
   if (typeof b.goal === "string" && GOALS.has(b.goal)) patch.goal = b.goal as NutritionPrefs["goal"];
   const parts = cleanParts(b.mealParts);
   if (parts) patch.mealParts = parts;
+  // `targets: null` is a deliberate CLEAR — the athlete handing the numbers
+  // back to the engine — and must be distinguishable from "not in this patch".
+  if (b.targets === null) patch.targets = null;
+  else if (b.targets && typeof b.targets === "object") {
+    const ov = cleanTargetOverride(b.targets);
+    // An override with no field left after coercion IS a clear: the athlete
+    // emptied every box, and storing `{ trainingFuel: true }` alone would leave
+    // the screen claiming a manual target it does not have.
+    patch.targets = hasOverride(ov) ? ov : null;
+  }
 
   const existing = await readAnswers(user.id);
   if (existing == null) {

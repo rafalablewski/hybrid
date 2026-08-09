@@ -1,4 +1,4 @@
-import type { DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -627,7 +627,9 @@ export async function deleteSavedMeal(id: string): Promise<boolean> {
 
 // ── Nutrition prefs — the small cross-device state the Nutrition hub remembers:
 // onboarding completion, the chosen goal, and any custom parts of the day.
-export type NutritionPrefs = { onboardedAt?: string | null; goal?: NutritionGoal | null; mealParts?: NutritionMealPart[] };
+// `targets` is the MANUAL override — per field, so a field absent here keeps
+// adapting; null clears the whole thing and hands every figure back.
+export type NutritionPrefs = { onboardedAt?: string | null; goal?: NutritionGoal | null; mealParts?: NutritionMealPart[]; targets?: TargetOverride | null };
 export async function getNutritionPrefs(): Promise<NutritionPrefs> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/prefs`, { headers: await authHeaders() });
@@ -637,7 +639,7 @@ export async function getNutritionPrefs(): Promise<NutritionPrefs> {
     return {};
   }
 }
-export async function saveNutritionPrefs(patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[] }): Promise<void> {
+export async function saveNutritionPrefs(patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[]; targets?: TargetOverride | null }): Promise<void> {
   try {
     await fetchWithTimeout(`${API_URL}/api/nutrition/prefs`, {
       method: "POST",
