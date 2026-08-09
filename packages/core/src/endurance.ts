@@ -82,14 +82,27 @@ export function disciplinePaceUnit(discipline: CardioDiscipline): string {
 }
 
 /**
+ * The rate's FIGURE alone, in the discipline's own reading — "5:42", "1:30",
+ * "32.5" — with no unit on it. Split out from formatDisciplinePace so a surface
+ * that types the figure and its unit differently (a held chart's readout, where
+ * the unit rides small beside a large number) doesn't have to re-derive the
+ * conversion and drift from the labelled form beside it.
+ */
+export function disciplinePaceFigure(secPerKm: number, discipline: CardioDiscipline): string {
+  const meta = DISCIPLINE_META[discipline];
+  if (!Number.isFinite(secPerKm) || secPerKm <= 0) return "–";
+  if (meta.mode === "speed") return String(Math.round((3600 / secPerKm) * 10) / 10);
+  return paceClock(secPerKm * (meta.pacePer / 1000));
+}
+
+/**
  * Format a canonical seconds-per-km rate for a discipline: a labelled PACE
  * ("5:42 /km", "1:30 /100m", "2:00 /500m") for pace disciplines, or a SPEED
  * ("32.5 km/h") for cycling. Storage is always km so the input is single-unit;
  * this only converts for display.
  */
 export function formatDisciplinePace(secPerKm: number, discipline: CardioDiscipline): string {
-  const meta = DISCIPLINE_META[discipline];
-  if (!Number.isFinite(secPerKm) || secPerKm <= 0) return "–";
-  if (meta.mode === "speed") return `${Math.round((3600 / secPerKm) * 10) / 10} km/h`;
-  return `${paceClock(secPerKm * (meta.pacePer / 1000))} ${disciplinePaceUnit(discipline)}`;
+  const figure = disciplinePaceFigure(secPerKm, discipline);
+  if (figure === "–") return figure;
+  return `${figure} ${disciplinePaceUnit(discipline)}`;
 }

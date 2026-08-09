@@ -14,7 +14,6 @@ import {
   sessionVolume,
   totalVolume,
   athleteId,
-  canSeeHPI,
   type BadgeAccent,
   type LoggedSession,
   type Achievement,
@@ -24,7 +23,6 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSession } from "../../lib/session";
-import { usePersona } from "../../lib/persona";
 import { useLang } from "../../lib/i18n";
 import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -34,7 +32,6 @@ import { leading, fs, F, serifIf, PressScale, PressScale as Pressable, FIXED_FON
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS, CARD_PAD, ASection } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
-import PrivateTab from "./private-tab";
 import { AuroraIcon } from "./icons";
 import { ArrowGlyph } from "./cta-label";
 
@@ -50,7 +47,7 @@ type P = ReturnType<typeof useTheme>["palette"];
  */
 const badgeInk = (C: P, accent: BadgeAccent): string =>
   accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
-type TabId = "overview" | "prs" | "activity" | "private";
+type TabId = "overview" | "prs" | "activity";
 
 /**
  * AURORA profile — the "You" account screen, reworked into the SOCIAL layout: a
@@ -62,11 +59,11 @@ type TabId = "overview" | "prs" | "activity" | "private";
  * (Overview / PRs / Activity) and a 3-column grid of PUBLIC highlight tiles.
  *
  * Privacy: HPI is PRIVATE — it is deliberately absent from the public highlight
- * grid and every follower-facing surface. It lives only in a clearly-marked
- * "Private · only you" card at the bottom, visible to the owner (this screen is
- * always your own profile). Every metric is computed from the same engines the
- * rest of the app runs (real sessions + signals); an empty history degrades to
- * honest zeros / omitted tiles — nothing here is fabricated.
+ * grid and every follower-facing surface. It lives on Performance, behind the
+ * Full gate, and this screen never restates it. Every metric here is computed
+ * from the same engines the rest of the app runs (real sessions + signals); an
+ * empty history degrades to honest zeros / omitted tiles — nothing here is
+ * fabricated.
  */
 export default function AuroraProfile() {
   const { palette: C, scheme } = useTheme();
@@ -74,8 +71,6 @@ export default function AuroraProfile() {
   const router = useRouter();
   const { name, email, entitlement, createdYear } = useIdentity();
   const prefs = useLoggerPrefs();
-  // HPI is a Full feature — free (casual) users see a locked teaser, not the score.
-  const showHpi = canSeeHPI(usePersona());
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -326,24 +321,21 @@ export default function AuroraProfile() {
         ))}
       </View>
 
-      {/* TABS — Overview / PRs / Activity */}
+      {/* TABS — Overview / PRs / Activity.
+          There is no 4th "Private" tab: it held a link to Performance, a link
+          to Settings and Body & progress, so two thirds of it duplicated
+          doorways the app already has. Body & progress moved to Nutrition →
+          Body, next to the weigh-in its targets are steered by. */}
       <View style={{ flexDirection: "row", marginTop: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
         {([
           { id: "overview" as const, label: t("w.account.profile.tab-overview") },
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
-          // 4th, owner-only tab — this screen is always your own profile.
-          // (The lock renders as a drawn AuroraIcon beside the label, not an
-          // emoji inside the string — see the tab renderer below.)
-          { id: "private" as const, label: t("w.account.profile.tab-private") },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
             <PressScale key={tb.id} onPress={() => setTab(tb.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                {tb.id === "private" && <AuroraIcon name="lock" size={13} color={on ? C.chalk : C.ash} />}
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
-              </View>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
               {on && <View style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, backgroundColor: C.lime }} />}
             </PressScale>
           );
@@ -477,12 +469,6 @@ export default function AuroraProfile() {
           </View>
         </View>
       )}
-
-      {/* PRIVATE tab — the interactive owner-only surface (Cockpit link, Body &
-          progress, Journal, privacy & visibility → Settings). HPI/readiness/risk
-          are NOT duplicated — the Command-center row links to the Cockpit.
-          Curating the public grid lives on Overview (long-press a card). */}
-      {tab === "private" && <PrivateTab isFull={showHpi} />}
 
       <View style={{ height: 8 }} />
     </AuroraScreen>

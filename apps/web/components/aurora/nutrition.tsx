@@ -24,6 +24,7 @@ import {
 import { fs, space, CARD_PAD, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
+import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { AuroraIcon } from "./icons";
 import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
@@ -34,6 +35,7 @@ import { CoverHero, useHeroCollapse, COVER_BAR, COVER_INK } from "./cover-hero";
 import { HeroNav } from "./hero";
 import { DockRail, DockChip } from "./dock-rail";
 import { NutritionHubBento } from "./nutrition-hub";
+import BodyProgress from "./body-progress";
 
 // The Create Food form's blank state — one constant, so the reset paths can
 // never fall out of step with the fields the form actually has.
@@ -330,6 +332,9 @@ function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onSt
  *  /api/signals logging + personal library underneath. */
 export default function AuroraNutrition({ onNavigate, compact = false }: { onNavigate?: (screen: string) => void; compact?: boolean }) {
   const revalidate = useRevalidate();
+  // The athlete's display unit — Body & progress logs weight in it (kg or lb),
+  // the same preference the logger and every tonnage figure read.
+  const units = useLoggerPrefs().units;
   const { t } = useLang();
   // Free (casual) users log macros manually; scanning a label and saving
   // meals/products is a Full feature (see canScanFoodLabel / canSaveMealsAndProducts).
@@ -409,7 +414,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const toggleFavorite = (q: QuickFood) => {
     setFavorites((xs) => { const next = isFavorite(q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; writeQuickFoods("hybrid.nutrition.favorites", next); return next; });
   };
-  const [weighIn, setWeighIn] = useState("");
   const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -2194,47 +2198,41 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
       )}
 
+      {/* BODY — the athlete's measurements, rehomed here from the retired
+          Profile → Private tab. It belongs on Nutrition: the weigh-in IS the
+          input the intake targets are steered by (a bodyMass signal drives
+          maintenance and every kcal target), so the number and the thing it
+          feeds now share a screen instead of sitting two tabs apart. The panel
+          owns the whole log — height, weight, tape and body fat — so the old
+          kg-only weigh-in card is gone rather than sitting beside it asking for
+          the same number in a second place. The EWMA trend rides in the panel's
+          `trend` slot, directly under the report that names the same weight. */}
       {view === "body" && (
-        <div style={{ ...card, marginTop: 16 }}>
-          {/* Weight is a PROFILE attribute — one canonical source. This reads the
-              latest profile weigh-in and updating here writes straight back to
-              the profile (no separate nutrition weight silo). */}
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.currentWeight")}</div>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: C("ash") }}>{t("w.recovery.nutrition.weightFromProfile")}</span>
-          </div>
-          {bodyMassKg != null ? (
-            <div style={{ fontWeight: 900, fontSize: 30, letterSpacing: "-.02em", marginTop: 6, fontVariantNumeric: "tabular-nums" }}>{bodyMassKg}<span style={{ fontWeight: 400, fontSize: 15, color: C("ash") }}> kg</span></div>
-          ) : (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8 }}>{t("w.recovery.nutrition.noWeightYet")}</div>
-          )}
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8 }}>{t("w.recovery.nutrition.weightProfileSub")}</div>
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <input value={weighIn} onChange={(e) => setWeighIn(e.target.value)} inputMode="decimal" placeholder="kg" aria-label={t("w.recovery.nutrition.updateWeight")} style={{ ...numField, flex: 1 }} />
-            <button className="pressable" onClick={() => { const kg = parseFloat(weighIn); if (Number.isFinite(kg) && kg > 0) { logWeighIn(kg); setWeighIn(""); } }} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 16, padding: "0 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.updateWeight")}</button>
-          </div>
-        </div>
-      )}
-
-      {view === "body" && weight.points.length > 0 && (
-        <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.bodyweightTrend")}</b>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: weight.ratePerWeek <= 0 ? "var(--lime-text)" : "var(--amber-text)" }}>{weight.ratePerWeek > 0 ? "+" : ""}{weight.ratePerWeek} kg/wk</span>
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={weight.points} margin={{ left: -10, right: 8 }}>
-                <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} tickFormatter={(d: string) => d.slice(5)} />
-                <YAxis unit="kg" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} domain={["dataMin - 1", "dataMax + 1"]} />
-                <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? t("w.recovery.nutrition.trend") : t("w.recovery.nutrition.raw")]} />
-                <Line type="monotone" dataKey="raw" stroke={ASH} strokeWidth={1} dot={false} isAnimationActive={false} />
-                <Line type="monotone" dataKey="smoothed" stroke={LIME_HEX} strokeWidth={2.5} dot={false} isAnimationActive={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <BodyProgress
+          units={units}
+          onPhotos={() => onNavigate?.("progress")}
+          onSaved={() => { load(); revalidate.recovery(); }}
+          trend={weight.points.length > 0 ? (
+            <div style={{ ...card, marginTop: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18 }}>{t("w.recovery.nutrition.bodyweightTrend")}</b>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: weight.ratePerWeek <= 0 ? "var(--lime-text)" : "var(--amber-text)" }}>{weight.ratePerWeek > 0 ? "+" : ""}{weight.ratePerWeek} kg/wk</span>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={weight.points} margin={{ left: -10, right: 8 }}>
+                    <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" />
+                    <XAxis dataKey="date" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} tickFormatter={(d: string) => d.slice(5)} />
+                    <YAxis unit="kg" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} domain={["dataMin - 1", "dataMax + 1"]} />
+                    <Tooltip contentStyle={tip} formatter={(v, n) => [`${v} kg`, n === "smoothed" ? t("w.recovery.nutrition.trend") : t("w.recovery.nutrition.raw")]} />
+                    <Line type="monotone" dataKey="raw" stroke={ASH} strokeWidth={1} dot={false} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="smoothed" stroke={LIME_HEX} strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          ) : null}
+        />
       )}
 
       {/* LOG — the unified manual entry + scan + one-tap premade meals. */}

@@ -2,12 +2,14 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import {
-  otherSportLanes, sportWeekBars, OTHER_SPORT_CAP, ago,
-  parentageHours, progressParentage,
+  otherSportLanes, otherSportReading, sportWeekBars, OTHER_SPORT_CAP, ago,
+  durationUnits, formatDuration,
+  parentageDuration, progressParentage,
   type LoggedSession, type OtherSportLane,
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import { useChartScrub, SCRUB_STYLE_IN_RAIL } from "./chart-scrub";
 import HistoryStrip from "./history-strip";
 
 /**
@@ -52,6 +54,7 @@ export default function AuroraOtherSports({
 }) {
   const { t } = useLang();
   const [expanded, setExpanded] = useState(false);
+  const u = durationUnits(t);
 
   const lanes = useMemo(() => otherSportLanes(sessions), [sessions]);
   // WAVE-3 PARENTAGE: the head quotes the sports' share of the This-week
@@ -68,12 +71,12 @@ export default function AuroraOtherSports({
   return (
     <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, ONE mono fact right —
-          the wave-3 parentage quote ("3.1 of 5.2 h this week"), naming the
+          the wave-3 parentage quote ("3h 6min of 5h 12min this week"), naming the
           slice of the verdict's hours column this block decomposes. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.other.title")}</span>
         <span style={kicker}>
-          {t("w.home.group.metaOf").replace("{a}", String(parentageHours(parentage.sportMinutes))).replace("{b}", String(parentageHours(parentage.totalMinutes)))}
+          {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.totalMinutes, u))}
         </span>
       </div>
 
@@ -116,13 +119,27 @@ export default function AuroraOtherSports({
   );
 }
 
+/** A week bucket's date, as the tile prints it. */
+const fmtWeekDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
+
 /** One sport. Efforts as the headline, hours beneath, an 8-week frequency
  *  strip, and when it was last played — the four things a timed sport can
- *  honestly say about itself. */
+ *  honestly say about itself.
+ *
+ *  The strip HOLDS, and answers in the FOOT rather than the headline: the
+ *  headline is all-time efforts and the strip is minutes per week, so swapping
+ *  it would put a quantity in a slot that never meant it. The time cell
+ *  becomes the held week's own duration, and "3 days ago" becomes the week.
+ *
+ *  The tile is also a button, so the dwell decides which a press meant — a tap
+ *  opens the sport's page, a hold reads the strip. Parity: the Today exercise
+ *  rail's card, where the same dwell separates the two. */
 function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) => string; onOpen?: (sport: string) => void }) {
   const bars = sportWeekBars(lane.weeks);
-  const hours = Math.round(lane.minutes / 6) / 10;
+  const time = formatDuration(lane.minutes, durationUnits(t));
   const interactive = !!onOpen;
+  const scrub = useChartScrub(lane.weeks.length, "band", undefined, { inButton: interactive });
+  const read = scrub.index >= 0 ? otherSportReading(lane, scrub.index) : null;
 
   return (
     <button className="pressable"
@@ -153,13 +170,15 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
       {/* Eight weeks of frequency in the cluster's shared HistoryStrip. Violet
           is the app's non-endurance channel — teal already means cardio on the
           lanes directly above this block. */}
-      <span style={{ display: "block", width: "100%", marginTop: "auto" }}>
-        <HistoryStrip bars={bars} color={C("violet")} />
+      <span {...scrub.bind} style={{ ...SCRUB_STYLE_IN_RAIL, display: "block", width: "100%", marginTop: "auto" }}>
+        <HistoryStrip bars={bars} color={C("violet")} held={scrub.index} />
       </span>
 
-      <span style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 10, color: C("ash") }}>
-        <span>{hours} h</span>
-        <span>{ago(lane.lastAt)}</span>
+      <span aria-live="polite" style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 10, color: C("ash") }}>
+        {/* A held week reads as a duration too, so it brings its own units and
+            the readout adds none — same figure the resting footer shows. */}
+        <span style={read?.best ? { color: "var(--lime-text)" } : undefined}>{read ? (read.unit ? `${read.value} ${read.unit}` : read.value) : time}</span>
+        <span>{read ? t("chart.weekOf").replace("{date}", fmtWeekDate(read.weekStart)) : ago(lane.lastAt)}</span>
       </span>
     </button>
   );

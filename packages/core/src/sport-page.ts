@@ -36,8 +36,10 @@
 // two clients cannot branch differently on what a sport shows.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { ChartReading } from "./chart-scrub";
 import { deviceTrueSessions } from "./device-truth";
 import { roundKm } from "./distance";
+import { durationParts, formatDuration } from "./duration";
 import { DISCIPLINE_META } from "./endurance";
 import {
   cardioSeconds,
@@ -120,7 +122,8 @@ export interface SportPrimary {
   kind: "marker" | "pace" | "distance" | "time";
   /** Formatted for display, already in the sport's own unit. */
   value: string;
-  /** Trailing unit ("km", "m", "/100m", "h"), or null when the value carries none. */
+  /** Trailing unit ("km", "m", "/100m"), or null when the value carries none —
+   *  a duration always does, so `time` never sets one. */
   unit: string | null;
   /** The marker's own label from the catalog — `marker` kind only. */
   label: string | null;
@@ -209,8 +212,11 @@ export interface SportPageModel {
   weeks: SportWeek[];
   /** Mean of `weeks`, in the same measure. */
   weekAvg: number;
-  /** Null unless the sport is paced AND something paced is logged. */
-  pace: { avgSecPerKm: number; bestSecPerKm: number; trend: number[]; prIndex: number } | null;
+  /** Null unless the sport is paced AND something paced is logged.
+   *  `weekStarts` is aligned with `trend` — the trend SKIPS the weeks with
+   *  nothing paced in them, so a held point can only name its own week if the
+   *  model says which week each point came from. */
+  pace: { avgSecPerKm: number; bestSecPerKm: number; trend: number[]; weekStarts: string[]; prIndex: number } | null;
   /** Null unless the sport is paced and the split has minutes in it. */
   split: EffortSplit | null;
   bests: SportBest[];
@@ -315,10 +321,10 @@ export function sportPace(secPerKm: number, pacePer: number): string {
   return mmss(Math.round((secPerKm * pacePer) / 1000));
 }
 
-/** "31 h 40" — the exact figure, for the one place that shows total time big. */
-export function sportDuration(minutes: number): { hours: number; minutes: number } {
-  return { hours: Math.floor(minutes / 60), minutes: Math.round(minutes % 60) };
-}
+/** "31h 40min" — the exact figure, for the one place that shows total time big.
+ *  The split itself is the shared one, so a sport's hero figure and a sport
+ *  tile on Today can't round the same minutes two different ways. */
+export const sportDuration = durationParts;
 
 /** A signed marker delta, formatted the way the marker itself is written. */
 function markerDelta(from: string, to: string): { delta: string; improving: boolean } | null {
@@ -384,17 +390,23 @@ export function sportPageModel(
   const pacedEfforts = all.filter((e) => e.secPerKm != null);
   // Divides by the bucket's exact `seconds`, not the whole minutes the volume
   // bars draw — the same device-truth rule the effort paces above follow.
-  const weekPaces = buckets
-    .map((w) => (w.km > 0 && w.seconds > 0 ? w.seconds / w.km : null))
-    .filter((p): p is number => p != null)
-    .map((p) => Math.round(p));
+  const pacedWeeks = buckets
+    .map((w) => (w.km > 0 && w.seconds > 0 ? { weekStart: w.weekStart, secPerKm: Math.round(w.seconds / w.km) } : null))
+    .filter((p): p is { weekStart: string; secPerKm: number } => p != null);
+  const weekPaces = pacedWeeks.map((p) => p.secPerKm);
   let pace: SportPageModel["pace"] = null;
   if (hasPace && pacedEfforts.length > 0 && weekPaces.length >= 2) {
     const best = Math.min(...pacedEfforts.map((e) => e.secPerKm!));
     const avg = Math.round(
       pacedEfforts.reduce((a, e) => a + e.secPerKm!, 0) / pacedEfforts.length,
     );
-    pace = { avgSecPerKm: avg, bestSecPerKm: best, trend: weekPaces, prIndex: weekPaces.indexOf(Math.min(...weekPaces)) };
+    pace = {
+      avgSecPerKm: avg,
+      bestSecPerKm: best,
+      trend: weekPaces,
+      weekStarts: pacedWeeks.map((p) => p.weekStart),
+      prIndex: weekPaces.indexOf(Math.min(...weekPaces)),
+    };
   }
 
   /* ── effort split: the shared zone engine, hidden when it has no minutes ── */
@@ -436,8 +448,8 @@ export function sportPageModel(
     if (longest && longest.minutes > 0) {
       bests.push({
         id: "longestSession",
-        value: String(longest.minutes),
-        unit: "min",
+        value: formatDuration(longest.minutes),
+        unit: null,
         at: longest.startedAt,
         sessionId: longest.sessionId,
         provider: longest.provider,
@@ -448,8 +460,8 @@ export function sportPageModel(
   if (biggest && biggest.value > 0) {
     bests.push({
       id: "biggestWeek",
-      value: hasDistance ? sportDistance(distanceUnit === "m" ? biggest.value / 1000 : biggest.value, distanceUnit) : String(Math.round(biggest.value)),
-      unit: hasDistance ? distanceUnit : "min",
+      value: hasDistance ? sportDistance(distanceUnit === "m" ? biggest.value / 1000 : biggest.value, distanceUnit) : formatDuration(biggest.value),
+      unit: hasDistance ? distanceUnit : null,
       at: biggest.weekStart,
       // An aggregate is neither typed nor measured — it has no single session
       // behind it, so it carries no provenance mark.
@@ -481,19 +493,23 @@ export function sportPageModel(
   } else if (hasDistance && totalsRaw.distanceKm > 0) {
     primary = { kind: "distance", value: sportDistance(totalsRaw.distanceKm, distanceUnit), unit: distanceUnit, label: null, delta: null, improving: null, trend: [], at: null };
   } else {
-    const { hours, minutes } = sportDuration(totalsRaw.minutes);
-    primary = { kind: "time", value: hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}` : String(minutes), unit: hours > 0 ? "h" : "min", label: null, delta: null, improving: null, trend: [], at: null };
+    // Hours AND minutes, in one string — "1:07 h" was a clock time wearing a
+    // duration's unit, and the alternative it replaced ("1.1 h") was tenths of
+    // an hour. The figure carries its own units, so it takes no separate one.
+    primary = { kind: "time", value: formatDuration(totalsRaw.minutes), unit: null, label: null, delta: null, improving: null, trend: [], at: null };
   }
 
   /* ── totals — the distance cell exists only when the sport measures one ── */
   const thisWeek = weeks[weeks.length - 1] ?? { value: 0, efforts: 0, weekStart: new Date(now).toISOString() };
   const totals: SportTotal[] = [{ id: "efforts", value: String(totalsRaw.efforts), unit: null }];
   if (hasDistance) totals.push({ id: "distance", value: sportDistance(totalsRaw.distanceKm, distanceUnit), unit: distanceUnit });
-  totals.push({ id: "hours", value: String(Math.round(totalsRaw.minutes / 60)), unit: null });
+  // Time logged reads in hours AND minutes: rounding to whole hours printed a
+  // flat "1" over 67 minutes of tennis, and the athlete had logged the 7.
+  totals.push({ id: "hours", value: formatDuration(totalsRaw.minutes), unit: null });
   totals.push({
     id: "week",
-    value: hasDistance ? sportDistance(distanceUnit === "m" ? thisWeek.value / 1000 : thisWeek.value, distanceUnit) : String(Math.round(thisWeek.value)),
-    unit: hasDistance ? distanceUnit : "min",
+    value: hasDistance ? sportDistance(distanceUnit === "m" ? thisWeek.value / 1000 : thisWeek.value, distanceUnit) : formatDuration(thisWeek.value),
+    unit: hasDistance ? distanceUnit : null,
   });
 
   /* ── the hero's meta line — facts about THIS instance ── */
@@ -539,6 +555,54 @@ export function sportPageModel(
     transfer,
     pool,
     recent: all.slice(0, SPORT_PAGE_RECENT),
+  };
+}
+
+/* ── 5b. HOLDING A CHART — what one held point says ──────────────────────── */
+
+/**
+ * The figure under a held finger, in the sport's own unit.
+ *
+ * The charts on this page draw NUMBERS, not labels — the volume bars are km or
+ * minutes depending on the sport, and the pace trend is seconds-per-km rendered
+ * at the sport's own split. The shape is the one every held chart uses
+ * (chart-scrub.ts `ChartReading`); this alias is here so a reader of the sport
+ * page finds it under the name the page's own functions return.
+ */
+export type SportChartReading = ChartReading;
+
+/** One week of the volume bars, held. Null when the index is off the series. */
+export function sportVolumeReading(m: SportPageModel, index: number): SportChartReading | null {
+  const w = m.weeks[index];
+  if (!w) return null;
+  const max = Math.max(...m.weeks.map((x) => x.value), 0);
+  return {
+    index,
+    weekStart: w.weekStart,
+    // A timed sport's week is a DURATION, so it brings its own units and the
+    // readout adds none — the same string the totals row prints.
+    value: m.hasDistance
+      ? sportDistance(m.distanceUnit === "m" ? w.value / 1000 : w.value, m.distanceUnit)
+      : formatDuration(w.value),
+    unit: m.hasDistance ? m.distanceUnit : "",
+    efforts: w.efforts,
+    best: w.value > 0 && w.value === max,
+  };
+}
+
+/** One week of the pace trend, held. The trend skips the weeks with nothing
+ *  paced in them, so the week named here comes from the trend's OWN alignment
+ *  (`pace.weekStarts`), never from the volume bars' index. */
+export function sportPaceReading(m: SportPageModel, index: number): SportChartReading | null {
+  const sec = m.pace?.trend[index];
+  if (m.pace == null || sec == null) return null;
+  return {
+    index,
+    weekStart: m.pace.weekStarts[index] ?? "",
+    value: sportPace(sec, m.pacePer),
+    unit: m.paceUnit,
+    efforts: null,
+    best: index === m.pace.prIndex,
   };
 }
 

@@ -9,6 +9,7 @@ import {
   formatStrengthPr,
   prsForSession,
   e1rmSeries,
+  e1rmPointReading,
   volumeByMuscle,
   conditioningSummary,
   cardioSummary,
@@ -21,6 +22,7 @@ import {
   kgToUnit,
   type WeightUnit,
   paceSeries,
+  pacePointReading,
   paceClock,
   formatCardioPr,
   cardioPrsForSession,
@@ -35,6 +37,8 @@ import {
   type LoggedSession,
   type PrHit,
   type CardioPrHit,
+  type E1rmPoint,
+  type PacePoint,
 } from "@hybrid/core";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
@@ -44,6 +48,7 @@ import { useSessionActions } from "../../lib/session-actions";
 import { fs, space, Kicker, Mono, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useTemplate } from "../../lib/template";
+import { useChartScrub } from "../../components/aurora/chart-scrub";
 import { AuroraScreen, ACard, cardStack, APill } from "../../components/aurora/kit";
 import { HeroNav } from "../../components/aurora/hero";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
@@ -218,12 +223,17 @@ export default function SessionDetail() {
                   </View>
                   );
                 })}
-                <Trend series={e1rmSeries(all, b.name, bw).map((p) => Math.round(kgToUnit(p.e1rm, units)))} t={t} />
+                <Trend
+                  points={e1rmSeries(all, b.name, bw)}
+                  series={e1rmSeries(all, b.name, bw).map((p) => Math.round(kgToUnit(p.e1rm, units)))}
+                  units={units}
+                  t={t}
+                />
               </View>
             ) : b.kind === "cardio" ? (
               <>
                 <Mono style={{ marginTop: 8 }}>{cardioSummary(b, { rpe: true })}</Mono>
-                <PaceTrend series={paceSeries(all, b.name).map((p) => p.secPerKm)} t={t} />
+                <PaceTrend points={paceSeries(all, b.name)} series={paceSeries(all, b.name).map((p) => p.secPerKm)} t={t} />
               </>
             ) : (
               <Mono style={{ marginTop: 8 }}>{conditioningSummary(b, { rpe: true })}</Mono>
@@ -302,9 +312,21 @@ function MuscleFocus({ blocks, bodyweightKg, t }: { blocks: LoggedSession["block
   );
 }
 
-// Dependency-free e1RM trend: scaled bars, latest highlighted.
-function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
+/** A trend point's date, as the strip prints it. */
+const fmtPointDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
+
+/**
+ * Dependency-free e1RM trend: scaled bars, latest highlighted.
+ *
+ * The strip is 30dp tall and carries no axis, so holding it is the only way to
+ * ask which session a bar was. Held, the row above answers — the DELTA line
+ * becomes that point's e1RM and its date, which is the same swap the Trends
+ * bands and the lane tiles make, in the one slot this strip already has.
+ */
+function Trend({ points, series, t, units }: { points: E1rmPoint[]; series: number[]; t: (k: string) => string; units: WeightUnit }) {
   const C = useTheme().palette;
+  const scrub = useChartScrub(series.length, "band");
+  const read = scrub.index >= 0 ? e1rmPointReading(points, scrub.index, units) : null;
   if (series.length < 2) return null;
   const max = Math.max(...series);
   const min = Math.min(...series);
@@ -314,11 +336,17 @@ function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
     <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <Kicker>{t("session.trend")}</Kicker>
-        <Mono color={delta >= 0 ? C.lime : C.amber}>
-          {delta >= 0 ? "+" : ""}{delta} kg – {series.length}×
-        </Mono>
+        {read ? (
+          <Mono color={read.best ? C.lime : C.chalk}>
+            {read.value} {read.unit} – {fmtPointDate(read.weekStart)}
+          </Mono>
+        ) : (
+          <Mono color={delta >= 0 ? C.lime : C.amber}>
+            {delta >= 0 ? "+" : ""}{delta} kg – {series.length}×
+          </Mono>
+        )}
       </View>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>
+      <View {...scrub.bind} style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>
         {series.map((v, i) => (
           <View
             key={i}
@@ -326,7 +354,7 @@ function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
               flex: 1,
               height: 6 + ((v - min) / range) * 22,
               borderRadius: 2,
-              backgroundColor: i === series.length - 1 ? C.lime : `${C.lime}55`,
+              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.lime : `${C.lime}55`,
             }}
           />
         ))}
@@ -337,8 +365,10 @@ function Trend({ series, t }: { series: number[]; t: (k: string) => string }) {
 
 // Dependency-free pace trend (sec/km). Lower is faster, so a faster bar is
 // TALLER; latest highlighted, delta shown as time saved (lime) or lost (amber).
-function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }) {
+function PaceTrend({ points, series, t }: { points: PacePoint[]; series: number[]; t: (k: string) => string }) {
   const C = useTheme().palette;
+  const scrub = useChartScrub(series.length, "band");
+  const read = scrub.index >= 0 ? pacePointReading(points, scrub.index) : null;
   if (series.length < 2) return null;
   const max = Math.max(...series);
   const min = Math.min(...series);
@@ -349,11 +379,17 @@ function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }
     <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <Kicker>{t("session.paceTrend")}</Kicker>
-        <Mono color={delta <= 0 ? C.lime : C.amber}>
-          {sign}{paceClock(Math.abs(delta))} /km – {series.length}×
-        </Mono>
+        {read ? (
+          <Mono color={read.best ? C.lime : C.chalk}>
+            {read.value} {read.unit} – {fmtPointDate(read.weekStart)}
+          </Mono>
+        ) : (
+          <Mono color={delta <= 0 ? C.lime : C.amber}>
+            {sign}{paceClock(Math.abs(delta))} /km – {series.length}×
+          </Mono>
+        )}
       </View>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>
+      <View {...scrub.bind} style={{ flexDirection: "row", alignItems: "flex-end", height: 30, gap: 3 }}>
         {series.map((v, i) => (
           <View
             key={i}
@@ -361,7 +397,7 @@ function PaceTrend({ series, t }: { series: number[]; t: (k: string) => string }
               flex: 1,
               height: 6 + ((max - v) / range) * 22,
               borderRadius: 2,
-              backgroundColor: i === series.length - 1 ? C.blue : `${C.blue}55`,
+              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.blue : `${C.blue}55`,
             }}
           />
         ))}
