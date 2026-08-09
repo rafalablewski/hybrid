@@ -29,6 +29,7 @@ import { useFitnessLevel } from "@/lib/use-fitness-level";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { StreakMark } from "./streak-mark";
 import { ArrowGlyph } from "./cta-label";
 
 /**
@@ -480,7 +481,20 @@ export default function AuroraProfile({
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 12, fontFamily: "var(--font-mono)", fontSize: 8, color: C("ash") }}>
-              <span style={{ color: "var(--lime-text)" }}>{weekStreak > 0 ? `${weekStreak}${t("w.account.profile.week-streak-suffix")}` : dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : t("w.account.profile.no-streak")}</span>
+              {/* THE STREAK — the shared mark (aurora/streak-mark.tsx), the same
+                  one the app header wears, so the figure under the heat-map is
+                  no longer a bare chartreuse count that says the same thing in
+                  a different voice and does nothing when clicked. It opens the
+                  history — which is what this heat-map is a picture of. The
+                  fallback is NOT the day-streak (it is the LONGEST WEEK run,
+                  which this side mislabelled as a current "-week streak"), so
+                  it stays plain text, and it now reads and orders exactly as
+                  the mobile twin does. */}
+              {dayStreak.current > 0 ? (
+                <StreakMark onNavigate={onNavigate} />
+              ) : (
+                <span style={{ color: "var(--lime-text)" }}>{weekStreak > 0 ? `${weekStreak}${t("w.account.profile.week-best-suffix")}` : t("w.account.profile.no-streak")}</span>
+              )}
               <span style={{ flex: 1 }} />
               {t("w.account.profile.less")}
               {[0, 1, 2, 3, 4].map((l) => (

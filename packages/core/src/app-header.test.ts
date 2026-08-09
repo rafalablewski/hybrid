@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { APP_HEADER, APP_HEADER_HEIGHT, avatarInitials, unreadLabel } from "./app-header";
-import { fs, space, tracking } from "./scale";
+import { APP_HEADER, APP_HEADER_HEIGHT, APP_HEADER_LOCKUP_HEIGHT, avatarInitials, unreadLabel } from "./app-header";
+import { fs, tracking } from "./scale";
 
 /**
  * THE APP HEADER GUARD.
@@ -44,8 +44,6 @@ const HEADER_COMPONENTS = [
 describe("the app header contract", () => {
   it("is built from named tokens, never hand-typed numbers", () => {
     expect(APP_HEADER.wordmark.tracking).toBe(tracking.display);
-    expect(APP_HEADER.streak.tracking).toBe(tracking.caps);
-    expect(APP_HEADER.streak.gap).toBe(space.xxs);
     expect(APP_HEADER.badge.text).toBe(fs.nano);
   });
 
@@ -56,11 +54,11 @@ describe("the app header contract", () => {
   });
 
   it("fits the whole lockup inside the row the tiles set", () => {
-    // Wordmark + the streak's top gap + its caption must not grow the row —
+    // Wordmark + the streak's top gap + the mark's line must not grow the row —
     // that is why the streak became a second LINE rather than a pill in the
-    // flank, and why the caption sits below the type scale's smallest rung.
-    const lockup = APP_HEADER.wordmark.size + APP_HEADER.streak.top + APP_HEADER.streak.size * 1.6;
-    expect(lockup).toBeLessThanOrEqual(APP_HEADER_HEIGHT);
+    // flank, and why the mark's hairline rung sits below the type scale's
+    // smallest.
+    expect(APP_HEADER_LOCKUP_HEIGHT).toBeLessThanOrEqual(APP_HEADER_HEIGHT);
   });
 
   it("has ONE placeholder for a nameless athlete, and it is not someone's initial", () => {
@@ -105,13 +103,14 @@ describe("the app header guard — no screen may draw its own", () => {
     }
   });
 
-  it("sources its own data rather than being handed a streak to draw", () => {
+  it("sources its own data rather than being handed a figure to draw", () => {
     // The point of the extraction: a second tab root wears the identical head
     // by rendering the component, so there is no `streak`/`initials`/`unread`
-    // prop to thread — and therefore no way for two tabs to disagree.
+    // prop to thread — and therefore no way for two tabs to disagree. The
+    // streak arrives the same way, one level down: the shared mark sources it.
     for (const file of HEADER_COMPONENTS) {
       const src = code(file);
-      expect(src, file).toContain("computeAccountability");
+      expect(src, file).toContain("<StreakMark");
       expect(src, file).toContain("avatarInitials");
       expect(src, file).toMatch(/unread/);
     }

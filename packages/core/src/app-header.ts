@@ -25,6 +25,7 @@
 // sits inside the tile.
 
 import { fs, space, tracking } from "./scale";
+import { STREAK_MARK } from "./streak-mark";
 
 /**
  * THE CONTRACT. Four clusters, and the row is fully specified.
@@ -39,11 +40,12 @@ export const APP_HEADER = {
    *  tracking in em (-.03em ≈ -0.57 at 19) where mobile stated it in dp; the
    *  app's tracking scale is in dp (see hub-masthead.ts for the same note). */
   wordmark: { size: 19, tracking: tracking.display },
-  /** The day-streak caption under the wordmark. A HAIRLINE: deliberately below
-   *  the type scale's smallest rung (fs.nano, 10), because it is a mark on the
-   *  lockup rather than a line of copy, and because it has to stay one line in
-   *  every locale ("-dniowa seria", "-Tage-Serie") inside the tile's height. */
-  streak: { size: 9.5, tracking: tracking.caps, icon: 11, gap: space.xxs, top: 3 },
+  /** The day-streak's offset under the wordmark — the ONE thing about the mark
+   *  that is the header's business. The mark itself (its size, its flame, its
+   *  colour and where it goes when tapped) is the shared STREAK_MARK, at its
+   *  `hairline` rung, so the header cannot dress the streak differently from
+   *  the two other places it appears. */
+  streak: { top: 3 },
   /** The unread badge riding the bell's top-right corner. */
   badge: { size: 18, inset: -5, ring: 2, text: fs.nano },
   /** The gap under the row, to whatever the tab puts first — its hub pills, or
@@ -53,6 +55,12 @@ export const APP_HEADER = {
 
 /** The row's height at rest. The tiles set it; the lockup fits inside it. */
 export const APP_HEADER_HEIGHT = APP_HEADER.tile.size;
+
+/** What the lockup actually occupies: the wordmark, the gap, and the streak
+ *  mark's line. Stated so the guard can prove it clears the row rather than
+ *  taking the comment's word for it. */
+export const APP_HEADER_LOCKUP_HEIGHT =
+  APP_HEADER.wordmark.size + APP_HEADER.streak.top + STREAK_MARK.hairline.size * 1.6;
 
 /**
  * The avatar's initials, from a display name — up to two, uppercased.

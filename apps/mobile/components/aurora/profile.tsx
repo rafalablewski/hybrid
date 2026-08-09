@@ -34,6 +34,7 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS, CARD_PAD, ASection } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
 import { AuroraIcon } from "./icons";
+import { StreakMark } from "./streak-mark";
 import { ArrowGlyph } from "./cta-label";
 
 type P = ReturnType<typeof useTheme>["palette"];
@@ -436,9 +437,21 @@ export default function AuroraProfile() {
               ))}
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>
-                {dayStreak.current > 0 ? `${dayStreak.current}${t("w.account.profile.day-streak-suffix")}` : weekStreakBest > 0 ? `${weekStreakBest}${t("w.account.profile.week-best-suffix")}` : t("w.account.profile.no-streak")}
-              </Text>
+              {/* THE STREAK — the shared mark (aurora/streak-mark.tsx), the
+                  same one the app header wears, so the figure under the
+                  heat-map is no longer a bare chartreuse "17d" that says the
+                  same thing in a different voice and does nothing when tapped.
+                  It opens the history — which is what this heat-map is a
+                  picture of. The two fallbacks are NOT the day-streak (a
+                  longest-week figure, or nothing yet), so they stay plain
+                  text. */}
+              {dayStreak.current > 0 ? (
+                <StreakMark />
+              ) : (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>
+                  {weekStreakBest > 0 ? `${weekStreakBest}${t("w.account.profile.week-best-suffix")}` : t("w.account.profile.no-streak")}
+                </Text>
+              )}
               <View style={{ flex: 1 }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.account.profile.less")}</Text>
               {[0, 1, 2, 3, 4].map((l) => (

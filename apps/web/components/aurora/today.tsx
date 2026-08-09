@@ -94,6 +94,7 @@ import { TodayTabs } from "./today-tabs";
 import { HubMasthead } from "./hub-masthead";
 import { TodayHubDock } from "./today-hub-dock";
 import { AppHeader } from "./app-header";
+import { StreakMark } from "./streak-mark";
 import { RtpPanel } from "./protocol";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
@@ -586,10 +587,9 @@ export default function AuroraToday({
           renders, so the app's identity strip cannot be authored twice: every
           number lives in @hybrid/core app-header.ts and the component sources
           its own name, streak and unread count. This screen passes only the
-          two things that are TODAY'S: what the streak opens (the done-today
-          sheet, which is day-scoped) and the hub the drawer switches in place.
+          one thing that is TODAY'S: the hub the drawer switches in place.
           Mirrors mobile home.tsx. */}
-      <AppHeader onNavigate={onNavigate} onStreak={() => setDoneOpen(true)} hub={{ value: tab, onChange: selectTab }} />
+      <AppHeader onNavigate={onNavigate} hub={{ value: tab, onChange: selectTab }} />
 
       {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the
           profile row and above the calendar. Today is the athlete's home, and
@@ -1133,15 +1133,17 @@ export default function AuroraToday({
         open={doneOpen}
         onClose={() => setDoneOpen(false)}
         title={dayIsToday ? t("w.home.today.doneModalTitle") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "")}
-        sub={dayIsToday ? (
-          <>
-            {dateStr}
-            {acc.streak.current > 0 && (
-              <> – <AuroraIcon name="flame" size={12} color="var(--red-text)" style={{ verticalAlign: "-2px" }} /> {acc.streak.current}{t("w.home.today.dayStreak")}</>
-            )}
-          </>
-        ) : dayLabel ?? ""}
+        sub={dayIsToday ? dateStr : dayLabel ?? ""}
       >
+        {/* THE STREAK — the shared mark (aurora/streak-mark.tsx) at its inline
+            rung: the same mark as the one under the wordmark, with the same
+            count and the same destination (the history, closing this sheet on
+            the way). It used to be a flame and a number spliced into the sub
+            line above, which is a line of text — text can hold a glyph but not
+            a control, and this figure is a control now. It draws nothing when
+            there is no streak, so there is no conditional here and no
+            separator left dangling. Mirrors mobile home.tsx. */}
+        {dayIsToday && <StreakMark rung="inline" onNavigate={onNavigate} onDismiss={() => setDoneOpen(false)} />}
         {doneOnDay.length === 0 ? (
           <div style={{ fontSize: fs.body, color: C("ash"), lineHeight: 1.5, padding: "8px 0" }}>{t(dayIsToday ? "w.home.today.doneModalEmpty" : "w.home.today.doneModalEmptyDay")}</div>
         ) : (

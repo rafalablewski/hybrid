@@ -1,15 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { APP_HEADER, APP_HEADER_HEIGHT, avatarInitials, computeAccountability, unreadLabel, type TodayTabId } from "@hybrid/core";
+import { APP_HEADER, APP_HEADER_HEIGHT, avatarInitials, unreadLabel, type TodayTabId } from "@hybrid/core";
 import { useSession } from "@/lib/session";
-import { useSessions } from "@/lib/use-sessions";
 import { useNotifications } from "@/lib/use-notifications";
 import { useLang } from "@/lib/i18n";
 import { fs } from "@/lib/ui";
 import { AuroraIcon } from "./icons";
 import AuroraSideMenu from "./side-menu";
+import { StreakMark } from "./streak-mark";
 
 const C = (v: string) => `var(--color-${v})`;
 
@@ -24,34 +24,27 @@ const C = (v: string) => `var(--color-${v})`;
  * tiles were already 44 here against 42 there, with "A" standing in for a
  * nameless athlete on this side and "·" on that one.
  *
- * IT SOURCES ITS OWN DATA (the shared session, the shared sessions query, the
- * shared notifications feed), so a second tab root wears the identical head by
- * rendering the component — nothing to thread through, nothing to recompute a
- * second way.
+ * IT SOURCES ITS OWN DATA (the shared session, the shared notifications feed)
+ * and the streak comes from the shared mark (aurora/streak-mark.tsx), which
+ * sources its own — so a second tab root wears the identical head by rendering
+ * the component: nothing to thread through, nothing to recompute a second way.
  *
  * A screen passes DATA and cannot pass style.
  */
 export function AppHeader({
   /** The app-shell's screen switch, when the header is rendered inside it. */
   onNavigate,
-  /** What the streak caption opens. Today hands it the done-today sheet, which
-   *  is Today's own and day-scoped. A tab with nothing to show for it renders
-   *  the caption as plain text rather than a button that goes nowhere. */
-  onStreak,
   /** Present only on the Today hub: the drawer's three hub rows switch the hub
    *  IN PLACE there. Everywhere else they are ordinary destinations. */
   hub,
 }: {
   onNavigate?: (screen: string) => void;
-  onStreak?: () => void;
   hub?: { value: TodayTabId; onChange: (tab: TodayTabId) => void };
 }) {
   const { t } = useLang();
   const router = useRouter();
   const { session } = useSession();
-  const { sessions } = useSessions();
   const [menuOpen, setMenuOpen] = useState(false);
-  const streak = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }).streak.current, [sessions]);
   // The bell badge is the UNREAD count from the shared notifications feed — the
   // same list the screen renders, so the two cannot disagree, and it reaches
   // zero once the athlete has read it.
@@ -60,14 +53,6 @@ export function AppHeader({
   const go = (screen: string) => (onNavigate ? onNavigate(screen) : router.push(`/${screen}`));
 
   const tile = { position: "relative", width: APP_HEADER.tile.size, height: APP_HEADER.tile.size, borderRadius: APP_HEADER.tile.radius, display: "grid", placeItems: "center", cursor: "pointer" } as const;
-  const streakStyle = { display: "inline-flex", alignItems: "center", gap: APP_HEADER.streak.gap, marginTop: APP_HEADER.streak.top, padding: "2px 8px", background: "none", border: "none", color: "var(--red-text)", fontFamily: "var(--font-mono)", fontSize: APP_HEADER.streak.size, fontWeight: 600, letterSpacing: `${APP_HEADER.streak.tracking}px`, textTransform: "uppercase", whiteSpace: "nowrap" } as const;
-  const streakLine = (
-    <>
-      <AuroraIcon name="flame" size={APP_HEADER.streak.icon} color="var(--red-text)" />
-      {streak}{t("w.home.today.dayStreak")}
-    </>
-  );
-
   return (
     <>
       {/* THREE COLUMNS, FIXED FLANKS. The row used to be `space-between`, which
@@ -95,14 +80,13 @@ export function AppHeader({
           <div style={{ fontWeight: 900, fontSize: APP_HEADER.wordmark.size, letterSpacing: `${APP_HEADER.wordmark.tracking}px`, lineHeight: 1, color: C("chalk") }}>
             HYBRID<span style={{ color: "var(--lime-text)" }}>.</span>
           </div>
-          {/* SPECTRUM: the streak wears the warm terracotta accent (Connect),
-              pairing with the flame and keeping chartreuse for the primary
-              action. */}
-          {streak > 0 && (
-            onStreak
-              ? <button className="pressable" onClick={onStreak} style={{ ...streakStyle, cursor: "pointer" }}>{streakLine}</button>
-              : <span style={streakStyle}>{streakLine}</span>
-          )}
+          {/* THE STREAK (aurora/streak-mark.tsx) — the shared mark, which draws
+              itself, sources its own count and opens the history. It renders
+              nothing at all when there is no streak, which is why the lockup
+              needs no conditional of its own here. */}
+          <div style={{ marginTop: APP_HEADER.streak.top }}>
+            <StreakMark onNavigate={onNavigate} />
+          </div>
         </div>
 
         <button className="pressable" onClick={() => go("notifications")} aria-label={t("w.home.today.notificationsAria")} style={{ ...tile, background: C("ink2"), border: `1px solid ${C("line")}` }}>
