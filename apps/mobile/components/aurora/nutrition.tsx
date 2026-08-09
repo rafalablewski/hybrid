@@ -33,6 +33,11 @@ import {
   targetMismatch,
   hasOverride,
   type TargetOverride,
+  SERVING_UNITS,
+  composeServingLabel,
+  parseServing,
+  servingGrams as servingGramsOf,
+  unitById,
   trainingEnergyOnDay,
   localDayKey,
   localTodayKey,
@@ -131,7 +136,13 @@ const MEAL_TYPES = DEFAULT_MEAL_PART_KEYS;
 // band (web parity — one threshold, both surfaces).
 const KCAL_OVER_THRESHOLD = 1.05;
 const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunrise" : m === "lunch" ? "sun" : m === "dinner" ? "moon" : m === "snack" ? "cup" : "bowl";
-const UNIT_OPTIONS = ["gram", "ml", "oz", "piece", "serving"];
+/** A serving weight recovered from its label, EXACT conversions only — a
+ *  volume weight is an assumption (see serving-units.ts) and must not be
+ *  handed to anything that treats it as measured. */
+const exactGrams = (label: string | null | undefined): number | null => {
+  const g = servingGramsOf(parseServing(label));
+  return g && !g.assumed ? g.grams : null;
+};
 // A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
@@ -666,6 +677,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     [full, customParts, t],
   );
   const partLabel = useCallback((key: string) => partList.find((p) => p.key === key)?.label ?? t(`w.recovery.nutrition.meal.${key}`), [partList, t]);
+  // A mass/volume symbol is the same token in all three languages; only the
+  // COUNT words are translated.
+  const unitLabel = useCallback((id: string) => {
+    const u = unitById(id);
+    return !u ? id : u.kind === "count" ? t(`w.recovery.nutrition.unitOpt.${id}`) : u.symbol;
+  }, [t]);
 
   const load = () => { refetch(); loadLibrary(); };
   useRefreshOnFocus(refetch);
@@ -834,14 +851,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       id: r.key, name: r.name, subname: r.subname ?? null, servingLabel: r.serving,
       // A recent carries no serving weight, so a gram phrase against one is
       // routed to the portion editor rather than converted (see quick-add.ts).
-      servingGrams: r.servingGrams ?? null,
+      servingGrams: r.servingGrams ?? exactGrams(r.serving),
       facts: { kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat, satFat: r.satFat ?? null, sugar: r.sugar ?? null, fiber: r.fiber ?? null, salt: r.salt ?? null },
       source: "recent" as const,
       verifiedId: r.verifiedId ?? null,
     })),
     ...products.map((p) => ({
       id: p.id, name: p.name, subname: p.subname ?? null, servingLabel: p.servingLabel,
-      servingGrams: p.servingGrams ?? null,
+      // Derived from the LABEL when the product never recorded a weight — the
+      // reason this shipped without a migration. "100 g" saved years ago is
+      // measurable today. Exact conversions only.
+      servingGrams: p.servingGrams ?? exactGrams(p.servingLabel),
       facts: { kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat ?? null, sugar: p.sugar ?? null, fiber: p.fiber ?? null, salt: p.salt ?? null },
       source: "product" as const,
       verifiedId: p.verifiedId ?? null,
@@ -935,10 +955,18 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // "I don't know", and writing a zero there would invent a fact.
     const opt = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n >= 0 ? n : undefined; };
     const panelFields = { satFat: opt(createForm.satFat), sugar: opt(createForm.sugar), fiber: opt(createForm.fiber), salt: opt(createForm.salt) };
-    const servingGrams = createForm.unit === "gram" ? opt(serving) : undefined;
+    // The label is composed by core, so what is saved is exactly what
+    // parseServing reads back. The weight is DERIVED from the unit — the old
+    // rule only set it for "gram", so an ounce serving never got one even
+    // though ounces convert exactly. An ASSUMED (volume) conversion is
+    // deliberately not stored: writing a guessed weight into the measured
+    // field would make it indistinguishable from one somebody weighed.
+    const composedLabel = serving ? composeServingLabel(serving, createForm.unit) : undefined;
+    const derivedGrams = composedLabel ? servingGramsOf(parseServing(composedLabel)) : null;
+    const servingGrams = derivedGrams && !derivedGrams.assumed ? derivedGrams.grams : undefined;
     const res = isMeal
       ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros, ...panelFields })
-      : await createFoodProduct({ name: createForm.name.trim(), subname, servingLabel: serving ? `${serving} ${createForm.unit}`.trim() : undefined, servingGrams, ...macros, ...panelFields });
+      : await createFoodProduct({ name: createForm.name.trim(), subname, servingLabel: composedLabel, servingGrams, ...macros, ...panelFields });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     setCreateForm(BLANK_CREATE_FORM);
@@ -1789,7 +1817,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.recovery.nutrition.per")}</Text>
             <TextInput value={createForm.serving} onChangeText={(v) => setCF({ serving: v })} keyboardType="numeric" placeholder="1" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.servingLabel2")} style={{ width: 44, textAlign: "right", fontFamily: F.mono, fontSize: 15, color: C.chalk, borderBottomWidth: 1, borderBottomColor: C.line, paddingBottom: 2 }} />
             <Pressable onPress={() => setUnitPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{t(`w.recovery.nutrition.unitOpt.${createForm.unit}`)}</Text><IChevDown size={13} color={C.ash} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{unitLabel(createForm.unit)}</Text><IChevDown size={13} color={C.ash} />
             </Pressable>
           </View>
         ) : null}
@@ -1800,9 +1828,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
         <Sheet visible={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")} scroll={false}>
           <View style={{ gap: 8 }}>
-            {UNIT_OPTIONS.map((u) => (
+            {SERVING_UNITS.map(({ id: u }) => (
               <Pressable key={u} onPress={() => { setCreateForm((s) => ({ ...s, unit: u })); setUnitPicker(false); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.ink, borderWidth: 1, borderColor: createForm.unit === u ? C.lime : C.line, borderRadius: 16, padding: 16 }}>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{t(`w.recovery.nutrition.unitOpt.${u}`)}</Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{unitLabel(u)}</Text>
                 {createForm.unit === u ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : null}
               </Pressable>
             ))}
