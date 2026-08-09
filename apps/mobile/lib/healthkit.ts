@@ -153,6 +153,16 @@ type Reading = { value: number; start: string; end: string };
 
 const iso = (d: Date | string) => new Date(d).toISOString();
 
+/** `iso`, but for dates that come off a native proxy and may not be dates at
+ *  all. `new Date(junk).toISOString()` THROWS, and a throw in the middle of a
+ *  workout read used to take the whole fortnight's list with it — see
+ *  `readWorkouts`. Null means "this recording has no usable clock". */
+const isoOrNull = (d: Date | string | null | undefined): string | null => {
+  if (d == null) return null;
+  const t = new Date(d).getTime();
+  return Number.isFinite(t) ? new Date(t).toISOString() : null;
+};
+
 const localDay = (isoTs: string) => {
   const d = new Date(isoTs);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -365,8 +375,12 @@ const recordingDevice = (w: {
  * bridge reads reaches ALREADY-matched sessions too, not just the next match.
  */
 async function readWorkout(hk: HK, w: WorkoutProxyLike): Promise<DeviceWorkout | null> {
-  const start = iso(w.startDate);
-  const end = iso(w.endDate);
+  // Read through `isoOrNull`, not `iso`: a proxy whose dates don't survive the
+  // bridge would otherwise THROW here rather than return null, and the caller's
+  // list would end at this recording instead of skipping it.
+  const start = isoOrNull(w.startDate);
+  const end = isoOrNull(w.endDate);
+  if (!start || !end) return null;
   const rawActivity = activityRawName(hk, w.workoutActivityType as unknown as number);
   const durationMin =
     qtyMinutes(w.duration) ?? Math.max(1, Math.round((Date.parse(end) - Date.parse(start)) / 60000));
@@ -425,7 +439,15 @@ export async function queryDeviceWorkouts(aroundIso: string): Promise<DeviceWork
  * the window differs from the per-session match above.
  */
 export async function queryRecentDeviceWorkouts(days = DEVICE_IMPORT_DAYS): Promise<DeviceWorkout[] | null> {
-  return readWorkouts(new Date(Date.now() - days * 86400000), new Date());
+  // The window ends a DAY AHEAD of now, not at now. A recording can't be too
+  // new to import, and the phone's clock is not the watch's: a workout stamped
+  // even seconds ahead of `Date.now()` (clock skew between the paired devices,
+  // or a recording the store still holds open) fell outside a window that
+  // stopped at the current instant — while the per-session match window, which
+  // reaches DEVICE_MATCH_WINDOW_H in BOTH directions, saw it perfectly well.
+  // That is exactly the shape of the bug athletes reported: nothing in the
+  // import sheet, then the same workout right there in the summary's picker.
+  return readWorkouts(new Date(Date.now() - days * 86400000), new Date(Date.now() + 86400000));
 }
 
 /** The shared read: every workout in [start, end], normalized to DeviceWorkout.
@@ -434,17 +456,34 @@ async function readWorkouts(startDate: Date, endDate: Date): Promise<DeviceWorko
   const hk = loadHealthKit();
   if (!hk) return null;
   const filter = { date: { startDate, endDate } };
+  let proxies: readonly WorkoutProxyLike[];
   try {
-    const proxies = await hk.queryWorkoutSamples({ limit: 0, ascending: false, filter });
-    const out: DeviceWorkout[] = [];
-    for (const w of proxies) {
-      const candidate = await readWorkout(hk, w);
-      if (candidate) out.push(candidate);
-    }
-    return out;
+    proxies = await hk.queryWorkoutSamples({ limit: 0, ascending: false, filter });
   } catch {
+    // Only the QUERY failing means "unreachable". Everything past this point is
+    // per-recording and must degrade per-recording.
     return null;
   }
+  // ONE BAD RECORDING MUST NOT COST THE LIST. Every read below happens on a
+  // native proxy, and a proxy that throws (a date the bridge can't hand over, a
+  // statistic that rejects synchronously, an object the store has since
+  // released) used to escape into a try/catch wrapped around the whole loop —
+  // so the entire read returned null and the sheet showed nothing. The import
+  // reads a FORTNIGHT where the match sheet reads a day either side of one
+  // session, so the import was many times likelier to meet the bad recording:
+  // "no workouts on the watch" in the import sheet, the workout plainly there
+  // in the summary's picker, and no pattern to it from the outside.
+  const out: DeviceWorkout[] = [];
+  for (const w of proxies) {
+    let candidate: DeviceWorkout | null = null;
+    try {
+      candidate = await readWorkout(hk, w);
+    } catch {
+      candidate = null;
+    }
+    if (candidate) out.push(candidate);
+  }
+  return out;
 }
 
 /** The stored fields a refresh may legitimately change. `matchedAt` is excluded
@@ -485,17 +524,24 @@ export async function refreshMatchedWorkouts(): Promise<{ checked: number; repai
   }
   if (matched.length === 0) return { checked: 0, repaired: 0 };
 
-  let fresh: Map<string, DeviceWorkout>;
+  const fresh = new Map<string, DeviceWorkout>();
+  let proxies: readonly WorkoutProxyLike[];
   try {
     const uuids = [...new Set(matched.map((m) => m.device.uuid))];
-    const proxies = await hk.queryWorkoutSamples({ limit: 0, filter: { uuids } });
-    fresh = new Map();
-    for (const w of proxies) {
-      const read = await readWorkout(hk, w);
-      if (read) fresh.set(read.uuid, read);
-    }
+    proxies = await hk.queryWorkoutSamples({ limit: 0, filter: { uuids } });
   } catch {
     return { checked: matched.length, repaired: 0 };
+  }
+  // Per-recording, for the same reason the import read is (see `readWorkouts`):
+  // this pass covers the athlete's WHOLE matched history, so one unreadable
+  // proxy in it would otherwise mean not a single session gets repaired.
+  for (const w of proxies) {
+    try {
+      const read = await readWorkout(hk, w);
+      if (read) fresh.set(read.uuid, read);
+    } catch {
+      /* this recording can't be re-read — leave the stored one alone */
+    }
   }
 
   let repaired = 0;

@@ -23,20 +23,30 @@
 // concurrent sync is idempotent) and both clients run it to SHOW what an import
 // will do before the athlete taps. Same function, same answer.
 
+import { deviceActivityVerdict, sportForDeviceActivity } from "./device-activity";
 import { doneReceipt } from "./done-receipt";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 import { cardioDiscipline } from "./engines/session";
 import { kmValue } from "./distance";
-import { displaySportDistance, olympicSport, sportDistanceUnit } from "./olympic-sports";
+import { displaySportDistance, sportDistanceUnit } from "./olympic-sports";
 import type { DeviceWorkout } from "./session-device";
 
 /** How far back an import reads the device store, days. Two weeks covers a
  *  holiday away from the phone without re-planning a year of history. */
 export const DEVICE_IMPORT_DAYS = 14;
 
-/** Recordings shorter than this are not sessions — they are the watch noticing
- *  you walked to the car. Filtered before anything else so neither the picker
- *  nor an auto-import ever offers them. */
+/**
+ * Recordings shorter than this are not sessions — they are the watch noticing
+ * you walked to the car. It is the floor for what an UNATTENDED import writes:
+ * `planDeviceImport` drops them by default, so auto-import can never fill the
+ * log with walks to the shop.
+ *
+ * It is NOT a floor on what the athlete may see. The import sheet plans with
+ * `minMinutes: 0` and renders the short ones switched OFF, because a floor that
+ * hides a recording outright is indistinguishable from the watch never having
+ * recorded it — and the summary's match picker offers those same recordings, so
+ * hiding them here made the two surfaces disagree about what the device holds.
+ */
 export const DEVICE_IMPORT_MIN_MIN = 5;
 
 /** How far a POINT-logged session (startedAt == completedAt — quick-logged after
@@ -44,71 +54,6 @@ export const DEVICE_IMPORT_MIN_MIN = 5;
  *  hours. Deliberately much tighter than DEVICE_MATCH_WINDOW_H: that window is
  *  for a human picking from a ranked list, this one decides unattended. */
 export const DEVICE_IMPORT_ATTACH_H = 3;
-
-/**
- * HealthKit activity → the catalog sport it IS, keyed by the label squashed to
- * letters only ("Cross Country Skiing" → "crosscountryskiing"). Only entries
- * where the mapping is UNAMBIGUOUS are here: HealthKit's `hockey` covers both
- * ice and field, its `skatingSports` covers speed, short-track and figure, so
- * those keep the device's own wording rather than guess a sport wrong.
- *
- * A hit means the imported session is a first-class catalog sport — its icon,
- * its distance unit, its PR handling. A miss is not a failure: the recording's
- * own label becomes the title and `cardioDiscipline` classifies it from the
- * name, exactly as a typed-in "Treadmill" is classified today.
- */
-const ACTIVITY_SPORT: Record<string, string> = {
-  running: "Running",
-  cycling: "Cycling",
-  handcycling: "Cycling",
-  swimming: "Swimming",
-  swimbikerun: "Triathlon",
-  openwaterswimming: "Open Water Swimming",
-  rowing: "Rowing",
-  waterpolo: "Water Polo",
-  sailing: "Sailing",
-  surfingsports: "Surfing",
-  tennis: "Tennis",
-  tabletennis: "Table Tennis",
-  badminton: "Badminton",
-  squash: "Squash",
-  soccer: "Football",
-  americanfootball: "Football",
-  basketball: "Basketball",
-  volleyball: "Volleyball",
-  handball: "Handball",
-  baseball: "Baseball",
-  softball: "Softball",
-  rugby: "Rugby Sevens",
-  golf: "Golf",
-  climbing: "Climbing",
-  boxing: "Boxing",
-  wrestling: "Wrestling",
-  fencing: "Fencing",
-  archery: "Archery",
-  equestriansports: "Equestrian",
-  gymnastics: "Artistic Gymnastics",
-  crosscountryskiing: "Cross-Country Skiing",
-  downhillskiing: "Alpine Skiing",
-  snowboarding: "Snowboarding",
-  curling: "Curling",
-};
-
-const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-/**
- * The catalog sport a device recording is, or null when the catalog has no
- * unambiguous answer. Checks the explicit map first, then the catalog itself —
- * so a label that already reads as a sport name ("Judo", "Diving") resolves
- * without needing a row here.
- */
-export function sportForDeviceActivity(activityLabel: string): string | null {
-  const label = (activityLabel || "").trim();
-  if (!label) return null;
-  const mapped = ACTIVITY_SPORT[squash(label)];
-  if (mapped) return mapped;
-  return olympicSport(label) ? label : null;
-}
 
 /** What the imported session is CALLED: the catalog sport when the recording is
  *  one, else the device's own label ("Functional Strength Training"). */
@@ -242,8 +187,16 @@ const loggedMinutes = (s: LoggedSession): number | null => {
  * Anything short of these stays unmatched and imports as its own session — a
  * duplicate the athlete can delete is recoverable; a recording silently welded
  * onto the wrong session is not.
+ *
+ * And BEFORE either shape, the two have to be the same kind of training. The
+ * clock alone said a tennis recording was the ride you logged at the same hour;
+ * `deviceActivityVerdict` is what stops that. It only refuses a genuine
+ * contradiction — both sides named, and named different things — so a vague
+ * watch label ("Other") or a free-text title ("Morning session") still matches
+ * exactly as before.
  */
 function sameSession(session: LoggedSession, w: DeviceWorkout): boolean {
+  if (deviceActivityVerdict(session, w) === "different") return false;
   const s0 = Date.parse(session.startedAt);
   const s1 = session.completedAt ? Date.parse(session.completedAt) : s0;
   const w0 = Date.parse(w.start);
@@ -277,15 +230,24 @@ const pairDistance = (session: LoggedSession, w: DeviceWorkout): number =>
  * Pairing is one-to-one and greedy on closeness — the nearest (session,
  * recording) pair is settled first, and both drop out of the pool — so two runs
  * the same morning can't both claim the same logged session. Recordings under
- * DEVICE_IMPORT_MIN_MIN are dropped entirely, and the newest is planned first
- * so a list rendered straight from this reads newest-down.
+ * `minMinutes` are dropped entirely, and the newest is planned first so a list
+ * rendered straight from this reads newest-down.
+ *
+ * `minMinutes` defaults to DEVICE_IMPORT_MIN_MIN — the floor an UNATTENDED
+ * import writes at (the server runs the plan with the default, so auto-import
+ * never creates a session out of a 3-minute walk). A surface that puts the plan
+ * in front of the athlete passes 0 and renders the short ones switched off
+ * instead: the athlete gets the final word, and the sheet stops disagreeing
+ * with the match picker about what the device actually holds.
  */
 export function planDeviceImport(
   workouts: DeviceWorkout[],
   sessions: LoggedSession[],
+  opts: { minMinutes?: number } = {},
 ): DeviceImportItem[] {
+  const floor = opts.minMinutes ?? DEVICE_IMPORT_MIN_MIN;
   const usable = workouts
-    .filter((w) => w.durationMin >= DEVICE_IMPORT_MIN_MIN && Number.isFinite(Date.parse(w.start)))
+    .filter((w) => w.durationMin >= floor && Number.isFinite(Date.parse(w.start)))
     .sort((a, b) => Date.parse(b.start) - Date.parse(a.start));
 
   // Already on a row: the uuid is the device store's own id, so this survives a

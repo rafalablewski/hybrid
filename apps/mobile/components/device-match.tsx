@@ -144,7 +144,16 @@ export function DeviceMatchSheet({
             <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false}>
               {ranked.map((r, i) => {
                 const linked = session.device?.uuid === r.workout.uuid;
-                const best = i === 0;
+                // A recording of a DIFFERENT sport is never THE card, even when
+                // it is all the watch has. Log a ride and the tennis match from
+                // the same hour used to arrive lime-washed, badged "Best match"
+                // and carrying the big Match button — the app recommending, in
+                // its most confident voice, a session the athlete can see is
+                // not theirs. It stays in the list (the wrong workout type on
+                // the watch is a real thing, and they know which recording is
+                // their ride) as a quiet, one-tap row that says what it is.
+                const wrongSport = r.activity === "different";
+                const best = i === 0 && !wrongSport;
                 // The best candidate is THE card — lime-washed, tagged, with its
                 // own match affordance — the rest read as quiet alternatives.
                 return (
@@ -187,6 +196,11 @@ export function DeviceMatchSheet({
                     </Text>
                     {best && metaFull(r.workout) !== "" && (
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{metaFull(r.workout)}</Text>
+                    )}
+                    {wrongSport && (
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.amber), marginTop: 4 }}>
+                        {t("session.device.otherSport")}
+                      </Text>
                     )}
                     {best && busyUuid == null && (
                       <View style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 11, alignItems: "center" }}>

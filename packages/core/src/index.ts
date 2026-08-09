@@ -128,6 +128,7 @@ export * from "./session-wrapped";
 export * from "./session-edit";
 export * from "./session-feel";
 export * from "./session-device";
+export * from "./device-activity";
 export * from "./device-import";
 export * from "./device-marks";
 export * from "./device-truth";

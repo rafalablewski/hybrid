@@ -136,6 +136,34 @@ describe("deviceMatchScore", () => {
     const lastWeek = { ...watchTennis, start: "2026-07-20T10:00:00.000Z", end: "2026-07-20T11:00:00.000Z" };
     expect(deviceMatchScore(loggedAfter, lastWeek)).toBe(0);
   });
+
+  it("demotes a recording of a DIFFERENT sport", () => {
+    // Log a ride, and the tennis match the watch caught in the same hour used
+    // to score exactly as well as the ride would have.
+    const ride = { ...loggedAfter, title: "Cycling", blocks: [] };
+    const blind = { startedAt: loggedAfter.startedAt, completedAt: loggedAfter.completedAt, durationMin: 60 };
+    expect(deviceMatchScore(ride, watchTennis)).toBeLessThan(deviceMatchScore(blind, watchTennis));
+  });
+
+  it("never lets a wrong-sport candidate outrank an agreeing one", () => {
+    const ride = { ...loggedAfter, title: "Cycling", blocks: [] };
+    // The tennis sits right on the session's stamp; the ride is three hours off
+    // and still has to win.
+    const cycling: DeviceWorkout = {
+      ...watchTennis,
+      uuid: "hk-9",
+      activityLabel: "Cycling",
+      start: "2026-07-29T09:00:00.000Z",
+      end: "2026-07-29T10:00:00.000Z",
+    };
+    expect(deviceMatchScore(ride, cycling)).toBeGreaterThan(deviceMatchScore(ride, watchTennis));
+  });
+
+  it("leaves the score alone when the session says nothing about its sport", () => {
+    const vague = { ...loggedAfter, title: "Morning session", blocks: [] };
+    const blind = { startedAt: loggedAfter.startedAt, completedAt: loggedAfter.completedAt, durationMin: 60 };
+    expect(deviceMatchScore(vague, watchTennis)).toBe(deviceMatchScore(blind, watchTennis));
+  });
 });
 
 describe("rankDeviceWorkouts", () => {
@@ -145,6 +173,14 @@ describe("rankDeviceWorkouts", () => {
     const stale: DeviceWorkout = { ...watchTennis, uuid: "hk-3", start: "2026-07-01T10:00:00.000Z", end: "2026-07-01T11:00:00.000Z" };
     const ranked = rankDeviceWorkouts(session, [walk, stale, watchTennis]);
     expect(ranked.map((r) => r.workout.uuid)).toEqual(["hk-1", "hk-2"]);
+  });
+
+  it("carries the sport verdict so the picker can SAY why a card sank", () => {
+    const ride = { startedAt: "2026-07-29T12:30:00.000Z", completedAt: "2026-07-29T12:30:00.000Z", durationMin: 60, title: "Cycling", blocks: [] };
+    const [top] = rankDeviceWorkouts(ride, [watchTennis]);
+    // Still offered — the athlete may have started the wrong workout type on
+    // the watch — but it is no longer offered silently.
+    expect(top!.activity).toBe("different");
   });
 });
 
