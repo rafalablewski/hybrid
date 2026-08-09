@@ -4,6 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
+  STREAK_DESTINATION,
+  STREAK_ARIA_KEY,
   trainingHeatmap,
   computeAchievements,
   topLoadMap,
@@ -33,6 +35,7 @@ import { leading, fs, F, serifIf, PressScale, PressScale as Pressable, FIXED_FON
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS, CARD_PAD, ASection } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
+import { NAV_HREF } from "../../lib/nav-href";
 import { AuroraIcon } from "./icons";
 import { StreakMark } from "./streak-mark";
 import { ArrowGlyph } from "./cta-label";
@@ -195,7 +198,20 @@ export default function AuroraProfile() {
     const out: { v: string; k: string; icon: AuroraIconName; hkey: string }[] = [];
     const topPr = topPrs[0];
     if (topPr) out.push({ v: fmtWeight(topPr[1], prefs.units), k: `${topPr[0]} PR`, icon: "arrow-up", hkey: `pr:${topPr[0]}` });
-    if (weekStreakBest > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle", hkey: "streak" });
+    // THE STREAK TILE opens the HISTORY, the same place the streak mark does
+    // (STREAK_DESTINATION, so the tile and the mark cannot point at two
+    // screens) and with the same accessible name. Only when there IS a current
+    // day streak: the tile falls back to the longest-WEEK figure, and that is
+    // not what the history's day grid would be answering.
+    if (weekStreakBest > 0 || dayStreak.current > 0) out.push({
+      v: streakLabel,
+      k: t("w.account.profile.spec-streak"),
+      icon: "check-circle",
+      hkey: "streak",
+      ...(dayStreak.current > 0
+        ? { to: STREAK_DESTINATION, aria: t(STREAK_ARIA_KEY).replace("{n}", String(dayStreak.current)) }
+        : {}),
+    });
     if (hasData) out.push({ v: `${sessions.length}`, k: t("w.account.profile.id-sessions"), icon: "calendar-event", hkey: "sessions" });
     if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage"), icon: "list-check", hkey: "tonnage" });
     if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements"), icon: "verified", hkey: "badges" });
@@ -375,6 +391,7 @@ export default function AuroraProfile() {
             <HighlightGrid
               C={C}
               tiles={publicTiles}
+              onOpen={(to) => router.push(NAV_HREF[to] ?? "/history")}
               hidden={hidden}
               order={order}
               onToggleHidden={toggleHidden}
@@ -538,11 +555,16 @@ function monthLabels(heat: HeatCell[][]): string[] {
 // / reanimated dependency. Reorder mirrors web: snapshot each tile's slot at
 // grab, translate neighbours toward the vacated slot, commit the order on drop.
 // ─────────────────────────────────────────────────────────────────────────────
-type HlTile = { v: string; k: string; icon: AuroraIconName; hkey: string };
+/** A highlight tile. `to` is a nav id (see lib/nav-href): a tile that CARRIES a
+ *  destination opens it on a tap, while the long-press still enters edit mode.
+ *  Most tiles are figures with nowhere to go and simply omit it. `aria` names
+ *  what a tapping tile does, since "Streak" alone says neither the value nor
+ *  where it leads. Mirrors web profile.tsx. */
+type HlTile = { v: string; k: string; icon: AuroraIconName; hkey: string; to?: string; aria?: string };
 type Slot = { key: string; x: number; y: number; w: number; h: number };
 
 function HighlightGrid({
-  C, tiles, hidden, order, onToggleHidden, onPersistOrder, t,
+  C, tiles, hidden, order, onToggleHidden, onPersistOrder, onOpen, t,
 }: {
   C: P;
   tiles: HlTile[];
@@ -550,6 +572,9 @@ function HighlightGrid({
   order: string[];
   onToggleHidden: (key: string, next: boolean) => void;
   onPersistOrder: (keys: string[]) => void;
+  /** Open a tile's destination (its `to` nav id). Never fires in edit mode —
+   *  there the tap belongs to the rearrange. */
+  onOpen: (to: string) => void;
   t: (k: string) => string;
 }) {
   const tileMap = useMemo(() => new Map(tiles.map((x) => [x.hkey, x])), [tiles]);
@@ -719,10 +744,14 @@ function HighlightGrid({
               style={{ width: "31.5%", aspectRatio: 1, marginBottom: 8, zIndex: isDrag ? 50 : 0, elevation: isDrag ? 8 : 0, transform }}
             >
               <Pressable
+                onPress={tile.to && !editMode ? () => onOpen(tile.to!) : undefined}
                 onLongPress={() => setEditMode(true)}
                 delayLongPress={450}
                 accessibilityRole="button"
-                accessibilityLabel={tile.k}
+                // The value belongs in the name: a tile that announced only
+                // "Streak" told a screen-reader user everything except the
+                // number they came for.
+                accessibilityLabel={tile.aria ?? `${tile.v} ${tile.k}`}
                 style={{ width: "100%", height: "100%" }}
               >
                 <Animated.View style={{ width: "100%", height: "100%", borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", padding: 8, transform: editMode && !isDrag ? [{ rotate: rotations[idx % 3] }] : [] }}>

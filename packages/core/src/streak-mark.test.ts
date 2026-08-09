@@ -123,6 +123,33 @@ describe("the streak mark guard — no screen may draw its own", () => {
     }
   });
 
+  it("points the profile's streak TILE at the same screen as the mark", () => {
+    // The tile is the last place the streak appears, and it was the last inert
+    // one — a figure in a grid of figures. It carries STREAK_DESTINATION rather
+    // than a "history" of its own, so the tile and the mark can never point at
+    // two screens, and it reuses the mark's aria key so both announce the same
+    // sentence. It also keeps the long-press: a tap opens, a hold rearranges.
+    for (const file of ["apps/mobile/components/aurora/profile.tsx", "apps/web/components/aurora/profile.tsx"]) {
+      const src = code(file);
+      expect(src, file).toContain("to: STREAK_DESTINATION");
+      expect(src, file).toContain("aria: t(STREAK_ARIA_KEY)");
+      // The destination is on the TILE, generic, not an `hkey === "streak"`
+      // special case buried in the grid.
+      expect(src, file).toMatch(/onOpen[:=]/);
+      expect(src, file).not.toMatch(/hkey === "streak"/);
+    }
+  });
+
+  it("never lets the grid's edit mode double as a link", () => {
+    // In edit mode the press belongs to the rearrange. Mobile gates onPress on
+    // it; web additionally refuses to navigate on a pointercancel, which is how
+    // a touch-scroll that started on a tile ends.
+    expect(code("apps/mobile/components/aurora/profile.tsx")).toContain("tile.to && !editMode");
+    const web = code("apps/web/components/aurora/profile.tsx");
+    expect(web).toMatch(/if \(editMode \|\| !shortPress\) return;/);
+    expect(web).toContain("onPointerCancel={onCancel}");
+  });
+
   it("takes data and not style", () => {
     for (const file of MARK_COMPONENTS) {
       const src = code(file);

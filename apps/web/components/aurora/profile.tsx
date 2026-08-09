@@ -5,6 +5,8 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fs, space,
+  STREAK_DESTINATION,
+  STREAK_ARIA_KEY,
   trainingHeatmap,
   computeAchievements,
   longestWeekStreak,
@@ -228,10 +230,23 @@ export default function AuroraProfile({
     // Each tile type → an apt EXISTING AuroraIconName (identical mapping on
     // mobile): PR/lift = arrow-up, streak = check-circle, sessions =
     // calendar-event, tonnage = list-check, badges = verified.
-    const out: { v: string; k: string; icon: AuroraIconName; hkey: string }[] = [];
+    const out: HlTile[] = [];
     const topPr = prs[0];
     if (topPr) out.push({ v: fmtWeight(topPr[1], units), k: `${topPr[0]} PR`, icon: "arrow-up", hkey: `pr:${topPr[0]}` });
-    if (weekStreak > 0 || dayStreak.current > 0) out.push({ v: streakLabel, k: t("w.account.profile.spec-streak"), icon: "check-circle", hkey: "streak" });
+    // THE STREAK TILE opens the HISTORY, the same place the streak mark does
+    // (STREAK_DESTINATION, so the tile and the mark cannot point at two
+    // screens) and with the same accessible name. Only when there IS a current
+    // day streak: the tile falls back to the longest-WEEK figure, and that is
+    // not what the history's day grid would be answering.
+    if (weekStreak > 0 || dayStreak.current > 0) out.push({
+      v: streakLabel,
+      k: t("w.account.profile.spec-streak"),
+      icon: "check-circle",
+      hkey: "streak",
+      ...(dayStreak.current > 0
+        ? { to: STREAK_DESTINATION, aria: t(STREAK_ARIA_KEY).replace("{n}", String(dayStreak.current)) }
+        : {}),
+    });
     if (hasData) out.push({ v: String(sessions.length), k: t("w.account.profile.id-sessions"), icon: "calendar-event", hkey: "sessions" });
     if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, units), k: t("w.account.profile.spec-tonnage"), icon: "list-check", hkey: "tonnage" });
     if (earnedCount > 0) out.push({ v: String(earnedCount), k: t("w.account.profile.achievements"), icon: "verified", hkey: "badges" });
@@ -420,6 +435,7 @@ export default function AuroraProfile({
           {publicTiles.length > 0 ? (
             <HighlightGrid
               tiles={publicTiles}
+              onOpen={(to) => go(to, `/${to}`)()}
               hidden={hidden}
               order={order}
               onToggleHidden={toggleHidden}
@@ -554,16 +570,24 @@ export default function AuroraProfile({
 // each tile's slot rect, translate the neighbours toward the vacated slot, and
 // commit the new order once on drop — so React never fights the in-flight drag.
 // ─────────────────────────────────────────────────────────────────────────────
-type HlTile = { v: string; k: string; icon: AuroraIconName; hkey: string };
+/** A highlight tile. `to` is a screen id: a tile that CARRIES a destination
+ *  opens it on a click, while the long-press still enters edit mode. Most tiles
+ *  are figures with nowhere to go and simply omit it. `aria` names what a
+ *  clicking tile does, since "Streak" alone says neither the value nor where it
+ *  leads. Mirrors mobile profile.tsx. */
+type HlTile = { v: string; k: string; icon: AuroraIconName; hkey: string; to?: string; aria?: string };
 
 function HighlightGrid({
-  tiles, hidden, order, onToggleHidden, onPersistOrder, t,
+  tiles, hidden, order, onToggleHidden, onPersistOrder, onOpen, t,
 }: {
   tiles: HlTile[];
   hidden: string[];
   order: string[];
   onToggleHidden: (key: string, next: boolean) => void;
   onPersistOrder: (keys: string[]) => void;
+  /** Open a tile's destination (its `to` screen id). Never fires in edit mode —
+   *  there the click belongs to the rearrange. */
+  onOpen: (to: string) => void;
   t: (k: string) => string;
 }) {
   const tileMap = useMemo(() => new Map(tiles.map((x) => [x.hkey, x])), [tiles]);
@@ -695,11 +719,30 @@ function HighlightGrid({
       if (Math.hypot(dx, dy) > 10) clearTimer(); // a scroll, not a long-press
     }
   };
-  const onUp = () => { clearTimer(); if (drag.current) endDrag(); };
+  // A SHORT press on a tile that carries a destination OPENS it. `pressTimer`
+  // still pending is the test for "short": the long-press promoted itself to
+  // edit mode when it fired, and onMove clears the timer past 10px, so a scroll
+  // that started on a tile never navigates either.
+  const onUp = (key: string) => () => {
+    const shortPress = pressTimer.current != null;
+    clearTimer();
+    if (drag.current) { endDrag(); return; }
+    if (editMode || !shortPress) return;
+    const to = tileMap.get(key)?.to;
+    if (to) onOpen(to);
+  };
+  // A CANCEL is not a tap. A touch-scroll that began on a tile hands the
+  // gesture to the browser and can end in pointercancel with no pointermove of
+  // ours in between, so sharing onUp here would navigate on a flick.
+  const onCancel = () => { clearTimer(); if (drag.current) endDrag(); };
   const onKey = (key: string) => (e: React.KeyboardEvent) => {
     if (e.key !== "Enter" && e.key !== " ") return;
     e.preventDefault();
-    if (editMode) onToggleHidden(key, true); else setEditMode(true);
+    if (editMode) { onToggleHidden(key, true); return; }
+    // Enter follows the tile where a click would go; only a tile with nowhere
+    // to go keeps the keyboard's route into edit mode.
+    const to = tileMap.get(key)?.to;
+    if (to) onOpen(to); else setEditMode(true);
   };
 
   // Leave edit mode on Esc or a tap outside the grid / tray / Done bar.
@@ -729,16 +772,23 @@ function HighlightGrid({
             <div
               key={key}
               ref={setNode(key)}
-              className={`hl-tile${editMode ? " edit" : ""}${dragKey === key ? " dragging" : ""}`}
+              // Press feedback outside edit mode, matching the mobile twin's
+              // PressScale: every tile answers a press (a long one opens the
+              // rearrange; the streak tile also opens on a short one). In edit
+              // mode the wiggle and the drag own the tile's motion.
+              className={`hl-tile${editMode ? " edit" : ""}${dragKey === key ? " dragging" : ""}${editMode ? "" : " pressable"}`}
               role="button"
               tabIndex={0}
-              aria-label={tile.k}
+              // The value belongs in the name: a tile that announced only
+              // "Streak" told a screen-reader user everything except the
+              // number they came for.
+              aria-label={tile.aria ?? `${tile.v} ${tile.k}`}
               onPointerDown={onDown(key)}
               onPointerMove={onMove}
-              onPointerUp={onUp}
-              onPointerCancel={onUp}
+              onPointerUp={onUp(key)}
+              onPointerCancel={onCancel}
               onKeyDown={onKey(key)}
-              style={{ position: "relative", aspectRatio: "1", touchAction: editMode ? "none" : "auto", cursor: editMode ? "grab" : "default", userSelect: "none" }}
+              style={{ position: "relative", aspectRatio: "1", touchAction: editMode ? "none" : "auto", cursor: editMode ? "grab" : tile.to ? "pointer" : "default", userSelect: "none" }}
             >
               {editMode && (
                 <button className="pressable"
