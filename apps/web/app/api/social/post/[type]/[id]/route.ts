@@ -78,9 +78,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ type
       authorCards([authorId]),
     ]);
     const relation = relationTo(me.id, authorId, edges);
-    // No profile row yet = the app's default, followers-only. An athlete who
-    // hasn't chosen is never treated as public.
-    const visibility = (profile?.visibility as Visibility) ?? "followers";
+    // No profile row yet = the app's default, PUBLIC — the same value a fresh
+    // profile row gets, so the two paths can never disagree about one athlete.
+    const visibility = (profile?.visibility as Visibility) ?? "public";
     if (authorId !== me.id && !canViewResults(visibility, relation))
       return NextResponse.json({ error: "private" }, { status: 403 });
 

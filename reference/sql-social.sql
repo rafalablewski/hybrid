@@ -16,12 +16,19 @@ create table if not exists "SocialProfile" (
   "displayName" text,
   "bio"         text,
   "avatarUrl"   text,
-  "visibility"  text not null default 'followers', -- public | followers | private
+  "visibility"  text not null default 'public', -- public | followers | private
   "showcase"    jsonb not null default '{}'::jsonb,
   "createdAt"   timestamp(3) not null default now(),
   "updatedAt"   timestamp(3) not null default now()
 );
 create index if not exists "SocialProfile_handle_idx" on "SocialProfile" ("handle");
+
+-- Public is the DEFAULT (Aug 2026): every finished workout publishes to the
+-- feed automatically, and the athlete opts DOWN to followers-only or private.
+-- Idempotent, so re-running this file applies it to a database created before
+-- the flip. Existing rows are left as they are — a stored 'followers' may be a
+-- choice the athlete made, and a privacy setting is never loosened by a script.
+alter table "SocialProfile" alter column "visibility" set default 'public';
 
 alter table "SocialProfile" enable row level security;
 
