@@ -109,7 +109,7 @@
     font-size: clamp(19px, 2vw, 22px); line-height: 1.34; letter-spacing: -.012em;
     color: var(--fg); margin: 0 0 14px; max-width: 40ch; text-wrap: balance;
   }
-  .concept .why + .why { margin-top: 12px; }
+  .why + .why { margin-top: 12px; }
 
   .ledger { margin-top: 26px; display: flex; flex-direction: column; }
   .ledger dt {
@@ -201,6 +201,14 @@
     font-family: var(--mono); font-size: 9px; font-weight: 700; color: var(--terra);
     background: var(--ink); padding: 0 5px; letter-spacing: .1em;
   }
+  /* THE SOURCE LINE — the four sources kept; the pill bar's box and its lime
+     fill dropped. Weight and a rule carry the selection, so switching costs no
+     container and not a scrap of the accent. */
+  .f-src { display: flex; gap: 19px; border-bottom: 1px solid var(--fline); padding: 0 4px; margin-top: 16px; flex: none; }
+  .f-src button, .f-src span { background: none; border: none; padding: 0 0 11px; margin-bottom: -1px; color: var(--ash); font-size: 13.5px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; letter-spacing: -.006em; white-space: nowrap; }
+  .f-src .on { color: var(--chalk); font-weight: 700; border-bottom-color: var(--chalk); }
+  .f-src .ct { font-family: var(--mono); font-size: 9.5px; font-weight: 700; color: var(--ash); margin-left: 5px; }
+
   .f-seg { display: flex; background: var(--ink2); border: 1px solid var(--fline); border-radius: 16px; padding: 4px; gap: 4px; }
   .f-seg span { flex: 1; text-align: center; border-radius: 12px; padding: 9px 0; font-size: 12.5px; font-weight: 600; color: var(--ash); }
   .f-seg span.on { background: var(--lime); color: var(--on-accent); font-weight: 700; }
@@ -346,6 +354,11 @@
       chartreuse reserved for <em>go</em>. Every one is specified for both clients; web and mobile
       ship together.
     </p>
+    <p class="lede">
+      <strong>Nothing here removes a source or a way to log.</strong> Recent, Favorites, Meals and
+      Foods all stay, and so does quick add. What every concept drops is the <em>pill bar</em> — the
+      box drawn around those four, and the accent spent on which one is selected.
+    </p>
   </header>
 
   <!-- ══════════════ DIAGNOSIS ══════════════ -->
@@ -370,7 +383,7 @@
             <p>Quick add and search sit 90 px apart in the same shape with the same left-hand glyph. Two inputs stacked is the interface admitting it doesn't know which question it's asking.</p>
           </div></div>
           <div class="fault"><div class="n">03</div><div>
-            <h3>The accent is spent on navigation</h3>
+            <h3>The accent is spent on which list you're in</h3>
             <p>Chartreuse is the app's one <em>go</em> colour. Here the loudest chartreuse object is a <b>tab</b> — a statement about which list you're looking at — and the second is a 64 px add ring on a row. Nothing on screen is go.</p>
           </div></div>
           <div class="fault"><div class="n">04</div><div>
@@ -395,6 +408,7 @@
           <span class="tag">2 text fields</span>
           <span class="tag">55 % empty</span>
           <span class="tag">2 chevrons, 1 glyph</span>
+          <span class="tag">75 % of the library, hidden</span>
         </div>
       </div>
 
@@ -437,6 +451,77 @@
     </div>
   </section>
 
+  <!-- ══════════════ THE CONSTRAINT ══════════════ -->
+  <section class="band">
+    <div class="split">
+      <div>
+        <div class="kicker">The fixed points</div>
+        <h2>Four sources stay. Quick add stays. The box goes.</h2>
+        <p class="why">
+          Recent, Favorites, Meals and Foods are not four versions of one list to be pruned down —
+          they are four different questions (<em>what did I just eat</em>, <em>what do I always
+          eat</em>, <em>what have I built</em>, <em>what have I saved</em>), and quick add is the
+          fastest path in the whole app. So none of the six concepts removes any of them.
+        </p>
+        <p class="why">
+          What every concept removes is the <em>treatment</em>. The fault was never that four
+          sources exist; it is that they are wrapped in a bordered, filled, radiused bar — a seventh
+          container — and that the selected one wears <em>chartreuse</em>, the colour this app
+          reserves for go. A tab is not a go. It is a statement about which list you are looking at,
+          and it should be the quietest thing on the screen, not the loudest.
+        </p>
+        <p class="why">
+          The replacement is one shared component, drawn once and used everywhere: <strong>the
+          source line</strong>. Same four labels, same order, same job — selection carried by
+          <em>weight and a rule</em> instead of a fill. No border, no radius, no tint, no accent. It
+          costs one row of type and zero containers.
+        </p>
+        <p class="why">
+          Two of the six don't switch at all: the Ledger and the Shelf show <em>all four at once</em>
+          as section heads and as shelves, which is the stronger answer to the real complaint — that
+          three-quarters of your own library is invisible at any moment. Both approaches keep the
+          four; they differ on whether you pick a list or see them all.
+        </p>
+
+        <dl class="ledger">
+          <dt>Quick add</dt><dd><b>Kept, and promoted.</b> <span class="off">It is not a second search box — it is the first thing the one field does. Type <code>40g protein</code> or <code>chicken 200g</code> in Concept 01's mock and the grammar still answers.</span></dd>
+          <dt>Quick Log</dt><dd><b>Kept</b> <span class="off">— the fast kcal-and-macro sheet survives as a tail row at the end of the list, where a rarely-used door belongs, rather than as a third of the screen's top.</span></dd>
+          <dt>Create Food</dt><dd><b>Kept</b> <span class="off">— same tail, bare <code>+</code>, no ring: it grows the library in place, it doesn't go anywhere.</span></dd>
+          <dt>Barcode</dt><dd><b>Kept</b> <span class="off">— it stays the field's trailing glyph, because scanning is the same question asked with a camera.</span></dd>
+        </dl>
+      </div>
+
+      <div class="stage">
+        <div class="frame" aria-label="The pill bar as it ships today, above its replacement">
+          <div class="f-screen" style="min-height: 0;">
+            <div style="padding: 26px 12px 8px;">
+              <div class="f-sechead" style="margin: 0 2px 12px;"><span class="t">Today</span><span class="m">A seventh container</span></div>
+              <div class="f-seg">
+                <span>Recent</span><span>Favorites</span><span>Meals</span><span class="on">Foods</span>
+              </div>
+              <p class="f-hint" style="margin: 12px 2px 0; color: var(--terra);">
+                Border, fill, radius, and the go accent — on a control that goes nowhere.
+              </p>
+            </div>
+            <div style="padding: 30px 12px 34px; border-top: 1px solid var(--fline); margin-top: 14px;">
+              <div class="f-sechead" style="margin: 0 2px 4px;"><span class="t">The source line</span><span class="m">Shared</span></div>
+              <div class="f-src" style="margin-top: 12px;">
+                <span>Recent<b class="ct">4</b></span>
+                <span>Favorites<b class="ct">3</b></span>
+                <span>Meals<b class="ct">2</b></span>
+                <span class="on">Foods<b class="ct">8</b></span>
+              </div>
+              <p class="f-hint" style="margin: 14px 2px 0;">
+                Same four, same order, same job. Weight and a rule carry the selection. The counts
+                are the Explore section head's mono meta, moved onto the label they describe.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ══════════════ CONCEPT 01 ══════════════ -->
   <section class="band concept">
     <div class="split">
@@ -453,9 +538,16 @@
         </p>
         <p class="why">
           The barcode stays where it already is, as the field's trailing glyph, because scanning is
-          the same question asked with a camera. The four tabs are gone: sources become
-          <em>section heads inside one list</em>, which is how Explore has always ranked things. At rest —
-          nothing typed — the list is your recents, so the screen has a floor before you touch it.
+          the same question asked with a camera. At rest — nothing typed — the four sources sit
+          under the field on the source line, and the screen has a floor before you touch it.
+          <strong>Tap through them in the mock;</strong> all four are there, counted, with no box
+          around them.
+        </p>
+        <p class="why">
+          The thing that makes the merge worth it: once you type, <em>the answer ranks across all
+          four at once</em>. Today you have to know which list a food is in before you can look for
+          it — and the honest answer is usually "the one I'm not on". A saved meal, a favourite and
+          an own-brand product compete in one ordered list, each labelled with where it came from.
         </p>
         <p class="why">
           <em>Quick Log</em> and <em>Create Food</em> fall to the tail of the list as bare <code>+</code>
@@ -463,12 +555,13 @@
         </p>
 
         <dl class="ledger">
-          <dt>Containers</dt><dd><b>6 → 1.</b> <span class="off">One field; everything else is type on the ground.</span></dd>
+          <dt>Containers</dt><dd><b>6 → 1.</b> <span class="off">One field. The source line is type on a hairline, not a box.</span></dd>
+          <dt>Sources</dt><dd><b>All four, always.</b> <span class="off">Switchable at rest; ranked together the moment you type.</span></dd>
           <dt>The accent</dt><dd><b>Returns to go.</b> <span class="off">Chartreuse appears only on the ring that commits the interpretation on screen.</span></dd>
-          <dt>Costs</dt><dd>Provenance has to be legible per row <span class="off">— a mono tag (YOURS / RECENT / OFF) on the right, since one list now mixes sources.</span></dd>
+          <dt>Costs</dt><dd>Provenance has to be legible per row <span class="off">— a mono tag on the right (RECENT / FAVORITES / MEALS / FOODS / OFF), since one list now mixes sources.</span></dd>
           <dt>Both clients</dt><dd>Identical. <span class="off">The ranking lives in <code>packages/core</code> beside <code>resolveQuickAdd</code>, so neither client can drift.</span></dd>
         </dl>
-        <div class="tags"><span class="tag go">Try it — type in the field</span><span class="tag">kills the second field</span><span class="tag">kills the tab bar</span></div>
+        <div class="tags"><span class="tag go">Try it — type, and tap the sources</span><span class="tag">keeps quick add</span><span class="tag">keeps all four sources</span></div>
       </div>
 
       <div class="stage">
@@ -521,10 +614,16 @@
           It also makes over-logging visible: a row that would push protein past target reads its
           delta in sand, not chartreuse, and the bar carries past the tick. No warning copy needed.
         </p>
+        <p class="why">
+          Quick add sits directly under the gap, and the source line under that — so the reading
+          order is <em>what you owe</em>, <em>say it</em>, <em>or pick it from one of your four
+          lists</em>. The ordering only rearranges the list you are on; it never moves a food
+          between sources.
+        </p>
 
         <dl class="ledger">
           <dt>Hierarchy</dt><dd><b>One figure, then rows.</b> <span class="off">The picker inherits the Today masthead's grammar — a caption, one big number, a quiet sentence.</span></dd>
-          <dt>Ordering</dt><dd>By fit to the remaining gap <span class="off">— protein-dense foods rise when protein is what's short.</span></dd>
+          <dt>Ordering</dt><dd>By fit to the remaining gap <span class="off">— protein-dense foods rise when protein is what's short, within whichever source you're on.</span></dd>
           <dt>Costs</dt><dd>The gap must be honest <span class="off">— it reads through the same targets engine the rings do, never a second copy of the maths.</span></dd>
           <dt>Both clients</dt><dd>Identical. <span class="off">Not the removed sticky HUD: this lives in the picker's header, where the decision is being made.</span></dd>
         </dl>
@@ -550,8 +649,18 @@
                   <div><div class="t"><span>Fat</span><b id="c2-fv">71/86</b></div><div class="track"><div class="fill" id="c2-fb" style="width: 82%;"></div></div></div>
                 </div>
               </div>
-              <div class="f-sechead"><span class="t">Closes the gap</span><span class="m">Your foods</span></div>
-              <div id="c2-list"></div>
+              <div class="f-field" style="background: none; padding: 0 13px;">
+                <span class="f-glyph"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-bolt"/></svg></span>
+                <input placeholder="What did you eat?" aria-label="What did you eat?" autocomplete="off">
+                <span class="f-glyph"><svg class="ic thin" width="18" height="18" aria-hidden="true"><use href="#i-barcode"/></svg></span>
+              </div>
+              <div class="f-src">
+                <span class="on">Recent<b class="ct">4</b></span>
+                <span>Favorites<b class="ct">3</b></span>
+                <span>Meals<b class="ct">2</b></span>
+                <span>Foods<b class="ct">8</b></span>
+              </div>
+              <div id="c2-list" style="margin-top: 4px;"></div>
             </div>
             <div class="f-tabbar">
               <span>Today</span><span class="on">Nutrition</span><span>Train</span><span>Messages</span><span>Profile</span>
@@ -577,9 +686,15 @@
           does the grouping that six borders were doing badly.
         </p>
         <p class="why">
+          It doesn't switch sources — it <em>shows all four</em>. Recent, Favorites, Meals and Foods
+          become the four section heads of one continuous column, in that order, each with its count
+          on the right. Nothing is hidden behind a tap, and the source line isn't needed because the
+          heads already say where you are as you scroll past them.
+        </p>
+        <p class="why">
           Because the figures line up in a real column, the screen becomes readable as a
           <em>table</em> — you can compare 133 against 63 against 190 at a glance, which is the actual
-          question when you're standing in a kitchen at 21:12. The single field sits above,
+          question when you're standing in a kitchen at 21:12. The quick-add field sits above,
           unadorned, and the whole screen is legible in one look.
         </p>
         <p class="why">
@@ -590,11 +705,12 @@
 
         <dl class="ledger">
           <dt>Vocabulary</dt><dd><b>Type and hairlines only.</b> <span class="off">Exactly the Explore <code>SectionHead</code> the design rules name as the golden standard.</span></dd>
+          <dt>Sources</dt><dd><b>All four visible</b> <span class="off">— four heads in one column, no switcher, nothing behind a tap.</span></dd>
           <dt>Figures</dt><dd>One tabular mono column <span class="off">— comparison becomes possible for the first time.</span></dd>
           <dt>Costs</dt><dd>Quietest of the six <span class="off">— nothing shouts, so the add target has to stay a full 44 px even without a ring around it.</span></dd>
           <dt>Both clients</dt><dd>Identical, and largely already written.</dd>
         </dl>
-        <div class="tags"><span class="tag">−5 containers</span><span class="tag">deletes code</span></div>
+        <div class="tags"><span class="tag">−5 containers</span><span class="tag">all four visible</span><span class="tag">deletes code</span></div>
       </div>
 
       <div class="stage">
@@ -613,19 +729,22 @@
                 <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
               </div>
 
-              <div class="f-sechead" style="margin-top: 20px;"><span class="t">Tonight</span><span class="m">2 logged</span></div>
+              <div class="f-sechead" style="margin-top: 20px;"><span class="t">Recent</span><span class="m">4</span></div>
               <button class="f-lrow" type="button"><span class="nm">Skyr naturalny</span><span class="por">150 g</span><span class="kc">95</span></button>
               <button class="f-lrow" type="button"><span class="nm">Kabanosy drobiowe</span><span class="por">2 sticks</span><span class="kc">110</span></button>
-
-              <div class="f-sechead"><span class="t">Your foods</span><span class="m">18</span></div>
               <button class="f-lrow" type="button"><span class="nm">Kefir Krasnystaw</span><span class="por">100 g</span><span class="kc">50</span></button>
+
+              <div class="f-sechead"><span class="t">Favorites</span><span class="m">3</span></div>
               <button class="f-lrow" type="button"><span class="nm">Twaróg półtłusty</span><span class="por">100 g</span><span class="kc">133</span></button>
               <button class="f-lrow" type="button"><span class="nm">Whey isolate</span><span class="por">30 g</span><span class="kc">118</span></button>
+
+              <div class="f-sechead"><span class="t">Meals</span><span class="m">2</span></div>
+              <button class="f-lrow" type="button"><span class="nm">Owsianka + whey</span><span class="por">1 bowl</span><span class="kc">422</span></button>
+              <button class="f-lrow" type="button"><span class="nm">Kurczak + ryż</span><span class="por">1 plate</span><span class="kc">610</span></button>
+
+              <div class="f-sechead"><span class="t">Foods</span><span class="m">8</span></div>
               <button class="f-lrow" type="button"><span class="nm">Masło orzechowe</span><span class="por">30 g</span><span class="kc">190</span></button>
               <button class="f-lrow" type="button"><span class="nm">Banan</span><span class="por">1 medium</span><span class="kc">105</span></button>
-
-              <div class="f-sechead"><span class="t">Saved meals</span><span class="m">6</span></div>
-              <button class="f-lrow" type="button"><span class="nm">Owsianka + whey</span><span class="por">1 bowl</span><span class="kc">422</span></button>
 
               <div class="f-tail" style="border-top: 1px solid var(--fline); margin-top: 4px;">
                 <span class="plus"><svg class="ic" width="19" height="19" aria-hidden="true"><use href="#i-plus"/></svg></span><b>New food</b>
@@ -655,10 +774,11 @@
           question the app already knows the answer to.
         </p>
         <p class="why">
-          Search doesn't disappear; it stops being the frame. It's a glyph in the header that pushes
-          the search state in over the top, which is the honest ranking: the fallback for a food
-          you've never logged sits behind one tap, and the thing you do every night sits under your
-          thumb.
+          Nothing below it is lost — quick add and the four sources sit directly under the hour
+          block, in the same order they have now. This concept only changes <em>what greets you</em>:
+          the top of Recent, re-sorted by the clock, instead of an empty field. The hour list IS
+          Recent; Favorites, Meals and Foods are one tap away on the source line, exactly as they
+          are today.
         </p>
         <p class="why">
           The typographic move that makes it work: those rows are set at 18/700, bigger than any row
@@ -669,6 +789,7 @@
         <dl class="ledger">
           <dt>Data</dt><dd><b>Already on device.</b> <span class="off">The recents MRU plus each entry's timestamp — no model, no network, no new schema.</span></dd>
           <dt>Taps to log</dt><dd><b>3 → 1</b> <span class="off">for the food you eat most nights.</span></dd>
+          <dt>Sources</dt><dd><b>Untouched.</b> <span class="off">The hour block is the top of Recent; the source line below it keeps all four.</span></dd>
           <dt>Costs</dt><dd>A cold start has no history <span class="off">— day one falls back to Concept 01's list, and says so in one line rather than showing an empty state.</span></dd>
           <dt>Both clients</dt><dd>Identical. <span class="off">The hour-bucketing belongs in core beside <code>quick-add.ts</code>; it is a grammar, not a guess.</span></dd>
         </dl>
@@ -704,18 +825,24 @@
                 <span class="nm"><b>Skyr naturalny</b><i>150 g — logged 7 nights</i></span>
                 <span class="kc">95</span>
               </button>
-              <button class="f-usual" type="button">
-                <span class="f-ring"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-plus"/></svg></span>
-                <span class="nm"><b>Wedel gorzka 64 %</b><i>2 squares — logged 6 nights</i></span>
-                <span class="kc">60</span>
-              </button>
 
-              <div class="f-sechead"><span class="t">Anything else</span><span class="m">Search</span></div>
+              <div class="f-sechead"><span class="t">Anything else</span><span class="m">Your library</span></div>
               <div class="f-field" style="background: none;">
                 <span class="f-glyph"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg></span>
                 <input placeholder="Name it, or scan it" aria-label="Name it, or scan it" autocomplete="off">
                 <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
               </div>
+              <div class="f-src">
+                <span class="on">Recent<b class="ct">4</b></span>
+                <span>Favorites<b class="ct">3</b></span>
+                <span>Meals<b class="ct">2</b></span>
+                <span>Foods<b class="ct">8</b></span>
+              </div>
+              <button class="f-row" type="button" style="margin-top: 4px;">
+                <span class="f-ring sm"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-plus"/></svg></span>
+                <span class="nm"><b>Wedel gorzka 64 %</b><i>2 squares</i></span>
+                <span class="f-fig">60 kcal</span>
+              </button>
             </div>
             <div class="f-tabbar">
               <span>Today</span><span class="on">Nutrition</span><span>Train</span><span>Messages</span><span>Profile</span>
@@ -744,6 +871,12 @@
           you have to go and find.
         </p>
         <p class="why">
+          It is also the concept that gets the most out of keeping four sources, because a tray
+          <em>survives switching between them</em>: pull the yoghurt from Recent, the whey from
+          Favorites and the oats from Meals, and commit once. Today each of those is a separate
+          round trip through a separate tab.
+        </p>
+        <p class="why">
           The tray obeys the sheet rule exactly: its pad is <code>sheetPadBottom(insetBottom)</code>, one
           number, a maximum and never a sum, and nothing inside it trails a pad of its own. It covers
           the tab bar rather than reserving clearance for it.
@@ -751,6 +884,7 @@
 
         <dl class="ledger">
           <dt>Journeys</dt><dd><b>3 foods → 1 commit</b> <span class="off">instead of three round trips through the diary.</span></dd>
+          <dt>Sources</dt><dd><b>All four, and the tray outlives them</b> <span class="off">— switch lists mid-build without losing what you've picked.</span></dd>
           <dt>Undo</dt><dd>Free, and before the fact <span class="off">— tap a chip to drop it.</span></dd>
           <dt>Costs</dt><dd>A state that can be abandoned <span class="off">— leaving with a full tray must ask, once, rather than silently discarding.</span></dd>
           <dt>Both clients</dt><dd>Identical. <span class="off">Web renders the tray as the sheet's own footer; mobile pins it above the home indicator.</span></dd>
@@ -773,8 +907,13 @@
                 <input placeholder="What did you eat?" aria-label="What did you eat?" autocomplete="off">
                 <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
               </div>
-              <div class="f-sechead"><span class="t">Your foods</span><span class="m">Recent</span></div>
-              <div id="c5-list"></div>
+              <div class="f-src">
+                <span class="on">Recent<b class="ct">4</b></span>
+                <span>Favorites<b class="ct">3</b></span>
+                <span>Meals<b class="ct">2</b></span>
+                <span>Foods<b class="ct">8</b></span>
+              </div>
+              <div id="c5-list" style="margin-top: 4px;"></div>
             </div>
             <div class="f-foot" style="padding: 0;">
               <div class="f-tray">
@@ -794,14 +933,14 @@
       <div>
         <div class="kicker"><b>Concept 06</b> — The Shelf</div>
         <h2>Stop hiding three-quarters of the athlete's own food.</h2>
-        <p class="thesis">Four exclusive tabs mean that at any moment, 75 % of what this athlete has ever saved is one tap away and invisible.</p>
+        <p class="thesis">The four sources are exactly right. Making them <em>exclusive</em> is what's wrong: at any moment, 75 % of what this athlete has saved is one tap away and invisible.</p>
         <p class="why">
           Tabs are the right control when the lists are alternatives. These aren't — recents,
           favourites, saved meals and your own foods are all <em>yours</em>, and the answer is usually in
-          whichever one you're not looking at. So they become shelves: one full-bleed rail per
-          source, all on screen, scrolling under the physical edge exactly as the exercise-widget
-          rail does — negative margins the width of the gutter, matching internal padding, so resting
-          cards still align with the content column.
+          whichever one you're not looking at. So all four stay and none of them hides: each becomes
+          a shelf, one full-bleed rail per source, scrolling under the physical edge exactly as the
+          exercise-widget rail does — negative margins the width of the gutter, matching internal
+          padding, so resting cards still align with the content column.
         </p>
         <p class="why">
           Each rail ends in the shared rail tail, and the grammar is the one the rules already fix:
@@ -816,12 +955,12 @@
         </p>
 
         <dl class="ledger">
-          <dt>Visible library</dt><dd><b>25 % → 100 %.</b> <span class="off">Nothing exclusive, nothing hidden behind a tap.</span></dd>
+          <dt>Visible library</dt><dd><b>25 % → 100 %.</b> <span class="off">All four sources on one screen, nothing exclusive, nothing behind a tap.</span></dd>
           <dt>The accent</dt><dd><b>Freed.</b> <span class="off">No selected tab to tint, so chartreuse can go back to meaning go.</span></dd>
-          <dt>Costs</dt><dd>Vertical budget <span class="off">— three rails is the ceiling; the fourth source lives behind its rail's tail.</span></dd>
+          <dt>Costs</dt><dd><b>Vertical budget.</b> <span class="off">Four rails is a scrolling screen, not a glance — the fourth shelf sits below the fold. Depth per source is the lever: three tiles and a tail, then "See all".</span></dd>
           <dt>Both clients</dt><dd>Identical, via the shared <code>rail-tail.tsx</code> and the published gutter var <span class="off">— never a local copy; the drift is the whole problem.</span></dd>
         </dl>
-        <div class="tags"><span class="tag go">Try it — the rails scroll under the edge</span><span class="tag">kills the tab bar</span></div>
+        <div class="tags"><span class="tag go">Try it — the rails scroll under the edge</span><span class="tag">all four, all visible</span></div>
       </div>
 
       <div class="stage">
@@ -840,7 +979,7 @@
                 <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
               </div>
 
-              <div class="f-sechead"><span class="t">Tonight</span><span class="m">Recent</span></div>
+              <div class="f-sechead"><span class="t">Recent</span><span class="m">4</span></div>
               <div class="f-rail">
                 <button class="f-tile" type="button"><b>Twaróg półtłusty</b><i>200 g</i><span class="kc">266 kcal</span></button>
                 <button class="f-tile" type="button"><b>Kefir Krasnystaw</b><i>250 g</i><span class="kc">125 kcal</span></button>
@@ -848,18 +987,26 @@
                 <button class="f-railtail" type="button"><span class="ring"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-chev-right"/></svg></span><span>See all</span></button>
               </div>
 
-              <div class="f-sechead"><span class="t">Your foods</span><span class="m">18</span></div>
+              <div class="f-sechead"><span class="t">Favorites</span><span class="m">3</span></div>
               <div class="f-rail">
                 <button class="f-tile" type="button"><b>Whey isolate</b><i>30 g scoop</i><span class="kc">118 kcal</span></button>
                 <button class="f-tile" type="button"><b>Masło orzechowe</b><i>30 g</i><span class="kc">190 kcal</span></button>
-                <button class="f-tile" type="button"><b>Kabanosy drobiowe</b><i>1 stick</i><span class="kc">55 kcal</span></button>
+                <button class="f-tile" type="button"><b>Twaróg półtłusty</b><i>100 g</i><span class="kc">133 kcal</span></button>
                 <button class="f-railtail" type="button"><span class="ring"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-chev-right"/></svg></span><span>See all</span></button>
               </div>
 
-              <div class="f-sechead"><span class="t">Saved meals</span><span class="m">6</span></div>
+              <div class="f-sechead"><span class="t">Meals</span><span class="m">2</span></div>
               <div class="f-rail">
                 <button class="f-tile" type="button"><b>Owsianka + whey</b><i>1 bowl</i><span class="kc">422 kcal</span></button>
                 <button class="f-tile" type="button"><b>Kurczak + ryż</b><i>1 plate</i><span class="kc">610 kcal</span></button>
+                <button class="f-railtail" type="button"><span class="ring"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-chev-right"/></svg></span><span>See all</span></button>
+              </div>
+
+              <div class="f-sechead"><span class="t">Foods</span><span class="m">8</span></div>
+              <div class="f-rail">
+                <button class="f-tile" type="button"><b>Kabanosy drobiowe</b><i>1 stick</i><span class="kc">55 kcal</span></button>
+                <button class="f-tile" type="button"><b>Banan</b><i>1 medium</i><span class="kc">105 kcal</span></button>
+                <button class="f-tile" type="button"><b>Chicken breast</b><i>100 g</i><span class="kc">165 kcal</span></button>
                 <button class="f-railtail" type="button"><span class="ring"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-chev-right"/></svg></span><span>See all</span></button>
               </div>
 
@@ -887,7 +1034,7 @@
       <div class="cell">
         <div class="k">Build first</div>
         <h3>01 One Field + 02 What's Left</h3>
-        <p>One input, the gap as the header, one ranked list beneath. This alone deletes five containers, returns the accent to <em>go</em>, and gives the screen a floor.</p>
+        <p>One input, the gap as the header, the source line beneath, one ranked list under that. This alone deletes five containers, returns the accent to <em>go</em>, and gives the screen a floor — while keeping every source and every way to log.</p>
       </div>
       <div class="cell">
         <div class="k">Then</div>
@@ -902,15 +1049,15 @@
       <div class="cell">
         <div class="k">Style, not structure</div>
         <h3>03 The Ledger and 06 The Shelf</h3>
-        <p>Two answers to the same question — how the list is drawn. The Ledger is the quieter and cheaper one; the Shelf is the one that shows the library growing. Pick one, don't ship both.</p>
+        <p>Two answers to the same question — how four sources are drawn when none of them hides. The Ledger stacks them as four heads in one column; the Shelf gives each a full-bleed rail. The Ledger is quieter and cheaper; the Shelf shows the library growing. Pick one, don't ship both.</p>
       </div>
     </div>
 
     <div style="margin-top: 40px;">
       <div class="kicker">What dies in all six</div>
       <ul class="deadlist">
-        <li><span class="x">✕</span><span><b>The second text field.</b> One question gets one input.</span></li>
-        <li><span class="x">✕</span><span><b>The four-tab pill bar</b> — and with it, chartreuse spent on navigation state.</span></li>
+        <li><span class="x">✕</span><span><b>The second text field — not quick add.</b> The grammar stays and gets the whole field; what goes is the duplicate box beneath it.</span></li>
+        <li><span class="x">✕</span><span><b>The pill BAR — not the four sources.</b> Recent, Favorites, Meals and Foods all stay; the border, the fill, the radius and the chartreuse selected-state go. They become the source line, or four section heads, or four shelves.</span></li>
         <li><span class="x">✕</span><span><b>The instructional mono caption.</b> The placeholder carries it, or the field is wrong.</span></li>
         <li><span class="x">✕</span><span><b>Card chrome on Quick Log and Create Food.</b> They become bare <code>+</code> tails — they grow the library, they don't go anywhere.</span></li>
         <li><span class="x">✕</span><span><b>The black full-bleed result card.</b> Rows sit in the content column on a hairline, like every other list in the app.</span></li>
@@ -932,18 +1079,37 @@
   "use strict";
 
   // The athlete's own library — the foods behind the screenshot.
+  // `lists` is the point of the revision: a food belongs to as many of the four
+  // sources as it really belongs to, and every concept keeps all four.
   var LIB = [
-    { name: "Kefir Krasnystaw",  serving: "100 g",   grams: 100, kcal: 50,  p: 3.4,  c: 4.1, f: 2.0,  src: "YOURS",  tag: "Recent" },
-    { name: "Twaróg półtłusty",  serving: "100 g",   grams: 100, kcal: 133, p: 18.0, c: 3.5, f: 5.0,  src: "YOURS",  tag: "Recent" },
-    { name: "Skyr naturalny",    serving: "150 g",   grams: 150, kcal: 95,  p: 17.0, c: 5.0, f: 0.3,  src: "YOURS",  tag: "Recent" },
-    { name: "Whey isolate",      serving: "30 g",    grams: 30,  kcal: 118, p: 25.0, c: 1.5, f: 1.0,  src: "YOURS",  tag: "Foods" },
-    { name: "Chicken breast",    serving: "100 g",   grams: 100, kcal: 165, p: 31.0, c: 0.0, f: 3.6,  src: "YOURS",  tag: "Foods" },
-    { name: "Kabanosy drobiowe", serving: "1 stick", grams: 17.5, kcal: 55, p: 5.0,  c: 0.5, f: 3.7,  src: "YOURS",  tag: "Foods" },
-    { name: "Masło orzechowe",   serving: "30 g",    grams: 30,  kcal: 190, p: 7.0,  c: 5.0, f: 16.0, src: "YOURS",  tag: "Foods" },
-    { name: "Banan",             serving: "1 medium",grams: 118, kcal: 105, p: 1.3,  c: 27.0,f: 0.4,  src: "YOURS",  tag: "Foods" },
-    { name: "Owsianka + whey",   serving: "1 bowl",  grams: 0,   kcal: 422, p: 34.0, c: 52.0,f: 8.0,  src: "MEAL",   tag: "Meals" },
-    { name: "Chicken breast, grilled", serving: "100 g", grams: 100, kcal: 172, p: 30.0, c: 0.0, f: 5.4, src: "OFF", tag: "Open Food Facts" }
+    { name: "Kefir Krasnystaw",  serving: "100 g",   grams: 100, kcal: 50,  p: 3.4,  c: 4.1, f: 2.0,  lists: ["recent", "foods"] },
+    { name: "Twaróg półtłusty",  serving: "100 g",   grams: 100, kcal: 133, p: 18.0, c: 3.5, f: 5.0,  lists: ["recent", "favorites", "foods"] },
+    { name: "Skyr naturalny",    serving: "150 g",   grams: 150, kcal: 95,  p: 17.0, c: 5.0, f: 0.3,  lists: ["recent", "foods"] },
+    { name: "Kabanosy drobiowe", serving: "1 stick", grams: 17.5, kcal: 55, p: 5.0,  c: 0.5, f: 3.7,  lists: ["recent", "foods"] },
+    { name: "Whey isolate",      serving: "30 g",    grams: 30,  kcal: 118, p: 25.0, c: 1.5, f: 1.0,  lists: ["favorites", "foods"] },
+    { name: "Masło orzechowe",   serving: "30 g",    grams: 30,  kcal: 190, p: 7.0,  c: 5.0, f: 16.0, lists: ["favorites", "foods"] },
+    { name: "Chicken breast",    serving: "100 g",   grams: 100, kcal: 165, p: 31.0, c: 0.0, f: 3.6,  lists: ["foods"] },
+    { name: "Banan",             serving: "1 medium",grams: 118, kcal: 105, p: 1.3,  c: 27.0,f: 0.4,  lists: ["foods"] },
+    { name: "Owsianka + whey",   serving: "1 bowl",  grams: 0,   kcal: 422, p: 34.0, c: 52.0,f: 8.0,  lists: ["meals"] },
+    { name: "Kurczak + ryż",     serving: "1 plate", grams: 0,   kcal: 610, p: 52.0, c: 68.0,f: 12.0, lists: ["meals"] },
+    { name: "Chicken breast, grilled", serving: "100 g", grams: 100, kcal: 172, p: 30.0, c: 0.0, f: 5.4, off: true, lists: [] }
   ];
+  var SOURCES = [
+    { key: "recent",    label: "Recent" },
+    { key: "favorites", label: "Favorites" },
+    { key: "meals",     label: "Meals" },
+    { key: "foods",     label: "Foods" }
+  ];
+  var inList = function (food, key) { return food.lists.indexOf(key) > -1; };
+  var listOf = function (key) { return LIB.filter(function (f) { return inList(f, key); }); };
+  // The provenance tag a ranked row carries, since one list now mixes sources.
+  var provenance = function (food) {
+    if (food.off) return "OFF";
+    for (var i = 0; i < SOURCES.length; i++) {
+      if (inList(food, SOURCES[i].key)) return SOURCES[i].label.toUpperCase();
+    }
+    return "";
+  };
 
   var fold = function (s) {
     return s.toLowerCase()
@@ -973,6 +1139,7 @@
   /* ─────────────── CONCEPT 01 — one field ─────────────── */
   var c1in = document.getElementById("c1-input");
   var c1out = document.getElementById("c1-out");
+  var c1Source = "recent";
 
   // A deliberately small echo of core's quick-add grammar: a macro keyword takes
   // the number on either side; a food line is a name plus a mass or a count.
@@ -1015,7 +1182,8 @@
       .map(function (food) {
         var n = fold(food.name);
         var score = n === name ? 4 : n.indexOf(name) === 0 ? 3 : n.indexOf(" " + name) > -1 ? 2 : n.indexOf(name) > -1 ? 1 : 0;
-        if (score && food.src === "YOURS") score += 0.3;
+        if (score && inList(food, "recent")) score += 0.4;
+        else if (score && !food.off) score += 0.2;
         return { food: food, score: score };
       })
       .filter(function (r) { return r.score > 0; })
@@ -1054,20 +1222,37 @@
     c1out.innerHTML = "";
 
     if (p.kind === "empty") {
-      c1out.appendChild(head("Tonight", "Recent"));
-      LIB.slice(0, 3).forEach(function (food) {
+      // THE SOURCE LINE — all four, always, selection carried by weight and a
+      // rule. No box, no fill, no accent.
+      var line = el("div", "f-src");
+      line.setAttribute("role", "tablist");
+      SOURCES.forEach(function (src) {
+        var b = el("button");
+        b.type = "button";
+        b.className = src.key === c1Source ? "on" : "";
+        b.setAttribute("role", "tab");
+        b.setAttribute("aria-selected", src.key === c1Source ? "true" : "false");
+        b.appendChild(document.createTextNode(src.label));
+        b.appendChild(el("b", "ct", String(listOf(src.key).length)));
+        b.addEventListener("click", function () { c1Source = src.key; renderC1(); });
+        line.appendChild(b);
+      });
+      c1out.appendChild(line);
+
+      listOf(c1Source).forEach(function (food) {
         c1out.appendChild(row({ title: food.name, meta: food.serving, right: food.kcal + " kcal" }));
       });
-      c1out.appendChild(head("Your foods", "18"));
-      LIB.slice(3, 6).forEach(function (food) {
-        c1out.appendChild(row({ title: food.name, meta: food.serving, right: food.kcal + " kcal" }));
+
+      // The two rare doors, at the end of the thing, bare — they grow the
+      // library rather than going anywhere.
+      [["Quick Log"], ["New food"]].forEach(function (t) {
+        var tail = el("div", "f-tail");
+        var tp = el("span", "plus");
+        tp.appendChild(svgIcon("plus", 19));
+        tail.appendChild(tp);
+        tail.appendChild(el("b", null, t[0]));
+        c1out.appendChild(tail);
       });
-      var tail = el("div", "f-tail");
-      var tp = el("span", "plus");
-      tp.appendChild(svgIcon("plus", 19));
-      tail.appendChild(tp);
-      tail.appendChild(el("b", null, "New food"));
-      c1out.appendChild(tail);
       return;
     }
 
@@ -1102,12 +1287,14 @@
       return;
     }
 
-    var mine = hits.filter(function (h) { return h.src !== "OFF"; });
-    var world = hits.filter(function (h) { return h.src === "OFF"; });
+    var mine = hits.filter(function (h) { return !h.off; });
+    var world = hits.filter(function (h) { return h.off; });
 
     if (mine.length) {
-      c1out.appendChild(head("Understood", "Tap to log"));
-      mine.forEach(function (food, i) {
+      // Ranked ACROSS all four sources — you never have to know which list a
+      // food is in — so every row says where it came from.
+      c1out.appendChild(head("Understood", "All four sources"));
+      mine.forEach(function (food) {
         var q = 1, meta;
         if (p.grams && food.grams) {
           q = Math.round((p.grams / food.grams) * 100) / 100;
@@ -1122,11 +1309,7 @@
         } else {
           meta = food.serving + " — " + food.kcal + " kcal";
         }
-        c1out.appendChild(row({
-          title: food.name,
-          meta: meta,
-          right: i === 0 ? round(food.p * q) + " P" : null
-        }));
+        c1out.appendChild(row({ title: food.name, meta: meta, right: provenance(food), rightMuted: true }));
       });
     }
     if (world.length) {
