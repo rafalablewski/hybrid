@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
+  applyNotifOp,
+  applyNotifOps,
   buildNotifications,
   countUnread,
   DEFAULT_NOTIF_READ,
   dismissNotif,
+  normalizeNotifOp,
   isNotifDismissed,
   isNotifRead,
   markAllNotifsRead,
@@ -296,6 +299,79 @@ describe("swipe left — delete", () => {
     let state = DEFAULT_NOTIF_READ;
     for (let i = 0; i < NOTIF_READ_ID_CAP + 5; i++) state = dismissNotif(state, `d${i}`);
     expect(state.dismissedIds.length).toBe(NOTIF_READ_ID_CAP);
+  });
+});
+
+describe("the ops — one reducer for the clients and the server", () => {
+  const items = () => buildNotifications({ sessions: [session()], social: [kudos()], now: NOW }).items;
+
+  it("each op does what its named function does", () => {
+    expect(applyNotifOp(DEFAULT_NOTIF_READ, { kind: "read", id: "a" })).toEqual(markNotifRead(DEFAULT_NOTIF_READ, "a"));
+    expect(applyNotifOp(DEFAULT_NOTIF_READ, { kind: "unread", id: "a" })).toEqual(markNotifUnread(DEFAULT_NOTIF_READ, "a"));
+    expect(applyNotifOp(DEFAULT_NOTIF_READ, { kind: "dismiss", id: "a" })).toEqual(dismissNotif(DEFAULT_NOTIF_READ, "a"));
+    const list = items();
+    expect(applyNotifOp(DEFAULT_NOTIF_READ, { kind: "sweep", items: list, now: NOW })).toEqual(sweepNotifsRead(DEFAULT_NOTIF_READ, list, NOW));
+    expect(applyNotifOp(DEFAULT_NOTIF_READ, { kind: "markAll", items: list, now: NOW })).toEqual(markAllNotifsRead(DEFAULT_NOTIF_READ, list, NOW));
+  });
+
+  it("arrival order decides when two devices disagree about one row", () => {
+    // The phone reads it, then the laptop swipes it back to unread. Last one in
+    // wins, because that is the order the athlete did them in.
+    const late = applyNotifOps(DEFAULT_NOTIF_READ, [{ kind: "read", id: "x" }, { kind: "unread", id: "x" }]);
+    expect(isNotifRead(late, { id: "x", at: NOW })).toBe(false);
+    const other = applyNotifOps(DEFAULT_NOTIF_READ, [{ kind: "unread", id: "x" }, { kind: "read", id: "x" }]);
+    expect(isNotifRead(other, { id: "x", at: NOW })).toBe(true);
+  });
+
+  it("replays a pending queue on top of the server's state", () => {
+    // What a client does when the server answers while ops are still in flight:
+    // the swipe must not blink back to read.
+    const server = markAllNotifsRead(DEFAULT_NOTIF_READ, items(), NOW);
+    const withPending = applyNotifOps(server, [{ kind: "unread", id: "social-kudos-nina" }]);
+    expect(buildNotifications({ sessions: [session()], social: [kudos()], read: withPending, now: NOW }).unread).toBe(1);
+  });
+
+  it("replaying the same op twice is the same as once", () => {
+    // A queue that retries after a timeout must not double-apply.
+    const once = applyNotifOps(DEFAULT_NOTIF_READ, [{ kind: "dismiss", id: "x" }]);
+    const twice = applyNotifOps(DEFAULT_NOTIF_READ, [{ kind: "dismiss", id: "x" }, { kind: "dismiss", id: "x" }]);
+    expect(twice).toEqual(once);
+  });
+});
+
+describe("normalizeNotifOp — this is a request body, not our data", () => {
+  it("takes the ops it recognises", () => {
+    expect(normalizeNotifOp({ kind: "read", id: "a" }, NOW)).toEqual({ kind: "read", id: "a" });
+    expect(normalizeNotifOp({ kind: "dismiss", id: "a" }, NOW)).toEqual({ kind: "dismiss", id: "a" });
+  });
+
+  it("rejects anything else", () => {
+    expect(normalizeNotifOp(null, NOW)).toBeNull();
+    expect(normalizeNotifOp({ kind: "drop table" }, NOW)).toBeNull();
+    expect(normalizeNotifOp({ kind: "read" }, NOW)).toBeNull();
+    expect(normalizeNotifOp({ kind: "sweep" }, NOW)).toBeNull();
+  });
+
+  it("drops junk items rather than the whole sweep", () => {
+    const op = normalizeNotifOp({ kind: "sweep", now: NOW, items: [{ id: "a", at: NOW }, { id: 5, at: NOW }, null, { id: "b" }] }, NOW);
+    expect(op).toEqual({ kind: "sweep", items: [{ id: "a", at: NOW }], now: NOW });
+  });
+
+  it("clamps a device clock that runs ahead", () => {
+    // Unclamped, a wrong clock pushes the watermark into the future and reads
+    // everything, for good.
+    const op = normalizeNotifOp({ kind: "markAll", items: [], now: NOW + 400 * 86_400_000 }, NOW);
+    expect(op).toEqual({ kind: "markAll", items: [], now: NOW });
+  });
+
+  it("leaves an honest clock alone, including one running behind", () => {
+    expect(normalizeNotifOp({ kind: "sweep", items: [], now: NOW - H }, NOW)).toEqual({ kind: "sweep", items: [], now: NOW - H });
+  });
+
+  it("bounds the ids one op can carry", () => {
+    const many = Array.from({ length: 400 }, (_, i) => ({ id: `n${i}`, at: NOW }));
+    const op = normalizeNotifOp({ kind: "sweep", items: many, now: NOW }, NOW);
+    expect(op!.kind === "sweep" && op.items.length).toBe(200);
   });
 });
 

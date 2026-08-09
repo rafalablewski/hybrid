@@ -1,93 +1,89 @@
 import { useSyncExternalStore } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  DEFAULT_NOTIF_READ,
-  dismissNotif,
-  markAllNotifsRead,
-  markNotifRead,
-  markNotifUnread,
+  createNotifSync,
+  normalizeNotifCache,
   normalizeNotifRead,
-  sweepNotifsRead,
+  type NotifOp,
   type NotifReadState,
+  type NotifSyncCache,
 } from "@hybrid/core";
+import { fetchNotifState, pushNotifOps } from "./api";
 
 /**
- * Which notifications you have already seen — persisted per device
- * (AsyncStorage), shared by the Home bell badge and the notifications screen
- * through one store, so the two can never disagree.
+ * Which notifications you have already seen — per ACCOUNT, synced through
+ * /api/notifications/state, with AsyncStorage as the offline cache.
  *
- * Per-device is the same contract as the logger preferences: the state is small
- * and idempotent (reading on your phone and again on your laptop costs you one
- * extra glance, never a lost notification), and it needs no migration on a
- * database the sandbox cannot reach. Server-side sync is tracked as
- * `prefs-cross-device-sync`.
+ * It used to be per-device on the logger-prefs contract: small, idempotent,
+ * costing you at worst one extra glance. That argument held right up until a
+ * row could be DELETED. A badge that disagrees between your phone and your
+ * laptop is a nuisance; a notification you deliberately threw away coming back
+ * on the other device is the app forgetting something you told it.
  *
+ * All of the interesting behaviour — optimistic apply, the offline queue,
+ * rebasing onto server truth without reverting a swipe still in flight — lives
+ * in @hybrid/core's createNotifSync, so this file is only the four ports.
  * Mirrors apps/web/lib/notif-read.ts.
  */
 const KEY = "hybrid.notifRead";
 
-let state: NotifReadState = DEFAULT_NOTIF_READ;
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
-
-AsyncStorage.getItem(KEY)
-  .then((v) => {
-    if (!v) return;
+const sync = createNotifSync({
+  load: async () => {
     try {
-      state = normalizeNotifRead(JSON.parse(v));
-      emit();
+      const raw = await AsyncStorage.getItem(KEY);
+      return raw ? normalizeNotifCache(JSON.parse(raw), normalizeNotifRead) : null;
     } catch {
-      /* keep the default: everything unread, which is the safe direction */
+      // Keep the default — everything unread, which is the safe direction.
+      return null;
     }
-  })
-  .catch(() => {});
+  },
+  save: (cache: NotifSyncCache) => {
+    AsyncStorage.setItem(KEY, JSON.stringify(cache)).catch(() => {});
+  },
+  pull: async () => {
+    const r = await fetchNotifState();
+    return r ? { state: normalizeNotifRead(r.state), synced: r.synced } : null;
+  },
+  push: async (ops: NotifOp[]) => {
+    const r = await pushNotifOps(ops);
+    return r ? { state: normalizeNotifRead(r.state), synced: r.synced } : null;
+  },
+});
 
-function persist(next: NotifReadState): void {
-  // A no-op sweep returns the state it was given (see sweepNotifsRead) — writing
-  // and emitting it anyway would re-render the screen, re-arm the sweep and go
-  // round again every poll.
-  if (next === state) return;
-  state = next;
-  AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {});
-  emit();
+/** Drain the queue when the app comes back to the foreground — where a phone
+ *  most often regains connectivity. Wired from the app's AppState listener
+ *  (lib/query.tsx) so there is one place that knows about foregrounding. */
+export function flushNotifications(): void {
+  sync.flush();
 }
 
 /** Mark one row read (tapping it). */
 export function readNotification(id: string): void {
-  persist(markNotifRead(state, id));
+  sync.dispatch({ kind: "read", id });
 }
 
 /** Put one row back to unread (swipe right). */
 export function unreadNotification(id: string): void {
-  persist(markNotifUnread(state, id));
+  sync.dispatch({ kind: "unread", id });
 }
 
 /** Delete one row (swipe left) — a tombstone, since the list is a projection. */
 export function dismissNotification(id: string): void {
-  persist(dismissNotif(state, id));
+  sync.dispatch({ kind: "dismiss", id });
 }
 
 /** The passive sweep: mark what the screen has just shown as seen. */
 export function sweepNotifications(items: { id: string; at: number }[]): void {
-  persist(sweepNotifsRead(state, items));
+  sync.dispatch({ kind: "sweep", items, now: Date.now() });
 }
 
 /** Mark every row currently on screen read — the explicit action. */
 export function readAllNotifications(items: { id: string; at: number }[]): void {
-  persist(markAllNotifsRead(state, items));
-}
-
-function subscribe(l: () => void): () => void {
-  listeners.add(l);
-  return () => listeners.delete(l);
+  sync.dispatch({ kind: "markAll", items, now: Date.now() });
 }
 
 /** The current read state (the default — everything unread — until hydrated).
  *  A badge that briefly over-counts beats one that hides a notification. */
 export function useNotifRead(): NotifReadState {
-  return useSyncExternalStore(
-    subscribe,
-    () => state,
-    () => state,
-  );
+  return useSyncExternalStore(sync.subscribe, sync.get, sync.get);
 }

@@ -6,6 +6,7 @@ import {
   QueryClientProvider,
   focusManager,
 } from "@tanstack/react-query";
+import { flushNotifications } from "./notif-read";
 
 // TanStack Query for the mobile app — parity with the web data-layer so both
 // clients dedupe fetches, cache across navigation, and revalidate by key on
@@ -19,6 +20,10 @@ import {
 
 function onAppStateChange(status: AppStateStatus) {
   focusManager.setFocused(status === "active");
+  // Foregrounding is where a phone most often regains connectivity, so it is
+  // also when any notification decisions taken offline get another chance to
+  // reach the server (lib/notif-read.ts holds them until they do).
+  if (status === "active") flushNotifications();
 }
 
 export default function QueryProvider({ children }: { children: ReactNode }) {

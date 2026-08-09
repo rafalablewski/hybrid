@@ -19,6 +19,7 @@ export * from "./checkin-scales";
 export * from "./feel-timing";
 export * from "./feel-schedule";
 export * from "./notifications";
+export * from "./notif-sync";
 export * from "./readiness-reads";
 export * from "./readiness-read-explain";
 export * from "./day-key";

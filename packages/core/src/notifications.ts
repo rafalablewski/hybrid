@@ -57,6 +57,15 @@
  *     events and the feel schedule), so a delete is a tombstone: the id is
  *     remembered and the row is filtered out of every later build.
  *
+ * WHERE THE STATE LIVES: with the ACCOUNT, not the device. It began per-device
+ * on the logger-prefs contract — small, idempotent, costing you at worst one
+ * extra glance — and that argument held right up until a row could be DELETED.
+ * A badge that disagrees across devices is a nuisance; a notification you threw
+ * away coming back on the laptop is the app forgetting something you told it.
+ * Every social app of any size stores this against the account, and so do we
+ * now: the clients write through `NotifOp` (below) to `/api/notifications/state`
+ * and keep their local copy as an offline cache, never as the source of truth.
+ *
  * Nothing here fabricates a notification. No training, no social events and no
  * session waiting on a feel read yields an empty list and an honest zero.
  */
@@ -227,6 +236,93 @@ export function markAllNotifsRead(
 ): NotifReadState {
   const next = sweepTo(state, items, now);
   return { ...next, unreadIds: drop(next.unreadIds, items.map((i) => i.id)) };
+}
+
+// ------------------------------------------------------------ the ops ------
+
+/**
+ * ONE notification decision, as a value.
+ *
+ * The read state is ACCOUNT state, not device state, and the thing that makes
+ * that safe is syncing the DECISIONS rather than the resulting blob. Two
+ * devices pushing whole states have to be merged, and a merge needs a rule for
+ * "the phone says read, the laptop says unread" that nobody can state without
+ * inventing per-id timestamps. Two devices pushing OPS need no rule: the server
+ * applies them in arrival order, which is the order they happened in, which is
+ * what the athlete would tell you happened.
+ *
+ * So this type is the whole write API. The clients apply an op locally for the
+ * optimistic paint and send the same value on; the server applies it to the
+ * canonical row with the same reducer below. One implementation, three callers,
+ * no chance of the server and a client disagreeing about what "mark all read"
+ * means.
+ */
+export type NotifOp =
+  | { kind: "read"; id: string }
+  | { kind: "unread"; id: string }
+  | { kind: "dismiss"; id: string }
+  | { kind: "sweep"; items: { id: string; at: number }[]; now: number }
+  | { kind: "markAll"; items: { id: string; at: number }[]; now: number };
+
+/** Apply one decision. Total over NotifOp — a new op cannot be forgotten here. */
+export function applyNotifOp(state: NotifReadState, op: NotifOp): NotifReadState {
+  switch (op.kind) {
+    case "read":
+      return markNotifRead(state, op.id);
+    case "unread":
+      return markNotifUnread(state, op.id);
+    case "dismiss":
+      return dismissNotif(state, op.id);
+    case "sweep":
+      return sweepNotifsRead(state, op.items, op.now);
+    case "markAll":
+      return markAllNotifsRead(state, op.items, op.now);
+  }
+}
+
+/**
+ * Replay a queue of decisions onto a state.
+ *
+ * This is what makes an offline queue honest: the server hands back the
+ * canonical state, the client replays whatever it has not managed to send yet
+ * on top, and the screen shows the truth PLUS the decisions still in flight —
+ * rather than briefly reverting a row the athlete has already swiped.
+ */
+export function applyNotifOps(state: NotifReadState, ops: NotifOp[]): NotifReadState {
+  return ops.reduce(applyNotifOp, state);
+}
+
+/** How many ids one op may carry. A sweep covers the visible list, not a log. */
+const NOTIF_OP_ITEM_CAP = 200;
+
+/**
+ * Coerce an op off the wire. Returns null for anything unrecognised, so the
+ * server can reject rather than guess — this is a request body, not our data.
+ *
+ * `now` is deliberately NOT trusted as sent: a device with a badly wrong clock
+ * would otherwise push the watermark into the future and mark everything read
+ * for good. The caller passes the clock it trusts (`ceiling`), and a stamp
+ * ahead of it is clamped back.
+ */
+export function normalizeNotifOp(value: unknown, ceiling: number = Date.now()): NotifOp | null {
+  const v = (value ?? {}) as Record<string, unknown>;
+  const id = typeof v.id === "string" ? v.id.slice(0, 200) : "";
+  if (v.kind === "read" || v.kind === "unread" || v.kind === "dismiss") {
+    return id ? { kind: v.kind, id } : null;
+  }
+  if (v.kind === "sweep" || v.kind === "markAll") {
+    if (!Array.isArray(v.items)) return null;
+    const items = v.items
+      .filter((i): i is { id: string; at: number } => {
+        const r = (i ?? {}) as Record<string, unknown>;
+        return typeof r.id === "string" && typeof r.at === "number" && Number.isFinite(r.at);
+      })
+      .map((i) => ({ id: i.id.slice(0, 200), at: i.at }))
+      .slice(0, NOTIF_OP_ITEM_CAP);
+    const sent = typeof v.now === "number" && Number.isFinite(v.now) ? v.now : ceiling;
+    return { kind: v.kind, items, now: Math.min(sent, ceiling) };
+  }
+  return null;
 }
 
 /** Are any of these rows unread? Cheap enough for a badge that re-renders. */
