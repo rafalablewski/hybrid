@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { SIDE_MENU_PRIMARY, SIDE_MENU_FOOTER, SIDE_MENU_ROWS, SIDE_MENU_SCREEN_IDS } from "./side-menu";
-import { NAV_ITEMS } from "./nav";
+import { SIDE_MENU_PRIMARY, SIDE_MENU_FOOTER, SIDE_MENU_ROWS, SIDE_MENU_SCREEN_IDS, SIDE_MENU_NAMED_IDS } from "./side-menu";
+import { NAV_ITEMS, groupedNavWithLocks } from "./nav";
 import { AURORA_NAV_TABS } from "./nav-bar";
 import { TODAY_TABS } from "./today-tabs";
 import { baselineString } from "./i18n";
@@ -45,6 +45,24 @@ describe("the side menu", () => {
       for (const row of SIDE_MENU_ROWS) {
         expect(baselineString(lang, row.labelKey), `${row.labelKey} missing in ${lang}`).toBeTruthy();
       }
+    }
+  });
+
+  it("never lists a row it has already named inside 'All tools'", () => {
+    // The expander below the primary list carries the rest of the nav, and the
+    // filter that keeps it from repeating the drawer must key on the ROW IDS,
+    // not on the screen targets. Performance and Feed are hub rows AND nav ids
+    // resolving to the very same component, so a screen-target-only filter
+    // printed each of them twice in one panel — once at the top, once under
+    // Analyze/Social. Every persona, because the lock state must not change it.
+    const named = new Set<string>(SIDE_MENU_NAMED_IDS);
+    for (const persona of ["casual", "athlete", "coach", "admin"] as const) {
+      const repeated = groupedNavWithLocks(persona)
+        .flatMap((g) => g.items)
+        .filter(({ item }) => !named.has(item.id))
+        .filter(({ item }) => SIDE_MENU_ROWS.some((r) => r.id === item.id))
+        .map(({ item }) => item.id);
+      expect(repeated, `${persona}: repeated in All tools`).toEqual([]);
     }
   });
 

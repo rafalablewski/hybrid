@@ -7,7 +7,7 @@ import {
   AURORA_NAV_ICONS,
   SIDE_MENU_PRIMARY,
   SIDE_MENU_FOOTER,
-  SIDE_MENU_SCREEN_IDS,
+  SIDE_MENU_NAMED_IDS,
   SIDE_MENU_WIDTH,
   FUNNEL,
   type SideMenuRow,
@@ -121,7 +121,7 @@ export default function AuroraSideMenu({
   // ALL TOOLS — everything this persona may see that the drawer hasn't already
   // named. Premium items a free user hasn't unlocked stay VISIBLE with a lock
   // and route to the paywall, so the whole toolkit is legible from here.
-  const named = new Set<string>(SIDE_MENU_SCREEN_IDS);
+  const named = new Set<string>(SIDE_MENU_NAMED_IDS);
   const groups = groupedNavWithLocks(persona, access)
     .map(({ group, items }) => ({
       group: group as NavGroup,

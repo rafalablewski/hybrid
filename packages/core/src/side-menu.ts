@@ -88,14 +88,25 @@ export const SIDE_MENU_FOOTER: readonly SideMenuRow[] = [
 /** Every row the menu renders, primary then footer (handy for tests/audits). */
 export const SIDE_MENU_ROWS: readonly SideMenuRow[] = [...SIDE_MENU_PRIMARY, ...SIDE_MENU_FOOTER];
 
-/**
- * The nav ids the drawer already names, so the "All tools" expander below it
- * doesn't offer the same destination twice. Hub rows are not nav ids (Dashboard
- * is a view of Today, not a screen), so only the `screen` targets count.
- */
+/** The `screen` targets only — the canonical nav ids the drawer routes to. */
 export const SIDE_MENU_SCREEN_IDS: readonly string[] = SIDE_MENU_ROWS
   .filter((r) => r.target.kind === "screen")
   .map((r) => (r.target as { kind: "screen"; screen: string }).screen);
+
+/**
+ * Everything the drawer already names, so the "All tools" expander below it
+ * never offers the same destination twice. This is the ROW IDS, not just the
+ * screen targets, and the difference is not academic: PERFORMANCE and FEED are
+ * hub rows here AND canonical nav ids, and both the hub tab and the nav id
+ * render the very same component (AuroraPerformance, SocialFeed). Filtering on
+ * screen targets alone printed each of them twice in one panel — once at the
+ * top as a hub row, once again under Analyze/Social — which reads as two
+ * different places and is exactly the duplication the drawer was meant to end.
+ *
+ * DASHBOARD is a row id with no nav id (it is a view of Today, not a screen);
+ * it simply matches nothing, which is correct.
+ */
+export const SIDE_MENU_NAMED_IDS: readonly string[] = SIDE_MENU_ROWS.map((r) => r.id);
 
 /** Panel width, in px/dp, capped to a share of the viewport by each client. */
 export const SIDE_MENU_WIDTH = 300;
