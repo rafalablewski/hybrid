@@ -21,9 +21,9 @@ import { useIsMobile } from "@/lib/use-media-query";
  * look like one product on one client and another on the other.
  *
  * The screen's order is the spec's (reference/feed-spec.html, D2):
- *   co-sign inbox (someone is waiting on an answer) → feed tabs → the composer
- *   → the stream → the caught-up marker, which hands the athlete back to the
- *   bar rather than to more scrolling.
+ *   co-sign inbox (someone is waiting on an answer) → feed tabs → the
+ *   always-open composer → the stream → the caught-up marker, which hands the
+ *   athlete back to the bar rather than to more scrolling.
  *
  * FOR YOU vs FOLLOWING: the ranked feed only earns trust while an unranked exit
  * exists. "Following" is strictly chronological and strictly other people —
@@ -38,7 +38,9 @@ type Tab = "forYou" | "following";
  *  its right, the whole block running edge to edge between two hairlines. No
  *  fill, no border, no radius, no open/close state — the box is always one tap
  *  from typing, and the pill sits dimmed until there is something to post.
- *  Twin of the mobile composer in components/feed-view.tsx. */
+ *  Twin of the mobile composer in components/feed-view.tsx. The nav's Add post
+ *  circle focuses THIS box (the "hybrid:compose" event) rather than opening a
+ *  second editor, so there is exactly one place a post is written. */
 function Composer({ onPosted }: { onPosted: () => void }) {
   const { t } = useLang();
   const isMobile = useIsMobile();
@@ -53,6 +55,18 @@ function Composer({ onPosted }: { onPosted: () => void }) {
     queryFn: () => jget<OwnProfileResponse>("/api/social/profile"),
     staleTime: 5 * 60_000,
   }).data?.profile;
+
+  // The nav's Add post — scroll the composer into view and hand it the caret.
+  useEffect(() => {
+    const focus = () => {
+      const el = box.current;
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.focus();
+    };
+    window.addEventListener("hybrid:compose", focus);
+    return () => window.removeEventListener("hybrid:compose", focus);
+  }, []);
 
   const share = async () => {
     if (!text.trim() && !attachPr) return;
@@ -263,6 +277,8 @@ export default function SocialFeed({
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
       <FeedLiveStrip live={live} onOpen={(h) => onOpenUser?.(h)} />
 
+      {/* The always-open composer — it draws its own top hairline and, at
+          mobile widths, bleeds edge to edge with the stream rows below. */}
       <Composer onPosted={load} />
 
       {/* The stream boundary. The rows below are full-width timeline rows

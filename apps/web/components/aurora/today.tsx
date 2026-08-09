@@ -147,6 +147,7 @@ export default function AuroraToday({
   sessionsReady = true,
   macroReady = true,
   macroSettled = true,
+  onHubTab,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -191,6 +192,9 @@ export default function AuroraToday({
   sessionsReady?: boolean;
   macroReady?: boolean;
   macroSettled?: boolean;
+  /** Reports which hub tab is up, so the shell's pill nav can resolve its
+   *  action circle (the verb becomes Add post while the Feed tab is visible). */
+  onHubTab?: (id: TodayTabId) => void;
 }) {
   const router = useRouter();
   const { t } = useLang();
@@ -201,6 +205,10 @@ export default function AuroraToday({
   // home and its job is "what do I do today?", so every visit opens on the
   // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
+  // Report the hub tab upward (covers the mount too, so the shell is never
+  // stuck on a stale value from a previous visit — the hub always reopens on
+  // the daily loop, see above).
+  useEffect(() => { onHubTab?.(tab); }, [tab, onHubTab]);
   // The in-flow switcher's own box. THE DOCK (aurora/today-hub-dock.tsx)
   // measures its bottom edge so the floating row appears the instant the real
   // control leaves the viewport, never beside it.

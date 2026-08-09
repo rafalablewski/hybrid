@@ -26,8 +26,8 @@ import { useConfirm } from "./aurora/confirm";
  * CONNECT — the feed (mobile). Twin of apps/web/components/social-feed.tsx.
  * Both screens render the shared card model from core (feed-card.ts), and the
  * order is the spec's (reference/feed-spec.html, D2): co-sign inbox → feed
- * tabs → the composer → the stream → the caught-up marker, which hands the
- * athlete back to the bar rather than to more scrolling.
+ * tabs → the always-open composer → the stream → the caught-up marker, which
+ * hands the athlete back to the bar rather than to more scrolling.
  */
 type FeedTab = "forYou" | "following";
 

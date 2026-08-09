@@ -1,20 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { AURORA_NAV_TABS, AURORA_NAV_GEOMETRY, formatSessionElapsed } from "./nav-bar";
+import { AURORA_NAV_TABS, AURORA_NAV_ACTIONS, AURORA_NAV_GEOMETRY, auroraNavAction, formatSessionElapsed } from "./nav-bar";
 
 describe("aurora nav bar contract", () => {
-  it("carries five destinations, within Apple's iPhone ceiling", () => {
-    expect(AURORA_NAV_TABS).toHaveLength(5);
-    expect(AURORA_NAV_TABS.map((t) => t.id)).toEqual(["today", "nutrition", "train", "messages", "profile"]);
+  it("carries the four places in the capsule", () => {
+    expect(AURORA_NAV_TABS).toHaveLength(4);
+    expect(AURORA_NAV_TABS.map((t) => t.id)).toEqual(["today", "nutrition", "messages", "profile"]);
   });
 
-  it("spends the fourth slot on a destination, not on a directory", () => {
+  it("spends the third slot on a destination, not on a directory", () => {
     // More was a springboard of ~40 launcher tiles — a directory of screens,
     // which nobody's daily loop includes opening. It moved to the side menu
     // behind the Today header's avatar (side-menu.ts), and the slot went to
     // Messages: a place with its own unread state that you come back to.
     const ids = AURORA_NAV_TABS.map((t) => t.id) as string[];
     expect(ids).not.toContain("more");
-    expect(ids[3]).toBe("messages");
+    expect(ids[2]).toBe("messages");
   });
 
   it("spends the second slot on a daily loop, not on discovery", () => {
@@ -26,21 +26,32 @@ describe("aurora nav bar contract", () => {
     expect(ids[1]).toBe("nutrition");
   });
 
-  it("keeps Train as a tab, not a detached action", () => {
-    // The separated circle beside an iOS 26 tab bar is the SEARCH role; a
-    // training CTA parked there reads as search. Train is a destination (the
-    // launcher), so it belongs in the capsule with the other tabs.
-    const train = AURORA_NAV_TABS.find((t) => t.id === "train");
-    expect(train).toBeDefined();
-    expect(train!.glyph).toBe("train");
+  it("keeps the capsule to places — the verb lives in the detached action", () => {
+    // Train is the app's one VERB and rides beside the capsule as the detached
+    // circle (AURORA_NAV_ACTIONS), never as a fifth tab. The circle wears the
+    // kit's own glyphs — the dumbbell, never a magnifier — which is the
+    // deliberate trade against the iOS 26 search-role reading of that slot.
+    const ids = AURORA_NAV_TABS.map((t) => t.id) as string[];
+    expect(ids).not.toContain("train");
+    expect(AURORA_NAV_ACTIONS.train.glyph).toBe("train");
+    expect(AURORA_NAV_ACTIONS.post.glyph).toBe("list-add");
+  });
+
+  it("resolves the action per surface: Train everywhere, Add post on the feed", () => {
+    expect(auroraNavAction("feed")).toBe("post");
+    for (const surface of ["today", "nutrition", "messages", "profile", "train", "log", "performance", null, undefined]) {
+      expect(auroraNavAction(surface), String(surface)).toBe("train");
+    }
   });
 
   it("leaves a visible glass margin around the selection lens", () => {
     // Concentricity: the lens must be strictly shorter than the capsule's
     // inner height, otherwise the bar pinches the pill instead of holding it.
-    const { slotH, padV, miniSlotH } = AURORA_NAV_GEOMETRY;
+    const { slotH, padV, miniSlotH, actionGap } = AURORA_NAV_GEOMETRY;
     expect(padV).toBeGreaterThan(0);
     expect(miniSlotH).toBeLessThan(slotH);
+    // The action circle is detached — a real gap, or the split reads as a dent.
+    expect(actionGap).toBeGreaterThan(0);
   });
 
   it("formats elapsed session time", () => {

@@ -3,37 +3,40 @@ import type { AuroraIconName } from "./theme/icons";
 /**
  * THE BOTTOM-NAV CONTRACT — shared by both clients so the bar cannot drift.
  *
- * Anatomy follows Apple's tab-bar guidance rather than an approximation of it:
- * a tab bar carries NAVIGATION, and "avoid placing screen-specific actions in
- * the tab bar". So Train is a TAB (it opens the Train launcher — a destination,
- * which is what it always was) and not a detached circular button beside the
- * capsule.
+ * Anatomy: a SPLIT bar. The capsule carries the four PLACES — destinations you
+ * go to and come back to — and the app's one VERB rides beside it as a detached
+ * circle of the same glass (AURORA_NAV_ACTIONS). Train left the capsule for
+ * that circle: it is the thing this app exists to make you do, and inside the
+ * capsule it was one grey glyph among five, indistinguishable from the places
+ * around it.
  *
- * That detached-circle geometry was the deeper mistake in the previous build:
- * on iOS 26 a separated circle beside the tab bar is the SEARCH ROLE, which
- * morphs into a search field on tap. Parking a training CTA there reads as
- * "search" to anyone fluent in the platform. The slot is left unused here, so
- * it stays available if HYBRID ever adds cross-app search.
+ * The detached-circle slot beside an iOS 26 tab bar is the platform's SEARCH
+ * role, and spending it on an action is a DELIBERATE trade recorded here so it
+ * is never re-litigated by accident: HYBRID has no cross-app search to put
+ * there, the circle wears the dumbbell (never a magnifier) in the accent
+ * colour — the "go" colour, which the grammar reserves for things that act —
+ * and on the feed it morphs to the compose glyph, none of which a search field
+ * does. The action is CONTEXTUAL by design: Train everywhere, Add post on the
+ * feed — the one surface whose primary verb isn't training (auroraNavAction).
  *
- * Persistent session state does NOT go in the tab bar either — it belongs in
- * the tab-bar accessory (the system home for players and active orders, i.e.
- * the mini-player slot). See the session accessory in each client's nav.
+ * Persistent session state does NOT go in the bar either — it belongs in the
+ * tab-bar accessory (the system home for players and active orders, i.e. the
+ * mini-player slot). See the session accessory in each client's nav.
  */
 
 /**
- * The five bar destinations, in order. Five is Apple's ceiling for iPhone.
+ * The four capsule destinations, in order.
  *
  * NUTRITION holds the second slot, where Explore used to sit. Explore was a
  * DISCOVERY surface — a coach rail, a plan cover flow, a community preview —
  * and discovery is not a daily destination: every one of those blocks was a
- * preview of a screen that still lives in More (Plans, Feed, Find friends), and
- * the one piece with a daily job, "Follow a coach", now sits on Today next to
- * the training it applies to. Eating is the opposite kind of thing: it happens
- * several times a day, every day, and a tracker you must dig for is a tracker
- * you stop using. So the bar spends its scarcest slot on the loop the user is
- * actually in.
+ * preview of a screen that still lives in the side menu (Plans, Feed, Find
+ * friends), and the one piece with a daily job, "Follow a coach", now sits on
+ * Today next to the training it applies to. Eating is the opposite kind of
+ * thing: it happens several times a day, every day, and a tracker you must dig
+ * for is a tracker you stop using.
  *
- * MESSAGES holds the fourth slot, where More used to sit. More was a
+ * MESSAGES holds the third slot, where More used to sit. More was a
  * SPRINGBOARD — ~40 launcher tiles grouped by cluster — and a directory is not
  * a destination: nobody's daily loop includes "open the list of screens". It
  * has moved into the side menu behind the Today header's avatar (side-menu.ts),
@@ -41,7 +44,7 @@ import type { AuroraIconName } from "./theme/icons";
  * for is a place with its own state that you come back to — which is exactly
  * what a conversation is.
  */
-export type AuroraNavTabId = "today" | "nutrition" | "train" | "messages" | "profile";
+export type AuroraNavTabId = "today" | "nutrition" | "messages" | "profile";
 
 export type AuroraNavTab = {
   id: AuroraNavTabId;
@@ -55,15 +58,52 @@ export type AuroraNavTab = {
 export const AURORA_NAV_TABS: readonly AuroraNavTab[] = [
   { id: "today", glyph: "village", labelKey: "nav.today", label: "Today" },
   { id: "nutrition", glyph: "fork-knife", labelKey: "nav.nutrition", label: "Nutrition" },
-  { id: "train", glyph: "train", labelKey: "nav.train", label: "Train" },
   { id: "messages", glyph: "mail", labelKey: "nav.messages", label: "Messages" },
   { id: "profile", glyph: "user-circle", labelKey: "nav.profile", label: "Profile" },
 ] as const;
 
 /**
+ * THE ACTION — the detached circle beside the capsule. One verb at a time,
+ * resolved per surface by auroraNavAction(): TRAIN by default (it opens the
+ * Train launcher, exactly what the retired Train tab did), ADD POST on the
+ * feed, where the composer — not the gym — is the thing the athlete came to
+ * do. The morph is a glyph crossfade inside the same circle, never a second
+ * button. Glyphs are the kit's own: the shared inline dumbbell and the
+ * `list-add` compose mark the quick-log already wears.
+ */
+export type AuroraNavActionId = "train" | "post";
+
+export type AuroraNavAction = {
+  id: AuroraNavActionId;
+  /** Kit glyph name, or "train" for the inline dumbbell (AURORA_TRAIN_GLYPH). */
+  glyph: AuroraIconName | "train";
+  /** i18n key, with `label` as the fallback when the key is missing. */
+  labelKey: string;
+  label: string;
+};
+
+export const AURORA_NAV_ACTIONS: Record<AuroraNavActionId, AuroraNavAction> = {
+  train: { id: "train", glyph: "train", labelKey: "nav.train", label: "Train" },
+  post: { id: "post", glyph: "list-add", labelKey: "nav.addPost", label: "Add post" },
+} as const;
+
+/**
+ * Which action the circle carries on a given surface. `surface` is the visible
+ * screen id, with the Today hub's inner tab folded in by the caller (the hub
+ * renders Feed inside the `today` screen, so the shell passes "feed" while that
+ * hub tab is up). The feed is the ONE override: everywhere else the app's verb
+ * is training.
+ */
+export function auroraNavAction(surface: string | null | undefined): AuroraNavActionId {
+  return surface === "feed" ? "post" : "train";
+}
+
+/**
  * Bar geometry. Concentric by construction: the capsule's padding is what
  * leaves a visible glass margin around the selection lens, so the bar reads as
- * a container HOLDING a pill rather than pinching it.
+ * a container HOLDING a pill rather than pinching it. The action circle's
+ * diameter is the capsule's full height (slotH + 2·padV — 56 full, 48 mini),
+ * so the split bar reads as one bar in two pieces, never a bar and a button.
  */
 export const AURORA_NAV_GEOMETRY = {
   /** Full size — icon + label. */
@@ -79,6 +119,8 @@ export const AURORA_NAV_GEOMETRY = {
   /** Collapse progress that flips the bar to icon-only, with hysteresis. */
   miniOn: 0.6,
   miniOff: 0.25,
+  /** The gap between the capsule and the detached action circle. */
+  actionGap: 10,
   /** The session accessory strip that rides above the capsule. */
   accessoryH: 42,
   accessoryGap: 8,
@@ -93,7 +135,9 @@ export const AURORA_NAV_GEOMETRY = {
  * On iOS 26 the real system material supersedes all of this (see the native
  * glassEffect path in the mobile nav); these numbers drive the WEB bar and the
  * Android / iOS < 26 fallback, which is exactly where the two clients used to
- * drift apart.
+ * drift apart. The action circle wears the SAME material as the capsule — the
+ * accent lives in its glyph, never in its glass (the old solid-lime circle is
+ * the retired look).
  */
 export const AURORA_NAV_MATERIAL = {
   /** Body: a light film, not a dark one — glass brightens what it covers. */

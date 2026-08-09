@@ -5,11 +5,14 @@ import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import {
   fs,
   AURORA_NAV_TABS,
+  AURORA_NAV_ACTIONS,
   AURORA_NAV_GEOMETRY,
   AURORA_NAV_MATERIAL,
   AURORA_TRAIN_GLYPH,
+  AURORA_ICON_PATHS,
   formatSessionElapsed,
   type AuroraIconName,
+  type AuroraNavActionId,
 } from "@hybrid/core";
 import { loadWorkoutDraft, type WorkoutDraft } from "@/lib/workout-draft";
 import { useLang } from "@/lib/i18n";
@@ -18,19 +21,19 @@ import { AuroraIcon } from "./icons";
 
 /**
  * AURORA pill nav (web) — the floating bottom bar, the web twin of the mobile
- * Aurora bar. FIVE tabs (icon + label) inside a single Liquid Glass capsule,
- * with a session accessory riding above it when a workout is in progress.
+ * Aurora bar. A SPLIT bar: FOUR tabs (icon + label) inside a single Liquid
+ * Glass capsule — the places — and the app's one VERB as a detached circle of
+ * the same glass beside it, with a session accessory riding above the whole
+ * bar when a workout is in progress.
  *
- * Anatomy follows Apple's tab-bar guidance instead of approximating it. Two
- * corrections from the previous build, both recorded in @hybrid/core's
- * AURORA_NAV_TABS:
- *  - Tab bars carry NAVIGATION; "avoid placing screen-specific actions in the
- *    tab bar". Train is a destination (it opens the Train launcher, which is
- *    what the old circle did too), so it is simply a tab.
- *  - A circle DETACHED beside an iOS 26 tab bar is the SEARCH role — it morphs
- *    into a search field on tap. The old lime Train circle sat in that slot and
- *    read as search to anyone fluent in the platform. The slot is now unused
- *    and stays free for real search.
+ * The circle carries whatever @hybrid/core's auroraNavAction resolves for the
+ * visible surface: TRAIN by default (the launcher — exactly what the retired
+ * Train tab opened), ADD POST on the feed, morphing between the two with a
+ * glyph crossfade in place. The circle's material is the capsule's own
+ * (.aurora-navglass); the accent lives in its GLYPH — lime, the "go" colour —
+ * never in its glass. That detached slot reads as the search role to an iOS 26
+ * eye; nav-bar.ts records why HYBRID spends it on the verb anyway.
+ *
  * Persistent session state lives in the accessory above the bar (the system's
  * mini-player slot), never as a tab.
  *
@@ -44,32 +47,32 @@ import { AuroraIcon } from "./icons";
  * MENU behind the Today header's avatar (aurora/side-menu.tsx), which is one
  * tap from every hub tab and does not spend a bar slot on a directory.
  */
-// The bar reads Today, Nutrition, Train, Messages, Profile — five, which is
-// Apple's ceiling for iPhone. Nutrition holds the slot Explore used to (see
-// @hybrid/core nav-bar.ts: discovery is not a daily destination, eating is);
-// Messages holds the one More used to. Plans/History/Performance/Feed and the
-// rest of the toolkit live in the side menu.
+// The capsule reads Today, Nutrition, Messages, Profile — the four places (see
+// @hybrid/core nav-bar.ts: discovery is not a daily destination, eating is;
+// Messages holds the slot More used to). Train rides beside them as the
+// detached action. Plans/History/Performance/Feed and the rest of the toolkit
+// live in the side menu.
 const TABS = AURORA_NAV_TABS;
 
 // Geometry + material are shared with mobile via @hybrid/core so the two
 // clients cannot drift (they previously hard-coded their own copies).
-const { slotH: SLOT_H, lensW: LENS_W, padV: PAD_V, padH: PAD_H, miniSlotH: MINI_SLOT_H, miniLensW: MINI_LENS_W, labelH: LABEL_H, accessoryGap: ACC_GAP } = AURORA_NAV_GEOMETRY;
+const { slotH: SLOT_H, lensW: LENS_W, padV: PAD_V, padH: PAD_H, miniSlotH: MINI_SLOT_H, miniLensW: MINI_LENS_W, labelH: LABEL_H, actionGap: ACTION_GAP, accessoryGap: ACC_GAP } = AURORA_NAV_GEOMETRY;
 const M = AURORA_NAV_MATERIAL;
 
 const C = (v: string) => `var(--color-${v})`;
 
-export default function AuroraPillNav({ activeId, onSelect }: { activeId?: string; onSelect: (id: string) => void }) {
+export default function AuroraPillNav({ activeId, action = "train", onSelect, onAction }: { activeId?: string; action?: AuroraNavActionId; onSelect: (id: string) => void; onAction?: (id: AuroraNavActionId) => void }) {
   const aurora = useTemplate().template === "aurora";
   const { t } = useLang();
 
   // Sliding selection indicator (the glass lens): a single translucent highlight
   // that SPRINGS to the active slot and STRETCHES mid-travel (scaled by travel
   // DISTANCE) instead of a static per-tab background. barRef is the capsule (the
-  // offset parent); flatRefs holds the five tab buttons; wrapRef is the whole
-  // stack (accessory + capsule) for the shrink-on-scroll. All five destinations
-  // are slots now, so the lens has no hidden state — it only fades out on a
-  // screen that isn't on the bar at all, staying MOUNTED so the next selection
-  // travels instead of popping in.
+  // offset parent); flatRefs holds the four tab buttons; wrapRef is the whole
+  // stack (accessory + capsule + action circle) for the shrink-on-scroll. A
+  // screen that isn't on the capsule (the Train launcher, the logger, a side
+  // menu leaf) lights nothing and the lens fades out in place, staying MOUNTED
+  // so the next selection travels instead of popping in.
   const wrapRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const flatRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -100,17 +103,11 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  // Which of the five slots is lit. Train is a real slot (it was the detached
-  // circle, which mapped to none and made the lens fade out), so every bar
-  // destination lights one. A screen that is NOT on the bar lights nothing and
-  // the lens fades out where it stands — the state the retired "more" slot used
-  // to absorb by claiming every unlisted screen as its own.
-  const slotIds = new Set<string>([...TABS.map((tb) => tb.id), "log"]);
-  const activeFlat = activeId === "log"
-    ? "train"
-    : activeId != null && slotIds.has(activeId)
-      ? activeId
-      : null;
+  // Which of the four slots is lit. A screen that is NOT on the capsule lights
+  // nothing and the lens fades out where it stands — the Train launcher and the
+  // live logger belong to the action circle now, so they light no slot either.
+  const slotIds = new Set<string>(TABS.map((tb) => tb.id));
+  const activeFlat = activeId != null && slotIds.has(activeId) ? activeId : null;
 
   // Reposition the indicator whenever the active slot changes (and on resize).
   // On the first paint it snaps into place; after that it springs, stretching
@@ -122,11 +119,11 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
       const bar = barRef.current;
       const el = activeFlat ? flatRefs.current[activeFlat] : null;
       if (!bar || !el) {
-        // Train / none: fade out where it stands (keep `ind`, so it can travel
-        // back from the same spot when a side tab is selected again). Reset the
-        // stretch too — the pending settle timer was cleared by the effect
-        // cleanup, so without this a mid-stretch hop to Train left the hidden
-        // indicator permanently elongated (review finding).
+        // Off-capsule screen: fade out where it stands (keep `ind`, so it can
+        // travel back from the same spot when a slot is selected again). Reset
+        // the stretch too — the pending settle timer was cleared by the effect
+        // cleanup, so without this a mid-stretch hop off the capsule left the
+        // hidden indicator permanently elongated (review finding).
         indShownRef.current = false;
         lastActiveRef.current = activeFlat;
         setIndShown(false);
@@ -172,7 +169,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
 
   // Shrink-on-scroll (the tabBarMinimizeBehavior feel): full size at the very
   // top, the bar scales down smoothly as the page scrolls. The whole split bar
-  // (wrapRef — capsule + Train circle) is scaled; the sliding indicator is a
+  // (wrapRef — capsule + action circle) is scaled; the sliding indicator is a
   // child, so it shrinks with it. Applied imperatively per animation frame
   // (transform isn't in the bar's React-managed style, so it's never clobbered
   // on re-render); honours reduced motion; recomputed on screen change so a
@@ -235,18 +232,19 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
   return (
     <>
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none" }}>
-        {/* The bar stack: [session accessory] over [glass capsule with the five
-            tabs], shrinking together on scroll. */}
+        {/* The bar stack: [session accessory] over [glass capsule with the four
+            tabs + the detached action circle], shrinking together on scroll. */}
         <div ref={wrapRef} style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: ACC_GAP, width: "100%", maxWidth: 480 }}>
           {showAccessory && draft && (
             <SessionAccessory draft={draft} nowTs={nowTs} reduced={reduced} onResume={() => go("train")} resumeLabel={t("common.resume") === "common.resume" ? "Resume" : t("common.resume")} />
           )}
+          <div style={{ display: "flex", alignItems: "center", gap: ACTION_GAP }}>
           {/* The Liquid Glass capsule. The material lives in globals.css as
               .aurora-navglass — a nearly clear body under a modest blur, a
               specular rim arc, a refraction band at the edge and a dark bottom
               lip. The old inline recipe (40% ink film under blur(24) with a
               uniform hairline) was frosted glass, not Liquid Glass. */}
-          <div ref={barRef} className="aurora-navglass" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: 999, padding: `${PAD_V}px ${PAD_H}px` }}>
+          <div ref={barRef} className="aurora-navglass" style={{ position: "relative", flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: 999, padding: `${PAD_V}px ${PAD_H}px` }}>
             {/* The single sliding highlight — a LIFTED lens: thinner glass than
                 the capsule carrying it (clearer + brighter), with its own drop
                 shadow onto the bar surface and a specular arc on top, so the
@@ -272,7 +270,7 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 }}
               />
             )}
-            {/* Today, Nutrition, Train, Messages, Profile */}
+            {/* Today, Nutrition, Messages, Profile */}
             {TABS.map((tab) => (
               <PillButton
                 key={tab.id}
@@ -285,6 +283,15 @@ export default function AuroraPillNav({ activeId, onSelect }: { activeId?: strin
                 onClick={() => go(tab.id)}
               />
             ))}
+          </div>
+          {/* THE ACTION — the detached circle. Same glass, one verb. */}
+          <ActionCircle
+            action={action}
+            label={label(action === "post" ? "addPost" : "train", AURORA_NAV_ACTIONS[action].label)}
+            mini={mini}
+            reduced={reduced}
+            onClick={() => onAction?.(action)}
+          />
           </div>
         </div>
       </div>
@@ -320,6 +327,80 @@ function SessionAccessory({ draft, nowTs, reduced, onResume, resumeLabel }: { dr
   );
 }
 
+/**
+ * THE ACTION CIRCLE — the detached verb beside the capsule. Its diameter is the
+ * capsule's full height (slotH + 2·padV, so it shrinks in step with the MINI
+ * bar), its material is the capsule's own glass, and the accent lives in the
+ * GLYPH: lime, the "go" colour, because this is the one thing on the bar that
+ * ACTS rather than navigates. When the surface changes the verb (feed → Add
+ * post) the two glyphs CROSSFADE in place with a small spring on the incoming
+ * one — the circle itself never moves, so the morph reads as the same button
+ * changing its mind, not a new button arriving.
+ */
+function ActionCircle({ action, label, mini, reduced, onClick }: { action: AuroraNavActionId; label: string; mini: boolean; reduced: boolean; onClick: () => void }) {
+  const d = (mini ? MINI_SLOT_H : SLOT_H) + PAD_V * 2;
+  // The incoming glyph springs from slightly small; a bare opacity swap reads
+  // as a redraw, not a morph. Driven by a two-frame transition (set small,
+  // then release) rather than a keyframe so it needs no global CSS.
+  const [settled, setSettled] = useState(true);
+  const prevRef = useRef(action);
+  useEffect(() => {
+    if (prevRef.current === action) return;
+    prevRef.current = action;
+    if (reduced) return;
+    setSettled(false);
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setSettled(true)));
+    return () => cancelAnimationFrame(id);
+  }, [action, reduced]);
+
+  // Both glyphs stay mounted and stacked so the crossfade has two real layers.
+  // The dumbbell is the shared inline path (outside the kit's PNG-mirrored
+  // union); Add post is the kit's own `list-add` compose mark. Stroke 4 at 23 —
+  // the bar's unified nav weight, a touch larger than the 21 tab glyphs since
+  // the circle carries no label.
+  const glyph = (id: AuroraNavActionId, on: boolean) => (
+    <span
+      aria-hidden
+      style={{
+        position: "absolute", inset: 0, display: "grid", placeItems: "center",
+        opacity: on ? 1 : 0,
+        transform: on && !settled ? "scale(.72)" : "scale(1)",
+        transition: reduced ? "none" : on
+          ? "opacity .18s ease, transform .34s cubic-bezier(.32,1.36,.44,1)"
+          : "opacity .14s ease",
+      }}
+    >
+      {id === "train" ? (
+        <svg width={23} height={23} viewBox="0 0 72 72" fill="none" aria-hidden>
+          <path d={AURORA_TRAIN_GLYPH} stroke={C("lime")} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        <svg width={23} height={23} viewBox="0 0 72 72" fill="none" aria-hidden>
+          {AURORA_ICON_PATHS["list-add"].map((p) => (
+            <path key={p} d={p} stroke={C("lime")} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+          ))}
+        </svg>
+      )}
+    </span>
+  );
+
+  return (
+    <button
+      className="aurora-navglass pressable"
+      onClick={onClick}
+      aria-label={label}
+      style={{
+        position: "relative", width: d, height: d, flexShrink: 0,
+        borderRadius: 999, border: "none", padding: 0, cursor: "pointer",
+        transition: reduced ? "none" : "width .22s cubic-bezier(.4,0,.2,1), height .22s cubic-bezier(.4,0,.2,1)",
+      }}
+    >
+      {glyph("train", action === "train")}
+      {glyph("post", action === "post")}
+    </button>
+  );
+}
+
 function PillButton({ glyph, label, active, reduced, mini, onClick, innerRef }: { glyph: AuroraIconName | "train"; label: string; active: boolean; reduced: boolean; mini: boolean; onClick: () => void; innerRef?: (el: HTMLButtonElement | null) => void }) {
   // Each item is icon + label (the tab-bar item), stacked TWICE: an ash base and
   // a LIME active overlay. zIndex 2 keeps the stack above the shared sliding
@@ -341,9 +422,6 @@ function PillButton({ glyph, label, active, reduced, mini, onClick, innerRef }: 
   // The height is what animates (not `display`), so the slot morphs smoothly
   // between the two sizes. The button keeps its aria-label either way, so the
   // name never disappears for assistive tech.
-  // Train's dumbbell is the one glyph outside the kit's PNG-mirrored union, so
-  // it is stroked inline from the shared path data (same 72 viewBox, same
-  // weight) rather than going through AuroraIcon.
   const item = (color: string) => (
     <span style={{ display: "grid", justifyItems: "center" }}>
       {glyph === "train" ? (
