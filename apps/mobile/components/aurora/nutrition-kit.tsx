@@ -4,7 +4,8 @@ import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
-  type MicroFacts, type NutritionFacts, type NutritionGlyphName, type SourceMark,
+  PICKER_SOURCES, pickerSourceLabelKey,
+  type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
 } from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
@@ -170,8 +171,174 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
 // with numbers that were not the ones components/swipe-row.tsx swipes every set
 // row by. Both now delegate to their client's SwipeRow, which means one set of
 // physics from @hybrid/core (velocity projection, rubber-band, full-swipe).
-export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
+/**
+ * THE DAY GAP — what the day still owes, at the top of the picker.
+ *
+ * Nobody opens this screen to search; they open it because the day is short of
+ * something. So the picker says what, in the Builder's One Number vocabulary: a
+ * display-weight mono figure, a quiet sentence under it, and the macros as thin
+ * meters. It reads through the SAME arithmetic the hub's ring does
+ * (core/nutrition-gap.ts) so the two can never disagree about whether you are
+ * over, and it renders NOTHING when there is no target yet — a header reading
+ * "2 000 left" against a number nobody set would be a confident wrong number.
+ *
+ * This is the picker's own header, not the sticky HUD that was removed
+ * (nutrition-hud): it sits where the decision is being made and scrolls with it.
+ * Web twin: aurora/nutrition-kit.tsx DayGap.
+ */
+export function DayGap({ C, gap }: {
+  C: ReturnType<typeof useTheme>["palette"]; gap: NutritionGap;
+}) {
+  const { t } = useLang();
+  const left = gap.kcal.left ?? 0;
+  // The WORD follows the sign and the COLOUR follows the band. They are two
+  // different questions: 50 past a 2 000 target is "50 over" (it is), drawn
+  // calmly (it is inside the 5 % tolerance). Reading the word off the tolerance
+  // flag printed "50 kcal left" at 2 050 logged.
+  const isOver = left < 0;
+  const tone = gap.kcal.over ? txt(C, C.amber) : txt(C, C.lime);
+  const macros = gap.macros.filter((m) => m.figure.want != null);
+  return (
+    <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 18 }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+        <Text
+          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 44, letterSpacing: tracking.display, lineHeight: 46, color: tone }}
+        >
+          {Math.abs(left)}
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          {t(isOver ? "w.recovery.nutrition.pick.kcalOver" : "w.recovery.nutrition.pick.kcalLeft")}
+        </Text>
+      </View>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8 }}>
+        {t("w.recovery.nutrition.pick.ofTarget")
+          .replace("{a}", String(Math.round(gap.kcal.have)))
+          .replace("{b}", String(Math.round(gap.kcal.want ?? 0)))}
+      </Text>
+      {macros.length ? (
+        <View style={{ flexDirection: "row", gap: 16, marginTop: 18 }}>
+          {macros.map((m) => (
+            <View key={m.key} style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6, marginBottom: 6 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+                  {t(`w.recovery.nutrition.${m.key}`)}
+                </Text>
+                <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: C.chalk }}>
+                  {Math.round(m.figure.have)}/{Math.round(m.figure.want ?? 0)}
+                </Text>
+              </View>
+              <View style={{ height: 3, borderRadius: 2, backgroundColor: C.line, overflow: "hidden" }}>
+                <View style={{ width: `${m.figure.pct}%`, height: "100%", borderRadius: 2, backgroundColor: m.figure.over ? txt(C, C.amber) : txt(C, C.lime) }} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * THE SOURCE LINE — Recent / Favorites / Meals / Foods, kept, with the box gone.
+ *
+ * The four sources are four different questions (what did I just eat, what do I
+ * always eat, what have I built, what have I saved) and all four stay. What the
+ * redesign drops is the PILL BAR they were wrapped in: a bordered, filled,
+ * radiused seventh container whose selected tab wore CHARTREUSE — the app's one
+ * "go" colour — on a control that goes nowhere.
+ *
+ * Selection is carried by weight and a rule instead. No border, no radius, no
+ * fill, no accent. The counts are the Explore section head's mono meta, moved
+ * onto the label they describe. Web twin: aurora/nutrition-kit.tsx SourceLine.
+ */
+export function SourceLine({ C, value, counts, onChange }: {
+  C: ReturnType<typeof useTheme>["palette"];
+  value: PickerSourceKey;
+  counts: Record<PickerSourceKey, number>;
+  onChange: (key: PickerSourceKey) => void;
+}) {
+  const { t } = useLang();
+  return (
+    <View
+      accessibilityRole="tablist"
+      style={{ flexDirection: "row", gap: 18, borderBottomWidth: 1, borderBottomColor: C.line, paddingHorizontal: 2 }}
+    >
+      {PICKER_SOURCES.map((key) => {
+        const on = key === value;
+        return (
+          <Pressable
+            key={key}
+            onPress={() => onChange(key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            style={{
+              flexDirection: "row", alignItems: "baseline", gap: 5,
+              paddingBottom: 11, marginBottom: -1,
+              borderBottomWidth: 2, borderBottomColor: on ? C.chalk : "transparent",
+            }}
+          >
+            <Text
+              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              style={{ fontFamily: on ? F.bold : F.semi, fontSize: fs.body, color: on ? C.chalk : C.ash }}
+            >
+              {t(pickerSourceLabelKey(key))}
+            </Text>
+            <Text
+              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: C.ash }}
+            >
+              {counts[key]}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/**
+ * A DOOR at the end of the picker's list — Quick Log, New food.
+ *
+ * Both are RARE work that used to be priced like the constant kind: two filled
+ * cards taking a third of the screen's top, at the same weight as logging. They
+ * belong at the end of the thing, and per the exit rule they wear a RING,
+ * because both of them genuinely leave — Quick Log opens a sheet, New food opens
+ * a screen. (The concept sketch drew them as bare pluses; a bare plus promises
+ * something that grows in place, which neither of these does.) The row takes the
+ * LIST's own hairline and chevron, since there the separator belongs to the rows
+ * above it. Web twin: aurora/nutrition-kit.tsx PickerDoor.
+ */
+export function PickerDoor({ C, title, icon, onPress, last }: {
+  C: ReturnType<typeof useTheme>["palette"]; title: string; icon: ReactNode; onPress: () => void; last?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      style={{
+        flexDirection: "row", alignItems: "center", gap: 16,
+        paddingVertical: 14, paddingHorizontal: 6,
+        borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line,
+      }}
+    >
+      <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        {icon}
+      </View>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
+      <IChevRight size={18} color={C.ash} />
+    </Pressable>
+  );
+}
+
+export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: ReturnType<typeof useTheme>["palette"]; name: string; subname?: string | null; meta: string; onAdd: () => void;
+  /** This food would take the day past its energy target. Said in SAND on the
+   *  figure line — the sport/caution accent, never the alert red, because going
+   *  over is a fact about the day and not an injury. It changes nothing about
+   *  what the row does. */
+  over?: boolean;
   /** tapping the row BODY, when that means something different from the ⊕ —
    *  a verified item opens its page; everything else just adds. */
   onOpen?: () => void;
@@ -187,7 +354,7 @@ export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starre
           {verified ? <VerifiedMark C={C} /> : null}
           {subname ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{subname}</Text> : null}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{meta}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: over ? txt(C, C.amber) : C.ash, marginTop: 3 }}>{meta}</Text>
       </Pressable>
       {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
       {chevron ? <IChevRight size={18} color={C.ash} /> : null}

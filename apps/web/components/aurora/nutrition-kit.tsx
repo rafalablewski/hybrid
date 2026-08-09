@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts, sourceMarkDataUri,
+  PICKER_SOURCES, pickerSourceLabelKey,
   type MicroFacts, type NutritionFacts, type NutritionGlyphName,
-  type NutritionNudge as NutritionNudgeShape, type SourceMark, type VerifiedStamp,
+  type NutritionGap, type NutritionNudge as NutritionNudgeShape, type PickerSourceKey, type SourceMark, type VerifiedStamp,
 } from "@hybrid/core";
 import { fs, CARD_PAD } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
@@ -31,7 +32,12 @@ import SwipeRow from "../swipe-row";
 
 const C = (v: string) => `var(--color-${v})`;
 
-export type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null };
+export type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null }
+  /** WHEN this exact (food, serving) was logged — epoch ms, capped. Written
+   *  on every log; read by usualAtHour so the picker can open on what this
+   *  athlete actually eats at this time of day. Per-device, like the MRU
+   *  itself; an entry saved before this shipped simply has no history yet. */
+  & { logs?: number[] | null };
 
 export function readQuickFoods(key: string): QuickFood[] {
   try { if (typeof window === "undefined") return []; const raw = localStorage.getItem(key); return raw ? (JSON.parse(raw) as QuickFood[]) : []; } catch { return []; }
@@ -105,11 +111,21 @@ export const shelfScroller: React.CSSProperties = { ...railScroller, scrollSnapT
 // END OF THE RAIL as a tail card (aurora/rail-tail.tsx), where the thumb already
 // is once the cards run out. `action` survives only for a head that needs a
 // non-navigational meta or control, and renders nothing when it isn't passed.
-export function RailHead({ title, action }: { title: string; action?: { label: string; onClick: () => void; premium?: boolean } }) {
+export function RailHead({ title, meta, action }: {
+  title: string;
+  /** Small mono uppercase on the RIGHT of the title's row — the Explore
+   *  SectionHead's meta slot, for a head that states something rather than
+   *  offering a control. `action` remains the control. */
+  meta?: string;
+  action?: { label: string; onClick: () => void; premium?: boolean };
+}) {
   const C = (v: string) => `var(--color-${v})`;
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "28px 2px 10px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
+      {meta && !action && (
+        <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{meta}</span>
+      )}
       {action && (
         <button className="pressable" onClick={action.onClick} style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: action.premium ? "var(--premium-accent-text)" : C("ash") }}>
           <CtaLabel size={12}>{action.label}</CtaLabel>
@@ -251,8 +267,162 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
 // gesture in an app whose parity rule says otherwise). It now delegates to
 // SwipeRow on both clients, which means one set of physics from @hybrid/core —
 // velocity projection, rubber-band, the iOS full-swipe — and one delete.
-export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
+/**
+ * THE DAY GAP — what the day still owes, at the top of the picker.
+ *
+ * Nobody opens this screen to search; they open it because the day is short of
+ * something. So the picker says what, in the Builder's One Number vocabulary: a
+ * display-weight mono figure, a quiet sentence under it, and the macros as thin
+ * meters. It reads through the SAME arithmetic the hub's ring does
+ * (core/nutrition-gap.ts) so the two can never disagree about whether you are
+ * over, and it renders NOTHING when there is no target yet — a header reading
+ * "2 000 left" against a number nobody set would be a confident wrong number.
+ *
+ * This is the picker's own header, not the sticky HUD that was removed
+ * (nutrition-hud): it sits where the decision is being made and scrolls with it.
+ * Mobile twin: aurora/nutrition-kit.tsx DayGap.
+ */
+export function DayGap({ C, gap }: { C: (v: string) => string; gap: NutritionGap }) {
+  const { t } = useLang();
+  const left = gap.kcal.left ?? 0;
+  // The WORD follows the sign and the COLOUR follows the band. They are two
+  // different questions: 50 past a 2 000 target is "50 over" (it is), drawn
+  // calmly (it is inside the 5 % tolerance). Reading the word off the tolerance
+  // flag printed "50 kcal left" at 2 050 logged.
+  const isOver = left < 0;
+  const tone = gap.kcal.over ? "var(--amber-text)" : "var(--lime-text)";
+  const macros = gap.macros.filter((m) => m.figure.want != null);
+  return (
+    <div style={{ padding: "4px 4px 18px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 44, letterSpacing: "-.03em", lineHeight: 1.05, color: tone, fontVariantNumeric: "tabular-nums" }}>
+          {Math.abs(left)}
+        </span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
+          {t(isOver ? "w.recovery.nutrition.pick.kcalOver" : "w.recovery.nutrition.pick.kcalLeft")}
+        </span>
+      </div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8 }}>
+        {t("w.recovery.nutrition.pick.ofTarget")
+          .replace("{a}", String(Math.round(gap.kcal.have)))
+          .replace("{b}", String(Math.round(gap.kcal.want ?? 0)))}
+      </div>
+      {macros.length > 0 && (
+        <div style={{ display: "flex", gap: 16, marginTop: 18 }}>
+          {macros.map((m) => (
+            <div key={m.key} style={{ flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 6, marginBottom: 6 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".1em", textTransform: "uppercase", color: C("ash") }}>
+                  {t(`w.recovery.nutrition.${m.key}`)}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.nano, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
+                  {Math.round(m.figure.have)}/{Math.round(m.figure.want ?? 0)}
+                </span>
+              </div>
+              <div style={{ height: 3, borderRadius: 2, background: C("line"), overflow: "hidden" }}>
+                <div style={{ width: `${m.figure.pct}%`, height: "100%", borderRadius: 2, background: m.figure.over ? "var(--amber-text)" : "var(--lime-text)" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * THE SOURCE LINE — Recent / Favorites / Meals / Foods, kept, with the box gone.
+ *
+ * The four sources are four different questions (what did I just eat, what do I
+ * always eat, what have I built, what have I saved) and all four stay. What the
+ * redesign drops is the PILL BAR they were wrapped in: a bordered, filled,
+ * radiused seventh container whose selected tab wore CHARTREUSE — the app's one
+ * "go" colour — on a control that goes nowhere.
+ *
+ * Selection is carried by weight and a rule instead. No border, no radius, no
+ * fill, no accent. The counts are the Explore section head's mono meta, moved
+ * onto the label they describe. Mobile twin: aurora/nutrition-kit.tsx SourceLine.
+ */
+export function SourceLine({ C, value, counts, onChange }: {
+  C: (v: string) => string;
+  value: PickerSourceKey;
+  counts: Record<PickerSourceKey, number>;
+  onChange: (key: PickerSourceKey) => void;
+}) {
+  const { t } = useLang();
+  return (
+    <div role="tablist" style={{ display: "flex", gap: 18, borderBottom: `1px solid ${C("line")}`, padding: "0 2px" }}>
+      {PICKER_SOURCES.map((key) => {
+        const on = key === value;
+        return (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={on}
+            className="pressable"
+            onClick={() => onChange(key)}
+            style={{
+              display: "flex", alignItems: "baseline", gap: 5,
+              background: "none", border: "none", cursor: "pointer",
+              padding: "0 0 11px", marginBottom: -1,
+              borderBottom: `2px solid ${on ? C("chalk") : "transparent"}`,
+              color: on ? C("chalk") : C("ash"),
+              fontFamily: "var(--font-display)", fontWeight: on ? 700 : 600, fontSize: fs.body,
+              letterSpacing: "-.006em", whiteSpace: "nowrap",
+            }}
+          >
+            {t(pickerSourceLabelKey(key))}
+            <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.nano, color: C("ash") }}>{counts[key]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * A DOOR at the end of the picker's list — Quick Log, New food.
+ *
+ * Both are RARE work that used to be priced like the constant kind: two filled
+ * cards taking a third of the screen's top, at the same weight as logging. They
+ * belong at the end of the thing, and per the exit rule they wear a RING,
+ * because both of them genuinely leave — Quick Log opens a sheet, New food opens
+ * a screen. (The concept sketch drew them as bare pluses; a bare plus promises
+ * something that grows in place, which neither of these does.) The row takes the
+ * LIST's own hairline and chevron, since there the separator belongs to the rows
+ * above it. Mobile twin: aurora/nutrition-kit.tsx PickerDoor.
+ */
+export function PickerDoor({ C, title, icon, onPress, last }: {
+  C: (v: string) => string; title: string; icon: ReactNode; onPress: () => void; last?: boolean;
+}) {
+  return (
+    <button
+      className="pressable"
+      onClick={onPress}
+      style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 16, textAlign: "left",
+        background: "none", border: "none", cursor: "pointer",
+        padding: "14px 6px",
+        borderBottom: last ? "none" : `1px solid ${C("line")}`,
+        color: C("chalk"),
+      }}
+    >
+      <span style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0, color: C("ash") }}>
+        {icon}
+      </span>
+      <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{title}</span>
+      <IChevRight size={18} color={C("ash")} />
+    </button>
+  );
+}
+
+export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: (v: string) => string; name: string; subname?: string | null; meta: string; onAdd: () => void;
+  /** This food would take the day past its energy target. Said in SAND on the
+   *  figure line — the sport/caution accent, never the alert red, because going
+   *  over is a fact about the day and not an injury. It changes nothing about
+   *  what the row does. */
+  over?: boolean;
   /** tapping the row BODY, when that means something different from the ⊕ —
    *  a verified item opens its page; everything else just adds. */
   onOpen?: () => void;
@@ -268,7 +438,7 @@ export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starre
           {verified && <VerifiedMark />}
           {subname ? <span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0 }}>{subname}</span> : null}
         </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{meta}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: over ? "var(--amber-text)" : C("ash"), marginTop: 3 }}>{meta}</div>
       </button>
       {onStar && <button className="pressable" onClick={onStar} aria-label={t("w.recovery.nutrition.tab.favorites")} style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 4, color: starred ? "var(--color-gold)" : C("ash") }}><IStar size={19} color={starred ? "var(--color-gold)" : C("ash")} fill={starred} /></button>}
       {chevron && <IChevRight size={18} color={C("ash")} />}
