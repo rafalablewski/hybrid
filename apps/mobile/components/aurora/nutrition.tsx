@@ -12,7 +12,7 @@ import {
   todayNutrition,
   adaptiveTargets,
   fuelToday, hydrationToday,
-  canSaveRecipe, emptyUserRecipe, recipeToLog, type UserRecipe, type RecipeSource,
+  canSaveRecipe, emptyUserRecipe, recipeToLog, libraryRecipeToLog, type UserRecipe, type RecipeSource,
   type CopyPlan, type CopyableEntry,
   estimateMaintenance,
   dailyNutrition,
@@ -676,6 +676,27 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     loadLibrary();
     setRecipeMsg(t("w.recovery.nutrition.recipeSavedMeal"));
+  };
+
+  // Eat what you cooked. ONE serving, not the tray: the serves stepper scales
+  // the ingredient list (how much you're making), which is a different number
+  // from how much you ate. It writes an ordinary food entry — per single
+  // serving with a separate quantity — so the Diary's stepper rescales it after
+  // the fact, exactly as a user recipe's log does. Web parity: logLibraryRecipe.
+  const logLibraryRecipe = async (r: Recipe, serves: number) => {
+    setRecipeMsg("");
+    const draft = libraryRecipeToLog(r, 1, serves);
+    const ok = await logEntry({
+      name: draft.name,
+      subname: draft.subname,
+      source: mealType,
+      kcal: draft.facts.kcal,
+      protein: draft.facts.protein,
+      carbs: draft.facts.carbs,
+      fat: draft.facts.fat,
+      qty: draft.qty,
+    });
+    if (ok) { setRecipeMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
   };
 
   const saveProduct = async () => {
@@ -2000,10 +2021,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         ))}
 
         {recipeMsg ? <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 20 }}><AuroraIcon name="check" size={13} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{recipeMsg}</Text></View> : null}
+        {/* Two secondaries, then the primary. Saving a meal FILES the recipe in
+            your library; logging a serving records that you ATE one — different
+            jobs, so they read as a pair rather than one hiding behind the
+            other, and neither competes with Start cooking. */}
         <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
-          <Pressable onPress={() => saveRecipeAsMeal(rc)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 20 }}><IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.2} /><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text></Pressable>
-          <Pressable onPress={() => { setCookStep(0); setView("cook"); }} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.startCooking")}</Text></Pressable>
+          <Pressable onPress={() => saveRecipeAsMeal(rc)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 14, paddingHorizontal: 12 }}><IPlus size={14} color={txt(C, C.lime)} strokeWidth={2.2} /><Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text></Pressable>
+          <Pressable onPress={() => logLibraryRecipe(rc, recipeServes)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 14, paddingHorizontal: 12 }}><AuroraIcon name="check" size={14} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.logServing")}</Text></Pressable>
         </View>
+        <Pressable onPress={() => { setCookStep(0); setView("cook"); }} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", marginTop: 12 }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.startCooking")}</Text></Pressable>
       </CoverScreen>
     );
   }
@@ -2029,9 +2055,18 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <IClock size={15} color={txt(C, C.amber)} /><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber) }}>{Math.floor(cook.step.timerSec / 60)}:{String(cook.step.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}</Text>
           </View>
         ) : null}
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 28 }}>
+        {/* On the last step the accent moves to the LOG: the end of cooking is
+            the moment you eat it, and "Finish" only ever navigated. It demotes
+            to a ghost exit rather than disappearing — cooking for the family
+            and logging nothing is a real ending too. */}
+        {cook.last ? (
+          <Pressable onPress={() => { setView("recipe"); void logLibraryRecipe(recipe, recipeServes); }} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", marginTop: 28 }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.logServing")}</Text></Pressable>
+        ) : null}
+        <View style={{ flexDirection: "row", gap: 12, marginTop: cook.last ? 12 : 28 }}>
           {cook.index > 0 ? <Pressable onPress={() => setCookStep((s) => s - 1)} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 24, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.stepBack")}</Text></Pressable> : null}
-          <Pressable onPress={() => cook.last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{cook.last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</Text></Pressable>
+          <Pressable onPress={() => cook.last ? setView("recipe") : setCookStep((s) => s + 1)} style={cook.last
+            ? { flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 16, alignItems: "center" }
+            : { flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}><Text style={{ fontFamily: cook.last ? F.bold : F.black, fontSize: fs.subtitle, color: cook.last ? C.chalk : C.onAccent }}>{cook.last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</Text></Pressable>
         </View>
       </AuroraScreen>
     );

@@ -12,7 +12,7 @@ import {
   fuelToday, hydrationToday,
   RECIPES, recipeById, recipeCoverView, localDayKey, localTodayKey,
   recipeCookView, resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
-  canSaveRecipe, emptyUserRecipe, recipeToLog, type UserRecipe, type RecipeSource,
+  canSaveRecipe, emptyUserRecipe, recipeToLog, libraryRecipeToLog, type UserRecipe, type RecipeSource,
   type QuickAddCandidate, type QuickAddDraft, type QuickAddMatch,
   resolveTargets, targetMismatch, hasOverride, type TargetOverride,
   SERVING_UNITS, composeServingLabel, parseServing, servingGrams as servingGramsOf, unitById,
@@ -679,6 +679,27 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       await loadLibrary();
       setRecipeMsg(t("w.recovery.nutrition.recipeSavedMeal"));
     } catch { setRecipeMsg(t("w.recovery.nutrition.errNetwork")); }
+  };
+
+  // Eat what you cooked. ONE serving, not the tray: the serves stepper scales
+  // the ingredient list (how much you're making), which is a different number
+  // from how much you ate. It writes an ordinary food entry — per single
+  // serving with a separate quantity — so the Diary's stepper rescales it after
+  // the fact, exactly as a user recipe's log does.
+  const logLibraryRecipe = async (r: Recipe, serves: number) => {
+    setRecipeMsg("");
+    const draft = libraryRecipeToLog(r, 1, serves);
+    const ok = await logEntry({
+      name: draft.name,
+      subname: draft.subname,
+      source: mealType,
+      kcal: draft.facts.kcal,
+      protein: draft.facts.protein,
+      carbs: draft.facts.carbs,
+      fat: draft.facts.fat,
+      qty: draft.qty,
+    });
+    if (ok) setRecipeMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType)));
   };
 
   // Custom products — free users keep up to FREE_PRODUCT_LIMIT (canSaveProduct,
@@ -2025,6 +2046,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       backLabel={recipeFrom === "collection" && collection ? collectionTitle(collection, t) : t("w.recovery.nutrition.recipes")}
       onBack={() => setView(recipeFrom === "collection" && collection ? "collection" : "recipes")}
       onSaveMeal={() => saveRecipeAsMeal(recipe)}
+      onLog={() => logLibraryRecipe(recipe, recipeServes)}
       onCook={() => { setCookStep(0); setView("cook"); }}
     />;
   }
@@ -2050,9 +2072,20 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
         )}
         <div style={{ flex: 1 }} />
-        <div style={{ display: "grid", gridTemplateColumns: cook.index > 0 ? "auto 1fr" : "1fr", gap: 12, marginTop: 24, paddingBottom: 12 }}>
-          {cook.index > 0 && <button className="pressable" onClick={() => setCookStep((s) => s - 1)} style={{ background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "16px 24px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.stepBack")}</button>}
-          <button className="pressable" onClick={() => cook.last ? setView("recipe") : setCookStep((s) => s + 1)} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{cook.last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</button>
+        {/* On the last step the accent moves to the LOG: the end of cooking is
+            the moment you eat it, and "Finish" only ever navigated. It demotes
+            to a ghost exit rather than disappearing — cooking for the family
+            and logging nothing is a real ending too. */}
+        <div style={{ display: "grid", gap: 12, marginTop: 24, paddingBottom: 12 }}>
+          {cook.last && (
+            <button className="pressable" onClick={() => { setView("recipe"); void logLibraryRecipe(recipe, recipeServes); }} style={{ background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.logServing")}</button>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: cook.index > 0 ? "auto 1fr" : "1fr", gap: 12 }}>
+            {cook.index > 0 && <button className="pressable" onClick={() => setCookStep((s) => s - 1)} style={{ background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: "16px 24px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.stepBack")}</button>}
+            <button className="pressable" onClick={() => cook.last ? setView("recipe") : setCookStep((s) => s + 1)} style={cook.last
+              ? { background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }
+              : { background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{cook.last ? t("w.recovery.nutrition.finishCooking") : t("w.recovery.nutrition.nextStep")}</button>
+          </div>
         </div>
       </div>
     );

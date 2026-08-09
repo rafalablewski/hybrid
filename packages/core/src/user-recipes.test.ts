@@ -4,6 +4,7 @@ import {
   emptyUserRecipe,
   formatIngredientQty,
   ingredientFacts,
+  libraryRecipeToLog,
   recipeServings,
   recipeToLog,
   recipeTotals,
@@ -14,6 +15,7 @@ import {
   type UserRecipeIngredient,
 } from "./user-recipes";
 import type { NutritionFacts } from "./food-facts";
+import { RECIPES } from "./recipes";
 
 const facts = (f: Partial<NutritionFacts> & Pick<NutritionFacts, "kcal">): NutritionFacts => ({
   protein: 0, carbs: 0, fat: 0, ...f,
@@ -122,6 +124,42 @@ describe("recipeToLog", () => {
     expect(recipeToLog(pasta()).qty).toBe(1);
     expect(recipeToLog(pasta(), 0).qty).toBe(1);
     expect(recipeToLog(pasta(), -4).qty).toBe(1);
+  });
+});
+
+describe("libraryRecipeToLog", () => {
+  const ramen = () => RECIPES.find((r) => r.id === "ramen")!;
+
+  it("logs ONE serving by default, not the whole tray", () => {
+    const draft = libraryRecipeToLog(ramen());
+    expect(draft.qty).toBe(1);
+    expect(draft.facts.kcal).toBe(ramen().macros.kcal); // per-serve, not × baseServes
+  });
+
+  it("carries the per-serve macros unchanged at any quantity", () => {
+    const draft = libraryRecipeToLog(ramen(), 3);
+    expect(draft.qty).toBe(3);
+    expect(draft.facts.protein).toBe(ramen().macros.protein);
+  });
+
+  it("names the portion by what was COOKED, not by what was eaten", () => {
+    expect(libraryRecipeToLog(ramen(), 1).subname).toBe(`1 of ${ramen().baseServes}`);
+    expect(libraryRecipeToLog(ramen(), 1, 6).subname).toBe("1 of 6");
+  });
+
+  it("leaves the panel NOT STATED — a curated recipe states four macros and no more", () => {
+    const f = libraryRecipeToLog(ramen()).facts;
+    expect(f.sugar).toBeNull();
+    expect(f.satFat).toBeNull();
+    expect(f.fiber).toBeNull();
+    expect(f.salt).toBeNull();
+  });
+
+  it("refuses nonsense quantities and serve counts", () => {
+    expect(libraryRecipeToLog(ramen(), 0).qty).toBe(1);
+    expect(libraryRecipeToLog(ramen(), -2).qty).toBe(1);
+    expect(libraryRecipeToLog(ramen(), 1, 0).subname).toBe("1 of 1");
+    expect(libraryRecipeToLog(ramen(), 1, -3).subname).toBe("1 of 1");
   });
 });
 

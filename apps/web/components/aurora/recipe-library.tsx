@@ -300,7 +300,7 @@ export function RecipeCollectionScreen({ collection, openRecipe, back }: { colle
  * it is made, which made "Start cooking" a decision taken blind. It also gives
  * the page the length the collapsing cover needs to be worth having.
  */
-export function RecipeDetail({ recipe, serves, setServes, msg, onBack, backLabel, onSaveMeal, onCook }: {
+export function RecipeDetail({ recipe, serves, setServes, msg, onBack, backLabel, onSaveMeal, onLog, onCook }: {
   recipe: Recipe;
   serves: number;
   setServes: React.Dispatch<React.SetStateAction<number>>;
@@ -309,6 +309,8 @@ export function RecipeDetail({ recipe, serves, setServes, msg, onBack, backLabel
   /** where back goes — the collection you came through, or the library root. */
   backLabel: string;
   onSaveMeal: () => void;
+  /** log ONE serving to the current meal — see logLibraryRecipe. */
+  onLog: () => void;
   onCook: () => void;
 }) {
   const { t } = useLang();
@@ -385,8 +387,15 @@ export function RecipeDetail({ recipe, serves, setServes, msg, onBack, backLabel
           docked CTA the way the plan detail does — Start cooking never leaves. */}
       <div style={{ position: "sticky", bottom: 0, background: C("ink"), padding: "16px 0 20px", marginTop: 8 }}>
         {msg && <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginBottom: 12 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{msg}</div>}
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 12 }}>
-          <button className="pressable" onClick={onSaveMeal} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "16px 20px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}><IPlus size={16} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.createMeal")}</button>
+        {/* Two secondaries, then the primary. Saving a meal FILES the recipe in
+            your library; logging a serving records that you ATE one — different
+            jobs, so they read as a pair rather than one hiding behind the
+            other, and neither competes with Start cooking. */}
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <button className="pressable" onClick={onSaveMeal} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "14px 12px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note }}><IPlus size={14} color="var(--lime-text)" strokeWidth={2.2} />{t("w.recovery.nutrition.createMeal")}</button>
+            <button className="pressable" onClick={onLog} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "14px 12px", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.note }}><AuroraIcon name="check" size={14} color="var(--lime-text)" />{t("w.recovery.nutrition.logServing")}</button>
+          </div>
           <button className="pressable" onClick={onCook} style={{ width: "100%", background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 16, cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle }}>{t("w.recovery.nutrition.startCooking")}</button>
         </div>
       </div>

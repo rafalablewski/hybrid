@@ -41,6 +41,7 @@
  */
 
 import { scaleFacts, sumFacts, type MicroKey, type NutritionFacts } from "./food-facts";
+import type { Recipe } from "./recipes";
 
 /** One line of a recipe: a food, and how much of it went in. */
 export interface UserRecipeIngredient {
@@ -148,6 +149,35 @@ export function recipeToLog(r: UserRecipe, qty = 1): RecipeLogDraft {
     // other way to know whether "Chicken pasta" was a quarter of the tray.
     subname: `1 of ${servings}`,
     facts: perServing,
+    qty: n,
+  };
+}
+
+/**
+ * The same draft, for a recipe out of the CURATED library (recipes.ts).
+ *
+ * Two things this deliberately does not do:
+ *
+ *   1. It does not log the whole tray. The detail's `serves` stepper scales the
+ *      INGREDIENT list — how much you are cooking — which is a different number
+ *      from how much you ate, and cooking four while eating one is the normal
+ *      case. So `qty` defaults to ONE serving and the cook count only names the
+ *      portion ("1 of 4"), exactly as a user recipe's does.
+ *   2. It does not invent a panel. A curated recipe states four macros and
+ *      nothing else, so satFat/sugar/fibre/salt stay NOT STATED rather than
+ *      becoming zeros that would claim the dish is sugar-free.
+ *
+ * `Recipe.macros` is already per-serve and constant as `serves` changes, so
+ * there is no arithmetic here beyond choosing what a serving means.
+ */
+export function libraryRecipeToLog(recipe: Recipe, qty = 1, serves?: number): RecipeLogDraft {
+  const n = Number.isFinite(qty) && qty > 0 ? qty : 1;
+  const cooked = Math.max(1, Math.round(serves ?? recipe.baseServes) || 1);
+  const m = recipe.macros;
+  return {
+    name: recipe.name,
+    subname: `1 of ${cooked}`,
+    facts: { kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: null, sugar: null, fiber: null, salt: null },
     qty: n,
   };
 }
