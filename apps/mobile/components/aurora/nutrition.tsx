@@ -11,7 +11,7 @@ import {
   HERO_INLINE_TITLE,
   todayNutrition,
   adaptiveTargets,
-  fuelToday,
+  fuelToday, hydrationToday,
   estimateMaintenance,
   dailyNutrition,
   weightTrend,
@@ -52,7 +52,8 @@ import {
   fetchFoodProducts, createFoodProduct, deleteFoodProduct, searchFoods,
   getNutritionPrefs, saveNutritionPrefs as apiSaveNutritionPrefs,
   fetchFoodLogs, createFoodLog, updateFoodLogQty, scaleFoodLog, deleteFoodLog,
-  type SavedMealRow, type FoodProductRow, type FoodLogRow,
+  fetchWaterLogs, logWater, deleteSignal,
+  type SavedMealRow, type FoodProductRow, type FoodLogRow, type WaterLog as WaterLogRow,
 } from "../../lib/api";
 import { useSignalsQuery, useSessionsQuery, useRevalidate } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -73,6 +74,7 @@ import Sheet from "./sheet";
 import { useConfirm } from "./confirm";
 import { NutritionHubBento } from "./nutrition-hub";
 import BodyProgress from "./body-progress";
+import WaterCard from "./water";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -892,6 +894,37 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
   const sig = signals as unknown as Parameters<typeof todayNutrition>[0];
   const today = useMemo(() => todayNutrition(sig), [signals]);
+
+  // ── WATER ────────────────────────────────────────────────────────────────
+  // The same training-aware composition the calorie target uses: a bodyweight
+  // baseline plus today's sweat allowance. `today` is passed through so the
+  // whole Signal stream isn't rolled up a second time just for one figure.
+  const hydration = useMemo(
+    () => hydrationToday(sig, { bodyMassKg, trainingKcal, day: today }),
+    [signals, bodyMassKg, trainingKcal, today],
+  );
+  // Today's water readings, newest first — undo needs the id of the reading it
+  // is taking back (a negative water Signal would be a lie about the day).
+  const [waterLogs, setWaterLogs] = useState<WaterLogRow[]>([]);
+  const loadWater = useCallback(() => { fetchWaterLogs().then(setWaterLogs).catch(() => {}); }, []);
+  useEffect(() => { loadWater(); }, [loadWater]);
+
+  // Optimistic on the client's own list, then refetch: the vessel row must fill
+  // on the tap rather than on the round-trip, and a failed write must not leave
+  // millilitres on screen the athlete never drank.
+  const addWater = useCallback(async (ml: number) => {
+    const row = await logWater(ml);
+    if (row) setWaterLogs((xs) => [row, ...xs]);
+    refetch(); revalidate.recovery();
+  }, [refetch, revalidate]);
+
+  const undoWater = useCallback(async () => {
+    const last = waterLogs[0];
+    if (!last) return;
+    setWaterLogs((xs) => xs.slice(1));
+    await deleteSignal(last.id);
+    refetch(); revalidate.recovery();
+  }, [waterLogs, refetch, revalidate]);
   // Today's energy grouped by meal (source = meal type) for the hub sections.
   const mealTotals = useMemo(() => {
     const todayKey = localTodayKey();
@@ -2144,6 +2177,20 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudge nudge={nudge} />
+
+          {/* WATER — its own card directly under the energy hero, because it is
+              a target the athlete acts on hourly, not a figure they review. It
+              is deliberately NOT a fourth hairline inside the hero card: water
+              carries no energy and has no place in the macro split, and sitting
+              it under protein/carbs/fat would say that it does. */}
+          <WaterCard
+            h={hydration}
+            units={units}
+            onAdd={addWater}
+            onUndo={undoWater}
+            canUndo={waterLogs.length > 0}
+            style={{ marginTop: 16 }}
+          />
 
           {/* Today's meals — Breakfast / Lunch / Dinner / Snacks. Each opens the
               picker attributed to that meal; the kcal already logged is shown. */}

@@ -9,7 +9,7 @@ import {
   isFullAccess, canUseRecipes, MEAL_PRESETS, FREE_MEAL_LIMIT, FREE_PRODUCT_LIMIT,
   nutritionSummary, nutritionNudge, trainingEnergyOnDay, NUTRITION_GLYPHS, sumMealComponents, recipeToMeal,
   nutritionHubSeries,
-  fuelToday,
+  fuelToday, hydrationToday,
   RECIPES, formatIngredient, recipeById, recipeCoverView, localDayKey, localTodayKey,
   recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats, recipeCookView, DOCK_RAIL,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
@@ -36,6 +36,7 @@ import { HeroNav } from "./hero";
 import { DockRail, DockChip } from "./dock-rail";
 import { NutritionHubBento } from "./nutrition-hub";
 import BodyProgress from "./body-progress";
+import WaterCard from "./water";
 
 // The Create Food form's blank state — one constant, so the reset paths can
 // never fall out of step with the fields the form actually has.
@@ -65,7 +66,11 @@ const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunris
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
 type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null };
-type Row = { userId: string; kind: string; value: number; unit: string; source: string; ts: string };
+type Row = { id?: string; userId: string; kind: string; value: number; unit: string; source: string; ts: string };
+// Today's water logs, newest first — kept beside the engine's rolled-up total
+// because UNDO needs the id of the reading it is taking back. A negative water
+// Signal would be a lie about the day that every downstream sum would carry.
+type WaterLog = { id: string; value: number; ts: string };
 // One editable logged entry (per-serving macros + qty) the Diary lists.
 // `derived` marks an entry the server rebuilt from its Signals because no
 // FoodLog row exists for it (logged before the table shipped, or the migration
@@ -343,6 +348,8 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Recipes (browse / cook-along / build a meal from a recipe) are Full-only.
   const recipesUnlocked = canUseRecipes(persona);
   const [signals, setSignals] = useState<Signal[]>([]);
+  // Today's water readings (newest first) — see the WaterLog note.
+  const [waterLogs, setWaterLogs] = useState<WaterLog[]>([]);
   // True when the day's intake fetch FAILED — so the hub can show a retry card
   // instead of a "0 eaten" summary that reads as a fresh day (parity with mobile).
   const [loadErr, setLoadErr] = useState(false);
@@ -837,9 +844,19 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       if (res.status === 401) { setLoadErr(false); return setSignals([]); }
       if (!res.ok) { setLoadErr(true); return setSignals([]); }
       const data = (await res.json()) as { signals?: Row[] };
-      setSignals((data.signals ?? []).map((s) => ({ athleteId: s.userId, kind: s.kind as Signal["kind"], value: s.value, unit: s.unit, source: s.source, ts: s.ts })));
+      const rows = data.signals ?? [];
+      setSignals(rows.map((s) => ({ athleteId: s.userId, kind: s.kind as Signal["kind"], value: s.value, unit: s.unit, source: s.source, ts: s.ts })));
+      // Keep today's water readings addressable (see WaterLog) so the control
+      // can delete the last one rather than appending its negation.
+      const todayKey = localTodayKey();
+      setWaterLogs(
+        rows
+          .filter((s) => s.kind === "water" && typeof s.id === "string" && localDayKey(Date.parse(s.ts)) === todayKey)
+          .map((s) => ({ id: s.id as string, value: s.value, ts: s.ts }))
+          .sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts)),
+      );
       setLoadErr(false);
-    } catch { setLoadErr(true); setSignals([]); }
+    } catch { setLoadErr(true); setSignals([]); setWaterLogs([]); }
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -853,6 +870,55 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const trainingKcal = useMemo(() => trainingEnergyOnDay(sessions, bodyMassKg ?? 75), [sessions, bodyMassKg]);
 
   const today = useMemo(() => todayNutrition(signals), [signals]);
+
+  // ── WATER ────────────────────────────────────────────────────────────────
+  // The same training-aware composition the calorie target uses: a bodyweight
+  // baseline plus today's sweat allowance. `today` is passed through so the
+  // whole Signal stream isn't rolled up a second time just for one figure.
+  const hydration = useMemo(
+    () => hydrationToday(signals, { bodyMassKg, trainingKcal, day: today }),
+    [signals, bodyMassKg, trainingKcal, today],
+  );
+  // Optimistic: the vessel row must fill on the tap, not on the round-trip.
+  // A failed write reloads from the server rather than leaving the optimistic
+  // millilitres on screen — a drink the athlete never logged is worse than a
+  // control that visibly bounces back.
+  const logWater = useCallback(async (ml: number) => {
+    const ts = new Date().toISOString();
+    const optimistic: Signal = { athleteId: "me", kind: "water", value: ml, unit: "ml", source: "manual", ts };
+    setSignals((xs) => [optimistic, ...xs]);
+    try {
+      const res = await fetch("/api/signals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "water", value: ml, unit: "ml", source: "manual", ts }),
+      });
+      if (!res.ok) throw new Error("water");
+      const { signal } = (await res.json()) as { signal?: { id?: string } };
+      if (signal?.id) setWaterLogs((xs) => [{ id: signal.id as string, value: ml, ts }, ...xs]);
+      revalidate.recovery();
+    } catch {
+      load();
+    }
+  }, [load, revalidate]);
+
+  // Undo removes the READING, not its effect — see the /api/signals/[id] note.
+  const undoWater = useCallback(async () => {
+    const last = waterLogs[0];
+    if (!last) return;
+    setWaterLogs((xs) => xs.slice(1));
+    setSignals((xs) => {
+      const i = xs.findIndex((s) => s.kind === "water" && s.ts === last.ts && s.value === last.value);
+      return i < 0 ? xs : [...xs.slice(0, i), ...xs.slice(i + 1)];
+    });
+    try {
+      const res = await fetch(`/api/signals/${last.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("undo");
+      revalidate.recovery();
+    } catch {
+      load();
+    }
+  }, [waterLogs, load, revalidate]);
   // Today's energy grouped by meal (source = meal type) for the hub sections.
   const mealTotals = useMemo(() => {
     const todayKey = localTodayKey();
@@ -2090,6 +2156,20 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudge nudge={nudge} />
+
+          {/* WATER — its own card directly under the energy hero, because it is
+              a target the athlete acts on hourly, not a figure they review. It
+              is deliberately NOT a fourth hairline inside the hero card: water
+              carries no energy and has no place in the macro split, and sitting
+              it under protein/carbs/fat would say that it does. */}
+          <WaterCard
+            h={hydration}
+            units={units}
+            onAdd={logWater}
+            onUndo={undoWater}
+            canUndo={waterLogs.length > 0}
+            style={{ marginTop: 16 }}
+          />
 
           {/* Today's meals — Breakfast / Lunch / Dinner / Snacks. Each opens the
               picker attributed to that meal; the kcal already logged is shown. */}

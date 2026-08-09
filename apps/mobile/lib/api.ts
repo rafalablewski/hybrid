@@ -1,5 +1,5 @@
 import type { DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
-import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog } from "@hybrid/core";
+import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 
@@ -229,6 +229,60 @@ export async function logBodyweight(weightKg: number): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ weightKg }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ── WATER ──────────────────────────────────────────────────────────────────
+// The water control appends one Signal per tap and takes a tap back by DELETING
+// that reading — never by appending its negation, which would be a lie about
+// the day that every downstream sum would faithfully carry. So the client needs
+// the reading's id, which `querySignals` deliberately drops (CoreSignal is the
+// engine's shape and has no id): these three helpers carry it.
+
+/** One of today's water readings, addressable so it can be undone. */
+export type WaterLog = { id: string; value: number; ts: string };
+
+/** Today's water readings, newest first. Soft — returns [] rather than throwing,
+ *  since a missing undo history must never fail the Nutrition screen. */
+export async function fetchWaterLogs(): Promise<WaterLog[]> {
+  try {
+    const data = await fetchJson<{ signals?: { id?: string; value: number; ts: string }[] }>(`/api/signals?kind=water`);
+    const today = localTodayKey();
+    return (data.signals ?? [])
+      .filter((s): s is { id: string; value: number; ts: string } => typeof s.id === "string" && localDayKey(Date.parse(s.ts)) === today)
+      .map((s) => ({ id: s.id, value: s.value, ts: s.ts }))
+      .sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts));
+  } catch {
+    return [];
+  }
+}
+
+/** Log a drink. Returns the created reading so the caller can undo it. */
+export async function logWater(ml: number, ts = new Date().toISOString()): Promise<WaterLog | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ kind: "water", value: ml, unit: "ml", source: "manual", ts }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { signal?: { id?: string } };
+    return data.signal?.id ? { id: data.signal.id, value: ml, ts } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Remove one reading you own — the undo behind the water control. */
+export async function deleteSignal(id: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/signals/${id}`, {
+      method: "DELETE",
+      headers: await authHeaders(),
     });
     return res.ok;
   } catch {
