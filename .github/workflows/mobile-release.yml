@@ -74,6 +74,14 @@ jobs:
       - name: Install JS deps
         run: pnpm install --frozen-lockfile
 
+      # A build that ships a mismatched Expo set compiles, signs, uploads and
+      # processes cleanly, then aborts in dyld on the tester's phone before the
+      # first frame — see build 82223058 and apps/mobile/lib/expo-alignment.test.ts.
+      # Ten seconds here, or a dead build and a TestFlight round trip.
+      - name: Check the Expo SDK set is aligned
+        working-directory: apps/mobile
+        run: npx vitest run lib/expo-alignment.test.ts
+
       - name: Install signing helper (codemagic-cli-tools — not the codemagic.io service)
         run: pipx install codemagic-cli-tools
 

@@ -124,19 +124,19 @@ describe("pantryShelves", () => {
 
   it("sorts alphabetically INSIDE a shelf, not by the order it was given", () => {
     const shelves = pantryShelves([yogurt(), chicken()]);
-    expect(shelves[0].items.map((f) => f.name)).toEqual(["Chicken breast", "Greek yogurt"]);
+    expect(shelves[0]!.items.map((f) => f.name)).toEqual(["Chicken breast", "Greek yogurt"]);
   });
 
   it("narrows to one role", () => {
     const shelves = pantryShelves(all(), { role: "fat" });
     expect(shelves).toHaveLength(1);
-    expect(shelves[0].items.map((f) => f.name)).toEqual(["Olive oil"]);
+    expect(shelves[0]!.items.map((f) => f.name)).toEqual(["Olive oil"]);
   });
 
   it("filters BEFORE shelving, so a search inside a role narrows what is on screen", () => {
     const shelves = pantryShelves(all(), { role: "protein", query: "chicken" });
     expect(shelves).toHaveLength(1);
-    expect(shelves[0].items).toHaveLength(1);
+    expect(shelves[0]!.items).toHaveLength(1);
     // The query must not re-populate the shelves the role filtered away.
     expect(pantryShelves(all(), { role: "protein", query: "rice" })).toEqual([]);
   });

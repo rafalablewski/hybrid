@@ -38,7 +38,15 @@ export default defineConfig({
         test: {
           name: "pure",
           environment: "node",
-          include: ["lib/health-quantities.test.ts", "lib/ui.test.ts", "lib/design-tokens.test.ts", "lib/event-pooling.test.ts"],
+          include: [
+            "lib/health-quantities.test.ts",
+            "lib/ui.test.ts",
+            "lib/design-tokens.test.ts",
+            "lib/event-pooling.test.ts",
+            // Reads package.json + the SDK's own version table as DATA, so it
+            // stays inside the boundary while covering every native module.
+            "lib/expo-alignment.test.ts",
+          ],
         },
       },
       {
