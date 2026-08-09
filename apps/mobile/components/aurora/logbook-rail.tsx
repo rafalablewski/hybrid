@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import {
   logbookWeek,
@@ -43,7 +43,6 @@ export default function AuroraLogbookRail({
   onLog,
   onNavigate,
   onSelectDay,
-  resetToken,
   doneFloor,
 }: {
   sessions: LoggedSession[];
@@ -54,9 +53,6 @@ export default function AuroraLogbookRail({
    *  of the screen (Also-today / feeling cards) to the viewed day. Mirrors the
    *  plan week rail's prop. */
   onSelectDay?: (day: LogbookDay) => void;
-  /** Bump to snap the rail's internal selection back to today (the masthead's
-   *  "Back to today" affordance). */
-  resetToken?: number;
   /** The DONE FLOOR — every session logged on the viewed day, rendered as this
    *  card's lower floor under a labelled seam (aurora/done-floor.tsx). It is
    *  passed in rather than built here because the screen owns the day's
@@ -72,7 +68,6 @@ export default function AuroraLogbookRail({
 
   // Selected day: follows today until the athlete taps another chip.
   const [picked, setPicked] = useState<number | null>(null);
-  useEffect(() => { setPicked(null); }, [resetToken]);
   const selectedIndex = picked ?? week.todayIndex;
   const sel = week.days[selectedIndex] ?? week.days[week.todayIndex]!;
 
