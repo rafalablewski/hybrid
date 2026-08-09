@@ -11,6 +11,7 @@ import { fs, space, leading, F, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HI
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
+import SwipeRow from "../swipe-row";
 
 /**
  * THE NUTRITION KIT (mobile) — the vocabulary every Nutrition screen draws in.
@@ -163,6 +164,12 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
   );
 }
 
+// THE SWIPE IS THE SHARED ONE. This row drew a trash BUTTON where the web twin
+// swiped, so "swipe left to delete a saved food" was a web-only gesture in an
+// app whose parity rule says otherwise — and web's own swipe was hand-rolled
+// with numbers that were not the ones components/swipe-row.tsx swipes every set
+// row by. Both now delegate to their client's SwipeRow, which means one set of
+// physics from @hybrid/core (velocity projection, rubber-band, full-swipe).
 export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: ReturnType<typeof useTheme>["palette"]; name: string; subname?: string | null; meta: string; onAdd: () => void;
   /** tapping the row BODY, when that means something different from the ⊕ —
@@ -170,9 +177,10 @@ export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starre
   onOpen?: () => void;
   chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void; verified?: VerifiedStamp;
 }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 12, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
-      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
+  const { t } = useLang();
+  const body = (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 12, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }}>
+      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
       <Pressable onPress={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>
@@ -181,11 +189,12 @@ export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starre
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{meta}</Text>
       </Pressable>
-      {onStar ? <Pressable onPress={onStar} accessibilityLabel="Favorite" hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
-      {onDelete ? <Pressable onPress={onDelete} accessibilityLabel="Delete" hitSlop={8} style={{ padding: 4 }}><ITrash size={20} color={C.ash} /></Pressable> : null}
+      {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
       {chevron ? <IChevRight size={18} color={C.ash} /> : null}
     </View>
   );
+  if (!onDelete) return body;
+  return <SwipeRow onDelete={onDelete} label={t("w.recovery.nutrition.remove")} background={C.ink}>{body}</SwipeRow>;
 }
 
 /** AURORA Nutrition (mobile) — the adaptive macro tracker on one restrained

@@ -9,6 +9,7 @@ import {
 import { fs, CARD_PAD } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { CtaLabel } from "./cta-label";
+import SwipeRow from "../swipe-row";
 
 /**
  * THE NUTRITION KIT (web) — the vocabulary every Nutrition screen draws in.
@@ -239,8 +240,17 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
 }
 
 // A food row in the picker — a lime add-circle, name + macro meta, and either a
-// chevron (a DB hit), a favourite star, or a swipe-left-to-reveal delete (a
-// personal item). The row body opens the portion editor; the trash sits behind.
+// chevron (a DB hit), a favourite star, or a swipe-left-to-delete (a personal
+// item). The row body opens the portion editor; the ⊕ adds.
+//
+// THE SWIPE IS THE SHARED ONE. This row used to carry its OWN gesture: a
+// pointer-delta translate with a -84px clamp, a 60px reveal threshold and a
+// .22s ease — none of which are the numbers apps/web/components/swipe-row.tsx
+// swipes every set row in the app by, and none of which existed on the mobile
+// twin at all (it drew a trash BUTTON, so "swipe to delete" was a web-only
+// gesture in an app whose parity rule says otherwise). It now delegates to
+// SwipeRow on both clients, which means one set of physics from @hybrid/core —
+// velocity projection, rubber-band, the iOS full-swipe — and one delete.
 export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: (v: string) => string; name: string; subname?: string | null; meta: string; onAdd: () => void;
   /** tapping the row BODY, when that means something different from the ⊕ —
@@ -248,35 +258,22 @@ export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starre
   onOpen?: () => void;
   chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void; verified?: VerifiedStamp;
 }) {
-  const [dx, setDx] = useState(0);
-  const start = useRef<number | null>(null);
-  const revealed = dx <= -60;
-  return (
-    <div style={{ position: "relative", overflow: "hidden", borderRadius: 16 }}>
-      {onDelete && (
-        <button className="pressable" onClick={onDelete} aria-label="Delete" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 74, background: "var(--color-red)", border: "none", borderRadius: 16, display: "grid", placeItems: "center", cursor: "pointer" }}>
-          <ITrash size={22} color="#fff" />
-        </button>
-      )}
-      <div
-        onPointerDown={onDelete ? (e) => { start.current = e.clientX; } : undefined}
-        onPointerMove={onDelete ? (e) => { if (start.current != null) setDx(Math.max(-84, Math.min(0, e.clientX - start.current))); } : undefined}
-        onPointerUp={onDelete ? () => { setDx(revealed ? -84 : 0); start.current = null; } : undefined}
-        onPointerLeave={onDelete ? () => { if (start.current != null) { setDx(revealed ? -84 : 0); start.current = null; } } : undefined}
-        style={{ position: "relative", display: "flex", alignItems: "center", gap: 16, padding: "12px 6px", background: C("ink"), borderBottom: `1px solid ${C("line")}`, transform: `translateX(${dx}px)`, transition: start.current == null ? "transform .22s cubic-bezier(.4,0,.2,1)" : "none", touchAction: "pan-y" }}
-      >
-        <button className="pressable" onClick={onAdd} aria-label={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, border: "1.6px solid var(--color-lime)", background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0, cursor: "pointer" }}><IPlus size={20} color="var(--lime-text)" strokeWidth={2.2} /></button>
-        <button className="pressable" onClick={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto", minWidth: 0 }}>{name}</span>
-            {verified && <VerifiedMark />}
-            {subname ? <span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0 }}>{subname}</span> : null}
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{meta}</div>
-        </button>
-        {onStar && <button className="pressable" onClick={onStar} aria-label="Favorite" style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 4, color: starred ? "var(--color-gold)" : C("ash") }}><IStar size={19} color={starred ? "var(--color-gold)" : C("ash")} fill={starred} /></button>}
-        {chevron && <IChevRight size={18} color={C("ash")} />}
-      </div>
+  const { t } = useLang();
+  const body = (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 6px", background: C("ink"), borderBottom: `1px solid ${C("line")}` }}>
+      <button className="pressable" onClick={onAdd} aria-label={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: 44, height: 44, borderRadius: 999, border: "1.6px solid var(--color-lime)", background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0, cursor: "pointer" }}><IPlus size={20} color="var(--lime-text)" strokeWidth={2.2} /></button>
+      <button className="pressable" onClick={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto", minWidth: 0 }}>{name}</span>
+          {verified && <VerifiedMark />}
+          {subname ? <span style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.caption, color: C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 auto", minWidth: 0 }}>{subname}</span> : null}
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>{meta}</div>
+      </button>
+      {onStar && <button className="pressable" onClick={onStar} aria-label={t("w.recovery.nutrition.tab.favorites")} style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 4, color: starred ? "var(--color-gold)" : C("ash") }}><IStar size={19} color={starred ? "var(--color-gold)" : C("ash")} fill={starred} /></button>}
+      {chevron && <IChevRight size={18} color={C("ash")} />}
     </div>
   );
+  if (!onDelete) return body;
+  return <SwipeRow onDelete={onDelete} label={t("w.recovery.nutrition.remove")} radius={0} margin="0">{body}</SwipeRow>;
 }

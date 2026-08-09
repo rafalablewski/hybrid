@@ -22,7 +22,7 @@
  * table, no key.
  */
 
-import { type NutritionFacts, atwaterKcal, auditFacts, factsCompleteness, kj } from "./food-facts";
+import { type NutritionFacts, atwaterKcal, auditFacts, factsCompleteness, foldFoodName, kj } from "./food-facts";
 import type { FoodHit } from "./nutrition-off";
 import { LIDL_MARK, MAX_MARK } from "./source-marks";
 
@@ -223,20 +223,9 @@ export function verifiedFood(id: string): VerifiedFood | null {
   return VERIFIED_FOODS.find((f) => f.id === id) ?? null;
 }
 
-// Letters that carry their mark INSIDE the glyph, so NFD can't split them off.
-// Polish "\u0142" is the one that matters here (Frytki ma\u0142e) \u2014 without this, stripping
-// non-ASCII would turn "ma\u0142e" into "ma e" and a search for "male" would miss.
-const FOLD: Record<string, string> = { \u0142: "l", \u0111: "d", \u00f0: "d", \u00f8: "o", \u00e6: "ae", \u0153: "oe", \u00df: "ss", \u00fe: "th" };
-
-const norm = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[\u0142\u0111\u00f0\u00f8\u00e6\u0153\u00df\u00fe]/g, (c) => FOLD[c] ?? c)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9 ]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+// The fold lives in food-facts.ts (foldFoodName) — it is a fact about food
+// NAMES, not about this catalog, and the pantry shelf matches on the same one.
+const norm = foldFoodName;
 
 /**
  * Search the verified catalog. Matches the English name, the operator's own

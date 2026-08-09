@@ -104,6 +104,8 @@ import {
   CDivider, WeightTrend, NutritionNudgeLine, SummaryDashboard, OnboardingGoal, QuadTile, Cell,
 } from "./nutrition-panels";
 import TargetSheet, { TargetMismatchLine } from "./target-sheet";
+import { PantryScreen, PantrySearchToggle, UndoBar, UNDO_MS } from "./pantry";
+import GroupMark from "./group-mark";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -269,8 +271,6 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const [userRecipeMsg, setUserRecipeMsg] = useState("");
   const [mealForm, setMealForm] = useState({ name: "", emoji: "", kcal: "", protein: "", carbs: "", fat: "" });
   const [showMealBuilder, setShowMealBuilder] = useState(false);
-  const [prodForm, setProdForm] = useState({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
-  const [showProdBuilder, setShowProdBuilder] = useState(false);
   const canSaveAnotherMeal = full || meals.length < FREE_MEAL_LIMIT;
   const canSaveAnotherProduct = full || products.length < FREE_PRODUCT_LIMIT;
   const loadLibrary = () => {
@@ -699,26 +699,66 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     if (ok) { setRecipeMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
   };
 
-  const saveProduct = async () => {
-    if (!prodForm.name.trim()) return;
-    if (!canSaveAnotherProduct) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
-    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
-    const res = await createFoodProduct({ name: prodForm.name.trim(), servingLabel: prodForm.serving.trim() || undefined, kcal: num(prodForm.kcal) || undefined, protein: num(prodForm.protein), carbs: num(prodForm.carbs), fat: num(prodForm.fat) });
-    if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
-    if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
-    setProdForm({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
-    setShowProdBuilder(false);
-    loadLibrary();
-  };
-
+  // The inline bordered "New product" builder that used to sit at the bottom of
+  // this screen is GONE with the Pantry redesign, along with its own form state
+  // and its own POST. It was the second way to create a product — the Create
+  // Food form (openCreate("product")) is the primary one and has been since the
+  // de-clutter pass — and two forms writing the same row is how a field lands
+  // on one of them and not the other.
   const removeProduct = async (id: string) => { setProducts((xs) => xs.filter((x) => x.id !== id)); await deleteFoodProduct(id); };
 
-  const addProductToMeal = (p: FoodProductRow) => {
-    setShowMealBuilder(true);
-    setMealForm((s) => {
-      const addv = (a: string, b: number) => String((parseFloat(a) || 0) + b);
-      return { ...s, name: s.name || p.name, kcal: addv(s.kcal, p.kcal), protein: addv(s.protein, p.protein), carbs: addv(s.carbs, p.carbs), fat: addv(s.fat, p.fat) };
+  // ── PANTRY — swipe to delete, with a real undo ───────────────────────────
+  // The row leaves immediately but the DELETE is HELD for UNDO_MS. Undoing a
+  // completed delete would have to re-create the product, which mints a new id
+  // and quietly breaks every recipe ingredient pointing at the old one, so the
+  // row that comes back has to be the row that left. `pendingRef` mirrors the
+  // state so the flush on unmount can read it without re-subscribing: a delete
+  // that silently un-happens on the next load is worse than one that lands.
+  // Web parity: aurora/nutrition.tsx askDeleteProduct.
+  const [pantrySearch, setPantrySearch] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<FoodProductRow | null>(null);
+  const pendingRef = useRef<{ product: FoodProductRow; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const commitDeleteProduct = useCallback(() => {
+    const p = pendingRef.current;
+    if (!p) return;
+    clearTimeout(p.timer);
+    pendingRef.current = null;
+    setPendingDelete(null);
+    void deleteFoodProduct(p.product.id);
+  }, []);
+  const askDeleteProduct = (id: string) => {
+    const p = products.find((x) => x.id === id);
+    if (!p) return;
+    // A second swipe while one is still pending commits the first: two rows can
+    // leave, but only one of them can be the one Undo brings back.
+    commitDeleteProduct();
+    setProducts((xs) => xs.filter((x) => x.id !== id));
+    const timer = setTimeout(() => commitDeleteProduct(), UNDO_MS);
+    pendingRef.current = { product: p, timer };
+    setPendingDelete(p);
+  };
+  const undoDeleteProduct = () => {
+    const p = pendingRef.current;
+    if (!p) return;
+    clearTimeout(p.timer);
+    pendingRef.current = null;
+    setPendingDelete(null);
+    setProducts((xs) => xs.some((x) => x.id === p.product.id) ? xs : [...xs, p.product]);
+  };
+  useEffect(() => () => { const p = pendingRef.current; if (p) { clearTimeout(p.timer); void deleteFoodProduct(p.product.id); } }, []);
+
+  // ⊕ on a pantry row — log ONE serving to the current meal, now. The row body
+  // still opens the portion editor for a quantity and the full panel; this is
+  // the tap for the food you eat the same way every time.
+  const logOneServing = async (p: FoodProductRow) => {
+    setFoodMsg("");
+    const ok = await logEntry({
+      name: p.name, subname: p.subname, source: mealType,
+      kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat,
+      satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt,
+      verifiedId: p.verifiedId, qty: 1,
     });
+    if (ok) { setFoodMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
   };
 
   // ── Food search — Open Food Facts (free, no key) via searchFoods → the
@@ -2431,32 +2471,40 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
       )}
 
-      {/* MY FOODS — search-first. The box queries Open Food Facts (free, no key)
-          for any food or barcode; a hit can be logged to today or saved to the
-          library. Below sits your own saved foods + a manual builder. */}
+      {/* THE PANTRY — the athlete's own saved foods, shelved. The redesign is
+          documented in aurora/pantry.tsx; the search sits in the HERO's
+          accessory slot (top right), which is why this screen passes the
+          open/closed state down rather than letting the panel own it. */}
       {view === "foods" && (
-      <ACard solid style={{ marginTop: 16 }}>
-        {/* Search — text or barcode */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}>
-          <AuroraIcon name="search" size={18} color={C.ash} />
-          <TextInput value={foodQuery} onChangeText={setFoodQuery} placeholder={t("w.recovery.nutrition.foodSearchPh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.foodSearchPh")} autoCorrect={false} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, padding: 0 }} />
-          {foodQuery ? <Pressable onPress={() => setFoodQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 17, color: C.ash }}>×</Text></Pressable> : <Glyph name="scan" size={17} color={C.ash} strokeWidth={4} />}
-        </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8, letterSpacing: 0.9 }}>{t("w.recovery.nutrition.foodSearchHint")}</Text>
-        {foodMsg ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}><AuroraIcon name="check" size={13} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{foodMsg}</Text></View> : null}
-
-        {/* Database results */}
-        {foodQuery.trim().length >= 2 ? (
-          <View style={{ marginTop: 16 }}>
+      <>
+      <PantryScreen
+        items={products}
+        query={foodQuery}
+        onQuery={setFoodQuery}
+        searchOpen={pantrySearch}
+        onSearchOpen={setPantrySearch}
+        onLogOne={logOneServing}
+        onOpen={logProduct}
+        onDelete={askDeleteProduct}
+        onCreate={() => canSaveAnotherProduct ? openCreate("product") : (onUpgrade ? onUpgrade() : router.push("/upgrade"))}
+        canCreate={canSaveAnotherProduct}
+        full={full}
+        limit={FREE_PRODUCT_LIMIT}
+        msg={foodMsg}
+        premium={{ fill: pa.fill, text: pa.text }}
+        searchHint={<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8, letterSpacing: 0.9 }}>{t("w.recovery.nutrition.foodSearchHint")}</Text>}
+        dbSlot={
+          <View style={{ marginTop: 26 }}>
+            <GroupMark label={t("w.recovery.nutrition.pn.fromDatabase")} mt={0} />
             {searching ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 6 }}>{t("w.recovery.nutrition.searching")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 10 }}>{t("w.recovery.nutrition.searching")}</Text>
             ) : foodResults.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 6, lineHeight: leading(fs.caption, "snug") }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 10, lineHeight: leading(fs.caption, "snug") }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
             ) : foodResults.map((food, i) => (
               <View key={`${food.id || food.code}-${i}`} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                {/* A verified row opens its page from the name, exactly as in the
-                    picker — the same food must not be a dead end on one screen
-                    and a doorway on another. */}
+                {/* A verified row opens its page from the name, exactly as in
+                    the picker — the same food must not be a dead end on one
+                    screen and a doorway on another. */}
                 <Pressable
                   onPress={food.verified && food.id ? () => openFoodPage(food.id!, "foods") : () => logFood(food)}
                   style={{ flex: 1 }}
@@ -2472,62 +2520,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               </View>
             ))}
           </View>
-        ) : null}
-
-        {/* Your saved foods */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 20, paddingTop: foodQuery.trim().length >= 2 ? 16 : 0, borderTopWidth: foodQuery.trim().length >= 2 ? 1 : 0, borderTopColor: C.line }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.yourProducts")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`}</Text>
-        </View>
-        {products.length === 0 && !showProdBuilder ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, lineHeight: leading(fs.caption, "snug") }}>{t("w.recovery.nutrition.yourProductsSub")}</Text>
-        ) : null}
-        {products.length > 0 ? (
-          <View style={{ marginTop: 10 }}>
-            {products.map((p, i) => (
-              <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, flexShrink: 1 }} numberOfLines={1}>{p.name}</Text>
-                    {p.subname ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }} numberOfLines={1}>{p.subname}</Text> : null}
-                  </View>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{p.servingLabel} — {p.kcal} kcal — {p.protein}P {p.carbs}C {p.fat}F</Text>
-                </View>
-                <Pressable onPress={() => addProductToMeal(p)} accessibilityLabel={t("w.recovery.nutrition.addToMeal")} style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="add" size={14} color={txt(C, C.lime)} /></Pressable>
-                <Pressable onPress={() => removeProduct(p.id)} accessibilityLabel={t("w.recovery.nutrition.deleteProduct")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>×</Text></Pressable>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        {showProdBuilder ? (
-          <View style={{ marginTop: 16 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("w.recovery.nutrition.newProduct")}</Text>
-            <TextInput value={prodForm.name} onChangeText={(v) => setProdForm((s) => ({ ...s, name: v }))} placeholder={t("w.recovery.nutrition.productNamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.productName")} style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }} />
-            <TextInput value={prodForm.serving} onChangeText={(v) => setProdForm((s) => ({ ...s, serving: v }))} placeholder={t("w.recovery.nutrition.servingPh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.servingPh")} style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }} />
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-              <QuadTile field="kcal" label="kcal" unit="kcal" color={txt(C, C.lime)} value={prodForm.kcal} onChange={(v) => setProdForm((s) => ({ ...s, kcal: v }))} />
-              <QuadTile field="protein" label={t("w.recovery.nutrition.protein")} unit="g" color={txt(C, C.blue)} value={prodForm.protein} onChange={(v) => setProdForm((s) => ({ ...s, protein: v }))} />
-              <QuadTile field="carbs" label={t("w.recovery.nutrition.carbs")} unit="g" color={txt(C, C.amber)} value={prodForm.carbs} onChange={(v) => setProdForm((s) => ({ ...s, carbs: v }))} />
-              <QuadTile field="fat" label={t("w.recovery.nutrition.fat")} unit="g" color={txt(C, C.violet)} value={prodForm.fat} onChange={(v) => setProdForm((s) => ({ ...s, fat: v }))} />
-            </View>
-            {(() => { const mk = macroKcal(prodForm.protein, prodForm.carbs, prodForm.fat); return mk > 0 && !prodForm.kcal.trim() ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 10 }}>{t("w.recovery.nutrition.macrosApprox")} {mk} kcal</Text> : null; })()}
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-              <Pressable onPress={() => setShowProdBuilder(false)} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text></Pressable>
-              <Pressable onPress={saveProduct} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>{t("w.recovery.nutrition.saveProduct")}</Text></Pressable>
-            </View>
-          </View>
-        ) : null}
-        {showProdBuilder ? null : canSaveAnotherProduct ? (
-          <Pressable onPress={() => openCreate("product")} accessibilityRole="button" style={{ marginTop: 16, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 12 }}>
-            <AuroraIcon name="add" size={15} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
-          </Pressable>
-        ) : (
-          <Pressable onPress={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} accessibilityRole="button" style={{ marginTop: 16, flexDirection: "row", justifyContent: "center", gap: 8, backgroundColor: `${pa.fill}1f`, borderWidth: 1, borderColor: `${pa.fill}66`, borderRadius: 999, paddingVertical: 12 }}>
-            <Text style={{ color: pa.text }}>✦</Text><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: pa.text }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
-          </Pressable>
-        )}
-      </ACard>
-
+        }
+      />
+      {pendingDelete ? (
+        <UndoBar label={t("w.recovery.nutrition.pn.deleted").replace("{v}", pendingDelete.name)} onUndo={undoDeleteProduct} />
+      ) : null}
+      </>
       )}
 
       {/* DIARY — the selected day's individual entries, grouped by part, each
@@ -2776,6 +2774,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       // take the same hero every other screen does. `root` means this is
       // showing as a Today hub tab, where Today owns the head.
       hero={root && view === "home" ? undefined : { rank: "title", title: viewTitle, eyebrow: view === "home" ? greeting || undefined : undefined }}
+      // The Pantry's SEARCH is the rail's trailing slot — the shell's own
+      // top-right control, which is where web puts it too. Nothing else on
+      // Nutrition claims the accessory, so it is absent everywhere else.
+      accessory={view === "foods" ? <PantrySearchToggle open={pantrySearch} onToggle={() => { setPantrySearch(!pantrySearch); if (pantrySearch) setFoodQuery(""); }} /> : undefined}
       back={view === "home" ? (root ? false : undefined) : () => setView("home")}
       backLabel={view === "home" ? undefined : t("w.recovery.nutrition.title")}
     >

@@ -185,6 +185,29 @@ export function factsCompleteness(f: NutritionFacts): number {
   return stated / MICRO_KEYS.length;
 }
 
+// Letters that carry their mark INSIDE the glyph, so NFD can't split them off.
+// Polish "ł" is the one that matters here (Frytki małe) — without this, stripping
+// non-ASCII would turn "małe" into "ma e" and a search for "male" would miss.
+const FOLD: Record<string, string> = { "ł": "l", "đ": "d", "ð": "d", "ø": "o", "æ": "ae", "œ": "oe", "ß": "ss", "þ": "th" };
+
+/**
+ * A food NAME, folded for matching: lower-cased, accent-stripped, punctuation
+ * flattened to single spaces. Lives here because it is a fact about FOOD NAMES
+ * rather than about any one search — the verified catalog and the pantry shelf
+ * both match on it, and two copies of a fold is two definitions of whether
+ * "małe" is "male".
+ */
+export function foldFoodName(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[łđðøæœßþ]/g, (c) => FOLD[c] ?? c)
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /**
  * Sanity-check a stated panel against arithmetic. Returns human-readable
  * problems, empty when the numbers hang together. This is the check the HYBRID

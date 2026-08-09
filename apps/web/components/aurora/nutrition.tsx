@@ -51,6 +51,8 @@ import {
 import {
   CDivider, NutritionNudgeLine, Ring, SummaryDashboard, OnboardingGoal, useCountUpFactor,
 } from "./nutrition-panels";
+import { PantryScreen, UndoBar, UNDO_MS } from "./pantry";
+import GroupMark from "./group-mark";
 import {
   readQuickFoods, writeQuickFoods, Glyph, RailHead, MarkPlate, VerifiedMark, FactsPanel, FoodRow, IClose, IChevDown, IChevRight, IPlus, IBarcode, ITrash, IBolt, IClock,
   IPlusBox, presetGlyph, railScroller, type QuickFood,
@@ -703,40 +705,73 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   };
 
   // Custom products — free users keep up to FREE_PRODUCT_LIMIT (canSaveProduct,
-  // mirrored client + server); Full is unlimited. Building a meal can draw macros
-  // from these.
-  const [prodForm, setProdForm] = useState({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
-  const [showProdBuilder, setShowProdBuilder] = useState(false);
-
-  const saveProduct = async () => {
-    if (!prodForm.name.trim()) return;
-    if (!canSaveAnotherProduct) { onNavigate?.("upgrade"); return; }
-    setLibMsg("");
-    const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
-    const body = { name: prodForm.name.trim(), servingLabel: prodForm.serving.trim() || undefined, kcal: num(prodForm.kcal) || undefined, protein: num(prodForm.protein), carbs: num(prodForm.carbs), fat: num(prodForm.fat) };
-    try {
-      const res = await fetch("/api/nutrition/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (res.status === 403) { onNavigate?.("upgrade"); return; }
-      if (!res.ok) { setLibMsg(`${t("w.recovery.nutrition.errSave")} (HTTP ${res.status}).`); return; }
-      setProdForm({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
-      setShowProdBuilder(false);
-      await loadLibrary();
-    } catch { setLibMsg(t("w.recovery.nutrition.errNetwork")); }
-  };
-
+  // mirrored client + server); Full is unlimited.
+  //
+  // The inline bordered "New product" builder that used to sit at the bottom of
+  // this screen is GONE with the Pantry redesign, along with its own form state
+  // and its own POST. It was the second way to create a product — the Create
+  // Food form (openCreate("product")) is the primary one and has been since the
+  // de-clutter pass — and two forms writing the same row is how a field lands
+  // on one of them and not the other. The Pantry's add button opens the one
+  // form.
   const deleteProduct = async (id: string) => {
     setProducts((xs) => xs.filter((x) => x.id !== id));
     try { await fetch(`/api/nutrition/products/${id}`, { method: "DELETE" }); } catch { /* revert on next load */ }
   };
 
-  // Add a product's macros straight into the meal builder (compose a meal from
-  // your foods). Sums onto whatever's already typed.
-  const addProductToMeal = (p: FoodProduct) => {
-    setShowMealBuilder(true);
-    setMealForm((s) => {
-      const add = (a: string, b: number) => String((parseFloat(a) || 0) + b);
-      return { ...s, name: s.name || p.name, kcal: add(s.kcal, p.kcal), protein: add(s.protein, p.protein), carbs: add(s.carbs, p.carbs), fat: add(s.fat, p.fat) };
+  // ── PANTRY — swipe to delete, with a real undo ───────────────────────────
+  // The row leaves immediately but the DELETE is HELD for UNDO_MS. Undoing a
+  // completed delete would have to re-create the product, which mints a new id
+  // and quietly breaks every recipe ingredient pointing at the old one, so the
+  // row that comes back has to be the row that left. `pendingRef` mirrors the
+  // state so the flush on unmount can read it without re-subscribing: a delete
+  // that silently un-happens on the next load is worse than one that lands.
+  // Whether the Pantry's search field is open — the host's, not the screen's,
+  // because on mobile the control that opens it is the hero's accessory.
+  const [pantrySearch, setPantrySearch] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<FoodProduct | null>(null);
+  const pendingRef = useRef<{ product: FoodProduct; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const commitDeleteProduct = useCallback(() => {
+    const p = pendingRef.current;
+    if (!p) return;
+    clearTimeout(p.timer);
+    pendingRef.current = null;
+    setPendingDelete(null);
+    fetch(`/api/nutrition/products/${p.product.id}`, { method: "DELETE" }).catch(() => { /* revert on next load */ });
+  }, []);
+  const askDeleteProduct = (id: string) => {
+    const p = products.find((x) => x.id === id);
+    if (!p) return;
+    // A second swipe while one is still pending commits the first: two rows can
+    // leave, but only one of them can be the one Undo brings back.
+    commitDeleteProduct();
+    setProducts((xs) => xs.filter((x) => x.id !== id));
+    const timer = setTimeout(() => commitDeleteProduct(), UNDO_MS);
+    pendingRef.current = { product: p, timer };
+    setPendingDelete(p);
+  };
+  const undoDeleteProduct = () => {
+    const p = pendingRef.current;
+    if (!p) return;
+    clearTimeout(p.timer);
+    pendingRef.current = null;
+    setPendingDelete(null);
+    setProducts((xs) => xs.some((x) => x.id === p.product.id) ? xs : [...xs, p.product]);
+  };
+  useEffect(() => () => { const p = pendingRef.current; if (p) { clearTimeout(p.timer); fetch(`/api/nutrition/products/${p.product.id}`, { method: "DELETE" }).catch(() => {}); } }, []);
+
+  // ⊕ on a pantry row — log ONE serving to the current meal, now. The row body
+  // still opens the portion editor for a quantity and the full panel; this is
+  // the tap for the food you eat the same way every time.
+  const logOneServing = async (p: FoodProduct) => {
+    setFoodMsg("");
+    const ok = await logEntry({
+      name: p.name, subname: p.subname, source: mealType,
+      kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat,
+      satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt,
+      verifiedId: p.verifiedId, qty: 1,
     });
+    if (ok) { setFoodMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); load(); }
   };
 
   // ── Food search — Open Food Facts (free, no key) via our /api/nutrition/search
@@ -2112,13 +2147,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* Hub masthead (home), or a sub-screen back-header. */}
+      {/* Hub masthead (home), or a sub-screen back-header. The Pantry draws its
+          OWN head, because its head carries a control — the search in the right
+          slot — and this one has no slot to put it in. */}
       {view === "home" ? (
         <div>
           {greeting && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 3 }}>{greeting}</div>}
           <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
         </div>
-      ) : (
+      ) : view === "foods" ? null : (
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pressable" onClick={() => setView("home")} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 16, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><AuroraIcon name="back" size={18} color={C("chalk")} /></button>
           <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 26, letterSpacing: "-.03em", margin: 0 }}>{view === "log" ? t("w.recovery.nutrition.logMealCta") : view === "insights" ? t("w.recovery.nutrition.menuInsights") : view === "diary" ? t("w.recovery.nutrition.menuDiary") : view === "body" ? t("w.recovery.nutrition.menuBody") : view === "meals" ? t("w.recovery.nutrition.yourMeals") : t("w.recovery.nutrition.yourProducts")}</h1>
@@ -2558,96 +2595,54 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           library. Below sits the user's own saved foods, with a manual builder
           for anything the database doesn't have. */}
       {view === "foods" && (
-      <div style={{ ...card, marginTop: 16 }}>
-        {/* Search — text or barcode */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px" }}>
-          <AuroraIcon name="search" size={18} color={C("ash")} />
-          <input value={foodQuery} onChange={(e) => setFoodQuery(e.target.value)} placeholder={t("w.recovery.nutrition.foodSearchPh")} aria-label={t("w.recovery.nutrition.foodSearchPh")} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body }} />
-          {foodQuery ? <button className="pressable" onClick={() => setFoodQuery("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 17, lineHeight: 1 }}>×</button> : <Glyph name="scan" size={17} color={C("ash")} strokeWidth={4} />}
-        </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8, letterSpacing: ".08em" }}>{t("w.recovery.nutrition.foodSearchHint")}</div>
-        {foodMsg && <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 10 }}><AuroraIcon name="check" size={13} color="var(--lime-text)" />{foodMsg}</div>}
-
-        {/* Database results */}
-        {foodQuery.trim().length >= 2 && (
-          <div style={{ marginTop: 16 }}>
-            {searching ? (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "6px 0" }}>{t("w.recovery.nutrition.searching")}</div>
-            ) : foodResults.length === 0 ? (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "6px 0", lineHeight: 1.5 }}>{t("w.recovery.nutrition.foodNoResults")}</div>
-            ) : foodResults.map((food, i) => (
-              <div key={`${food.id || food.code}-${i}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                {/* A verified row opens its page from the name, exactly as in the
-                    picker — the same food must not be a dead end on one screen
-                    and a doorway on another. */}
-                <button className="pressable"
-                  onClick={food.verified && food.id ? () => openFoodPage(food.id!, "foods") : () => logFood(food)}
-                  style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
-                >
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
-                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{food.name}</span>
-                    {food.verified && <VerifiedMark size={12} />}
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{food.brand ? `${food.brand} — ` : ""}{food.serving} — {food.kcal} kcal — {food.protein}P {food.carbs}C {food.fat}F</div>
-                </button>
-                <button className="pressable" onClick={() => saveFood(food)} aria-label={t("w.recovery.nutrition.saveToFoods")} title={t("w.recovery.nutrition.saveToFoods")} style={{ flex: "none", width: 34, height: 34, borderRadius: "50%", border: `1px solid ${C("line")}`, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="bookmark" size={15} color={C("ash")} /></button>
-                <button className="pressable" onClick={() => logFood(food)} style={{ flex: "none", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Your saved foods */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 20, paddingTop: foodQuery.trim().length >= 2 ? 16 : 0, borderTop: foodQuery.trim().length >= 2 ? `1px solid ${C("line")}` : "none" }}>
-          <b style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.note }}>{t("w.recovery.nutrition.yourProducts")}</b>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{full ? t("w.recovery.nutrition.unlimited") : `${products.length} / ${FREE_PRODUCT_LIMIT}`}</span>
-        </div>
-        {products.length === 0 && !showProdBuilder && (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 8, lineHeight: 1.5 }}>{t("w.recovery.nutrition.yourProductsSub")}</div>
-        )}
-        {products.length > 0 && (
-          <div style={{ marginTop: 10 }}>
-            {products.map((p, i) => (
-              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><span style={{ fontWeight: 600, fontSize: fs.body }}>{p.name}</span>{p.subname ? <span style={{ fontSize: fs.caption, color: C("ash"), fontWeight: 500 }}>{p.subname}</span> : null}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{p.servingLabel} — {p.kcal} kcal — {p.protein}P {p.carbs}C {p.fat}F</div>
+        <PantryScreen
+          items={products}
+          query={foodQuery}
+          onQuery={setFoodQuery}
+          searchOpen={pantrySearch}
+          onSearchOpen={setPantrySearch}
+          onLogOne={logOneServing}
+          onOpen={logProduct}
+          onDelete={askDeleteProduct}
+          onCreate={() => canSaveAnotherProduct ? openCreate("product") : onNavigate?.("upgrade")}
+          canCreate={canSaveAnotherProduct}
+          full={full}
+          limit={FREE_PRODUCT_LIMIT}
+          msg={foodMsg}
+          back={() => setView("home")}
+          searchHint={<div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 8, letterSpacing: ".08em" }}>{t("w.recovery.nutrition.foodSearchHint")}</div>}
+          dbSlot={
+            <div style={{ marginTop: 26 }}>
+              <GroupMark label={t("w.recovery.nutrition.pn.fromDatabase")} mt={0} />
+              {searching ? (
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "10px 2px" }}>{t("w.recovery.nutrition.searching")}</div>
+              ) : foodResults.length === 0 ? (
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "10px 2px", lineHeight: 1.5 }}>{t("w.recovery.nutrition.foodNoResults")}</div>
+              ) : foodResults.map((food, i) => (
+                <div key={`${food.id || food.code}-${i}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C("line")}` : "none" }}>
+                  {/* A verified row opens its page from the name, exactly as in
+                      the picker — the same food must not be a dead end on one
+                      screen and a doorway on another. */}
+                  <button className="pressable"
+                    onClick={food.verified && food.id ? () => openFoodPage(food.id!, "foods") : () => logFood(food)}
+                    style={{ flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
+                  >
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
+                      <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{food.name}</span>
+                      {food.verified && <VerifiedMark size={12} />}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{food.brand ? `${food.brand} — ` : ""}{food.serving} — {food.kcal} kcal — {food.protein}P {food.carbs}C {food.fat}F</div>
+                  </button>
+                  <button className="pressable" onClick={() => saveFood(food)} aria-label={t("w.recovery.nutrition.saveToFoods")} title={t("w.recovery.nutrition.saveToFoods")} style={{ flex: "none", width: 34, height: 34, borderRadius: "50%", border: `1px solid ${C("line")}`, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="bookmark" size={15} color={C("ash")} /></button>
+                  <button className="pressable" onClick={() => logFood(food)} style={{ flex: "none", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.caption, color: "var(--on-accent)", background: C("lime"), border: "none", borderRadius: 999, padding: "8px 16px", cursor: "pointer" }}>{t("w.recovery.nutrition.log")}</button>
                 </div>
-                <button className="pressable" onClick={() => addProductToMeal(p)} aria-label={t("w.recovery.nutrition.addToMeal")} style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", border: `1px solid color-mix(in srgb, var(--color-lime) 42%, ${C("line")})`, background: "transparent", color: "var(--lime-text)", display: "grid", placeItems: "center", cursor: "pointer" }}><AuroraIcon name="add" size={14} color="var(--lime-text)" /></button>
-                <button className="pressable" onClick={() => deleteProduct(p.id)} aria-label={t("w.recovery.nutrition.deleteProduct")} style={{ flex: "none", background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 16 }}>×</button>
-              </div>
-            ))}
-          </div>
-        )}
-        {showProdBuilder && (
-          <div style={{ marginTop: 16, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: 16 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>{t("w.recovery.nutrition.newProduct")}</div>
-            <input value={prodForm.name} onChange={(e) => setProdForm((s) => ({ ...s, name: e.target.value }))} placeholder={t("w.recovery.nutrition.productNamePh")} aria-label={t("w.recovery.nutrition.productName")} style={{ width: "100%", boxSizing: "border-box", background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", outline: "none", fontFamily: "var(--font-display)", fontSize: fs.bodyLg }} />
-            <input value={prodForm.serving} onChange={(e) => setProdForm((s) => ({ ...s, serving: e.target.value }))} placeholder={t("w.recovery.nutrition.servingPh")} aria-label={t("w.recovery.nutrition.servingPh")} style={{ width: "100%", boxSizing: "border-box", background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px", outline: "none", fontFamily: "var(--font-mono)", fontSize: fs.body, marginTop: 8 }} />
-            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-              {macroField("kcal", "var(--lime-text)", prodForm.kcal, (v) => setProdForm((s) => ({ ...s, kcal: v })), "kcal")}
-              {macroField(t("w.recovery.nutrition.protein"), "var(--blue-text)", prodForm.protein, (v) => setProdForm((s) => ({ ...s, protein: v })))}
-              {macroField(t("w.recovery.nutrition.carbs"), "var(--amber-text)", prodForm.carbs, (v) => setProdForm((s) => ({ ...s, carbs: v })))}
-              {macroField(t("w.recovery.nutrition.fat"), "var(--violet-text)", prodForm.fat, (v) => setProdForm((s) => ({ ...s, fat: v })))}
+              ))}
             </div>
-            {(() => { const mk = macroKcalOf(prodForm.protein, prodForm.carbs, prodForm.fat); return mk > 0 && !prodForm.kcal.trim() ? <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 10, textAlign: "center" }}>{t("w.recovery.nutrition.macrosApprox")} {mk} kcal</div> : null; })()}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
-              <button className="pressable" onClick={() => setShowProdBuilder(false)} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: C("chalk"), border: `1px solid ${C("line")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.cancel")}</button>
-              <button className="pressable" onClick={saveProduct} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", border: "none", borderRadius: 999, padding: 12, cursor: "pointer" }}>{t("w.recovery.nutrition.saveProduct")}</button>
-            </div>
-          </div>
-        )}
-        {showProdBuilder ? null : canSaveAnotherProduct ? (
-          <button className="pressable" onClick={() => openCreate("product")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: "transparent", color: "var(--lime-text)", border: `1px solid ${C("lime")}`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
-            <AuroraIcon name="add" size={15} color="var(--lime-text)" />{t("w.recovery.nutrition.addManually")}
-          </button>
-        ) : (
-          <button className="pressable" onClick={() => onNavigate?.("upgrade")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.body, background: `color-mix(in srgb, var(--premium-accent) 12%, transparent)`, color: "var(--premium-accent-text)", border: `1px solid color-mix(in srgb, var(--premium-accent) 40%, transparent)`, borderRadius: 999, padding: 12, cursor: "pointer" }}>
-            <span aria-hidden>✦</span>{t("w.recovery.nutrition.unlockMoreProducts")}
-          </button>
-        )}
-      </div>
-
+          }
+        />
+      )}
+      {view === "foods" && pendingDelete && (
+        <UndoBar label={t("w.recovery.nutrition.pn.deleted").replace("{v}", pendingDelete.name)} onUndo={undoDeleteProduct} />
       )}
 
       {/* DIARY — the selected day's individual entries, grouped by part, each one

@@ -52,6 +52,7 @@ export * from "./endurance-lanes";
 export * from "./bodyweight";
 export * from "./body-progress";
 export * from "./food-facts";
+export * from "./pantry";
 export * from "./nutrition-off";
 export * from "./verified-foods";
 export * from "./source-marks";
