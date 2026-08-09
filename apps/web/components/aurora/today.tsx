@@ -54,7 +54,7 @@ import { fs, space,
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
-import { sportForDiscipline, hasEnduranceHistory, TODAY_RANGE_STORE_KEY } from "@hybrid/core";
+import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { CARD_PAD, roleText } from "@/lib/ui";
 import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
@@ -76,14 +76,13 @@ import AuroraLogbookRail from "./logbook-rail";
 import DoneFloor from "./done-floor";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
-import AuroraEnduranceLanes from "./endurance-lanes";
+import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
 import AuroraEnduranceSummary from "./endurance-summary";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 import GroupMark from "./group-mark";
 import SectionSeam from "./section-seam";
-import { RangeFilter } from "./range-filter";
 import { AuroraIcon } from "./icons";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
@@ -291,6 +290,10 @@ export default function AuroraToday({
   const logbookMode = !plan && !loading && hasData;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
+  // THE ENDURANCE LANES' ORDER, owned here because the chip that changes it
+  // renders on the Endurance cluster's headline row rather than inside the
+  // block it orders. See aurora/endurance-lanes.tsx.
+  const laneOrder = useLaneOrder(sessions);
   // The DAY the screen is scoped to. The week rail's tapped chip lifts up here
   // so the Also-today and feeling cards follow the viewed day instead of
   // staying pinned to the real today; null (or tapping today's chip) = today.
@@ -984,16 +987,7 @@ export default function AuroraToday({
           a strength records rail and a strength-favourites rail to reach their
           own sport, under a single headline claiming all of it was "Progress".
           It is its own section now, below the seam. ═════ */}
-      {/* THE PERIOD, at cluster altitude. The filter used to be a full-width
-          segmented bar nested under the This-week card's own head — three
-          levels down, reading as that card's control while actually scoping
-          BOTH clusters. It is a chip on the headline row now, which is where
-          the Explore SectionHead grammar puts a head-level control, and the
-          Endurance headline carries the identical one on the same period. */}
-      <GroupMark
-        label={t("w.home.group.progress")}
-        right={<RangeFilter storeKey={TODAY_RANGE_STORE_KEY} sessions={sessions} />}
-      />
+      <GroupMark label={t("w.home.group.progress")} />
 
       {/* ───── (a) THIS WEEK — the verdict card, and the screen's date filter
           (Endurance shows the same one again, on the same period). A verdict
@@ -1035,10 +1029,19 @@ export default function AuroraToday({
       {hasEnduranceHistory(sessions) && (
         <>
           <SectionSeam />
+          {/* The order control sits ON THE HEADLINE, which is where the
+              Explore SectionHead grammar puts a head-level control: beside the
+              title, same row. It used to float on an orphan right-aligned row
+              between the section's opener and its first lane, attached to
+              neither — and a control that orders the whole section belongs at
+              the section's altitude. Hidden with one lane: sorting a list of
+              one is a control that does nothing. */}
           <GroupMark
             label={t("endurance.title")}
             mt={24}
-            right={<RangeFilter storeKey={TODAY_RANGE_STORE_KEY} sessions={sessions} />}
+            right={isAthlete && laneOrder.many
+              ? <LaneOrderChip order={laneOrder.order} onClick={laneOrder.cycle} t={t} />
+              : undefined}
           />
 
           {/* ───── (a) THE LEAD — the section's opener, and it is a SENTENCE:
@@ -1065,6 +1068,7 @@ export default function AuroraToday({
             <AuroraEnduranceLanes
               sessions={sessions}
               head={false}
+              order={laneOrder.order}
               canOpen={(d) => !!onOpenSport && !!sportForDiscipline(d)}
               onOpen={(d) => { const sport = sportForDiscipline(d); if (sport) onOpenSport?.(sport); }}
             />

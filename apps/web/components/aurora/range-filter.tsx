@@ -2,44 +2,35 @@
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import {
-  ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
-  activityMonths, activityRangeSpanEnd, activityRangeTitleKey, resolveActivityRange,
+  ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE, MONTH_SEGMENT_ID,
+  activityMonths, activityRangeSegIndex, activityRangeSegments, activityRangeSpanEnd,
+  activityRangeTitleKey, resolveActivityRange,
   type ActivityRange, type LoggedSession,
 } from "@hybrid/core";
 import Sheet from "./sheet";
+import { LiquidSeg } from "./liquid-seg";
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { useToday } from "@/lib/use-today";
 
 /**
- * THE DATE FILTER — a HEAD-LEVEL CHIP carrying the window it is showing, and a
- * sheet of every period behind it. The TWIN of
- * components/aurora/range-filter.tsx on mobile.
+ * THE DATE FILTER — Week / 7 days / 30 days / YTD / a month, in the iOS 26
+ * segmented-control idiom, plus the month sheet behind its trailing segment.
+ * The TWIN of components/aurora/range-filter.tsx on mobile.
  *
- * IT SITS ON THE CLUSTER'S HEADLINE ROW, which is where the Explore SectionHead
- * grammar puts a head-level control — beside the title, never under it. That is
- * the fix for what it used to be: a full-width five-segment bar nested under
- * the This-week block head, three levels down, reading as that one card's
- * control while actually scoping the whole retrospective. A filter belongs at
- * the altitude of the thing it filters.
+ * It lived inside the This-week verdict card, which was correct while that card
+ * was the only period-scoped block on Today. Splitting the retrospective into
+ * PROGRESS and ENDURANCE gave the screen a second one, and a second control —
+ * so the control became a shared component before it became a copy. That is the
+ * same rule the rail tails follow (aurora/rail-tail.tsx): five rails once drew
+ * five different tails because each sized its own.
  *
- * SO THE SEGMENTED BAR IS GONE from Today, and the SHEET it always had is now
- * the whole editor: presets and months in one grouped list, with a check on the
- * one in force. The chip is the same idiom the endurance lanes' order control
- * already uses — a bordered pill in ash with a chevron, a state selector rather
- * than an action, so chartreuse stays reserved for "go". Two lines of chrome
- * became one, on a row that had space to spare.
- *
- * It is a shared component because the screen has two clusters and both carry
- * one — the same rule the rail tails follow (aurora/rail-tail.tsx): five rails
- * once drew five different tails because each sized its own.
- *
- * WHAT IS SHARED. The SHAPE is core's (activity-range-view.ts): the preset
- * list, the title, the span the chip prints. The CHOICE is shared too — every
- * block passing the same key reads one period and moves together the instant
- * any one of them is changed. Today's two clusters both pass core's
- * TODAY_RANGE_STORE_KEY, so the two chips are one filter shown twice and can
- * never drift apart. See that constant for why.
+ * WHAT IS SHARED. The SHAPE of the control is core's
+ * (activity-range-view.ts): the segment list, which one is lit, the span the
+ * head prints. The CHOICE is shared too — every block passing the same key
+ * reads one period and moves together the instant any one of them is scrubbed.
+ * Today's two sections both pass core's TODAY_RANGE_STORE_KEY, because they are
+ * the same filter shown twice, not two filters. See that constant for why.
  *
  * THAT LIVENESS IS THE WHOLE POINT OF THE STORE BELOW. A shared storage key
  * alone would leave two mounted controls disagreeing until the next launch —
@@ -152,66 +143,74 @@ export function useRangeLabels(range: ActivityRange): RangeLabels {
   };
 }
 
-/** The Explore-standard head a period-scoped block opens with — the display-face
- *  title, and nothing on the right. The span used to ride that slot; it is on
- *  the cluster's head chip now, so the block states its window's NAME and lets
- *  the control state its dates. */
-export function RangeHead({ title }: { title: string }) {
+/** The Explore-standard head a period-scoped block opens with: display-face
+ *  title left, the span as mono meta right. */
+export function RangeHead({ title, meta }: { title: string; meta: string }) {
   return (
-    <div style={{ margin: "0 2px 8px", fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>
-      {title}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
+      <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{title}</span>
+      <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".08em", color: C("ash") }}>{meta}</span>
     </div>
   );
 }
 
 /**
- * The chip, and the sheet it opens.
- *
- * The LABEL IS THE SPAN — "3 – 9 Aug" — not the period's name. The name is
- * already the title of the block underneath ("This week"), and a chip repeating
- * it beside a heading 40px away is the restatement this whole pass has been
- * removing. Dates with a chevron also say "date filter" without a word of
- * chrome, and they are the fact a period's NAME cannot give you: which seven
- * days "this week" actually means. The name rides the accessible label, so the
- * control still announces itself as the period it is.
+ * The control itself: five equal segments and one thumb that TRAVELS — the
+ * movement is what makes it read as iOS rather than as five buttons. The Month
+ * segment intercepts to its picker sheet; the pill only lands on it once a
+ * month is actually in force (the index moves then).
  */
 export function RangeFilter({
-  storeKey,
-  sessions,
+  range, sessions, onPick,
 }: {
-  /** Which period this control edits. Same key → same period, live. */
-  storeKey: string;
-  /** Which months the sheet can offer — that depends on the history. */
+  range: ActivityRange;
+  /** Which months the picker can offer — that depends on the history. */
   sessions: LoggedSession[];
+  onPick: (id: string) => void;
 }) {
   const { t } = useLang();
   const today = useToday();
   const [picker, setPicker] = useState(false);
-  const { range, pick } = useActivityRange(storeKey);
-  const { title, span, monthLabel } = useRangeLabels(range);
+  const { monthLabel } = useRangeLabels(range);
+
+  const segments = activityRangeSegments(range);
+  const segIndex = activityRangeSegIndex(range, segments);
   const months = useMemo(() => activityMonths(sessions, Date.now()), [sessions, today]);
+  const label = (s: (typeof segments)[number]) =>
+    s.labelKey ? t(s.labelKey) : monthLabel(s.monthId ?? range.id, false);
 
   return (
     <>
-      <button
-        className="pressable"
-        onClick={() => setPicker(true)}
-        aria-haspopup="dialog"
-        aria-label={`${t("w.home.act.pickTitle")} – ${title}`}
-        style={{
-          display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
-          background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 999,
-          padding: "4px 9px", color: C("ash"), flex: "0 0 auto",
-        }}
-      >
-        <span style={{ ...kicker, fontSize: fs.nano, color: C("ash") }}>{span}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano }} aria-hidden>⌄</span>
-      </button>
+      <LiquidSeg
+        items={segments.map((s) => ({
+          key: s.id,
+          label: label(s),
+          intercept: s.id === MONTH_SEGMENT_ID ? () => setPicker(true) : undefined,
+          render: (on: boolean) => (
+            <span
+              style={{
+                fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em",
+                color: on ? C("chalk") : C("ash"),
+                fontWeight: on ? 600 : 400,
+                transition: "color .2s ease",
+                maxWidth: "100%", padding: "0 4px",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}
+            >
+              {label(s)}
+              {s.isMonth && <span aria-hidden style={{ opacity: .6 }}> ▾</span>}
+            </span>
+          ),
+        }))}
+        index={segIndex}
+        onSelect={(i) => onPick(segments[i]!.id)}
+        segHeight={30}
+        pad={3}
+        trackStyle={{ background: C("ink"), border: `1px solid ${C("line")}`, marginBottom: 10 }}
+      />
 
-      {/* ── THE PERIOD SHEET — the iOS grouped list: sections, a row per
-          period, a check on the one in force. It used to be reachable only
-          through the segmented bar's trailing Month segment; now it is the
-          whole editor. ─────────────────────────────────────────────────── */}
+      {/* ── THE MONTH PICKER — the iOS grouped list: sections, a row per
+          period, a check on the one in force. ─────────────────────────────── */}
       <Sheet open={picker} onClose={() => setPicker(false)} title={t("w.home.act.pickTitle")} sub={t("w.home.act.pickSub")}>
         <PickerSection label={t("w.home.act.presets")}>
           {ACTIVITY_RANGE_PRESETS.map((p) => (
@@ -219,7 +218,7 @@ export function RangeFilter({
               key={p.id}
               label={t(p.labelKey)}
               active={range.id === p.id}
-              onClick={() => { pick(p.id); setPicker(false); }}
+              onClick={() => { onPick(p.id); setPicker(false); }}
             />
           ))}
         </PickerSection>
@@ -229,7 +228,7 @@ export function RangeFilter({
               key={id}
               label={monthLabel(id)}
               active={range.id === id}
-              onClick={() => { pick(id); setPicker(false); }}
+              onClick={() => { onPick(id); setPicker(false); }}
             />
           ))}
         </PickerSection>

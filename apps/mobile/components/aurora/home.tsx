@@ -56,7 +56,7 @@ import {
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
-import { sportForDiscipline, hasEnduranceHistory, TODAY_RANGE_STORE_KEY } from "@hybrid/core";
+import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, fetchRoutines, favouriteRoutine, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
@@ -86,7 +86,7 @@ import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
 import ReadinessSheet from "./readiness-sheet";
 import FetchError from "./fetch-error";
-import AuroraEnduranceLanes from "./endurance-lanes";
+import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
 import AuroraEnduranceSummary from "./endurance-summary";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
@@ -99,7 +99,6 @@ import AuroraLogbookRail from "./logbook-rail";
 import DoneFloor from "./done-floor";
 import GroupMark from "./group-mark";
 import SectionSeam from "./section-seam";
-import { RangeFilter } from "./range-filter";
 import { TodayTabs } from "./today-tabs";
 import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
@@ -333,6 +332,10 @@ export default function AuroraHome() {
   const hasData = sessionsRead.ready && sessions.length > 0;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
+  // THE ENDURANCE LANES' ORDER, owned here because the chip that changes it
+  // renders on the Endurance cluster's headline row rather than inside the
+  // block it orders. See aurora/endurance-lanes.tsx.
+  const laneOrder = useLaneOrder(sessions);
   // The date-anchored WEEK RAIL replaces the count-based plan hero whenever an
   // enrolled program + a start date resolve (parity with web home). The shared
   // engine (planSchedule) reconciles each calendar date against logged sessions
@@ -1052,17 +1055,7 @@ export default function AuroraHome() {
             reach their own sport, under a single headline claiming all of it
             was "Progress". It is its own section now, below the seam. Mirrors
             web today.tsx. ═════ */}
-        {/* THE PERIOD, at cluster altitude. The filter used to be a
-            full-width segmented bar nested under the This-week card's own head
-            — three levels down, reading as that card's control while actually
-            scoping BOTH clusters. It is a chip on the headline row now, which
-            is where the Explore SectionHead grammar puts a head-level control,
-            and the Endurance headline carries the identical one on the same
-            period. */}
-        <GroupMark
-          label={t("w.home.group.progress")}
-          right={<RangeFilter storeKey={TODAY_RANGE_STORE_KEY} sessions={sessions} />}
-        />
+        <GroupMark label={t("w.home.group.progress")} />
 
         {/* ───── (a) THIS WEEK — the verdict card, and the screen's date
             filter (Endurance shows the same one again, on the same period). A
@@ -1108,10 +1101,19 @@ export default function AuroraHome() {
         {hasEnduranceHistory(sessions) && (
           <>
             <SectionSeam />
+            {/* The order control sits ON THE HEADLINE, which is where the
+                Explore SectionHead grammar puts a head-level control: beside
+                the title, same row. It used to float on an orphan
+                right-aligned row between the section's opener and its first
+                lane, attached to neither — and a control that orders the whole
+                section belongs at the section's altitude. Hidden with one
+                lane: sorting a list of one is a control that does nothing. */}
             <GroupMark
               label={t("endurance.title")}
               mt={24}
-              right={<RangeFilter storeKey={TODAY_RANGE_STORE_KEY} sessions={sessions} />}
+              right={isAthlete && laneOrder.many
+                ? <LaneOrderChip order={laneOrder.order} onPress={laneOrder.cycle} />
+                : undefined}
             />
 
             {/* ───── (a) THE LEAD — the section's opener, and it is a
@@ -1140,6 +1142,7 @@ export default function AuroraHome() {
               <AuroraEnduranceLanes
                 sessions={sessions}
                 head={false}
+                order={laneOrder.order}
                 canOpen={(d) => !!sportForDiscipline(d)}
                 onOpen={(d) => { const sport = sportForDiscipline(d); if (sport) router.push({ pathname: "/sport-page", params: { name: sport } }); }}
               />

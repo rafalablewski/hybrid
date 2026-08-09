@@ -42,12 +42,11 @@ import { useActivityRange, useRangeLabels } from "./range-filter";
  * The anatomy is the verdict card's, deliberately: a sentence, then its
  * working-out. That is how a summary reads on this screen.
  *
- * NO CONTROL OF ITS OWN. The section's filter is the chip on the ENDURANCE
- * headline row directly above (aurora/range-filter.tsx), which is where a
- * control that scopes a whole cluster belongs; this block only reads the period
- * it sets. It still NAMES the window, because a sentence about "5.4 h" with no
- * period attached is not a summary — but only the name, since the chip a line
- * above is already carrying the dates.
+ * NO FILTER OF ITS OWN. It reads the SCREEN's period (core's
+ * TODAY_RANGE_STORE_KEY, the same one the verdict card's control writes), so a
+ * second five-segment control here would be the same control drawn twice, ten
+ * lines apart, always agreeing. The block names the window instead — a total
+ * with no period is not a total.
  *
  * IT NEVER DISAPPEARS while the section exists. A block that comes and goes is
  * worse than one that is sometimes quiet, so an empty period keeps its place
@@ -79,7 +78,7 @@ export default function AuroraEnduranceSummary({
   // Read-only: the control that WRITES this period is the verdict card's, at
   // the top of the retrospective. Same key, so this follows it live.
   const { range } = useActivityRange(TODAY_RANGE_STORE_KEY);
-  const { title } = useRangeLabels(range);
+  const { title, span } = useRangeLabels(range);
 
   const w = useMemo(() => enduranceWindow(sessions, range, bw), [sessions, range, bw]);
   const lead = useMemo(() => enduranceLead(w), [w]);
@@ -103,13 +102,14 @@ export default function AuroraEnduranceSummary({
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
         boxShadow: "var(--shadow-card)", padding: 14,
       }}>
-        {/* The window's NAME, said once. The dates are on the cluster's head
-            chip directly above, so printing them again here would be the
-            restatement this block exists to avoid — but a sentence about
-            "5.4 h" with no period at all is not a summary. */}
-        <span style={{ display: "block", ...kicker, color: C("chalk") }}>{title}</span>
+        {/* The window, said once. There is no filter here, so this line is what
+            stops "5.4 h" being a figure with no period attached. */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+          <span style={{ ...kicker, color: C("chalk") }}>{title}</span>
+          <span style={{ ...kicker, color: C("ash") }}>{span}</span>
+        </div>
 
-        <p style={{ margin: "7px 0 0", fontSize: fs.bodyLg, lineHeight: 1.4, color: C("chalk") }}>{sentence}</p>
+        <p style={{ margin: "8px 0 0", fontSize: fs.bodyLg, lineHeight: 1.4, color: C("chalk") }}>{sentence}</p>
 
         {lead.sports > 0 && (
           <p style={{
