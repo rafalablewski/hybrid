@@ -10,6 +10,16 @@ import { coachDisplay, loadCoachStorefront } from "@/lib/coach-storefront";
 // The read itself lives in lib/coach-storefront.ts, because the PERSON's page
 // (/api/social/user/[handle]) serves the same coaching block as a section of
 // the human — a coach is not a second kind of profile.
+//
+// NO CLIENT CALLS THIS ANY MORE: both apps read the coaching block from the
+// user page. It is kept deliberately, for one reason that is not sentiment —
+// an endpoint is a contract with app binaries that are ALREADY INSTALLED. A
+// TestFlight build from before the user page still opens its coach modal
+// against this URL, and deleting it would leave those users on a spinner
+// forever. It costs a thin delegation to the shared loader (so it cannot drift
+// from what the page shows), and it can go once no shipped build needs it.
+// The dead mobile CLIENT helper (`getCoach`) was removed, because a client
+// helper is a contract with nobody.
 
 export async function GET(request: Request, { params }: { params: Promise<{ handle: string }> }) {
   const me = await getOrCreateDbUser(request);

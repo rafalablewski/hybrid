@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, seedPerson, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 // The AI coach screen, reached from the Cockpit module tile (see below).
 const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { AuroraIcon } from "./aurora/icons";
@@ -278,8 +278,11 @@ export default function AppShell() {
   // there is one surface for a person and it has an address.
   const [userFocus, setUserFocus] = useState("");
   const [userReturn, setUserReturn] = useState("feed");
-  const openUser = (handle: string) => {
+  const openUser = (handle: string, card?: { handle: string; displayName?: string | null; avatarUrl?: string | null; coachVerified?: boolean }) => {
     if (!handle) return;
+    // Hand over what the row already knows, so the page paints the person on
+    // its first frame instead of a spinner (core/person-seed.ts).
+    if (card?.handle) seedPerson(card);
     if (screen !== "user") setUserReturn(screen);
     // The sub-target is written BEFORE the screen, so the pushed history entry
     // carries the handle with it (same reason as the post and the sport page).
@@ -966,7 +969,7 @@ export default function AppShell() {
             bio={bio ?? undefined}
             macro={macro}
             currentWeek={currentWeek}
-            onNavigate={navigate}
+            onNavigate={navigate} onOpenUser={openUser}
           />
         )}
 
@@ -1126,7 +1129,7 @@ export default function AppShell() {
 
         {/* Tools available in BOTH templates (Aurora-styled when active, classic
             otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}
-        {screen === "notifications" && <NotificationsScreen embedded onNavigate={navigate} onOpenSession={openSession} />}
+        {screen === "notifications" && <NotificationsScreen embedded onNavigate={navigate} onOpenSession={openSession} onOpenUser={openUser} />}
         {screen === "timer" && <IntervalTimerScreen embedded />}
         {screen === "statistics" && <StatisticsScreen embedded />}
 

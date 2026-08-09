@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type { FeedItemView, LiveAthlete, Relation } from "@hybrid/core";
-import { colors, feedPostPath, userPagePath } from "@hybrid/core";
+import { colors, feedPostPath, seedPerson, userPagePath } from "@hybrid/core";
 import { getFeed, toggleKudos, createPost, deletePost } from "../lib/social-api";
 import { Empty, SButton } from "./social-kit";
 import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
@@ -208,7 +208,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       <FeedCard
         item={item}
         units={units}
-        onOpenProfile={(h) => { if (h) router.push(userPagePath(h)); }}
+        onOpenProfile={(h) => { if (h) { seedPerson(item.author); router.push(userPagePath(h)); } }}
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
         // EVERY post opens its own screen — a workout, a record, a status

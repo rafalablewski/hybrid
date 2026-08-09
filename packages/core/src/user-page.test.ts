@@ -64,15 +64,18 @@ describe("userPageRelation", () => {
 });
 
 describe("userPageTabs", () => {
-  it("an athlete has Overview + Activity", () => {
-    expect(userPageTabs(page()).map((t) => t.id)).toEqual(["overview", "activity"]);
+  it("an athlete has Overview, Activity and People", () => {
+    expect(userPageTabs(page()).map((t) => t.id)).toEqual(["overview", "activity", "people"]);
   });
   it("a coach gets the coaching tab, between the person and their training", () => {
-    expect(userPageTabs(page({ coach: coach() })).map((t) => t.id)).toEqual(["overview", "coaching", "activity"]);
+    expect(userPageTabs(page({ coach: coach() })).map((t) => t.id)).toEqual(["overview", "coaching", "activity", "people"]);
   });
   it("a private account keeps Overview (the locked notice) and drops Activity", () => {
     expect(userPageTabs(page({ canViewResults: false })).map((t) => t.id)).toEqual(["overview"]);
     expect(userPageTabs(page({ canViewResults: false, coach: coach() })).map((t) => t.id)).toEqual(["overview", "coaching"]);
+    // People rides the SAME gate as Activity — a private account's follow graph
+    // is no more browsable than its training.
+    expect(userPageTabs(page({ canViewResults: false })).map((t) => t.id)).not.toContain("people");
   });
   it("every tab carries a label key rather than English", () => {
     for (const t of userPageTabs(page({ coach: coach() }))) expect(t.labelKey.startsWith("w.user.")).toBe(true);

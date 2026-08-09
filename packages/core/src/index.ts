@@ -95,6 +95,7 @@ export * from "./feed-actions";
 export * from "./feed-workout";
 export * from "./social";
 export * from "./user-page";
+export * from "./person-seed";
 export * from "./stats";
 export * from "./activity-window";
 export * from "./activity-range-view";

@@ -33,6 +33,7 @@ import type {
   ApiError,
   Degradable,
   FeedItemView,
+  PersonCard,
   FollowState,
   PublicProfile,
   StorefrontProgram,
@@ -89,7 +90,27 @@ export interface UserPageResponse extends Degradable, ApiError {
    *  renders, so a person's page and the stream can't describe one workout two
    *  ways. */
   activity: FeedItemView[];
+  /** True when the timeline hit its cap and there is older training the page is
+   *  NOT showing. The page says so out loud: a list that stops without saying
+   *  it stopped reads as "this is everything they have done", which for an
+   *  athlete of ten years is a lie by omission. */
+  activityTruncated: boolean;
 }
+
+/** GET /api/social/user/[handle]/people?tab=… — one side of someone's follow
+ *  graph. Its own read because a page should not pay for a list nobody has
+ *  asked to see yet. */
+export type PeopleTab = "followers" | "following";
+
+export interface UserPagePeopleResponse extends Degradable, ApiError {
+  tab: PeopleTab;
+  people: PersonCard[];
+  /** More than the page returns. Same honesty rule as the timeline. */
+  truncated: boolean;
+}
+
+/** How many people one read returns. */
+export const PEOPLE_PAGE_MAX = 100;
 
 /* ── RELATION ────────────────────────────────────────────────────────────── */
 
@@ -113,10 +134,19 @@ export const followsUser = (rel: UserPageRelation): boolean =>
 
 /* ── TABS ────────────────────────────────────────────────────────────────── */
 
-/** Overview is always there. Coaching exists only for a coach; Activity only
- *  when the viewer is allowed to see results at all — a private account's page
- *  shows the locked notice on Overview rather than an empty third tab. */
-export type UserPageTabId = "overview" | "coaching" | "activity";
+/**
+ * Overview is always there. Coaching exists only for a coach. Activity and
+ * People need the viewer to be allowed to look at all — a private account's
+ * page shows the locked notice on Overview rather than a row of empty tabs.
+ *
+ * PEOPLE is last on purpose: it is the least primary thing about a person, and
+ * it is normally reached by tapping the follower counts above rather than by
+ * the tab itself. Its gate is the SAME `canViewResults` the stats use, which is
+ * a deliberate reading of the existing privacy model rather than a new one —
+ * a public account's connections are browsable, a followers-only account shows
+ * them to its followers, a private account to nobody.
+ */
+export type UserPageTabId = "overview" | "coaching" | "activity" | "people";
 
 export interface UserPageTab {
   id: UserPageTabId;
@@ -128,12 +158,13 @@ const TAB_LABEL: Record<UserPageTabId, string> = {
   overview: "w.user.tabOverview",
   coaching: "w.user.tabCoaching",
   activity: "w.user.tabActivity",
+  people: "w.user.tabPeople",
 };
 
 export function userPageTabs(d: Pick<UserPageResponse, "coach" | "canViewResults">): UserPageTab[] {
   const ids: UserPageTabId[] = ["overview"];
   if (d.coach) ids.push("coaching");
-  if (d.canViewResults) ids.push("activity");
+  if (d.canViewResults) ids.push("activity", "people");
   return ids.map((id) => ({ id, labelKey: TAB_LABEL[id] }));
 }
 

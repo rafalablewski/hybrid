@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, RefreshControl } from "react-native";
 import { router } from "expo-router";
-import { FEED_SAVED_PAGE, feedPostPath, orderBySaved, userPagePath, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
+import { FEED_SAVED_PAGE, feedPostPath, orderBySaved, seedPerson, userPagePath, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
 import { Loading, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
 import { AuroraScreen, GUTTER } from "../components/aurora/kit";
 import type { HeroScrollProps } from "../components/aurora/hero";
@@ -99,7 +99,7 @@ export default function SavedScreen() {
     <FeedCard
       item={item}
       units={units}
-      onOpenProfile={(h) => { if (h) router.push(userPagePath(h)); }}
+      onOpenProfile={(h) => { if (h) { seedPerson(item.author); router.push(userPagePath(h)); } }}
       onKudos={() => cheer(item)}
       onComments={() => setOpen(open === item.id ? null : item.id)}
       // A saved row opens the same post screen the feed's rows open.

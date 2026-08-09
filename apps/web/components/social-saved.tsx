@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FEED_SAVED_PAGE, feedSubjectKey, fs, leading, orderBySaved, tracking } from "@hybrid/core";
 import type { FeedItemView, KudosResponse, Relation, SavedFeedResponse } from "@hybrid/core";
-import { C, Btn, EmptyState, jsend } from "./social-ui";
+import { C, Btn, EmptyState, jsend, type OpenUser } from "./social-ui";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
 import { HubMasthead } from "./aurora/hub-masthead";
@@ -43,7 +43,7 @@ export default function SocialSaved({
 }: {
   onNavigate?: (screen: string) => void;
   /** A person, on their own page (the shell's `user` screen). */
-  onOpenUser?: (handle: string) => void;
+  onOpenUser?: OpenUser;
   /** A saved row opens the same post page the feed's rows open. */
   onOpenPost?: (key: string, item: FeedItemView) => void;
 } = {}) {
@@ -121,7 +121,7 @@ export default function SocialSaved({
               key={item.id}
               item={item}
               units={units}
-              onOpenProfile={(h) => onOpenUser?.(h)}
+              onOpenProfile={(h) => onOpenUser?.(h, item.author)}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
               onOpen={onOpenPost ? () => { setOpen(null); onOpenPost(feedSubjectKey(item), item); } : undefined}

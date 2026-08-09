@@ -6,10 +6,12 @@ import {
   canReviewCoach,
   feedPostPath,
   followsUser,
+  userPagePath,
   fs,
   leading,
   tracking,
   canCompareWith,
+  peekPerson,
   resolveUserPageTab,
   userPageAction,
   userPageRelation,
@@ -20,6 +22,8 @@ import {
 import type {
   CompareResult,
   FeedItemView,
+  PeopleTab,
+  PersonCard,
   ProgramPreviewDay,
   ProgramPreviewItem,
   ProgramPreviewWeek,
@@ -27,6 +31,7 @@ import type {
   SharedLift,
   StorefrontProgram,
   StorefrontReview,
+  UserPagePeopleResponse,
   UserPageResponse,
   UserPageTabId,
 } from "@hybrid/core";
@@ -38,7 +43,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useConfirm } from "../../components/aurora/confirm";
 import { HeroAccessory } from "../../components/aurora/hero";
 import {
-  blockUser, enrollProgram, follow, getCompare, getUserPage, postReview, reportTarget, toggleKudos, unfollow,
+  blockUser, enrollProgram, follow, getCompare, getUserPage, getUserPeople, postReview, reportTarget, toggleKudos, unfollow,
 } from "../../lib/social-api";
 import { Avatar, Empty, SButton, Stars, levelInk } from "../../components/social-kit";
 import FeedCard from "../../components/feed-card";
@@ -71,7 +76,11 @@ export default function UserScreen() {
   const [tab, setTab] = useState<UserPageTabId>("overview");
   const [cmp, setCmp] = useState<CompareResult | null>(null);
   const [thread, setThread] = useState<string | null>(null);
+  const [peopleTab, setPeopleTab] = useState<PeopleTab>("followers");
   const [busy, setBusy] = useState<string | null>(null);
+  // What the row that opened us already knew (core/person-seed.ts) — the first
+  // frame paints the person, not a spinner where the person will be.
+  const seed = peekPerson(handle);
 
   const load = async () => {
     const d = await getUserPage(handle);
@@ -85,7 +94,7 @@ export default function UserScreen() {
   const rel = data ? userPageRelation(data) : "none";
   const tabs = data ? userPageTabs(data) : [];
   const shown = resolveUserPageTab(tabs, tab);
-  const name = p?.displayName || (p ? `@${p.handle}` : `@${handle}`);
+  const name = p?.displayName || seed?.displayName || `@${p?.handle ?? handle}`;
   const hero = { rank: "title" as const, title: name, eyebrow: `@${p?.handle ?? handle}` };
 
   const run = async (key: string, fn: () => Promise<void>) => { setBusy(key); try { await fn(); } finally { setBusy(null); } };
@@ -120,7 +129,21 @@ export default function UserScreen() {
     );
   }
   if (!data || !p) {
-    return <AuroraScreen hero={hero}><Loading /></AuroraScreen>;
+    return (
+      <AuroraScreen hero={hero}>
+        {seed ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.title }}>{name}</Text>
+              <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.caption }}>@{seed.handle}</Text>
+            </View>
+          </View>
+        ) : (
+          <Loading />
+        )}
+      </AuroraScreen>
+    );
   }
 
   const action = userPageAction(data);
@@ -161,14 +184,22 @@ export default function UserScreen() {
       {/* ── THE COUNTS ── who they reach, and how much they train. */}
       <View style={{ flexDirection: "row", marginTop: 14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line, paddingVertical: 10 }}>
         {[
-          { v: data.counts.followers.toLocaleString(), l: t("w.user.followers") },
-          { v: data.counts.following.toLocaleString(), l: t("w.user.following") },
-          ...(data.stats ? [{ v: data.stats.totalSessions.toLocaleString(), l: t("w.social.statSessions") }] : []),
+          /* The two follow counts OPEN the list they count — the gesture every
+             social product has taught. They select the People tab rather than
+             pushing a screen, so a person still has exactly one address. */
+          { v: data.counts.followers.toLocaleString(), l: t("w.user.followers"), go: data.canViewResults ? () => { setPeopleTab("followers"); setTab("people"); } : undefined },
+          { v: data.counts.following.toLocaleString(), l: t("w.user.following"), go: data.canViewResults ? () => { setPeopleTab("following"); setTab("people"); } : undefined },
+          ...(data.stats ? [{ v: data.stats.totalSessions.toLocaleString(), l: t("w.social.statSessions"), go: undefined }] : []),
         ].map((f) => (
-          <View key={f.l} style={{ flex: 1, alignItems: "center" }}>
+          <Pressable
+            key={f.l}
+            disabled={!f.go}
+            onPress={f.go}
+            style={{ flex: 1, alignItems: "center" }}
+          >
             <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle }}>{f.v}</Text>
             <Text style={{ ...label, marginTop: 2 }}>{f.l}</Text>
-          </View>
+          </Pressable>
         ))}
       </View>
 
@@ -242,9 +273,18 @@ export default function UserScreen() {
                 {thread === item.id ? <Comments item={item} /> : null}
               </FeedCard>
             ))}
+            {/* The cap, said out loud. A list that stops silently reads as
+                "this is everything they have ever done". */}
+            {data.activityTruncated ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, textAlign: "center", paddingVertical: 14 }}>
+                {t("w.user.activityBound").replace("{n}", String(data.activity.length))}
+              </Text>
+            ) : null}
           </View>
         )
       ) : null}
+
+      {shown === "people" ? <People handle={handle} tab={peopleTab} onTab={setPeopleTab} /> : null}
 
       {/* ── THE QUIET VERBS ── never beside the ones you're meant to use. */}
       {rel !== "self" ? (
@@ -336,6 +376,65 @@ function Overview({ data, cmp, name, onCompare, busy }: {
         </>
       ) : null}
     </>
+  );
+}
+
+/* ── PEOPLE ───────────────────────────────────────────────────────────────── */
+
+/** Who follows them, and who they follow. Rows carry no follow button of their
+ *  own: a row opens the person, and acting on a person happens on their page,
+ *  where the one button lives. */
+function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab: (t: PeopleTab) => void }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const [data, setData] = useState<UserPagePeopleResponse | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    setData(null);
+    getUserPeople(handle, tab).then((d) => { if (alive) setData(d); });
+    return () => { alive = false; };
+  }, [handle, tab]);
+
+  const side = (id: PeopleTab, l: string) => (
+    <Pressable onPress={() => onTab(id)} accessibilityState={{ selected: tab === id }} style={{ paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: tab === id ? C.chalk : "transparent" }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: tab === id ? C.chalk : C.ash }}>{l}</Text>
+    </Pressable>
+  );
+
+  return (
+    <View style={{ marginTop: 16 }}>
+      <View style={{ flexDirection: "row", gap: 18, marginBottom: 6 }}>
+        {side("followers", t("w.user.followers"))}
+        {side("following", t("w.user.following"))}
+      </View>
+      {!data ? (
+        <Loading />
+      ) : data.people.length === 0 ? (
+        <Empty title={t(tab === "followers" ? "w.user.noFollowers" : "w.user.noFollowing")} />
+      ) : (
+        <>
+          {data.people.map((c: PersonCard) => (
+            <Pressable
+              key={c.userId}
+              onPress={() => router.push(userPagePath(c.handle))}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}
+            >
+              <Avatar url={c.avatarUrl} name={c.displayName} handle={c.handle} size={38} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: fs.body }}>{c.displayName || `@${c.handle}`}</Text>
+                <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.nano }}>@{c.handle}</Text>
+              </View>
+            </Pressable>
+          ))}
+          {data.truncated ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, textAlign: "center", paddingVertical: 14 }}>
+              {t("w.user.peopleBound").replace("{n}", String(data.people.length))}
+            </Text>
+          ) : null}
+        </>
+      )}
+    </View>
   );
 }
 

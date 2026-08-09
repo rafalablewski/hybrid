@@ -5,7 +5,7 @@ import { Loading, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { userPagePath } from "@hybrid/core";
+import { seedPerson, userPagePath } from "@hybrid/core";
 import type {
   CoachCard, CoachProfileResponse, CoachProgramData,
   CoachEnrollmentsResponse, EnrollmentRow,
@@ -118,7 +118,7 @@ export default function CoachesScreen() {
         <>
           <ASearch value={q} onChange={setQ} placeholder={t("w.coaches.search")} />
           {!coaches ? <Loading /> : coaches.length === 0 ? <Empty title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} /> : coaches.map((c) => (
-            <Pressable key={c.userId} onPress={() => router.push(userPagePath(c.handle))}>
+            <Pressable key={c.userId} onPress={() => { seedPerson({ handle: c.handle, displayName: c.name, avatarUrl: c.avatarUrl, coachVerified: c.coachVerified }); router.push(userPagePath(c.handle)); }}>
               <ACard style={cardStack}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />

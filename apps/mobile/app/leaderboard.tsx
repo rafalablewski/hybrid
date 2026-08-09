@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, ScrollView, FlatList } from "react-native";
 import { useRouter } from "expo-router";
-import { LEADERBOARD_METRICS, userPagePath, type LeaderboardMetric } from "@hybrid/core";
+import { LEADERBOARD_METRICS, seedPerson, userPagePath, type LeaderboardMetric } from "@hybrid/core";
 import { Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
@@ -24,7 +24,7 @@ export default function LeaderboardScreen() {
   const navScroll = useNavScrollProps();
 
   const renderRow = ({ item: r }: { item: any }) => (
-    <Pressable onPress={() => { if (!r.isMe && r.handle) router.push(userPagePath(r.handle)); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
+    <Pressable onPress={() => { if (!r.isMe && r.handle) { seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
       <Text style={{ width: 28, textAlign: "center", fontFamily: F.bold, fontWeight: "800", color: r.rank <= 3 ? C.amber : C.ash, fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</Text>
       <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
       <View style={{ flex: 1 }}>

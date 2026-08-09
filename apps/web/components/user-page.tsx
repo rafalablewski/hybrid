@@ -11,6 +11,7 @@ import {
   tracking,
   followsUser,
   canCompareWith,
+  peekPerson,
   resolveUserPageTab,
   userPageAction,
   userPageRelation,
@@ -24,6 +25,8 @@ import type {
   FeedItemView,
   KudosResponse,
   MutationResult,
+  PersonCard,
+  PeopleTab,
   ProgramPreviewDay,
   ProgramPreviewItem,
   ProgramPreviewWeek,
@@ -31,6 +34,7 @@ import type {
   SharedLift,
   StorefrontProgram,
   StorefrontReview,
+  UserPagePeopleResponse,
   UserPageResponse,
   UserPageTabId,
 } from "@hybrid/core";
@@ -89,11 +93,94 @@ function LevelChip({ level }: { level: NonNullable<UserPageResponse["fitnessLeve
 
 /** A labelled figure. Counts and training stats read the same way, because on a
  *  person's page they are the same kind of fact about them. */
-function Figure({ value, label }: { value: string; label: string }) {
-  return (
-    <div style={{ flex: 1, textAlign: "center", padding: "10px 6px" }}>
+function Figure({ value, label, onClick }: { value: string; label: string; onClick?: () => void }) {
+  const body = (
+    <>
       <div style={{ fontFamily: heading, fontWeight: 800, fontSize: fs.subtitle, color: C("chalk") }}>{value}</div>
       <div style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C("ash"), marginTop: 2 }}>{label}</div>
+    </>
+  );
+  const box = { flex: 1, textAlign: "center" as const, padding: "10px 6px" };
+  if (!onClick) return <div style={box}>{body}</div>;
+  return (
+    <button className="pressable" onClick={onClick} style={{ ...box, background: "none", border: "none", cursor: "pointer" }}>
+      {body}
+    </button>
+  );
+}
+
+/* ── PEOPLE ───────────────────────────────────────────────────────────────── */
+
+/** Who follows them, and who they follow. Rows carry no follow button of their
+ *  own: a row opens the person, and acting on a person happens on their page,
+ *  where the one button lives. */
+function People({ handle, tab, onTab, onOpenUser }: {
+  handle: string;
+  tab: PeopleTab;
+  onTab: (t: PeopleTab) => void;
+  onOpenUser?: (handle: string) => void;
+}) {
+  const { t } = useLang();
+  const [data, setData] = useState<UserPagePeopleResponse | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    setData(null);
+    jget<UserPagePeopleResponse>(`/api/social/user/${encodeURIComponent(handle)}/people?tab=${tab}`)
+      .then((d) => { if (alive) setData(d); })
+      .catch(() => { if (alive) setData({ tab, people: [], truncated: false } as UserPagePeopleResponse); });
+    return () => { alive = false; };
+  }, [handle, tab]);
+
+  const side = (id: PeopleTab, label: string) => (
+    <button
+      className="pressable"
+      onClick={() => onTab(id)}
+      aria-pressed={tab === id}
+      style={{
+        background: "none", border: "none", padding: "0 0 8px", cursor: "pointer",
+        fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase",
+        color: tab === id ? C("chalk") : C("ash"),
+        borderBottom: `1px solid ${tab === id ? C("chalk") : "transparent"}`,
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ display: "flex", gap: 18, marginBottom: 6 }}>
+        {side("followers", t("w.user.followers"))}
+        {side("following", t("w.user.following"))}
+      </div>
+      {!data ? (
+        <EmptyState title={t("common.loading")} />
+      ) : data.people.length === 0 ? (
+        <EmptyState title={t(tab === "followers" ? "w.user.noFollowers" : "w.user.noFollowing")} />
+      ) : (
+        <>
+          {data.people.map((c: PersonCard) => (
+            <button
+              className="pressable"
+              key={c.userId}
+              onClick={() => onOpenUser?.(c.handle)}
+              style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "10px 0", background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, cursor: "pointer" }}
+            >
+              <Avatar url={c.avatarUrl} name={c.displayName} handle={c.handle} size={38} />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", color: C("chalk"), fontSize: fs.body, fontWeight: 600 }}>{c.displayName || `@${c.handle}`}</span>
+                <span style={{ display: "block", color: C("ash"), fontFamily: mono, fontSize: fs.nano }}>@{c.handle}</span>
+              </span>
+            </button>
+          ))}
+          {data.truncated && (
+            <p style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C("ash"), textAlign: "center", padding: "14px 0 4px" }}>
+              {t("w.user.peopleBound").replace("{n}", String(data.people.length))}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -127,7 +214,11 @@ export default function UserPage({
   const [tab, setTab] = useState<UserPageTabId>("overview");
   const [compare, setCompare] = useState<CompareResult | null>(null);
   const [thread, setThread] = useState<string | null>(null);
+  const [peopleTab, setPeopleTab] = useState<PeopleTab>("followers");
   const busy = useBusy();
+  // What the row that opened us already knew (core/person-seed.ts). It paints
+  // the identity on the FIRST frame; the fetch confirms it a moment later.
+  const seed = peekPerson(handle);
 
   const load = async () => {
     const d = await jget<UserPageResponse>(`/api/social/user/${encodeURIComponent(handle)}`);
@@ -176,8 +267,8 @@ export default function UserPage({
     });
   };
 
-  const name = p?.displayName || (p ? `@${p.handle}` : handle);
-  const hero = { rank: "title" as const, title: name, eyebrow: p ? `@${p.handle}` : `@${handle}` };
+  const name = p?.displayName || seed?.displayName || `@${p?.handle ?? handle}`;
+  const hero = { rank: "title" as const, title: name, eyebrow: `@${p?.handle ?? handle}` };
 
   if (failed) {
     return (
@@ -187,9 +278,21 @@ export default function UserPage({
     );
   }
   if (!data || !p) {
+    // A row handed us the identity on the way in, so paint the person rather
+    // than a spinner where the person will be.
     return (
       <HeroScreen hero={hero} back={onBack} backLabel={t("common.back")}>
-        <EmptyState title={t("common.loading")} />
+        {seed ? (
+          <div style={{ display: "flex", gap: 16, alignItems: "center", maxWidth: 640 }}>
+            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: heading, fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{name}</div>
+              <div style={{ color: C("ash"), fontFamily: mono, fontSize: fs.caption }}>@{seed.handle}</div>
+            </div>
+          </div>
+        ) : (
+          <EmptyState title={t("common.loading")} />
+        )}
       </HeroScreen>
     );
   }
@@ -234,8 +337,19 @@ export default function UserPage({
             sessions figure only appears when the results gate is open; the
             follow counts are public on every social product and stay. */}
         <div style={{ display: "flex", marginTop: 14, borderTop: `1px solid ${C("line")}`, borderBottom: `1px solid ${C("line")}` }}>
-          <Figure value={data.counts.followers.toLocaleString()} label={t("w.user.followers")} />
-          <Figure value={data.counts.following.toLocaleString()} label={t("w.user.following")} />
+          {/* The two follow counts OPEN the list they count — the gesture every
+              social product has taught. They select the People tab rather than
+              pushing a screen, so a person still has exactly one address. */}
+          <Figure
+            value={data.counts.followers.toLocaleString()}
+            label={t("w.user.followers")}
+            onClick={data.canViewResults ? () => { setPeopleTab("followers"); setTab("people"); } : undefined}
+          />
+          <Figure
+            value={data.counts.following.toLocaleString()}
+            label={t("w.user.following")}
+            onClick={data.canViewResults ? () => { setPeopleTab("following"); setTab("people"); } : undefined}
+          />
           {data.stats && <Figure value={data.stats.totalSessions.toLocaleString()} label={t("w.social.statSessions")} />}
         </div>
 
@@ -315,8 +429,19 @@ export default function UserPage({
                   )}
                 </FeedCard>
               ))}
+              {/* The cap, said out loud. A list that stops silently reads as
+                  "this is everything they have ever done". */}
+              {data.activityTruncated && (
+                <p style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C("ash"), textAlign: "center", padding: "14px 0 4px" }}>
+                  {t("w.user.activityBound").replace("{n}", String(data.activity.length))}
+                </p>
+              )}
             </div>
           )
+        )}
+
+        {shown === "people" && (
+          <People handle={handle} tab={peopleTab} onTab={setPeopleTab} onOpenUser={onOpenUser} />
         )}
 
         {/* ── THE QUIET VERBS ── report and block, at the foot of the page,

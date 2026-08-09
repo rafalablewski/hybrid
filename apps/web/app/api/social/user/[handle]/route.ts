@@ -62,6 +62,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ hand
       counts: { followers, following },
       coach: store?.coach ?? null,
       activity,
+      // A list that stops without saying it stopped reads as "this is
+      // everything they have done".
+      activityTruncated: activity.length >= LIMIT,
     };
     return NextResponse.json(body);
   } catch (e) {

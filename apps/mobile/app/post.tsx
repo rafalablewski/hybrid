@@ -6,6 +6,7 @@ import {
   feedHeadlineText,
   feedSubjectKey,
   parseFeedSubjectKey,
+  seedPerson,
   userPagePath,
   type FeedItemView,
   type Relation,
@@ -106,7 +107,7 @@ export default function PostScreen() {
           screen of its own the post is the only thing here, so the person
           leads it. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Pressable onPress={() => item.author.handle && router.push(userPagePath(item.author.handle))}>
+        <Pressable onPress={() => { if (item.author.handle) { seedPerson(item.author); router.push(userPagePath(item.author.handle)); } }}>
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={44} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>

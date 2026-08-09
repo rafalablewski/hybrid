@@ -38,10 +38,13 @@ const SWEEP_MS = 1500;
 export default function NotificationsScreen({
   embedded = false,
   onNavigate,
+  onOpenUser,
   onOpenSession,
 }: {
   embedded?: boolean;
   onNavigate?: (screen: string) => void;
+  /** A person, on their own page. */
+  onOpenUser?: (handle: string) => void;
   onOpenSession?: (id: string) => void;
 }) {
   const router = useRouter();
@@ -92,7 +95,9 @@ export default function NotificationsScreen({
       else go("history");
     } else if (a.kind === "checkin") go("checkin");
     else if (a.kind === "calendar") go("calendar");
-    else if (a.kind === "social") go("feed");
+    // A social notification is ABOUT somebody. Now that a person has a page, it
+    // opens them rather than dropping you at the top of the feed to go looking.
+    else if (a.kind === "social") { if (a.handle && onOpenUser) onOpenUser(a.handle); else go("feed"); }
   };
 
   const C = (v: string) => `var(--color-${v})`;

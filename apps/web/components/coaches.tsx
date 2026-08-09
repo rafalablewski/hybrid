@@ -12,7 +12,7 @@ import type {
   EnrollmentRow,
   MutationResult,
 } from "@hybrid/core";
-import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy } from "./social-ui";
+import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy, type OpenUser } from "./social-ui";
 import { useLang } from "@/lib/i18n";
 
 /**
@@ -115,7 +115,7 @@ function Storefront() {
 }
 
 // ---------------- Marketplace directory ----------------
-export default function Coaches({ onOpenUser }: { onOpenUser?: (handle: string) => void } = {}) {
+export default function Coaches({ onOpenUser }: { onOpenUser?: OpenUser } = {}) {
   const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [tab, setTab] = useState<"browse" | "storefront">("browse");
@@ -146,7 +146,7 @@ export default function Coaches({ onOpenUser }: { onOpenUser?: (handle: string) 
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {coaches.map((c) => (
-                <button className="pressable" key={c.userId} onClick={() => onOpenUser?.(c.handle)} style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}>
+                <button className="pressable" key={c.userId} onClick={() => onOpenUser?.(c.handle, { handle: c.handle, displayName: c.name, avatarUrl: c.avatarUrl, coachVerified: c.coachVerified })} style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                     <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
                     <div style={{ flex: 1, minWidth: 0 }}>

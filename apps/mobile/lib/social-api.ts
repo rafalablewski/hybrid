@@ -2,6 +2,7 @@ import type {
   OwnProfileResponse,
   PublicProfileResponse,
   UserPageResponse,
+  UserPagePeopleResponse,
   SearchResponse,
   SuggestionsResponse,
   ConnectionsResponse,
@@ -13,7 +14,6 @@ import type {
   LeaderboardResponse,
   CompareResponse,
   CoachesResponse,
-  CoachStorefrontResponse,
   CoachProfileResponse,
   CoachProgramsResponse,
   CoachEnrollmentsResponse,
@@ -54,6 +54,10 @@ export const getProfile = (handle: string) => sapi<PublicProfileResponse>(`/api/
  *  posts. The individual user page's only fetch, so a link to somebody works
  *  with nothing else loaded. */
 export const getUserPage = (handle: string) => sapi<UserPageResponse>(`/api/social/user/${encodeURIComponent(handle)}`);
+/** One side of someone's follow graph — its own read, because a page should not
+ *  pay for a list nobody has asked to see yet. */
+export const getUserPeople = (handle: string, tab: "followers" | "following") =>
+  sapi<UserPagePeopleResponse>(`/api/social/user/${encodeURIComponent(handle)}/people?tab=${tab}`);
 export const searchPeople = (q: string) => sapi<SearchResponse>(`/api/social/search?q=${encodeURIComponent(q)}`);
 export const follow = (b: unknown) => sapi<MutationResult>("/api/social/follow", "POST", b);
 export const unfollow = (b: unknown) => sapi<MutationResult>("/api/social/follow", "DELETE", b);
@@ -83,7 +87,6 @@ export const reportTarget = (b: unknown) => sapi<MutationResult>("/api/reports",
 
 // ---- marketplace
 export const getCoaches = (q?: string) => sapi<CoachesResponse>(`/api/coaches${q ? `?q=${encodeURIComponent(q)}` : ""}`);
-export const getCoach = (handle: string) => sapi<CoachStorefrontResponse>(`/api/coaches/${handle}`);
 export const enrollProgram = (programId: string) => sapi<MutationResult>("/api/coaches/enroll", "POST", { programId });
 export const postReview = (handle: string, b: unknown) => sapi<MutationResult>(`/api/coaches/${handle}/reviews`, "POST", b);
 export const getCoachProfile = () => sapi<CoachProfileResponse>("/api/coach/profile");
