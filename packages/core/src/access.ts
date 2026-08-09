@@ -89,6 +89,22 @@ export function canSaveMeal(persona: Persona, savedCount: number): boolean {
   return persona === "casual" && savedCount < FREE_MEAL_LIMIT;
 }
 
+/** How many recipes a FREE user may keep. Deliberately the SAME number as meals
+ *  and products rather than a stingier one: three different free allowances for
+ *  three shapes of the same idea (a food you keep) is a rule nobody can predict,
+ *  and a recipe costs more to author than a meal, not less. */
+export const FREE_RECIPE_LIMIT = 4;
+
+/** Free users CAN author their own recipes — up to {@link FREE_RECIPE_LIMIT}.
+ *  Mirrors {@link canSaveMeal} exactly, including the API's 403 upgrade_required
+ *  at the cap, so the clients gate the "new recipe" CTA on this predicate rather
+ *  than surfacing an error.
+ *  @param savedCount how many recipes the user currently has. */
+export function canSaveRecipe(persona: Persona, savedCount: number): boolean {
+  if (isFullAccess(persona)) return true;
+  return persona === "casual" && savedCount < FREE_RECIPE_LIMIT;
+}
+
 /** How many reusable routines (WorkoutTemplates) a FREE user may keep saved.
  *  The Builder itself is free; only the library size is capped — more requires
  *  the Full upgrade. Shared by both clients AND the API gate so the number can

@@ -1,5 +1,5 @@
-import type { DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
-import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
+import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 
@@ -229,6 +229,154 @@ export async function logBodyweight(weightKg: number): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ weightKg }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ── COPY A DAY ─────────────────────────────────────────────────────────────
+// Write several diary entries in one round-trip. Each goes through the SAME
+// server-side writer a hand-typed entry uses, so a copied entry is not a special
+// kind of entry. The batch is deliberately not transactional (a FoodLog row is
+// best-effort by design), so the result reports how many actually landed.
+export async function copyFoodLogs(
+  entries: Record<string, unknown>[],
+): Promise<{ written: number; failed: number; ok: boolean }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/batch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ entries }),
+    });
+    if (!res.ok) return { written: 0, failed: entries.length, ok: false };
+    const data = (await res.json()) as { written?: number; failed?: number };
+    return { written: data.written ?? 0, failed: data.failed ?? 0, ok: true };
+  } catch {
+    return { written: 0, failed: entries.length, ok: false };
+  }
+}
+
+// ── YOUR RECIPES ───────────────────────────────────────────────────────────
+// A recipe the athlete authored. Its macros are DERIVED from its ingredients
+// (@hybrid/core user-recipes.ts), so nothing on the wire carries a recipe-level
+// macro figure — only the ingredient snapshots the totals are summed from.
+
+export type UserRecipeIngredientRow = {
+  id: string;
+  name: string;
+  qty: number;
+  servingLabel: string;
+  kcal: number; protein: number; carbs: number; fat: number;
+  satFat?: number | null; sugar?: number | null; fiber?: number | null; salt?: number | null;
+  productId?: string | null;
+  verifiedId?: string | null;
+  position: number;
+};
+export type UserRecipeRow = {
+  id: string;
+  name: string;
+  note?: string | null;
+  emoji?: string | null;
+  servings: number;
+  timeMins?: number | null;
+  ingredients: UserRecipeIngredientRow[];
+};
+
+/** The athlete's recipes. Soft — the tables are a later migration, so an
+ *  un-migrated database costs the shelf and never the whole screen. */
+export async function fetchUserRecipes(): Promise<UserRecipeRow[]> {
+  try {
+    const data = await fetchJson<{ recipes?: UserRecipeRow[] }>(`/api/nutrition/recipes`);
+    return data.recipes ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Create or replace a recipe. `id` absent → POST (create), present → PATCH.
+ *  Returns the SERVER's row, which carries the real ingredient ids the editor
+ *  keys its rows by. `upgrade` distinguishes the free cap from a real failure so
+ *  the caller can route to the paywall instead of showing an error. */
+export async function saveUserRecipe(
+  body: Record<string, unknown>,
+  id?: string,
+): Promise<{ recipe: UserRecipeRow | null; upgrade: boolean }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/recipes${id ? `/${id}` : ""}`, {
+      method: id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 403) return { recipe: null, upgrade: true };
+    if (!res.ok) return { recipe: null, upgrade: false };
+    const data = (await res.json()) as { recipe?: UserRecipeRow };
+    return { recipe: data.recipe ?? null, upgrade: false };
+  } catch {
+    return { recipe: null, upgrade: false };
+  }
+}
+
+export async function deleteUserRecipe(id: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/recipes/${id}`, {
+      method: "DELETE",
+      headers: await authHeaders(),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ── WATER ──────────────────────────────────────────────────────────────────
+// The water control appends one Signal per tap and takes a tap back by DELETING
+// that reading — never by appending its negation, which would be a lie about
+// the day that every downstream sum would faithfully carry. So the client needs
+// the reading's id, which `querySignals` deliberately drops (CoreSignal is the
+// engine's shape and has no id): these three helpers carry it.
+
+/** One of today's water readings, addressable so it can be undone. */
+export type WaterLog = { id: string; value: number; ts: string };
+
+/** Today's water readings, newest first. Soft — returns [] rather than throwing,
+ *  since a missing undo history must never fail the Nutrition screen. */
+export async function fetchWaterLogs(): Promise<WaterLog[]> {
+  try {
+    const data = await fetchJson<{ signals?: { id?: string; value: number; ts: string }[] }>(`/api/signals?kind=water`);
+    const today = localTodayKey();
+    return (data.signals ?? [])
+      .filter((s): s is { id: string; value: number; ts: string } => typeof s.id === "string" && localDayKey(Date.parse(s.ts)) === today)
+      .map((s) => ({ id: s.id, value: s.value, ts: s.ts }))
+      .sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts));
+  } catch {
+    return [];
+  }
+}
+
+/** Log a drink. Returns the created reading so the caller can undo it. */
+export async function logWater(ml: number, ts = new Date().toISOString()): Promise<WaterLog | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ kind: "water", value: ml, unit: "ml", source: "manual", ts }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { signal?: { id?: string } };
+    return data.signal?.id ? { id: data.signal.id, value: ml, ts } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Remove one reading you own — the undo behind the water control. */
+export async function deleteSignal(id: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/signals/${id}`, {
+      method: "DELETE",
+      headers: await authHeaders(),
     });
     return res.ok;
   } catch {
@@ -479,7 +627,9 @@ export async function deleteSavedMeal(id: string): Promise<boolean> {
 
 // ── Nutrition prefs — the small cross-device state the Nutrition hub remembers:
 // onboarding completion, the chosen goal, and any custom parts of the day.
-export type NutritionPrefs = { onboardedAt?: string | null; goal?: NutritionGoal | null; mealParts?: NutritionMealPart[] };
+// `targets` is the MANUAL override — per field, so a field absent here keeps
+// adapting; null clears the whole thing and hands every figure back.
+export type NutritionPrefs = { onboardedAt?: string | null; goal?: NutritionGoal | null; mealParts?: NutritionMealPart[]; targets?: TargetOverride | null };
 export async function getNutritionPrefs(): Promise<NutritionPrefs> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/prefs`, { headers: await authHeaders() });
@@ -489,7 +639,7 @@ export async function getNutritionPrefs(): Promise<NutritionPrefs> {
     return {};
   }
 }
-export async function saveNutritionPrefs(patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[] }): Promise<void> {
+export async function saveNutritionPrefs(patch: { onboarded?: boolean; goal?: NutritionGoal; mealParts?: NutritionMealPart[]; targets?: TargetOverride | null }): Promise<void> {
   try {
     await fetchWithTimeout(`${API_URL}/api/nutrition/prefs`, {
       method: "POST",

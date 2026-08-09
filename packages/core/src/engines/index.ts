@@ -40,6 +40,7 @@ export * from "./habits";
 export * from "./accountability";
 export * from "./future-self";
 export * from "./nutrition";
+export * from "./hydration";
 export * from "./load";
 export * from "./history-views";
 export * from "./compliance";
