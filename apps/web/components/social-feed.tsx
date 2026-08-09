@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { feedSubjectKey, fs, leading, tracking } from "@hybrid/core";
 import type { FeedItemView, FeedResponse, KudosResponse, LiveAthlete, MutationResult, Relation } from "@hybrid/core";
-import { C, useSocialTheme, card, Btn, EmptyState, jget, jsend, type OpenUser } from "./social-ui";
+import { C, Btn, EmptyState, jget, jsend, type OpenUser } from "./social-ui";
 import { CosignInbox } from "./pr-attestation";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
@@ -20,9 +20,9 @@ import { useIsMobile } from "@/lib/use-media-query";
  * look like one product on one client and another on the other.
  *
  * The screen's order is the spec's (reference/feed-spec.html, D2):
- *   co-sign inbox (someone is waiting on an answer) → feed tabs → the quiet
- *   composer → the stream → the caught-up marker, which hands the athlete back
- *   to the bar rather than to more scrolling.
+ *   co-sign inbox (someone is waiting on an answer) → feed tabs → the
+ *   always-open composer → the stream → the caught-up marker, which hands the
+ *   athlete back to the bar rather than to more scrolling.
  *
  * FOR YOU vs FOLLOWING: the ranked feed only earns trust while an unranked exit
  * exists. "Following" is strictly chronological and strictly other people —
@@ -32,15 +32,31 @@ import { useIsMobile } from "@/lib/use-media-query";
 type FeedItem = FeedItemView;
 type Tab = "forYou" | "following";
 
-/** The composer, deliberately underweighted: in this product the workout is the
- *  post, so the blank page is a one-line invitation until it's wanted. */
+/** The composer — ALWAYS OPEN, the X idiom: the input sits at the head of the
+ *  stream with no card chrome around it (the stream's hairlines bound it), and
+ *  the Share button stays dead until there's something to share. There used to
+ *  be a collapsed one-line pill that expanded into a card on tap; that tap was
+ *  a door in front of an empty page. The nav's Add post circle focuses THIS
+ *  input (the "hybrid:compose" event) rather than opening a second editor, so
+ *  there is exactly one place a post is written. */
 function Composer({ onPosted }: { onPosted: () => void }) {
   const { t } = useLang();
-  const { aurora } = useSocialTheme();
-  const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // The nav's Add post — scroll the composer into view and hand it the caret.
+  useEffect(() => {
+    const focus = () => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.focus();
+    };
+    window.addEventListener("hybrid:compose", focus);
+    return () => window.removeEventListener("hybrid:compose", focus);
+  }, []);
 
   const share = async () => {
     if (!text.trim() && !attachPr) return;
@@ -48,31 +64,17 @@ function Composer({ onPosted }: { onPosted: () => void }) {
     const r = await jsend<MutationResult>("/api/social/posts", "POST", { text, attachPr });
     setPosting(false);
     if (r.error) { alert(r.error); return; }
-    setText(""); setAttachPr(false); setOpen(false); onPosted();
+    setText(""); setAttachPr(false); onPosted();
   };
 
-  if (!open) {
-    return (
-      <button
-        className="pressable"
-        onClick={() => setOpen(true)}
-        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", marginBottom: 10, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: fs.body, cursor: "pointer", textAlign: "left" }}
-      >
-        {t("w.social.sharePlaceholder")}
-      </button>
-    );
-  }
   return (
-    <div style={card(aurora, { marginBottom: 10 })}>
-      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 48, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.note, outline: "none" }} />
+    <div style={{ padding: "2px 0 10px" }}>
+      <textarea ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 48, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.note, outline: "none" }} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 12 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: fs.body, cursor: "pointer" }}>
           <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> {t("w.social.attachPr")}
         </label>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn small ghost onClick={() => { setOpen(false); setText(""); setAttachPr(false); }}>{t("common.cancel")}</Btn>
-          <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? t("w.social.sharing") : t("w.social.share")}</Btn>
-        </div>
+        <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? t("w.social.sharing") : t("w.social.share")}</Btn>
       </div>
     </div>
   );
@@ -221,6 +223,9 @@ export default function SocialFeed({
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
       <FeedLiveStrip live={live} onOpen={(h) => onOpenUser?.(h)} />
 
+      {/* The always-open composer sits between two hairlines — the X anatomy:
+          no card around the input, the stream's own lines bound it. */}
+      <div style={{ height: 1, background: C("line"), margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 12px))" : 0 }} />
       <Composer onPosted={load} />
 
       {/* The stream boundary. The rows below are full-width timeline rows

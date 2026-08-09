@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, seedPerson, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, seedPerson, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, auroraNavAction, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 // The AI coach screen, reached from the Cockpit module tile (see below).
 const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { AuroraIcon } from "./aurora/icons";
@@ -265,6 +265,12 @@ export default function AppShell() {
     writeDeepLink({ post: key });
     setScreen("post");
   };
+
+  // WHICH OF TODAY'S HUB TABS IS UP (dashboard | performance | feed). The hub
+  // lives inside the Today screen, but the pill nav's action circle needs to
+  // know when the FEED is the visible surface — that's the one place the verb
+  // becomes Add post (core auroraNavAction). Today reports it via onHubTab.
+  const [todayHub, setTodayHub] = useState("dashboard");
 
   // THE PERSON — one page per human, coach or not (components/user-page.tsx).
   // Every place that used to peek at somebody in a drawer now goes here, so
@@ -840,7 +846,7 @@ export default function AppShell() {
         {screen === "aicoach" && <AuroraAskCoach />}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenPost={openPost} onOpenExercise={openExercisePage} onOpenSport={openSportPage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenPost={openPost} onOpenExercise={openExercisePage} onOpenSport={openSportPage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} onHubTab={setTodayHub} />
         )}
 
         {screen === "profile" && (
@@ -1028,8 +1034,21 @@ export default function AppShell() {
           floats over whatever screen is active. */}
       <AuroraUpgrade open={upgradeOpen} onClose={() => setUpgradeOpen(false)} onUpgraded={() => { setUpgradeOpen(false); setScreen("today"); }} />
 
-      {/* The floating pill bottom nav (coexists with the sidebar). */}
-      <AuroraPillNav activeId={screen} onSelect={navigate} />
+      {/* The floating pill bottom nav (coexists with the sidebar). The action
+          circle resolves per surface (core auroraNavAction): Train everywhere,
+          Add post while the feed is the visible surface — its own screen or
+          Today's feed hub tab. Add post opens no second editor: it hands focus
+          to the feed's always-open composer (social-feed.tsx listens for the
+          event), so there is exactly one place a post is written. */}
+      <AuroraPillNav
+        activeId={screen}
+        action={auroraNavAction(screen === "today" ? todayHub : screen)}
+        onSelect={navigate}
+        onAction={(id) => {
+          if (id === "post") window.dispatchEvent(new Event("hybrid:compose"));
+          else navigate("train");
+        }}
+      />
 
       {/* First-run guided tour overlay (#2) — only on Today so its anchors exist. */}
       {showTour && screen === "today" && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}

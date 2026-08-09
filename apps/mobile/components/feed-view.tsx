@@ -9,7 +9,7 @@ import type { FeedItemView, LiveAthlete, Relation } from "@hybrid/core";
 import { colors, feedPostPath, seedPerson, userPagePath } from "@hybrid/core";
 import { getFeed, toggleKudos, createPost, deletePost } from "../lib/social-api";
 import { Empty, SButton } from "./social-kit";
-import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
+import { GUTTER, RADIUS } from "./aurora/kit";
 import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
@@ -26,8 +26,8 @@ import { useConfirm } from "./aurora/confirm";
  * CONNECT — the feed (mobile). Twin of apps/web/components/social-feed.tsx.
  * Both screens render the shared card model from core (feed-card.ts), and the
  * order is the spec's (reference/feed-spec.html, D2): co-sign inbox → feed
- * tabs → the quiet composer → the stream → the caught-up marker, which hands
- * the athlete back to the bar rather than to more scrolling.
+ * tabs → the always-open composer → the stream → the caught-up marker, which
+ * hands the athlete back to the bar rather than to more scrolling.
  */
 type FeedTab = "forYou" | "following";
 
@@ -41,7 +41,6 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<FeedTab>("forYou");
   const [live, setLive] = useState<LiveAthlete[]>([]);
-  const [composing, setComposing] = useState(false);
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
@@ -73,7 +72,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     const r = await createPost({ text, attachPr });
     setPosting(false);
     if (r.error) { notify(t("common.error"), r.error); return; }
-    setText(""); setAttachPr(false); setComposing(false); load();
+    setText(""); setAttachPr(false); load();
   };
 
   // "Following" is the honest exit from the ranked feed: other people, newest
@@ -174,26 +173,19 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
       <FeedLiveStrip live={live} onOpen={(h) => { if (h) router.push(userPagePath(h)); }} />
 
-      {/* COMPOSER — deliberately underweighted: in this product the workout is
-          the post, so the blank page stays a one-line invitation until wanted. */}
-      {composing ? (
-        <ACard style={cardStack}>
-          <TextInput autoFocus value={text} onChangeText={setText} multiline maxLength={500} placeholder={t("w.social.sharePlaceholder")} placeholderTextColor={C.ash} style={{ minHeight: 48, color: C.chalk, fontSize: fs.note, fontFamily: F.reg }} />
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 10 }}>
-            <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? txt(C, colors.lime) : C.ash, fontSize: fs.body, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} {t("w.social.attachPr")}</Text></Pressable>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <SButton label={t("common.cancel")} small ghost onPress={() => { setComposing(false); setText(""); setAttachPr(false); }} />
-              <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
-            </View>
-          </View>
-        </ACard>
-      ) : (
-        <Pressable onPress={() => setComposing(true)}>
-          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10, marginBottom: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>
-            <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body }}>{t("w.social.sharePlaceholder")}</Text>
-          </View>
-        </Pressable>
-      )}
+      {/* COMPOSER — ALWAYS OPEN, the X idiom (twin of web social-feed.tsx):
+          the input sits at the head of the stream with no card chrome — the
+          stream's own hairlines bound it — and Share stays dead until there's
+          something to share. The collapsed one-line pill it replaces was a
+          door in front of an empty page. */}
+      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -GUTTER }} />
+      <View style={{ paddingTop: 2, paddingBottom: 10 }}>
+        <TextInput value={text} onChangeText={setText} multiline maxLength={500} placeholder={t("w.social.sharePlaceholder")} placeholderTextColor={C.ash} style={{ minHeight: 48, color: C.chalk, fontSize: fs.note, fontFamily: F.reg }} />
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 10 }}>
+          <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? txt(C, colors.lime) : C.ash, fontSize: fs.body, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} {t("w.social.attachPr")}</Text></Pressable>
+          <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+        </View>
+      </View>
 
       {/* The stream boundary. The rows below are full-bleed timeline rows
           (feed-card.tsx), each closed by an edge-to-edge hairline — the header
