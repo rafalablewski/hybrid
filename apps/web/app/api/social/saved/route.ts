@@ -107,9 +107,9 @@ export async function POST(request: Request) {
       authorIds.filter((id) => {
         if (id === me.id) return true;
         if (blocked.has(id)) return false;
-        // No profile row yet = the app's default, followers-only — never a
-        // permissive fallback.
-        return canViewResults(visibilityOf.get(id) ?? "followers", relationTo(me.id, id, edges));
+        // No profile row yet = the app's default, PUBLIC — the same value a
+        // fresh profile row gets, so this path can never disagree with it.
+        return canViewResults(visibilityOf.get(id) ?? "public", relationTo(me.id, id, edges));
       }),
     );
 

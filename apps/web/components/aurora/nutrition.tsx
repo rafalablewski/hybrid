@@ -39,6 +39,8 @@ import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
 import { useHeroCollapse } from "./cover-hero";
 import { HeroNav } from "./hero";
+import { AppHeader } from "./app-header";
+import { HubMasthead } from "./hub-masthead";
 import { DockRail } from "./dock-rail";
 import { NutritionHubBento } from "./nutrition-hub";
 import BodyProgress from "./body-progress";
@@ -1106,7 +1108,15 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // Where 'over' begins — the shared band, so the hub's ring and the picker's
   // header cannot disagree about it (core/nutrition-gap.ts).
   const KCAL_OVER_FACTOR = KCAL_OVER_TOLERANCE;
-  const kcalOver = today.kcal > targets.kcal * KCAL_OVER_FACTOR;
+  // HOME-HERO DAY SCOPE — the hero ring shares the Diary's viewed day
+  // (diaryDay), so its ‹ › stepper reviews any past day's ring + macros in
+  // place. Today reads todayNutrition; a past day reads the same
+  // dailyNutrition row the Diary's summary shows. The PICKER's gap header
+  // deliberately does NOT follow it (see pickerGap above): the picker writes to
+  // today whatever the hero is scrubbed to.
+  const heroIsToday = diaryDay === localTodayKey();
+  const heroDay = heroIsToday ? today : daySummary;
+  const kcalOver = heroDay.kcal > targets.kcal * KCAL_OVER_FACTOR;
   const maint = useMemo(() => estimateMaintenance(signals, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
   const weight = useMemo(() => weightTrend(signals), [signals]);
@@ -2332,14 +2342,21 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* Hub masthead (home), or a sub-screen back-header. The Pantry draws its
-          OWN head, because its head carries a control — the search in the right
-          slot — and this one has no slot to put it in. */}
+      {/* THE TAB ROOT'S CHROME, or a sub-screen back-header. The Pantry draws
+          its OWN head, because its head carries a control — the search in the
+          right slot — and this one has no slot to put it in.
+          At the root: the shared APP HEADER (aurora/app-header.tsx — avatar,
+          the HYBRID lockup with the day-streak, the bell) over the shared HUB
+          MASTHEAD, which is exactly what Today puts above its own first content
+          row. Nutrition is a bottom-nav destination of its own, so it wears the
+          app's identity strip like the other root does; and the head under it
+          is the shared component rather than the hand-rolled mono line plus
+          `fontSize: 34` <h1> that used to sit here. */}
       {view === "home" ? (
-        <div>
-          {greeting && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 3 }}>{greeting}</div>}
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
-        </div>
+        <>
+          <AppHeader onNavigate={onNavigate} />
+          <HubMasthead eyebrow={greeting || null} title={t("w.recovery.nutrition.title")} />
+        </>
       ) : view === "foods" ? null : (
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pressable" onClick={() => setView("home")} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 16, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><AuroraIcon name="back" size={18} color={C("chalk")} /></button>
@@ -2453,18 +2470,29 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       )}
 
           {/* CALORIE RING + MACROS — the hero, ONE card: the ring on top, the
-              three macro hairlines beneath. The whole card presses into the
-              Diary (same destination as the "Diary →" link). The HUD still
-              anchors on the two inner sections — getBoundingClientRect is
-              viewport-space, so the nesting changes nothing for it. */}
-          <button onClick={() => setView("diary")} aria-label={t("w.recovery.nutrition.menuDiary")} className="pressable" style={{ ...card, display: "block", width: "100%", marginTop: 16, padding: "28px 20px 24px", textAlign: "center", cursor: "pointer", color: C("chalk") }}>
+              three macro hairlines beneath. It no longer presses into the
+              Diary (that door lives in the "Diary →" link + the bento) —
+              instead it carries the Diary's ‹ › day stepper, sharing the SAME
+              viewed-day scope, so any past day's ring is reviewed in place.
+              The HUD still anchors on the two inner sections —
+              getBoundingClientRect is viewport-space, so the nesting changes
+              nothing for it. */}
+          <div style={{ ...card, display: "block", width: "100%", marginTop: 16, padding: "20px 20px 24px", textAlign: "center", color: C("chalk") }}>
             <div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.caloriesLeft")}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <button className="pressable" onClick={() => shiftDiaryDay(-1)} aria-label={t("w.recovery.nutrition.prevDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={C("chalk")} style={{ transform: "rotate(180deg)" }} /></button>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--lime-text)" }}>{t("w.recovery.nutrition.caloriesLeft")}</div>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, marginTop: 2 }}>{heroIsToday ? t("w.recovery.nutrition.backToToday") : diaryDayLabel}</div>
+                  {!heroIsToday && <button className="pressable" onClick={() => setDiaryDay(localTodayKey())} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--lime-text)", marginTop: 2 }}><CtaLabel size={12}>{`${t("w.recovery.nutrition.backToToday")} →`}</CtaLabel></button>}
+                </div>
+                <button className="pressable" onClick={() => shiftDiaryDay(1)} disabled={heroIsToday} aria-label={t("w.recovery.nutrition.nextDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: heroIsToday ? C("line") : C("chalk"), cursor: heroIsToday ? "default" : "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={heroIsToday ? C("line") : C("chalk")} /></button>
+              </div>
               <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-                <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} color={kcalOver ? C("red") : C("lime")} size={200} center={
+                <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} color={kcalOver ? C("red") : C("lime")} size={200} center={
                   <span style={{ display: "block", textAlign: "center" }}>
-                    <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}>{Math.round((targets.kcal - today.kcal) * kcalCountF)}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{Math.round(today.kcal)} / {targets.kcal}</span>
+                    <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}>{Math.round((targets.kcal - heroDay.kcal) * kcalCountF)}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{Math.round(heroDay.kcal)} / {targets.kcal}</span>
                   </span>
                 } />
               </div>
@@ -2473,7 +2501,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                   {t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}
                 </div>
               )}
-              {trainingKcal > 0 && (
+              {/* Today's training bump only belongs to today's target — a past
+                  day's ring must not wear today's fuel badge. */}
+              {trainingKcal > 0 && heroIsToday && (
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12, background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-lime) 28%, transparent)`, borderRadius: 999, padding: "6px 12px" }}>
                   <Glyph name="spark" size={13} color="var(--lime-text)" strokeWidth={4} />
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--lime-text)" }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</span>
@@ -2482,7 +2512,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             </div>
             {/* Macros — hairline lines beneath the hero, same card. */}
             <div style={{ marginTop: 24, textAlign: "left" }}>
-              {([["w.recovery.nutrition.protein", today.protein, targets.protein, C("blue"), "var(--blue-text)"], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C("amber"), "var(--amber-text)"], ["w.recovery.nutrition.fat", today.fat, targets.fat, C("violet"), "var(--violet-text)"]] as const).map(([label, cur, tgt, col, colT], i) => (
+              {([["w.recovery.nutrition.protein", heroDay.protein, targets.protein, C("blue"), "var(--blue-text)"], ["w.recovery.nutrition.carbs", heroDay.carbs, targets.carbs, C("amber"), "var(--amber-text)"], ["w.recovery.nutrition.fat", heroDay.fat, targets.fat, C("violet"), "var(--violet-text)"]] as const).map(([label, cur, tgt, col, colT], i) => (
                 <div key={label} style={{ marginTop: i ? 16 : 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: colT }}>{t(label)}</span>
@@ -2492,7 +2522,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
                 </div>
               ))}
             </div>
-          </button>
+          </div>
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
           <NutritionNudgeLine nudge={nudge} />

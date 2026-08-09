@@ -82,6 +82,8 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, tracking, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
+import { AppHeader } from "./app-header";
+import { HubMasthead } from "./hub-masthead";
 import { CoverScreen, type CoverScreenApi } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
@@ -1011,6 +1013,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const [y, m, d] = diaryDay.split("-").map(Number);
     return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   }, [diaryDay]);
+  // HOME-HERO DAY SCOPE — the hero ring shares the Diary's viewed day
+  // (diaryDay), so its ‹ › stepper reviews any past day's ring + macros in
+  // place (web parity). Today reads todayNutrition; a past day reads the same
+  // dailyNutrition row the Diary's summary shows.
+  const heroIsToday = diaryDay === localTodayKey();
+  const heroDay = heroIsToday ? today : daySummary;
   // The engine's own figures, WITHOUT the training bump — resolveTargets is the
   // single place that decides whether the bump applies, so the adaptive and the
   // manual path cannot add it two different ways.
@@ -2296,20 +2304,27 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     );
   }
 
+  // THE HEAD OWNS THE GAP BELOW IT. At the tab root the shared masthead sits
+  // above this body and already emits HUB_MASTHEAD.gap.below, so the first
+  // block must contribute none of its own — RN does not collapse margins and
+  // CSS does, so a first block that kept its 16 would sit 16 lower here than
+  // on the web twin while both files "looked" the same.
+  const headGap = root && view === "home" ? 0 : 16;
   const body = (
     <>
-      {/* The head — hub masthead or sub-screen title — is the HERO's now (see
-          the AuroraScreen below). Nothing renders here. */}
+      {/* The head — the app header + hub masthead at the tab root, the hero's
+          rail on every other view — is the SHELL's (see the AuroraScreen
+          below). Nothing renders here. */}
 
       {view === "home" && (signalsError && signals.length === 0 ? (
         /* SIGNALS FAILED TO LOAD — with no cached intake the day summary would
            read "0 eaten / full target remaining" as if nothing were logged yet,
            masking an offline / 500. Show the honest retry card instead. */
-        <FetchError onRetry={() => refetch()} style={{ marginTop: 16 }} />
+        <FetchError onRetry={() => refetch()} style={{ marginTop: headGap }} />
       ) : (<>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
-      <PressScale onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 16 }}>
+      <PressScale onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: headGap, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Glyph name="target" size={20} color={C.ash} strokeWidth={5} />
           <View>
@@ -2340,24 +2355,35 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       )}
 
           {/* CALORIE RING + MACROS — the hero, ONE card: ring on top, the three
-              macro hairlines beneath. The whole card presses into the Diary
-              (web parity). */}
+              macro hairlines beneath. It no longer presses into the Diary
+              (that door lives in the "Diary →" link + the bento) — instead it
+              carries the Diary's ‹ › day stepper, sharing the SAME viewed-day
+              scope, so any past day's ring is reviewed in place (web parity). */}
           <View style={{ marginTop: 16 }}>
-          <PressScale onPress={() => setView("diary")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.menuDiary")}>
-          <ACard solid style={{ paddingVertical: 24, alignItems: "center" }}>
+          <ACard solid style={{ paddingVertical: 20, alignItems: "center" }}>
             <View style={{ alignSelf: "stretch", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
+              <View style={{ alignSelf: "stretch", flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <Pressable onPress={() => shiftDiaryDay(-1)} accessibilityLabel={t("w.recovery.nutrition.prevDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><View style={{ transform: [{ rotate: "180deg" }] }}><IChevRight size={16} color={C.chalk} /></View></Pressable>
+                <View style={{ alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 2 }}>{heroIsToday ? t("w.recovery.nutrition.backToToday") : diaryDayLabel}</Text>
+                  {!heroIsToday ? <Pressable onPress={() => setDiaryDay(localTodayKey())}><CtaLabel label={`${t("w.recovery.nutrition.backToToday")} →`} color={txt(C, C.lime)} fontSize={fs.nano} font={F.mono} style={{ textTransform: "uppercase", letterSpacing: 0.9, marginTop: 2 }} /></Pressable> : null}
+                </View>
+                <Pressable onPress={() => shiftDiaryDay(1)} disabled={heroIsToday} accessibilityLabel={t("w.recovery.nutrition.nextDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><IChevRight size={16} color={heroIsToday ? C.line : C.chalk} /></Pressable>
+              </View>
               <View style={{ marginTop: 16 }}>
                 {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
-                <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
+                <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
                   <View style={{ alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - today.kcal)}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(today.kcal)} / {targets.kcal}</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - heroDay.kcal)}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(heroDay.kcal)} / {targets.kcal}</Text>
                   </View>
                 </Ring>
               </View>
               {maint.kcal != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 16, textAlign: "center" }}>{t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}</Text> : null}
-              {trainingKcal > 0 ? (
+              {/* Today's training bump only belongs to today's target — a past
+                  day's ring must not wear today's fuel badge. */}
+              {trainingKcal > 0 && heroIsToday ? (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}47`, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 }}>
                   <Glyph name="spark" size={13} color={txt(C, C.lime)} strokeWidth={5} />
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</Text>
@@ -2366,7 +2392,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </View>
             {/* Macros — hairline lines beneath the hero, same card. */}
             <View style={{ alignSelf: "stretch", marginTop: 24 }}>
-              {([["w.recovery.nutrition.protein", today.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", today.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
+              {([["w.recovery.nutrition.protein", heroDay.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", heroDay.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", heroDay.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
                 <View key={label} style={{ marginTop: i ? 18 : 0 }}>
                   <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: colT }}>{t(label)}</Text>
@@ -2377,7 +2403,6 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               ))}
             </View>
           </ACard>
-          </PressScale>
           </View>
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
@@ -2958,9 +2983,25 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       onRefresh={load}
       // THE HEAD IS THE SYSTEM'S. The sticky HUD that used to sit here — and
       // that occupied exactly the rail's y — is gone, so Nutrition's screens
-      // take the same hero every other screen does. `root` means this is
-      // showing as a Today hub tab, where Today owns the head.
+      // take the same hero every other screen does.
+      //
+      // AT THE TAB ROOT there is no hero, because a tab root has nothing to pop
+      // and no origin to name. It wears the APP HEADER instead (`top`, below) —
+      // the same lockup row Today wears, since Nutrition is a bottom-nav
+      // destination of its own now rather than a view inside Today's hub.
       hero={root && view === "home" ? undefined : { rank: "title", title: viewTitle, eyebrow: view === "home" ? greeting || undefined : undefined }}
+      // THE TAB ROOT'S CHROME — the shared app header (aurora/app-header.tsx:
+      // avatar, the HYBRID lockup with the day-streak, the bell) over the
+      // shared hub masthead, which is exactly what Today puts above its own
+      // first content row. The masthead carries the greeting and the screen's
+      // name here, the job the hero's rail does on every pushed view. Both are
+      // shared components, so the two tab roots cannot drift.
+      top={root && view === "home" ? (
+        <>
+          <AppHeader />
+          <HubMasthead eyebrow={greeting || null} title={viewTitle} />
+        </>
+      ) : undefined}
       // The Pantry's SEARCH is the rail's trailing slot — the shell's own
       // top-right control, which is where web puts it too. Nothing else on
       // Nutrition claims the accessory, so it is absent everywhere else.

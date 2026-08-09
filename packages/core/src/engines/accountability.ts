@@ -60,7 +60,7 @@ export function computeAccountability(
 ): AccountabilityState {
   const now = opts.now ?? Date.now();
   const target = Math.max(1, opts.targetPerWeek ?? 3);
-  const str = streak(sessions, 1, now);
+  const str = streak(sessions, { now });
 
   const last7 = sessionsInWeek(sessions, 0, now);
   const prev7 = sessionsInWeek(sessions, 1, now);

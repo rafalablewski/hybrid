@@ -30,7 +30,7 @@ export function SocialProfileEdit({ onDone, embedded, account, onProfileUpdate }
   const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [data, setData] = useState<OwnProfileResponse | null>(null);
-  const [form, setForm] = useState<MyProfile>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
+  const [form, setForm] = useState<MyProfile>({ handle: "", displayName: "", bio: "", visibility: "public", avatarUrl: "" });
   const [err, setErr] = useState<string | null>(null);
   const [avail, setAvail] = useState<null | "checking" | "ok" | "taken">(null);
   const [editing, setEditing] = useState<FieldKey | null>(null);

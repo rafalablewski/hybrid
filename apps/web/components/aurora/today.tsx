@@ -59,11 +59,9 @@ import { fs, space,
 } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { CARD_PAD, roleText } from "@/lib/ui";
-import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useCheckins } from "@/lib/use-checkins";
-import { useNotifications } from "@/lib/use-notifications";
 import { useRevalidate } from "@/lib/use-invalidate";
 import { useToday } from "@/lib/use-today";
 import { useLang } from "@/lib/i18n";
@@ -95,7 +93,8 @@ import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
 import { HubMasthead } from "./hub-masthead";
 import { TodayHubDock } from "./today-hub-dock";
-import AuroraSideMenu from "./side-menu";
+import { AppHeader } from "./app-header";
+import { StreakMark } from "./streak-mark";
 import { RtpPanel } from "./protocol";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
@@ -195,8 +194,6 @@ export default function AuroraToday({
 }) {
   const router = useRouter();
   const { t } = useLang();
-  const { session } = useSession();
-  const name = session?.name ?? "Athlete";
   const isAthlete = usePersona() !== "casual";
 
   // THE HUB — which of Today's three top-level views is showing (see
@@ -223,12 +220,10 @@ export default function AuroraToday({
     track("today_tab", { tab: id });
   }, []);
 
-  // THE SIDE MENU — the drawer behind the avatar in this header (aurora/
-  // side-menu.tsx). It lives HERE rather than in the app shell because the
-  // header is what opens it and all three hub tabs render this header, and
-  // because its hub rows switch `tab` in place — a drawer mounted above the
-  // hub would have had to reach back down into it.
-  const [menuOpen, setMenuOpen] = useState(false);
+  // THE SIDE MENU (aurora/side-menu.tsx) is the app header's own now — it
+  // opens on every tab root that wears the header, not on the hub alone. All
+  // this screen still owns is the hub the drawer's three hub rows switch in
+  // place, which it hands down as `hub`.
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
@@ -331,10 +326,6 @@ export default function AuroraToday({
   // never "2 days ago" — clumsy as a headline, worse inflected in PL/DE).
   // The naming rule lives in @hybrid/core masthead.ts so mobile can't drift.
   const mast = masthead(dayTs);
-  // "Back to today" re-anchors BOTH the lifted day scope and the rail's own
-  // internal selection (via resetToken) in one tap.
-  const [railResetToken, setRailResetToken] = useState(0);
-  const backToToday = () => { setRailDay(null); setRailResetToken((n) => n + 1); };
   // Sessions logged on the VIEWED day — the confirmation loop. A finished
   // prescribed session and a quick sport log both land here the moment they
   // save, so Today shows "you did this" instead of forever prompting "Start".
@@ -373,16 +364,9 @@ export default function AuroraToday({
 
   const upsell = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "web", source }); onNavigate ? onNavigate("upgrade") : router.push("/upgrade"); };
 
-  const initials = useMemo(
-    () => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "A",
-    [name],
-  );
-  // The bell badge is the UNREAD count from the shared notifications feed —
-  // the same list the screen renders, so the two cannot disagree, and it
-  // reaches zero once the athlete has read it. It used to be the LENGTH of the
-  // training feed (sessions only, no social, no read state), a number that only
-  // ever went up.
-  const { unread: notifCount } = useNotifications();
+  // The avatar's initials and the bell's unread count moved INTO the app header
+  // (aurora/app-header.tsx) with the row that draws them — it reads the same
+  // session and the same notifications feed this screen used to.
 
   // The readiness FEELING log — the emoji the athlete picked in the quick
   // check-in (primed/good/flat/wrecked), not a computed score. The raw list is
@@ -563,9 +547,8 @@ export default function AuroraToday({
   useEffect(() => {
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
   }, []);
-  // FIRST-RUN CHOOSER state (new user: no plan, no history) — hoisted because
-  // the masthead's caption line says "Free" when the chooser (or its demoted
-  // logbook-mode form) renders. With history the logbook rail takes over.
+  // FIRST-RUN CHOOSER state (new user: no plan, no history). With history the
+  // logbook rail takes over.
   const firstRun = !plan && !loading && !hasData;
   // Masthead strings for the viewed day: headline, caption date, and (beyond
   // ±1 day, where the headline stops saying it) the scrub-distance tag. The
@@ -582,7 +565,6 @@ export default function AuroraToday({
       ? t(mast.diffDays < 0 ? "w.home.today.daysBack" : "w.home.today.daysOut").replace("{n}", String(Math.abs(mast.diffDays)))
       : null;
 
-  const iconBtn = { position: "relative", width: 44, height: 44, borderRadius: 12, background: C("ink2"), border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", cursor: "pointer" } as const;
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: CARD_PAD } as const;
 
   // The shell every hub tab wears: the profile header, then the three pills.
@@ -595,58 +577,14 @@ export default function AuroraToday({
   const hubHeader = (
     <>
     <div className="motion-hub-chrome">
-      {/* HEADER — profile, the HYBRID LOCKUP, bell.
-          THREE COLUMNS, FIXED FLANKS. The row used to be `space-between`,
-          which centres its middle child only when both flanks weigh the
-          same — and they never did: one 44px tile on the left against a
-          streak pill plus the bell on the right, so the brand sat ~69px
-          left of the screen's centre and slid further with every extra
-          digit. `44px 1fr 44px` centres the wordmark BY CONSTRUCTION,
-          whatever the flanks carry.
-          THE STREAK LEFT THE ROW and became the lockup's second line — a
-          hairline mono caption under the wordmark. It survives on all three
-          hub tabs (they render this same header), it can never push the
-          brand off centre again, and it costs NO height: wordmark (19) +
-          caption (~17) still sits inside the 44px the tiles already set.
+      {/* THE APP HEADER — profile, the HYBRID LOCKUP, bell. The SHARED row
+          (aurora/app-header.tsx), the same component the Nutrition screen
+          renders, so the app's identity strip cannot be authored twice: every
+          number lives in @hybrid/core app-header.ts and the component sources
+          its own name, streak and unread count. This screen passes only the
+          one thing that is TODAY'S: the hub the drawer switches in place.
           Mirrors mobile home.tsx. */}
-      <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center", height: 44 }}>
-        {/* The avatar opens the SIDE MENU (aurora/side-menu.tsx) — the drawer
-            that carries Profile, History, the three hub views, Nutrition and
-            the whole toolbox. It used to jump straight to Profile; Profile is
-            now the drawer's first row, so nothing was lost and five more
-            destinations were gained from the same tap. */}
-        <button className="pressable"
-          onClick={() => setMenuOpen(true)}
-          aria-label={t("nav.openMenu")}
-          aria-expanded={menuOpen}
-          aria-haspopup="dialog"
-          style={{ position: "relative", width: 44, height: 44, borderRadius: 12, background: `${C("lime")}22`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.bodyLg, color: "var(--lime-text)" }}
-        >
-          {initials}
-        </button>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifySelf: "center" }}>
-          <div style={{ fontWeight: 900, fontSize: 19, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk") }}>
-            HYBRID<span style={{ color: "var(--lime-text)" }}>.</span>
-          </div>
-          {acc.streak.current > 0 && (
-            // SPECTRUM: the streak wears the warm terracotta accent (Connect),
-            // pairing with the flame and keeping chartreuse for the primary
-            // action. Same destination as the retired pill — the done sheet.
-            <button className="pressable" onClick={() => setDoneOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 3, padding: "2px 8px", background: "none", border: "none", color: "var(--red-text)", fontFamily: "var(--font-mono)", fontSize: 9.5, fontWeight: 600, letterSpacing: ".13em", textTransform: "uppercase", whiteSpace: "nowrap", cursor: "pointer" }}>
-              <AuroraIcon name="flame" size={11} color="var(--red-text)" />
-              {acc.streak.current}{t("w.home.today.dayStreak")}
-            </button>
-          )}
-        </div>
-        <button className="pressable" onClick={() => (onNavigate ? onNavigate("notifications") : router.push("/notifications"))} style={iconBtn} aria-label={t("w.home.today.notificationsAria")}>
-          <AuroraIcon name="bell" size={20} color={C("ash")} />
-          {notifCount > 0 && (
-            <span style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 999, background: C("red"), border: `2px solid ${C("ink")}`, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, color: "#fff" }}>
-              {notifCount > 9 ? "9+" : notifCount}
-            </span>
-          )}
-        </button>
-      </div>
+      <AppHeader onNavigate={onNavigate} hub={{ value: tab, onChange: selectTab }} />
 
       {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the
           profile row and above the calendar. Today is the athlete's home, and
@@ -664,16 +602,6 @@ export default function AuroraToday({
           is captured with the group and would fly with it. Every hub tab
           mounts this, so Performance and Feed keep their exits too. */}
       <TodayHubDock value={tab} onChange={selectTab} anchor={hubAnchor} />
-
-      {/* The side menu rides with the header on every hub tab. It portals to
-          <body>, so it is not trapped by the shell's transformed surface. */}
-      <AuroraSideMenu
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        onNavigate={(id) => (onNavigate ? onNavigate(id) : router.push(`/${id}`))}
-        onHubTab={selectTab}
-        activeHub={tab}
-      />
     </>
   );
 
@@ -725,29 +653,19 @@ export default function AuroraToday({
           The headline NAMES THE VIEWED DAY (masthead() in @hybrid/core): "Today"
           until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the
           weekday name beyond — a static "Today" over Friday's session would lie
-          in the largest type on screen. Off today, a "Back to today" return
-          affordance renders beneath, teal, in the same spot every time. Mirrors
-          mobile home.tsx. */}
+          in the largest type on screen. Off today, the scrub distance rides the
+          caption line as the mono tag; the rail's today chip is the way back.
+          Mirrors mobile home.tsx. */}
       <HubMasthead
         eyebrow={mastCaption}
-        meta={firstRun || (logbookMode && !mastTag) ? t("w.home.today.badgeFree") : mastTag}
-        metaTone={!firstRun && !(logbookMode && !mastTag) && mastTag ? "accent" : "plain"}
+        meta={mastTag}
+        metaTone="accent"
         title={mastTitle}
         mark={
           // Kyoto Hour hanko — the app's vermilion seal, stamped beside the true
           // "Today" only (never the scrubbed days). Hidden in Aurora via CSS
           // (.hanko-seal). Mirrors mobile home.tsx.
           dayIsToday ? <span className="hanko-seal" aria-hidden>力</span> : null
-        }
-        accessory={
-          !dayIsToday ? (
-            <button className="pressable"
-              onClick={backToToday}
-              style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--blue-text)" }}
-            >
-              <CtaLabel size={12}>{`${t("w.home.today.backToToday")} →`}</CtaLabel>
-            </button>
-          ) : null
         }
       />
 
@@ -781,7 +699,6 @@ export default function AuroraToday({
           onStart={onStart}
           onNavigate={onNavigate}
           onSelectDay={setRailDay}
-          resetToken={railResetToken}
           doneFloor={doneFloor}
         />
       ) : logbookMode ? (
@@ -796,7 +713,6 @@ export default function AuroraToday({
             onLog={() => onStart()}
             onNavigate={onNavigate}
             onSelectDay={setRailDay}
-            resetToken={railResetToken}
             doneFloor={doneFloor}
           />
           <div style={{ margin: "24px 0 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
@@ -827,8 +743,7 @@ export default function AuroraToday({
            to start?" question was retired with the masthead redesign (the page
            already opens with "Today", and three cards titled
            Follow a plan / Build your own / Log a workout need no sentence
-           announcing that a choice is available); "Free" is said ONCE on the
-           masthead's caption line. Each full-width card wears the Go-Full
+           announcing that a choice is available). Each full-width card wears the Go-Full
            anatomy with its corner glow, the hue confined to glyph + CTA, and
            IS the start — no separate Start pill. Mirrored on mobile. */
         <div data-tour="today-plan" style={{ marginTop: 16 }}>
@@ -1200,15 +1115,17 @@ export default function AuroraToday({
         open={doneOpen}
         onClose={() => setDoneOpen(false)}
         title={dayIsToday ? t("w.home.today.doneModalTitle") : t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "")}
-        sub={dayIsToday ? (
-          <>
-            {dateStr}
-            {acc.streak.current > 0 && (
-              <> – <AuroraIcon name="flame" size={12} color="var(--red-text)" style={{ verticalAlign: "-2px" }} /> {acc.streak.current}{t("w.home.today.dayStreak")}</>
-            )}
-          </>
-        ) : dayLabel ?? ""}
+        sub={dayIsToday ? dateStr : dayLabel ?? ""}
       >
+        {/* THE STREAK — the shared mark (aurora/streak-mark.tsx) at its inline
+            rung: the same mark as the one under the wordmark, with the same
+            count and the same destination (the history, closing this sheet on
+            the way). It used to be a flame and a number spliced into the sub
+            line above, which is a line of text — text can hold a glyph but not
+            a control, and this figure is a control now. It draws nothing when
+            there is no streak, so there is no conditional here and no
+            separator left dangling. Mirrors mobile home.tsx. */}
+        {dayIsToday && <StreakMark rung="inline" onNavigate={onNavigate} onDismiss={() => setDoneOpen(false)} />}
         {doneOnDay.length === 0 ? (
           <div style={{ fontSize: fs.body, color: C("ash"), lineHeight: 1.5, padding: "8px 0" }}>{t(dayIsToday ? "w.home.today.doneModalEmpty" : "w.home.today.doneModalEmptyDay")}</div>
         ) : (

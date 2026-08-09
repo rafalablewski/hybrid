@@ -217,7 +217,9 @@ model SocialProfile {
   avatarUrl   String?
   // Who can see this athlete's RESULTS (feed, leaderboard, compare). The profile
   // card + handle stay searchable regardless; this gates the data behind it.
-  visibility  String   @default("followers") // public | followers | private
+  // PUBLIC is the app's default — every finished workout publishes to the feed
+  // automatically, and the athlete opts DOWN to followers-only or private.
+  visibility  String   @default("public") // public | followers | private
   showcase    Json     @default("{}") // pinned highlight stats (client-curated)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt

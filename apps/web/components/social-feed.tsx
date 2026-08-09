@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { feedSubjectKey, fs, leading, tracking } from "@hybrid/core";
-import type { FeedItemView, FeedResponse, KudosResponse, LiveAthlete, MutationResult, Relation } from "@hybrid/core";
-import { C, useSocialTheme, card, Btn, EmptyState, jget, jsend, type OpenUser } from "./social-ui";
+import type { FeedItemView, FeedResponse, KudosResponse, LiveAthlete, MutationResult, OwnProfileResponse, Relation } from "@hybrid/core";
+import { C, Avatar, Btn, EmptyState, jget, jsend, type OpenUser } from "./social-ui";
 import { CosignInbox } from "./pr-attestation";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
@@ -20,9 +21,9 @@ import { useIsMobile } from "@/lib/use-media-query";
  * look like one product on one client and another on the other.
  *
  * The screen's order is the spec's (reference/feed-spec.html, D2):
- *   co-sign inbox (someone is waiting on an answer) → feed tabs → the quiet
- *   composer → the stream → the caught-up marker, which hands the athlete back
- *   to the bar rather than to more scrolling.
+ *   co-sign inbox (someone is waiting on an answer) → feed tabs → the composer
+ *   → the stream → the caught-up marker, which hands the athlete back to the
+ *   bar rather than to more scrolling.
  *
  * FOR YOU vs FOLLOWING: the ranked feed only earns trust while an unranked exit
  * exists. "Following" is strictly chronological and strictly other people —
@@ -32,15 +33,26 @@ import { useIsMobile } from "@/lib/use-media-query";
 type FeedItem = FeedItemView;
 type Tab = "forYou" | "following";
 
-/** The composer, deliberately underweighted: in this product the workout is the
- *  post, so the blank page is a one-line invitation until it's wanted. */
+/** The composer — the X compose box's grammar, not a card: my avatar beside a
+ *  bare auto-growing field, then one accent glyph row with the Share pill on
+ *  its right, the whole block running edge to edge between two hairlines. No
+ *  fill, no border, no radius, no open/close state — the box is always one tap
+ *  from typing, and the pill sits dimmed until there is something to post.
+ *  Twin of the mobile composer in components/feed-view.tsx. */
 function Composer({ onPosted }: { onPosted: () => void }) {
   const { t } = useLang();
-  const { aurora } = useSocialTheme();
-  const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
+  const box = useRef<HTMLTextAreaElement>(null);
+  // My own face beside the box — the one identity the feed response doesn't
+  // carry, so the composer fetches it itself (and keeps it for the session).
+  const me = useQuery({
+    queryKey: ["own-profile"],
+    queryFn: () => jget<OwnProfileResponse>("/api/social/profile"),
+    staleTime: 5 * 60_000,
+  }).data?.profile;
 
   const share = async () => {
     if (!text.trim() && !attachPr) return;
@@ -48,30 +60,60 @@ function Composer({ onPosted }: { onPosted: () => void }) {
     const r = await jsend<MutationResult>("/api/social/posts", "POST", { text, attachPr });
     setPosting(false);
     if (r.error) { alert(r.error); return; }
-    setText(""); setAttachPr(false); setOpen(false); onPosted();
+    setText(""); setAttachPr(false);
+    // The field's auto-grow writes an inline height; a programmatic clear
+    // must hand the height back too, or the empty box keeps the old depth.
+    if (box.current) box.current.style.height = "";
+    onPosted();
   };
 
-  if (!open) {
-    return (
-      <button
-        className="pressable"
-        onClick={() => setOpen(true)}
-        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", marginBottom: 10, borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("ash"), fontFamily: "var(--font-display)", fontSize: fs.body, cursor: "pointer", textAlign: "left" }}
-      >
-        {t("w.social.sharePlaceholder")}
-      </button>
-    );
-  }
   return (
-    <div style={card(aurora, { marginBottom: 10 })}>
-      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} maxLength={500} placeholder={t("w.social.sharePlaceholder")} style={{ width: "100%", minHeight: 48, resize: "vertical", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.note, outline: "none" }} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 12 }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, color: attachPr ? "var(--lime-text)" : C("ash"), fontSize: fs.body, cursor: "pointer" }}>
-          <input type="checkbox" checked={attachPr} onChange={(e) => setAttachPr(e.target.checked)} /> {t("w.social.attachPr")}
-        </label>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn small ghost onClick={() => { setOpen(false); setText(""); setAttachPr(false); }}>{t("common.cancel")}</Btn>
-          <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? t("w.social.sharing") : t("w.social.share")}</Btn>
+    // At mobile widths the block bleeds under the shell's gutter exactly like
+    // the timeline rows below it (feed-card.tsx), so its hairline and the
+    // stream's run the same edge-to-edge width — no side gaps.
+    <div
+      style={{
+        borderTop: `1px solid ${C("line")}`,
+        padding: isMobile ? "10px var(--page-pad-x, 12px) 8px" : "10px 0 8px",
+        margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 12px))" : 0,
+      }}
+    >
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <Avatar url={me?.avatarUrl} name={me?.displayName} handle={me?.handle} size={40} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* The field is bare and one line tall until the text needs more —
+              the X idiom: the placeholder IS the invitation, at heading size. */}
+          <textarea
+            ref={box}
+            rows={1}
+            value={text}
+            maxLength={500}
+            onChange={(e) => {
+              setText(e.target.value);
+              e.currentTarget.style.height = "0";
+              e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+            }}
+            placeholder={t("w.social.sharePlaceholder")}
+            style={{ display: "block", width: "100%", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.heading, lineHeight: `${leading(fs.heading)}px`, outline: "none", resize: "none", overflow: "hidden", padding: "7px 0 2px" }}
+          />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
+            {/* The one attachment this product has — the latest PR — as an
+                accent glyph in X's toolbar position. It fills when attached. */}
+            <button
+              className="pressable"
+              onClick={() => setAttachPr((v) => !v)}
+              aria-pressed={attachPr}
+              aria-label={t("w.social.attachPr")}
+              title={t("w.social.attachPr")}
+              style={{ background: "none", border: "none", padding: 4, margin: -4, cursor: "pointer", color: "var(--lime-text)", display: "inline-flex" }}
+            >
+              <svg width="19" height="19" viewBox="0 0 18 18" fill={attachPr ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="9" cy="6.8" r="4.1" />
+                <path d="M6.6 10.3 5.2 15.2l3.8-1.9 3.8 1.9-1.4-4.9" fill="none" />
+              </svg>
+            </button>
+            <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? t("w.social.sharing") : t("w.social.share")}</Btn>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,10 @@
 # HYBRID — Founder-Panel Evaluation (July 2026)
 
+> **Re-audited 2026-08-09** — see the **RE-AUDIT (2026-08-09)** section at the end.
+> Ground truth moved: 429 shipped / 29 blocked / 47 planned, RLS and the social
+> schema are live in production, the two 10x bets shipped. The demand-side line is
+> unchanged: $0 MRR, no card can be charged, no analytics, internal TestFlight only.
+
 _Panel lens: Chen (network effects), Andreessen (software strategy), Thiel (monopoly & secrets),
 Chesky/Systrom (product taste), Collison (compounding), plus the Strava, Uber-growth, Airbnb-marketplace
 and Booking-experimentation teams. Mandate: decide whether this deserves to become a defining company
@@ -581,3 +586,104 @@ re-rate will be violent, and we want to be the first call.
 _Prepared without regard for the founder's feelings, per the mandate. The kindest thing this
 panel can do is repeat the finding the company keeps generating for itself and then ignoring:
 stop building. Launch. Charge someone. Count who stays._
+
+---
+---
+
+# RE-AUDIT (2026-08-09)
+
+_Same panel lens, same mandate, thirteen days later, verified against the repository at
+HEAD `5a1cfde` — code and registry read directly, nothing taken on the founder's word._
+
+## Ground truth, restated
+
+**429 `shipped` / 29 `blocked` / 47 `planned`** (was 263/30/21 — +166 shipped in ~6 weeks
+of registry time). Core suite 3,021/3,021 green across 184 test files. ~229k lines of
+TS/TSX, 73 Prisma models, 1,569 commits since 2026-06-02.
+
+What flipped since July, on the supply side — and some of it is real:
+
+- **RLS is enabled in production** (`sql-pending.sql` applied Jul 2026), including five
+  policy-escalation fixes from a follow-up security audit. The "one bug from a breach"
+  line is retired.
+- **The social schema is deployed.** Feed, follow, kudos, leaderboard serve real tables;
+  the feed was then re-founded (card system, server-side ranking, one post per workout,
+  live "now training" presence, one page per person).
+- **Adaptive per-athlete MRV shipped** — a real 4-layer estimator (population → profile →
+  observed-with-evidence → manual), bounded, confidence-scored, with a no-lookahead
+  replay auditor pinned by test. The single most defensible thing in the codebase, and
+  exactly the "prescription-with-receipts" mechanic Parts 8–9 said the thesis needed.
+- **Verified Strength Record, tiers 0–2** — witness co-signing live against a production
+  table; tiers 3–5 declared, not live; no public read API yet, no crypto signing.
+- **Program Efficacy Index v1, public** — median e1RM outcomes per program, k-anonymous
+  (floor 5, suppression), on an unauthenticated CDN-cached endpoint and a public
+  `/programs` page. The first crawlable asset the company has ever produced.
+- **Guest-first is the default** — first workout with no account, migrating on sign-in.
+- **Watch/HealthKit went from paper to unverified code** — HealthKit sync, a watchOS
+  glance app, a WidgetKit widget, and a device-truth rule (a matched recording outranks
+  typed numbers in every engine). All wait on one workflow run and one on-device check.
+- Apple Developer account obtained; IAP is StoreKit-2-verified server-side; TestFlight
+  pipeline is self-owned (GitHub Actions, off EAS) with build 1.0.0 on device.
+
+And what did not flip — the entire demand side, unchanged to the decimal:
+
+- **$0 MRR. No Stripe account exists.** Billing still cannot physically charge a card
+  (all four billing capabilities blocked on the same missing account).
+- **No analytics provider.** The funnel call-sites fire into a no-op shim.
+- **No push** (the entitlement was *removed* from the build to unblock IAP-era signing).
+- **Internal TestFlight only.** No external beta, no store listing, no waitlist.
+- **No import path** (Hevy/Strong/CSV: still `planned`, registry now calls it "TABLE
+  STAKES + the switching mechanic" — correct self-diagnosis, third document in a row).
+- **No wearable OAuth connected**, no coach cohort, no retention cohort, no user #1.
+
+## Scores that move (and the ones that pointedly don't)
+
+| Dimension | Jul | Aug | Why |
+|---|---|---|---|
+| Product quality | 7 | 7 | Better (crash containment, device truth, feel instrument) but still zero in-the-hand evidence. |
+| Technology | 6 | **7** | The MRV estimator + replay auditor is the first thing here that is actually *hard* — an opinionated, evidence-bounded model with provenance, not a heuristic clamp. |
+| Moat | 2 | **3** | Attestation + efficacy + adaptive landmarks are now live *mechanisms*, not schemas. Still prospective without users, hence 3 not 5. |
+| AI advantage | 3 | 3 | The estimator strengthens the grounding story; the corpus is still zero. |
+| Data advantage | 2 | 2 | The pipes improved again; observations remain ~zero. A flywheel at 0 RPM, now with better bearings. |
+| Network effects | 2 | 2 | Tables deployed ≠ network. Nodes: still approximately one. |
+| Virality | 3 | 3 | Witness co-sign is a real invite mechanic — for the users who don't exist yet. |
+| Monetization | 3 | 3 | Can still charge no one. Web still says $9.99; the trial copy still promises what billing can't deliver. |
+| Distribution | **1** | **1** | The catastrophic number, untouched. No listing, no audience, no channel, no coach outreach visible in the repo. |
+
+The shape diagnosis from Part 2 — *every score above 6 is supply, every score below 4 is
+demand* — is not just intact; the re-audit widened it. The company answered a critique of
+demand-generation with its two best-ever supply-side quarters-in-miniature.
+
+## Part 13's "tomorrow" checklist, scored at thirteen days
+
+1. **Clear the weekend admin blockers** (Stripe, push, one OAuth, App Store submission) —
+   **not done.** Zero of the four. (The Apple Developer account — obtained — is the one
+   admin task that moved, and it moved in service of more building.)
+2. **Freeze feature development** — **the opposite happened**: +166 shipped capabilities,
+   including a full nutrition redesign and a feed re-founding.
+3. **Set the only metric (weekly logging users, W4 retention)** — **not done**; still no
+   analytics to compute it with.
+
+Of the investment memo's six-condition bar: **0 of 6 met.** (Commerce live: no. 1,000
+users: no. A retention cohort: no. 20 coaches: no. One wearable ingesting: built,
+unverified — half a point at most. Named plan for the founder gap: no evidence in repo.)
+
+## The panel's one-paragraph update
+
+The July evaluation said this was a venture-scale idea held by a lifestyle-trajectory
+company, and that no engineering work could move the probabilities — only demand evidence
+could. Thirteen days later the company shipped the three most strategically correct
+features in its history — adaptive MRV, the verified record's social tier, and a public
+efficacy index — and acquired zero users, zero dollars, and zero measurements while doing
+it. The work is no longer misdirected; it is now precisely directed at the right moats
+and still sequenced before the only thing that gives moats meaning. The pick therefore
+stands — ❌ **lifestyle business by default** — with one sharpened observation: the
+remaining blockers are no longer engineering problems at all. Every one (a Stripe
+account, a store review, an analytics key, twenty coach conversations) is a decision to
+face the market, available any given morning. The codebase has stopped being the
+bottleneck. The founder's calendar is.
+
+_(The July memo ordered "no more memos until 100 paying users — including, pointedly,
+responses to prompts like this one." This update was commissioned anyway. The panel notes
+the pattern without surprise, updates the file per the mandate, and repeats the close:
+stop building. Launch. Charge someone. Count who stays.)_

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   fs,
   space,
+  avatarInitials,
   groupedNavWithLocks,
   sanitizePersonaAccess,
   AURORA_NAV_ICONS,
@@ -69,10 +70,14 @@ export default function AuroraSideMenu({
   onClose: () => void;
   /** Canonical nav id → the app-shell screen (upgrade opens the paywall sheet). */
   onNavigate: (id: string) => void;
-  /** Switch the Today hub in place. */
-  onHubTab: (tab: TodayTabId) => void;
-  /** Which hub view is showing, so its row reads as the current one. */
-  activeHub: TodayTabId;
+  /** Switch the Today hub in place — passed only when the drawer is opened
+   *  FROM the hub. Opened from another tab root (Nutrition), there is no hub on
+   *  screen to switch, so the three hub rows route to their standalone screens
+   *  instead of pretending to move a control the athlete cannot see. */
+  onHubTab?: (tab: TodayTabId) => void;
+  /** Which hub view is showing, so its row reads as the current one. Undefined
+   *  off the hub, where none of the three is current. */
+  activeHub?: TodayTabId;
 }) {
   const { session, logout } = useSession();
   const persona = usePersona();
@@ -100,11 +105,17 @@ export default function AuroraSideMenu({
   if (!mounted || !open || !session) return null;
 
   const label = (id: string, fallback: string) => (t(`nav.${id}`) === `nav.${id}` ? fallback : t(`nav.${id}`));
-  const initials = (session.name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
+  const initials = avatarInitials(session.name);
 
   const go = (id: string) => { onClose(); onNavigate(id); };
   const pick = (row: SideMenuRow) => {
-    if (row.target.kind === "hub") { onClose(); onHubTab(row.target.tab); return; }
+    if (row.target.kind === "hub") {
+      // In the hub: switch it in place. Off the hub: the same three
+      // destinations as full screens.
+      if (onHubTab) { onClose(); onHubTab(row.target.tab); return; }
+      go(row.target.tab === "dashboard" ? "today" : row.target.tab);
+      return;
+    }
     go(row.target.screen);
   };
   const signOut = () => { onClose(); logout(); router.replace("/login"); };
