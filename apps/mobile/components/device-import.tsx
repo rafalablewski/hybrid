@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import {
   DEVICE_IMPORT_DAYS,
@@ -6,12 +6,15 @@ import {
   deviceImportCounts,
   deviceImportMeta,
   deviceSourceLabel,
+  feelSamples,
+  loadBaseline,
   planDeviceImport,
   type DeviceImportItem,
   type LoggedSession,
 } from "@hybrid/core";
 import { healthKitAvailability, queryRecentDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
-import { importDeviceWorkouts } from "../lib/api";
+import { importDeviceWorkouts, type DeviceImportLanded } from "../lib/api";
+import { FeelPrompt } from "./feel-prompt";
 import { setLoggerPref, useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
@@ -33,6 +36,15 @@ import Sheet from "./aurora/sheet";
  * Rows are individually excludable — the watch catches a 6-minute walk to the
  * shop and calls it a workout, and the athlete gets the final word on that.
  *
+ * AND IT ENDS IN THE ONE QUESTION THE WATCH CANNOT ANSWER. A recording carries
+ * every figure of the session except how hard it felt — the value session load,
+ * ACWR and every risk read are built from (core/session-feel.ts). Importing
+ * used to close the sheet on success, which left that answer reachable only by
+ * finding the session and scrolling its summary to the Wrapped's panel. Nobody
+ * does that, so in practice every imported session stayed weightless in the
+ * models. The import now finishes ON the question instead, with the athlete
+ * still in front of it and the session still the thing they are thinking about.
+ *
  * Web parity: apps/web/components/device-import.tsx renders the same plan and
  * the same auto-import switch; only the READ is native (see capabilities.ts —
  * device-import).
@@ -53,11 +65,26 @@ export function DeviceImportSheet({
   const C = useTheme().palette;
   const { t } = useLang();
   const prefs = useLoggerPrefs();
-  const [phase, setPhase] = useState<"loading" | "list" | "error" | "unavailable" | "importing">("loading");
+  const [phase, setPhase] = useState<"loading" | "list" | "error" | "unavailable" | "importing" | "rate">("loading");
   const [items, setItems] = useState<DeviceImportItem[]>([]);
   // Excluded by uuid — everything pending is in by default.
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  // What the import just put in the log, waiting on its effort rating.
+  const [landed, setLanded] = useState<DeviceImportLanded[]>([]);
+  const [answered, setAnswered] = useState(false);
+  // "vs your usual" is the athlete against THEMSELVES over the last month.
+  // Bodyweight is not passed because it cannot move this number: a felt load is
+  // effort × minutes, and neither term is bodyweight-dependent.
+  const baseline = useMemo(() => loadBaseline(feelSamples(sessions)), [sessions]);
 
+  // THE READ IS AN EVENT, NOT A SUBSCRIPTION. `load` is deliberately stable and
+  // takes the log from a ref: the effect below runs it when the sheet OPENS,
+  // and a `load` that changed identity every time `sessions` did would re-run it
+  // on every refetch behind the sheet — re-reading the health store, discarding
+  // the rows the athlete had excluded, and (since the import itself refetches)
+  // throwing away the rate step the moment it appeared.
+  const sessionsRef = useRef(sessions);
+  sessionsRef.current = sessions;
   const load = useCallback(async () => {
     if (healthKitAvailability() !== "ready") {
       setPhase("unavailable");
@@ -72,10 +99,12 @@ export function DeviceImportSheet({
       setPhase("error");
       return;
     }
-    setItems(planDeviceImport(workouts, sessions));
+    setItems(planDeviceImport(workouts, sessionsRef.current));
     setExcluded(new Set());
+    setLanded([]);
+    setAnswered(false);
     setPhase("list");
-  }, [sessions]);
+  }, []);
 
   useEffect(() => {
     if (visible) void load();
@@ -87,6 +116,26 @@ export function DeviceImportSheet({
   );
   const counts = deviceImportCounts(items);
 
+  /**
+   * THE REFETCH IS TOLD ON THE WAY OUT, not the moment the write lands.
+   *
+   * `onImported` is the host's "something changed, reload" — and on Home that
+   * host is the quick-log sheet, whose reload handler also CLOSES itself. This
+   * sheet renders inside it, so announcing the import mid-flow would unmount the
+   * rating step the instant it appeared. Firing on dismissal instead costs
+   * nothing (the sheet covers the screen it would be refreshing) and keeps the
+   * announcement to exactly one, however the athlete leaves — the button, a
+   * swipe, or the scrim.
+   */
+  const wrote = useRef(false);
+  const close = () => {
+    if (wrote.current) {
+      wrote.current = false;
+      onImported();
+    }
+    onClose();
+  };
+
   const run = async () => {
     if (pending.length === 0) return;
     setPhase("importing");
@@ -95,20 +144,31 @@ export function DeviceImportSheet({
       setPhase("error");
       return;
     }
-    onImported();
-    onClose();
+    wrote.current = true;
+    // A row that came back already rated (an attach onto a session the athlete
+    // finished in the app) has nothing to ask. Nothing to ask about at all → the
+    // import is simply done, exactly as before.
+    const ask = res.landed.filter((l) => !l.rated);
+    if (ask.length === 0) {
+      close();
+      return;
+    }
+    setLanded(ask);
+    setPhase("rate");
   };
 
   const when = (isoTs: string) =>
     new Date(isoTs).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
   return (
-    <Sheet visible={visible} onClose={onClose} scroll={false}>
+    <Sheet visible={visible} onClose={close} scroll={false}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             {/* A manufacturer's mark reproduces solid only — never the accent. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, paddingRight: 10 }}>
               <DeviceMark provider="apple" form="mark" height={14} on="dark" label="" />
-              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("device.import.title")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>
+                {t(phase === "rate" ? "device.import.ratedTitle" : "device.import.title")}
+              </Text>
             </View>
             {phase === "list" && (
               <Pressable onPress={() => void load()} hitSlop={8}>
@@ -117,7 +177,7 @@ export function DeviceImportSheet({
             )}
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 8 }}>
-            {t("device.import.lead")}
+            {t(phase === "rate" ? "device.import.rateLead" : "device.import.lead")}
           </Text>
 
           {phase === "unavailable" && (
@@ -220,6 +280,52 @@ export function DeviceImportSheet({
                 {t("device.import.cta").replace("{n}", String(pending.length))}
               </Text>
             </Pressable>
+          )}
+
+          {/* THE ASK — one prompt per session that just landed, seeded blank
+              because a row nobody typed is a row nobody was asked about. Each
+              tap saves on its own (FeelPrompt is optimistic), so the athlete can
+              answer one, both, or none and leave whenever they like. The eyebrow
+              carries the SESSION's name rather than the generic question: with
+              two runs imported at once, "How did that feel?" twice is not a
+              question anyone can answer. */}
+          {phase === "rate" && (
+            <>
+              <ScrollView style={{ marginTop: 4 }} showsVerticalScrollIndicator={false}>
+                {landed.map((l) => (
+                  <FeelPrompt
+                    key={l.id}
+                    compact
+                    sessionId={l.id}
+                    minutes={l.minutes}
+                    sessionEnd={l.completedAt}
+                    baseline={baseline}
+                    onAnswered={() => setAnswered(true)}
+                    eyebrow={() => (
+                      <Text
+                        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                        numberOfLines={1}
+                        style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}
+                      >
+                        {l.title}
+                      </Text>
+                    )}
+                  />
+                ))}
+              </ScrollView>
+              {/* The way out says what leaving MEANS. Before an answer it is a
+                  deferral, after one it is a finish — the same button either
+                  way, because the sheet never holds anybody hostage to a
+                  question about their own training. */}
+              <Pressable
+                onPress={close}
+                style={{ marginTop: 14, backgroundColor: answered ? C.lime : "transparent", borderWidth: answered ? 0 : 1, borderColor: C.line, borderRadius: 14, paddingVertical: 16, alignItems: "center" }}
+              >
+                <Text style={{ fontFamily: answered ? F.black : F.mono, fontSize: answered ? 15 : fs.caption, color: answered ? C.onAccent : C.ash }}>
+                  {t(answered ? "common.done" : "device.import.rateSkip")}
+                </Text>
+              </Pressable>
+            </>
           )}
 
           {/* WHERE IT READS FROM — every provider the import shape supports,

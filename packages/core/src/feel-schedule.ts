@@ -126,6 +126,43 @@ export function hasImmediateRead(s: FeelSessionRef): boolean {
   return lag == null || classifyRead(lag) === "immediate";
 }
 
+/**
+ * Has this session been rated AT ALL?
+ *
+ * Not the same question as `hasImmediateRead`, and the difference is the whole
+ * reason both exist. That one asks whether the read the SCHEDULE wanted was
+ * taken, in its window, so an answer given the next morning honestly counts as
+ * a miss. This one asks whether the app knows how hard the session was — the
+ * effort value that multiplies into session load, ACWR and every risk read
+ * downstream. A late answer still fills that hole; a missing one leaves the
+ * session weightless in every model that reads it.
+ *
+ * A session with no effort rating is therefore a thing to OFFER, not to nag
+ * about: `feltSessionLoad` returns null for it, so the week's load quietly
+ * under-counts by exactly one session and nothing on any screen says so.
+ * That's what an imported workout is the moment it lands — a row nobody typed,
+ * and so a row nobody was asked about.
+ */
+export function isRated(s: FeelSessionRef): boolean {
+  const v = s.feel;
+  return typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 5;
+}
+
+/**
+ * Every session in the list still missing its effort rating, newest first.
+ *
+ * No lookback and no window: unlike the two scheduled reads, this is a backlog
+ * rather than a prompt. The caller decides the scope it is willing to ask about
+ * (a day's rows on Today, the batch that just imported) — the shared part is
+ * only what "unrated" means, so the two clients can't disagree about which row
+ * wears the ask.
+ */
+export function unratedSessions<T extends FeelSessionRef>(sessions: readonly T[]): T[] {
+  return sessions
+    .filter((s) => !isRated(s))
+    .sort((a, b) => (endOf(b) || 0) - (endOf(a) || 0));
+}
+
 export interface FeelScheduleOptions {
   sessions: FeelSessionRef[];
   /** ISO/epoch of the most recent daily check-in — the recovery read. */

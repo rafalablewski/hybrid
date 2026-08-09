@@ -57,6 +57,7 @@ export function FeelPrompt({
   sessionEnd = null,
   compact = false,
   eyebrow,
+  onAnswered,
 }: {
   /** null for a guest / unsaved session — the taps are then read-only local. */
   sessionId: string | null;
@@ -72,6 +73,9 @@ export function FeelPrompt({
   /** card chrome for the finish screen instead of the Wrapped's panel chrome. */
   compact?: boolean;
   eyebrow?: (label: string) => ReactNode;
+  /** Fired after a tap is SAVED, so a host that is waiting on the answer (the
+   *  import sheet's rate step) can stop offering to skip it. */
+  onAnswered?: () => void;
 }) {
   const { t } = useLang();
   const qc = useQueryClient();
@@ -92,6 +96,7 @@ export function FeelPrompt({
       });
       if (!res.ok) throw new Error(String(res.status));
       void qc.invalidateQueries({ queryKey: sessionsKey });
+      onAnswered?.();
     } catch {
       setFailed(true);
     }

@@ -77,6 +77,7 @@ import ExerciseWidgetRail from "./exercise-widget";
 import AuroraWeekRail from "./week-rail";
 import AuroraLogbookRail from "./logbook-rail";
 import DoneFloor from "./done-floor";
+import FeelSheet from "./feel-sheet";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import AuroraEnduranceLanes from "./endurance-lanes";
@@ -225,6 +226,9 @@ export default function AuroraToday({
   // (everything logged today, with a link through to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
+  // The session whose rating sheet is up — a row on the done floor that nobody
+  // ever answered "how hard was that" for. Null when the sheet is closed.
+  const [rating, setRating] = useState<LoggedSession | null>(null);
   // Today has no TIER-3 sheets left. Readiness is set inline on the feeling
   // card; fuelling left this screen entirely (it has its own Nutrition tab);
   // and Follow a coach is a rail on the page rather than a row behind a sheet.
@@ -349,6 +353,7 @@ export default function AuroraToday({
       onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
       onLog={() => setQuickOpen(true)}
       onDone={() => setDoneOpen(true)}
+      onRate={setRating}
     />
   );
 
@@ -942,6 +947,7 @@ export default function AuroraToday({
             onOpen={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
             onLog={() => setQuickOpen(true)}
             onDone={() => setDoneOpen(true)}
+            onRate={setRating}
           />
         </div>
       )}
@@ -1087,6 +1093,13 @@ export default function AuroraToday({
       <Sheet open={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
         <QuickSportLog sessions={sessions} onSaved={() => { onSaved?.(); setQuickOpen(false); }} solid />
       </Sheet>
+
+      {/* RATE sheet — "how hard was that", for a session that arrived without an
+          answer (imported off a watch, quick-logged after the fact). One tap
+          from the floor's row: the alternative is opening the session and
+          scrolling its summary to the last panel, which nobody does, which is
+          why those sessions were counting for nothing in the load model. */}
+      <FeelSheet session={rating} sessions={sessions} open={rating != null} onClose={() => setRating(null)} />
 
       {/* QUICK START sheet — re-launch a saved routine (favourites + rediscover). */}
       <QuickStartSheet

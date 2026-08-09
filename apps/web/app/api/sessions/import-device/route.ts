@@ -19,7 +19,7 @@ import { prisma } from "@/lib/db";
  * DEVICE IMPORT — the workouts the athlete's watch already recorded, written
  * into the log in one call.
  *
- * POST { workouts: DeviceWorkout[] } → { created, attached, linked, skipped }
+ * POST { workouts: DeviceWorkout[] } → { created, attached, linked, skipped, landed }
  *
  * The client (only the phone can read a health store) hands over what it read;
  * the SERVER decides what each recording means, by running the same shared plan
@@ -33,6 +33,13 @@ import { prisma } from "@/lib/db";
  * to that row instead of duplicating it, and only what's genuinely new becomes a
  * session — with the recording attached, so THE MEASUREMENT WINS downstream
  * exactly as it does for a hand-matched session (see core/session-device.ts).
+ *
+ * `landed` NAMES THE ROWS, and that is not bookkeeping. A watch measures every
+ * figure of a session except the one the load model needs from a person — how
+ * hard it felt — so an import that returns only counts leaves the client with
+ * nothing to ask about, and the athlete has to go find the session and open its
+ * summary to rate it. Nobody does that. Returning the rows lets the import end
+ * in the question (see the mobile sheet's rate phase).
  */
 export async function POST(request: Request) {
   const user = await getOrCreateDbUser(request);
@@ -60,7 +67,7 @@ export async function POST(request: Request) {
     workouts.push(clean);
   }
   const skipped = raw.length - workouts.length;
-  if (workouts.length === 0) return NextResponse.json({ created: 0, attached: 0, linked: 0, skipped });
+  if (workouts.length === 0) return NextResponse.json({ created: 0, attached: 0, linked: 0, skipped, landed: [] });
 
   // Plan against the window the recordings actually span, widened by a day at
   // each end so a session logged either side of midnight is still a candidate.
@@ -88,6 +95,20 @@ export async function POST(request: Request) {
   let created = 0;
   let attached = 0;
   let linked = 0;
+  /** The rows this call actually put in (or joined), for the client's ask. */
+  const landed: {
+    id: string;
+    title: string;
+    startedAt: string;
+    completedAt: string;
+    /** The DEVICE's moving time — the trusted duration, so the load figure the
+     *  rating produces is built from what was measured, not a wall-clock span. */
+    minutes: number;
+    /** Already rated rows are handed back too, marked, so the client asks about
+     *  the right ones rather than re-asking a question already answered on an
+     *  attach. */
+    rated: boolean;
+  }[] = [];
 
   for (const item of plan) {
     const device = { ...item.workout, matchedAt: stamp() } as unknown as Prisma.InputJsonValue;
@@ -102,11 +123,27 @@ export async function POST(request: Request) {
         where: { id: item.sessionId, userId: user.id, device: { equals: Prisma.DbNull } },
         data: { device },
       });
-      if (res.count > 0) attached += 1;
-      else linked += 1;
+      if (res.count === 0) {
+        linked += 1;
+        continue;
+      }
+      attached += 1;
+      // `sessionId` is optional on the plan item — an attach always carries one,
+      // and the row it names came out of the query the plan was built against,
+      // so this find is what proves it rather than a non-null assertion.
+      const joined = rows.find((r) => r.id === item.sessionId);
+      if (joined)
+        landed.push({
+          id: joined.id,
+          title: item.sessionTitle ?? deviceWorkoutTitle(item.workout),
+          startedAt: joined.startedAt.toISOString(),
+          completedAt: new Date(item.workout.end).toISOString(),
+          minutes: item.workout.durationMin,
+          rated: typeof joined.feel === "number",
+        });
       continue;
     }
-    await prisma.session.create({
+    const row = await prisma.session.create({
       data: {
         userId: user.id,
         title: deviceWorkoutTitle(item.workout).slice(0, 200),
@@ -118,7 +155,16 @@ export async function POST(request: Request) {
       },
     });
     created += 1;
+    landed.push({
+      id: row.id,
+      title: row.title,
+      startedAt: row.startedAt.toISOString(),
+      completedAt: new Date(item.workout.end).toISOString(),
+      minutes: item.workout.durationMin,
+      // A row this call created cannot carry an answer — nobody has been asked.
+      rated: false,
+    });
   }
 
-  return NextResponse.json({ created, attached, linked, skipped });
+  return NextResponse.json({ created, attached, linked, skipped, landed });
 }
