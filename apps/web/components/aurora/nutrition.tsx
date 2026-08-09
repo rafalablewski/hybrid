@@ -24,6 +24,7 @@ import {
   type MicroFacts, type VerifiedStamp,
   type Recipe, type RecipeCollection, type NutritionMealPart, type MealPartDef,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
+  recordLog, usualAtHour,
   type PickerSourceKey,
 } from "@hybrid/core";
 import { fs, space, CARD_PAD, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
@@ -199,8 +200,20 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // without a backend. Recent is written on every log; Favorites toggles a star.
   const [recent, setRecent] = useState<QuickFood[]>(() => readQuickFoods("hybrid.nutrition.recent"));
   const [favorites, setFavorites] = useState<QuickFood[]>(() => readQuickFoods("hybrid.nutrition.favorites"));
+  // Every log STAMPS the entry, carrying forward the hours it was already
+  // logged at, so the picker can open on what this athlete eats at this time
+  // of day (core/hour-recents.ts). Per-device, no schema change.
   const pushRecent = useCallback((q: QuickFood) => {
-    setRecent((xs) => { const next = [q, ...xs.filter((x) => x.key !== q.key)].slice(0, 20); writeQuickFoods("hybrid.nutrition.recent", next); return next; });
+    setRecent((xs) => {
+      const prev = xs.find((x) => x.key === q.key);
+      // The STORED history wins: the caller's copy can be a snapshot taken
+      // before the last write (a double tap, or a favourite holding a frozen
+      // copy of the entry), and stamping that would drop a log.
+      const stamped = { ...q, logs: recordLog(prev?.logs ?? q.logs, Date.now()) };
+      const next = [stamped, ...xs.filter((x) => x.key !== q.key)].slice(0, 20);
+      writeQuickFoods("hybrid.nutrition.recent", next);
+      return next;
+    });
   }, []);
   const isFavorite = (key: string) => favorites.some((x) => x.key === key);
   const toggleFavorite = (q: QuickFood) => {
@@ -622,7 +635,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   const relogRecent = async (q: QuickFood) => {
     setError(""); setMealMsg("");
     try {
-      const ok = await logEntry({ name: q.name, subname: q.subname ?? null, source: mealType, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, qty: 1 });
+      // The WHOLE food, exactly as mobile's twin sends it: dropping the micros
+      // here zeroed the day's label panel, and dropping verifiedId lost the
+      // provenance — on the same gesture, on the other client.
+      const ok = await logEntry({ name: q.name, subname: q.subname ?? null, source: mealType, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat, sugar: q.sugar, fiber: q.fiber, salt: q.salt, verifiedId: q.verifiedId ?? null, qty: 1 });
       if (!ok) return;
       pushRecent(q);
       setMealMsg(`${q.name} +${Math.round(q.kcal)} kcal`);
@@ -824,6 +840,25 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     () => pickerAnswer(foodQuery, quickAddCandidates, { vocab: pickVocab }),
     [foodQuery, quickAddCandidates, pickVocab],
   );
+
+  // ── THE HOUR — what this athlete actually eats around now (core/hour-recents).
+  //    Recomputed on the minute rather than on every render, so a picker left
+  //    open across 21:59 → 22:00 does not keep answering yesterday's question.
+  const [clockMinute, setClockMinute] = useState(() => Math.floor(Date.now() / 60000));
+  useEffect(() => {
+    // Only while the picker is open: this screen is seventeen views, and a
+    // timer that re-rendered all of them for a label one of them shows would
+    // be paying for the clock everywhere it is not on screen.
+    if (view !== "add") return;
+    const id = setInterval(() => setClockMinute(Math.floor(Date.now() / 60000)), 30000);
+    return () => clearInterval(id);
+  }, [view]);
+  const usuals = useMemo(() => usualAtHour(recent, clockMinute * 60000), [recent, clockMinute]);
+  const usualDays = useMemo(() => new Map(usuals.map((u) => [u.item.key, u.days])), [usuals]);
+  const clockLabel = useMemo(() => {
+    const d = new Date(clockMinute * 60000);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }, [clockMinute]);
 
   // ── Food search — Open Food Facts (free, no key) via our /api/nutrition/search
   //    proxy (the server auto-detects a barcode). Debounced, and driven by the
@@ -1462,6 +1497,11 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
   // ============ ADD TO MEAL — the food picker (redesigned) ============
   if (view === "add") {
+    // RECENT, SPLIT BY THE CLOCK: the usuals for this hour are drawn under
+    // their own head, and everything else follows under its own. The hour is a
+    // RANKING of Recent, not a fifth source beside it.
+    const usualKeys = new Set(usuals.map((u) => u.item.key));
+    const restOfRecent = recent.filter((r) => !usualKeys.has(r.key));
     const foods: QuickFood[] =
       foodTab === "recent" ? recent
       : foodTab === "favorites" ? favorites
@@ -1473,6 +1513,32 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     const sourceCounts: Record<PickerSourceKey, number> = {
       recent: recent.length, favorites: favorites.length, meals: meals.length, personal: products.length,
     };
+    // ONE row renderer, used by both groups of the hour split below.
+    const recentRow = (food: QuickFood) => {
+              const prodId = food.key.startsWith("p:") ? food.key.slice(2) : null;
+      const days = usualDays.get(food.key);
+      const isRecent = foodTab === "recent";
+      return (
+        <FoodRow
+          key={food.key} C={C}
+          name={food.name}
+          subname={food.subname}
+          // A row that jumped the queue says WHY: the count is the
+          // evidence, not an ornament.
+          meta={`${Math.round(food.kcal)} kcal  –  ${food.serving || t("w.recovery.nutrition.serving")}${isRecent && days ? `  –  ${t("w.recovery.nutrition.pick.atThisHour").replace("{n}", String(days))}` : ""}`}
+          // ONE TAP on a recent. An MRU entry is a food PLUS its
+          // serving, so re-logging it needs no question answering —
+          // the portion editor is still one tap away on the row body,
+          // for the evening the amount is different.
+          onAdd={() => { const p = prodId ? products.find((x) => x.id === prodId) : null; if (p) logProduct(p); else if (isRecent) relogRecent(food); else logQuickFood(food); }}
+          onOpen={isRecent && !prodId ? () => logQuickFood(food) : undefined}
+          starred={isFavorite(food.key)}
+          onStar={() => toggleFavorite(food)}
+          onDelete={prodId ? () => deleteProduct(prodId) : undefined}
+        />
+      );
+    };
+
     // The two doors at the end of the list. Both LEAVE — Quick Log opens a
     // sheet, New food opens a screen — so both wear the exit rule's ring.
     const doors = (
@@ -1534,6 +1600,17 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           }}
         />
 
+        {/* A one-tap add is invisible unless the screen says so — and a FAILED
+            one is worse than invisible, because the thumb tries again. Same
+            confirmation line the hub and the diary already use. */}
+        {error ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--red-text)", marginTop: 12 }}>{error}</div>
+        ) : mealMsg ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--lime-text)", marginTop: 12 }}>
+            <AuroraIcon name="check" size={13} color="var(--lime-text)" />{mealMsg}
+          </div>
+        ) : null}
+
         {answer.kind === "resting" ? (
           /* AT REST — all four sources, switchable, with the box gone. */
           <>
@@ -1555,21 +1632,25 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               ))
             ) : foods.length === 0 ? (
               <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "16px 6px", lineHeight: 1.6 }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</div>
-            ) : foods.map((food) => {
-              const prodId = food.key.startsWith("p:") ? food.key.slice(2) : null;
-              return (
-                <FoodRow
-                  key={food.key} C={C}
-                  name={food.name}
-                  subname={food.subname}
-                  meta={`${Math.round(food.kcal)} kcal  –  ${food.serving || t("w.recovery.nutrition.serving")}`}
-                  onAdd={() => prodId ? logProduct(products.find((p) => p.id === prodId)!) : logQuickFood(food)}
-                  starred={isFavorite(food.key)}
-                  onStar={() => toggleFavorite(food)}
-                  onDelete={prodId ? () => deleteProduct(prodId) : undefined}
-                />
-              );
-            })}
+            ) : foodTab === "recent" && usuals.length ? (
+              /* THE HOUR. The app knows the clock and the meal, so Recent
+                 opens on what this athlete actually eats around now — and
+                 the head covers ONLY those rows. The rest of the MRU follows
+                 under its own head, because a recent that happens to sit in
+                 this list is not a habit and must not be labelled as one.
+                 A cold start has no habit, so `usuals` is empty and the list
+                 stays exactly as it was — no empty state, nothing claimed. */
+              <>
+                <RailHead title={t("w.recovery.nutrition.pick.usualHour")} meta={clockLabel} />
+                {usuals.map((u) => recentRow(u.item))}
+                {restOfRecent.length ? (
+                  <>
+                    <RailHead title={t("w.recovery.nutrition.pick.everythingElse")} />
+                    {restOfRecent.map(recentRow)}
+                  </>
+                ) : null}
+              </>
+            ) : foods.map(recentRow)}
             {doors}
           </>
         ) : (

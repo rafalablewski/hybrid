@@ -32,7 +32,12 @@ import SwipeRow from "../swipe-row";
 
 const C = (v: string) => `var(--color-${v})`;
 
-export type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null };
+export type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null }
+  /** WHEN this exact (food, serving) was logged — epoch ms, capped. Written
+   *  on every log; read by usualAtHour so the picker can open on what this
+   *  athlete actually eats at this time of day. Per-device, like the MRU
+   *  itself; an entry saved before this shipped simply has no history yet. */
+  & { logs?: number[] | null };
 
 export function readQuickFoods(key: string): QuickFood[] {
   try { if (typeof window === "undefined") return []; const raw = localStorage.getItem(key); return raw ? (JSON.parse(raw) as QuickFood[]) : []; } catch { return []; }

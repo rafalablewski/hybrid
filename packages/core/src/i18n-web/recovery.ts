@@ -304,6 +304,11 @@ export const web_recovery = {
     "w.recovery.nutrition.pick.noneYours": "Nothing of yours matches \u201C{v}\u201D.",
     "w.recovery.nutrition.pick.newFood": "New food",
     "w.recovery.nutrition.pick.newNamed": "New food: {v}",
+    // The hour block — what this athlete actually eats at this time of day. The
+    // count is the row's own evidence for why it jumped the queue.
+    "w.recovery.nutrition.pick.usualHour": "At this hour you usually eat",
+    "w.recovery.nutrition.pick.atThisHour": "{n} days at this hour",
+    "w.recovery.nutrition.pick.everythingElse": "Everything else",
     // The parser's VOCABULARY. These are the words it recognises when you type,
     // not labels — keep them lowercase, comma-separated, and include the short
     // forms people actually use.
@@ -889,6 +894,9 @@ export const web_recovery = {
     "w.recovery.nutrition.pick.noneYours": "Nic z Twoich nie pasuje do \u201E{v}\u201D.",
     "w.recovery.nutrition.pick.newFood": "Nowy produkt",
     "w.recovery.nutrition.pick.newNamed": "Nowy produkt: {v}",
+    "w.recovery.nutrition.pick.usualHour": "O tej porze zwykle jesz",
+    "w.recovery.nutrition.pick.atThisHour": "{n} dni o tej porze",
+    "w.recovery.nutrition.pick.everythingElse": "Pozostałe",
     "w.recovery.nutrition.qa.vocabKcal": "kcal,kalorie,kal",
     "w.recovery.nutrition.qa.vocabProtein": "bialko,białko,bialka,białka,protein,b",
     "w.recovery.nutrition.qa.vocabCarbs": "wegle,węgle,weglowodany,węglowodany,w",
@@ -1468,6 +1476,9 @@ export const web_recovery = {
     "w.recovery.nutrition.pick.noneYours": "Nichts von dir passt zu \u201E{v}\u201C.",
     "w.recovery.nutrition.pick.newFood": "Neues Lebensmittel",
     "w.recovery.nutrition.pick.newNamed": "Neues Lebensmittel: {v}",
+    "w.recovery.nutrition.pick.usualHour": "Um diese Zeit isst du meistens",
+    "w.recovery.nutrition.pick.atThisHour": "{n} Tage um diese Zeit",
+    "w.recovery.nutrition.pick.everythingElse": "Alles andere",
     "w.recovery.nutrition.qa.vocabKcal": "kcal,kalorien,kal",
     "w.recovery.nutrition.qa.vocabProtein": "protein,eiweiss,eiweiß,p",
     "w.recovery.nutrition.qa.vocabCarbs": "kohlenhydrate,kh,carbs,k",

@@ -63,6 +63,7 @@ export * from "./copy-day";
 export * from "./nutrition-analytics";
 export * from "./quick-add";
 export * from "./food-picker";
+export * from "./hour-recents";
 export * from "./nutrition-targets";
 export * from "./serving-units";
 export * from "./notes";
