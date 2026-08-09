@@ -437,7 +437,7 @@ function metricValue(metric: LeaderboardMetric, sessions: LoggedSession[], now: 
     case "activeDays":
       return r.activeDays;
     case "streak":
-      return streak(sessions, 1, now).current;
+      return streak(sessions, { now }).current;
     case "prs":
       return r.prs.length + r.cardioPrs.length;
   }
@@ -529,8 +529,8 @@ export function compareAthletes(
 ): CompareResult {
   const ra = weeklyRecap(a.sessions, now);
   const rb = weeklyRecap(b.sessions, now);
-  const sa = streak(a.sessions, 1, now);
-  const sb = streak(b.sessions, 1, now);
+  const sa = streak(a.sessions, { now });
+  const sb = streak(b.sessions, { now });
 
   const lines: CompareLine[] = [
     { key: "volume", label: "Weekly volume", a: Math.round(ra.volume), b: Math.round(rb.volume), unit: "kg", leader: lead(ra.volume, rb.volume) },
@@ -579,7 +579,7 @@ export function profileStats(sessions: LoggedSession[], now = Date.now(), bw?: B
   return {
     totalSessions: sessions.length,
     totalVolumeKg: Math.round(totalVolume(sessions, bw)),
-    currentStreak: streak(sessions, 1, now).current,
+    currentStreak: streak(sessions, { now }).current,
     topLifts: bestTopLoadByLift(sessions).slice(0, 3).map((r) => ({ lift: r.lift, topLoad: r.weightKg })),
   };
 }

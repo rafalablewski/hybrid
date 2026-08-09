@@ -26,7 +26,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const visLabel = (v: "public" | "followers" | "private") => v === "public" ? t("w.profile.visPublic") : v === "followers" ? t("w.profile.visFollowers") : t("w.profile.visPrivate");
   const acct = useAccountSettings();
   const [data, setData] = useState<any>(null);
-  const [form, setForm] = useState<any>({ handle: "", displayName: "", bio: "", visibility: "followers", avatarUrl: "" });
+  const [form, setForm] = useState<any>({ handle: "", displayName: "", bio: "", visibility: "public", avatarUrl: "" });
   const [err, setErr] = useState<string | null>(null);
   const [avail, setAvail] = useState<null | "checking" | "ok" | "taken">(null);
   const [editing, setEditing] = useState<FieldKey | null>(null);

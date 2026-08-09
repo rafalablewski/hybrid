@@ -34,17 +34,12 @@ export function HubMasthead({
   /** Rendered inline after the title (the Kyoto Hour hanko). Decorative only —
    *  anything with meaning belongs in a slot of its own. */
   mark,
-  /** Rendered UNDER the title. The one thing that may grow the block, and only
-   *  for a transient state — Dashboard's "Back to today" when the week rail is
-   *  scrubbed off the true today. Not a subtitle slot. */
-  accessory,
 }: {
   eyebrow?: string | null;
   meta?: string | null;
   metaTone?: HubMetaTone;
   title: string;
   mark?: ReactNode;
-  accessory?: ReactNode;
 }) {
   const { palette: C, scheme } = useTheme();
   const type = hubTitleType(title);
@@ -126,8 +121,6 @@ export function HubMasthead({
         </Text>
         {mark}
       </Animated.View>
-
-      {accessory}
     </View>
   );
 }

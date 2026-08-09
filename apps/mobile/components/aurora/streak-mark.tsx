@@ -44,7 +44,7 @@ export function StreakMark({
   const { t } = useLang();
   const router = useRouter();
   const sessions = useSessionsRead().data ?? [];
-  const days = useMemo(() => streak(sessions, 1).current, [sessions]);
+  const days = useMemo(() => streak(sessions).current, [sessions]);
   if (days <= 0) return null;
 
   const type = STREAK_MARK[rung];

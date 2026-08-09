@@ -19,25 +19,40 @@ function session(id: string, startedAt: string, lift?: string, e1rmLoad?: number
 }
 
 describe("habits — streaks", () => {
-  it("counts a forgiving day-streak with one grace day", () => {
-    // trained today, 2 days ago, 4 days ago → all within 1 grace day of each other
-    const s = [session("a", daysAgo(0)), session("b", daysAgo(2)), session("c", daysAgo(4))];
-    const r = streak(s, 1, NOW);
+  it("counts strictly consecutive days", () => {
+    const s = [session("a", daysAgo(0)), session("b", daysAgo(1)), session("c", daysAgo(2))];
+    const r = streak(s, { now: NOW });
     expect(r.current).toBe(3);
     expect(r.alive).toBe(true);
     expect(r.daysSinceLast).toBe(0);
   });
 
-  it("lapses the streak once the gap exceeds the grace", () => {
-    const s = [session("a", daysAgo(3)), session("b", daysAgo(5))];
-    const r = streak(s, 1, NOW); // 3 days since last > graceDays 1
+  it("a rest day between sessions resets the run — no grace", () => {
+    // trained today, 2 days ago, 4 days ago → every-other-day is NOT a streak
+    const s = [session("a", daysAgo(0)), session("b", daysAgo(2)), session("c", daysAgo(4))];
+    const r = streak(s, { now: NOW });
+    expect(r.current).toBe(1);
+    expect(r.longest).toBe(1);
+  });
+
+  it("yesterday's run still shows today (today can extend it)", () => {
+    const s = [session("a", daysAgo(1)), session("b", daysAgo(2)), session("c", daysAgo(3))];
+    const r = streak(s, { now: NOW });
+    expect(r.current).toBe(3);
+    expect(r.alive).toBe(true);
+    expect(r.daysSinceLast).toBe(1);
+  });
+
+  it("lapses to 0 once a full day passes without training", () => {
+    const s = [session("a", daysAgo(2)), session("b", daysAgo(3))];
+    const r = streak(s, { now: NOW });
     expect(r.alive).toBe(false);
     expect(r.current).toBe(0);
-    expect(r.longest).toBeGreaterThanOrEqual(2);
+    expect(r.longest).toBe(2);
   });
 
   it("returns empty for no sessions", () => {
-    expect(streak([], 1, NOW)).toMatchObject({ current: 0, longest: 0, lastActive: null });
+    expect(streak([], { now: NOW })).toMatchObject({ current: 0, longest: 0, lastActive: null });
     expect(activeDays([])).toEqual([]);
   });
 
