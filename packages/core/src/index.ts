@@ -58,6 +58,7 @@ export * from "./source-marks";
 export * from "./recipes";
 export * from "./user-recipes";
 export * from "./copy-day";
+export * from "./nutrition-analytics";
 export * from "./notes";
 export * from "./exercise-db";
 export * from "./exercise-profile";

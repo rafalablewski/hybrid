@@ -24,6 +24,8 @@ import {
   FREE_PRODUCT_LIMIT,
   nutritionSummary,
   nutritionNudge,
+  nutritionAnalytics,
+  type AnalyticsWindow,
   trainingEnergyOnDay,
   localDayKey,
   localTodayKey,
@@ -81,6 +83,7 @@ import BodyProgress from "./body-progress";
 import WaterCard from "./water";
 import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type RecipeRow } from "./user-recipes";
 import CopyDaySheet from "./copy-day";
+import NutritionTrends from "./nutrition-trends";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -1081,8 +1084,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // Safety net for the "onboarding shows every time" bug: anyone who has already
   // logged intake or a weigh-in has finished first-run — never re-show the wizard.
   const hasNutritionData = useMemo(() => sig.some((s) => s.kind === "energyIntake" || s.kind === "bodyMass"), [signals]);
-  const [summaryWindow, setSummaryWindow] = useState<7 | 30>(30);
+  // ONE window for the whole Insights screen: the goal overview and the
+  // per-nutrient trends below it must answer the same question over the same
+  // span, so the control lives on the screen rather than inside either panel.
+  const [summaryWindow, setSummaryWindow] = useState<AnalyticsWindow>(30);
   const summary = useMemo(() => nutritionSummary(sig, { targets, windowDays: summaryWindow }), [signals, targets, summaryWindow]);
+  // Every figure on the trends screen comes from here — nothing is computed
+  // in the component, so the two clients cannot reach different conclusions.
+  const analytics = useMemo(
+    () => nutritionAnalytics(sig, { sessions, goal, bodyMassKg, windowDays: summaryWindow }),
+    [signals, sessions, goal, bodyMassKg, summaryWindow],
+  );
   // The hub bento's Diary chart: seven days of target-vs-logged. The target is
   // per-day training-aware (the same composition `targets` uses for today), so
   // today's point on the chart and the hero ring above it agree by construction.
@@ -2434,8 +2446,19 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       ))}
 
       {view === "insights" && (
-        <View style={{ marginTop: 16 }}>
-          <SummaryDashboard summary={summary} window={summaryWindow} onWindow={setSummaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} full={full} />
+        <View>
+          {/* The window control belongs to the SCREEN, so the goal overview and
+              every nutrient below it read the same span. */}
+          <NutritionTrends
+            analytics={analytics}
+            window={summaryWindow}
+            onWindow={setSummaryWindow}
+            units={units}
+          />
+          {/* The goal overview keeps what the per-nutrient view has no place
+              for: the chosen goal and the measured weight change it is actually
+              being judged by. */}
+          <SummaryDashboard summary={summary} window={summaryWindow} goal={goal} weightChangeKg={maint.weightChangeKg} onUpgrade={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} full={full} />
         </View>
       )}
 
@@ -2970,16 +2993,14 @@ function NutritionNudge({ nudge }: { nudge: NutritionNudge }) {
 }
 
 // The SUMMARY dashboard — a week/month rollup of stat tiles + macro balance.
-function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onUpgrade, full }: { summary: NutritionSummary; window: 7 | 30; onWindow: (w: 7 | 30) => void; goal: NutritionGoal; weightChangeKg: number | null; onUpgrade: () => void; full: boolean }) {
+// The goal overview. Its own 7/30 toggle was REMOVED when the trends screen
+// above it gained a 7/30/90 one: two window controls on one screen, offering
+// different spans, is a screen that cannot say what period it is describing.
+function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgrade, full }: { summary: NutritionSummary; window: number; goal: NutritionGoal; weightChangeKg: number | null; onUpgrade: () => void; full: boolean }) {
   const { palette: C } = useTheme();
   const pa = usePremiumAccent();
   const { t } = useLang();
   const goalLabel = t(goal === "lose" ? "w.recovery.nutrition.goalLose" : goal === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
-  const seg = (w: 7 | 30, label: string) => (
-    <Pressable key={w} onPress={() => onWindow(w)} style={{ flex: 1, paddingVertical: 8, borderRadius: 999, alignItems: "center", backgroundColor: window === w ? C.lime : "transparent" }}>
-      <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.caption, letterSpacing: 0.9, textTransform: "uppercase", color: window === w ? C.onAccent : C.ash }}>{label}</Text>
-    </Pressable>
-  );
   // Generic stats stay neutral (ash); the macro-average tile keeps its violet.
   const tiles: [string, string, string, string][] = [
     [t("w.recovery.nutrition.avgIntake"), summary.avgKcal != null ? String(summary.avgKcal) : "—", t("w.recovery.nutrition.perDay"), C.ash],
@@ -2991,9 +3012,7 @@ function SummaryDashboard({ summary, window, onWindow, goal, weightChangeKg, onU
     <ACard solid style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.summary")}</Text>
-        <View style={{ flexDirection: "row", width: 132, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 999, padding: 3 }}>
-          {seg(7, t("w.recovery.nutrition.week"))}{seg(30, t("w.recovery.nutrition.month"))}
-        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t(`w.recovery.nutrition.an.window${window}`)}</Text>
       </View>
       {summary.loggedDays === 0 ? (
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12 }}>{t("w.recovery.nutrition.summaryEmpty")}</Text>
