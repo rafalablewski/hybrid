@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
-  fmtWeight, splitFigure, strengthPrProof,
+  activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
   durationUnits, formatDuration,
-  resolveActivityRange, groupDistanceDisplay, fmtKm, kmValue, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
+  groupDistanceDisplay, fmtKm, kmValue,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
   figureDeltaPct, figureDirection,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
-  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit,
+  type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
-import Sheet from "./sheet";
-import { LiquidSeg } from "./liquid-seg";
-import { fs, CARD_PAD as SHARED_CARD_PAD, accentText } from "@/lib/ui";
+import PeriodRecords from "./period-records";
+import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
+import { fs, CARD_PAD as SHARED_CARD_PAD } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
-import { useToday } from "@/lib/use-today";
 
 /**
  * THE ACTIVITY CARD — "This week" and everything the date filter turns it into
@@ -27,21 +25,31 @@ import { useToday } from "@/lib/use-today";
  * metric that moved, its baseline as the working-out, and — under a hairline —
  * the figures the sentence was drawn from.
  *
- * It is the ONLY totals card on Today, and it now summarises ALL activity, not
- * just what was lifted: a tennis match logged as 90 minutes on a block counts
- * toward the hours even with no stopwatch running, and every sport's distance
- * lands in the KM column. See core activity-window.ts for the attribution rule.
+ * It is the WHOLE-SCREEN totals card, and it summarises ALL activity, not just
+ * what was lifted: a tennis match logged as 90 minutes on a block counts toward
+ * the hours even with no stopwatch running, and every sport's distance lands in
+ * the KM column. See core activity-window.ts for the attribution rule.
+ *
+ * There IS a second totals card on Today now — the Endurance section's — and
+ * the thing that makes it safe is the thing the retired cross-sport strip never
+ * had: a heading. It sits under a cluster headline reading ENDURANCE, and its
+ * figures are a strict SLICE of this card's (core endurance-window.ts reads the
+ * same activitySummary), so the two can restate each other but never disagree.
  *
  * THREE THINGS THE CARD GAINED, and why each one is here:
  *
  *   • A REAL WEEK. "This week" is MONDAY → SUNDAY now, not a rolling seven days
  *     that reports last Friday under a label claiming the current week.
- *   • A DATE FILTER, in the iOS 26 segmented-control idiom (the shared
- *     LiquidSeg): a neutral pill at rest that turns into a clear glass lens on
- *     touch, scrubs under a drag, and springs between segments, with the label
- *     it lands on taking the foreground. Week / 7 days / 30 days / YTD, with
- *     the fifth segment opening a sheet of individual months. The choice
- *     persists per device.
+ *   • A DATE FILTER — the shared aurora/range-filter.tsx, in the iOS 26
+ *     segmented-control idiom: a neutral pill at rest that turns into a clear
+ *     glass lens on touch, scrubs under a drag, and springs between segments,
+ *     with the label it lands on taking the foreground. Week / 7 days /
+ *     30 days / YTD, with the fifth segment opening a sheet of individual
+ *     months. The choice persists per device. It became a shared component
+ *     when the Endurance section grew a second view of it — one control, two
+ *     callers, rather than the four copies that would otherwise exist, and
+ *     ONE period: both read core's TODAY_RANGE_STORE_KEY, so scrubbing either
+ *     moves both.
  *   • FIGURES THAT OPEN. Every column is a button; pressing one expands the
  *     card's lower compartment, carrying the groups the total is made of and
  *     the sessions underneath them. "41.6 km" becomes 39 km of running, 600 m
@@ -71,29 +79,12 @@ import { useToday } from "@/lib/use-today";
  */
 
 const C = (v: string) => `var(--color-${v})`;
-const STORE_KEY = "hybrid.today.range";
+/** ONE PERIOD FOR THE SCREEN — core's TODAY_RANGE_STORE_KEY, which the
+ *  Endurance section's card reads too, so the two filters move together. */
 /** Set once the athlete has opened any column — see the hint below. */
 const HINT_KEY = "hybrid.today.actHinted";
 const ROWS_SHOWN = 5;
 
-/** The segment labels are SHORTER than the card's own title for the same
- *  period ("7 days" under a card headed "Last 7 days") — a segmented control
- *  that wraps is a segmented control that has stopped being one. */
-const SHORT_KEY: Record<string, string> = {
-  week: "w.home.act.sWeek", d7: "w.home.act.sD7", d30: "w.home.act.sD30", ytd: "w.home.act.sYtd",
-};
-
-/** The records block names the WINDOW, not just "New PRs" — the card is
- *  period-aware and a month's records must not read as this week's news. */
-const PRS_HEAD_KEY: Record<string, string> = {
-  week: "w.home.act.prsWeek", d7: "w.home.act.prsD7", d30: "w.home.act.prsD30", ytd: "w.home.act.prsYtd",
-};
-
-/** Records shown before the rail offers "Show all" — a year can hold forty,
- *  and an endless drag is not a celebration. */
-const PRS_RAIL_CAP = 8;
-/** The width of the edge dissolve, in px. Mirrored on mobile. */
-const PRS_FADE = 24;
 /** The verdict card's own inner padding — what the detail compartment bleeds by
  *  to reach the card's edges. NOT the screen gutter (`--page-pad-x`): the
  *  compartment lives INSIDE the card, so it must follow the card. The value is
@@ -106,8 +97,6 @@ const kicker: CSSProperties = {
   textTransform: "uppercase", whiteSpace: "nowrap",
 };
 const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
-
-const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 /** Render a "{m}"-templated sentence with the metric name in bold. */
 function Lead({ template, word }: { template: string; word: string | null }): ReactNode {
@@ -169,74 +158,6 @@ export function DoorRow({ title, sub, glyph, onClick, premium = false }: { title
   );
 }
 
-/**
- * ONE RECORD, set as a FIGURE — not the list row this used to be.
- *
- * The block used to be four hairlines around two 12px rows: a section rule, a
- * rule under the header and one above every record, fencing content inside a
- * card that already has a border. Whitespace separates two items perfectly
- * well, so the rules went and the budget was spent on the two things a record
- * actually needs — SCALE (the load at fs.display, the largest figure in the
- * card, because a personal best is the only thing on Today worth celebrating)
- * and PROOF (the load it beat, which is what makes 90 kg an achievement rather
- * than a fact).
- *
- * The proof's three shapes come from core's strengthPrProof, so this and the
- * session summary can't drift, and it arrives SPLIT — "from 82.5" reads in ash
- * and only the gain takes the accent, which a single joined string could not
- * express. The value is bare because the unit is on the figure above it.
- *
- * Pressable when the hit knows its session: the card's whole promise is that a
- * figure opens what's behind it, and a record is no exception.
- */
-function PrCell({ pr, units, t, onOpen }: {
-  pr: PrHit;
-  units: WeightUnit;
-  t: (k: string) => string;
-  onOpen?: () => void;
-}) {
-  const [value, unit] = splitFigure(fmtWeight(pr.topLoad, units));
-  const proof = strengthPrProof(pr, units);
-  const body = (
-    <>
-      <span style={{ display: "block", ...kicker, color: C("ash"), overflow: "hidden", textOverflow: "ellipsis" }}>{pr.lift}</span>
-      <span style={{
-        display: "block", ...num, fontSize: fs.display, fontWeight: 800,
-        letterSpacing: "-.03em", lineHeight: 1, marginTop: 7, color: accentText("lime"),
-      }}>
-        {value}
-        <i style={{ fontStyle: "normal", fontSize: ".46em", fontWeight: 600, letterSpacing: ".04em", marginLeft: 3 }}>{unit}</i>
-      </span>
-      <span style={{
-        display: "block", marginTop: 6, fontSize: fs.micro, color: C("ash"),
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-      }}>
-        {proof.kind === "climb" ? (
-          <>
-            {t("w.home.act.prFrom").replace("{v}", proof.from ?? "")}{" "}
-            <em style={{ fontStyle: "normal", color: accentText("lime") }}>{proof.delta}</em>
-          </>
-        ) : t(proof.kind === "first" ? "w.home.act.prFirst" : "w.home.act.prReps")}
-      </span>
-    </>
-  );
-
-  if (!onOpen) return <div style={{ minWidth: 0 }}>{body}</div>;
-  return (
-    <button
-      className="pressable"
-      onClick={onOpen}
-      aria-label={`${pr.lift} – ${fmtWeight(pr.topLoad, units)} – ${t("w.home.act.prOpen")}`}
-      style={{
-        display: "block", width: "100%", minWidth: 0, textAlign: "left",
-        background: "none", border: "none", padding: 0, margin: 0,
-        color: "inherit", cursor: "pointer",
-      }}
-    >
-      {body}
-    </button>
-  );
-}
 
 export default function AuroraWeekVerdict({
   sessions,
@@ -251,12 +172,11 @@ export default function AuroraWeekVerdict({
   onSession?: (id: string) => void;
 }) {
   const { t, lang } = useLang();
-  const today = useToday();
 
-  // The chosen period, persisted per device. Read after mount so the server and
-  // the first client paint agree; a stale/unknown id resolves to the week.
-  const [rangeId, setRangeId] = useState<string>(DEFAULT_ACTIVITY_RANGE);
-  const [picker, setPicker] = useState(false);
+  // The chosen period, persisted per device under the PROGRESS key — the
+  // shared filter owns the reading, the storage and the midnight re-derive.
+  const { range, pick: setRange } = useActivityRange(TODAY_RANGE_STORE_KEY);
+  const { title, span } = useRangeLabels(range);
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [all, setAll] = useState(false);
@@ -267,58 +187,23 @@ export default function AuroraWeekVerdict({
   // opened. Starts true so it can only ever disappear, never flash in (and so
   // the server paint and the first client paint agree). Mirrors mobile.
   const [hinted, setHinted] = useState(true);
-  // The records rail (three records and up) — see .pr-rail in globals.css.
-  const rail = useRef<HTMLDivElement>(null);
-  const [fade, setFade] = useState({ l: 0, r: 0 });
-  const [allPrs, setAllPrs] = useState(false);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORE_KEY);
-      if (saved) setRangeId(saved);
       setHinted(localStorage.getItem(HINT_KEY) === "1");
-    } catch { /* storage disabled — the week is a fine default */ }
+    } catch { /* storage disabled — the hint simply stays */ }
   }, []);
 
+  // A new period is a new breakdown: the open column's group filter and its
+  // "show all" must not carry over into a window they were never chosen in.
   const pick = (id: string) => {
-    setRangeId(id);
+    setRange(id);
     setGroup(null);
     setAll(false);
-    try { localStorage.setItem(STORE_KEY, id); } catch { /* ignore */ }
   };
 
-  // `today` is an explicit input so a tab left open across midnight re-derives
-  // the week rather than holding on to yesterday's.
-  const range: ActivityRange = useMemo(() => resolveActivityRange(rangeId, Date.now()), [rangeId, today]);
   const v: ActivityVerdict = useMemo(() => activityVerdict(sessions, range, bw), [sessions, range, bw]);
   const summary = useMemo(() => activitySummary(sessions, range, bw), [sessions, range, bw]);
-  // THE PERIOD'S RECORDS. These used to sit on the Performance tab's "Your
-  // week" card, computed over a ROLLING seven days while this card counted a
-  // real calendar week — two cards one tab apart, both labelled as the week,
-  // reporting different numbers. A PR belongs to the period it happened in, so
-  // it belongs to whatever window this card is showing.
-  const prs = useMemo(() => prsBetween(sessions, range.from, range.through + 1, bw), [sessions, range, bw]);
-  const shownPrs = allPrs ? prs : prs.slice(0, PRS_RAIL_CAP);
-  const months = useMemo(() => activityMonths(sessions, Date.now()), [sessions, today]);
-
-  // A new period is a new set of records — an expanded rail must not carry over.
-  useEffect(() => { setAllPrs(false); }, [range.id]);
-
-  // THE EDGE DISSOLVE, written from the scroll offset: an edge fades only while
-  // records are hidden behind it, and an edge with nothing past it stays crisp.
-  // A fade on both sides at all times would be decoration; this is a status.
-  useEffect(() => {
-    const el = rail.current;
-    if (!el) return;
-    const paint = () => {
-      const max = el.scrollWidth - el.clientWidth;
-      setFade({ l: el.scrollLeft > 4 ? PRS_FADE : 0, r: max - el.scrollLeft > 4 ? PRS_FADE : 0 });
-    };
-    paint();
-    el.addEventListener("scroll", paint, { passive: true });
-    window.addEventListener("resize", paint);
-    return () => { el.removeEventListener("scroll", paint); window.removeEventListener("resize", paint); };
-  }, [shownPrs.length]);
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
   // distance keeps the shared km precision, and minutes go through the shared
@@ -344,23 +229,6 @@ export default function AuroraWeekVerdict({
   const groupName = (g: { labelKey: string | null; label: string | null }) => (g.labelKey ? t(g.labelKey) : g.label ?? "");
 
   const dateFmt = (ms: number, opts: Intl.DateTimeFormatOptions) => new Date(ms).toLocaleDateString(lang, opts);
-  // Some locales lowercase their month names ("lipiec"); a label is a label, so
-  // the first letter is raised here rather than with a blanket `capitalize`,
-  // which would also turn "Last 7 days" into "Last 7 Days".
-  const monthLabel = (id: string, long = true) =>
-    cap(dateFmt(Date.parse(`${id.slice(2)}-01T12:00:00`), long ? { month: "long", year: "numeric" } : { month: "short" }));
-
-  const title = range.kind === "month" ? monthLabel(range.id) : t(range.labelKey ?? "w.home.act.rWeek");
-  // The records kicker names the window too. The month case interpolates the
-  // localized month name rather than an inflected phrase — "in July" declines
-  // in Polish (w lipcu) and a nominative month in that slot would be wrong.
-  const prsHead = range.kind === "month"
-    ? t("w.home.act.prsMonth").replace("{m}", monthLabel(range.id))
-    : t(PRS_HEAD_KEY[range.id] ?? "w.home.act.prsWeek");
-  // A year-to-date span ends TODAY; a week or a month shows its whole frame, so
-  // "Mon 27 – Sun 2" says which seven days the card means even on Tuesday.
-  const spanEnd = (range.kind === "ytd" ? range.through : range.to) - 1;
-  const span = `${dateFmt(range.from, { day: "numeric", month: "short" })} – ${dateFmt(spanEnd, { day: "numeric", month: "short" })}`;
 
   const tone = v.direction === "down" ? "var(--red-text)" : v.direction === "up" ? "var(--lime-text)" : C("ash");
   const named = v.figures.find((f) => f.metric === v.metric) ?? null;
@@ -423,57 +291,17 @@ export default function AuroraWeekVerdict({
     }
   };
 
-  // ── The segmented control. Five equal segments and one thumb that TRAVELS —
-  // the movement is what makes it read as iOS rather than as five buttons.
-  const segments = [
-    ...ACTIVITY_RANGE_PRESETS.map((p) => ({ id: p.id, label: t(SHORT_KEY[p.id] ?? p.labelKey) })),
-    {
-      id: "month",
-      label: range.kind === "month" ? monthLabel(range.id, false) : t("w.home.act.sMonth"),
-    },
-  ];
-  const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
-
   return (
     <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, mono meta right. The
           head names the window so no figure below it needs a qualifier. */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
-        <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{title}</span>
-        <span style={{ ...kicker, fontSize: fs.micro, letterSpacing: ".08em", color: C("ash") }}>{span}</span>
-      </div>
+      <RangeHead title={title} meta={span} />
 
-      {/* ── THE DATE FILTER — the shared LiquidSeg: neutral pill at rest,
-          clear glass lens on touch/drag, per the iOS 26 system control. The
-          Month segment intercepts to its picker; the pill only lands on it
-          once a month is actually in force (segIndex moves then). ────────── */}
-      <LiquidSeg
-        items={segments.map((s) => ({
-          key: s.id,
-          label: s.label,
-          intercept: s.id === "month" ? () => setPicker(true) : undefined,
-          render: (on: boolean) => (
-            <span
-              style={{
-                fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em",
-                color: on ? C("chalk") : C("ash"),
-                fontWeight: on ? 600 : 400,
-                transition: "color .2s ease",
-                maxWidth: "100%", padding: "0 4px",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}
-            >
-              {s.label}
-              {s.id === "month" && <span aria-hidden style={{ opacity: .6 }}> ▾</span>}
-            </span>
-          ),
-        }))}
-        index={segIndex}
-        onSelect={(i) => pick(segments[i]!.id)}
-        segHeight={30}
-        pad={3}
-        trackStyle={{ background: C("ink"), border: `1px solid ${C("line")}`, marginBottom: 10 }}
-      />
+      {/* ── THE DATE FILTER — the shared control (aurora/range-filter.tsx):
+          neutral pill at rest, clear glass lens on touch/drag, per the iOS 26
+          system control, with the Month segment intercepting to its picker
+          sheet. Shared because the Endurance section carries one too. ────── */}
+      <RangeFilter range={range} sessions={sessions} onPick={pick} />
 
       <div style={{
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28,
@@ -621,128 +449,26 @@ export default function AuroraWeekVerdict({
         )}
       </div>
 
-      {/* RECORDS SET IN THIS PERIOD — the one part of the old Performance
-          "Your week" card that was not already said better here. It reads the
-          window the athlete actually picked, so a month view lists the month's
-          PRs rather than the last seven days'. Silent when there are none. */}
-      {prs.length > 0 && (
-        <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C("line")}` }}>
-          {/* The one rule that stays is this section divider — it separates the
-              figures from what follows and is load-bearing. The three that used
-              to sit inside the block were decoration. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ ...kicker, color: C("ash"), overflow: "hidden", textOverflow: "ellipsis" }}>{prsHead}</span>
-            {/* A6: the count is a fact only when the reader cannot do the
-                counting. With one or two records both cells sit side by side on
-                one row, so a "2" beside them restates what is already in view.
-                From three up they are a RAIL — you cannot count what you have
-                to scroll — so the total earns its place, and past
-                PRS_RAIL_CAP the trailing "Show all {n}" cell carries it too. */}
-            {prs.length > 2 && (
-              <span style={{ ...num, fontSize: fs.micro, color: accentText("lime"), marginLeft: "auto" }}>{prs.length}</span>
-            )}
-          </div>
+      {/* RECORDS — the Progress cluster's block (b), which used to be a mono
+          kicker in this card's foot. It is a SECTION of its own now
+          (aurora/period-records.tsx), headed like its neighbours, because
+          Progress reads as three named things: This week, Records, Exercises.
+          It still takes ITS window from this card's filter — a PR belongs to
+          the period it happened in — which is why the range and the window's
+          name are passed down rather than resolved again. */}
+      <PeriodRecords
+        sessions={sessions}
+        range={range}
+        windowName={title}
+        units={units}
+        bw={bw}
+        onSession={onSession}
+      />
 
-          {prs.length < 3 ? (
-            /* ONE OR TWO — the figures sit still. No rail, no fade, nothing to
-               drag: a rail that cannot move is worse than no rail. A single
-               record takes the full width rather than leaving half a row empty. */
-            <div style={{
-              display: "grid", gridTemplateColumns: prs.length === 1 ? "1fr" : "1fr 1fr",
-              gap: 14, marginTop: 12,
-            }}>
-              {prs.map((pr) => (
-                <PrCell key={pr.lift} pr={pr} units={units} t={t}
-                  onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
-              ))}
-            </div>
-          ) : (
-            /* THREE AND UP — the same cells become a rail.
-             *
-             * This block sits DIRECTLY ON THE SCREEN (it is a sibling of the
-             * card above, not a child of it), so the rail is full-bleed: the
-             * negative margins are the width of the screen gutter and the
-             * padding matches, exactly as the exercise-widget rail does it.
-             * Cards slide under the physical screen edge instead of clipping at
-             * the content column with the gutter showing beside a cut cell.
-             *
-             * A cell is HALF THE CONTENT COLUMN — the same width the two-up
-             * grid gives it — so going from two records to three doesn't resize
-             * anything: the third simply appears past the right edge. That peek
-             * is the whole affordance, which is why there are no arrows, no dot
-             * row and no "swipe" label. Flex percentages resolve against the
-             * content box, which the matching padding makes exactly the column.
-             *
-             * Snap is PROXIMITY, not mandatory: a flick lands cleanly, a small
-             * drag is left where it was put. */
-            <div
-              ref={rail}
-              className="pr-rail"
-              tabIndex={0}
-              role="group"
-              aria-label={`${prsHead} – ${prs.length}`}
-              style={{
-                display: "flex", gap: 14, marginTop: 12, overflowX: "auto",
-                scrollSnapType: "x proximity",
-                margin: "12px calc(-1 * var(--page-pad-x, 12px)) 0",
-                padding: "0 var(--page-pad-x, 12px) 2px",
-                "--pr-fade-l": `${fade.l}px`, "--pr-fade-r": `${fade.r}px`,
-              } as CSSProperties}
-            >
-              {shownPrs.map((pr) => (
-                <div key={pr.lift} style={{ flex: "0 0 calc((100% - 14px) / 2)", minWidth: 0, scrollSnapAlign: "start" }}>
-                  <PrCell pr={pr} units={units} t={t}
-                    onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
-                </div>
-              ))}
-              {!allPrs && prs.length > PRS_RAIL_CAP && (
-                <button
-                  className="pressable"
-                  onClick={() => setAllPrs(true)}
-                  style={{
-                    flex: "0 0 calc((100% - 14px) / 2)", scrollSnapAlign: "start", textAlign: "left",
-                    background: "none", border: "none", padding: 0, cursor: "pointer",
-                    fontFamily: "var(--font-mono)", fontSize: fs.micro,
-                    color: C("ash"), whiteSpace: "normal",
-                  }}
-                >
-                  {t("w.home.act.showAll").replace("{n}", String(prs.length))}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* The doors moved OUT of this card (wave 3): they are the whole
-          PROGRESS cluster's single exit now, rendered at the cluster's end in
+      {/* The doors moved OUT of this card (wave 3): they are the retrospective's
+          single exit now, rendered at the END of the Endurance cluster in
           today.tsx — one exit point after all the breakdowns, not a detour
           between the summary and the rails that decompose it. */}
-
-      {/* ── THE MONTH PICKER — the iOS grouped list: sections, a row per
-          period, a check on the one in force. ─────────────────────────────── */}
-      <Sheet open={picker} onClose={() => setPicker(false)} title={t("w.home.act.pickTitle")} sub={t("w.home.act.pickSub")}>
-        <PickerSection label={t("w.home.act.presets")}>
-          {ACTIVITY_RANGE_PRESETS.map((p) => (
-            <PickerRow
-              key={p.id}
-              label={t(p.labelKey)}
-              active={range.id === p.id}
-              onClick={() => { pick(p.id); setPicker(false); }}
-            />
-          ))}
-        </PickerSection>
-        <PickerSection label={t("w.home.act.monthsHead")}>
-          {months.map((id) => (
-            <PickerRow
-              key={id}
-              label={monthLabel(id)}
-              active={range.id === id}
-              onClick={() => { pick(id); setPicker(false); }}
-            />
-          ))}
-        </PickerSection>
-      </Sheet>
 
       <style>{`@keyframes hb-act-in { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: none } }`}</style>
     </div>
@@ -911,36 +637,5 @@ function MetricDetail({
         </>
       )}
     </>
-  );
-}
-
-/* ───────────────────────────── the picker ──────────────────────────────── */
-
-function PickerSection({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div style={{ marginTop: 16 }}>
-      <div style={{ ...kicker, color: C("ash"), margin: "0 4px 6px" }}>{label}</div>
-      <div style={{ background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, overflow: "hidden" }}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function PickerRow({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button className="pressable"
-      onClick={onClick}
-      aria-current={active}
-      style={{
-        display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 10,
-        padding: "12px 16px", background: "transparent", border: "none",
-        borderTop: `1px solid ${C("line")}`, cursor: "pointer", textAlign: "left",
-        fontSize: fs.bodyLg, color: active ? C("chalk") : C("ash"),
-      }}
-    >
-      <span>{label}</span>
-      {active && <span style={{ color: "var(--lime-text)", fontSize: fs.note }} aria-hidden>✓</span>}
-    </button>
   );
 }

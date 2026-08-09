@@ -57,7 +57,7 @@ import { fs, space,
   type LogbookDay,
   type FeedItemView,
 } from "@hybrid/core";
-import { sportForDiscipline } from "@hybrid/core";
+import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { CARD_PAD, roleText } from "@/lib/ui";
 import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
@@ -80,11 +80,13 @@ import DoneFloor from "./done-floor";
 import FeelSheet from "./feel-sheet";
 import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
-import AuroraEnduranceLanes from "./endurance-lanes";
+import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
+import AuroraEnduranceSummary from "./endurance-summary";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
 import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 import GroupMark from "./group-mark";
+import SectionSeam from "./section-seam";
 import { AuroraIcon } from "./icons";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
@@ -299,6 +301,10 @@ export default function AuroraToday({
   const logbookMode = !plan && !loading && hasData;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
+  // THE ENDURANCE LANES' ORDER, owned here because the chip that changes it
+  // renders on the Endurance cluster's headline row rather than inside the
+  // block it orders. See aurora/endurance-lanes.tsx.
+  const laneOrder = useLaneOrder(sessions);
   // The DAY the screen is scoped to. The week rail's tapped chip lifts up here
   // so the Also-today and feeling cards follow the viewed day instead of
   // staying pinned to the real today; null (or tapping today's chip) = today.
@@ -985,15 +991,24 @@ export default function AuroraToday({
           object. Renders nothing when no protocol is open. */}
       <RtpPanel />
 
-      {/* ═════ GROUP: PROGRESS — where the training is going. The week's
-          verdict, the favourite movements' deltas, then each sport's own read:
-          every retrospective block on Today, in one cluster, widest first. ═════ */}
+      {/* ═════ GROUP: PROGRESS — where the LIFTING is going. Three named
+          things, in the order the question is actually asked: the period's
+          verdict, the records it produced, and the movements underneath them.
+
+          Endurance used to be part of this cluster, which is what forced the
+          reading it never survived: a runner scrolled past a strength verdict,
+          a strength records rail and a strength-favourites rail to reach their
+          own sport, under a single headline claiming all of it was "Progress".
+          It is its own section now, below the seam. ═════ */}
       <GroupMark label={t("w.home.group.progress")} />
 
-      {/* ───── THIS WEEK — the verdict card. A verdict with its working-out
-          shown. Replaces the Statistics and Analytics destinations on Today
-          (both are now promotedTo "today" in core nav.ts); the two rows under it
-          are the doors to everything past this week. Mirrors mobile. ───── */}
+      {/* ───── (a) THIS WEEK — the verdict card, and the screen's date filter
+          (Endurance shows the same one again, on the same period). A verdict
+          with its working-out shown. Replaces the Statistics and
+          Analytics destinations on Today (both are now promotedTo "today" in
+          core nav.ts). It also renders (b) RECORDS directly underneath, because
+          a PR belongs to the period this filter is showing — same window, one
+          control. Mirrors mobile. ───── */}
       <AuroraWeekVerdict
         sessions={sessions}
         units={units}
@@ -1001,49 +1016,93 @@ export default function AuroraToday({
         onSession={(id) => (onOpenSession ? onOpenSession(id) : onNavigate ? onNavigate("history") : router.push("/history"))}
       />
 
-      {/* EXERCISES — the favourites widget rail (free for everyone): swipeable
-          full-bleed cards, one favourite per purpose, stock-ticker deltas; tap
-          opens that movement's own stats page. Hidden until there's history —
-          an empty rail would just be chrome. Lives in the PROGRESS cluster
-          (it is per-movement trend, not part of the day's job): directly under
-          This week, whose lifting columns these cards break down per movement. */}
+      {/* ───── (c) EXERCISES — the favourites widget rail (free for everyone):
+          swipeable full-bleed cards, one favourite per purpose, stock-ticker
+          deltas; tap opens that movement's own stats page. Hidden until there's
+          history — an empty rail would just be chrome. Last in the cluster
+          because it is the finest grain: verdict → records → per-movement. ─── */}
       {onOpenExercise && sessions.length > 0 && (
         <div style={{ marginTop: 24 }}>
           <ExerciseWidgetRail sessions={sessions} deferToLanes={isAthlete} onOpen={onOpenExercise} onAll={() => (onNavigate ? onNavigate("exercises") : router.push("/analyze"))} />
         </div>
       )}
 
-      {/* ───── ENDURANCE — sport lanes, directly under This week because the
-          card's KM column is the headline these rails break down: the total and
-          its per-sport detail now read as one thought instead of sitting at
-          opposite ends of the scroll. One full-bleed rail per logged discipline
-          carrying that sport's whole read (efforts / distance / time, 8-week
-          volume, pace trend, pace zones, last effort). NOT gated on dayIsToday:
-          an eight-week volume chart is not a property of the day you happen to
-          be scrubbed to. Renders nothing until there's endurance to show.
-          Mirrors mobile. ───── */}
-      {isAthlete && (
-        <AuroraEnduranceLanes
-          sessions={sessions}
-          canOpen={(d) => !!onOpenSport && !!sportForDiscipline(d)}
-          onOpen={(d) => { const sport = sportForDiscipline(d); if (sport) onOpenSport?.(sport); }}
-        />
+      {/* ═════ THE SEAM, then ENDURANCE. The seam is the page turning: one
+          full-bleed hairline, fading at both ends, belonging to neither section
+          (aurora/section-seam.tsx). Whitespace alone separated the clusters
+          while they were short; after a screen of Progress the extra air read
+          as a gap in a list rather than as the end of a chapter, and the next
+          headline had to carry that on its own.
+
+          The whole section is absent for a pure lifter — no heading, no empty
+          card, no column of zeroes — which is why it is gated on the HISTORY
+          rather than on the window: a runner who took this week off still finds
+          their section where they left it, with the card saying the week was
+          quiet. Mirrors mobile. ═════ */}
+      {hasEnduranceHistory(sessions) && (
+        <>
+          <SectionSeam />
+          {/* The order control sits ON THE HEADLINE, which is where the
+              Explore SectionHead grammar puts a head-level control: beside the
+              title, same row. It used to float on an orphan right-aligned row
+              between the section's opener and its first lane, attached to
+              neither — and a control that orders the whole section belongs at
+              the section's altitude. Hidden with one lane: sorting a list of
+              one is a control that does nothing. */}
+          <GroupMark
+            label={t("endurance.title")}
+            mt={24}
+            right={isAthlete && laneOrder.many
+              ? <LaneOrderChip order={laneOrder.order} onClick={laneOrder.cycle} t={t} />
+              : undefined}
+          />
+
+          {/* ───── (a) THE LEAD — the section's opener, and it is a SENTENCE:
+              how many sports, and which carried them. That is the one thing
+              about this section no other block on Today can state, which is
+              exactly why the two earlier cuts failed — a per-discipline
+              breakdown is a table of contents for the lanes directly below it,
+              and a row of totals is the verdict card's own columns one screen
+              up (distance especially: only these groups ever carry any). Under
+              the sentence, one mono line — this section's own time against its
+              own baseline, the only comparison nothing else makes. It carries
+              no filter: it reads the screen's period, which the verdict card's
+              control writes. ───── */}
+          <AuroraEnduranceSummary sessions={sessions} bw={bw} />
+
+          {/* ───── (b…) ONE LANE PER SPORT — a full-bleed rail per logged
+              discipline carrying that sport's whole read (efforts / distance /
+              time, 8-week volume, pace trend, pace zones, last effort). NOT
+              gated on dayIsToday: an eight-week volume chart is not a property
+              of the day you happen to be scrubbed to. Headless — the GroupMark
+              above now says "Endurance", and the block printing it again would
+              be the title twice in 60px; the order chip keeps its own row. ─── */}
+          {isAthlete && (
+            <AuroraEnduranceLanes
+              sessions={sessions}
+              head={false}
+              order={laneOrder.order}
+              canOpen={(d) => !!onOpenSport && !!sportForDiscipline(d)}
+              onOpen={(d) => { const sport = sportForDiscipline(d); if (sport) onOpenSport?.(sport); }}
+            />
+          )}
+
+          {/* ───── (x) OTHER SPORTS — tennis, squash, five-a-side: everything
+              logged as `discipline: "sport"`, the bucket ENDURANCE_DISCIPLINES
+              deliberately excludes. LAST in the section because it is the same
+              question one step out: what else did you actually play. These
+              sports are TIMED, so a sport gets ONE tile rather than a rail —
+              the block spends its width on the NUMBER of sports, not the depth
+              of each. Renders nothing until a sport is logged. ───── */}
+          <AuroraOtherSports sessions={sessions} onOpen={(sport) => (onOpenSport ? onOpenSport(sport) : onNavigate ? onNavigate("sport") : router.push("/sport"))} />
+        </>
       )}
 
-      {/* ───── OTHER SPORTS — tennis, squash, five-a-side: everything logged as
-          `discipline: "sport"`, the bucket ENDURANCE_DISCIPLINES deliberately
-          excludes. It fed the week's sessions and hours and then had nowhere to
-          appear. Sits under Endurance because it is the same question one step
-          out: what else did you actually play. These sports are TIMED, so a
-          sport gets ONE tile rather than a rail — the block spends its width on
-          the NUMBER of sports, not the depth of each. Renders nothing until a
-          sport is logged. Mirrors mobile. ───── */}
-      <AuroraOtherSports sessions={sessions} onOpen={(sport) => (onOpenSport ? onOpenSport(sport) : onNavigate ? onNavigate("sport") : router.push("/sport"))} />
-
-      {/* THE CLUSTER'S EXIT (wave 3) — the doors past this week, moved here
-          from under the This-week card: summary → breakdowns → ONE exit point,
-          instead of a detour between the summary and the rails that decompose
-          it. Same door-row anatomy, same destinations. */}
+      {/* THE RETROSPECTIVE'S EXIT — the doors past this period. They sit after
+          BOTH clusters, not at the end of Progress: they are the way out of
+          everything above them (the archive holds endurance too), and one exit
+          point after all the breakdowns is the rule wave 3 established. Same
+          door-row anatomy, same destinations. */}
       <DoorRow glyph="▤" title={t("w.home.week.archive")} sub={t("w.home.week.archiveSub")} onClick={() => (onNavigate ? onNavigate("history") : router.push("/history"))} />
       {isAthlete && <DoorRow glyph="◫" title={t("w.home.week.deep")} sub={t("w.home.week.deepSub")} onClick={() => (onNavigate ? onNavigate("analytics") : router.push("/analytics"))} />}
 

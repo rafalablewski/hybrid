@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
+  activeDisciplines, enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
   laneVolumeReading, lanePaceReading,
   DISCIPLINE_META, LANE_CAP, ago, durationUnits, formatDuration,
@@ -302,11 +302,23 @@ function LastTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => string }
   );
 }
 
-/** The lane-order selector, in CONTROL form — a bordered chip in ash with a
- *  chevron, not accent-coloured text. It cycles rather than opening a menu, so
- *  the chip shows the order in force and the chevron says there are others.
- *  Mirrors mobile. */
-function OrderChip({ order, onClick, t }: { order: LaneOrder; onClick: () => void; t: (k: string) => string }) {
+/**
+ * THE LANE-ORDER SELECTOR, in CONTROL form — a bordered chip in ash with a
+ * chevron, not accent-coloured text. It cycles rather than opening a menu, so
+ * the chip shows the order in force and the chevron says there are others.
+ *
+ * EXPORTED, because on Today it does not render here. The Endurance cluster's
+ * headline row carries it (today.tsx, through GroupMark's `right` slot), which
+ * is where the Explore SectionHead grammar puts a head-level control: beside
+ * the title, on the same row, never on an orphan row of its own underneath. It
+ * used to sit on such a row — right-aligned, floating between the section's
+ * opener and its first lane, attached to neither. A control that orders the
+ * whole section belongs at the section's altitude.
+ *
+ * The Endurance SCREEN still renders it internally: its own hero is the
+ * headline there, and this block has no head to hang it on. Mirrors mobile.
+ */
+export function LaneOrderChip({ order, onClick, t }: { order: LaneOrder; onClick: () => void; t: (k: string) => string }) {
   return (
     <button className="pressable"
       onClick={onClick}
@@ -380,6 +392,7 @@ export default function AuroraEnduranceLanes({
   canOpen,
   cap = LANE_CAP,
   head = true,
+  order: controlledOrder,
 }: {
   sessions: LoggedSession[];
   onOpen?: (discipline: CardioDiscipline) => void;
@@ -391,10 +404,18 @@ export default function AuroraEnduranceLanes({
   cap?: number;
   /** The block's own title row. Off on the screen, whose hero already says it. */
   head?: boolean;
+  /** The lane order, when a CALLER owns it — Today does, because the chip that
+   *  changes it lives on the Endurance headline row, outside this block. Given
+   *  one, this block only READS it (the chip that writes it is the caller's);
+   *  omit it and the state and the chip both stay in here. */
+  order?: LaneOrder;
 }) {
   const { t } = useLang();
-  const [order, setOrder] = useState<LaneOrder>("trained");
+  const [ownOrder, setOwnOrder] = useState<LaneOrder>("trained");
   const [expanded, setExpanded] = useState(false);
+  const controlled = controlledOrder !== undefined;
+  const order = controlledOrder ?? ownOrder;
+  const cycle = useCallback(() => setOwnOrder((o) => nextLaneOrder(o)), []);
 
   const lanes = useMemo(() => enduranceLanes(sessions), [sessions]);
   // No endurance logged → no block. A lane exists because something is in it,
@@ -426,14 +447,19 @@ export default function AuroraEnduranceLanes({
       {head && (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("endurance.title")}</span>
-        {stacked.length > 1 && <OrderChip order={order} onClick={() => setOrder(nextLaneOrder(order))} t={t} />}
+        {stacked.length > 1 && <LaneOrderChip order={order} onClick={cycle} t={t} />}
       </div>
       )}
       {/* Headless (the Endurance SCREEN, whose hero says the title) still needs
           the control, so it keeps its own row there and nowhere else. */}
-      {!head && stacked.length > 1 && (
+      {/* Headless AND uncontrolled — the Endurance SCREEN — keeps its own row,
+          because there its hero is the headline and this block has no head to
+          hang the chip on. On Today the chip is hoisted to the cluster's
+          headline (today.tsx), so `order` arrives controlled and nothing
+          renders here. */}
+      {!head && !controlled && stacked.length > 1 && (
         <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 2px 8px" }}>
-          <OrderChip order={order} onClick={() => setOrder(nextLaneOrder(order))} t={t} />
+          <LaneOrderChip order={order} onClick={cycle} t={t} />
         </div>
       )}
 
@@ -468,4 +494,26 @@ export default function AuroraEnduranceLanes({
       )}
     </div>
   );
+}
+
+/**
+ * THE ORDER, owned by the SCREEN — state, the cycle, and whether there is
+ * anything to order.
+ *
+ * Today's Endurance headline carries the chip, so the state has to live above
+ * the lanes. `many` is the gate: one lane cannot be reordered, and a control
+ * offering to sort a list of one is a control that does nothing. It counts
+ * through core's `activeDisciplines` rather than building the lanes again —
+ * the lanes below already do that, and this only needs to know how many there
+ * will be. Mirrors mobile.
+ */
+export function useLaneOrder(sessions: LoggedSession[]): {
+  order: LaneOrder;
+  cycle: () => void;
+  many: boolean;
+} {
+  const [order, setOrder] = useState<LaneOrder>("trained");
+  const many = useMemo(() => activeDisciplines(sessions).length > 1, [sessions]);
+  const cycle = useCallback(() => setOrder((o) => nextLaneOrder(o)), []);
+  return { order, cycle, many };
 }

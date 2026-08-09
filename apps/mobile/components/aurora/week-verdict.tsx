@@ -1,29 +1,23 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Animated, Easing, ScrollView, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type LayoutChangeEvent } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useMemo, useState } from "react";
+import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
-  fmtWeight, splitFigure, strengthPrProof,
+  activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
   durationUnits, formatDuration,
-  resolveActivityRange, groupDistanceDisplay, fmtKm, kmValue, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
-  verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage, durations,
+  groupDistanceDisplay, fmtKm, kmValue,
+  verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
   figureDeltaPct, figureDirection,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
-  type ActivityRange, type ActivityVerdict, type BodyweightInput, type LoggedSession, type PrHit,
+  type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
-import Sheet from "./sheet";
-import { ADrawer, GUTTER, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
-import { LiquidSeg } from "./liquid-seg";
+import { ADrawer, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
+import PeriodRecords from "./period-records";
+import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, F, serifIf, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { useToday } from "../../lib/use-today";
-// The drawer's own motion moved into ADrawer; this is here for the records
-// rail's edge dissolve, which eases in and out on its own.
-import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { leading, fs, F, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 
 /**
  * THE ACTIVITY CARD — "This week" and everything the date filter turns it into,
@@ -34,21 +28,30 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
  * metric that moved, its baseline as the working-out, and — under a hairline —
  * the figures the sentence was drawn from.
  *
- * It is the ONLY totals card on Today, and it now summarises ALL activity, not
- * just what was lifted: a tennis match logged as 90 minutes on a block counts
- * toward the hours even with no stopwatch running, and every sport's distance
- * lands in the KM column. See core activity-window.ts for the attribution rule.
+ * It is the WHOLE-SCREEN totals card, and it summarises ALL activity, not just
+ * what was lifted: a tennis match logged as 90 minutes on a block counts toward
+ * the hours even with no stopwatch running, and every sport's distance lands in
+ * the KM column. See core activity-window.ts for the attribution rule.
+ *
+ * There IS a second totals card on Today now — the Endurance section's — and
+ * the thing that makes it safe is the thing the retired cross-sport strip never
+ * had: a heading. It sits under a cluster headline reading ENDURANCE, and its
+ * figures are a strict SLICE of this card's (core endurance-window.ts reads the
+ * same activitySummary), so the two can restate each other but never disagree.
  *
  * THREE THINGS THE CARD GAINED, and why each one is here:
  *
  *   • A REAL WEEK. "This week" is MONDAY → SUNDAY now, not a rolling seven days
  *     that reports last Friday under a label claiming the current week.
- *   • A DATE FILTER, in the iOS 26 segmented-control idiom (the shared
- *     LiquidSeg): a neutral pill at rest that turns into a clear glass lens on
- *     touch, scrubs under a drag, and springs between segments, with the label
- *     it lands on taking the foreground. Week / 7 days / 30 days / YTD, with
- *     the fifth segment opening a sheet of individual months. Persisted per
- *     device.
+ *   • A DATE FILTER — the shared aurora/range-filter.tsx, in the iOS 26
+ *     segmented-control idiom: a neutral pill at rest that turns into a clear
+ *     glass lens on touch, scrubs under a drag, and springs between segments,
+ *     with the label it lands on taking the foreground. Week / 7 days /
+ *     30 days / YTD, with the fifth segment opening a sheet of individual
+ *     months. Persisted per device. It became a shared component when the
+ *     Endurance section grew a second view of it — one control, two callers,
+ *     rather than the four copies that would otherwise exist, and ONE period:
+ *     both read core's TODAY_RANGE_STORE_KEY, so scrubbing either moves both.
  *   • FIGURES THAT OPEN. Every column is a button; pressing one expands the
  *     card's lower compartment, carrying the groups the total is made of and
  *     the sessions underneath them. "41.6 km" becomes 39 km of running, 600 m
@@ -77,36 +80,11 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
  * still holds the tone, so the resting card is unchanged.
  */
 
-const STORE_KEY = "hybrid.today.range";
+/** ONE PERIOD FOR THE SCREEN — core's TODAY_RANGE_STORE_KEY, which the
+ *  Endurance section's card reads too, so the two filters move together. */
 /** Set once the athlete has opened any column — see the hint below. */
 const HINT_KEY = "hybrid.today.actHinted";
 const ROWS_SHOWN = 5;
-
-/** The segment labels are SHORTER than the card's own title for the same
- *  period ("7 days" under a card headed "Last 7 days") — a segmented control
- *  that wraps is a segmented control that has stopped being one. */
-const SHORT_KEY: Record<string, string> = {
-  week: "w.home.act.sWeek", d7: "w.home.act.sD7", d30: "w.home.act.sD30", ytd: "w.home.act.sYtd",
-};
-
-/** The records block names the WINDOW, not just "New PRs" — the card is
- *  period-aware and a month's records must not read as this week's news. */
-const PRS_HEAD_KEY: Record<string, string> = {
-  week: "w.home.act.prsWeek", d7: "w.home.act.prsD7", d30: "w.home.act.prsD30", ytd: "w.home.act.prsYtd",
-};
-
-/** Records shown before the rail offers "Show all" — a year can hold forty,
- *  and an endless drag is not a celebration. */
-const PRS_RAIL_CAP = 8;
-/** The width of the edge dissolve, in dp. Mirrors web's .pr-rail. */
-const PRS_FADE = 24;
-/** The gap between record cells, in dp. Mirrors web. */
-const PRS_GAP = 14;
-/** AuroraScreen's gutter — what the rail bleeds by, so cards slide under the
- *  physical screen edge. The PRs section is a SIBLING of the verdict card, not
- *  inside it, which is why this is the screen gutter and CARD_PAD below is not.
- *  Mirrors web's --page-pad-x. */
-const PRS_BLEED = GUTTER;
 /** The verdict card's own inner padding — what the detail compartment bleeds by
  *  to reach the card's edges. NOT the screen gutter: the compartment lives
  *  inside the card, so it must follow the card. The two were both written as
@@ -119,8 +97,6 @@ const PRS_BLEED = GUTTER;
  *  fixed which container it belonged to but not what it should be, and it sat
  *  at 16 while Performance sat at 20. Mirrors web's CARD_PAD. */
 const CARD_PAD = SHARED_CARD_PAD;
-
-const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 /** Render a "{m}"-templated sentence with the metric name in bold. */
 function Lead({ template, word, color }: { template: string; word: string | null; color: string }) {
@@ -186,66 +162,6 @@ export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title
   );
 }
 
-/**
- * ONE RECORD, set as a FIGURE — the TWIN of PrCell on web.
- *
- * The block used to be four hairlines around two 12dp rows: a section rule, a
- * rule under the header and one above every record, fencing content that was
- * already fenced. Whitespace separates two items perfectly well, so the rules
- * went and the budget was spent on the two things a record actually needs —
- * SCALE (the load at fs.display, the largest figure in the card, because a
- * personal best is the only thing on Today worth celebrating) and PROOF (the
- * load it beat, which is what makes 90 kg an achievement rather than a fact).
- *
- * The proof's three shapes come from core's strengthPrProof, so this and the
- * session summary can't drift, and it arrives SPLIT — "from 82.5" reads in ash
- * and only the gain takes the accent. The value is bare because the unit is on
- * the figure above it.
- */
-function PrCell({ pr, units, t, width, onOpen }: {
-  pr: PrHit;
-  units: WeightUnit;
-  t: (k: string) => string;
-  /** Fixed cell width inside the rail; unset in the two-up grid, which flexes. */
-  width?: number;
-  onOpen?: () => void;
-}) {
-  const { palette: C } = useTheme();
-  const [value, unit] = splitFigure(fmtWeight(pr.topLoad, units));
-  const proof = strengthPrProof(pr, units);
-  const body = (
-    <>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-        {pr.lift}
-      </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.display, fontWeight: "800", letterSpacing: -0.8, marginTop: 7, color: txt(C, C.lime) }}>
-        {value}
-        <Text style={{ fontSize: fs.caption, fontWeight: "600", letterSpacing: 0.4 }}> {unit}</Text>
-      </Text>
-      <Text numberOfLines={1} style={{ marginTop: 6, fontFamily: F.reg, fontSize: fs.micro, color: C.ash }}>
-        {proof.kind === "climb" ? (
-          <>
-            {t("w.home.act.prFrom").replace("{v}", proof.from ?? "")}{" "}
-            <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>{proof.delta}</Text>
-          </>
-        ) : t(proof.kind === "first" ? "w.home.act.prFirst" : "w.home.act.prReps")}
-      </Text>
-    </>
-  );
-
-  if (!onOpen) return <View style={{ width, flex: width == null ? 1 : undefined }}>{body}</View>;
-  return (
-    <Pressable
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`${pr.lift} – ${fmtWeight(pr.topLoad, units)} – ${t("w.home.act.prOpen")}`}
-      style={{ width, flex: width == null ? 1 : undefined }}
-    >
-      {body}
-    </Pressable>
-  );
-}
-
 export default function AuroraWeekVerdict({
   sessions,
   units,
@@ -260,11 +176,11 @@ export default function AuroraWeekVerdict({
 }) {
   const { palette: C, scheme } = useTheme();
   const { t, lang } = useLang();
-  const today = useToday();
-  const reduced = useReducedMotion();
 
-  const [rangeId, setRangeId] = useState<string>(DEFAULT_ACTIVITY_RANGE);
-  const [picker, setPicker] = useState(false);
+  // The chosen period, persisted per device under the PROGRESS key — the
+  // shared filter owns the reading, the storage and the midnight re-derive.
+  const { range, pick: setRange } = useActivityRange(TODAY_RANGE_STORE_KEY);
+  const { title, span } = useRangeLabels(range);
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [all, setAll] = useState(false);
@@ -275,78 +191,20 @@ export default function AuroraWeekVerdict({
   // opened. Starts true so it can only ever disappear, never flash in.
   const [hinted, setHinted] = useState(true);
 
-  // ── THE RECORDS RAIL (three records and up) — the twin of web's .pr-rail.
-  // Web masks the edges; here two gradient overlays stand in, which is the
-  // idiom coach-rail already ships and needs no MaskedView dependency. The
-  // dissolve is a STATUS either way: an edge fades only while records are
-  // hidden behind it.
-  const win = useWindowDimensions();
-  const [allPrs, setAllPrs] = useState(false);
-  const [railW, setRailW] = useState(0);
-  const fadeL = useRef(new Animated.Value(0)).current;
-  const fadeR = useRef(new Animated.Value(0)).current;
-  /** offset / viewport / content, written by whichever handler last measured. */
-  const railGeom = useRef({ x: 0, w: 0, c: 0 });
-  const fadeOn = useRef({ l: false, r: false });
-
-  const paintFade = () => {
-    const { x, w, c } = railGeom.current;
-    const max = Math.max(0, c - w);
-    const next = { l: x > 4, r: max - x > 4 };
-    for (const side of ["l", "r"] as const) {
-      if (fadeOn.current[side] === next[side]) continue;
-      fadeOn.current[side] = next[side];
-      Animated.timing(side === "l" ? fadeL : fadeR, {
-        toValue: next[side] ? 1 : 0,
-        duration: reduced ? durations.reduced : 220,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start();
-    }
-  };
-
-  const onRailScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-    railGeom.current = { x: contentOffset.x, w: layoutMeasurement.width, c: contentSize.width };
-    paintFade();
-  };
-
   useEffect(() => {
-    AsyncStorage.getItem(STORE_KEY).then((v) => { if (v) setRangeId(v); }).catch(() => {});
     AsyncStorage.getItem(HINT_KEY).then((v) => setHinted(v === "1")).catch(() => {});
   }, []);
 
+  // A new period is a new breakdown: the open column's group filter and its
+  // "show all" must not carry over into a window they were never chosen in.
   const pick = (id: string) => {
-    setRangeId(id);
+    setRange(id);
     setGroup(null);
     setAll(false);
-    AsyncStorage.setItem(STORE_KEY, id).catch(() => {});
   };
 
-  // `today` is an explicit input so an app left backgrounded across midnight
-  // re-derives the week rather than holding on to yesterday's.
-  const range: ActivityRange = useMemo(() => resolveActivityRange(rangeId, Date.now()), [rangeId, today]);
   const v: ActivityVerdict = useMemo(() => activityVerdict(sessions, range, bw), [sessions, range, bw]);
   const summary = useMemo(() => activitySummary(sessions, range, bw), [sessions, range, bw]);
-  // THE PERIOD'S RECORDS. These used to sit on the Performance tab's "Your
-  // week" card, computed over a ROLLING seven days while this card counted a
-  // real calendar week — two cards one tab apart, both labelled as the week,
-  // reporting different numbers. A PR belongs to the period it happened in, so
-  // it belongs to whatever window this card is showing. Mirrors web.
-  const prs = useMemo(() => prsBetween(sessions, range.from, range.through + 1, bw), [sessions, range, bw]);
-  const shownPrs = allPrs ? prs : prs.slice(0, PRS_RAIL_CAP);
-  const months = useMemo(() => activityMonths(sessions, Date.now()), [sessions, today]);
-
-  // A new period is a new set of records — an expanded rail must not carry over.
-  useEffect(() => { setAllPrs(false); }, [range.id]);
-
-  // A cell is HALF THE CONTENT COLUMN — the same width the two-up grid gives
-  // it — so going from two records to three doesn't resize anything: the third
-  // simply appears past the right edge. The rail bleeds by the screen gutter,
-  // so its own width is the whole screen; the window width is that value before
-  // the first layout lands, which keeps the cells from popping.
-  const railWidth = railW || win.width;
-  const prCellW = Math.max(120, Math.round((railWidth - PRS_BLEED * 2 - PRS_GAP) / 2));
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
   // distance keeps the shared km precision, and minutes go through the shared
@@ -372,23 +230,6 @@ export default function AuroraWeekVerdict({
   const groupName = (g: { labelKey: string | null; label: string | null }) => (g.labelKey ? t(g.labelKey) : g.label ?? "");
 
   const dateFmt = (ms: number, opts: Intl.DateTimeFormatOptions) => new Date(ms).toLocaleDateString(lang, opts);
-  // Some locales lowercase their month names ("lipiec"); a label is a label, so
-  // the first letter is raised here rather than with a blanket `capitalize`,
-  // which would also turn "Last 7 days" into "Last 7 Days".
-  const monthLabel = (id: string, long = true) =>
-    cap(dateFmt(Date.parse(`${id.slice(2)}-01T12:00:00`), long ? { month: "long", year: "numeric" } : { month: "short" }));
-
-  const title = range.kind === "month" ? monthLabel(range.id) : t(range.labelKey ?? "w.home.act.rWeek");
-  // The records kicker names the window too. The month case interpolates the
-  // localized month name rather than an inflected phrase — "in July" declines
-  // in Polish (w lipcu) and a nominative month in that slot would be wrong.
-  const prsHead = range.kind === "month"
-    ? t("w.home.act.prsMonth").replace("{m}", monthLabel(range.id))
-    : t(PRS_HEAD_KEY[range.id] ?? "w.home.act.prsWeek");
-  // A year-to-date span ends TODAY; a week or a month shows its whole frame, so
-  // "27 Jul – 2 Aug" says which seven days the card means even on Tuesday.
-  const spanEnd = (range.kind === "ytd" ? range.through : range.to) - 1;
-  const span = `${dateFmt(range.from, { day: "numeric", month: "short" })} – ${dateFmt(spanEnd, { day: "numeric", month: "short" })}`;
 
   const tone = v.direction === "down" ? C.red : v.direction === "up" ? C.lime : C.ash;
   const toneText = txt(C, tone);
@@ -434,14 +275,6 @@ export default function AuroraWeekVerdict({
     }
   };
 
-  // ── The segmented control. Five equal segments and one thumb that TRAVELS —
-  // the movement is what makes it read as iOS rather than as five buttons.
-  const segments = [
-    ...ACTIVITY_RANGE_PRESETS.map((p) => ({ id: p.id, label: t(SHORT_KEY[p.id] ?? p.labelKey) })),
-    { id: "month", label: range.kind === "month" ? monthLabel(range.id, false) : t("w.home.act.sMonth") },
-  ];
-  const segIndex = range.kind === "month" ? segments.length - 1 : Math.max(0, segments.findIndex((s) => s.id === range.id));
-
   /** A direction as a text colour. Distinct from `toneText` above, which is the
    *  SENTENCE's and reads ash when flat: a column the athlete deliberately
    *  opened is being read, so its flat state is chalk, not the muted grey of a
@@ -464,38 +297,13 @@ export default function AuroraWeekVerdict({
     <View style={{ marginTop: 20 }}>
       {/* Explore-standard head: display-face title left, mono meta right. The
           head names the window so no figure below it needs a qualifier. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: C.ash }}>{span}</Text>
-      </View>
+      <RangeHead title={title} meta={span} />
 
-      {/* ── THE DATE FILTER — the shared LiquidSeg: neutral pill at rest,
-          clear glass lens on touch/drag, per the iOS 26 system control. The
-          Month segment intercepts to its picker sheet; the pill only lands on
-          it once a month is actually in force (segIndex moves then). ─────── */}
-      <LiquidSeg
-        items={segments.map((s) => ({
-          key: s.id,
-          label: s.label,
-          intercept: s.id === "month" ? () => setPicker(true) : undefined,
-          render: (on: boolean) => (
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              numberOfLines={1}
-              style={{
-                fontFamily: on ? F.monoBold : F.mono, fontSize: 11,
-                color: on ? C.chalk : C.ash, paddingHorizontal: 2,
-              }}
-            >
-              {s.label}{s.id === "month" ? " ▾" : ""}
-            </Text>
-          ),
-        }))}
-        index={segIndex}
-        onSelect={(i) => pick(segments[i]!.id)}
-        segHeight={30}
-        pad={3}
-        trackStyle={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, marginBottom: 10 }}
-      />
+      {/* ── THE DATE FILTER — the shared control (aurora/range-filter.tsx):
+          neutral pill at rest, clear glass lens on touch/drag, per the iOS 26
+          system control, with the Month segment intercepting to its picker
+          sheet. Shared because the Endurance section carries one too. ────── */}
+      <RangeFilter range={range} sessions={sessions} onPick={pick} />
 
       {/* The compartment below supplies the bottom padding while it is open, so
           the card gives its own up rather than fencing the panel in. */}
@@ -635,126 +443,26 @@ export default function AuroraWeekVerdict({
         )}
       </View>
 
-      {/* RECORDS SET IN THIS PERIOD — the one part of the old Performance
-          "Your week" card that was not already said better here. It reads the
-          window the athlete actually picked, so a month view lists the month's
-          PRs rather than the last seven days'. Silent when there are none. */}
-      {prs.length > 0 && (
-        <View style={{ marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
-          {/* The one rule that stays is this section divider — it separates the
-              figures from what follows and is load-bearing. The three that used
-              to sit inside the block were decoration. */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{prsHead}</Text>
-            {/* A6: the count is a fact only when the reader cannot do the
-                counting. With one or two records both cells sit side by side on
-                one row, so a "2" beside them restates what is already in view.
-                From three up they are a RAIL — you cannot count what you have
-                to scroll — so the total earns its place, and past
-                PRS_RAIL_CAP the trailing "Show all {n}" cell carries it too. */}
-            {prs.length > 2 && (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{prs.length}</Text>
-            )}
-          </View>
+      {/* RECORDS — the Progress cluster's block (b), which used to be a mono
+          kicker in this card's foot. It is a SECTION of its own now
+          (aurora/period-records.tsx), headed like its neighbours, because
+          Progress reads as three named things: This week, Records, Exercises.
+          It still takes ITS window from this card's filter — a PR belongs to
+          the period it happened in — which is why the range and the window's
+          name are passed down rather than resolved again. */}
+      <PeriodRecords
+        sessions={sessions}
+        range={range}
+        windowName={title}
+        units={units}
+        bw={bw}
+        onSession={onSession}
+      />
 
-          {prs.length < 3 ? (
-            /* ONE OR TWO — the figures sit still. No rail, no fade, nothing to
-               drag: a rail that cannot move is worse than no rail. A single
-               record takes the full width rather than leaving half a row empty. */
-            <View style={{ flexDirection: "row", gap: PRS_GAP, marginTop: 12 }}>
-              {prs.map((pr) => (
-                <PrCell key={pr.lift} pr={pr} units={units} t={t}
-                  onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
-              ))}
-            </View>
-          ) : (
-            /* THREE AND UP — the same cells become a rail.
-             *
-             * This block sits DIRECTLY ON THE SCREEN (it is a sibling of the
-             * card above, not a child of it), so the rail is full-bleed:
-             * marginHorizontal of the screen gutter with matching content
-             * padding, exactly as the exercise-widget rail does it. Cards slide
-             * under the physical screen edge instead of clipping at the content
-             * column with the gutter showing beside a cut cell.
-             *
-             * The third cell peeking past the edge is the whole affordance,
-             * which is why there are no arrows, no dot row and no "swipe"
-             * label. Deceleration is "fast" with no snapToInterval — the mobile
-             * twin of web's proximity snap, and the feel every other rail in
-             * the app already has. */
-            <View
-              style={{ marginTop: 12, marginHorizontal: -PRS_BLEED }}
-              onLayout={(e: LayoutChangeEvent) => setRailW(e.nativeEvent.layout.width)}
-            >
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                decelerationRate="fast"
-                scrollEventThrottle={16}
-                onScroll={onRailScroll}
-                onContentSizeChange={(w) => { railGeom.current = { ...railGeom.current, c: w }; paintFade(); }}
-                contentContainerStyle={{ paddingHorizontal: PRS_BLEED, gap: PRS_GAP }}
-              >
-                {shownPrs.map((pr) => (
-                  <PrCell key={pr.lift} pr={pr} units={units} t={t} width={prCellW}
-                    onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
-                ))}
-                {!allPrs && prs.length > PRS_RAIL_CAP && (
-                  <Pressable
-                    onPress={() => setAllPrs(true)}
-                    accessibilityRole="button"
-                    style={{ width: prCellW, justifyContent: "center" }}
-                  >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
-                      {t("w.home.act.showAll").replace("{n}", String(prs.length))}
-                    </Text>
-                  </Pressable>
-                )}
-              </ScrollView>
-
-              {/* THE DISSOLVE — screen-coloured, since this block sits on the
-                  screen rather than on a card. Opacity is animated (not the
-                  gradient), so it runs on the native driver. */}
-              <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeL }}>
-                <LinearGradient colors={[C.ink, `${C.ink}00`]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
-              </Animated.View>
-              <Animated.View pointerEvents="none" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeR }}>
-                <LinearGradient colors={[`${C.ink}00`, C.ink]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
-              </Animated.View>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* The doors moved OUT of this card (wave 3): they are the whole
-          PROGRESS cluster's single exit now, rendered at the cluster's end in
+      {/* The doors moved OUT of this card (wave 3): they are the retrospective's
+          single exit now, rendered at the END of the Endurance cluster in
           home.tsx — one exit point after all the breakdowns, not a detour
           between the summary and the rails that decompose it. */}
-
-      {/* ── THE MONTH PICKER — the iOS grouped list: sections, a row per
-          period, a check on the one in force. ─────────────────────────────── */}
-      <Sheet visible={picker} onClose={() => setPicker(false)} title={t("w.home.act.pickTitle")} sub={t("w.home.act.pickSub")}>
-        <PickerSection label={t("w.home.act.presets")}>
-          {ACTIVITY_RANGE_PRESETS.map((p) => (
-            <PickerRow
-              key={p.id}
-              label={t(p.labelKey)}
-              active={range.id === p.id}
-              onPress={() => { pick(p.id); setPicker(false); }}
-            />
-          ))}
-        </PickerSection>
-        <PickerSection label={t("w.home.act.monthsHead")}>
-          {months.map((id) => (
-            <PickerRow
-              key={id}
-              label={monthLabel(id)}
-              active={range.id === id}
-              onPress={() => { pick(id); setPicker(false); }}
-            />
-          ))}
-        </PickerSection>
-      </Sheet>
     </View>
   );
 }
@@ -922,39 +630,5 @@ function MetricDetail({
         </>
       )}
     </>
-  );
-}
-
-/* ───────────────────────────── the picker ──────────────────────────────── */
-
-function PickerSection({ label, children }: { label: string; children: ReactNode }) {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginHorizontal: 4, marginBottom: 6 }}>
-        {label}
-      </Text>
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden" }}>
-        {children}
-      </View>
-    </View>
-  );
-}
-
-function PickerRow({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const { palette: C } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      style={{
-        flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10,
-        paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.line,
-      }}
-    >
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: active ? C.chalk : C.ash }}>{label}</Text>
-      {active && <Text style={{ fontSize: fs.note, color: txt(C, C.lime) }}>✓</Text>}
-    </Pressable>
   );
 }

@@ -1,4 +1,5 @@
-import { Text } from "react-native";
+import type { ReactNode } from "react";
+import { View, Text } from "react-native";
 import { useTheme } from "../../lib/theme";
 import { F, serifIf } from "../../lib/ui";
 
@@ -14,15 +15,30 @@ import { F, serifIf } from "../../lib/ui";
  *  trailing hairline; it read as the default divider every generated layout
  *  reaches for, and was retired for pure type. `mt` compensates containers
  *  that already contribute their own spacing, keeping the OPTICAL 36
- *  constant. Mirrors web (aurora/group-mark.tsx). */
-export default function GroupMark({ label, mt = 36 }: { label: string; mt?: number }) {
+ *  constant. Mirrors web (aurora/group-mark.tsx).
+ *
+ *  `right` is the cluster's HEAD-LEVEL CONTROL, and it is the one thing allowed
+ *  on this row besides the name — the Explore SectionHead grammar, which puts a
+ *  meta or a control (a count, a filter) on the right of the same row as the
+ *  title. Today's period filter lives there: a filter scopes the whole cluster,
+ *  so it belongs beside the cluster's name rather than under one block inside
+ *  it, where it read as that block's own control. Absent by default, and the
+ *  headline is then exactly the bare type it has always been. */
+export default function GroupMark({ label, mt = 36, right }: { label: string; mt?: number; right?: ReactNode }) {
   const { palette: C, scheme } = useTheme();
-  return (
+  const heading = (
     <Text
       accessibilityRole="header"
-      style={{ marginTop: mt, marginHorizontal: 2, fontFamily: serifIf(scheme, F.black), fontSize: 23, letterSpacing: -0.5, lineHeight: 26, color: C.chalk }}
+      style={{ fontFamily: serifIf(scheme, F.black), fontSize: 23, letterSpacing: -0.5, lineHeight: 26, color: C.chalk }}
     >
       {label}
     </Text>
+  );
+  if (!right) return <View style={{ marginTop: mt, marginHorizontal: 2 }}>{heading}</View>;
+  return (
+    <View style={{ marginTop: mt, marginHorizontal: 2, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      {heading}
+      {right}
+    </View>
   );
 }

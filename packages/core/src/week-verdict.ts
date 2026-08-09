@@ -7,13 +7,19 @@
  * figures the sentence is drawn from. The deep screens stay reachable — this is
  * the glance, not the archive.
  *
- * It is also the ONLY totals card on Today. The Endurance block used to open
- * with a cross-sport strip of its own — efforts / km / h for the SAME week —
- * which put two "this week" cards on one screen counting different populations
- * under near-identical labels: "5 sessions, 3.2 h" above "3 efforts, 0.9 h",
- * with nothing on either saying which was which. That strip is gone and its
- * distance moved here, so the week is stated once. Per-sport figures still live
- * inside each lane, where the scope is named by the lane itself.
+ * It is the WHOLE-SCREEN totals card. The Endurance block used to open with a
+ * cross-sport strip of its own — efforts / km / h for the SAME week — which put
+ * two "this week" cards on one screen counting different populations under
+ * near-identical labels: "5 sessions, 3.2 h" above "3 efforts, 0.9 h", with
+ * nothing on either saying which was which. That strip is gone and its distance
+ * moved here, so the week is stated once for the screen.
+ *
+ * Endurance is a SECTION now, with a headline of its own, and that heading is
+ * what lets it carry a summary card again (endurance-window.ts): under a
+ * headline reading ENDURANCE, "8 efforts / 41.6 km / 3.2 h" is scoped by the
+ * section it opens, which the old strip's figures never were. Those figures are
+ * a strict SLICE of this card's — same activitySummary, filtered to the
+ * endurance and sport groups — so the two can never disagree.
  *
  * THE WINDOW IS NO LONGER FIXED. The card carries a date filter — the calendar
  * week (Mon–Sun), the last 7 or 30 days, the year to date, or any single month

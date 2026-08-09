@@ -243,6 +243,29 @@ export const web_home = {
     "w.home.act.vsBase": "{d} vs {b}",
     "w.home.act.empty": "Nothing logged in this period.",
     "w.home.act.hint": "Open a figure for the sessions behind it",
+    // RECORDS — the Progress cluster's own block, promoted out of the verdict
+    // card's foot into a section head of its own. The head names the block and
+    // the meta beside it names the window, so the old "New PRs this week"
+    // phrasing (title and window in one string) is no longer needed.
+    "w.home.act.recordsTitle": "Records",
+    // ENDURANCE — the section's opener. Scoped w.home.endw.* so it can never
+    // be mistaken for the w.home.end.* lane strings.
+    "w.home.endw.empty": "No endurance logged in this period.",
+    // The opener's SENTENCE. It says what the verdict card cannot — how many
+    // sports, and which carried them — because the figures it used to print
+    // (distance especially, which only these groups ever carry) were that
+    // card's own columns restated a screen below it. {n} sports, {s} the
+    // leading sport's name.
+    "w.home.endw.leadOne": "All of it was {s}.",
+    "w.home.endw.leadMost": "{n} sports, mostly {s}.",
+    "w.home.endw.leadLed": "{n} sports, led by {s}.",
+    // The working-out: the one figure that is NOT a restatement (this
+    // section's own time) against the one comparison nothing else makes.
+    // {h} arrives ALREADY FORMATTED, through core's formatDuration — the unit
+    // is the formatter's ("1h 30min"), never a literal in the string, so this
+    // line and the verdict card's hours column can't print a span two ways.
+    "w.home.endw.why": "{h}, {d} on your average",
+    "w.home.endw.whyCold": "{h} in total",
     "w.home.act.close": "Close",
     "w.home.act.allGroups": "All",
     "w.home.act.showAll": "Show all {n}",
@@ -263,11 +286,6 @@ export const web_home = {
     // localized month name through {m} rather than an inflected phrase: "in
     // July" declines in Polish (w lipcu) and a nominative month name in that
     // slot would be wrong, so a spaced en dash carries it in every locale.
-    "w.home.act.prsWeek": "Records this week",
-    "w.home.act.prsD7": "Records in the last 7 days",
-    "w.home.act.prsD30": "Records in the last 30 days",
-    "w.home.act.prsYtd": "Records this year",
-    "w.home.act.prsMonth": "Records – {m}",
     // The proof under each record. The value is bare — the unit is on the
     // figure directly above it.
     "w.home.act.prFrom": "from {v}",
@@ -1363,6 +1381,13 @@ export const web_home = {
     "w.home.act.vsBase": "{d} wobec {b}",
     "w.home.act.empty": "Nic nie zapisano w tym okresie.",
     "w.home.act.hint": "Otwórz liczbę, żeby zobaczyć sesje za nią",
+    "w.home.act.recordsTitle": "Rekordy",
+    "w.home.endw.empty": "Brak wytrzymałości w tym okresie.",
+    "w.home.endw.leadOne": "Wszystko to {s}.",
+    "w.home.endw.leadMost": "{n} sportów, głównie {s}.",
+    "w.home.endw.leadLed": "{n} sportów, na czele {s}.",
+    "w.home.endw.why": "{h}, {d} wobec Twojej średniej",
+    "w.home.endw.whyCold": "{h} łącznie",
     "w.home.act.close": "Zamknij",
     "w.home.act.allGroups": "Wszystko",
     "w.home.act.showAll": "Pokaż wszystkie ({n})",
@@ -1378,11 +1403,6 @@ export const web_home = {
     "w.home.act.uMin": "min",
     "w.home.act.uH": "h",
     "w.home.act.uSets": "serie",
-    "w.home.act.prsWeek": "Rekordy w tym tygodniu",
-    "w.home.act.prsD7": "Rekordy z ostatnich 7 dni",
-    "w.home.act.prsD30": "Rekordy z ostatnich 30 dni",
-    "w.home.act.prsYtd": "Rekordy w tym roku",
-    "w.home.act.prsMonth": "Rekordy – {m}",
     "w.home.act.prFrom": "z {v}",
     "w.home.act.prFirst": "pierwszy raz",
     "w.home.act.prReps": "więcej powtórzeń",
@@ -2420,6 +2440,13 @@ export const web_home = {
     "w.home.act.vsBase": "{d} vs. {b}",
     "w.home.act.empty": "In diesem Zeitraum nichts geloggt.",
     "w.home.act.hint": "Öffne eine Zahl für die Sessions dahinter",
+    "w.home.act.recordsTitle": "Rekorde",
+    "w.home.endw.empty": "Keine Ausdauer in diesem Zeitraum erfasst.",
+    "w.home.endw.leadOne": "Alles davon war {s}.",
+    "w.home.endw.leadMost": "{n} Sportarten, überwiegend {s}.",
+    "w.home.endw.leadLed": "{n} Sportarten, angeführt von {s}.",
+    "w.home.endw.why": "{h}, {d} gegenüber deinem Schnitt",
+    "w.home.endw.whyCold": "{h} insgesamt",
     "w.home.act.close": "Schließen",
     "w.home.act.allGroups": "Alle",
     "w.home.act.showAll": "Alle {n} zeigen",
@@ -2435,11 +2462,6 @@ export const web_home = {
     "w.home.act.uMin": "min",
     "w.home.act.uH": "h",
     "w.home.act.uSets": "Sätze",
-    "w.home.act.prsWeek": "Rekorde diese Woche",
-    "w.home.act.prsD7": "Rekorde der letzten 7 Tage",
-    "w.home.act.prsD30": "Rekorde der letzten 30 Tage",
-    "w.home.act.prsYtd": "Rekorde in diesem Jahr",
-    "w.home.act.prsMonth": "Rekorde – {m}",
     "w.home.act.prFrom": "von {v}",
     "w.home.act.prFirst": "zum ersten Mal",
     "w.home.act.prReps": "mehr Wiederholungen",
