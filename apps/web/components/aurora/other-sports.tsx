@@ -3,7 +3,8 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import {
   otherSportLanes, otherSportReading, sportWeekBars, OTHER_SPORT_CAP, ago,
-  parentageHours, progressParentage,
+  durationUnits, formatDuration,
+  parentageDuration, progressParentage,
   type LoggedSession, type OtherSportLane,
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
@@ -53,6 +54,7 @@ export default function AuroraOtherSports({
 }) {
   const { t } = useLang();
   const [expanded, setExpanded] = useState(false);
+  const u = durationUnits(t);
 
   const lanes = useMemo(() => otherSportLanes(sessions), [sessions]);
   // WAVE-3 PARENTAGE: the head quotes the sports' share of the This-week
@@ -69,12 +71,12 @@ export default function AuroraOtherSports({
   return (
     <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, ONE mono fact right —
-          the wave-3 parentage quote ("3.1 of 5.2 h this week"), naming the
+          the wave-3 parentage quote ("3h 6min of 5h 12min this week"), naming the
           slice of the verdict's hours column this block decomposes. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.other.title")}</span>
         <span style={kicker}>
-          {t("w.home.group.metaOf").replace("{a}", String(parentageHours(parentage.sportMinutes))).replace("{b}", String(parentageHours(parentage.totalMinutes)))}
+          {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.totalMinutes, u))}
         </span>
       </div>
 
@@ -126,15 +128,15 @@ const fmtWeekDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(und
  *
  *  The strip HOLDS, and answers in the FOOT rather than the headline: the
  *  headline is all-time efforts and the strip is minutes per week, so swapping
- *  it would put a quantity in a slot that never meant it. The hours cell
- *  becomes the held week's minutes, and "3 days ago" becomes the week itself.
+ *  it would put a quantity in a slot that never meant it. The time cell
+ *  becomes the held week's own duration, and "3 days ago" becomes the week.
  *
  *  The tile is also a button, so the dwell decides which a press meant — a tap
  *  opens the sport's page, a hold reads the strip. Parity: the Today exercise
  *  rail's card, where the same dwell separates the two. */
 function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) => string; onOpen?: (sport: string) => void }) {
   const bars = sportWeekBars(lane.weeks);
-  const hours = Math.round(lane.minutes / 6) / 10;
+  const time = formatDuration(lane.minutes, durationUnits(t));
   const interactive = !!onOpen;
   const scrub = useChartScrub(lane.weeks.length, "band", undefined, { inButton: interactive });
   const read = scrub.index >= 0 ? otherSportReading(lane, scrub.index) : null;
@@ -173,7 +175,9 @@ function SportTile({ lane, t, onOpen }: { lane: OtherSportLane; t: (k: string) =
       </span>
 
       <span aria-live="polite" style={{ display: "flex", justifyContent: "space-between", gap: 6, ...num, fontSize: 10, color: C("ash") }}>
-        <span style={read?.best ? { color: "var(--lime-text)" } : undefined}>{read ? `${read.value} ${read.unit}` : `${hours} h`}</span>
+        {/* A held week reads as a duration too, so it brings its own units and
+            the readout adds none — same figure the resting footer shows. */}
+        <span style={read?.best ? { color: "var(--lime-text)" } : undefined}>{read ? (read.unit ? `${read.value} ${read.unit}` : read.value) : time}</span>
         <span>{read ? t("chart.weekOf").replace("{date}", fmtWeekDate(read.weekStart)) : ago(lane.lastAt)}</span>
       </span>
     </button>

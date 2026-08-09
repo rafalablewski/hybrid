@@ -147,6 +147,22 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     expect(m.primary.kind).toBe("time");
   });
 
+  it("prints every timed figure in hours AND minutes, carrying its own units", () => {
+    const m = sportPageModel("Tennis", MIXED, { now: NOW });
+    // 75 + 60 logged minutes. This used to read "2:15 h" as the hero and a
+    // flat "2" in the totals row — the athlete had logged the 15.
+    expect(m.primary.value).toBe("2h 15min");
+    expect(m.primary.unit).toBeNull();
+    expect(m.totals.find((c) => c.id === "hours")!.value).toBe("2h 15min");
+    expect(m.totals.find((c) => c.id === "hours")!.unit).toBeNull();
+    // The week cell and the longest session are durations too, so neither
+    // trails a separate "min" for the label to name a second time.
+    expect(m.totals.find((c) => c.id === "week")!.value).toBe("1h 15min");
+    expect(m.totals.find((c) => c.id === "week")!.unit).toBeNull();
+    expect(m.bests.find((b) => b.id === "longestSession")!.value).toBe("1h 15min");
+    expect(m.bests.find((b) => b.id === "longestSession")!.unit).toBeNull();
+  });
+
   it("reads a pool sport in METRES at a per-hundred pace", () => {
     const swims = [effort("s1", "Threshold set", "swimming", 2, 2.4, 45)];
     const m = sportPageModel("Swimming", swims, { now: NOW });
@@ -221,11 +237,12 @@ describe("holding a chart — the figure under the finger", () => {
     expect(held.unit).toBe("m");
   });
 
-  it("reads a TIMED sport's bar in minutes — it has no distance to state", () => {
+  it("reads a TIMED sport's bar as a duration — it has no distance to state", () => {
     const m = sportPageModel("Tennis", MIXED, { now: NOW });
     const held = sportVolumeReading(m, m.weeks.length - 1)!;
-    expect(held.value).toBe("75");
-    expect(held.unit).toBe("min");
+    // The figure brings its own units, so the readout prints none beside it.
+    expect(held.value).toBe("1h 15min");
+    expect(held.unit).toBe("");
   });
 
   it("names the pace point's OWN week — the trend skips the unpaced ones", () => {

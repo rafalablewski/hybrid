@@ -5,7 +5,7 @@ import {
   enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
   laneVolumeReading, lanePaceReading,
-  DISCIPLINE_META, LANE_CAP, ago,
+  DISCIPLINE_META, LANE_CAP, ago, durationUnits, formatDuration,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
@@ -143,7 +143,9 @@ function SummaryTile({ lane, t }: { lane: EnduranceLane; t: (k: string) => strin
       </div>
       <div style={{ display: "grid", gap: 3, marginTop: "auto" }}>
         {row("KM", String(lane.distanceKm))}
-        {row("H", String(Math.round(lane.minutes / 6) / 10))}
+        {/* TIME, not "H": the figure is hours AND minutes now, so the row's
+            label names the quantity rather than repeating the unit inside it. */}
+        {row("TIME", formatDuration(lane.minutes, durationUnits(t)))}
       </div>
     </Tile>
   );

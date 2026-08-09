@@ -25,6 +25,7 @@
  * Pure, so web and mobile render identical tiles.
  */
 import type { ChartReading } from "./chart-scrub";
+import { formatDuration } from "./duration";
 import { OLYMPIC_SPORTS } from "./olympic-sports";
 import { cardioDiscipline, type LoggedSession } from "./engines/session";
 
@@ -141,10 +142,13 @@ export function sportWeekBars(weeks: number[]): number[] {
  *
  * The strip draws MINUTES, while the tile's headline figure is all-time
  * EFFORTS — two different measures — so a held bar answers in the tile's FOOT
- * (where the hours already live) rather than swapping the headline for a
- * quantity it never meant. `efforts` is null for the same reason: the buckets
- * count minutes, and reporting a number this series does not hold would be
- * inventing one.
+ * (where the week's time already lives) rather than swapping the headline for
+ * a quantity it never meant. `efforts` is null for the same reason: the
+ * buckets count minutes, and reporting a number this series does not hold
+ * would be inventing one.
+ *
+ * The figure is a DURATION, so it carries its own units ("1h 15min") and the
+ * reading's `unit` is empty — the readout adds none.
  */
 export function otherSportReading(lane: OtherSportLane, index: number): ChartReading | null {
   const minutes = lane.weeks[index];
@@ -153,8 +157,8 @@ export function otherSportReading(lane: OtherSportLane, index: number): ChartRea
   return {
     index,
     weekStart: lane.weekStarts[index] ?? "",
-    value: String(minutes),
-    unit: "min",
+    value: formatDuration(minutes),
+    unit: "",
     efforts: null,
     best: minutes > 0 && minutes === peak,
   };

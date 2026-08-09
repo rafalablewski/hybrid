@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, activityMonths, prsBetween,
   fmtWeight, splitFigure, strengthPrProof,
+  durationUnits, formatDuration,
   resolveActivityRange, groupDistanceDisplay, fmtKm, kmValue, ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage, durations,
   figureDeltaPct, figureDirection,
@@ -348,15 +349,18 @@ export default function AuroraWeekVerdict({
   const prCellW = Math.max(120, Math.round((railWidth - PRS_BLEED * 2 - PRS_GAP) / 2));
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
-  // minutes read as hours to one decimal, distance at the shared km precision.
+  // distance keeps the shared km precision, and minutes go through the shared
+  // duration formatter. Training time used to print DECIMAL hours — "1.1 h"
+  // for 67 logged minutes, a figure nobody converts back in their head, and
+  // one that read the same at 67 and 68 minutes. The COLUMN and the breakdown
+  // beneath it share this formatter, so a span can't print two ways.
+  const fmtMinutes = (m: number) => formatDuration(m, durationUnits(t));
+
   const fmt = (metric: string, value: number) =>
     metric === "tonnage" ? fmtTonnage(value, units)
-      : metric === "hours" ? String(Math.round(value / 6) / 10)
+      : metric === "hours" ? fmtMinutes(value)
         : metric === "distance" ? kmValue(value)
           : String(Math.round(value));
-
-  const fmtMinutes = (m: number) =>
-    m < 60 ? `${Math.round(m)} ${t("w.home.act.uMin")}` : `${Math.round(m / 6) / 10} ${t("w.home.act.uH")}`;
 
   /** A contribution in ITS OWN unit — 600 m of swimming inside a km total. */
   const fmtValue = (metric: ActivityMetric, value: number, g: { unit: "km" | "m" }) =>

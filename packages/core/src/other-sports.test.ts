@@ -156,14 +156,15 @@ describe("holding a tile's frequency strip", () => {
     expect(Date.parse(tennis.weekStarts.at(-1)!)).toBeLessThan(NOW - 2 * DAY);
   });
 
-  it("reads a held bar in the measure the strip actually draws — minutes", () => {
+  it("reads a held bar in the measure the strip actually draws — a duration", () => {
     const held = otherSportReading(tennis, tennis.weeks.length - 1)!;
-    expect(held.value).toBe("90");
-    expect(held.unit).toBe("min");
+    // Hours AND minutes, carrying their own units, so the readout adds none.
+    expect(held.value).toBe("1h 30min");
+    expect(held.unit).toBe("");
     expect(held.weekStart).toBe(tennis.weekStarts.at(-1));
     // NOT the best: the 60 + 45 sessions land in one older bucket, 105 minutes.
     expect(held.best).toBe(false);
-    expect(otherSportReading(tennis, tennis.weeks.length - 2)!.value).toBe("105");
+    expect(otherSportReading(tennis, tennis.weeks.length - 2)!.value).toBe("1h 45min");
     // The buckets count minutes, so the reading claims no effort count.
     expect(held.efforts).toBeNull();
   });
@@ -173,7 +174,7 @@ describe("holding a tile's frequency strip", () => {
     expect(otherSportReading(tennis, busiest)!.best).toBe(true);
     const empty = tennis.weeks.findIndex((m) => m === 0);
     expect(otherSportReading(tennis, empty)!.best).toBe(false);
-    expect(otherSportReading(tennis, empty)!.value).toBe("0");
+    expect(otherSportReading(tennis, empty)!.value).toBe("0min");
   });
 
   it("returns nothing off either end of the series", () => {

@@ -7,6 +7,7 @@ import {
   LEVELS,
   SPORT_PAGE_WEEKS,
   ago,
+  durationUnits, formatDuration,
   heroMetaLine,
   markerHistory,
   recordMarker,
@@ -125,12 +126,16 @@ export default function AuroraSportPage() {
   const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: 1.2 });
   const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
+  const u = durationUnits(t);
   const unitLabel = m.distanceUnit === "m" ? t("w.train.sportPage.metres") : t("w.train.sportPage.kilometres");
-  const totalLabel = (id: string, unit: string | null) =>
+  // The week cell reads "This week" whatever the sport measures: a timed
+  // sport's figure now carries its own units ("1h 15min"), so the label that
+  // used to name them ("Min this week") would be naming them twice.
+  const totalLabel = (id: string) =>
     id === "efforts" ? t("w.train.sportPage.efforts")
       : id === "distance" ? unitLabel
       : id === "hours" ? t("w.train.sportPage.hours")
-      : unit ? t("w.train.sportPage.thisWeek") : t("w.train.sportPage.minThisWeek");
+      : t("w.train.sportPage.thisWeek");
   const bestLabel = (b: SportBest) =>
     b.id === "fastest" ? t("w.train.sportPage.fastest")
       : b.id === "longest" ? t("w.train.sportPage.longest")
@@ -143,7 +148,7 @@ export default function AuroraSportPage() {
       : t("w.train.sportPage.timeLogged");
   const weeksMeta = t("w.train.sportPage.weeksAvg")
     .replace("{weeks}", String(SPORT_PAGE_WEEKS))
-    .replace("{avg}", m.hasDistance ? `${sportDistance(m.distanceUnit === "m" ? m.weekAvg / 1000 : m.weekAvg, m.distanceUnit)} ${m.distanceUnit}` : `${Math.round(m.weekAvg)} min`);
+    .replace("{avg}", m.hasDistance ? `${sportDistance(m.distanceUnit === "m" ? m.weekAvg / 1000 : m.weekAvg, m.distanceUnit)} ${m.distanceUnit}` : formatDuration(m.weekAvg, u));
 
   /** The Explore SectionHead: display-face title left, mono meta right. */
   const SectionHead = ({ title, meta }: { title: string; meta?: string }) => (
@@ -260,7 +265,7 @@ export default function AuroraSportPage() {
         {m.totals.map((cell, i) => (
           <View key={cell.id} style={{ flex: 1, alignItems: "center", paddingVertical: space.lg, borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.heading, color: C.chalk }}>{cell.value}</Text>
-            <Text style={{ ...label(), fontSize: fs.nano, marginTop: 6, textAlign: "center" }}>{totalLabel(cell.id, cell.unit)}</Text>
+            <Text style={{ ...label(), fontSize: fs.nano, marginTop: 6, textAlign: "center" }}>{totalLabel(cell.id)}</Text>
           </View>
         ))}
       </View>
@@ -451,7 +456,7 @@ export default function AuroraSportPage() {
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk }}>
-                  {m.hasDistance ? `${sportDistance(e.distanceKm, m.distanceUnit)} ${m.distanceUnit}` : `${e.minutes} min`}
+                  {m.hasDistance ? `${sportDistance(e.distanceKm, m.distanceUnit)} ${m.distanceUnit}` : formatDuration(e.minutes, u)}
                 </Text>
                 {e.secPerKm != null && <Text style={{ ...mono(fs.micro), marginTop: 4 }}>{sportPace(e.secPerKm, m.pacePer)} {m.paceUnit}</Text>}
               </View>
