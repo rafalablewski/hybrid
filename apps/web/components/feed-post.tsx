@@ -123,6 +123,7 @@ export default function FeedPost({
   const headline = feedHeadlineText(item, t);
   const session = q.data?.session;
   const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: false });
+  const handle = item.author.handle ? `@${item.author.handle}` : null;
 
   return (
     <div style={{ maxWidth: 600, fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -139,14 +140,21 @@ export default function FeedPost({
         >
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={44} />
         </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: fs.note, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {item.author.displayName || (item.author.handle ? `@${item.author.handle}` : t("w.social.you"))}
-          </div>
-          {/* A spaced en dash joins the meta line — never a middot. */}
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>
-            {[item.author.handle ? `@${item.author.handle}` : null, item.when].filter(Boolean).join(" – ")}
-          </div>
+        {/* ONE line — avatar, name, handle, time — exactly as the row reads it
+            (feed-card.tsx): the name and the handle shrink, the time never does. */}
+        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontWeight: 700, fontSize: fs.note, color: C("chalk"), minWidth: 0, flexShrink: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {item.author.displayName || handle || t("w.social.you")}
+          </span>
+          {handle && item.author.displayName ? (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), minWidth: 0, flexShrink: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{handle}</span>
+          ) : null}
+          {item.when && (
+            // A spaced en dash divides the two ash figures — never a middot.
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), flexShrink: 0, whiteSpace: "nowrap" }}>
+              {(handle && item.author.displayName) ? <span aria-hidden="true">– </span> : null}{item.when}
+            </span>
+          )}
         </div>
         {menuRows.length > 0 && (
           <div style={{ position: "relative", zIndex: menu ? 30 : "auto", display: "inline-flex" }}>
