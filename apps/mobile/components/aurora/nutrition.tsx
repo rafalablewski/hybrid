@@ -12,6 +12,7 @@ import {
   todayNutrition,
   adaptiveTargets,
   fuelToday, hydrationToday,
+  canSaveRecipe, emptyUserRecipe, recipeToLog, type UserRecipe, type RecipeSource,
   estimateMaintenance,
   dailyNutrition,
   weightTrend,
@@ -53,6 +54,7 @@ import {
   getNutritionPrefs, saveNutritionPrefs as apiSaveNutritionPrefs,
   fetchFoodLogs, createFoodLog, updateFoodLogQty, scaleFoodLog, deleteFoodLog,
   fetchWaterLogs, logWater, deleteSignal,
+  fetchUserRecipes, saveUserRecipe as apiSaveUserRecipe, deleteUserRecipe as apiDeleteUserRecipe,
   type SavedMealRow, type FoodProductRow, type FoodLogRow, type WaterLog as WaterLogRow,
 } from "../../lib/api";
 import { useSignalsQuery, useSessionsQuery, useRevalidate } from "../../lib/queries";
@@ -75,6 +77,7 @@ import { useConfirm } from "./confirm";
 import { NutritionHubBento } from "./nutrition-hub";
 import BodyProgress from "./body-progress";
 import WaterCard from "./water";
+import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type RecipeRow } from "./user-recipes";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -103,7 +106,7 @@ const macroKcal = (protein: string, carbs: string, fat: string) => Math.round((p
 // reached from a menu, plus the redesigned add-to-meal / create-food / recipes
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
-type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "collection" | "recipe" | "cook" | "food" | "source" | "sources";
+type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "collection" | "recipe" | "cook" | "food" | "source" | "sources" | "myRecipe";
 // The part of the day a log is attributed to, carried into the Signal `source`.
 // The four built-ins plus any custom parts a Full user added — a plain key
 // string, not a closed union.
@@ -575,13 +578,22 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // ── Personal library — the user's OWN saved meals + custom products.
   const [meals, setMeals] = useState<SavedMealRow[]>([]);
   const [products, setProducts] = useState<FoodProductRow[]>([]);
+  // ── YOUR RECIPES — the athlete's own dishes.
+  const [userRecipes, setUserRecipes] = useState<RecipeRow[]>([]);
+  const [editRecipe, setEditRecipe] = useState<UserRecipe | null>(null);
+  const [recipeSaving, setRecipeSaving] = useState(false);
+  const [userRecipeMsg, setUserRecipeMsg] = useState("");
   const [mealForm, setMealForm] = useState({ name: "", emoji: "", kcal: "", protein: "", carbs: "", fat: "" });
   const [showMealBuilder, setShowMealBuilder] = useState(false);
   const [prodForm, setProdForm] = useState({ name: "", serving: "", kcal: "", protein: "", carbs: "", fat: "" });
   const [showProdBuilder, setShowProdBuilder] = useState(false);
   const canSaveAnotherMeal = full || meals.length < FREE_MEAL_LIMIT;
   const canSaveAnotherProduct = full || products.length < FREE_PRODUCT_LIMIT;
-  const loadLibrary = () => { fetchSavedMeals().then(setMeals).catch(() => {}); fetchFoodProducts().then(setProducts).catch(() => {}); };
+  const loadLibrary = () => {
+    fetchSavedMeals().then(setMeals).catch(() => {});
+    fetchFoodProducts().then(setProducts).catch(() => {});
+    fetchUserRecipes().then(setUserRecipes).catch(() => {});
+  };
   useEffect(() => { loadLibrary(); }, []);
   // First-run onboarding is a separate flow (see the early return). Completion is
   // persisted SERVER-SIDE (/api/nutrition/prefs) so the wizard appears exactly
@@ -645,6 +657,72 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     if (!ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return false; }
     return true;
   };
+  // ── YOUR RECIPES — open, save, delete, log ───────────────────────────────
+  // A recipe's macros are DERIVED from its ingredients (@hybrid/core
+  // user-recipes.ts), so nothing here stores or asks for a macro figure.
+  // The products library doubles as the ingredient source AND as what staleness
+  // is checked against, projected once into the engine's RecipeSource shape.
+  const recipeSources: RecipeSource[] = useMemo(
+    () => products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      servingLabel: p.servingLabel,
+      facts: { kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat ?? null, sugar: p.sugar ?? null, fiber: p.fiber ?? null, salt: p.salt ?? null },
+    })),
+    [products],
+  );
+  const openRecipeEditor = (r?: RecipeRow) => {
+    setUserRecipeMsg("");
+    // A never-saved recipe carries an empty id — that is what routes the save to
+    // POST instead of PATCH, so there is no separate "isNew" flag to drift.
+    setEditRecipe(r ? toUserRecipe(r) : { id: "", ...emptyUserRecipe() });
+    setView("myRecipe");
+  };
+  const saveRecipe = async () => {
+    if (!editRecipe) return;
+    if (!editRecipe.name.trim()) { setUserRecipeMsg(t("w.recovery.nutrition.recipeNeedsName")); return; }
+    setRecipeSaving(true);
+    const { recipe, upgrade } = await apiSaveUserRecipe(toRecipeBody(editRecipe), editRecipe.id || undefined);
+    setRecipeSaving(false);
+    if (upgrade) { router.push("/upgrade"); return; }
+    if (!recipe) { setUserRecipeMsg(t("w.recovery.nutrition.recipeNotMigrated")); return; }
+    // Adopt the SERVER's row: it carries the real ingredient ids the editor keys
+    // its rows by, so a second save must not send the client-side "new:" ids.
+    setEditRecipe(toUserRecipe(recipe));
+    loadLibrary();
+    setView("recipes");
+  };
+  const removeRecipe = async () => {
+    if (!editRecipe?.id) { setView("recipes"); return; }
+    const id = editRecipe.id;
+    setUserRecipes((xs) => xs.filter((x) => x.id !== id));
+    setView("recipes");
+    await apiDeleteUserRecipe(id);
+    loadLibrary();
+  };
+  // Logging a recipe writes a NORMAL food entry — per single serving with a
+  // separate quantity — so the Diary's own stepper rescales it afterwards and a
+  // recipe never becomes a row the diary cannot edit.
+  const logRecipe = async (qty: number) => {
+    if (!editRecipe) return;
+    const draft = recipeToLog(editRecipe, qty);
+    const ok = await logEntry({
+      name: draft.name,
+      subname: draft.subname,
+      source: mealType,
+      kcal: draft.facts.kcal,
+      protein: draft.facts.protein,
+      carbs: draft.facts.carbs,
+      fat: draft.facts.fat,
+      satFat: draft.facts.satFat,
+      sugar: draft.facts.sugar,
+      fiber: draft.facts.fiber,
+      salt: draft.facts.salt,
+      qty: draft.qty,
+    });
+    if (ok) { setUserRecipeMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
+  };
+
   const editLogQty = async (id: string, qty: number) => {
     setLogs((xs) => xs.map((x) => x.id === id ? { ...x, qty } : x)); // optimistic
     await updateFoodLogQty(id, qty);
@@ -1916,6 +1994,28 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     );
   }
 
+  // ============ YOUR RECIPE — the editor, which is also the detail view ============
+  // There is no separate read-only recipe page: a recipe you wrote is a document
+  // you keep amending, so a read mode would be a navigation layer whose only job
+  // is to hide a pencil.
+  if (view === "myRecipe" && editRecipe) {
+    return (
+      <AuroraScreen scroll>
+        {screenHead(editRecipe.id ? t("w.recovery.nutrition.editRecipe") : t("w.recovery.nutrition.newRecipe"), () => setView("recipes"))}
+        <UserRecipeEditor
+          recipe={editRecipe}
+          products={recipeSources}
+          onChange={setEditRecipe}
+          onSave={saveRecipe}
+          onDelete={editRecipe.id ? removeRecipe : undefined}
+          onLog={editRecipe.id ? logRecipe : undefined}
+          saving={recipeSaving}
+          message={userRecipeMsg}
+        />
+      </AuroraScreen>
+    );
+  }
+
   // ============ RECIPES — the library root ============
   // The PLANS TAB's root, not a lookalike: the same collapsing cover, the same
   // docked jump rail, the same search field and the same full-bleed shelves of
@@ -1944,6 +2044,18 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         <View style={{ marginTop: 16 }}>
           <AField value={recipeQuery} onChange={setRecipeQuery} placeholder={t("w.recovery.nutrition.searchRecipes")} icon="search" />
         </View>
+        {/* Your own recipes lead — but only at rest: while a search is running
+            the screen is answering a question about the curated library, and a
+            shelf that ignores the query would read as a result that matched. */}
+        {!recipeQuery.trim() ? (
+          <UserRecipeShelf
+            recipes={userRecipes}
+            onOpen={(r) => openRecipeEditor(r)}
+            onNew={() => openRecipeEditor()}
+            canAdd={canSaveRecipe(persona, userRecipes.length)}
+            onUpgrade={() => router.push("/upgrade")}
+          />
+        ) : null}
         {shelves.length === 0 ? (
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 16 }}>{t("w.recovery.nutrition.noRecipeMatches")}</Text>
         ) : (

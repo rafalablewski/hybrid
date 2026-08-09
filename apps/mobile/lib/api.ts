@@ -236,6 +236,78 @@ export async function logBodyweight(weightKg: number): Promise<boolean> {
   }
 }
 
+// ── YOUR RECIPES ───────────────────────────────────────────────────────────
+// A recipe the athlete authored. Its macros are DERIVED from its ingredients
+// (@hybrid/core user-recipes.ts), so nothing on the wire carries a recipe-level
+// macro figure — only the ingredient snapshots the totals are summed from.
+
+export type UserRecipeIngredientRow = {
+  id: string;
+  name: string;
+  qty: number;
+  servingLabel: string;
+  kcal: number; protein: number; carbs: number; fat: number;
+  satFat?: number | null; sugar?: number | null; fiber?: number | null; salt?: number | null;
+  productId?: string | null;
+  verifiedId?: string | null;
+  position: number;
+};
+export type UserRecipeRow = {
+  id: string;
+  name: string;
+  note?: string | null;
+  emoji?: string | null;
+  servings: number;
+  timeMins?: number | null;
+  ingredients: UserRecipeIngredientRow[];
+};
+
+/** The athlete's recipes. Soft — the tables are a later migration, so an
+ *  un-migrated database costs the shelf and never the whole screen. */
+export async function fetchUserRecipes(): Promise<UserRecipeRow[]> {
+  try {
+    const data = await fetchJson<{ recipes?: UserRecipeRow[] }>(`/api/nutrition/recipes`);
+    return data.recipes ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Create or replace a recipe. `id` absent → POST (create), present → PATCH.
+ *  Returns the SERVER's row, which carries the real ingredient ids the editor
+ *  keys its rows by. `upgrade` distinguishes the free cap from a real failure so
+ *  the caller can route to the paywall instead of showing an error. */
+export async function saveUserRecipe(
+  body: Record<string, unknown>,
+  id?: string,
+): Promise<{ recipe: UserRecipeRow | null; upgrade: boolean }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/recipes${id ? `/${id}` : ""}`, {
+      method: id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 403) return { recipe: null, upgrade: true };
+    if (!res.ok) return { recipe: null, upgrade: false };
+    const data = (await res.json()) as { recipe?: UserRecipeRow };
+    return { recipe: data.recipe ?? null, upgrade: false };
+  } catch {
+    return { recipe: null, upgrade: false };
+  }
+}
+
+export async function deleteUserRecipe(id: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/recipes/${id}`, {
+      method: "DELETE",
+      headers: await authHeaders(),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ── WATER ──────────────────────────────────────────────────────────────────
 // The water control appends one Signal per tap and takes a tap back by DELETING
 // that reading — never by appending its negation, which would be a lie about

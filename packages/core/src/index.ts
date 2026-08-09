@@ -56,6 +56,7 @@ export * from "./nutrition-off";
 export * from "./verified-foods";
 export * from "./source-marks";
 export * from "./recipes";
+export * from "./user-recipes";
 export * from "./notes";
 export * from "./exercise-db";
 export * from "./exercise-profile";
