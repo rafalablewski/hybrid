@@ -14,6 +14,8 @@ import {
   projectSwipe,
   sheetGesture,
   resolveSheetRelease,
+  releaseVelocity,
+  sheetSnaps,
   cssSpringVar,
   navRootRank,
   screenTransition,
@@ -279,6 +281,76 @@ describe("sheet drag release", () => {
     expect(resolveSheetRelease(100, 0, H, [0])).toEqual({ target: 0, dismiss: false });
     expect(resolveSheetRelease(400, 0, H, [0]).dismiss).toBe(true);
     expect(resolveSheetRelease(30, 1200, H, [0]).dismiss).toBe(true);
+  });
+
+  it("elongates on the way up and shortens on the way back", () => {
+    // A content-sized sheet: 600px panel holding 240px of content. It RESTS at
+    // 360 (240 visible) and the stop above it is 0 — one drag up is the whole
+    // elongation, one drag back down is the whole shortening.
+    const snaps = sheetSnaps(600, undefined, 240);
+    expect(snaps).toEqual([0, 360]);
+    // Up from rest: past the midpoint it lands full, and a flick gets there
+    // from anywhere.
+    expect(resolveSheetRelease(150, 0, 600, snaps).target).toBe(0);
+    expect(resolveSheetRelease(360, -1200, 600, snaps)).toEqual({ target: 0, dismiss: false });
+    // Back down: the FIRST thing a downward drag from full finds is the
+    // content height, not the exit — shortening cannot skip to dismissal.
+    expect(resolveSheetRelease(0, 1200, 600, snaps)).toEqual({ target: 360, dismiss: false });
+    expect(resolveSheetRelease(300, 0, 600, snaps).dismiss).toBe(false);
+    // And only from there does further down leave.
+    expect(resolveSheetRelease(500, 0, 600, snaps).dismiss).toBe(true);
+  });
+
+  it("keeps the dismiss travel identical to the old content-sized sheet", () => {
+    // The panel used to BE the content (600px tall, dismissing at 600); it is
+    // now the full height with the content resting part-way down. Half the
+    // content height is the drag that dismisses either way — the change in
+    // geometry must not change the feel.
+    const snaps = sheetSnaps(1000, undefined, 600);
+    const rest = snaps[snaps.length - 1]!;
+    expect(resolveSheetRelease(rest + 299, 0, 1000, snaps).dismiss).toBe(false);
+    expect(resolveSheetRelease(rest + 301, 0, 1000, snaps).dismiss).toBe(true);
+  });
+
+  it("gives a declared detent the pull to full", () => {
+    // ['medium'] on a 920px panel (0.92 of a 1000px screen) rests at half the
+    // SCREEN — 500px visible — and still pulls up to full.
+    expect(sheetSnaps(920, ["medium"], null)).toEqual([0, 420]);
+    expect(sheetSnaps(920, ["medium", "large"])).toEqual([0, 420]);
+  });
+
+  it("never inflates a short sheet to a declared detent", () => {
+    // THE REGRESSION THIS GUARDS: a confirm sheet declares ['medium'] and holds
+    // two buttons. The declared stop is a place it can GO, not a height it must
+    // be — resting it at half the screen would put 300px of empty panel under
+    // the last button. The shortest stop wins, and medium survives as a stop in
+    // between only when it is far enough from both to be its own.
+    expect(sheetSnaps(920, ["medium"], 200)).toEqual([0, 420, 720]);
+    // And a sheet TALLER than its declared detent rests at the detent — the
+    // content simply scrolls, exactly as it did before.
+    expect(sheetSnaps(920, ["medium"], 800)).toEqual([0, 120, 420]);
+  });
+
+  it("does not sprout a stop for a sheet that already fills the screen", () => {
+    // Content taller than the panel: one stop, fully open.
+    expect(sheetSnaps(600, undefined, 900)).toEqual([0]);
+    // And a hair short of it is the same stop, not a 20px snap under the finger.
+    expect(sheetSnaps(600, undefined, 580)).toEqual([0]);
+    expect(sheetSnaps(600, undefined, 600 - sheetGesture.minGrow)).toEqual([0, sheetGesture.minGrow]);
+  });
+
+  it("forgets the speed of a gesture that was being HELD", () => {
+    // Drag up, hold it there to read what you uncovered, let go. The hand is
+    // not throwing the sheet anywhere — but the last sample says it was.
+    expect(releaseVelocity(-1400, 16)).toBe(-1400);
+    expect(releaseVelocity(-1400, 240)).toBe(0);
+    const held = resolveSheetRelease(360, releaseVelocity(1400, 240), 600, [0, 360]);
+    expect(held).toEqual({ target: 360, dismiss: false });
+  });
+
+  it("falls back to a single open stop when nothing is known yet", () => {
+    expect(sheetSnaps(600)).toEqual([0]);
+    expect(sheetSnaps(600, [], null)).toEqual([0]);
   });
 
   it("keeps `large` short of the screen top", () => {

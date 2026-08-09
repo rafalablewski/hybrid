@@ -186,7 +186,7 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
   // and sit at the very bottom, which is what the hand-rolled
   // KeyboardAvoidingView here was for.
   return (
-    <Sheet visible={!!sport} onClose={close} scroll={false} detents={["medium"]}>
+    <Sheet visible={!!sport} onClose={close}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
             {!!meta && <Text style={{ fontSize: fs.heading }}>{meta.icon}</Text>}
             <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{name}</Text>

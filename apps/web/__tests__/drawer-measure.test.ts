@@ -48,7 +48,7 @@ const MEASURED: Record<string, string> = {
   "components/percent-program.tsx":
     "Collapse — the program accordion. Takes the other escape: while open and still unmeasured its height falls back to `undefined` (auto), so the box is never pinned to 0 with an unmeasured panel. TODO fold into ADrawer (capability drawer-collapse-merge).",
   "components/aurora/sheet.tsx":
-    "The sheet panel measures itself under a positive `maxHeight`, never inside a box pinned to 0.",
+    "The sheet measures its header and its content INSIDE a panel pinned to the full `large` height — a positive box, never one clipped to 0. The measurement decides where the panel RESTS (its translateY), not whether it has room to lay out, so an unmeasured sheet is off-screen rather than collapsed.",
   // components/aurora/hero.tsx was here. HeroScreen no longer measures
   // anything: its sub-rail's dock point is DERIVED from the hero's geometry
   // (core's heroRailPin), and the height it used to read was already dead. The

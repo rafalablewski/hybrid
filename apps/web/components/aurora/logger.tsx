@@ -697,7 +697,7 @@ export default function AuroraLogger({
           single top-level exit, and the irreversible one is reached through a
           menu and then a confirm. Anything added here later inherits that
           protection for free. */}
-      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")} detents={["medium"]}>
+      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")}>
         <button className="pressable"
           onClick={() => { setMenuOpen(false); setDiscardOpen(true); }}
           style={{ display: "flex", alignItems: "center", width: "100%", padding: "14px 0", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: accentText("red"), background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
@@ -709,7 +709,7 @@ export default function AuroraLogger({
       {/* The confirm. Cancel sits FIRST and the destructive action second — on a
           phone the lower button is the one under a resting thumb, and that must
           never be the irreversible one. Mirrors the mobile ConfirmProvider. */}
-      <Sheet open={discardOpen} onClose={() => setDiscardOpen(false)} title={t("workout.discardTitle")} detents={["medium"]}>
+      <Sheet open={discardOpen} onClose={() => setDiscardOpen(false)} title={t("workout.discardTitle")}>
         <div style={{ display: "grid", gap: space.md }}>
           <p style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: fs.note, lineHeight: 1.55, color: C("ash") }}>
             {t("workout.discardBody")}

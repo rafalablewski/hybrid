@@ -172,13 +172,56 @@ export const sheetGesture = {
   project: swipe.project,
   /** Rubber-band constant when dragged ABOVE its resting position. */
   resist: 90,
+  /** How old (ms) the last movement sample may be and still count as velocity.
+   *  A hand that has been holding the sheet still is not throwing it anywhere,
+   *  whatever its last sample said — and now that a sheet is dragged UP as well
+   *  as down, holding it somewhere to look at it before letting go is ordinary.
+   *  Without this, that release fires on a velocity from a moment ago and the
+   *  sheet leaves under the hand that was steadying it. */
+  stale: 100,
   /** Detent heights, as a fraction of the screen. `large` is not 1.0 — a sheet
    *  that reaches the top edge reads as a full-screen cover, and the strip of
    *  parent left visible is what says "this is temporary, you'll be back". */
   detents: { medium: 0.5, large: 0.92 },
+  /** The smallest growth (px) worth its own detent. Two stops closer than this
+   *  are the same stop: a sheet whose content already nearly fills the screen
+   *  must not sprout a 12px "expand" that snaps under your finger. */
+  minGrow: 64,
 } as const;
 
 export type SheetDetent = keyof typeof sheetGesture.detents;
+
+/**
+ * THE STOPS a sheet can rest at, as offsets from fully-open, ascending (0 = the
+ * panel's full `large` height, larger = further down the screen).
+ *
+ * EVERY SHEET GROWS. The panel is always laid out at `large` and translated
+ * down to its resting stop, so `0` is always in the set: an upward drag from
+ * any resting height elongates the sheet to full, and the way back down
+ * shortens it again before dismissing. A sheet that was merely content-sized
+ * used to have exactly one stop, so the handle's upward direction did nothing —
+ * the panel rubber-banded and fell back, which reads as "broken", not "no".
+ *
+ * `contentH` is the sheet's natural height (chrome included) — a stop like any
+ * other, and the SHORTEST one wins as the resting height. A sheet holding two
+ * buttons therefore rests two buttons tall whatever it declares: a declared
+ * detent adds a stop, it does not inflate a sheet to fill it. Pass `null` for a
+ * sheet with no natural height (a child that flexes into whatever it is given).
+ */
+export function sheetSnaps(
+  maxH: number,
+  detents?: readonly SheetDetent[],
+  contentH?: number | null,
+): number[] {
+  const raw = [0];
+  for (const d of detents ?? []) raw.push(Math.round(maxH * (1 - sheetGesture.detents[d] / sheetGesture.detents.large)));
+  if (contentH != null) raw.push(maxH - Math.round(contentH));
+  const out: number[] = [];
+  for (const v of raw.map((n) => Math.max(0, Math.min(maxH, n))).sort((a, b) => a - b)) {
+    if (!out.length || v - out[out.length - 1]! >= sheetGesture.minGrow) out.push(v);
+  }
+  return out.length ? out : [0];
+}
 
 /**
  * Where a released sheet drag lands.
@@ -222,6 +265,15 @@ export function resolveSheetRelease(
     if (d < best) { best = d; target = c; }
   }
   return { target, dismiss: target === dismissY };
+}
+
+/**
+ * The velocity a release should actually be decided on, given how long ago the
+ * last movement was sampled. Shared so both clients forget a held gesture's
+ * speed at the same moment.
+ */
+export function releaseVelocity(velocity: number, ageMs: number): number {
+  return ageMs > sheetGesture.stale ? 0 : velocity;
 }
 
 /**
