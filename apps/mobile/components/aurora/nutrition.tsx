@@ -79,6 +79,8 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, tracking, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
+import { AppHeader } from "./app-header";
+import { HubMasthead } from "./hub-masthead";
 import { CoverScreen, type CoverScreenApi } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
@@ -2112,20 +2114,27 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     );
   }
 
+  // THE HEAD OWNS THE GAP BELOW IT. At the tab root the shared masthead sits
+  // above this body and already emits HUB_MASTHEAD.gap.below, so the first
+  // block must contribute none of its own — RN does not collapse margins and
+  // CSS does, so a first block that kept its 16 would sit 16 lower here than
+  // on the web twin while both files "looked" the same.
+  const headGap = root && view === "home" ? 0 : 16;
   const body = (
     <>
-      {/* The head — hub masthead or sub-screen title — is the HERO's now (see
-          the AuroraScreen below). Nothing renders here. */}
+      {/* The head — the app header + hub masthead at the tab root, the hero's
+          rail on every other view — is the SHELL's (see the AuroraScreen
+          below). Nothing renders here. */}
 
       {view === "home" && (signalsError && signals.length === 0 ? (
         /* SIGNALS FAILED TO LOAD — with no cached intake the day summary would
            read "0 eaten / full target remaining" as if nothing were logged yet,
            masking an offline / 500. Show the honest retry card instead. */
-        <FetchError onRetry={() => refetch()} style={{ marginTop: 16 }} />
+        <FetchError onRetry={() => refetch()} style={{ marginTop: headGap }} />
       ) : (<>
       {/* Goal — a card you OPEN (never a live toggle): switching the goal
           recomputes every target, so it must take a deliberate tap. */}
-      <PressScale onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 16 }}>
+      <PressScale onPress={() => setGoalPicker(true)} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.goalLabel")}: ${goalName(goal)}`} style={{ marginTop: headGap, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Glyph name="target" size={20} color={C.ash} strokeWidth={5} />
           <View>
@@ -2771,9 +2780,25 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       onRefresh={load}
       // THE HEAD IS THE SYSTEM'S. The sticky HUD that used to sit here — and
       // that occupied exactly the rail's y — is gone, so Nutrition's screens
-      // take the same hero every other screen does. `root` means this is
-      // showing as a Today hub tab, where Today owns the head.
+      // take the same hero every other screen does.
+      //
+      // AT THE TAB ROOT there is no hero, because a tab root has nothing to pop
+      // and no origin to name. It wears the APP HEADER instead (`top`, below) —
+      // the same lockup row Today wears, since Nutrition is a bottom-nav
+      // destination of its own now rather than a view inside Today's hub.
       hero={root && view === "home" ? undefined : { rank: "title", title: viewTitle, eyebrow: view === "home" ? greeting || undefined : undefined }}
+      // THE TAB ROOT'S CHROME — the shared app header (aurora/app-header.tsx:
+      // avatar, the HYBRID lockup with the day-streak, the bell) over the
+      // shared hub masthead, which is exactly what Today puts above its own
+      // first content row. The masthead carries the greeting and the screen's
+      // name here, the job the hero's rail does on every pushed view. Both are
+      // shared components, so the two tab roots cannot drift.
+      top={root && view === "home" ? (
+        <>
+          <AppHeader />
+          <HubMasthead eyebrow={greeting || null} title={viewTitle} />
+        </>
+      ) : undefined}
       // The Pantry's SEARCH is the rail's trailing slot — the shell's own
       // top-right control, which is where web puts it too. Nothing else on
       // Nutrition claims the accessory, so it is absent everywhere else.

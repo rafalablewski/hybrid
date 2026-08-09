@@ -63,8 +63,6 @@ import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favour
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
-import { useNotifications } from "../../lib/use-notifications";
-import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -103,7 +101,7 @@ import FeelSheet from "../feel-sheet";
 import GroupMark from "./group-mark";
 import SectionSeam from "./section-seam";
 import { TodayTabs } from "./today-tabs";
-import AuroraSideMenu from "./side-menu";
+import { AppHeader } from "./app-header";
 import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
 // THE HUB's other two tabs — the same full screens their own routes render,
@@ -131,7 +129,6 @@ export default function AuroraHome() {
   const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
-  const { name } = useSession();
   const isAthlete = usePersona() !== "casual";
   const insets = useSafeAreaInsets();
   // Logbook mode's "Train your way" slider — one chooser card ≈ 72% of the
@@ -168,11 +165,10 @@ export default function AuroraHome() {
   // home and its job is "what do I do today?", so every visit opens on the
   // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
-  // THE SIDE MENU — the drawer behind the avatar in this header (aurora/
-  // side-menu.tsx). It lives HERE rather than at the root because the header is
-  // what opens it and all three hub tabs render this header, and because its
-  // hub rows switch `tab` in place.
-  const [menuOpen, setMenuOpen] = useState(false);
+  // THE SIDE MENU (aurora/side-menu.tsx) is the app header's own now — it opens
+  // on every tab root that wears the header, not on the hub alone. All this
+  // screen still owns is the hub the drawer's three hub rows switch in place,
+  // which it hands down as `hub`.
   const selectTab = useCallback((id: TodayTabId) => { setTab(id); track("today_tab", { tab: id }); }, []);
   // Whether this visit has LEFT the dashboard: the dashboard body replays the
   // hub dissolve only when it comes BACK from Performance/Feed — on the first
@@ -528,19 +524,9 @@ export default function AuroraHome() {
   }, [sessions, lastReadAt]);
   const goUpgrade = (source: string) => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source }); router.push("/upgrade"); };
 
-  // TODAY HEADER (step-1 redesign) — profile initials + a real notifications
-  // count (the shared notifications feed; never a fabricated number).
-  const initials = useMemo(() => {
-    const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return "·";
-    return (parts[0]![0]! + (parts[1]?.[0] ?? "")).toUpperCase();
-  }, [name]);
-  // The bell badge is the UNREAD count from the shared notifications feed —
-  // the same list the screen renders, so the two cannot disagree, and it
-  // reaches zero once the athlete has read it. It used to be the LENGTH of the
-  // training feed (no social, no feel reads, no read state), a number that only
-  // ever went up.
-  const { unread: notifCount } = useNotifications();
+  // The avatar's initials and the bell's unread count moved INTO the app header
+  // (aurora/app-header.tsx) with the row that draws them — it reads the same
+  // session and the same notifications feed this screen used to.
 
   // The caption date for the daily header.
   const [dateStr, setDateStr] = useState("");
@@ -624,61 +610,15 @@ export default function AuroraHome() {
   // the pills sit in exactly the same place on all three tabs.
   const hubHeader = (
     <>
-      {/* TODAY HEADER — profile, the HYBRID LOCKUP, bell.
-          THREE COLUMNS, FIXED FLANKS. The row used to be `space-between`,
-          which centres its middle child only when both flanks weigh the
-          same — and they never did: one 42dp tile on the left against a
-          streak pill plus the bell on the right, so the brand sat ~69dp
-          left of the screen's centre and slid further with every extra
-          digit. Fixed 42dp sides with a `flex: 1` centre column centres the
-          wordmark BY CONSTRUCTION, whatever the flanks carry.
-          THE STREAK LEFT THE ROW and became the lockup's second line — a
-          hairline mono caption under the wordmark. It survives on all three
-          hub tabs (they render this same header), it can never push the
-          brand off centre again, and it costs NO height: wordmark (19) +
-          caption (~16) still sits inside the 42dp the tiles already set.
-          Mirrors web today.tsx. */}
-      <View style={{ flexDirection: "row", alignItems: "center", height: 42 }}>
-        {/* profile — the avatar opens the SIDE MENU (aurora/side-menu.tsx), the
-            drawer carrying Profile, History, the three hub views, Nutrition and
-            the whole toolbox. It used to jump straight to the You tab; Profile
-            is now the drawer's first row, so nothing was lost and five more
-            destinations were gained from the same tap. */}
-        <Pressable onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel={t("nav.openMenu")} accessibilityState={{ expanded: menuOpen }} style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
-        </Pressable>
-        {/* the lockup — the wordmark, and the day-streak on the line under it */}
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk }}>
-            HYBRID<Text style={{ color: txt(C, C.lime) }}>.</Text>
-          </Text>
-          {acc.streak.current > 0 && (
-            // SPECTRUM: the streak wears the warm terracotta accent (Connect),
-            // pairing with the flame and keeping chartreuse for the primary
-            // action. Same destination as the retired pill — the done sheet.
-            <Pressable
-              onPress={() => setDoneOpen(true)}
-              hitSlop={{ top: 8, bottom: 10, left: 20, right: 20 }}
-              accessibilityRole="button"
-              style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 }}
-            >
-              <AuroraIcon name="flame" size={11} color={txt(C, C.red)} />
-              {/* one line, always: PL/DE carry longer words ("-dniowa seria",
-                  "-Tage-Serie") and a wrapped caption would push the lockup
-                  taller than the tiles beside it. */}
-              <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.red) }}>{acc.streak.current}{t("w.home.today.dayStreak")}</Text>
-            </Pressable>
-          )}
-        </View>
-        <Pressable onPress={() => router.push("/notifications")} accessibilityRole="button" accessibilityLabel={t("w.home.today.notificationsAria")} style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <AuroraIcon name="bell" size={20} color={C.ash} />
-          {notifCount > 0 && (
-            <View style={{ position: "absolute", top: -5, right: -5, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 10, color: "#fff" }}>{notifCount > 9 ? "9+" : notifCount}</Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
+      {/* THE APP HEADER — profile, the HYBRID LOCKUP, bell. The SHARED row
+          (aurora/app-header.tsx), the same component the Nutrition tab root
+          renders, so the app's identity strip cannot be authored twice: every
+          number lives in @hybrid/core app-header.ts and the component sources
+          its own name, streak and unread count. This screen passes only the
+          two things that are TODAY'S: what the streak opens (the done-today
+          sheet, which is day-scoped) and the hub the drawer switches in
+          place. Mirrors web today.tsx. */}
+      <AppHeader onStreak={() => setDoneOpen(true)} hub={{ value: tab, onChange: selectTab }} />
 
       {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the
           profile row and above the calendar. Today is the athlete's home, and
@@ -686,10 +626,6 @@ export default function AuroraHome() {
           it, and the people around it. Registry shared with web
           (@hybrid/core today-tabs.ts). */}
       <TodayTabs value={tab} onChange={selectTab} />
-
-      {/* The side menu rides with the header on every hub tab. It is a Modal,
-          so it sits above the native tab bar rather than inside a scroller. */}
-      <AuroraSideMenu open={menuOpen} onClose={() => setMenuOpen(false)} onHubTab={selectTab} activeHub={tab} />
     </>
   );
 
