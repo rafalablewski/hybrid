@@ -33,9 +33,11 @@ import {
   decisiveFeeling,
   decisiveRead,
   readTrend,
+  undoableRead,
   READ_GATE_KEY,
   READ_TREND_KEY,
   MAX_READS_PER_DAY,
+  READ_UNDO_MIN,
   type PlacedRead,
   type ReadGate,
   planSchedule,
@@ -57,7 +59,7 @@ import {
   type LogbookDay,
 } from "@hybrid/core";
 import { sportForDiscipline } from "@hybrid/core";
-import { fetchAssignments, createCheckin, fetchRoutines, favouriteRoutine, type Assignment } from "../../lib/api";
+import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -1286,7 +1288,7 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
 // own row) and the faces reopen once the gate does: four hours after the last
 // read, or six hours after a session that read was taken in the shadow of,
 // whichever is later. See core/readiness-reads.ts.
-function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSessionEnd, dayReads, gate, isToday, isFuture, dayTs, dayLabel, onPicked }: {
+function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSessionEnd, dayReads: allDayReads, gate, isToday, isFuture, dayTs, dayLabel, onPicked }: {
   C: P;
   /** The answer to THIS card's question, not a blend of the day's four. */
   feeling: ReadinessFeeling | null;
@@ -1328,7 +1330,24 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   // point the server's value wins with no clean-up needed. Counting reads
   // rather than asking "does the row have an answer yet" is what makes this
   // work for the second and third read of a day, where it always did.
-  const [picked, setPicked] = useState<{ day: number | null; rating: number; reads: number } | null>(null);
+  const [picked, setPicked] = useState<{ day: number | null; rating: number; reads: number; at: number } | null>(null);
+  // THE MIS-TAP, TAKEN BACK. The faces are a one-tap target inside a scrolling
+  // card, so the row gets brushed — and every other property of this card made
+  // that permanent: the read is appended (nothing here is ever overwritten), the
+  // gate shuts for four hours behind it, and the reading goes on to scale the
+  // next session's load. So the read just given stays withdrawable for
+  // READ_UNDO_MIN minutes. Not a confirm step — that would tax every honest tap
+  // to catch the rare wrong one, and turn the card's single gesture into two —
+  // and not an edit either: the row goes, the day falls back to whatever read
+  // now governs it, and past the window the honest move is a NEW read.
+  const [undone, setUndone] = useState<{ day: number | null; at: number } | null>(null);
+  // The withdrawn read is gone from the card the moment the server agrees,
+  // rather than at the next refetch — and the filter self-clears when the
+  // refetch lands without it.
+  const dayReads = useMemo(
+    () => (undone && undone.day === dayTs ? allDayReads.filter((r) => r.at !== undone.at) : allDayReads),
+    [allDayReads, undone, dayTs],
+  );
   // WHAT THE READING IS WORTH, ON REQUEST. This used to be ONE grey sentence an
   // ⓘ toggled in and out under the faces — while every figure on the Performance
   // tab opened onto its measured inputs, its arithmetic and its caveat. The
@@ -1430,6 +1449,39 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   // ask and the follow-up trigger. The ask wins whenever it is showing: it is
   // the app asking for something, and the follow-up is a door that can wait.
   const asking = isToday && recoveryDue;
+  // THE WITHDRAWAL WINDOW, LIVE. The stored read is preferred over the optimistic
+  // stamp so the window runs on the server's clock the moment the refetch lands
+  // — and because it reads off the record rather than off this render's state,
+  // the undo survives a remount inside the window instead of vanishing with it.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  const undoStamp = undoableRead(dayReads, nowTick)?.at ?? (justPicked ? picked!.at : null);
+  // Any day you can log on, you can un-log on: a back-logged read is stamped
+  // with the moment it was WRITTEN, so the window measures the tap either way.
+  const undoAt = !isFuture && undoStamp != null && nowTick - undoStamp < READ_UNDO_MIN * 60_000 ? undoStamp : null;
+  // One tick, scheduled for the exact moment the window shuts — the affordance
+  // has to leave on its own, and a card that re-renders every second to work
+  // that out is a card that re-renders every second all day.
+  useEffect(() => {
+    if (undoAt == null) return;
+    const id = setTimeout(() => setNowTick(Date.now()), Math.max(undoAt + READ_UNDO_MIN * 60_000 - Date.now(), 0) + 250);
+    return () => clearTimeout(id);
+  }, [undoAt]);
+  const undo = async () => {
+    if (busy || undoAt == null) return;
+    setBusy(true);
+    const weekOf = isToday || dayTs == null ? new Date().toISOString() : new Date(dayTs + 12 * 3600 * 1000).toISOString();
+    const ok = await undoCheckinRead(weekOf);
+    setBusy(false);
+    if (!ok) return; // a failed withdrawal simply doesn't take — the read stands
+    // The follow-up opened off the tap being withdrawn — leaving it up would go
+    // on asking the rest of a check-in the athlete just said they hadn't started.
+    setFollowUpOpen(false);
+    setPicked(null);
+    setUndone({ day: dayTs, at: undoAt });
+    revalidate.recovery();
+    revalidate.checkins();
+    onPicked();
+  };
   const pick = async (rating: number) => {
     if (locked) return;
     setBusy(true);
@@ -1453,7 +1505,8 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     setBusy(false);
     if (r.ok) {
       // Show the tap NOW; the refetch below confirms it a moment later.
-      setPicked({ day: dayTs, rating, reads: dayReads.length });
+      setPicked({ day: dayTs, rating, reads: dayReads.length, at: Date.now() });
+      setUndone(null);
       revalidate.recovery();
       // The cached check-in row drives this very card — drop it so the athlete's
       // own pick is never the thing that looks stale.
@@ -1475,11 +1528,24 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
         <Text style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.3, color: C.chalk }}>
           {t(shownFeeling ? "w.home.today.glanceReadiness" : "w.recovery.readiness.title")}
         </Text>
-        {/* viewing another day — the date names the scope, no extra copy */}
         {/* Mono meta on the right, per the Explore SectionHead standard: the
-            viewed date on another day, otherwise how long the faces are held.
-            It used to be a pill sharing a row with the reason paragraph. */}
-        {!isToday && dayLabel ? (
+            way back out of a read just given, then the viewed date on another
+            day, then how long the faces are held. It used to be a pill sharing
+            a row with the reason paragraph. */}
+        {undoAt != null ? (
+          /* THE WAY BACK, for as long as it is honest. It takes the head-level
+             control slot (the Explore SectionHead standard) and outranks the
+             cooldown countdown while it shows: an athlete who has just tapped
+             wants to know they can take it back far more than they want to know
+             when the next read opens — and the countdown returns the moment the
+             window shuts. Chalk, not the accent: the accent is the "go" colour,
+             and this undoes a go. */
+          <Pressable onPress={undo} disabled={busy} accessibilityRole="button" accessibilityLabel={t("w.home.today.readUndoA11y")} hitSlop={10} style={{ opacity: busy ? 0.5 : 1 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.chalk }}>
+              {t("w.home.today.readUndo")}
+            </Text>
+          </Pressable>
+        ) : !isToday && dayLabel ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text>
         ) : asking ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>
