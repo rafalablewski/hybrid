@@ -1,5 +1,10 @@
 # 07 — Product, QA, UX & Performance Audit (2026-07)
 
+> **Re-audited 2026-08-09** — every finding below was re-verified against the current
+> codebase and the measured numbers were re-taken. See **§11 Re-audit (2026-08-09)**
+> at the end of this document for per-finding verdicts. Headline: 4 findings fixed,
+> 8 partially fixed, the rest still open — including all seven High bugs.
+
 **Branch:** `claude/fitness-app-audit-wotwti`
 **Scope:** end-to-end product experience across both clients — onboarding, Today/home, workout logger & timers, progress/analytics, nutrition, social, settings, paywall, offline behaviour, notifications, visuals/typography/CSS, accessibility, and performance.
 **Method:** five parallel specialist passes (bugs/functional, consistency, visual/CSS, performance, UX/a11y/product) over the full codebase, followed by an adversarial verification pass — every headline finding below was re-checked against the actual code, and claims that did not survive verification were discarded. Performance numbers are **measured** (production `next build`, gzip of emitted chunks; `expo export --platform ios` for the mobile bundle). Baseline: `@hybrid/core` 1101/1101 tests green, both typechecks clean.
@@ -277,3 +282,183 @@ No third-party analytics/tracking SDKs (the tracker is a no-op shim awaiting a p
 ---
 
 *Verification note: every High finding in this report was confirmed by direct code reading (file:line cited). Findings from specialist passes that failed adversarial re-verification were excluded and are listed in §3's "tested and refuted" paragraph so future audits don't rediscover them.*
+
+---
+
+## 11. Re-audit (2026-08-09)
+
+**Method:** every finding above was re-verified against the current codebase by four
+parallel verification passes (bugs, consistency, visual/a11y, performance), each
+re-locating the cited code rather than trusting the July line numbers. Measured
+numbers were re-taken with the same method as July (production `next build`, gzip of
+emitted chunks; `expo export --platform ios`). Baseline today: `@hybrid/core`
+**3021/3021 tests green** across 184 files (July: 1101), both clients build clean.
+
+### 11.1 Updated measured numbers
+
+| Surface | July 2026 | Aug 2026 | Movement |
+|---|---|---|---|
+| Mobile Hermes bundle | 9.06 MB | **10.27 MB** | **+13%** — no dep removed; Watch-import, nutrition redesign, side menu, hub dock all added screens |
+| Edge middleware | 856 KB | **1.09 MB** | **+27%** — still imports the whole core barrel for `csrfCheck` |
+| `@hybrid/core` barrel chunk | 634 KB raw / 178 KB gz | **1.03 MB raw / 302 KB gz** | **+63% gz** — registry, i18n and plan library all grew; still shipped eagerly, all 3 languages |
+| Total emitted client JS (`.next/static/chunks`) | — | 7.5 MB | new baseline for next audit |
+| recharts in the `/app` entry graph | eager (~155 KB gz) | **evicted** | P0-2 fixed 2026-08-01 (#299) — the one first-paint number that moved the right way |
+| Core test suite | 1101 | 3021 | engines keep their discipline |
+
+Net: the single fixed P0 bought back ~155 KB gz on `/app` first paint, and growth
+elsewhere has already spent it. Every root cause of the bundle findings (no
+`sideEffects: false`, `main: src/index.ts`, `export *` barrels, monolithic
+3-language i18n, whole-barrel middleware import) is byte-for-byte intact, and the
+July recommendation of a CI size budget is still absent — this is now the third
+audit in a row to name it.
+
+### 11.2 High-severity findings — verdicts
+
+**All seven High bugs are still open.** None regressed further; one moved within reach.
+
+| Finding | Verdict | Evidence today |
+|---|---|---|
+| BUG-1 · 50-session cap | **STILL OPEN** | `api/sessions/route.ts` still `take: 50`, no cursor/param; both clients still single-shot; PR detection still reads the truncated array. Named in audits 01, 05, 07 — three strikes. |
+| BUG-2 · unvalidated `blocks` | **STILL OPEN — fix is one import away** | A real, unit-tested validator now exists (`sanitizeSessionBlocks`, `packages/core/src/session-edit.ts:229`, 20+ tests) but is wired into **PATCH only**; the create route keeps the unvalidated `(b.blocks ?? []) as object` with a comment asserting the exact assumption this bug disproves. `migrateBlocks` still throws on a null entry / missing `name`. |
+| BUG-3 · non-idempotent save | STILL OPEN | No client id in `NewSession`, no unique column, server still bare `create`; 15 s abort + offline stash re-post window unchanged. |
+| BUG-4 · interval timer | STILL OPEN | Both clients still count `setInterval` ticks; mobile screen still takes no keep-awake (the dependency is installed and used by the logger); no visibility resync on web. |
+| BUG-5 · cache survives logout | STILL OPEN | `clearClientState()` on both clients still never touches the query cache; repo-wide grep finds zero `queryClient.clear()`; keys still global. |
+| BUG-6 · silent onboarding failure | STILL OPEN | `use-onboarding.ts` still sets `hybrid.onboarded="1"` unconditionally; the wizard still discards `finishOnboarding`'s return. |
+| BUG-7 · trial copy vs billing | STILL OPEN | "7-day free trial" copy unchanged in all 3 languages; billing still `blocked`; web paywall still hardcodes `$9.99` + a local 4-benefit list (core's `FULL_BENEFITS` has 5). Mobile remains the better twin (StoreKit price, shared benefits) but shows the same trial promise. |
+
+### 11.3 Medium/Low bugs (§3) — verdicts
+
+M1 (lb rounding while typing), M2 (prefilled-unbanked sets count as work, both
+clients), M3 (UTC-day check-in dedupe), M4 (paused rest still fires the
+notification — the unmount/rest-change cleanup was added, the pause case still
+missed), M5 (no web offline-finish; still unrecorded in `capabilities.ts` —
+`parity-followups` lists it only as a guest-mode gap), M6 (`expo-notifications`
+plugin still absent from `app.json`, now adjacent to a deliberate
+`with-no-aps-environment.js` push-entitlement strip), L2 (DST-naive buckets), L3
+(sub-30 s runs save `minutes: 0`), L5 (unprimed permission ask; still the only
+permission call in the app, denial still invisible): **all still open.**
+L4 (PATCH guards): **partially fixed** — the body is now shape-validated
+(`sanitizeSessionBlocks` + device sanitizer) but still no `readJsonLimited` and no
+`rateLimit`, and DELETE is unthrottled too.
+
+### 11.4 Inconsistencies (§4) — verdicts
+
+- **Fixed:** dead `Stories` components (both clients now have real importers);
+  `social.ts`'s build-then-split middot string; `profile.tsx` NUL corruption is
+  gone (2 deliberate `join("\0")` sentinel bytes remain on one line — the file is
+  still binary to grep, so the tooling hazard stands even though the corruption
+  bug is closed).
+- **Still open:** full-bleed misses on the nutrition-Recent (mobile), competition,
+  team-monitor and org rails — competition/team-monitor/org are also still a
+  web↔mobile presentation drift (rails vs wrapping rows); operator-surface
+  middots (`slack.ts`, `agent-monthly`, `agents.ts`, admin exercise cues on both
+  clients); mobile Statistics still has zero `t()` calls; web onboarding still has
+  no Skip and mobile Skip still persists nothing (re-nag on every cold start);
+  history date-format divergence; the three-way date-locale strategy (15×
+  `"en-US"`, 34× device locale, 4× lang — still no shared Lang-aware formatter in
+  `format.ts`); Statistics still hardcodes `kg` on both clients; velocity est-1RM
+  units, mixed `history.blocks`/`w.analyze.hist.blocks` keys, "Workout" fallback,
+  6×6 vs 5×5 calendar dots.
+- **Registry drift got worse, in the direction this audit predicted (S4):**
+  `web-code-splitting` is still `planned` while app-shell now carries **53**
+  `dynamic()` screens and recharts is properly isolated — the work shipped, the
+  registry never heard. `mobile-admin` still claims "ALL 19 sections … one-for-one"
+  while web now has **21** admin sections and mobile **18** (missing `email`,
+  `engine`, `onboarding`). The three shipped-with-to-do-phrasing entries are
+  unchanged.
+
+### 11.5 Visual / a11y (§5, §7) — verdicts
+
+- **Fixed:** the mobile gutter is now ONE number — `GUTTER = 12` in
+  `aurora/kit.tsx`, consumed by AuroraScreen, enforced by a real test
+  (`screen-gutter.test.ts`) that also pins web's `--page-pad-x` to the same value.
+  This closed the July "gutter is not one number" finding properly: token + guard.
+- **Largely fixed:** sub-10px text — down from ~98 instances to **5** (a 9.5 streak
+  kicker in `home.tsx`, four SVG axis labels in `exercise-page.tsx`), and a HARD
+  design-token test now bans single-digit `fontSize:` — but its regex exempts
+  decimals (`9.5`) and the JSX prop form (`fontSize={9}`), which is exactly where
+  all 5 survivors sit. Close the two loopholes and this finding dies permanently.
+- **Partially fixed:** reduced motion (web catch-all extended to the Sheet panel;
+  mobile hook now consumed by 20 files including the profile wiggle and workout
+  drift loops — `workout-wrapped.tsx` and `feed-live-strip.tsx` still spin
+  unconditionally); web Sheet (Escape handler added; still no `useDialog`, no
+  focus trap — while six *other* surfaces adopted the hook); login (localized
+  `aria-label`s added; still no `<form>`, Enter still does nothing, no visible
+  labels).
+- **Still open:** Google-Fonts `@import` (zero `next/font` anywhere), px-not-rem
+  (`web-font-rem` still planned), light-mode chart hexes (84 usages of raw dark
+  `LINE_HEX`/`ASH`/`LIME_HEX` across 16 files; no web `paletteFor` equivalent),
+  token-parity test (still prose, not a test), mood-picker 32×32 without hitSlop
+  (the ⋯ button two screens up shows the known fix), desktop-shell first paint on
+  phones, `100vh` (**regressed 12 → 19 sites**), safe-area dead code (still no
+  `viewport-fit=cover`; pill nav still hardcodes its bottom pad), z-index ladder
+  (grew: 59, 65, 71 joined), history rows still bare `<div onClick>`, hardcoded
+  "Close" labels, landing footer still deep-links logged-out visitors into
+  authenticated empty states, legal placeholders untouched.
+- **FetchError rollout (§7): essentially unchanged** — 3 web / 4 mobile screens;
+  `statistics.tsx` still destructures only `sessions` from a hook that has exposed
+  `error` since July, so a failed fetch still reads "log a few workouts". Web
+  social still calls browser `alert()` (10 sites) — mobile has a HARD test banning
+  system alerts; web has no equivalent.
+
+### 11.6 Performance (§6) — verdicts
+
+- **P0-2 FIXED** (2026-08-01, #299): Today no longer imports Nutrition; recharts
+  verified out of the `/app` entry graph; `today.tsx` now documents the rule its
+  own regression created.
+- **P0-1 STILL OPEN:** `elapsed` still ticks at the top of both logger monoliths —
+  which have *grown* (2,309 → 2,650 and 984 → 1,097 lines); still zero `React.memo`
+  in either client's component tree.
+- **P0-3 STILL OPEN, untouched:** no `sideEffects: false`, middleware and `/login`
+  still pull the whole barrel, i18n still monolithic — and the barrel is 63%
+  heavier than when first flagged. Still the single highest-leverage line in the
+  repo.
+- **P1-4 PARTIALLY FIXED (2 of 9):** notifications and check-ins are on TanStack on
+  web; feed, discover, leaderboard, coaches, explore, progress, calendar still
+  `useEffect`+`fetch` (mobile: all nine still unmigrated). The `key={screen}`
+  remount is now *load-bearing for the motion system* (view-transition names), so
+  the tab-revisit refetch needs a cache-first design, not a one-line removal.
+- **P1-5 / P1-6 STILL OPEN:** `/api/me` waterfall byte-identical; every
+  authenticated request still pays the Supabase Auth round trip (no JWKS
+  verification; `jose` isn't even a dependency).
+- **P2:** exercise-catalog-before-sessions waterfall is now *documented as
+  deliberate* in `use-sessions.tsx` (the ordering-guarantee comment) — downgrade to
+  a conscious trade-off; still no `Cache-Control`/ETag on flags/translations/
+  exercises/sessions (server-side `unstable_cache` helps the DB, not the wire);
+  exercise picker search now capped at 60 (good) but A–Z browse still mounts the
+  whole catalog in a `ScrollView`; 10 font variants still block mobile first
+  render; still no `expo-image`.
+- **P3:** all three still open (tour double-import, duplicate `/api/me`,
+  run-track's 250 ms tick for a per-second display).
+- **CI budget: still absent** — `ci.yml` builds the iOS bundle but asserts nothing
+  about its size; no Lighthouse, no gzip budget. Third audit naming it.
+
+### 11.7 What this re-audit changes about the recommendations
+
+The §9 roadmap stands almost verbatim — which is itself the finding. Of the ten
+July quick wins, **two** landed (nutrition `dynamic()`, and the NUL bytes — plus
+the gutter constant from the medium list). The re-prioritized shortlist, cheapest
+first, using only machinery that now already exists:
+
+1. Import `sanitizeSessionBlocks` into `POST /api/sessions` (BUG-2 — the validator
+   and its tests are already merged; this is one import plus one guard on
+   `startedAt`, for which the checkins route already shows the idiom).
+2. `queryClient.clear()` in both `clearClientState()`s (BUG-5).
+3. Check `finishOnboarding`'s `ok` on mobile (BUG-6).
+4. Wire `useDialog` into the Sheet — six other surfaces prove the hook (a11y High).
+5. Destructure `error` in `statistics.tsx` and render the existing `FetchError`.
+6. Close the two loopholes in the sub-10px design-token test (decimals, JSX prop
+   form) and fix the 5 survivors.
+7. `"sideEffects": false` + a deep `csrf` subpath for the middleware (P0-3 stage 1
+   — now worth ~300 KB gz of barrel on every page and 1.09 MB on every request).
+8. The interval-timer wall-clock rewrite (BUG-4) — unchanged advice, two files.
+9. BUG-1/BUG-3 remain the most important *correctness* investments and still need
+   real design (cursor pagination + server aggregates; client id + upsert).
+10. Add the CI size budget before the next feature lands, not after.
+
+One process note: the July systemic patterns S3 ("correct idioms exist; adoption is
+the gap") and S4 ("the registry drifts in both directions") both re-confirmed
+*with new instances* this cycle — `sanitizeSessionBlocks`-on-PATCH-only is S3 in
+miniature, and `web-code-splitting`-still-planned is S4 exactly. The two guards
+that DID land (gutter test, font-size test) each froze their finding permanently,
+which is the repo's own proof that S3's "sweep + guard" prescription works.

@@ -7,6 +7,14 @@ $1B+ outcome, not a lifestyle business. Nothing here is polite.
 *Date: 27 July 2026. Sources: the repository at commit `37c9b14`, plus public
 market research (linked at the end).*
 
+> **Re-audited 9 August 2026** — see **PART XI — Re-audit (2026-08-09)** at the end.
+> Two corrections to this document's own facts (the "5 days" clock was a
+> shallow-clone artifact; the real history starts 2026-06-02), and a scorecard of
+> which recommendations were taken. Short version: the two 10x bets were taken
+> (Verified Record tiers 0–2, Adaptive MRV) plus the Program Efficacy Index; the
+> Kill List, the four-destination nav, and everything that touches money,
+> analytics, or the public App Store were not.
+
 ---
 
 ## 0. The one fact that reframes everything else
@@ -1563,3 +1571,174 @@ five deleting, and the next twelve months building four things instead of 279.
 - [Perch raises $4M for 3D strength tracking (Fitt Insider)](https://insider.fitt.co/perch-raises-4m-for-3d-strength-tracking/)
 - [VBT buyer's guide 2026 — camera vs LPT systems (Output Sports)](https://www.outputsports.com/blog/buyers-guide-to-velocity-based-training-vbt-in-2025)
 - [Best VBT devices 2026 (Vitruve)](https://vitruve.fit/blog/vbt-devices/)
+
+---
+
+# PART XI — Re-audit (2026-08-09)
+
+*Same repository, thirteen days later, at HEAD `5a1cfde`. Verified by direct code
+reading and the capabilities registry — not the founder's account of it.*
+
+## 11.0 Corrections to this document's own facts
+
+Two numbers in §0 were wrong when written, and the record should say so:
+
+- **The "5 days" clock was a shallow-clone artifact.** The repository's real first
+  commit is **2026-06-02** ("Initial commit" → "Sprint 0: Turborepo monorepo"), and
+  at this document's own cited commit `37c9b14` (2026-07-27) there were already
+  **1,178 commits over ~8 weeks**, not 160 over 5 days. The rhetorical point
+  survives at reduced voltage — it was 8 weeks of ferocious supply-side shipping
+  into a product with no public users, not 5 days — but "56 capabilities per day"
+  was wrong by roughly an order of magnitude.
+- The line counts quoted for individual screens have all since grown and are
+  restated below.
+
+## 11.1 The §0 table, re-measured
+
+| Measure | 27 Jul 2026 (as written) | 9 Aug 2026 (measured) |
+|---|---|---|
+| First commit | ~~2026-07-22~~ | **2026-06-02** (corrected) |
+| Total elapsed | ~~5 days~~ | **~10 weeks** |
+| Commits | 160 | **1,569** (Claude 1,263 / founder 302 / dependabot 4) |
+| Lines of TS/TSX | ~135,000 | **~229,000** |
+| Prisma models | 67 | **73** |
+| Nav destinations | 34 | **43** (7 groups; 4 of the 12 analyze entries are `promotedTo` folds, so 8 are menu-reachable) |
+| Capabilities `shipped` | 279 | **429** |
+| Capabilities `blocked` | 30 | **29** |
+| Capabilities `planned` | — | **47** |
+| Core tests | — | **3,021 / 3,021 green** (184 files) |
+| Real users | 0 | **0 public** (internal TestFlight only) |
+| Paying customers | 0 | **0 — billing still cannot charge a card** |
+| Analytics provider | none | **still none** (`funnel-analytics` blocked; instrumentation call-sites exist, shim is a no-op) |
+| Row-level security | not enabled | **ENABLED in production** (`schema-tenant-isolation-rls` shipped; sql-pending.sql applied Jul 2026, plus five policy-escalation fixes) |
+
+The capability count grew by 150 in 13 days while users stayed at zero — §0's
+diagnosis is not only intact, the ratio got worse. What did materially change is
+*which* capabilities they were, and that is the story below.
+
+## 11.2 Recommendations taken (genuinely, verifiably)
+
+1. **10x-1, Verified Strength Record — tiers 0–2 shipped.** `attestation.ts`
+   declares the full 0–5 ladder (tiers 3–5 present but `live: false`); tier 2
+   witness co-signing is real (`RecordAttestation` table applied in production,
+   ask-by-@handle API, co-sign inbox on the feed, server-side claim snapshot).
+   Honest scope: no cryptographic signing, **no public read API yet** (the registry
+   itself names it as NEXT — "the institutional wedge"), no badges on share cards.
+   A social co-sign feature today; the registry's language shows the strategic
+   intent stuck.
+2. **10x-2, Adaptive MRV — shipped, and it is the strongest thing built since
+   July.** The population table is now layer 1 of a 4-layer resolver
+   (`landmark-resolve.ts`): POPULATION → PROFILE (training age, chronological age,
+   body mass, sleep, stress, deficit — each factor returned with multiplier +
+   source + confidence) → OBSERVED (`landmark-adapt.ts` — the ceiling corrected by
+   what actually happened: e1RM drift, fatigue, soreness; bounded ±35%, <2
+   qualifying weeks returns the prior at zero confidence) → MANUAL overrides.
+   Plus `landmark-replay`, a no-lookahead auditor whose last point is pinned by
+   test to equal the number on screen. This is the MacroFactor move, actually
+   made. Gap: the athlete profile it feeds is per-device only
+   (`volume-profile-server-sync` planned), so the estimator's inputs don't follow
+   the athlete.
+3. **10x-5, Program Efficacy Index — v1 shipped, public.** `program-efficacy.ts`:
+   median e1RM delta over closed 12-week enrollments, adherence-banded, dropout
+   published, k-anonymity floor of 5 with suppression. Served by an
+   unauthenticated CDN-cached `GET /api/efficacy` and a public `/programs` page
+   with full methodology. **The first thing in the repo built to be crawled** —
+   the content engine this document asked for. Caveats: n is currently whatever a
+   zero-user product produces; no sitemap/robots/OG yet.
+4. **Guest-first is now the default** (`guest-first-workout` shipped): no-account
+   first workout, offline persistence, `flushGuestSessions()` on sign-in. §7.5's
+   headline ask, done.
+5. **Plate calculator exists** (`plates.ts`, tested, per-side hint in the logger —
+   default off).
+6. **Theme churn was cut**: themes reduced to dark/light, the Classic UI template
+   deleted (Aurora is the only one). Partial credit against §7.4.
+7. **Social schema is on** — sql ran in production (Jul 2026); feed/follow/kudos/
+   leaderboard serve real tables, and the feed was re-founded since (card system,
+   server-side ranking, one-post-per-workout, live "now training" presence).
+8. **RLS is enabled in production** — with the policy-logic escalations found and
+   fixed by the follow-up security audit (self-escalate-to-ADMIN, forged-ACTIVE
+   CoachLink, and three more).
+9. **Today was restructured** — from one 17-module scroll into a 3-tab hub
+   (Dashboard / Performance / Feed) with four named clusters; the Dashboard tab
+   is down to ~12 modules. Not the "one card + one button" this document asked
+   for, but a real IA consolidation in the asked direction. (The nav itself went
+   the other way — see below.)
+
+## 11.3 Recommendations NOT taken
+
+1. **The Kill List was not executed. Zero items deleted.** Tactical, Longevity,
+   Talent Graph, Org Graph, Competition Intelligence, Video Intelligence, Force
+   plate, the email platform, the agent org, the financials console, and the full
+   CMS are all still shipped and maintained; the nutrition stack was not killed
+   but **massively expanded** (~30 shipped `nutrition-*` capabilities, its own tab
+   on the bottom bar, public product pages). i18n is still EN/PL/DE. The one
+   partial: themes (above).
+2. **Nav did not collapse to 4 — it grew from 34 to 43 destinations.** The analyze
+   group went from 11 to 12 (4 folded via `promotedTo`, so menu-reachable analyze
+   is 8 — real consolidation motion, wrong direction on net).
+3. **Still cannot take money.** No Stripe account; all four billing capabilities
+   blocked. The IAP side advanced materially (StoreKit 2 server verification,
+   Apple root certs, native client, compliance hardening, Apple Developer account
+   obtained) — but nothing can charge a card today, thirteen days after this
+   document called it "days" of work.
+4. **Still cannot measure.** No analytics provider connected. The upgrade-funnel
+   call-sites exist and fire into a no-op shim.
+5. **Still not on the App Store.** Internal TestFlight only (real pipeline —
+   GitHub-Actions + codemagic-cli-tools, off EAS entirely; build 1.0.0 live on
+   device). No external beta, no review submission, no listing.
+6. **Import from Hevy/Strong/CSV — not built** (`history-import` planned). The
+   registry itself now calls it "TABLE STAKES + the switching mechanic". Still
+   the highest-leverage two weeks on the board, still not scheduled.
+7. **Live Activity rest timer — not built** (planned). Push notifications —
+   still blocked, and the `expo-notifications` plugin was *removed* from
+   `app.json` to unblock IAP-era builds (the ASC-API-key auth can't provision the
+   push entitlement).
+8. **Watch/HealthKit went from "0" to "built, unverified"** — a real watchOS
+   glance app, a WidgetKit extension, HealthKit sync, and the device-truth
+   projection (a matched recording overrides typed numbers in every engine — a
+   genuine product stance). All four wait on the same ops step: one
+   `with_targets=true` workflow run and an on-device check. The gap is now ops,
+   not engineering — which makes it more damning, not less.
+9. **Pricing unchanged**: web still hardcodes $9.99 (mobile now shows the live
+   StoreKit price); the $14.99–19.99 repositioning was not taken; the "7-day free
+   trial" copy still promises what billing cannot deliver.
+10. **The plan library did not move: still 6 programs against 19 goals** — 1,570
+    lines, zero growth in six weeks, while ~880 commits landed elsewhere. For a
+    document arguing "the program is the acquisition channel," this is the most
+    conspicuous standing-still number in the repo.
+
+## 11.4 What this does to the argument
+
+The panel's verdict framework survives contact with the update almost unchanged,
+with one honest amendment.
+
+**The amendment:** §2.1 said the moats were "moat-shaped holes" and everything
+differentiated was buried. That is less true now. Adaptive MRV is a real,
+shipped, tested estimator that no competitor has; the Efficacy Index is a real
+public data asset with correct statistics discipline; the Verified Record's
+witness tier is live. The four genuine assets this document counted are now
+seven. The engineering judgment inside the product got *better* at exactly the
+things this document said mattered.
+
+**What did not change is the thesis of §0:** the feedback loop has still never
+closed. Zero public users, zero charged cards, zero measured retention, zero
+analytics — after a re-audit window in which 150 more capabilities shipped. The
+company keeps choosing, with perfect consistency, the work that can be done
+without talking to the market: even the recommendations it took are the
+*buildable* ones (10x features, guest mode, RLS), and the ones it skipped are
+exactly the ones that require an external counterparty — a Stripe account, an
+App Store review, an analytics vendor, a deletion decision. The operating
+pattern the a16z memo in `reference/panel-evaluation-2026-07.md` called the red
+flag is now measurable across two audit cycles.
+
+**The 30-day list from PART VIII, re-scored:** items 5 (kill list), 6 (nav to
+4), 11 (positioning sentence — still absent from the product) not done; items 1
+(RLS) and 10 (social schema) **done**; items 2 (analytics), 3 (billing), 4 (App
+Store), 9 (import) not done; item 7 (Today as one card) partially; item 8
+(logger: one mode / ghost values / numpad / Live Activity) — ghost values yes,
+the rest no. **Score: 2.5 of 11**, and the 2.5 are the ones that needed only a
+SQL editor.
+
+The sentence at the end of this document stands. The record is being built; the
+things everything-else-has-to-read it through — a store listing, a price, a
+cohort — still do not exist.
