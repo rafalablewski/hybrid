@@ -44,6 +44,22 @@ JS-only changes can instead ship over-the-air via EAS Update (`eas-update`).
   Postgres ports are blocked**. So the agent CANNOT run migrations or query the
   DB directly — hand the user SQL to run in the Supabase SQL Editor instead.
 
+## RULE: Expo native modules move as ONE SET (always)
+Never `pnpm add expo-…`. It installs npm-latest, which is routinely a release
+AHEAD of the installed SDK — and every Expo module is Swift compiled against
+`ExpoModulesCore` and shipped as its own framework, so a module built against a
+newer core than the app links resolves fine at build time and then **aborts in
+dyld on the phone, before the first frame**. That is exactly how build 82223058
+shipped dead: `expo-camera` declared `~56.0.8` while `expo@56.0.8` pins
+`~56.0.7`, and camera 56.0.8 wanted core 56.0.16 against the app's 56.0.14.
+
+The version set is `expo/bundledNativeModules.json` — the versions Expo builds
+and tests together for the installed `expo`. Add and upgrade with
+`npx expo install <pkg>` / `--fix`, and when bumping `expo`, bump the whole set
+with it. `apps/mobile/lib/expo-alignment.test.ts` enforces this (and gates the
+TestFlight workflow); non-Expo packages may diverge, but only via that file's
+`DELIBERATE` map, with the reason written down.
+
 ## RULE: web ↔ mobile parity (always)
 This is ONE product on two clients. Whatever ships for **web must also ship for
 mobile**, and whatever ships for **mobile must also ship for web** — features,

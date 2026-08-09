@@ -64,7 +64,7 @@ function Shell() {
       {/* SCREEN TRANSITIONS. Direction encodes hierarchy — the shared rule in
           @hybrid/core (motion.ts `screenTransition`), which the web shell reads
           too, so the two clients can't disagree about what a given move means.
-          These options are rendered NATIVELY by react-native-screens (4.25), so
+          These options are rendered NATIVELY by react-native-screens, so
           the travel runs off the JS thread; only the content entrance
           (useEntrance) stays on the JS driver, deliberately — see lib/ui.tsx.
 
