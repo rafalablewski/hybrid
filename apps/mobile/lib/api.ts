@@ -236,6 +236,28 @@ export async function logBodyweight(weightKg: number): Promise<boolean> {
   }
 }
 
+// ── COPY A DAY ─────────────────────────────────────────────────────────────
+// Write several diary entries in one round-trip. Each goes through the SAME
+// server-side writer a hand-typed entry uses, so a copied entry is not a special
+// kind of entry. The batch is deliberately not transactional (a FoodLog row is
+// best-effort by design), so the result reports how many actually landed.
+export async function copyFoodLogs(
+  entries: Record<string, unknown>[],
+): Promise<{ written: number; failed: number; ok: boolean }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log/batch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ entries }),
+    });
+    if (!res.ok) return { written: 0, failed: entries.length, ok: false };
+    const data = (await res.json()) as { written?: number; failed?: number };
+    return { written: data.written ?? 0, failed: data.failed ?? 0, ok: true };
+  } catch {
+    return { written: 0, failed: entries.length, ok: false };
+  }
+}
+
 // ── YOUR RECIPES ───────────────────────────────────────────────────────────
 // A recipe the athlete authored. Its macros are DERIVED from its ingredients
 // (@hybrid/core user-recipes.ts), so nothing on the wire carries a recipe-level

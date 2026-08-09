@@ -13,6 +13,7 @@ import {
   adaptiveTargets,
   fuelToday, hydrationToday,
   canSaveRecipe, emptyUserRecipe, recipeToLog, type UserRecipe, type RecipeSource,
+  type CopyPlan, type CopyableEntry,
   estimateMaintenance,
   dailyNutrition,
   weightTrend,
@@ -55,6 +56,7 @@ import {
   fetchFoodLogs, createFoodLog, updateFoodLogQty, scaleFoodLog, deleteFoodLog,
   fetchWaterLogs, logWater, deleteSignal,
   fetchUserRecipes, saveUserRecipe as apiSaveUserRecipe, deleteUserRecipe as apiDeleteUserRecipe,
+  copyFoodLogs,
   type SavedMealRow, type FoodProductRow, type FoodLogRow, type WaterLog as WaterLogRow,
 } from "../../lib/api";
 import { useSignalsQuery, useSessionsQuery, useRevalidate } from "../../lib/queries";
@@ -66,7 +68,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, tracking, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AField, APill, AHeading, DockRail, DockChip, GUTTER, RADIUS, CARD_PAD, Ring, withAlpha, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { CoverScreen, COVER_GUTTER, type CoverScreenApi } from "../plan-hero";
@@ -78,6 +80,7 @@ import { NutritionHubBento } from "./nutrition-hub";
 import BodyProgress from "./body-progress";
 import WaterCard from "./water";
 import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type RecipeRow } from "./user-recipes";
+import CopyDaySheet from "./copy-day";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -721,6 +724,30 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       qty: draft.qty,
     });
     if (ok) { setUserRecipeMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
+  };
+
+  // ── COPY A DAY — "yesterday's breakfast is today's breakfast" ────────────
+  // The plan comes from @hybrid/core (copyDayPlan) and is written by the batch
+  // endpoint, which runs each entry through the SAME writer a hand-typed entry
+  // uses — so a copied day is not a special kind of day.
+  const [copySheet, setCopySheet] = useState(false);
+  const [copyBusy, setCopyBusy] = useState(false);
+  const [copyMsg, setCopyMsg] = useState("");
+  const runCopy = async (plan: CopyPlan) => {
+    setCopyBusy(true); setCopyMsg("");
+    const { written, failed, ok } = await copyFoodLogs(plan.entries as unknown as Record<string, unknown>[]);
+    setCopyBusy(false);
+    if (!ok) { setCopyMsg(t("w.recovery.nutrition.copyFailed")); return; }
+    // A partial write is reported as a partial write — the batch is
+    // deliberately not transactional, so claiming a clean copy when two rows
+    // fell over would be a lie the diary contradicts.
+    setCopyMsg(
+      failed > 0
+        ? t("w.recovery.nutrition.copyPartial").replace("{n}", String(written)).replace("{f}", String(failed))
+        : t("w.recovery.nutrition.copyDone").replace("{n}", String(written)),
+    );
+    loadLogs(); refetch(); revalidate.recovery();
+    if (failed === 0) setCopySheet(false);
   };
 
   const editLogQty = async (id: string, qty: number) => {
@@ -2694,6 +2721,21 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           </View>
           <Pressable onPress={() => shiftDiaryDay(1)} disabled={isToday} accessibilityLabel={t("w.recovery.nutrition.nextDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><IChevRight size={16} color={isToday ? C.line : C.chalk} /></Pressable>
         </View>
+        {/* COPY A DAY — on the diary's day header, because this is the one
+            screen where "a day" is the subject rather than the container. A
+            quiet bare control, not a filled button: it is one of several things
+            you can do to the day on display, not the day's purpose. */}
+        <Pressable
+          onPress={() => { setCopyMsg(""); setCopySheet(true); }}
+          accessibilityRole="button"
+          accessibilityLabel={t("w.recovery.nutrition.copyDay")}
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingTop: 12, marginTop: 4 }}
+        >
+          <AuroraIcon name="copy" size={14} color={C.ash} />
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+            {t("w.recovery.nutrition.copyDay")}
+          </Text>
+        </Pressable>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: 34, fontWeight: "700", color: C.chalk }}>{Math.round(daySummary.kcal)}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>kcal{targets.kcal ? ` / ${Math.round(targets.kcal)}` : ""}</Text>
@@ -2804,6 +2846,18 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </View>
       </ACard>
       )}
+
+      <CopyDaySheet
+        visible={copySheet}
+        onClose={() => setCopySheet(false)}
+        logs={logs as unknown as CopyableEntry[]}
+        to={diaryDay}
+        toLabel={diaryDay === localTodayKey() ? t("w.recovery.nutrition.todaysMeals") : diaryDayLabel}
+        partLabel={partLabel}
+        onCopy={runCopy}
+        busy={copyBusy}
+        message={copyMsg}
+      />
 
       <Sheet visible={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
         <View style={{ gap: 10 }}>

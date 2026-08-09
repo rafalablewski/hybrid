@@ -14,6 +14,7 @@ import {
   recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats, recipeCookView, DOCK_RAIL,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   canSaveRecipe, emptyUserRecipe, recipeToLog, type UserRecipe, type RecipeSource,
+  type CopyPlan, type CopyableEntry,
   nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods, kj,
@@ -39,6 +40,7 @@ import { NutritionHubBento } from "./nutrition-hub";
 import BodyProgress from "./body-progress";
 import WaterCard from "./water";
 import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type RecipeRow } from "./user-recipes";
+import CopyDaySheet from "./copy-day";
 
 // The Create Food form's blank state — one constant, so the reset paths can
 // never fall out of step with the fields the form actually has.
@@ -1012,6 +1014,39 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       load();
     }
   }, [waterLogs, load, revalidate]);
+
+  // ── COPY A DAY — "yesterday's breakfast is today's breakfast" ────────────
+  // The plan comes from @hybrid/core (copyDayPlan) and is written by the batch
+  // endpoint, which runs each entry through the SAME writer a hand-typed entry
+  // uses — so a copied day is not a special kind of day.
+  const [copySheet, setCopySheet] = useState(false);
+  const [copyBusy, setCopyBusy] = useState(false);
+  const [copyMsg, setCopyMsg] = useState("");
+  const runCopy = useCallback(async (plan: CopyPlan) => {
+    setCopyBusy(true); setCopyMsg("");
+    try {
+      const res = await fetch("/api/nutrition/log/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries: plan.entries }),
+      });
+      if (!res.ok) { setCopyMsg(t("w.recovery.nutrition.copyFailed")); return; }
+      const { written, failed } = (await res.json()) as { written: number; failed: number };
+      // A partial write is reported as a partial write. The batch is
+      // deliberately not transactional (see the route), so claiming a clean
+      // copy when two rows fell over would be a lie the diary contradicts.
+      setCopyMsg(
+        failed > 0
+          ? t("w.recovery.nutrition.copyPartial").replace("{n}", String(written)).replace("{f}", String(failed))
+          : t("w.recovery.nutrition.copyDone").replace("{n}", String(written)),
+      );
+      await load(); await loadLogs(); revalidate.recovery();
+      if (failed === 0) setCopySheet(false);
+    } catch {
+      setCopyMsg(t("w.recovery.nutrition.copyFailed"));
+    } finally { setCopyBusy(false); }
+  }, [load, loadLogs, revalidate, t]);
+
   // Today's energy grouped by meal (source = meal type) for the hub sections.
   const mealTotals = useMemo(() => {
     const todayKey = localTodayKey();
@@ -2222,6 +2257,18 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         </div>
       </Sheet>
 
+      <CopyDaySheet
+        open={copySheet}
+        onClose={() => setCopySheet(false)}
+        logs={logs as CopyableEntry[]}
+        to={diaryDay}
+        toLabel={diaryDay === localTodayKey() ? t("w.recovery.nutrition.todaysMeals") : diaryDayLabel}
+        partLabel={partLabel}
+        onCopy={runCopy}
+        busy={copyBusy}
+        message={copyMsg}
+      />
+
       {/* Portion & quantity — serving × quantity stepper, macros scale live. */}
       {renderPortionSheet()}
 
@@ -2700,6 +2747,18 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           </div>
           <button className="pressable" onClick={() => shiftDiaryDay(1)} disabled={isToday} aria-label={t("w.recovery.nutrition.nextDay")} style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: isToday ? C("line") : C("chalk"), cursor: isToday ? "default" : "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><IChevRight size={16} color={isToday ? C("line") : C("chalk")} /></button>
         </div>
+        {/* COPY A DAY — on the diary's day header, because this is the one
+            screen where "a day" is the subject rather than the container. A
+            quiet bare control, not a filled button: it is one of several things
+            you can do to the day on display, not the day's purpose. */}
+        <button
+          className="pressable"
+          onClick={() => { setCopyMsg(""); setCopySheet(true); }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, width: "100%", background: "none", border: "none", padding: "12px 0 0", marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}
+        >
+          <AuroraIcon name="copy" size={14} color={C("ash")} />
+          {t("w.recovery.nutrition.copyDay")}
+        </button>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 16 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 34, fontWeight: 700, color: C("chalk"), fontVariantNumeric: "tabular-nums", letterSpacing: "-.02em" }}>{Math.round(daySummary.kcal)}</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>kcal{targets.kcal ? ` / ${Math.round(targets.kcal)}` : ""}</span>
