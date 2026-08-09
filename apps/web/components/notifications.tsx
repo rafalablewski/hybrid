@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { fs, space, relativeTime, type ActivityAccent, type NotifItem } from "@hybrid/core";
+import { fs, space, relativeTime, splitNotifications, type ActivityAccent, type NotifItem } from "@hybrid/core";
 import { AuroraIcon } from "@/components/aurora/icons";
+import SwipeRow from "@/components/swipe-row";
+import { BLUE } from "@/lib/ui";
 import { useTemplate } from "@/lib/use-template";
 import { useLang } from "@/lib/i18n";
 import { useNotifications } from "@/lib/use-notifications";
-import { readAllNotifications, readNotification } from "@/lib/notif-read";
+import { dismissNotification, readAllNotifications, readNotification, sweepNotifications, unreadNotification } from "@/lib/notif-read";
 
 /**
  * Notifications / activity (web) — web parity of the mobile feed, running the
@@ -15,7 +17,7 @@ import { readAllNotifications, readNotification } from "@/lib/notif-read";
  * coach assignments, social events AND the feel reads the app is waiting on.
  * Honest empty state when there's nothing (or when signed out).
  *
- * THREE THINGS THIS SCREEN NOW DOES THAT IT DIDN'T:
+ * THREE THINGS THIS SCREEN DOES THAT IT DIDN'T:
  *   • it is LIVE — `useNotifications` polls and revalidates on focus, so a
  *     kudos or an approval that lands while you're looking at it appears with
  *     no reload, and the header bell counts the same list;
@@ -25,6 +27,18 @@ import { readAllNotifications, readNotification } from "@/lib/notif-read";
  *   • it REMINDS YOU TO LOG HOW YOU FEEL — the immediate and recovery reads
  *     from feel-schedule ride at the top of the list, and route to the place
  *     that can answer them.
+ *
+ * TWO SECTIONS AND TWO GESTURES (the Aug 2026 pass). A read row used to sit
+ * exactly where it had always sat, in one flat list, greyed — so a fortnight of
+ * training pushed the one row that wanted something off the bottom of the
+ * screen. What has been dealt with now falls into SEEN, under New, and stays
+ * there. The line is drawn by the VISIT, not by `read` (@hybrid/core
+ * splitNotifications): rows you arrived to hold their place while you read
+ * them, because the sweep fires a second and a half after the screen opens and
+ * a list that reshuffles under the reader is worse than one that doesn't sort.
+ * Each row is a SwipeRow — LEFT deletes it (a tombstone in the read state,
+ * since the list is a projection with no table to delete from), RIGHT puts it
+ * back to unread and climbs it into New.
  *
  * Works in BOTH templates: `embedded` (in the app-shell, reached from the
  * sidebar / ⌘K / the header bell) drops the full-screen chrome + back button;
@@ -66,7 +80,9 @@ export default function NotificationsScreen({
   useEffect(() => {
     if (!unread) return;
     const snapshot = items.map((i) => ({ id: i.id, at: i.at }));
-    const timer = window.setTimeout(() => readAllNotifications(snapshot), SWEEP_MS);
+    // The PASSIVE sweep, which is why it isn't readAllNotifications: a row the
+    // athlete has just swiped back to unread must survive it.
+    const timer = window.setTimeout(() => sweepNotifications(snapshot), SWEEP_MS);
     return () => window.clearTimeout(timer);
   }, [unread, items]);
 
@@ -102,6 +118,81 @@ export default function NotificationsScreen({
 
   const C = (v: string) => `var(--color-${v})`;
   const accent = (a: ActivityAccent) => C(a);
+
+  // New versus Seen. The rule is shared with mobile (@hybrid/core) because it
+  // is a rule and not a filter — see splitNotifications for why `read` alone
+  // can't draw the line.
+  const { fresh, seen } = splitNotifications(items, wasNew.current);
+
+  const row = (it: NotifItem): ReactNode => {
+    const isNew = wasNew.current.has(it.id);
+    const col = accent(it.accent);
+    const initial = (it.social?.actor?.displayName || it.social?.actor?.handle || "·").slice(0, 1).toUpperCase();
+    return (
+      <SwipeRow
+        key={it.id}
+        radius={r.field}
+        margin="0 0 14px"
+        background={C("ink")}
+        label={t("common.delete")}
+        onDelete={() => dismissNotification(it.id)}
+        leading={{ label: t("notif.markUnread"), color: BLUE, onAction: () => unreadNotification(it.id) }}
+      >
+        <div
+          className="pressable"
+          role="button"
+          tabIndex={0}
+          onClick={() => open(it)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(it); } }}
+          style={{ display: "flex", gap: space.md, alignItems: "center", cursor: "pointer", textAlign: "left" }}
+        >
+          <div style={{ width: 46, height: 46, borderRadius: r.field, background: `color-mix(in srgb, ${col} ${isNew ? 18 : 10}%, transparent)`, display: "grid", placeItems: "center", flexShrink: 0, fontFamily: "var(--font-display)", fontWeight: 800, color: col }}>
+            {it.source === "social" ? initial : <AuroraIcon name={it.icon} size={22} color={col} />}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Unread carries WEIGHT and full chalk; read recedes to ash.
+                The state is legible before the dot is even noticed. */}
+            <div style={{ fontWeight: isNew ? 800 : 600, fontSize: fs.bodyLg, lineHeight: 1.3, color: isNew ? C("chalk") : C("ash") }}>
+              {it.titleKey ? t(it.titleKey) : it.title}
+            </div>
+            {it.detail && (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.detail}</div>
+            )}
+            {it.actionable && (
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button className="pressable" onClick={(e) => { e.stopPropagation(); void respond(it, true); }} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("lime")}`, background: C("lime"), color: "var(--on-accent)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{it.social?.kind === "enroll_request" ? "Accept" : "Approve"}</button>
+                <button className="pressable" onClick={(e) => { e.stopPropagation(); void respond(it, false); }} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{it.social?.kind === "enroll_request" ? "Decline" : "Deny"}</button>
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{relativeTime(it.at)}</span>
+            {/* Semantic, not decoration: this row is unread. It sits on
+                the TRAILING edge so it can't read as a header marker. */}
+            {isNew && <span aria-label={t("notif.new")} style={{ width: 7, height: 7, borderRadius: 999, background: C("lime") }} />}
+          </div>
+        </div>
+      </SwipeRow>
+    );
+  };
+
+  /** A section head in the Explore SectionHead anatomy — display face on the
+   *  left, the meta or the head-level CONTROL on the right, no marker. */
+  const section = (title: string, meta: ReactNode, rows: NotifItem[]): ReactNode =>
+    rows.length === 0 ? null : (
+      <div style={{ marginTop: 20 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: space.ms, marginBottom: 12 }}>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
+          {typeof meta === "string" ? (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), textTransform: "uppercase", letterSpacing: ".08em" }}>{meta}</span>
+          ) : (
+            meta
+          )}
+        </div>
+        {rows.map(row)}
+      </div>
+    );
+
   const outer: CSSProperties = embedded
     ? { color: C("chalk"), fontFamily: "var(--font-display)", display: "flex", justifyContent: "center" }
     : { minHeight: "100vh", background: C("ink"), color: C("chalk"), fontFamily: "var(--font-display)", display: "flex", justifyContent: "center", padding: "32px 22px" };
@@ -123,69 +214,32 @@ export default function NotificationsScreen({
           )}
         </div>
 
-        {/* Mark-all-read rides the head's right edge in the metadata voice —
-            the Explore SectionHead standard, not a button bar. */}
-        {unread > 0 && (
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-            <button
-              className="pressable"
-              onClick={() => readAllNotifications(items.map((i) => ({ id: i.id, at: i.at })))}
-              style={{ background: "transparent", border: "none", padding: 0, color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", cursor: "pointer" }}
-            >
-              {t("notif.markAllRead")}
-            </button>
-          </div>
-        )}
-
         {items.length === 0 ? (
           <div style={{ marginTop: 22, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: r.card, padding: 20, color: C("ash"), fontSize: fs.bodyLg, lineHeight: 1.5 }}>
             {t("w.account.notifications.empty")}
           </div>
         ) : (
-          <div style={{ marginTop: 18 }}>
-            {items.map((it) => {
-              const isNew = wasNew.current.has(it.id);
-              const col = accent(it.accent);
-              const initial = (it.social?.actor?.displayName || it.social?.actor?.handle || "·").slice(0, 1).toUpperCase();
-              return (
-                <div
-                  key={it.id}
+          <>
+            {/* The gestures are invisible until you try them, so the screen says
+                so once — the same mono aside History uses over its swipe cards. */}
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), textAlign: "right", marginTop: 10 }}>{t("notif.swipeHint")}</div>
+            {section(
+              t("notif.new"),
+              // Mark-all-read rides the head's right slot in the metadata voice —
+              // the Explore SectionHead standard, not a button bar.
+              unread > 0 ? (
+                <button
                   className="pressable"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => open(it)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(it); } }}
-                  style={{ display: "flex", gap: space.md, alignItems: "center", marginBottom: 14, cursor: "pointer", textAlign: "left" }}
+                  onClick={() => readAllNotifications(items.map((i) => ({ id: i.id, at: i.at })))}
+                  style={{ background: "transparent", border: "none", padding: 0, color: C("ash"), fontFamily: "var(--font-mono)", fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".08em", cursor: "pointer" }}
                 >
-                  <div style={{ width: 46, height: 46, borderRadius: r.field, background: `color-mix(in srgb, ${col} ${isNew ? 18 : 10}%, transparent)`, display: "grid", placeItems: "center", flexShrink: 0, fontFamily: "var(--font-display)", fontWeight: 800, color: col }}>
-                    {it.source === "social" ? initial : <AuroraIcon name={it.icon} size={22} color={col} />}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Unread carries WEIGHT and full chalk; read recedes to ash.
-                        The state is legible before the dot is even noticed. */}
-                    <div style={{ fontWeight: isNew ? 800 : 600, fontSize: fs.bodyLg, lineHeight: 1.3, color: isNew ? C("chalk") : C("ash") }}>
-                      {it.titleKey ? t(it.titleKey) : it.title}
-                    </div>
-                    {it.detail && (
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.detail}</div>
-                    )}
-                    {it.actionable && (
-                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                        <button className="pressable" onClick={(e) => { e.stopPropagation(); void respond(it, true); }} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("lime")}`, background: C("lime"), color: "var(--on-accent)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{it.social?.kind === "enroll_request" ? "Accept" : "Approve"}</button>
-                        <button className="pressable" onClick={(e) => { e.stopPropagation(); void respond(it, false); }} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{it.social?.kind === "enroll_request" ? "Decline" : "Deny"}</button>
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{relativeTime(it.at)}</span>
-                    {/* Semantic, not decoration: this row is unread. It sits on
-                        the TRAILING edge so it can't read as a header marker. */}
-                    {isNew && <span aria-label={t("notif.new")} style={{ width: 7, height: 7, borderRadius: 999, background: C("lime") }} />}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  {t("notif.markAllRead")}
+                </button>
+              ) : null,
+              fresh,
+            )}
+            {section(t("notif.seen"), String(seen.length), seen)}
+          </>
         )}
       </div>
     </div>

@@ -380,22 +380,43 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
 
   // "Why you're seeing this" — a ranked card from someone the viewer doesn't
   // follow must be able to say why it's here, or it shouldn't be here at all.
-  // A spaced en dash joins the meta line — never a middot.
+  // It rides ABOVE the row as a kicker: identity is one line now, and the
+  // reason is about the FEED's choice, not about the person.
   const reason = item.reason ? t(item.reason.key) : null;
-  const meta = [item.author.handle ? `@${item.author.handle}` : null, item.when, reason].filter(Boolean).join(" – ");
+  const handle = item.author.handle ? `@${item.author.handle}` : null;
 
   return (
     <View style={{ marginHorizontal: -GUTTER, paddingHorizontal: GUTTER, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
-      {/* ZONE A — identity */}
+      {/* "Why you're seeing this" — a kicker over the row, because it is the
+          feed explaining ITSELF, not a fact about the athlete. */}
+      {reason ? (
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 6 }}>{reason}</Text>
+      ) : null}
+
+      {/* ZONE A — identity, ONE line: avatar, name, handle, time. The name and
+          the handle are the parts that can be any length, so they are the parts
+          that shrink (the handle first — a name is what you recognise); the
+          timestamp never shrinks and never wraps, so a post always says when. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Pressable onPress={() => onOpenProfile(item.author.handle)}>
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={36} />
         </Pressable>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
-            {item.author.displayName || (item.author.handle ? `@${item.author.handle}` : t("w.social.you"))}
+        <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
+            {item.author.displayName || handle || t("w.social.you")}
           </Text>
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{meta}</Text>
+          {/* The handle only earns its own slot when the name isn't already it. */}
+          {handle && item.author.displayName ? (
+            <Text numberOfLines={1} style={{ flexShrink: 4, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{handle}</Text>
+          ) : null}
+          {item.when ? (
+            // A spaced en dash divides the two ash figures — never a middot.
+            // (A gap alone can't: handle and time are the same face and colour,
+            // so with only space between them they read as one string.)
+            <Text numberOfLines={1} style={{ flexShrink: 0, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
+              {handle && item.author.displayName ? "– " : ""}{item.when}
+            </Text>
+          ) : null}
         </View>
         {/* ZONE A, right — the overflow menu. This corner used to hold a bare ×
             on your own posts: an unlabelled destructive control, and nothing at

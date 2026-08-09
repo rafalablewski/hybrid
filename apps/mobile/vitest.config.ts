@@ -38,7 +38,7 @@ export default defineConfig({
         test: {
           name: "pure",
           environment: "node",
-          include: ["lib/health-quantities.test.ts", "lib/ui.test.ts", "lib/design-tokens.test.ts"],
+          include: ["lib/health-quantities.test.ts", "lib/ui.test.ts", "lib/design-tokens.test.ts", "lib/event-pooling.test.ts"],
         },
       },
       {

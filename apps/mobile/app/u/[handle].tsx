@@ -35,8 +35,8 @@ import type {
   UserPageResponse,
   UserPageTabId,
 } from "@hybrid/core";
-import { F, Loading, PressScale as Pressable, serifIf } from "../../lib/ui";
-import { AuroraScreen, ACard, cardStack } from "../../components/aurora/kit";
+import { F, Loading, PressScale as Pressable } from "../../lib/ui";
+import { AuroraScreen, ACard, ASection, cardStack } from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -341,7 +341,7 @@ function Overview({ data, cmp, name, onCompare, busy }: {
 
       {stats && stats.topLifts.length > 0 ? (
         <>
-          <SectionHead title={t("w.social.topLifts")} />
+          <ASection title={t("w.social.topLifts")} />
           {stats.topLifts.map((l) => (
             <View key={l.lift} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line }}>
               <Text style={{ color: C.chalk, fontSize: fs.body }}>{l.lift}</Text>
@@ -365,7 +365,7 @@ function Overview({ data, cmp, name, onCompare, busy }: {
 
       {cmp ? (
         <>
-          <SectionHead title={`${t("w.social.you")} ${cmp.score.a} — ${cmp.score.b} ${name}`} />
+          <ASection title={`${t("w.social.you")} ${cmp.score.a} — ${cmp.score.b} ${name}`} />
           {[...cmp.lines, ...cmp.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
             <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
               <Text style={{ flex: 1, textAlign: "right", fontFamily: F.mono, color: l.leader === "a" ? C.lime : C.chalk }}>{l.a}{l.unit}</Text>
@@ -479,7 +479,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
         {coach.isMyCoach ? <Text style={{ color: txt(C, C.lime), fontSize: fs.caption, marginTop: 10 }}>✓ {t("w.coaches.isYourCoach")}</Text> : null}
       </View>
 
-      <SectionHead title={t("w.coaches.onlinePrograms")} meta={coach.programs.length ? String(coach.programs.length) : undefined} />
+      <ASection title={t("w.coaches.onlinePrograms")} meta={coach.programs.length ? String(coach.programs.length) : undefined} />
       {coach.programs.length === 0 ? (
         <Text style={{ color: C.ash, fontSize: fs.caption }}>{t("w.coaches.noPublished")}</Text>
       ) : coach.programs.map((p: StorefrontProgram) => (
@@ -539,7 +539,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
         </ACard>
       ))}
 
-      <SectionHead title={t("w.coaches.reviews")} meta={coach.reviews.length ? String(coach.reviews.length) : undefined} />
+      <ASection title={t("w.coaches.reviews")} meta={coach.reviews.length ? String(coach.reviews.length) : undefined} />
       {canReviewCoach(data) ? (
         <View style={{ alignSelf: "flex-start", marginBottom: 12 }}>
           <SButton label={reviewOpen ? t("common.cancel") : t("w.coaches.writeReview")} ghost small onPress={() => setReviewOpen((o) => !o)} />
@@ -587,17 +587,5 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
         </View>
       ))}
     </>
-  );
-}
-
-/** A section label with its count on the RIGHT — the Explore SectionHead
- *  grammar: no marker on the left, ever. */
-function SectionHead({ title, meta }: { title: string; meta?: string }) {
-  const { palette: C, scheme } = useTheme();
-  return (
-    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 22, marginBottom: 10 }}>
-      <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle }}>{title}</Text>
-      {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{meta}</Text> : null}
-    </View>
   );
 }
