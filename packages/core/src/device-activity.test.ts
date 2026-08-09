@@ -66,6 +66,22 @@ describe("sameActivity", () => {
     expect(sameActivity(id("Treadmill"), id("Cycling"))).toBe(false);
   });
 
+  it("treats walking as running — same feet, and the two names disagree freely", () => {
+    // A ruck titled "Run", a hike the watch called "Walking", a jog that spent
+    // half its minutes walking: all of them are that session's recording.
+    expect(sameActivity(id("Running"), id("Walking"))).toBe(true);
+    expect(sameActivity(id("Easy Run"), id("Hiking"))).toBe(true);
+    expect(sameActivity(id("Ruck"), id("Running"))).toBe(true);
+    expect(sameActivity(id("Walking"), id("Cycling"))).toBe(false);
+  });
+
+  it("does not let two catalog sports of one modality read as different", () => {
+    // Both are catalog sports, so a name-only comparison called them a
+    // contradiction — and refused the recording of the run they describe.
+    expect(sameActivity(id("Marathon"), id("Running"))).toBe(true);
+    expect(sameActivity(id("Race Walking"), id("Running"))).toBe(true);
+  });
+
   it("reads the watch's strength wording as the gym session it is", () => {
     expect(sameActivity(id("Traditional Strength Training"), id("Gym"))).toBe(true);
     expect(sameActivity(id("Functional Strength Training"), id("Tennis"))).toBe(false);

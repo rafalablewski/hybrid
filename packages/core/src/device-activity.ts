@@ -131,10 +131,22 @@ export function activityIdentity(name: string, discipline?: CardioDiscipline): A
   };
 }
 
+/**
+ * Modalities that are ONE thing for matching purposes.
+ *
+ * Walking folds into running: it is the same activity on the same two feet at a
+ * different speed, and the log and the watch routinely disagree about which
+ * word applies to it. A ruck titled "Run", a hike the watch called "Walking",
+ * an easy jog that spent half its minutes walking — all of them are the
+ * recording of that session, and treating the pair as a contradiction would
+ * demote exactly the candidate the athlete came to pick.
+ */
+const MODE_FAMILY: Partial<Record<CardioDiscipline, CardioDiscipline>> = { walking: "running" };
+
 /** The coarsest thing an identity commits to, or null when it commits to
  *  nothing. `"sport"` counts: a timed catalog sport is a real claim. */
 const coarse = (i: ActivityIdentity): string | null =>
-  i.strength ? "strength" : i.mode === "other" ? null : i.mode;
+  i.strength ? "strength" : i.mode === "other" ? null : (MODE_FAMILY[i.mode] ?? i.mode);
 
 /** True when an identity says ANYTHING we can compare. */
 const named = (i: ActivityIdentity): boolean => i.sport != null || coarse(i) != null;
@@ -143,17 +155,22 @@ const named = (i: ActivityIdentity): boolean => i.sport != null || coarse(i) != 
  * Are these two the same kind of training? `null` means "not enough named on
  * one side to say" — never treat it as a no.
  *
- * Compared on the most specific axis BOTH sides have. Two catalog sports settle
- * it outright (Tennis is not Table Tennis, even though both are timed sports);
- * otherwise the coarse modality decides, which is what lets a session logged as
- * "Bike intervals" recognise a recording labelled "Cycling".
+ * The same name is the same thing. Past that, the MODALITY decides — which is
+ * what lets a session logged "Bike intervals" recognise a recording labelled
+ * "Cycling", and "Marathon" or "Race Walking" recognise plain "Running".
+ *
+ * Except when the modality is `"sport"`, which is not a modality at all but the
+ * catch-all for a catalog sport that tracks no distance. Tennis and Table
+ * Tennis are both `"sport"`, and folding them together would undo the whole
+ * point of this file — so two DIFFERENT timed sports never fall through to it,
+ * they are simply different.
  */
 export function sameActivity(a: ActivityIdentity, b: ActivityIdentity): boolean | null {
   if (!named(a) || !named(b)) return null;
-  if (a.sport && b.sport) return a.sport === b.sport;
+  if (a.sport && b.sport && a.sport === b.sport) return true;
   const ca = coarse(a);
   const cb = coarse(b);
-  if (ca && cb) return ca === cb;
+  if (ca && cb && ca !== "sport" && cb !== "sport") return ca === cb;
   return false;
 }
 
