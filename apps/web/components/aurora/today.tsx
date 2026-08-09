@@ -95,6 +95,7 @@ import FetchError from "./fetch-error";
 import { TodayTabs } from "./today-tabs";
 import { HubMasthead } from "./hub-masthead";
 import { TodayHubDock } from "./today-hub-dock";
+import AuroraSideMenu from "./side-menu";
 import { RtpPanel } from "./protocol";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard).
 // Lazy so the wizard's weight only lands when an athlete actually expands it.
@@ -221,6 +222,13 @@ export default function AuroraToday({
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     track("today_tab", { tab: id });
   }, []);
+
+  // THE SIDE MENU — the drawer behind the avatar in this header (aurora/
+  // side-menu.tsx). It lives HERE rather than in the app shell because the
+  // header is what opens it and all three hub tabs render this header, and
+  // because its hub rows switch `tab` in place — a drawer mounted above the
+  // hub would have had to reach back down into it.
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [intake, setIntake] = useState<Intake>({});
   useEffect(() => setIntake(readIntake()), []);
@@ -602,9 +610,16 @@ export default function AuroraToday({
           caption (~17) still sits inside the 44px the tiles already set.
           Mirrors mobile home.tsx. */}
       <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 44px", alignItems: "center", height: 44 }}>
+        {/* The avatar opens the SIDE MENU (aurora/side-menu.tsx) — the drawer
+            that carries Profile, History, the three hub views, Nutrition and
+            the whole toolbox. It used to jump straight to Profile; Profile is
+            now the drawer's first row, so nothing was lost and five more
+            destinations were gained from the same tap. */}
         <button className="pressable"
-          onClick={() => (onNavigate ? onNavigate("profile") : router.push("/profile"))}
-          aria-label={t("w.home.today.profileAria")}
+          onClick={() => setMenuOpen(true)}
+          aria-label={t("nav.openMenu")}
+          aria-expanded={menuOpen}
+          aria-haspopup="dialog"
           style={{ position: "relative", width: 44, height: 44, borderRadius: 12, background: `${C("lime")}22`, border: `1px solid ${C("lime")}`, display: "grid", placeItems: "center", cursor: "pointer", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.bodyLg, color: "var(--lime-text)" }}
         >
           {initials}
@@ -649,6 +664,16 @@ export default function AuroraToday({
           is captured with the group and would fly with it. Every hub tab
           mounts this, so Performance and Feed keep their exits too. */}
       <TodayHubDock value={tab} onChange={selectTab} anchor={hubAnchor} />
+
+      {/* The side menu rides with the header on every hub tab. It portals to
+          <body>, so it is not trapped by the shell's transformed surface. */}
+      <AuroraSideMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNavigate={(id) => (onNavigate ? onNavigate(id) : router.push(`/${id}`))}
+        onHubTab={selectTab}
+        activeHub={tab}
+      />
     </>
   );
 

@@ -32,8 +32,16 @@ import type { AuroraIconName } from "./theme/icons";
  * several times a day, every day, and a tracker you must dig for is a tracker
  * you stop using. So the bar spends its scarcest slot on the loop the user is
  * actually in.
+ *
+ * MESSAGES holds the fourth slot, where More used to sit. More was a
+ * SPRINGBOARD — ~40 launcher tiles grouped by cluster — and a directory is not
+ * a destination: nobody's daily loop includes "open the list of screens". It
+ * has moved into the side menu behind the Today header's avatar (side-menu.ts),
+ * one gesture from every hub tab, costing the bar nothing. What a tab slot IS
+ * for is a place with its own state that you come back to — which is exactly
+ * what a conversation is.
  */
-export type AuroraNavTabId = "today" | "nutrition" | "train" | "more" | "profile";
+export type AuroraNavTabId = "today" | "nutrition" | "train" | "messages" | "profile";
 
 export type AuroraNavTab = {
   id: AuroraNavTabId;
@@ -48,7 +56,7 @@ export const AURORA_NAV_TABS: readonly AuroraNavTab[] = [
   { id: "today", glyph: "village", labelKey: "nav.today", label: "Today" },
   { id: "nutrition", glyph: "fork-knife", labelKey: "nav.nutrition", label: "Nutrition" },
   { id: "train", glyph: "train", labelKey: "nav.train", label: "Train" },
-  { id: "more", glyph: "grid", labelKey: "nav.more", label: "More" },
+  { id: "messages", glyph: "mail", labelKey: "nav.messages", label: "Messages" },
   { id: "profile", glyph: "user-circle", labelKey: "nav.profile", label: "Profile" },
 ] as const;
 

@@ -19,7 +19,10 @@ const MOBILE = join(__dirname, "..", "..", "mobile");
 
 // Surfaces whose press motion is owned by a parent (or which are full-bleed).
 const EXEMPT_WEB = ["swipe-row.tsx", "liquid-seg.tsx", "sheet.tsx"];
-const EXEMPT_MOBILE = ["swipe-row.tsx", "liquid-seg.tsx", "sheet.tsx", "upgrade.tsx", "drag-handle.tsx", "ui.tsx"];
+// `side-menu.tsx` joins for the same reason `sheet.tsx` is here: its raw
+// Pressable is the full-screen SCRIM, which must not scale or dim under a
+// finger — every row inside it uses PressScale.
+const EXEMPT_MOBILE = ["swipe-row.tsx", "liquid-seg.tsx", "sheet.tsx", "side-menu.tsx", "upgrade.tsx", "drag-handle.tsx", "ui.tsx"];
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {

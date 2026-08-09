@@ -157,6 +157,9 @@ export const NAV_ITEMS: NavItem[] = [
 
   // ---- Social (everyone) — follow friends, browse results, find a coach ----
   { id: "feed", label: "Feed", group: "social" },
+  // Direct messages. On the BOTTOM BAR (it took More's slot — see nav-bar.ts),
+  // and listed here too so it is findable by name like every other destination.
+  { id: "messages", label: "Messages", group: "social" },
   { id: "discover", label: "Find friends", group: "social" },
   // The shelf behind the feed's bookmark. Also reached from a glyph on the
   // feed's own tab row (the same pattern Find friends uses) — but it is a real
@@ -176,6 +179,9 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "profile", label: "Profile", group: "account" },
   { id: "connections", label: "Connections", group: "account", minPersona: "athlete" },
   { id: "settings", label: "Settings", group: "account" },
+  // Support. Reached from the side menu's footer (side-menu.ts) alongside
+  // Settings and privacy, and a real destination on both clients.
+  { id: "help", label: "Help center", group: "account" },
 ];
 
 const PERSONA_RANK: Record<Persona, number> = { casual: 0, athlete: 1, coach: 2, admin: 3 };

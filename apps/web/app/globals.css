@@ -790,6 +790,19 @@ html[data-sheet-open] body { background: #000; }
    height simply follows. It runs the sheet spring, because a drawer and a sheet
    are the same gesture at two scales. Mirrored on mobile by an interpolated
    height in aurora/volume.tsx. */
+/* THE SIDE MENU — the drawer behind the Today header's avatar
+   (components/aurora/side-menu.tsx). It enters from the left EDGE, on the
+   slide spring, because that is the edge it is anchored to; the scrim behind
+   it dissolves. Mounted only while open, so the entrance is an animation
+   rather than a transitioned transform. Mirrored on mobile by an Animated
+   translateX in components/aurora/side-menu.tsx. */
+.motion-side-menu { animation: motionSlideInLeft var(--d-slide) var(--e-slide) both; }
+@media (prefers-reduced-motion: reduce) {
+  /* SUBSTITUTE: it appears where it belongs and cross-dissolves — nothing
+     travels, but the arrival is still perceptible. */
+  .motion-side-menu { animation: motionDissolveIn var(--d-reduced) linear both; }
+}
+
 .motion-drawer {
   display: grid;
   grid-template-rows: 0fr;

@@ -103,6 +103,7 @@ import FeelSheet from "../feel-sheet";
 import GroupMark from "./group-mark";
 import SectionSeam from "./section-seam";
 import { TodayTabs } from "./today-tabs";
+import AuroraSideMenu from "./side-menu";
 import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
 // THE HUB's other two tabs — the same full screens their own routes render,
@@ -167,6 +168,11 @@ export default function AuroraHome() {
   // home and its job is "what do I do today?", so every visit opens on the
   // daily loop rather than wherever the athlete last wandered.
   const [tab, setTab] = useState<TodayTabId>("dashboard");
+  // THE SIDE MENU — the drawer behind the avatar in this header (aurora/
+  // side-menu.tsx). It lives HERE rather than at the root because the header is
+  // what opens it and all three hub tabs render this header, and because its
+  // hub rows switch `tab` in place.
+  const [menuOpen, setMenuOpen] = useState(false);
   const selectTab = useCallback((id: TodayTabId) => { setTab(id); track("today_tab", { tab: id }); }, []);
   // Whether this visit has LEFT the dashboard: the dashboard body replays the
   // hub dissolve only when it comes BACK from Performance/Feed — on the first
@@ -633,8 +639,12 @@ export default function AuroraHome() {
           caption (~16) still sits inside the 42dp the tiles already set.
           Mirrors web today.tsx. */}
       <View style={{ flexDirection: "row", alignItems: "center", height: 42 }}>
-        {/* profile — avatar opens the You / account tab */}
-        <Pressable onPress={() => router.push("/(tabs)/you")} accessibilityRole="button" accessibilityLabel={t("w.home.today.profileAria")} style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+        {/* profile — the avatar opens the SIDE MENU (aurora/side-menu.tsx), the
+            drawer carrying Profile, History, the three hub views, Nutrition and
+            the whole toolbox. It used to jump straight to the You tab; Profile
+            is now the drawer's first row, so nothing was lost and five more
+            destinations were gained from the same tap. */}
+        <Pressable onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel={t("nav.openMenu")} accessibilityState={{ expanded: menuOpen }} style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
         </Pressable>
         {/* the lockup — the wordmark, and the day-streak on the line under it */}
@@ -676,6 +686,10 @@ export default function AuroraHome() {
           it, and the people around it. Registry shared with web
           (@hybrid/core today-tabs.ts). */}
       <TodayTabs value={tab} onChange={selectTab} />
+
+      {/* The side menu rides with the header on every hub tab. It is a Modal,
+          so it sits above the native tab bar rather than inside a scroller. */}
+      <AuroraSideMenu open={menuOpen} onClose={() => setMenuOpen(false)} onHubTab={selectTab} activeHub={tab} />
     </>
   );
 
