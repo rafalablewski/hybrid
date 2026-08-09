@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import Svg, { Path, Circle, Polyline } from "react-native-svg";
 import {
   type NutritionGoal, type NutritionNudge as NutritionNudgeShape, type NutritionSummary,
   type WeightPoint,
 } from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
@@ -28,8 +28,8 @@ export function CDivider({ label, tier, premium }: { label: string; tier?: strin
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, marginBottom: 12 }}>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
-        {tier ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, borderWidth: 1, borderColor: premium ? `${pa.fill}73` : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{label}</Text>
+        {tier ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, borderWidth: 1, borderColor: premium ? `${pa.fill}73` : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
       </View>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
     </View>
@@ -119,26 +119,26 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
           {/* Goal-progress strip — goal + measured 28-day weight change. */}
           <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 16 }}>
             <View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.goalProgress")} — {goalLabel}</Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, marginTop: 4 }}>{weightChangeKg != null ? `${weightChangeKg > 0 ? "+" : ""}${weightChangeKg.toFixed(1)} kg` : "—"}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.goalProgress")} — {goalLabel}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: tracking.display, color: C.chalk, marginTop: 4 }}>{weightChangeKg != null ? `${weightChangeKg > 0 ? "+" : ""}${weightChangeKg.toFixed(1)} kg` : "—"}</Text>
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.recovery.nutrition.per28d")}</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
             {tiles.map(([label, val, unit, col]) => (
               <View key={label} style={{ width: "47%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: col }}>{label}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: 23, letterSpacing: -0.5, color: C.chalk, marginTop: 6 }}>{val}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: col }}>{label}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: 23, letterSpacing: tracking.display, color: C.chalk, marginTop: 6 }}>{val}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{unit}</Text>
               </View>
             ))}
           </View>
           {summary.macroSplit ? (
             <View style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("w.recovery.nutrition.macroBalance")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("w.recovery.nutrition.macroBalance")}</Text>
               {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.violet, txt(C, C.violet)]] as const).map(([label, pct, col, colT]) => (
                 <View key={label} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: colT, width: 52 }}>{t(label)}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: colT, width: 52 }}>{t(label)}</Text>
                   <View style={{ flex: 1, height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink2, overflow: "hidden" }}><View style={{ width: `${pct}%`, height: 4, borderRadius: RADIUS.pill, backgroundColor: col }} /></View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, width: 30, textAlign: "right" }}>{pct}%</Text>
                 </View>
@@ -152,7 +152,7 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.deepInsights")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.recovery.nutrition.deepInsightsSub")}</Text>
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text>
             </Pressable>
           ) : null}
         </>
@@ -201,7 +201,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
     <View style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         {step > 0 ? <Pressable onPress={() => setStep((s) => s - 1)} accessibilityLabel={t("w.recovery.nutrition.back")} style={{ width: 36, height: 36, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={16} color={C.chalk} /></Pressable> : null}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepOf").replace("{n}", String(step + 1))}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepOf").replace("{n}", String(step + 1))}</Text>
       </View>
       <View style={{ height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink, overflow: "hidden", marginTop: 12 }}><View style={{ width: `${((step + 1) / 3) * 100}%`, height: 4, backgroundColor: C.lime }} /></View>
 
@@ -223,13 +223,13 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
             {currentWeightKg != null ? (
               /* Profile already has a weight — reuse it, don't ask again. */
               <>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.currentWeight")}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, marginTop: 6 }}>{currentWeightKg}<Text style={{ fontFamily: F.mono, fontSize: 14, color: C.ash }}> kg</Text></Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.currentWeight")}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk, marginTop: 6 }}>{currentWeightKg}<Text style={{ fontFamily: F.mono, fontSize: 14, color: C.ash }}> kg</Text></Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6 }}>{t("w.recovery.nutrition.weightFromProfile")}</Text>
               </>
             ) : (
               <>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addWeighIn")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addWeighIn")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 5 }}>{t("w.recovery.nutrition.addWeighInSub")}</Text>
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
                   <TextInput value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="kg" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.addWeighIn")} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 12, textAlign: "center" }} />
@@ -245,10 +245,10 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
       {step === 2 ? (
         <View style={{ marginTop: 24 }}>
           <ACard solid style={{ alignItems: "center", paddingVertical: 20, backgroundColor: `${pa.fill}14`, borderColor: `${pa.fill}4d` }}>
-            <View style={{ backgroundColor: `${pa.fill}28`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
+            <View style={{ backgroundColor: `${pa.fill}28`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
             <AHeading style={{ fontSize: 22, marginTop: 16, textAlign: "center" }}>{t("w.recovery.nutrition.trialTitle")}</AHeading>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.trialSub")}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, marginTop: 16 }}>$9.99<Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text></Text>
+            <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk, marginTop: 16 }}>$9.99<Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text></Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3 }}>{t("w.recovery.nutrition.trialNote")}</Text>
             <Pressable onPress={onUpgrade} style={{ alignSelf: "stretch", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 16, marginTop: 16 }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: pa.ink }}>{t("w.recovery.nutrition.startTrial")}</Text><Glyph name="chevron" size={15} color={pa.ink} strokeWidth={6} /></Pressable>
           </ACard>
@@ -258,7 +258,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
           <ACard solid style={{ marginTop: 12 }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.freePlanTitle")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.recovery.nutrition.freePlanSub")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.recovery.nutrition.freePlanSub")}</Text>
             </View>
             <View style={{ marginTop: 12 }}>
               {["w.recovery.nutrition.freeBulletLogging", "w.recovery.nutrition.freeBulletMeals", "w.recovery.nutrition.freeBulletProducts", "w.recovery.nutrition.freeBulletInsights"].map((k) => (
@@ -284,7 +284,7 @@ export function QuadTile({ field, label, unit, color, value, onChange }: { field
   const { palette: C } = useTheme();
   return (
     <View style={{ flexGrow: 1, flexBasis: "46%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, marginTop: 4 }}>
         <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} testID={`quad-${field}`} style={{ flex: 1, fontFamily: F.black, fontSize: 26, letterSpacing: -1, color: C.chalk, paddingVertical: 2 }} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 6 }}>{unit}</Text>

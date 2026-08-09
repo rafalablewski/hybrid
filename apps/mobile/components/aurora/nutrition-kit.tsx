@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Animated, PanResponder } from "react-native";
+import { View, Text, Animated, PanResponder } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
@@ -7,7 +7,7 @@ import {
   type MicroFacts, type NutritionFacts, type NutritionGlyphName, type SourceMark,
   type VerifiedStamp,
 } from "@hybrid/core";
-import { fs, space, leading, F, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
+import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
@@ -87,7 +87,7 @@ export function SourceMarkView({ C, src, height }: {
 }) {
   if (!src.mark) {
     return (
-      <Text style={{ fontFamily: F.black, fontSize: Math.round(height * 0.48), letterSpacing: 0.9, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 8 }}>
+      <Text style={{ fontFamily: F.black, fontSize: Math.round(height * 0.48), letterSpacing: tracking.label, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 8 }}>
         {src.name}
       </Text>
     );
@@ -147,7 +147,7 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
     <View style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingBottom: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingTop: 12, paddingBottom: 8 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.facts.title")}</Text>
-        {p100 ? <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.facts.per100")}</Text> : null}
+        {p100 ? <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.facts.per100")}</Text> : null}
       </View>
       {rows.map((r, i) => (
         <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>

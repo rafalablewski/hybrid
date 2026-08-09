@@ -100,7 +100,12 @@ describe("leading and tracking", () => {
 
   it("RATCHET — raw letterSpacing gives way to tracking.*", () => {
     // 18 distinct values, of which 0.9 and 1.2 are the same eyebrow drawn twice.
-    expectAtMost(hits(/letterSpacing:\s*-?\d/g), 480, "raw letterSpacing → tracking.*");
+    // 480 → 459: the nutrition trio (nutrition-kit, nutrition-panels, pantry)
+    // took its 0.9 / 1.2 / -0.5 to tracking.label / .caps / .display, which is
+    // every site in them that HAS a token. What is left there is -1, -1.2, -1.6
+    // — display tightenings with no rung to land on, and a ratchet is not the
+    // place to invent one.
+    expectAtMost(hits(/letterSpacing:\s*-?\d/g), 459, "raw letterSpacing → tracking.*");
   });
 });
 
