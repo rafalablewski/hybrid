@@ -79,9 +79,12 @@ export function momentWeight(item: FeedItem): number {
   const base = d?.moment === "p0" ? 4 : d?.moment === "p1" ? 2.4 : d?.moment === "p3" ? 0.6 : 1;
   let m = base;
   // Provenance pays only where a claim is actually being made. A tier badge on
-  // a PR means the number survived scrutiny; the same badge on a session card
-  // would just be rewarding people for owning a watch.
-  if (d?.archetype === "stat" && d.tier) m *= 1 + Math.min(d.tier, 2) * 0.12;
+  // a RECORD means the number survived scrutiny; the same badge on an ordinary
+  // session card would just be rewarding people for owning a watch. A workout
+  // post that lists the records it set is making the claim (feed-card.ts
+  // sessionDetail), so it counts too — the records used to be a card of their
+  // own and must not lose their weight by moving inside the workout.
+  if (d?.tier && (d.archetype === "stat" || d.prs?.length)) m *= 1 + Math.min(d.tier, 2) * 0.12;
   // A lift never trained before is rarer than another 2.5 kg on a bar you have
   // loaded a hundred times — and it is the card that keeps a beginner posting.
   if (d?.firstEver) m *= 1.2;
@@ -127,7 +130,9 @@ export function engagementMultiplier(s: FeedSignals): number {
 
 /** Half-life in hours, per family. Different content ages differently. */
 export function halfLifeHours(item: FeedItem): number {
-  if (item.kind === "pr") return 72;
+  // A record ages like a record even though it now travels inside the workout
+  // that set it — the session it rides on would otherwise halve it in 18 hours.
+  if (item.kind === "pr" || item.detail?.prs?.length) return 72;
   if (item.kind === "recap") return 120;
   if (item.kind === "post") return 168;
   return 18; // a session

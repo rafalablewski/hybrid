@@ -1,41 +1,39 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   FEED_STAT_LABEL_KEY,
+  feedDeltaText,
   feedFigureText,
   feedStatText,
   feedWorkoutView,
+  setCountKey,
   fs,
   leading,
   tracking,
-  type FeedItemView,
-  type FeedSessionResponse,
+  type FeedPrLine,
+  type FeedStat,
   type FeedWorkoutExercise,
-  type FeedWorkoutView,
+  type FeedWorkoutSet,
   type LoggedSession,
   type WeightUnit,
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { accentText } from "@/lib/ui";
-import Sheet from "@/components/aurora/sheet";
-import { C, Avatar, EmptyState, jget } from "./social-ui";
+import { C } from "./social-ui";
 import { WatchGlyph } from "./feed-card";
 
 /**
- * THE OPENED POST (web) — twin of apps/mobile/components/feed-workout.tsx.
+ * THE WORKOUT, IN FULL (web) — twin of apps/mobile/components/feed-workout.tsx.
  *
  * A feed row shows two or three top sets on purpose; the stream is a stream.
- * Tapping the row opens THIS: the whole workout, every exercise and every set,
- * built by core's `feedWorkoutView` so both clients read one computation and
- * the ledger can't drift between them.
+ * The POST (feed-post.tsx) shows THIS: every figure the session can honestly
+ * produce — minutes, tonnage, sets, reps, distance, pace — then the records it
+ * set, then every exercise and every set, built by core's `feedWorkoutView` so
+ * both clients read one computation and the ledger can't drift between them.
  *
- * The session arrives from /api/social/session/[id], which applies the same
- * privacy gate as the rest of social — a workout the viewer may not see never
- * reaches this component, and the private post-workout note never travels at
- * all. The figures are device-true (the view model reads through
- * `deviceTrueSession`), so the opened post agrees with the row it came from.
+ * The figures are device-true (the view model reads through `deviceTrueSession`
+ * and derives pace from the device's own seconds), and the stat row EXTENDS the
+ * card's — so the post can never contradict the row it was opened from.
  */
 
 const mono = "var(--font-mono)";
@@ -46,16 +44,96 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { w
 
 /** The set-type tag beside a set, and its accent. A working set says nothing —
  *  it's the norm, and labelling it would put a word on every line. */
-function setTag(type: FeedWorkoutView["exercises"][number]["sets"][number]["type"]): { key: string; accent: string } | null {
+function setTag(type: FeedWorkoutSet["type"]): { key: string; accent: string } | null {
   if (type === "warmup") return { key: "feed.session.warmup", accent: accentText("amber") };
   if (type === "cooldown") return { key: "feed.session.cooldown", accent: accentText("blue") };
   if (type === "drop") return { key: "feed.session.drop", accent: accentText("lime") };
   return null;
 }
 
+/** The session's figures, wrapping — the post carries the whole set, so this is
+ *  a grid rather than the card's single row of three. */
+export function StatGrid({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
+  const { t } = useLang();
+  if (!stats.length) return null;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))", gap: 12, borderTop: `1px solid ${C("line")}`, marginTop: 10, paddingTop: 10 }}>
+      {stats.map((s) => (
+        <div key={s.key} style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: mono, fontSize: fs.note, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: s.key === "hr" ? accentText("blue") : C("chalk") }}>
+            {s.device && <WatchGlyph />}
+            {feedStatText(s, units)}
+          </div>
+          <div style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash"), marginTop: 2 }}>
+            {t(FEED_STAT_LABEL_KEY[s.key])}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * THE RECORDS, one after another.
+ *
+ * Every record the session set gets its own line with its own evidence — the
+ * weight, the estimate behind it, and what the athlete's own previous best was.
+ * A session that set three used to post a card naming only the heaviest and
+ * counting the rest.
+ */
+export function PostRecords({ prs, units }: { prs: FeedPrLine[]; units: WeightUnit }) {
+  const { t } = useLang();
+  if (!prs.length) return null;
+  const lime = accentText("lime");
+  return (
+    <section style={{ marginTop: 12 }}>
+      <h3 style={{ fontFamily: heading, fontWeight: 800, fontSize: fs.note, color: C("chalk"), margin: 0 }}>{t("feed.post.records")}</h3>
+      {prs.map((pr, i) => {
+        const fig = feedFigureText(pr.topLoadKg, units);
+        const prev = pr.previousTopLoadKg != null ? feedFigureText(pr.previousTopLoadKg, units) : null;
+        const e1 = pr.e1rmKg != null ? feedFigureText(pr.e1rmKg, units) : null;
+        // The second line is the EVIDENCE: what it beat, and the estimate
+        // behind the bar weight. A first-ever has nothing to beat and says so.
+        const proof = [
+          pr.firstEver ? t("feed.firstEver") : prev ? t("feed.post.previousBest").replace("{v}", `${prev.value} ${prev.unit}`) : null,
+          e1 ? t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`) : null,
+        ].filter(Boolean) as string[];
+        return (
+          <div key={`${pr.lift}-${i}`} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, borderTop: `1px solid ${C("line")}`, marginTop: 8, paddingTop: 8 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: display, fontWeight: 700, fontSize: fs.note, color: C("chalk") }}>{pr.lift}</div>
+              {/* A spaced en dash joins the proof line — never a middot. */}
+              {proof.length > 0 && <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{proof.join(" – ")}</div>}
+            </div>
+            <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+              <span style={{ fontFamily: mono, fontSize: fs.title, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{fig.value}</span>
+              <span style={{ fontFamily: mono, fontSize: fs.micro, color: C("ash") }}> {fig.unit}</span>
+              {pr.deltaPct != null && (
+                <div style={{ fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: lime }}>{feedDeltaText(pr.deltaPct)}</div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 function Exercise({ ex, units }: { ex: FeedWorkoutExercise; units: WeightUnit }) {
   const { t } = useLang();
   const top = ex.topLoadKg != null ? feedFigureText(ex.topLoadKg, units) : null;
+  // The exercise's own figures — what a training log shows beside a lift and a
+  // feed card has never had room for. A spaced en dash joins them.
+  const vol = ex.volumeKg > 0 ? feedFigureText(ex.volumeKg, units) : null;
+  const meta = [
+    ex.setCount > 0 ? t(setCountKey(ex.setCount)).replace("{n}", String(ex.setCount)) : null,
+    ex.reps > 0 ? `${ex.reps} ${t("feed.stat.reps")}` : null,
+    vol ? `${vol.value} ${vol.unit}` : null,
+    ex.distanceKm != null ? `${ex.distanceKm} ${t("feed.stat.distance")}` : null,
+    ex.minutes != null ? `${Math.round(ex.minutes)} ${t("feed.stat.min")}` : null,
+    ex.pace,
+  ].filter(Boolean) as string[];
+
   return (
     <div style={{ borderTop: `1px solid ${C("line")}`, padding: "12px 0" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
@@ -69,6 +147,7 @@ function Exercise({ ex, units }: { ex: FeedWorkoutExercise; units: WeightUnit })
           </span>
         )}
       </div>
+      {meta.length > 0 && <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{meta.join(" – ")}</div>}
 
       {ex.sets.length > 0 ? (
         <div style={{ marginTop: 6 }}>
@@ -97,13 +176,13 @@ function Exercise({ ex, units }: { ex: FeedWorkoutExercise; units: WeightUnit })
   );
 }
 
-export function FeedWorkout({ session, units }: { session: LoggedSession; units: WeightUnit }) {
+export function FeedWorkout({ session, units, prs = [] }: { session: LoggedSession; units: WeightUnit; prs?: FeedPrLine[] }) {
   const { t } = useLang();
-  const w = feedWorkoutView(session);
+  const w = feedWorkoutView(session, prs);
   const meta = [
     fmtDate(w.startedAt),
     t("feed.session.exercises").replace("{n}", String(w.exerciseCount)),
-    ...(w.setCount > 0 ? [t("feed.session.sets").replace("{n}", String(w.setCount))] : []),
+    ...(w.setCount > 0 ? [t(setCountKey(w.setCount)).replace("{n}", String(w.setCount))] : []),
   ];
   return (
     <div>
@@ -111,98 +190,12 @@ export function FeedWorkout({ session, units }: { session: LoggedSession; units:
       {/* A spaced en dash joins the meta line — never a middot. */}
       <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 4 }}>{meta.join(" – ")}</div>
 
-      {/* The card's OWN stat row, recomputed from the same core function, so
-          the opened post can never contradict the row it came from. */}
-      {w.stats.length > 0 && (
-        <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, marginTop: 10, paddingTop: 10 }}>
-          {w.stats.map((s) => (
-            <div key={s.key} style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: mono, fontSize: fs.note, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: s.key === "hr" ? accentText("blue") : C("chalk") }}>
-                {s.device && <WatchGlyph />}
-                {feedStatText(s, units)}
-              </div>
-              <div style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash"), marginTop: 2 }}>
-                {t(FEED_STAT_LABEL_KEY[s.key])}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <StatGrid stats={w.stats} units={units} />
+      <PostRecords prs={w.prs} units={units} />
 
       <div style={{ marginTop: 10 }}>
         {w.exercises.map((ex, i) => <Exercise key={`${ex.name}-${i}`} ex={ex} units={units} />)}
       </div>
     </div>
-  );
-}
-
-/** The post, opened: who trained, then their whole workout, then the thread
- *  (passed in as `children`, so the feed owns comments in one place). */
-export default function FeedWorkoutSheet({
-  item,
-  units,
-  open,
-  onClose,
-  children,
-}: {
-  item: FeedItemView | null;
-  units: WeightUnit;
-  open: boolean;
-  onClose: () => void;
-  children?: ReactNode;
-}) {
-  const { t } = useLang();
-  // The panel outlives the close by one animation, so it keeps rendering the
-  // post it was showing — clearing on close would empty the sheet mid-slide.
-  const [shown, setShown] = useState<FeedItemView | null>(item);
-  useEffect(() => { if (item) setShown(item); }, [item]);
-  const id = item?.subjectId ?? null;
-
-  // CACHED per session id (the app's react-query layer, same as every other
-  // read): a logged workout is immutable to a viewer, so re-opening the same
-  // post is instant and costs no request. `enabled` keeps a closed sheet from
-  // fetching anything at all.
-  const q = useQuery({
-    queryKey: ["feed-session", id],
-    queryFn: () => jget<FeedSessionResponse>(`/api/social/session/${id}`),
-    enabled: open && !!id,
-    staleTime: 5 * 60_000,
-  });
-  const session = q.data?.session ?? null;
-  const error =
-    q.data && !q.data.session
-      ? q.data.error === "private" ? t("feed.session.private") : t("feed.session.missing")
-      : q.isError
-        ? t("feed.session.missing")
-        : null;
-
-  return (
-    <Sheet open={open} onClose={onClose} label={t("feed.open")} detents={["medium", "large"]}>
-      {shown && (
-        <>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <Avatar url={shown.author.avatarUrl} name={shown.author.displayName} handle={shown.author.handle} size={36} />
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: display, fontWeight: 700, fontSize: fs.note, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {shown.author.displayName || (shown.author.handle ? `@${shown.author.handle}` : t("w.social.you"))}
-              </div>
-              <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash") }}>{shown.when}</div>
-            </div>
-          </div>
-
-          {shown.body && <p style={{ color: C("ash"), fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, margin: "0 0 12px" }}>{shown.body}</p>}
-
-          {session ? (
-            <FeedWorkout session={session} units={units} />
-          ) : error ? (
-            <EmptyState title={error} />
-          ) : (
-            <EmptyState title={t("common.loading")} />
-          )}
-
-          {children}
-        </>
-      )}
-    </Sheet>
   );
 }

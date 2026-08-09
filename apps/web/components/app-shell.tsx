@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, sportFromSlug, sportSlug, AURORA_NAV_ICONS, FUNNEL, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 // The AI coach screen, reached from the Cockpit module tile (see below).
 const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { AuroraIcon } from "./aurora/icons";
@@ -84,6 +84,7 @@ const IntervalTimerScreen = dynamic(() => import("./interval-timer"), { ssr: fal
 const NotificationsScreen = dynamic(() => import("./notifications"), { ssr: false });
 const StatisticsScreen = dynamic(() => import("./statistics"), { ssr: false });
 const SocialFeed = dynamic(() => import("./social-feed"), { ssr: false });
+const FeedPost = dynamic(() => import("./feed-post"), { ssr: false });
 const SocialDiscover = dynamic(() => import("./social-discover"), { ssr: false });
 const SocialSaved = dynamic(() => import("./social-saved"), { ssr: false });
 const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: false });
@@ -254,10 +255,36 @@ export default function AppShell() {
   // to wherever you came from.
   const [sportFocus, setSportFocus] = useState("");
   const [sportReturn, setSportReturn] = useState("sport");
+  // THE POST — one shared workout on its own page, addressed by the same
+  // (subjectType:subjectId) key kudos, comments and saves use. A row hands over
+  // what it already loaded so the page paints before the fetch returns; landing
+  // cold from a link, `postItem` is null and the page fetches the post itself.
+  const [postFocus, setPostFocus] = useState("");
+  const [postItem, setPostItem] = useState<FeedItemView | null>(null);
+  const [postReturn, setPostReturn] = useState("feed");
+  const openPost = (key: string, item?: FeedItemView) => {
+    if (screen !== "post") setPostReturn(screen);
+    setPostFocus(key);
+    setPostItem(item ?? null);
+    // The sub-target is written BEFORE the screen (see openSportPage below for
+    // why), so the pushed history entry carries the post with it.
+    writeDeepLink({ post: key });
+    setScreen("post");
+  };
+
   /** Which screen a deep link actually resolves to. A `sportpage` link carries
    *  the sport as a slug; one that names no catalog sport (an older build, a
-   *  mangled paste) lands on the sport INDEX rather than on an empty page. */
-  const landing = (p: { s?: string; sport?: string }): string => {
+   *  mangled paste) lands on the sport INDEX rather than on an empty page. A
+   *  `post` link carries the post's key; one that names no readable subject
+   *  lands on the FEED rather than on an empty page. */
+  const landing = (p: { s?: string; sport?: string; post?: string }): string => {
+    if (p.s === "post") {
+      const ref = parseFeedSubjectKey(p.post);
+      if (!ref) return "feed";
+      setPostFocus(feedSubjectKey(ref));
+      setPostItem(null); // a cold landing has no row to borrow
+      return "post";
+    }
     if (p.s !== "sportpage") return p.s ?? "today";
     const name = sportFromSlug(p.sport);
     if (!name) return "sport";
@@ -293,6 +320,22 @@ export default function AppShell() {
       sportParamWritten.current = false;
     }
   }, [screen, sportFocus]);
+
+  // A post's address is `?s=post&post=<type>:<id>`; leaving it drops the key,
+  // so a stale link can never point at a post you are no longer on. Same
+  // ref-guard as the sport param above, and for the same reason.
+  const postParamWritten = useRef(false);
+  useEffect(() => {
+    if (screen === "post") {
+      if (postFocus) {
+        writeDeepLink({ post: postFocus });
+        postParamWritten.current = true;
+      }
+    } else if (postParamWritten.current) {
+      writeDeepLink({ post: undefined });
+      postParamWritten.current = false;
+    }
+  }, [screen, postFocus]);
 
   // The upgrade paywall is a slide-up sheet OVERLAY (not a screen), so it appears
   // over whatever you're on. `navigate` centralises the intercept so any
@@ -875,7 +918,7 @@ export default function AppShell() {
         {screen === "aicoach" && <AuroraAskCoach />}
 
         {screen === "today" && (
-          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenExercise={openExercisePage} onOpenSport={openSportPage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
+          <AuroraToday sessions={sessions} bio={bio ?? undefined} macro={macro} currentWeek={currentWeek} planId={planId} planStartedAt={planStartedAt} onStart={(planBlocks, title) => { setPendingBlocks(planBlocks); setPendingTitle(title); setScreen("log"); }} onNavigate={navigate} onOpenSession={openSession} onOpenPost={openPost} onOpenExercise={openExercisePage} onOpenSport={openSportPage} onSaved={refresh} onEnrolled={refreshMacro} loading={sessionsLoading || macroLoading} fetchError={!!sessionsError} onRetry={refresh} sessionsReady={sessionsReady} macroReady={macroReady} macroSettled={macroSettled} />
         )}
 
         {screen === "profile" && (
@@ -1028,9 +1071,13 @@ export default function AppShell() {
             soften under Aurora), like the tools below. Everyone (casual+). The
             Explore screen that used to front these is gone: its coach rail sits
             on Today and each destination below is reached from More. */}
-        {screen === "feed" && <SocialFeed onNavigate={setScreen} onOpenSession={openSession} />}
+        {screen === "feed" && <SocialFeed onNavigate={setScreen} onOpenPost={openPost} />}
+        {/* ONE POST, on its own page — a workout with every figure, the records
+            it set and its thread. `?s=post&post=<type>:<id>` is its address, so
+            a shared link lands here rather than at the top of the stream. */}
+        {screen === "post" && <FeedPost postKey={postFocus} initial={postItem} onBack={() => popTo(postReturn, true)} onOpenSession={openSession} />}
         {screen === "discover" && <SocialDiscover />}
-        {screen === "saved" && <SocialSaved onNavigate={setScreen} />}
+        {screen === "saved" && <SocialSaved onNavigate={setScreen} onOpenPost={openPost} />}
         {screen === "leaderboard" && <SocialLeaderboard />}
         {screen === "coaches" && <CoachesScreen />}
 

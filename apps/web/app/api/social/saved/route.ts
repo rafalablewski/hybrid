@@ -11,7 +11,7 @@ import {
 } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, allSessionsFor, authorCards, blockedIdsFor, edgesFor } from "@/lib/social";
+import { reactionKeys, tableMissing, allSessionsFor, authorCards, blockedIdsFor, edgesFor } from "@/lib/social";
 
 /**
  * RESOLVE SAVED POSTS — the Saved screen's only read.
@@ -159,7 +159,7 @@ export async function POST(request: Request) {
 
     // Same enrichment the feed does, so a saved card carries live counts rather
     // than whatever they were when it was saved.
-    const keys = items.map((i) => ({ subjectType: i.subjectType, subjectId: i.subjectId }));
+    const { pairs: keys, keyOf } = reactionKeys(items);
     const [kudos, myKudos, comments] = keys.length
       ? await Promise.all([
           prisma.kudos.groupBy({ by: ["subjectType", "subjectId"], _count: { _all: true }, where: { OR: keys } }),
@@ -168,9 +168,16 @@ export async function POST(request: Request) {
         ])
       : [[], [], []];
 
-    const kCount = new Map((kudos as { subjectType: string; subjectId: string; _count: { _all: number } }[]).map((k) => [`${k.subjectType}:${k.subjectId}`, k._count._all]));
-    const cCount = new Map((comments as { subjectType: string; subjectId: string; _count: { _all: number } }[]).map((c) => [`${c.subjectType}:${c.subjectId}`, c._count._all]));
-    const cheered = new Set((myKudos as { subjectType: string; subjectId: string }[]).map((k) => `${k.subjectType}:${k.subjectId}`));
+    // A workout's reactions include the ones given to the PR card it used to
+    // have beside it — same subject now (lib/social.ts).
+    const tally = (rows: { subjectType: string; subjectId: string; _count: { _all: number } }[]) => {
+      const m = new Map<string, number>();
+      for (const r of rows) m.set(keyOf(r), (m.get(keyOf(r)) ?? 0) + r._count._all);
+      return m;
+    };
+    const kCount = tally(kudos as { subjectType: string; subjectId: string; _count: { _all: number } }[]);
+    const cCount = tally(comments as { subjectType: string; subjectId: string; _count: { _all: number } }[]);
+    const cheered = new Set((myKudos as { subjectType: string; subjectId: string }[]).map(keyOf));
 
     // A saved key whose author IS visible but whose card the builder didn't
     // produce is gone too — the session was archived, or the post row vanished

@@ -92,9 +92,17 @@ export interface SavedSyncResponse extends Degradable, ApiError {
   ids: string[];
 }
 
-/** The whole workout behind a feed post — GET /api/social/session/[id].
- *  `session` is absent when the viewer may not see it (403 private / 404). */
-export interface FeedSessionResponse extends Degradable, ApiError {
+/**
+ * ONE POST, opened — GET /api/social/post/[type]/[id].
+ *
+ * The card AND the workout behind it in one read, because a post has its own
+ * address on both clients: a shared link or a refresh lands here with nothing
+ * loaded, so the screen can't assume the feed handed it the row. `item` is
+ * absent when the viewer may not see it (403 private / 404); `session` is
+ * absent for a post with no workout behind it (a status update).
+ */
+export interface FeedPostResponse extends Degradable, ApiError {
+  item?: FeedItemView;
   session?: LoggedSession;
 }
 

@@ -5,6 +5,7 @@ import {
   feedMenuActions,
   feedSharePayload,
   feedShareUrl,
+  feedPostPath,
   feedSubjectKey,
   isFeedSaved,
   normalizeFeedSaved,
@@ -61,7 +62,9 @@ describe("reading the saved list back (the Saved screen)", () => {
     // into database queries.
     expect(parseFeedSubjectKey("post:abc")).toEqual({ subjectType: "post", subjectId: "abc" });
     expect(parseFeedSubjectKey("session:s1")).toEqual({ subjectType: "session", subjectId: "s1" });
-    expect(parseFeedSubjectKey("pr:s1")).toEqual({ subjectType: "pr", subjectId: "s1" });
+    // A key from before the records moved onto the workout resolves to the
+    // post that exists today, so an old bookmark and an old link both land.
+    expect(parseFeedSubjectKey("pr:s1")).toEqual({ subjectType: "session", subjectId: "s1" });
     expect(parseFeedSubjectKey("user:me")).toBeNull();        // not a feed subject
     expect(parseFeedSubjectKey("post:")).toBeNull();          // no id
     expect(parseFeedSubjectKey(":abc")).toBeNull();           // no type
@@ -146,8 +149,12 @@ describe("syncing the shelf across devices", () => {
 describe("share", () => {
   const item = { subjectType: "post", subjectId: "p 1", author: { displayName: "Ada Ruiz", handle: "ada" } };
 
-  it("links through the shell's own address scheme, url-encoded", () => {
-    expect(feedShareUrl(item)).toBe("https://hybrid.app/app?s=feed&post=post%3Ap%201");
+  it("lands ON the post, through the shell's own address scheme, url-encoded", () => {
+    expect(feedShareUrl(item)).toBe("https://hybrid.app/app?s=post&post=post%3Ap%201");
+  });
+
+  it("names the same post on mobile's router", () => {
+    expect(feedPostPath(item)).toBe("/post?type=post&id=p%201");
   });
 
   it("leads with WHO, because a share lands where nobody has the app's context", () => {

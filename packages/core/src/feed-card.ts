@@ -30,7 +30,15 @@
 import { type AttestationTier } from "./attestation";
 import { deviceTrueSession } from "./device-truth";
 import { roundKm } from "./distance";
-import { sessionMinutes, sessionVolume, workingSets, type LoggedSession, type StrengthBlock } from "./engines";
+import {
+  paceClock,
+  sessionMinutes,
+  sessionVolume,
+  workingSets,
+  type LoggedSession,
+  type PrHit,
+  type StrengthBlock,
+} from "./engines";
 import { fmtWeight, type WeightUnit } from "./units";
 
 // ------------------------------------------------------------- the model ----
@@ -42,12 +50,14 @@ export type FeedMoment = "p0" | "p1" | "p2" | "p3";
  *  these — adding a type must never add a component. */
 export type FeedArchetype = "stat" | "sets" | "text";
 
-/** The figures a card's stat row can carry. */
-export type FeedStatKey = "duration" | "volume" | "sets" | "hr" | "distance" | "kcal";
+/** The figures a card's stat row can carry. The CARD shows the first few; the
+ *  opened post shows the whole set (feed-workout.ts `feedWorkoutStats`). */
+export type FeedStatKey = "duration" | "volume" | "sets" | "reps" | "hr" | "distance" | "pace" | "kcal";
 
 export interface FeedStat {
   key: FeedStatKey;
-  /** kg for volume, minutes for duration, km for distance, raw count otherwise. */
+  /** kg for volume, minutes for duration, km for distance, seconds-per-km for
+   *  pace, raw count otherwise. */
   value: number;
   /** true when the DEVICE measured it (watch signature, never a typed figure). */
   device?: boolean;
@@ -62,6 +72,29 @@ export interface FeedSetLine {
   reps: string;
   /** heaviest working load on the line, kg; null for bodyweight/time work. */
   loadKg: number | null;
+}
+
+/**
+ * ONE RECORD, as it reads inside the workout that set it.
+ *
+ * A session that set three PRs used to emit three things: the workout card and
+ * a separate PR card that named only the heaviest lift. The other two records
+ * were a count ("3 PRs") and nothing else, and the stream carried the same
+ * session twice. A workout is ONE post, and the records it set are lines
+ * inside it — listed one after another, each with its own evidence.
+ */
+export interface FeedPrLine {
+  lift: string;
+  /** the weight actually lifted, kg — never the estimate (#231). */
+  topLoadKg: number;
+  /** the estimate behind it, kg — the honest second number, when there is one. */
+  e1rmKg?: number;
+  /** the athlete's own previous best on this lift, kg; absent on a first-ever. */
+  previousTopLoadKg?: number;
+  /** improvement over that previous best, percent. */
+  deltaPct?: number;
+  /** this lift had never been trained before — the beginner's record. */
+  firstEver: boolean;
 }
 
 /** The headline is a translation key plus the one thing it names, so the
@@ -98,6 +131,9 @@ export interface FeedDetail {
   device?: boolean;
   /** how many PRs the session set, when more than one. */
   prCount?: number;
+  /** the records this workout set, heaviest first — listed one after another
+   *  ON the workout card, never posted as cards of their own. */
+  prs?: FeedPrLine[];
 }
 
 // ------------------------------------------------------------ formatting ----
@@ -107,8 +143,10 @@ export const FEED_STAT_LABEL_KEY: Record<FeedStatKey, string> = {
   duration: "feed.stat.min",
   volume: "feed.stat.volume",
   sets: "feed.stat.sets",
+  reps: "feed.stat.reps",
   hr: "feed.stat.hr",
   distance: "feed.stat.distance",
+  pace: "feed.stat.pace",
   kcal: "feed.stat.kcal",
 };
 
@@ -123,6 +161,9 @@ export function feedStatText(stat: FeedStat, units: WeightUnit): string {
     }
     case "distance":
       return roundKm(stat.value).toLocaleString();
+    case "pace":
+      // A pace is a CLOCK, not a count — "5:42", with the label carrying /km.
+      return paceClock(stat.value);
     default:
       return Math.round(stat.value).toLocaleString();
   }
@@ -142,6 +183,26 @@ export function feedFigureText(kg: number, units: WeightUnit): { value: string; 
 export function feedTierChip(tier: AttestationTier | undefined): { short: string; labelKey: string } | null {
   if (tier == null || tier <= 0) return null;
   return { short: `T${tier}`, labelKey: `feed.tier.${tier}` };
+}
+
+/**
+ * The card's headline, composed — core names the lift, the client speaks the
+ * language. A session/workout headline IS its own title (the athlete named it,
+ * or `defaultSessionTitle` did); everything else is a key with the one thing it
+ * names substituted in.
+ *
+ * It lives here because four surfaces render it — the row and the post, on two
+ * clients — and four copies of one ternary is how a record comes to read one
+ * way in the stream and another when you open it.
+ */
+export function feedHeadlineText(
+  it: { lead?: string | null; title?: string; detail?: FeedDetail },
+  t: (key: string) => string,
+): string {
+  const d = it.detail;
+  if (!d) return it.lead || it.title || "";
+  if (d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout") return d.headlineArg || t(d.headlineKey);
+  return d.headlineArg ? t(d.headlineKey).replace("{lift}", d.headlineArg) : t(d.headlineKey);
 }
 
 /** Signed percent, for the delta line ("+4.2%"). */
@@ -235,51 +296,99 @@ export function sessionStats(session: LoggedSession): FeedStat[] {
   return stats;
 }
 
-/** A completed-session card: top sets lead, stat row underneath. p2 — the
- *  bread of the feed, deliberately quiet so the moments can be loud. */
-export function sessionDetail(session: LoggedSession): FeedDetail {
+/**
+ * The records a session set, as post lines — heaviest first, the order
+ * `newPrsInSession` already returns them in.
+ *
+ * The percent is over the athlete's OWN previous best on that lift, which is
+ * the only comparison that means anything here: it is what lets a beginner's
+ * +10 kg read as loud as an elite's +2.5 kg.
+ */
+export function prLines(prs: PrHit[]): FeedPrLine[] {
+  return prs.map((p) => {
+    const firstEver = p.previousTopLoad == null && p.previous == null;
+    const prev = p.previousTopLoad ?? null;
+    return {
+      lift: p.lift,
+      topLoadKg: p.topLoad,
+      ...(p.e1rm > 0 ? { e1rmKg: Math.round(p.e1rm) } : {}),
+      ...(prev != null ? { previousTopLoadKg: prev } : {}),
+      ...(prev != null && prev > 0 && p.topLoad > prev
+        ? { deltaPct: ((p.topLoad - prev) / prev) * 100 }
+        : {}),
+      firstEver,
+    };
+  });
+}
+
+/**
+ * A completed-session card: top sets lead, stat row underneath — and the
+ * records it set, listed on the same post.
+ *
+ * MOMENT. A plain session is p2, the bread of the feed, deliberately quiet so
+ * the moments can be loud. A session that set a record IS the moment: it takes
+ * p0, exactly as the separate PR card used to, so folding the two together
+ * costs a record none of its weight in the ranker (feed-rank.ts).
+ *
+ * TIER is earned, not claimed: a matched device recording corroborates the
+ * session the lifts were set in (attestation.ts). Tier 2 needs a witness and is
+ * resolved server-side per viewer.
+ */
+export function sessionDetail(session: LoggedSession, prs: PrHit[] = []): FeedDetail {
+  const lines = prLines(prs);
   return {
-    moment: "p2",
+    moment: lines.length ? "p0" : "p2",
     archetype: "sets",
     headlineKey: "feed.hl.session",
     headlineArg: session.title,
     stats: sessionStats(session),
     sets: topSetLines(session),
     device: !!session.device,
+    ...(lines.length
+      ? {
+          prs: lines,
+          prCount: lines.length,
+          tier: session.device ? 1 : 0,
+          // The loudest line's own numbers drive the ranker's rarity terms —
+          // a first-ever, and how far past the athlete's own best they went.
+          firstEver: lines.some((l) => l.firstEver),
+          deltaPct: lines.reduce<number | undefined>((max, l) => (l.deltaPct != null && (max == null || l.deltaPct > max) ? l.deltaPct : max), undefined),
+        }
+      : {}),
   };
 }
 
-/** A PR card. `firstEver` (a lift never trained before) is the beginner's
- *  record and gets the same p0 weight as a 200 kg squat — the warmest card in
- *  the system, and the one that keeps a beginner posting. */
-export function prDetail(pr: {
-  lift: string;
-  topLoad: number;
-  e1rm?: number;
-  previousTopLoad?: number | null;
-  previous?: number | null;
-  count?: number;
-}, opts: { tier?: AttestationTier; device?: boolean } = {}): FeedDetail {
-  const firstEver = pr.previousTopLoad == null && pr.previous == null;
-  // Percent over the athlete's OWN previous best on this lift — the only
-  // comparison that means anything, and the reason a beginner's card can be as
-  // loud as an elite's.
-  const prev = pr.previousTopLoad ?? null;
-  const deltaPct = prev != null && prev > 0 && pr.topLoad > prev ? ((pr.topLoad - prev) / prev) * 100 : undefined;
-  return {
-    moment: "p0",
-    archetype: "stat",
-    headlineKey: firstEver ? "feed.hl.first" : "feed.hl.pr",
-    headlineArg: pr.lift,
-    figureKg: pr.topLoad,
-    e1rmKg: pr.e1rm && pr.e1rm > 0 ? Math.round(pr.e1rm) : undefined,
-    tier: opts.tier ?? (opts.device ? 1 : 0),
-    deltaPct,
-    firstEver,
-    device: opts.device,
-    prCount: pr.count && pr.count > 1 ? pr.count : undefined,
-  };
+/**
+ * How many records a CARD lists before it counts the rest. The post lists all
+ * of them; a row that listed six would stop being a row.
+ */
+export const FEED_CARD_PR_LINES = 2;
+
+/** The records a card draws in full. */
+export function cardPrLines(prs: FeedPrLine[] | undefined): FeedPrLine[] {
+  return (prs ?? []).slice(0, FEED_CARD_PR_LINES);
 }
+
+/**
+ * The top-set lines still worth drawing BESIDE those records.
+ *
+ * A lift that already has a record line has said its numbers there — drawing
+ * "Back Squat 160 kg +6%" and then "Back Squat 3 × 5 — 160 kg" two rows down is
+ * the same lift twice in one card. Both clients filter through this, so neither
+ * can decide differently.
+ */
+export function cardSetLines(sets: FeedSetLine[] | undefined, shownPrs: FeedPrLine[]): FeedSetLine[] {
+  if (!sets?.length || !shownPrs.length) return sets ?? [];
+  const named = new Set(shownPrs.map((p) => p.lift));
+  return sets.filter((l) => !named.has(l.name));
+}
+
+/*
+ * THERE IS NO `prDetail` ANY MORE. A record the athlete SET is not a card — it
+ * is a line on the workout that set it (see `sessionDetail` above). The only
+ * PR-shaped card left is a PR the athlete deliberately SHARED as a post, which
+ * `postDetail("pr", …)` builds from the stored row.
+ */
 
 /** A typed post — text leads, nothing is dressed up as data. p2/p3. */
 export function postDetail(kind: "status" | "pr" | "workout", data: Record<string, unknown>): FeedDetail {

@@ -1,15 +1,18 @@
 import { describe, it, expect } from "vitest";
 import {
+  cardPrLines,
+  cardSetLines,
+  prLines,
   sessionDetail,
   sessionStats,
   topSetLines,
-  prDetail,
   postDetail,
   feedStatText,
   feedFigureText,
   feedTierChip,
   feedDeltaText,
 } from "./feed-card";
+import type { PrHit } from "./engines";
 import { buildSocialFeed, feedCardView } from "./social";
 import type { LoggedSession } from "./engines";
 
@@ -71,22 +74,50 @@ describe("stat row", () => {
   });
 });
 
-describe("PR cards", () => {
-  it("is a p0 moment carrying its own figure and the delta over the athlete's previous best", () => {
-    const d = prDetail({ lift: "Deadlift", topLoad: 210, e1rm: 228, previousTopLoad: 200, previous: 217 });
-    expect(d).toMatchObject({ moment: "p0", archetype: "stat", headlineKey: "feed.hl.pr", figureKg: 210, e1rmKg: 228 });
-    expect(feedDeltaText(d.deltaPct!)).toBe("+5%");
+describe("the records a workout set", () => {
+  const hit = (over: Partial<PrHit> = {}): PrHit => ({ lift: "Deadlift", e1rm: 228, previous: 217, topLoad: 210, previousTopLoad: 200, ...over });
+
+  it("lists EVERY record on the workout that set them, heaviest first", () => {
+    const d = sessionDetail(session(), [hit(), hit({ lift: "Back Squat", topLoad: 160, previousTopLoad: 155, e1rm: 180, previous: 175 })]);
+    expect(d.prs!.map((p) => p.lift)).toEqual(["Deadlift", "Back Squat"]);
+    expect(d.prCount).toBe(2);
+    // The second and third records used to be a bare count on a card that
+    // named only the heaviest lift.
+    expect(d.prs![1]).toMatchObject({ lift: "Back Squat", topLoadKg: 160, previousTopLoadKg: 155 });
   });
 
-  it("treats a lift never trained before as the beginner's record — same weight, warmer headline", () => {
-    const d = prDetail({ lift: "Pull-up", topLoad: 0, previousTopLoad: null, previous: null });
-    expect(d).toMatchObject({ moment: "p0", firstEver: true, headlineKey: "feed.hl.first" });
-    expect(d.deltaPct).toBeUndefined(); // nothing to improve on yet
+  it("keeps a card readable: two records drawn, the rest counted, and no lift twice", () => {
+    const d = sessionDetail(session(), [hit(), hit({ lift: "Back Squat", topLoad: 160 }), hit({ lift: "Split Squat", topLoad: 40 })]);
+    expect(cardPrLines(d.prs).map((p) => p.lift)).toEqual(["Deadlift", "Back Squat"]);
+    // Back Squat has said its numbers on its record line; the top sets drop it.
+    expect(d.sets!.map((l) => l.name)).toContain("Back Squat");
+    expect(cardSetLines(d.sets, cardPrLines(d.prs)).map((l) => l.name)).toEqual(["Romanian Deadlift", "Split Squat"]);
+    // No records at all → the top sets are untouched.
+    const plain = sessionDetail(session());
+    expect(cardSetLines(plain.sets, cardPrLines(plain.prs))).toEqual(plain.sets);
   });
 
-  it("earns tier 1 from a matched device recording and claims nothing without one", () => {
-    expect(prDetail({ lift: "Squat", topLoad: 180 }, { device: true }).tier).toBe(1);
-    expect(prDetail({ lift: "Squat", topLoad: 180 }).tier).toBe(0);
+  it("carries each record's own figure and the delta over the athlete's previous best", () => {
+    const [pr] = prLines([hit()]);
+    expect(pr).toMatchObject({ lift: "Deadlift", topLoadKg: 210, e1rmKg: 228, previousTopLoadKg: 200 });
+    expect(feedDeltaText(pr!.deltaPct!)).toBe("+5%");
+  });
+
+  it("treats a lift never trained before as the beginner's record", () => {
+    const [pr] = prLines([hit({ lift: "Pull-up", topLoad: 0, e1rm: 0, previousTopLoad: null, previous: null })]);
+    expect(pr).toMatchObject({ firstEver: true });
+    expect(pr!.deltaPct).toBeUndefined(); // nothing to improve on yet
+  });
+
+  it("makes the workout the p0 moment the PR card used to be, and earns tier 1 from a device", () => {
+    const plain = sessionDetail(session());
+    expect(plain).toMatchObject({ moment: "p2", archetype: "sets" });
+    expect(plain.prs).toBeUndefined();
+
+    expect(sessionDetail(session(), [hit()]).moment).toBe("p0");
+    expect(sessionDetail(session(), [hit()]).tier).toBe(0); // claimed, no badge
+    const watched = session({ device: { provider: "apple", uuid: "u1", activityLabel: "Traditional Strength Training", start: "2026-03-02T17:30:00.000Z", end: "2026-03-02T18:41:00.000Z", durationMin: 71 } });
+    expect(sessionDetail(watched, [hit()]).tier).toBe(1);
   });
 });
 
@@ -127,20 +158,30 @@ describe("the preview speaks the same language as the feed", () => {
   // model it must produce the CARD's headline and figures, not the legacy chip
   // soup — otherwise the same PR reads as a record in one place and as an
   // anonymous row two screens away.
-  const t = (k: string) => ({ "feed.hl.pr": "{lift} — new PR", "feed.tier.2": "Witnessed", "feed.stat.min": "min", "feed.stat.volume": "volume" })[k] ?? k;
+  const t = (k: string) => ({ "feed.hl.sharedPr": "{lift} — PR", "feed.tier.2": "Witnessed", "feed.stat.min": "min", "feed.stat.volume": "volume", "feed.prCount": "{n} PRs" })[k] ?? k;
 
-  it("leads a PR with the lift and carries its load, tier and delta", () => {
+  it("leads a shared PR post with the lift and carries its load and tier", () => {
     const v = feedCardView(
-      { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], detail: prDetail({ lift: "Deadlift", topLoad: 210, previousTopLoad: 200, previous: 217 }, { tier: 2 }) },
+      { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], detail: { ...postDetail("pr", { lift: "Deadlift", topLoad: 210 }), tier: 2 } },
       { t, units: "kg" },
     );
-    expect(v.lead).toBe("Deadlift — new PR");
+    expect(v.lead).toBe("Deadlift — PR");
     expect(v.chips).toContain("210 kg");
     expect(v.chips).toContain("T2 Witnessed");
   });
 
+  it("leads a workout that set records with the loudest one, not with its tonnage", () => {
+    const d = sessionDetail(session(), [
+      { lift: "Deadlift", e1rm: 228, previous: 217, topLoad: 210, previousTopLoad: 200 },
+      { lift: "Back Squat", e1rm: 180, previous: 175, topLoad: 160, previousTopLoad: 155 },
+    ]);
+    const v = feedCardView({ author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "Lower — W4D2", chips: [], detail: d }, { t, units: "kg" });
+    expect(v.chips[0]).toBe("Deadlift 210 kg");
+    expect(v.chips).toContain("2 PRs");
+  });
+
   it("falls back to the legacy shape when no translator is passed", () => {
-    const legacy = { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], detail: prDetail({ lift: "Deadlift", topLoad: 210 }) };
+    const legacy = { author: { displayName: "Kasia Nowak", handle: "kasia" }, when: "2 h", lead: "PR", chips: ["Deadlift — 210 kg"], detail: postDetail("pr", { lift: "Deadlift", topLoad: 210 }) };
     expect(feedCardView(legacy)).toMatchObject({ lead: "PR", chips: ["Deadlift — 210 kg"] });
   });
 
@@ -159,16 +200,19 @@ describe("the feed carries the card payload", () => {
 
   it("gives every session card its top sets and stat row", () => {
     const card = built().find((i) => i.kind === "session")!;
-    expect(card.detail).toMatchObject({ moment: "p2", archetype: "sets" });
+    expect(card.detail).toMatchObject({ archetype: "sets" });
     expect(card.detail!.sets!.length).toBeGreaterThan(0);
     expect(card.detail!.stats!.length).toBeGreaterThan(0);
   });
 
-  it("gives a PR its own p0 card so a record never renders like a Tuesday", () => {
-    const pr = built().find((i) => i.kind === "pr")!;
-    expect(pr.detail!.moment).toBe("p0");
-    expect(pr.detail!.figureKg).toBe(160);
-    const sessionCard = built().find((i) => i.kind === "session")!;
-    expect(sessionCard.detail!.moment).toBe("p2");
+  it("posts the workout ONCE, with the records it set listed on it", () => {
+    const feed = built();
+    // One session, one post — never a workout card plus a PR card beside it.
+    expect(feed).toHaveLength(1);
+    expect(feed[0]!.kind).toBe("session");
+    // Everything in this session is a first-ever, so the post is the moment.
+    expect(feed[0]!.detail!.moment).toBe("p0");
+    expect(feed[0]!.detail!.prs!.map((p) => p.lift)).toEqual(["Back Squat", "Romanian Deadlift", "Split Squat"]);
+    expect(feed[0]!.detail!.prs![0]).toMatchObject({ topLoadKg: 160, firstEver: true });
   });
 });

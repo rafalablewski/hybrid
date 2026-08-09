@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { fs, leading, tracking } from "@hybrid/core";
-import type { Relation } from "@hybrid/core";
-import type { FeedItemView, CommentView, CommentsResponse, FeedResponse, KudosResponse, LiveAthlete, MutationResult } from "@hybrid/core";
-import { C, useSocialTheme, card, Avatar, Btn, EmptyState, jget, jsend } from "./social-ui";
+import { feedSubjectKey, fs, leading, tracking } from "@hybrid/core";
+import type { FeedItemView, FeedResponse, KudosResponse, LiveAthlete, MutationResult, Relation } from "@hybrid/core";
+import { C, useSocialTheme, card, Btn, EmptyState, jget, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 import { CosignInbox } from "./pr-attestation";
 import FeedCard from "./feed-card";
-import FeedWorkoutSheet from "./feed-workout";
+import { Comments } from "./feed-comments";
 import FeedLiveStrip from "./feed-live-strip";
 import { HubMasthead } from "./aurora/hub-masthead";
 import { useLang } from "@/lib/i18n";
@@ -33,44 +32,6 @@ import { useIsMobile } from "@/lib/use-media-query";
 
 type FeedItem = FeedItemView;
 type Tab = "forYou" | "following";
-
-/** The comment thread under an open row. EXPORTED because the Saved screen
- *  (social-saved.tsx) renders the same rows and must open the same thread —
- *  a second copy of this would drift the moment either is touched. */
-export function Comments({ item, onCount }: { item: FeedItem; onCount: (n: number) => void }) {
-  const { t } = useLang();
-  const [list, setList] = useState<CommentView[] | null>(null);
-  const [text, setText] = useState("");
-  const load = () => jget<CommentsResponse>(`/api/social/comments?subjectType=${item.subjectType}&subjectId=${item.subjectId}`).then((r) => setList(r.comments ?? []));
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
-  const send = async () => {
-    if (!text.trim()) return;
-    const posted = await jsend<MutationResult>("/api/social/comments", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id, body: text });
-    if (posted.error) { alert(posted.error); return; } // don't clear the box on a failed post
-    setText("");
-    const r = await jget<CommentsResponse>(`/api/social/comments?subjectType=${item.subjectType}&subjectId=${item.subjectId}`);
-    setList(r.comments ?? []);
-    onCount((r.comments ?? []).length);
-  };
-  return (
-    <div style={{ marginTop: 10, borderTop: `1px solid ${C("line")}`, paddingTop: 10 }}>
-      {(list ?? []).map((c) => (
-        <div key={c.id} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <Avatar url={c.author?.avatarUrl} name={c.author?.displayName} handle={c.author?.handle} size={26} />
-          <div style={{ fontSize: fs.body, lineHeight: `${leading(fs.body)}px` }}>
-            <span style={{ color: C("chalk"), fontWeight: 600 }}>{c.author?.displayName || `@${c.author?.handle}`} </span>
-            <span style={{ color: C("ash") }}>{c.body}</span>
-          </div>
-        </div>
-      ))}
-      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-        {/* Named explicitly, like the composer's textarea beside it. */}
-        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={t("w.social.commentPlaceholder")} style={{ flex: 1, padding: "8px 10px", borderRadius: 999, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.body }} />
-        <Btn small onClick={send}>{t("w.social.post")}</Btn>
-      </div>
-    </div>
-  );
-}
 
 /** The composer, deliberately underweighted: in this product the workout is the
  *  post, so the blank page is a one-line invitation until it's wanted. */
@@ -120,15 +81,14 @@ function Composer({ onPosted }: { onPosted: () => void }) {
 
 export default function SocialFeed({
   onNavigate,
-  onOpenSession,
+  onOpenPost,
 }: {
   onNavigate?: (screen: string) => void;
-  /** Open one of MY OWN sessions in History's full detail (Wrapped, PRs, the
-   *  edit/archive row). The visitor's sheet is the right read of someone
-   *  else's workout, and the wrong one of your own — on your own session you
-   *  own actions the sheet deliberately doesn't carry. Absent (a caller with
-   *  no shell to switch) falls back to the sheet. */
-  onOpenSession?: (id: string) => void;
+  /** Open a post on its OWN page (components/feed-post.tsx). Every post opens
+   *  the same way — mine and everyone else's — because the post is what was
+   *  shared and what carries the thread. The shell owns the screen switch, so
+   *  it takes the key and the row we already loaded. */
+  onOpenPost?: (key: string, item: FeedItemView) => void;
 } = {}) {
   const { t } = useLang();
   const isMobile = useIsMobile();
@@ -136,10 +96,6 @@ export default function SocialFeed({
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
-  // The POST, opened — the whole workout behind a card. Held by id (not by the
-  // item) so the sheet keeps reading the live row: a kudos given from the feed
-  // while the sheet is up still shows there.
-  const [opened, setOpened] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("forYou");
   const [live, setLive] = useState<LiveAthlete[]>([]);
 
@@ -286,21 +242,12 @@ export default function SocialFeed({
               onOpenProfile={(h) => setDrawer(h)}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
-              // Session and PR cards are both anchored on a Session id, so both
-              // open to the workout. A status post has no workout behind it.
-              // MY OWN session opens MY view of it — the full detail with the
-              // Wrapped, the PRs and the manage row — not the visitor's read.
-              // Otherwise the sheet, and opening COLLAPSES the row's inline
-              // thread: the sheet carries the same thread, and two mounted
-              // copies would fetch the same comments twice and then disagree
-              // the moment one posted.
-              onOpen={
-                item.subjectType === "session" || item.subjectType === "pr"
-                  ? item.mine && onOpenSession
-                    ? () => onOpenSession(item.subjectId)
-                    : () => { setOpen(null); setOpened(item.id); }
-                  : undefined
-              }
+              // EVERY post opens its own page — a workout, a record, a status
+              // update alike. Opening COLLAPSES the row's inline thread: the
+              // post carries the same thread, and two mounted copies would
+              // fetch the same comments twice and then disagree the moment one
+              // of them posted.
+              onOpen={onOpenPost ? () => { setOpen(null); onOpenPost(feedSubjectKey(item), item); } : undefined}
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
               onAuthorChanged={authorChanged}
             >
@@ -319,18 +266,6 @@ export default function SocialFeed({
           </div>
         </>
       )}
-
-      {/* THE POST, OPENED — the whole workout behind the row, with its thread
-          underneath (the same Comments component the row expands, so a comment
-          written here and one written in the stream are one thing). */}
-      {(() => {
-        const it = opened ? items.find((i) => i.id === opened) ?? null : null;
-        return (
-          <FeedWorkoutSheet item={it} units={units} open={!!it} onClose={() => setOpened(null)}>
-            {it && <Comments item={it} onCount={(n) => setFeed((f) => f?.map((x) => (x.id === it.id ? { ...x, comments: n } : x)) ?? f)} />}
-          </FeedWorkoutSheet>
-        );
-      })()}
 
       {drawer && <ProfileDrawer handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </div>
