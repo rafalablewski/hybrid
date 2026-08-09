@@ -93,7 +93,6 @@ export default function AuroraWeekRail({
   onStart,
   onNavigate,
   onSelectDay,
-  resetToken,
   doneFloor,
 }: {
   planId: string;
@@ -109,9 +108,6 @@ export default function AuroraWeekRail({
    *  of the screen (Also-today / feeling cards) to the viewed day. Until the
    *  first tap the caller should assume today. */
   onSelectDay?: (day: ScheduledDay) => void;
-  /** Bump to snap the rail's internal selection back to today (the masthead's
-   *  "Back to today" affordance). Mirrors the mobile rail. */
-  resetToken?: number;
   /** The DONE FLOOR — every session logged on the viewed day, rendered as this
    *  card's lower floor under a labelled seam (aurora/done-floor.tsx). The plan
    *  floor above states what is ASKED of the athlete; this one states what they
@@ -134,7 +130,7 @@ export default function AuroraWeekRail({
   // the enrolled plan changes — a picked index is meaningless across schedules
   // (the caller's lifted onSelectDay copy re-anchors to today the same way).
   const [picked, setPicked] = useState<number | null>(null);
-  useEffect(() => { setPicked(null); }, [planId, resetToken]);
+  useEffect(() => { setPicked(null); }, [planId]);
   const selectedIndex = picked ?? schedule?.todayIndex ?? 0;
 
   // The receipt behind a done day — built from the logged session that
