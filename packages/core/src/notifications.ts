@@ -40,6 +40,23 @@
  * timestamp — a kudos from this morning fetched this afternoon is unread,
  * which is correct: you have not seen it.
  *
+ * THE TWO EXCEPTIONS THE WATERMARK CANNOT HOLD EITHER, and why each is its own
+ * id set rather than a flag on the row (the row is DERIVED — it is rebuilt from
+ * the sessions and the social feed on every poll, so nothing written onto it
+ * survives):
+ *
+ *   • `unreadIds` — rows pushed BACK to unread by hand (swipe right, "I'll deal
+ *     with this later"). Their timestamp is older than `seenAt` by definition,
+ *     so the watermark alone calls them read and the next sweep would silently
+ *     undo the athlete's decision. This set BEATS the watermark. The passive
+ *     sweep never clears it; the explicit "Mark all read" does, because that is
+ *     the one gesture that means "all of it, including that".
+ *
+ *   • `dismissedIds` — rows swiped away. There is no server-side notification
+ *     table to delete a row FROM (the list is a projection of training, social
+ *     events and the feel schedule), so a delete is a tombstone: the id is
+ *     remembered and the row is filtered out of every later build.
+ *
  * Nothing here fabricates a notification. No training, no social events and no
  * session waiting on a feel read yields an empty list and an honest zero.
  */
@@ -103,51 +120,113 @@ export interface NotifReadState {
    * Bounded — a read state is not a log.
    */
   readIds: string[];
+  /** Rows put BACK to unread by hand. Beats the watermark; see the header. */
+  unreadIds: string[];
+  /** Rows swiped away. Filtered out of every later build, never rebuilt. */
+  dismissedIds: string[];
 }
 
-export const DEFAULT_NOTIF_READ: NotifReadState = { seenAt: 0, readIds: [] };
+export const DEFAULT_NOTIF_READ: NotifReadState = { seenAt: 0, readIds: [], unreadIds: [], dismissedIds: [] };
 
-/** How many explicit ids a read state keeps. Oldest are dropped first. */
+/** How many explicit ids each of the state's id sets keeps. Oldest drop first. */
 export const NOTIF_READ_ID_CAP = 200;
+
+/** One persisted id list, de-duplicated and bounded. */
+const idList = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? [...new Set(value.filter((x): x is string => typeof x === "string"))].slice(-NOTIF_READ_ID_CAP)
+    : [];
 
 /** Coerce anything persisted (an older shape, a corrupted blob) to a valid state. */
 export function normalizeNotifRead(value: unknown): NotifReadState {
   const v = (value ?? {}) as Partial<NotifReadState>;
   const seenAt = typeof v.seenAt === "number" && Number.isFinite(v.seenAt) && v.seenAt > 0 ? v.seenAt : 0;
-  const ids = Array.isArray(v.readIds) ? v.readIds.filter((x): x is string => typeof x === "string") : [];
-  return { seenAt, readIds: [...new Set(ids)].slice(-NOTIF_READ_ID_CAP) };
+  return { seenAt, readIds: idList(v.readIds), unreadIds: idList(v.unreadIds), dismissedIds: idList(v.dismissedIds) };
 }
 
-const withIds = (state: NotifReadState, add: string[]): NotifReadState => {
-  if (!add.length) return state;
-  const next = [...state.readIds.filter((id) => !add.includes(id)), ...add];
-  return { ...state, readIds: next.slice(-NOTIF_READ_ID_CAP) };
-};
+/** Append to one id list, keeping each id once, newest last, within the cap. */
+const push = (list: string[] | undefined, add: string[]): string[] =>
+  [...(list ?? []).filter((id) => !add.includes(id)), ...add].slice(-NOTIF_READ_ID_CAP);
 
-/** Is this row already read under `state`? */
+const drop = (list: string[] | undefined, remove: string[]): string[] =>
+  (list ?? []).filter((id) => !remove.includes(id));
+
+/** Is this row already read under `state`? A hand-set unread beats everything. */
 export function isNotifRead(state: NotifReadState, item: { id: string; at: number }): boolean {
-  return item.at <= state.seenAt || state.readIds.includes(item.id);
+  if ((state.unreadIds ?? []).includes(item.id)) return false;
+  return item.at <= state.seenAt || (state.readIds ?? []).includes(item.id);
 }
 
-/** Mark ONE row read (tapping it). */
+/** Has this row been swiped away? */
+export function isNotifDismissed(state: NotifReadState, id: string): boolean {
+  return (state.dismissedIds ?? []).includes(id);
+}
+
+/** Mark ONE row read (tapping it). Clears a hand-set unread on the same row. */
 export function markNotifRead(state: NotifReadState, id: string): NotifReadState {
-  return withIds(state, [id]);
+  return { ...state, readIds: push(state.readIds, [id]), unreadIds: drop(state.unreadIds, [id]) };
+}
+
+/** Put ONE row BACK to unread (swipe right) — it returns to the New section. */
+export function markNotifUnread(state: NotifReadState, id: string): NotifReadState {
+  return { ...state, readIds: drop(state.readIds, [id]), unreadIds: push(state.unreadIds, [id]) };
+}
+
+/** Swipe a row away. The id is remembered so the projection can't rebuild it. */
+export function dismissNotif(state: NotifReadState, id: string): NotifReadState {
+  return {
+    ...state,
+    readIds: drop(state.readIds, [id]),
+    unreadIds: drop(state.unreadIds, [id]),
+    dismissedIds: push(state.dismissedIds, [id]),
+  };
 }
 
 /**
- * Mark every row currently on screen read.
+ * The watermark move both sweeps share.
  *
- * The watermark moves to `now` (not to the newest item's timestamp: a future
- * assignment would otherwise pre-read everything up to the day of the session).
- * Rows dated ahead of `now` are named explicitly instead.
+ * It goes to `now` (not to the newest item's timestamp: a future assignment
+ * would otherwise pre-read everything up to the day of the session). Rows dated
+ * ahead of `now` are named explicitly instead — except any the athlete is
+ * holding unread by hand, which must not be written into `readIds` behind them.
+ */
+const sweepTo = (state: NotifReadState, items: { id: string; at: number }[], now: number): NotifReadState => {
+  const held = state.unreadIds ?? [];
+  const future = items.filter((i) => i.at > now && !held.includes(i.id)).map((i) => i.id);
+  return { ...state, seenAt: Math.max(state.seenAt, now), readIds: push(state.readIds, future) };
+};
+
+/**
+ * The PASSIVE sweep — the screen marking what it has just shown you as seen.
+ *
+ * It never clears a hand-set unread: swiping a row right is a decision, and a
+ * timer that fires a second and a half later has no standing to undo it. It
+ * also returns the SAME object when there is nothing to sweep, so a screen that
+ * re-arms it on every poll cannot rewrite the store (and re-render) in a loop.
+ */
+export function sweepNotifsRead(
+  state: NotifReadState,
+  items: { id: string; at: number }[],
+  now: number = Date.now(),
+): NotifReadState {
+  const held = state.unreadIds ?? [];
+  if (!items.some((i) => !isNotifRead(state, i) && !held.includes(i.id))) return state;
+  return sweepTo(state, items, now);
+}
+
+/**
+ * Mark every row currently on screen read — the EXPLICIT action.
+ *
+ * Unlike the passive sweep this DOES clear the rows held unread by hand: a
+ * "mark all read" that leaves one row bold has not done what it says.
  */
 export function markAllNotifsRead(
   state: NotifReadState,
   items: { id: string; at: number }[],
   now: number = Date.now(),
 ): NotifReadState {
-  const future = items.filter((i) => i.at > now).map((i) => i.id);
-  return withIds({ ...state, seenAt: Math.max(state.seenAt, now) }, future);
+  const next = sweepTo(state, items, now);
+  return { ...next, unreadIds: drop(next.unreadIds, items.map((i) => i.id)) };
 }
 
 /** Are any of these rows unread? Cheap enough for a badge that re-renders. */
@@ -276,13 +355,49 @@ export function buildNotifications(input: NotifInput): NotifFeed {
 
   // A feel read the athlete has already answered is dropped by feelSchedule, so
   // the only de-duplication left is against ourselves — two calls, one list.
+  // Dismissed rows are dropped BEFORE the limit, so swiping one away lets the
+  // next row up rather than leaving a shorter list.
   const merged = [...feelItems(input, now), ...social, ...training];
   const seen = new Set<string>();
   const items = merged
+    .filter((i) => !isNotifDismissed(read, i.id))
     .filter((i) => (seen.has(i.id) ? false : (seen.add(i.id), true)))
     .map((i) => ({ ...i, read: isNotifRead(read, i) }))
     .sort((a, b) => (a.rank !== b.rank ? a.rank - b.rank : a.rank === 2 ? a.at - b.at : b.at - a.at))
     .slice(0, input.limit ?? 40);
 
   return { items, unread: items.reduce((n, i) => n + (i.read ? 0 : 1), 0) };
+}
+
+// ------------------------------------------------------ new versus seen ----
+
+export interface NotifSections {
+  /** The New section: what this visit has not dealt with yet. */
+  fresh: NotifItem[];
+  /** The Seen section: read on an earlier visit, kept and out of the way. */
+  seen: NotifItem[];
+}
+
+/**
+ * Split the list into the NEW section and the SEEN section.
+ *
+ * `read` alone cannot draw this line, and that is the whole reason this
+ * function exists rather than a `filter` in each client. The screen sweeps
+ * itself read a second and a half after it opens, so a split on `read` would
+ * tip every row you are still looking at into "Seen" under your eyes — the list
+ * would reshuffle itself while being read, which is the failure the frozen
+ * "New" markers were introduced to avoid in the first place.
+ *
+ * So the line is drawn by the VISIT: `visitNew` holds every id that was unread
+ * at any point since the screen was opened (a client keeps it in a ref, and
+ * clears it on each focus). Those rows stay in New until you leave and come
+ * back; everything already dealt with sits under Seen. A row swiped back to
+ * unread re-enters `visitNew` on the next render and climbs to New, which is
+ * exactly the feedback that gesture owes.
+ */
+export function splitNotifications(items: NotifItem[], visitNew: ReadonlySet<string>): NotifSections {
+  const fresh: NotifItem[] = [];
+  const seen: NotifItem[] = [];
+  for (const i of items) (visitNew.has(i.id) || !i.read ? fresh : seen).push(i);
+  return { fresh, seen };
 }

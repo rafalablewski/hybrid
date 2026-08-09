@@ -2,9 +2,12 @@ import { useSyncExternalStore } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   DEFAULT_NOTIF_READ,
+  dismissNotif,
   markAllNotifsRead,
   markNotifRead,
+  markNotifUnread,
   normalizeNotifRead,
+  sweepNotifsRead,
   type NotifReadState,
 } from "@hybrid/core";
 
@@ -40,6 +43,10 @@ AsyncStorage.getItem(KEY)
   .catch(() => {});
 
 function persist(next: NotifReadState): void {
+  // A no-op sweep returns the state it was given (see sweepNotifsRead) — writing
+  // and emitting it anyway would re-render the screen, re-arm the sweep and go
+  // round again every poll.
+  if (next === state) return;
   state = next;
   AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {});
   emit();
@@ -50,7 +57,22 @@ export function readNotification(id: string): void {
   persist(markNotifRead(state, id));
 }
 
-/** Mark every row currently on screen read. */
+/** Put one row back to unread (swipe right). */
+export function unreadNotification(id: string): void {
+  persist(markNotifUnread(state, id));
+}
+
+/** Delete one row (swipe left) — a tombstone, since the list is a projection. */
+export function dismissNotification(id: string): void {
+  persist(dismissNotif(state, id));
+}
+
+/** The passive sweep: mark what the screen has just shown as seen. */
+export function sweepNotifications(items: { id: string; at: number }[]): void {
+  persist(sweepNotifsRead(state, items));
+}
+
+/** Mark every row currently on screen read — the explicit action. */
 export function readAllNotifications(items: { id: string; at: number }[]): void {
   persist(markAllNotifsRead(state, items));
 }

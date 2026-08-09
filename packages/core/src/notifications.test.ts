@@ -3,10 +3,15 @@ import {
   buildNotifications,
   countUnread,
   DEFAULT_NOTIF_READ,
+  dismissNotif,
+  isNotifDismissed,
   isNotifRead,
   markAllNotifsRead,
   markNotifRead,
+  markNotifUnread,
   normalizeNotifRead,
+  splitNotifications,
+  sweepNotifsRead,
   NOTIF_READ_ID_CAP,
 } from "./notifications";
 import type { LoggedSession, SocialNotifItem } from "./index";
@@ -177,8 +182,13 @@ describe("read state", () => {
 
   it("normalizes junk to a usable state", () => {
     expect(normalizeNotifRead(null)).toEqual(DEFAULT_NOTIF_READ);
-    expect(normalizeNotifRead({ seenAt: "nope", readIds: [1, "x", null] })).toEqual({ seenAt: 0, readIds: ["x"] });
+    expect(normalizeNotifRead({ seenAt: "nope", readIds: [1, "x", null] })).toEqual({ seenAt: 0, readIds: ["x"], unreadIds: [], dismissedIds: [] });
     expect(normalizeNotifRead({ seenAt: NaN })).toEqual(DEFAULT_NOTIF_READ);
+  });
+
+  it("normalizes a state persisted before the unread/dismissed sets existed", () => {
+    // Every device that ever opened the bell has one of these in its store.
+    expect(normalizeNotifRead({ seenAt: NOW, readIds: ["a"] })).toEqual({ seenAt: NOW, readIds: ["a"], unreadIds: [], dismissedIds: [] });
   });
 
   it("countUnread agrees with the built feed", () => {
@@ -188,9 +198,139 @@ describe("read state", () => {
   });
 
   it("isNotifRead reads the watermark and the id set", () => {
-    const read = { seenAt: NOW - H, readIds: ["x"] };
+    const read = { ...DEFAULT_NOTIF_READ, seenAt: NOW - H, readIds: ["x"] };
     expect(isNotifRead(read, { id: "old", at: NOW - 2 * H })).toBe(true);
     expect(isNotifRead(read, { id: "new", at: NOW })).toBe(false);
     expect(isNotifRead(read, { id: "x", at: NOW })).toBe(true);
+  });
+});
+
+describe("swipe right — back to unread", () => {
+  const feedWith = (read = DEFAULT_NOTIF_READ) =>
+    buildNotifications({ sessions: [session()], social: [kudos()], read, now: NOW });
+
+  it("beats the watermark, so a swept row comes back", () => {
+    const swept = markAllNotifsRead(DEFAULT_NOTIF_READ, feedWith().items, NOW);
+    expect(feedWith(swept).unread).toBe(0);
+    const held = markNotifUnread(swept, "social-kudos-nina");
+    const after = feedWith(held);
+    expect(after.unread).toBe(1);
+    expect(after.items.find((i) => i.id === "social-kudos-nina")!.read).toBe(false);
+  });
+
+  it("survives the passive sweep — a timer does not undo a decision", () => {
+    const held = markNotifUnread(markAllNotifsRead(DEFAULT_NOTIF_READ, feedWith().items, NOW), "social-kudos-nina");
+    const after = sweepNotifsRead(held, feedWith(held).items, NOW + 1000);
+    expect(isNotifRead(after, { id: "social-kudos-nina", at: NOW - 30 * 60_000 })).toBe(false);
+  });
+
+  it("but 'Mark all read' clears it — the one gesture that means all of it", () => {
+    const held = markNotifUnread(markAllNotifsRead(DEFAULT_NOTIF_READ, feedWith().items, NOW), "social-kudos-nina");
+    const after = markAllNotifsRead(held, feedWith(held).items, NOW + 1000);
+    expect(feedWith(after).unread).toBe(0);
+  });
+
+  it("tapping a held row reads it again", () => {
+    const held = markNotifUnread(DEFAULT_NOTIF_READ, "social-kudos-nina");
+    const after = markNotifRead(held, "social-kudos-nina");
+    expect(after.unreadIds).not.toContain("social-kudos-nina");
+    expect(feedWith(after).items.find((i) => i.id === "social-kudos-nina")!.read).toBe(true);
+  });
+
+  it("a passive sweep with nothing to sweep returns the SAME state", () => {
+    const swept = markAllNotifsRead(DEFAULT_NOTIF_READ, feedWith().items, NOW);
+    const items = feedWith(swept).items;
+    expect(sweepNotifsRead(swept, items, NOW + 1000)).toBe(swept);
+    // And still the same object when the only unread row is one held by hand,
+    // which is what stops the screen's re-armed sweep from looping.
+    const held = markNotifUnread(swept, "social-kudos-nina");
+    expect(sweepNotifsRead(held, feedWith(held).items, NOW + 2000)).toBe(held);
+  });
+
+  it("does not pre-read a future assignment that is being held unread", () => {
+    const assignments = [{ id: "a1", name: "Tempo run", date: new Date(NOW + 3 * 86_400_000).toISOString(), status: "assigned" }];
+    const held = markNotifUnread(DEFAULT_NOTIF_READ, "assign-a1");
+    const after = sweepNotifsRead(held, buildNotifications({ sessions: [], assignments, read: held, now: NOW }).items, NOW);
+    expect(after.readIds).not.toContain("assign-a1");
+    expect(buildNotifications({ sessions: [], assignments, read: after, now: NOW }).unread).toBe(1);
+  });
+});
+
+describe("swipe left — delete", () => {
+  it("drops the row from the list and from the count", () => {
+    const before = buildNotifications({ sessions: [session()], social: [kudos()], now: NOW });
+    const read = dismissNotif(DEFAULT_NOTIF_READ, "social-kudos-nina");
+    const after = buildNotifications({ sessions: [session()], social: [kudos()], read, now: NOW });
+    expect(after.items.some((i) => i.id === "social-kudos-nina")).toBe(false);
+    expect(after.items.length).toBe(before.items.length - 1);
+    expect(after.unread).toBe(before.unread - 1);
+    expect(isNotifDismissed(read, "social-kudos-nina")).toBe(true);
+  });
+
+  it("stays deleted when the same event is fetched again", () => {
+    const read = dismissNotif(DEFAULT_NOTIF_READ, "feel-immediate-s1");
+    // The feel read is a PROJECTION — it is rebuilt from the session every poll,
+    // so only the tombstone can keep it away.
+    for (let i = 0; i < 3; i++) {
+      expect(buildNotifications({ sessions: [session()], read, now: NOW }).items.some((x) => x.id === "feel-immediate-s1")).toBe(false);
+    }
+  });
+
+  it("lets the next row up rather than shortening the list", () => {
+    const social = Array.from({ length: 6 }, (_, i) => kudos({ id: `k${i}`, at: NOW - (i + 1) * 60_000 }));
+    const full = buildNotifications({ sessions: [], social, limit: 3, now: NOW });
+    expect(full.items.length).toBe(3);
+    const read = dismissNotif(DEFAULT_NOTIF_READ, full.items[0]!.id);
+    expect(buildNotifications({ sessions: [], social, limit: 3, read, now: NOW }).items.length).toBe(3);
+  });
+
+  it("clears the row's read and unread marks with it", () => {
+    const held = markNotifUnread(markNotifRead(DEFAULT_NOTIF_READ, "x"), "x");
+    const gone = dismissNotif(held, "x");
+    expect(gone.readIds).not.toContain("x");
+    expect(gone.unreadIds).not.toContain("x");
+    expect(gone.dismissedIds).toContain("x");
+  });
+
+  it("bounds the tombstones too", () => {
+    let state = DEFAULT_NOTIF_READ;
+    for (let i = 0; i < NOTIF_READ_ID_CAP + 5; i++) state = dismissNotif(state, `d${i}`);
+    expect(state.dismissedIds.length).toBe(NOTIF_READ_ID_CAP);
+  });
+});
+
+describe("New versus Seen", () => {
+  const items = (read = DEFAULT_NOTIF_READ) =>
+    buildNotifications({ sessions: [session()], social: [kudos()], read, now: NOW }).items;
+
+  it("puts everything unread in New and nothing in Seen", () => {
+    const { fresh, seen } = splitNotifications(items(), new Set());
+    expect(fresh.length).toBe(items().length);
+    expect(seen).toEqual([]);
+  });
+
+  it("moves what an earlier visit read into Seen", () => {
+    const read = markAllNotifsRead(DEFAULT_NOTIF_READ, items(), NOW);
+    const { fresh, seen } = splitNotifications(items(read), new Set());
+    expect(fresh).toEqual([]);
+    expect(seen.length).toBe(items(read).length);
+  });
+
+  it("holds THIS visit's rows in New even after the sweep reads them", () => {
+    // The sweep fires while the athlete is still looking at the list; the rows
+    // must not tip into Seen under their eyes.
+    const visit = new Set(items().map((i) => i.id));
+    const read = markAllNotifsRead(DEFAULT_NOTIF_READ, items(), NOW);
+    const { fresh, seen } = splitNotifications(items(read), visit);
+    expect(fresh.length).toBe(items(read).length);
+    expect(seen).toEqual([]);
+  });
+
+  it("keeps each section in the feed's own order", () => {
+    const read = markNotifRead(DEFAULT_NOTIF_READ, "feel-immediate-s1");
+    const all = items(read);
+    const { fresh, seen } = splitNotifications(all, new Set());
+    expect([...fresh, ...seen].map((i) => i.id).sort()).toEqual(all.map((i) => i.id).sort());
+    expect(fresh.map((i) => i.id)).toEqual(all.filter((i) => !i.read).map((i) => i.id));
   });
 });
