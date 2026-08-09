@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  enduranceWindow, enduranceDeltaPct, enduranceValue, hasEnduranceHistory,
+  enduranceWindow, enduranceDeltaPct, enduranceLead, enduranceValue, hasEnduranceHistory,
 } from "./endurance-window";
 import { activitySummary, resolveActivityRange } from "./activity-window";
 import type { LoggedSession, SessionBlock } from "./engines/session";
@@ -121,6 +121,81 @@ describe("enduranceWindow", () => {
     expect(w.baseline.distanceKm).toBeCloseTo(8, 6);
     expect(enduranceDeltaPct(w, "distance")).toBe(25);
     expect(enduranceValue(w.totals, "distance")).toBeCloseTo(10, 6);
+  });
+});
+
+describe("enduranceLead", () => {
+  it("says nothing was logged rather than inventing a leader", () => {
+    const lead = enduranceLead(enduranceWindow([sess("gym", 1, [lift("Squat")])], week()));
+    expect(lead.key).toBe("w.home.endw.empty");
+    expect(lead.lead).toBeNull();
+    expect(lead.sports).toBe(0);
+  });
+
+  it("treats ONE sport as its own shape, not a degenerate 'led by'", () => {
+    const lead = enduranceLead(enduranceWindow([
+      sess("a", 1, [cardio("Run", 40, "running", 8)], 40),
+      sess("b", 2, [cardio("Run", 50, "running", 10)], 50),
+    ], week()));
+    expect(lead.key).toBe("w.home.endw.leadOne");
+    expect(lead.sports).toBe(1);
+    expect(lead.lead!.discipline).toBe("running");
+  });
+
+  it("says MOSTLY when the leader carried half the time or more", () => {
+    const lead = enduranceLead(enduranceWindow([
+      sess("run", 1, [cardio("Run", 120, "running", 22)], 120),
+      sess("swim", 2, [cardio("Swim", 30, "swimming", 1.2)], 30),
+    ], week()));
+    expect(lead.key).toBe("w.home.endw.leadMost");
+    expect(lead.lead!.discipline).toBe("running");
+    expect(lead.sports).toBe(2);
+  });
+
+  it("says LED BY when no sport carried a majority — a claim any window supports", () => {
+    const lead = enduranceLead(enduranceWindow([
+      sess("run", 1, [cardio("Run", 60, "running", 11)], 60),
+      sess("ride", 2, [cardio("Ride", 50, "cycling", 25)], 50),
+      sess("squash", 0, [cardio("Squash", 45, "sport")], 45),
+    ], week()));
+    expect(lead.key).toBe("w.home.endw.leadLed");
+    expect(lead.lead!.share).toBeLessThan(0.5);
+    // The leader is the largest slice by definition, so "led by" is always true.
+    expect(lead.lead!.discipline).toBe("running");
+    expect(lead.sports).toBe(3);
+  });
+
+  it("counts other sports alongside lane disciplines, and can be led by one", () => {
+    const lead = enduranceLead(enduranceWindow([
+      sess("tennis", 1, [cardio("Tennis", 120, "sport")], 120),
+      sess("run", 2, [cardio("Run", 30, "running", 6)], 30),
+    ], week()));
+    expect(lead.key).toBe("w.home.endw.leadMost");
+    expect(lead.lead!.label).toBe("Tennis");
+    expect(lead.sports).toBe(2);
+  });
+
+  it("carries the section's OWN time and its OWN move — never the card's", () => {
+    const sessions = [
+      sess("now", 1, [cardio("Run", 60, "running", 12)], 60),
+      sess("gym", 2, [lift("Bench")], 90),          // not endurance: must not count
+      sess("w1", 8, [cardio("Run", 40, "running", 8)], 40),
+      sess("w2", 15, [cardio("Run", 40, "running", 8)], 40),
+      sess("w3", 22, [cardio("Run", 40, "running", 8)], 40),
+      sess("w4", 29, [cardio("Run", 40, "running", 8)], 40),
+    ];
+    const lead = enduranceLead(enduranceWindow(sessions, week()));
+    expect(lead.minutes).toBe(60);
+    expect(lead.whyKey).toBe("w.home.endw.why");
+    expect(lead.deltaPct).toBe(50);                 // 60 against a 40-minute mean
+  });
+
+  it("has no comparison when there is no baseline — never a 0%", () => {
+    const lead = enduranceLead(enduranceWindow([
+      sess("run", 1, [cardio("Run", 40, "running", 8)], 40),
+    ], week()));
+    expect(lead.whyKey).toBe("w.home.endw.whyCold");
+    expect(lead.deltaPct).toBeNull();
   });
 });
 

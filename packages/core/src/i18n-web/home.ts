@@ -245,13 +245,21 @@ export const web_home = {
     // the meta beside it names the window, so the old "New PRs this week"
     // phrasing (title and window in one string) is no longer needed.
     "w.home.act.recordsTitle": "Records",
-    // ENDURANCE — the section's own summary card and everything its filter
-    // turns it into. Scoped w.home.endw.* so it can never be mistaken for the
-    // w.home.end.* lane strings.
-    "w.home.endw.lEfforts": "Efforts",
-    "w.home.endw.lDistance": "Distance",
-    "w.home.endw.lTime": "Time",
+    // ENDURANCE — the section's opener. Scoped w.home.endw.* so it can never
+    // be mistaken for the w.home.end.* lane strings.
     "w.home.endw.empty": "No endurance logged in this period.",
+    // The opener's SENTENCE. It says what the verdict card cannot — how many
+    // sports, and which carried them — because the figures it used to print
+    // (distance especially, which only these groups ever carry) were that
+    // card's own columns restated a screen below it. {n} sports, {s} the
+    // leading sport's name.
+    "w.home.endw.leadOne": "All of it was {s}.",
+    "w.home.endw.leadMost": "{n} sports, mostly {s}.",
+    "w.home.endw.leadLed": "{n} sports, led by {s}.",
+    // The working-out: the one figure that is NOT a restatement (this
+    // section's own time) against the one comparison nothing else makes.
+    "w.home.endw.why": "{h} h, {d} on your average",
+    "w.home.endw.whyCold": "{h} h in total",
     "w.home.act.close": "Close",
     "w.home.act.allGroups": "All",
     "w.home.act.showAll": "Show all {n}",
@@ -1356,10 +1364,12 @@ export const web_home = {
     "w.home.act.empty": "Nic nie zapisano w tym okresie.",
     "w.home.act.hint": "Otwórz liczbę, żeby zobaczyć sesje za nią",
     "w.home.act.recordsTitle": "Rekordy",
-    "w.home.endw.lEfforts": "Wysiłki",
-    "w.home.endw.lDistance": "Dystans",
-    "w.home.endw.lTime": "Czas",
     "w.home.endw.empty": "Brak wytrzymałości w tym okresie.",
+    "w.home.endw.leadOne": "Wszystko to {s}.",
+    "w.home.endw.leadMost": "{n} sportów, głównie {s}.",
+    "w.home.endw.leadLed": "{n} sportów, na czele {s}.",
+    "w.home.endw.why": "{h} h, {d} wobec Twojej średniej",
+    "w.home.endw.whyCold": "{h} h łącznie",
     "w.home.act.close": "Zamknij",
     "w.home.act.allGroups": "Wszystko",
     "w.home.act.showAll": "Pokaż wszystkie ({n})",
@@ -2402,10 +2412,12 @@ export const web_home = {
     "w.home.act.empty": "In diesem Zeitraum nichts geloggt.",
     "w.home.act.hint": "Öffne eine Zahl für die Sessions dahinter",
     "w.home.act.recordsTitle": "Rekorde",
-    "w.home.endw.lEfforts": "Einheiten",
-    "w.home.endw.lDistance": "Distanz",
-    "w.home.endw.lTime": "Zeit",
     "w.home.endw.empty": "Keine Ausdauer in diesem Zeitraum erfasst.",
+    "w.home.endw.leadOne": "Alles davon war {s}.",
+    "w.home.endw.leadMost": "{n} Sportarten, überwiegend {s}.",
+    "w.home.endw.leadLed": "{n} Sportarten, angeführt von {s}.",
+    "w.home.endw.why": "{h} h, {d} gegenüber deinem Schnitt",
+    "w.home.endw.whyCold": "{h} h insgesamt",
     "w.home.act.close": "Schließen",
     "w.home.act.allGroups": "Alle",
     "w.home.act.showAll": "Alle {n} zeigen",

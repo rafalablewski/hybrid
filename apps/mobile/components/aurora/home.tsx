@@ -1099,16 +1099,18 @@ export default function AuroraHome() {
             <SectionSeam />
             <GroupMark label={t("endurance.title")} mt={24} />
 
-            {/* ───── (a) THE STRIP — the section's opener, and deliberately
-                SMALL: efforts / distance / time for the period, each against
-                its own baseline, and nothing else. It carries no filter (it
-                reads the screen's period, which the verdict card's control
-                writes) and no per-discipline breakdown — that breakdown is the
-                lanes directly below, and printing it here was a table of
-                contents that pushed its own contents off the screen. The
-                figures are a SLICE of the verdict card's above (core
-                endurance-window.ts reads the same activitySummary), never a
-                second opinion. ───── */}
+            {/* ───── (a) THE LEAD — the section's opener, and it is a
+                SENTENCE: how many sports, and which carried them. That is the
+                one thing about this section no other block on Today can state,
+                which is exactly why the two earlier cuts failed — a
+                per-discipline breakdown is a table of contents for the lanes
+                directly below it, and a row of totals is the verdict card's
+                own columns one screen up (distance especially: only these
+                groups ever carry any). Under the sentence, one mono line —
+                this section's own time against its own baseline, the only
+                comparison nothing else makes. It carries no filter: it reads
+                the screen's period, which the verdict card's control
+                writes. ───── */}
             <AuroraEnduranceSummary sessions={sessions} bw={bw} />
 
             {/* ───── (b…) ONE LANE PER SPORT — a full-bleed rail per logged

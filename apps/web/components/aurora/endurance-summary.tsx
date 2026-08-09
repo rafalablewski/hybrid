@@ -2,59 +2,55 @@
 
 import { useMemo, type CSSProperties } from "react";
 import {
-  ENDURANCE_METRICS, TODAY_RANGE_STORE_KEY, enduranceDeltaPct, enduranceDirection,
-  enduranceMetricKey, enduranceValue, enduranceWindow, kmValue,
-  type BodyweightInput, type EnduranceMetric, type LoggedSession, type VerdictDirection,
+  TODAY_RANGE_STORE_KEY, enduranceDirection, enduranceLead, enduranceWindow, sliceName,
+  type BodyweightInput, type LoggedSession, type VerdictDirection,
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { useActivityRange, useRangeLabels } from "./range-filter";
 
 /**
- * THE ENDURANCE STRIP — how the section's period went, in one glance (web).
- * The TWIN of components/aurora/endurance-summary.tsx on mobile.
+ * THE ENDURANCE LEAD — the section's opener, as a SENTENCE (web). The TWIN of
+ * components/aurora/endurance-summary.tsx on mobile.
  *
  * Endurance used to be a run of per-discipline rails with nothing above them
- * stating the whole. You could read that running was 39 km and swimming 600 m
- * and never be told what the two came to, how many times you went out, or
- * whether any of it was more than usual. The lanes answer "how is my running
- * going"; nothing answered "how is my endurance going".
+ * stating the whole. The lanes answer "how is my running going"; nothing
+ * answered "how is my endurance going".
  *
- * A STRIP, NOT A CARD, and the difference is the point. The first cut was a
- * full card: the same three figures, then a hairline, a "what it was made of"
- * header, a share bar and a row per discipline — about 300px of section opening
- * before the first lane. Every one of those rows was a discipline that has a
- * WHOLE RAIL of its own immediately below, carrying eight weeks of volume, a
- * pace trend, zones and its last effort. So the breakdown was a table of
- * contents for a list already in view, and it pushed the thing it indexed off
- * the screen. What a section opener owes is the total the lanes decompose, and
- * nothing else.
+ * IT TOOK TWO CUTS TO FIND THE ANSWER, and both failures were the same
+ * failure — SAYING SOMETHING THE SCREEN WAS ALREADY SAYING.
  *
- * So: three figures, each with its own move under it, on one compact strip —
- * tile radius rather than card radius, tile padding rather than card padding,
- * because it is a header for what follows rather than an object in its own
- * right.
+ *   1. A CARD: three figures, a hairline, a "what it was made of" header, a
+ *      share bar and a row per discipline. Every row was a discipline with a
+ *      whole RAIL directly beneath it — eight weeks of volume, a pace trend,
+ *      zones, its last effort — so the breakdown was a table of contents for a
+ *      list already in view, and it pushed the thing it indexed off the screen.
+ *   2. A STRIP of the same three figures. Better, but the figures were the
+ *      redundancy. DISTANCE is the clearest case: only endurance and sport
+ *      groups ever carry any, so this section's kilometres ARE the verdict
+ *      card's KM column, to the decimal, one screen apart. EFFORTS sits beside
+ *      that card's SESSIONS count and reads as a contradiction of it. Only TIME
+ *      was new, and one honest figure does not need three columns and a rule.
+ *
+ * So the opener says the thing nothing else on Today can say — WHAT the
+ * endurance was made of, how many sports and which carried them — in a
+ * sentence, and hands the arithmetic back to the card above and the lanes
+ * below. Under it, one mono line: the section's own time, against the one
+ * comparison nothing else makes (its own baseline). Both come from core's
+ * `enduranceLead`, so neither client can invent its own phrasing.
+ *
+ * The anatomy is the verdict card's, deliberately: a sentence, then its
+ * working-out. That is how a summary reads on this screen.
  *
  * NO FILTER OF ITS OWN. It reads the SCREEN's period (core's
  * TODAY_RANGE_STORE_KEY, the same one the verdict card's control writes), so a
  * second five-segment control here would be the same control drawn twice, ten
- * lines apart, always agreeing. The strip names the window instead — a total
+ * lines apart, always agreeing. The block names the window instead — a total
  * with no period is not a total.
  *
  * IT NEVER DISAPPEARS while the section exists. A block that comes and goes is
  * worse than one that is sometimes quiet, so an empty period keeps its place
  * and says so.
- *
- * WHY THIS IS NOT THE STRIP THAT WAS RETIRED. The Endurance block once opened
- * with a cross-sport totals strip, and it was removed because two totals cards
- * on one screen counting different populations under near-identical labels —
- * "5 sessions, 3.2 h" over "3 efforts, 0.9 h" — is a misreading waiting to
- * happen. What has changed is the heading above it: this sits under a cluster
- * headline reading ENDURANCE, so its figures are scoped by the section they
- * open, which the old strip's never were. And the figures themselves are a
- * SLICE of the verdict card's, not a second opinion — core's `enduranceWindow`
- * reads the exact `activitySummary` that card renders and keeps the endurance
- * and sport groups (see endurance-window.ts).
  */
 
 const C = (v: string) => `var(--color-${v})`;
@@ -63,14 +59,13 @@ const kicker: CSSProperties = {
   fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
   textTransform: "uppercase", whiteSpace: "nowrap",
 };
-const num: CSSProperties = { fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" };
 
 /** Direction as a text colour — the SEMANTIC channel (terracotta down,
  *  chartreuse up), never the brand accent: a quiet fortnight must not read as a
- *  highlight. Flat is chalk, not ash: these three figures are the strip's whole
- *  subject, not muted context. */
+ *  highlight. Flat is ash, like the line it sits in: a move too small for the
+ *  verdict card to claim is too small to colour here either. */
 const dirColor = (d: VerdictDirection) =>
-  d === "down" ? "var(--red-text)" : d === "up" ? "var(--lime-text)" : C("chalk");
+  d === "down" ? "var(--red-text)" : d === "up" ? "var(--lime-text)" : C("ash");
 
 export default function AuroraEnduranceSummary({
   sessions,
@@ -81,22 +76,25 @@ export default function AuroraEnduranceSummary({
 }) {
   const { t } = useLang();
   // Read-only: the control that WRITES this period is the verdict card's, at
-  // the top of the retrospective. Same key, so the strip follows it live.
+  // the top of the retrospective. Same key, so this follows it live.
   const { range } = useActivityRange(TODAY_RANGE_STORE_KEY);
   const { title, span } = useRangeLabels(range);
 
   const w = useMemo(() => enduranceWindow(sessions, range, bw), [sessions, range, bw]);
+  const lead = useMemo(() => enduranceLead(w), [w]);
 
-  const fmtMinutes = (m: number) =>
-    m < 60 ? `${Math.round(m)} ${t("w.home.act.uMin")}` : `${Math.round(m / 6) / 10} ${t("w.home.act.uH")}`;
+  const sentence = t(lead.key)
+    .replace("{n}", String(lead.sports))
+    .replace("{s}", lead.lead ? sliceName(lead.lead, t) : "");
 
-  /** A metric in the strip's own display units. */
-  const fmt = (m: EnduranceMetric, value: number) =>
-    m === "efforts" ? String(Math.round(value))
-      : m === "distance" ? `${kmValue(value)} km`
-        : fmtMinutes(value);
-
-  const quiet = w.totals.efforts === 0;
+  // The working-out, split so only the DELTA takes the tone — "5.4 h" and "on
+  // your average" are context, and colouring the whole line would give a
+  // 12% week the weight of a headline. `whyCold` carries no {d}, so the split
+  // yields one part and the tone never appears.
+  const hours = Math.round(w.totals.minutes / 6) / 10;
+  const [whyBefore, whyAfter] = t(lead.whyKey).replace("{h}", String(hours)).split("{d}");
+  const delta = lead.deltaPct;
+  const tone = dirColor(enduranceDirection(w, "minutes"));
 
   return (
     <div style={{ marginTop: 20 }}>
@@ -104,53 +102,30 @@ export default function AuroraEnduranceSummary({
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16,
         boxShadow: "var(--shadow-card)", padding: 14,
       }}>
-        {/* The window, said once. The strip has no filter of its own, so this
-            line is what stops "58 km" being a figure with no period attached. */}
+        {/* The window, said once. There is no filter here, so this line is what
+            stops "5.4 h" being a figure with no period attached. */}
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
           <span style={{ ...kicker, color: C("chalk") }}>{title}</span>
           <span style={{ ...kicker, color: C("ash") }}>{span}</span>
         </div>
 
-        {quiet ? (
-          <p style={{ margin: "9px 0 0", fontSize: fs.caption, color: C("ash") }}>{t("w.home.endw.empty")}</p>
-        ) : (
-          /* THE THREE FIGURES — how many times you went out, how far, how long.
-             Each carries its OWN move against its OWN baseline underneath, in
-             its own tone: a period where distance rose while time fell reads as
-             exactly that, rather than being flattened into one headline. The
-             comparison is the same one the verdict card makes (the mean of the
-             preceding windows of the same length), so "up on your average"
-             means one thing on this screen. */
-          <div style={{ display: "flex", marginTop: 10 }}>
-            {ENDURANCE_METRICS.map((m, i) => {
-              const delta = enduranceDeltaPct(w, m);
-              const col = dirColor(enduranceDirection(w, m));
-              return (
-                <div
-                  key={m}
-                  style={{
-                    flex: 1, minWidth: 0,
-                    paddingLeft: i === 0 ? 0 : 12,
-                    borderLeft: i === 0 ? undefined : `1px solid ${C("line")}`,
-                  }}
-                >
-                  <span style={{ display: "block", ...kicker, color: C("ash") }}>{t(enduranceMetricKey(m))}</span>
-                  <span style={{
-                    display: "block", ...num, fontSize: 20, fontWeight: 500, letterSpacing: "-.02em",
-                    marginTop: 3, color: C("chalk"), whiteSpace: "nowrap",
-                    overflow: "hidden", textOverflow: "ellipsis",
-                  }}>
-                    {fmt(m, enduranceValue(w.totals, m))}
-                  </span>
-                  {/* No baseline to move from is a different fact from "it did
-                      not move", so it renders as a dash rather than as 0%. */}
-                  <span style={{ display: "block", ...num, fontSize: 10, marginTop: 4, color: delta === null ? C("ash") : col, whiteSpace: "nowrap" }}>
-                    {delta === null ? "—" : `${delta > 0 ? "+" : delta < 0 ? "−" : ""}${Math.abs(delta)}%`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+        <p style={{ margin: "8px 0 0", fontSize: fs.bodyLg, lineHeight: 1.4, color: C("chalk") }}>{sentence}</p>
+
+        {lead.sports > 0 && (
+          <p style={{
+            margin: "4px 0 0", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums",
+            fontSize: fs.micro, color: C("ash"),
+          }}>
+            {whyBefore}
+            {whyAfter !== undefined && delta !== null && (
+              <>
+                <em style={{ fontStyle: "normal", color: tone }}>
+                  {`${delta > 0 ? "+" : delta < 0 ? "−" : ""}${Math.abs(delta)}%`}
+                </em>
+                {whyAfter}
+              </>
+            )}
+          </p>
         )}
       </div>
     </div>
