@@ -55,7 +55,9 @@ import {
   per100g, emptyNutritionDay, panelStatus,
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
-  sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection, } from "@hybrid/core";
+  sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
+  dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
+  type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
@@ -90,11 +92,11 @@ import WaterCard from "./water";
 import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type RecipeRow } from "./user-recipes";
 import CopyDaySheet from "./copy-day";
 import NutritionTrends from "./nutrition-trends";
-import QuickAdd from "./quick-add";
+import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
-  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow,
-  IClose, IChevDown, IChevRight, IPlus, IBarcode, ITrash, IBolt, IClock, IPlusBox,
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor,
+  IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
 import {
@@ -194,7 +196,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // The picker sources: Recent / Favorites (per-device MRU) and the two personal
   // libraries — full MEALS and single PRODUCTS — so any part of the day can be
   // filled with either a saved meal or a product.
-  const [foodTab, setFoodTab] = useState<"recent" | "favorites" | "meals" | "personal">("personal");
+  // The source line's selection. Opens on RECENT, not Foods: the list you
+  // want at 21:12 is what you just ate, not the whole library.
+  const [foodTab, setFoodTab] = useState<PickerSourceKey>("recent");
   const [quickLog, setQuickLog] = useState(false); // the Quick Log sheet
   // Create form (blend: title plate + macro hero) — one form for a PRODUCT or a
   // MEAL. Name + the personal Subname on the plate; serving + unit (products
@@ -212,7 +216,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const [mealComps, setMealComps] = useState<MealComp[]>([]);
   const [compPicker, setCompPicker] = useState(false); // the "Add product" sheet
   const [compQuery, setCompQuery] = useState("");
-  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setMealComps([]); setCreateForm(BLANK_CREATE_FORM); setView("create"); };
+  // `name` seeds the form from the picker's unmatched query: the door says
+  // "New food: zupa", so arriving at an empty Name field would be the screen
+  // forgetting the word it just quoted back.
+  const openCreate = (mode: "product" | "meal", name = "") => { setCreateMode(mode); setMealComps([]); setCreateForm({ ...BLANK_CREATE_FORM, name }); setView("create"); };
   // Add a saved product to the meal being composed (or bump its serving count if
   // already added); remove / re-count keep the summed macros in sync.
   const addMealComp = (p: FoodProductRow) => setMealComps((xs) => {
@@ -504,7 +511,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // ── QUICK ADD — the athlete's OWN foods, ranked for a typed phrase.
   // Recents first (the food you logged yesterday is a better answer to two
   // words than one you saved in March), then products, then saved meals.
-  const quickAddCandidates: QuickAddCandidate[] = useMemo(() => [
+  //
+  // ALL FOUR SOURCES, IN RANK ORDER, DEDUPED. The four lists overlap by design
+  // — a product you starred and logged yesterday is legitimately in three of
+  // them — so the order here decides which provenance a ranked row keeps, and
+  // dedupeCandidates drops the repeats (see core/food-picker.ts).
+  const quickAddCandidates: QuickAddCandidate[] = useMemo(() => dedupeCandidates([
     ...recent.map((r) => ({
       id: r.key, name: r.name, subname: r.subname ?? null, servingLabel: r.serving,
       // A recent carries no serving weight, so a gram phrase against one is
@@ -514,6 +526,25 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       source: "recent" as const,
       verifiedId: r.verifiedId ?? null,
     })),
+    // A favourite is a per-device STAR over a food that lives somewhere else, so
+    // the star must not become the record: a favourite of a saved product is
+    // resolved back to the PRODUCT here, because the stored QuickFood carries no
+    // serving weight, no micros and no verified id, and dedupeCandidates would
+    // then let that thinner copy win (it ranks above `product`). What survives
+    // is the product's data with the favourite's rank.
+    ...favorites.map((q) => {
+      const prod = q.key.startsWith("p:") ? products.find((x) => x.id === q.key.slice(2)) : null;
+      const f = prod
+        ? { name: prod.name, subname: prod.subname ?? null, serving: prod.servingLabel, grams: prod.servingGrams ?? exactGrams(prod.servingLabel), kcal: prod.kcal, protein: prod.protein, carbs: prod.carbs, fat: prod.fat, satFat: prod.satFat ?? null, sugar: prod.sugar ?? null, fiber: prod.fiber ?? null, salt: prod.salt ?? null, verifiedId: prod.verifiedId ?? null }
+        : { name: q.name, subname: q.subname ?? null, serving: q.serving, grams: q.servingGrams ?? exactGrams(q.serving), kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat ?? null, sugar: q.sugar ?? null, fiber: q.fiber ?? null, salt: q.salt ?? null, verifiedId: q.verifiedId ?? null };
+      return {
+        id: `fav:${q.key}`, name: f.name, subname: f.subname, servingLabel: f.serving,
+        servingGrams: f.grams,
+        facts: { kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat, satFat: f.satFat, sugar: f.sugar, fiber: f.fiber, salt: f.salt },
+        source: "favorite" as const,
+        verifiedId: f.verifiedId,
+      };
+    }),
     ...products.map((p) => ({
       id: p.id, name: p.name, subname: p.subname ?? null, servingLabel: p.servingLabel,
       // Derived from the LABEL when the product never recorded a weight — the
@@ -530,7 +561,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       facts: { kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: m.satFat ?? null, sugar: m.sugar ?? null, fiber: m.fiber ?? null, salt: m.salt ?? null },
       source: "meal" as const,
     })),
-  ], [recent, products, meals, t]);
+  ]), [recent, favorites, products, meals, t]);
 
   // A quick-add commits straight to the diary — per single serving with a
   // separate quantity, the same shape every other logging path writes, so the
@@ -761,24 +792,39 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     if (ok) { setFoodMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
   };
 
-  // ── Food search — Open Food Facts (free, no key) via searchFoods → the
-  //    /api/nutrition/search proxy. One box takes text OR a barcode; debounced; a
-  //    hit can be logged to today or saved to the library.
+  // ── THE ONE FIELD. `foodQuery` is now the picker's ONLY input: quick add and
+  //    the database search were two boxes asking the same question, ninety
+  //    pixels apart, in the same shape with the same left-hand glyph.
   const [foodQuery, setFoodQuery] = useState("");
   const [foodResults, setFoodResults] = useState<FoodHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [foodMsg, setFoodMsg] = useState("");
+
+  // ONE READ OF THE GRAMMAR, shared by the field, the list beneath it and the
+  // search below that, so the three cannot disagree about what was typed. Quick
+  // add is not a second box any more; it is what this field does FIRST.
+  const pickVocab = useMemo(() => quickAddVocab(t), [t]);
+  const answer = useMemo(
+    () => pickerAnswer(foodQuery, quickAddCandidates, { vocab: pickVocab }),
+    [foodQuery, quickAddCandidates, pickVocab],
+  );
+
+  // ── Food search — Open Food Facts (free, no key) via searchFoods → the
+  //    /api/nutrition/search proxy. Debounced, and driven by the PARSED query
+  //    rather than the raw text: "kefir 200g" asks the database about kefir, and
+  //    a macro line never reaches the network at all, because there is no food
+  //    in "40g protein" to look up (see core pickerRemoteQuery).
+  const remoteQuery = pickerRemoteQuery(answer);
   useEffect(() => {
-    const q = foodQuery.trim();
-    if (q.length < 2) { setFoodResults([]); setSearching(false); return; }
+    if (!remoteQuery) { setFoodResults([]); setSearching(false); return; }
     setSearching(true);
     const id = setTimeout(async () => {
-      const foods = await searchFoods(q);
+      const foods = await searchFoods(remoteQuery);
       setFoodResults(foods);
       setSearching(false);
     }, 350);
     return () => clearTimeout(id);
-  }, [foodQuery]);
+  }, [remoteQuery]);
 
   // ── BARCODE SCAN — the camera half of a flow that already worked.
   // A scanned code is handed to the SAME barcode lookup a typed one uses, so
@@ -1302,8 +1348,29 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const foods: QuickFood[] =
       foodTab === "recent" ? recent
       : foodTab === "favorites" ? favorites
-      : products.map((p) => ({ key: `p:${p.id}`, name: p.name, subname: p.subname, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat }));
-    const q = foodQuery.trim();
+      : products.map((p) => ({ key: `p:${p.id}`, name: p.name, subname: p.subname, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat,
+          // Carried so STARRING one keeps the whole food — a favourite is stored
+          // as this shape, and a stripped copy loses the serving weight (and so
+          // the gram conversion), the micros and the verified provenance.
+          satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, verifiedId: p.verifiedId }));
+    const sourceCounts: Record<PickerSourceKey, number> = {
+      recent: recent.length, favorites: favorites.length, meals: meals.length, personal: products.length,
+    };
+    // The two doors at the end of the list. Both LEAVE — Quick Log opens a
+    // sheet, New food opens a screen — so both wear the exit rule's ring.
+    const doors = (
+      <>
+        <PickerDoor C={C} title={t("w.recovery.nutrition.quickLog")} icon={<IBolt size={16} color={C.ash} />} onPress={() => setQuickLog(true)} />
+        <PickerDoor
+          C={C} last
+          title={answer.kind === "matches" && answer.matches.length === 0 && answer.query
+            ? t("w.recovery.nutrition.pick.newNamed").replace("{v}", answer.query)
+            : t("w.recovery.nutrition.pick.newFood")}
+          icon={<IPlus size={17} color={C.ash} strokeWidth={2.2} />}
+          onPress={() => openCreate("product", answer.kind === "matches" ? answer.query : "")}
+        />
+      </>
+    );
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(
@@ -1311,6 +1378,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
           </Pressable>,
           () => setView("home"),
+          // BACK, not a second dismiss chevron: the head used to draw a ⌄ on the
+          // left and the meal switcher a ⌄ beside the title — one glyph, two
+          // jobs, on the same row.
+          { icon: "back" },
         )}
 
         <Sheet visible={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
@@ -1333,85 +1404,41 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
         <BarcodeScanSheet visible={scanSheet} onClose={() => setScanSheet(false)} onCode={onScanned} />
 
-        {/* QUICK ADD — above the database search, because it answers from foods
-            already saved and answers instantly. The search below it is the
-            fallback for a food this athlete has never logged. */}
-        <View style={{ marginBottom: 16 }}>
-          <QuickAdd
-            candidates={quickAddCandidates}
-            onLog={logQuickAdd}
-            onPortion={portionForQuickAdd}
-            entryName={t("w.recovery.nutrition.quickEntry")}
-          />
-        </View>
+        {/* THE ONE FIELD. Quick add and the database search were two boxes
+            asking the same question; this is that question, asked once. */}
+        <PickerField
+          value={foodQuery}
+          onChange={setFoodQuery}
+          onSubmit={() => {
+            // Enter commits the FIRST interpretation — the one on screen.
+            const s = pickerSubmit(answer);
+            if (s.kind === "macros") { logQuickAdd(macroDraft(s.macros, t("w.recovery.nutrition.quickEntry"))); setFoodQuery(""); }
+            else if (s.kind === "log") { logQuickAdd(quickAddDraft(s.match)); setFoodQuery(""); }
+            else if (s.kind === "portion") portionForQuickAdd(s.match);
+          }}
+          onScan={() => { setFoodMsg(""); setScanSheet(true); }}
+        />
 
-        {/* Search — text or barcode */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 16 }}>
-          <AuroraIcon name="search" size={18} color={C.ash} />
-          <TextInput value={foodQuery} onChangeText={setFoodQuery} placeholder={t("w.recovery.nutrition.searchPh")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.subtitle, color: C.chalk, padding: 0 }} />
-          {q ? (
-            <Pressable onPress={() => setFoodQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")}><IClose size={18} color={C.ash} /></Pressable>
-          ) : (
-            <Pressable onPress={() => { setFoodMsg(""); setScanSheet(true); }} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scan.title")} hitSlop={8}>
-              <IBarcode size={20} color={C.ash} />
-            </Pressable>
-          )}
-        </View>
-
-        {/* Quick Log + Create Food */}
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
-          <Pressable onPress={() => setQuickLog(true)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16 }}><IBolt size={18} color={C.chalk} /><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.quickLog")}</Text></Pressable>
-          <Pressable onPress={() => openCreate("product")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16 }}><IPlusBox size={18} color={C.chalk} /><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.createFood")}</Text></Pressable>
-        </View>
-
-        {/* Tabs */}
-        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 4, gap: 4, marginTop: 16 }}>
-          {(["recent", "favorites", "meals", "personal"] as const).map((tab) => (
-            <Pressable key={tab} onPress={() => setFoodTab(tab)} style={{ flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: "center", backgroundColor: foodTab === tab ? C.lime : "transparent" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: foodTab === tab ? C.onAccent : C.ash }}>{t(`w.recovery.nutrition.tab.${tab}`)}</Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {q.length >= 2 ? (
-          <View style={{ marginTop: 8 }}>
-            {searching ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16 }}>{t("w.recovery.nutrition.searching")}</Text>
-            ) : foodResults.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
-            ) : foodResults.map((food, i) => (
-              <FoodRow
-                key={`${food.id || food.code}-${i}`} C={C}
-                name={food.name}
-                subname={food.brand}
-                meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`}
-                onAdd={() => logFood(food)}
-                onOpen={food.verified && food.id ? () => openFoodPage(food.id!, "add") : undefined}
-                verified={food.verified}
-                chevron
-              />
-            ))}
-          </View>
-        ) : foodTab === "meals" ? (
-          /* Full saved MEALS — log one to the current part of the day, or swipe
-             to delete. The counterpart to the Products (personal) tab. */
-          <View style={{ marginTop: 8 }}>
-            {meals.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
-            ) : meals.map((m) => (
-              <FoodRow
-                key={m.id} C={C}
-                name={m.name}
-                subname={m.subname}
-                meta={`${Math.round(m.kcal)} kcal  –  ${Math.round(m.protein)}P ${Math.round(m.carbs)}C ${Math.round(m.fat)}F`}
-                onAdd={() => logMeal(m)}
-                onDelete={() => removeMeal(m.id)}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={{ marginTop: 8 }}>
-            {foods.length === 0 ? (
+        {answer.kind === "resting" ? (
+          /* AT REST — all four sources, switchable, with the box gone. */
+          <>
+            <View style={{ marginTop: 16 }}>
+              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
+            </View>
+            {foodTab === "meals" ? (
+              meals.length === 0 ? (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
+              ) : meals.map((m) => (
+                <FoodRow
+                  key={m.id} C={C}
+                  name={m.name}
+                  subname={m.subname}
+                  meta={`${Math.round(m.kcal)} kcal  –  ${Math.round(m.protein)}P ${Math.round(m.carbs)}C ${Math.round(m.fat)}F`}
+                  onAdd={() => logMeal(m)}
+                  onDelete={() => removeMeal(m.id)}
+                />
+              ))
+            ) : foods.length === 0 ? (
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
             ) : foods.map((food) => {
               const prodId = food.key.startsWith("p:") ? food.key.slice(2) : null;
@@ -1428,7 +1455,49 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 />
               );
             })}
-          </View>
+            {doors}
+          </>
+        ) : (
+          /* TYPED — what the grammar understood, then the athlete's own foods
+             ranked across ALL FOUR sources at once (you never have to know
+             which list a food is in), then the world under a section head. */
+          <>
+            <ASection
+              flat
+              title={t("w.recovery.nutrition.pick.understood")}
+              meta={answer.kind === "macros" ? t("w.recovery.nutrition.pick.quickAdd") : t("w.recovery.nutrition.pick.allSources")}
+            />
+            <Understood
+              answer={answer}
+              entryName={t("w.recovery.nutrition.quickEntry")}
+              onLog={(d) => { logQuickAdd(d); setFoodQuery(""); }}
+              onPortion={portionForQuickAdd}
+            />
+            {answer.kind === "matches" && answer.matches.length === 0 ? <NoneOfYours query={answer.query} /> : null}
+
+            {remoteQuery ? (
+              <>
+                <ASection flat title={t("w.recovery.nutrition.pick.database")} meta={t("w.recovery.nutrition.pick.databaseMeta")} />
+                {searching ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6 }}>{t("w.recovery.nutrition.searching")}</Text>
+                ) : foodResults.length === 0 ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6, lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
+                ) : foodResults.map((food, i) => (
+                  <FoodRow
+                    key={`${food.id || food.code}-${i}`} C={C}
+                    name={food.name}
+                    subname={food.brand}
+                    meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`}
+                    onAdd={() => logFood(food)}
+                    onOpen={food.verified && food.id ? () => openFoodPage(food.id!, "add") : undefined}
+                    verified={food.verified}
+                    chevron
+                  />
+                ))}
+              </>
+            ) : null}
+            {doors}
+          </>
         )}
 
         {renderPortionSheet()}
@@ -2493,7 +2562,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         msg={foodMsg}
         premium={{ fill: pa.fill, text: pa.text }}
         searchHint={<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8, letterSpacing: 0.9 }}>{t("w.recovery.nutrition.foodSearchHint")}</Text>}
-        dbSlot={
+        // Gated on the SAME condition as the fetch below the picker: the
+        // search only fires for a query that names a food, so a block that
+        // rendered on the raw text would sit on a permanent "no results".
+        dbSlot={remoteQuery ? (
           <View style={{ marginTop: 26 }}>
             <GroupMark label={t("w.recovery.nutrition.pn.fromDatabase")} mt={0} />
             {searching ? (
@@ -2520,7 +2592,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               </View>
             ))}
           </View>
-        }
+        ) : null}
       />
       {pendingDelete ? (
         <UndoBar label={t("w.recovery.nutrition.pn.deleted").replace("{v}", pendingDelete.name)} onUndo={undoDeleteProduct} />

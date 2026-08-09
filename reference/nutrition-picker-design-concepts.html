@@ -120,6 +120,9 @@
   .ledger dd b { font-weight: 600; }
   .ledger dd .off { color: var(--muted); }
 
+  .built { margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--line); }
+  .built .ledger { margin-top: 14px; }
+
   .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
   .tag {
     font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
@@ -526,7 +529,7 @@
   <section class="band concept">
     <div class="split">
       <div>
-        <div class="kicker"><b>Concept 01</b> — One Field</div>
+        <div class="kicker"><b>Concept 01</b> — One Field <b>— BUILT</b></div>
         <h2>One question, one field.</h2>
         <p class="thesis">The grammar and the database are not two features. They are two answers to the same sentence.</p>
         <p class="why">
@@ -562,6 +565,21 @@
           <dt>Both clients</dt><dd>Identical. <span class="off">The ranking lives in <code>packages/core</code> beside <code>resolveQuickAdd</code>, so neither client can drift.</span></dd>
         </dl>
         <div class="tags"><span class="tag go">Try it — type, and tap the sources</span><span class="tag">keeps quick add</span><span class="tag">keeps all four sources</span></div>
+
+        <div class="built">
+          <div class="kicker" style="margin-bottom: 10px;">As built</div>
+          <p class="why">
+            Shipped on both clients. The ranking, the answer model and the four-source dedupe live in
+            <code>packages/core/src/food-picker.ts</code> so the phone and the browser cannot read one
+            field two ways. Three things landed differently from the sketch above, and the sketch was
+            the one that was wrong:
+          </p>
+          <dl class="ledger">
+            <dt>The tails wear a ring</dt><dd><b>Not bare pluses.</b> <span class="off">The exit rule is ring = leaves, bare = grows in place — and both of these leave (Quick Log opens a sheet, New food opens a screen). They are door rows of the list, taking its own hairline and chevron. A bare <code>+</code> would have promised something that grows.</span></dd>
+            <dt>It opens on Recent</dt><dd><span class="off">The old tab bar defaulted to Foods, the whole library. At 21:12 the list you want is what you just ate.</span></dd>
+            <dt>Web's barcode is a hint</dt><dd><span class="off">Point-and-scan is a camera capability the browser side doesn't have, so the glyph is live on mobile and static on web. A TYPED barcode works on both — the field takes one and asks the database.</span></dd>
+          </dl>
+        </div>
       </div>
 
       <div class="stage">
@@ -1032,9 +1050,9 @@
 
     <div class="spine">
       <div class="cell">
-        <div class="k">Build first</div>
-        <h3>01 One Field + 02 What's Left</h3>
-        <p>One input, the gap as the header, the source line beneath, one ranked list under that. This alone deletes five containers, returns the accent to <em>go</em>, and gives the screen a floor — while keeping every source and every way to log.</p>
+        <div class="k">Built</div>
+        <h3>01 One Field <span style="color: var(--accent);">— shipped</span></h3>
+        <p>One input, the source line beneath, one ranked list under that. It deleted five containers, returned the accent to <em>go</em>, and gave the screen a floor — while keeping every source and every way to log. <strong>02 What's Left</strong> is the natural next layer: the gap as the header, above the field.</p>
       </div>
       <div class="cell">
         <div class="k">Then</div>

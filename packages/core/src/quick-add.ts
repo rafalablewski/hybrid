@@ -177,6 +177,8 @@ const macroFieldOf = (word: string, v: QuickAddVocab): keyof QuickAddMacros["fac
 function readMacros(tokens: string[], v: QuickAddVocab): QuickAddMacros | null {
   const facts: QuickAddMacros["facts"] = {};
   let found = false;
+  /** did any field bind through a ONE-LETTER abbreviation? see the guard below */
+  let viaAbbrev = false;
   const used = new Set<number>();
 
   for (let i = 0; i < tokens.length; i++) {
@@ -193,9 +195,35 @@ function readMacros(tokens: string[], v: QuickAddVocab): QuickAddMacros | null {
     if (n == null || !Number.isFinite(n) || n < 0) continue;
     facts[field] = Math.round(n * 10) / 10;
     used.add(i);
+    if (tokens[i]!.length === 1) viaAbbrev = true;
     found = true;
   }
   if (!found) return null;
+
+  // ── AN ABBREVIATION SURROUNDED BY PROSE IS A WORD ────────────────────────
+  // A one-letter keyword exists for TERSE input — "40g p", "170 w" — and every
+  // locale's short forms collide with something. Polish "w" (węglowodany) is
+  // also the commonest preposition in the language, so "tuńczyk 170 g w oleju"
+  // (tuna, 170 g, in oil) read as 170 g of carbohydrate and 680 kcal. German
+  // "k" and English "c" have the same shape of problem.
+  //
+  // The tell is LEFTOVER NAME WORDS: a real macro line is only numbers, units
+  // and keywords, so when a one-letter keyword bound a number and the line
+  // still carries words the reading did not account for, this is a food line
+  // and the caller should read it as one. Multi-letter keywords are unchanged —
+  // "obiad 800 kcal" is still a macro line with a name in front of it.
+  //
+  // This matters more since the picker merged its two fields (food-picker.ts):
+  // a misread used to cost a wrong row under a field whose search box still
+  // worked, and now it costs the only input on the screen.
+  if (viaAbbrev) {
+    const leftoverName = tokens.some((tok, i) =>
+      !used.has(i) &&
+      !NUMBER_RE.test(tok) &&
+      !isMassUnit(tok) &&
+      !v.times.includes(tok.toLowerCase()));
+    if (leftoverName) return null;
+  }
 
   // A line naming only macros still has to log an energy figure, or the day's
   // ring would not move. 4·4·9 is the same derivation the manual form uses.
@@ -246,10 +274,19 @@ export interface QuickAddCandidate {
   /** the serving's weight, when it was ever recorded */
   servingGrams?: number | null;
   facts: NutritionFacts;
-  /** where it came from — decides the tie-break, see `rank` */
-  source: "recent" | "product" | "meal";
+  /** where it came from — decides the tie-break, see `rank`, AND is what the
+   *  picker prints beside the row (see food-picker.ts PROVENANCE_KEY): once one
+   *  ranked list mixes all four sources, a row that cannot say where it came
+   *  from is a row the reader has to guess about. */
+  source: QuickAddSource;
   verifiedId?: string | null;
 }
+
+/** The four lists the athlete's own food lives in, and the order the picker
+ *  shows them in. A favourite is its own source rather than a flag because it
+ *  ranks differently: a food you starred is a better answer to two words than
+ *  one you saved and never used. */
+export type QuickAddSource = "recent" | "favorite" | "product" | "meal";
 
 export interface QuickAddMatch {
   candidate: QuickAddCandidate;
@@ -263,8 +300,11 @@ export interface QuickAddMatch {
 }
 
 /** Recents beat the library: the food you logged yesterday is a better answer
- *  to a two-word phrase than one you saved in March and never used. */
-const SOURCE_RANK: Record<QuickAddCandidate["source"], number> = { recent: 0.06, product: 0.03, meal: 0 };
+ *  to a two-word phrase than one you saved in March and never used. Favourites
+ *  sit just under recents — starring one is the athlete saying it matters — and
+ *  the gaps stay small enough that a better NAME match always outranks a better
+ *  source (0.85 for a prefix hit against 0.06 here). */
+const SOURCE_RANK: Record<QuickAddSource, number> = { recent: 0.06, favorite: 0.045, product: 0.03, meal: 0 };
 
 /** Accent-folded, case-folded — 'jogurt' should find 'Jogurt', and the Polish
  *  fold is the same one the verified search already applies. */

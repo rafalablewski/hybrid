@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts, sourceMarkDataUri,
+  PICKER_SOURCES, pickerSourceLabelKey,
   type MicroFacts, type NutritionFacts, type NutritionGlyphName,
-  type NutritionNudge as NutritionNudgeShape, type SourceMark, type VerifiedStamp,
+  type NutritionNudge as NutritionNudgeShape, type PickerSourceKey, type SourceMark, type VerifiedStamp,
 } from "@hybrid/core";
 import { fs, CARD_PAD } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
@@ -105,11 +106,21 @@ export const shelfScroller: React.CSSProperties = { ...railScroller, scrollSnapT
 // END OF THE RAIL as a tail card (aurora/rail-tail.tsx), where the thumb already
 // is once the cards run out. `action` survives only for a head that needs a
 // non-navigational meta or control, and renders nothing when it isn't passed.
-export function RailHead({ title, action }: { title: string; action?: { label: string; onClick: () => void; premium?: boolean } }) {
+export function RailHead({ title, meta, action }: {
+  title: string;
+  /** Small mono uppercase on the RIGHT of the title's row — the Explore
+   *  SectionHead's meta slot, for a head that states something rather than
+   *  offering a control. `action` remains the control. */
+  meta?: string;
+  action?: { label: string; onClick: () => void; premium?: boolean };
+}) {
   const C = (v: string) => `var(--color-${v})`;
   return (
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "28px 2px 10px" }}>
       <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, color: C("chalk") }}>{title}</span>
+      {meta && !action && (
+        <span style={{ flexShrink: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: C("ash") }}>{meta}</span>
+      )}
       {action && (
         <button className="pressable" onClick={action.onClick} style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".08em", textTransform: "uppercase", color: action.premium ? "var(--premium-accent-text)" : C("ash") }}>
           <CtaLabel size={12}>{action.label}</CtaLabel>
@@ -251,6 +262,92 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
 // gesture in an app whose parity rule says otherwise). It now delegates to
 // SwipeRow on both clients, which means one set of physics from @hybrid/core —
 // velocity projection, rubber-band, the iOS full-swipe — and one delete.
+/**
+ * THE SOURCE LINE — Recent / Favorites / Meals / Foods, kept, with the box gone.
+ *
+ * The four sources are four different questions (what did I just eat, what do I
+ * always eat, what have I built, what have I saved) and all four stay. What the
+ * redesign drops is the PILL BAR they were wrapped in: a bordered, filled,
+ * radiused seventh container whose selected tab wore CHARTREUSE — the app's one
+ * "go" colour — on a control that goes nowhere.
+ *
+ * Selection is carried by weight and a rule instead. No border, no radius, no
+ * fill, no accent. The counts are the Explore section head's mono meta, moved
+ * onto the label they describe. Mobile twin: aurora/nutrition-kit.tsx SourceLine.
+ */
+export function SourceLine({ C, value, counts, onChange }: {
+  C: (v: string) => string;
+  value: PickerSourceKey;
+  counts: Record<PickerSourceKey, number>;
+  onChange: (key: PickerSourceKey) => void;
+}) {
+  const { t } = useLang();
+  return (
+    <div role="tablist" style={{ display: "flex", gap: 18, borderBottom: `1px solid ${C("line")}`, padding: "0 2px" }}>
+      {PICKER_SOURCES.map((key) => {
+        const on = key === value;
+        return (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={on}
+            className="pressable"
+            onClick={() => onChange(key)}
+            style={{
+              display: "flex", alignItems: "baseline", gap: 5,
+              background: "none", border: "none", cursor: "pointer",
+              padding: "0 0 11px", marginBottom: -1,
+              borderBottom: `2px solid ${on ? C("chalk") : "transparent"}`,
+              color: on ? C("chalk") : C("ash"),
+              fontFamily: "var(--font-display)", fontWeight: on ? 700 : 600, fontSize: fs.body,
+              letterSpacing: "-.006em", whiteSpace: "nowrap",
+            }}
+          >
+            {t(pickerSourceLabelKey(key))}
+            <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.nano, color: C("ash") }}>{counts[key]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * A DOOR at the end of the picker's list — Quick Log, New food.
+ *
+ * Both are RARE work that used to be priced like the constant kind: two filled
+ * cards taking a third of the screen's top, at the same weight as logging. They
+ * belong at the end of the thing, and per the exit rule they wear a RING,
+ * because both of them genuinely leave — Quick Log opens a sheet, New food opens
+ * a screen. (The concept sketch drew them as bare pluses; a bare plus promises
+ * something that grows in place, which neither of these does.) The row takes the
+ * LIST's own hairline and chevron, since there the separator belongs to the rows
+ * above it. Mobile twin: aurora/nutrition-kit.tsx PickerDoor.
+ */
+export function PickerDoor({ C, title, icon, onPress, last }: {
+  C: (v: string) => string; title: string; icon: ReactNode; onPress: () => void; last?: boolean;
+}) {
+  return (
+    <button
+      className="pressable"
+      onClick={onPress}
+      style={{
+        width: "100%", display: "flex", alignItems: "center", gap: 16, textAlign: "left",
+        background: "none", border: "none", cursor: "pointer",
+        padding: "14px 6px",
+        borderBottom: last ? "none" : `1px solid ${C("line")}`,
+        color: C("chalk"),
+      }}
+    >
+      <span style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${C("line")}`, display: "grid", placeItems: "center", flexShrink: 0, color: C("ash") }}>
+        {icon}
+      </span>
+      <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>{title}</span>
+      <IChevRight size={18} color={C("ash")} />
+    </button>
+  );
+}
+
 export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: (v: string) => string; name: string; subname?: string | null; meta: string; onAdd: () => void;
   /** tapping the row BODY, when that means something different from the ⊕ —
