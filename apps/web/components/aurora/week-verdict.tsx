@@ -11,7 +11,7 @@ import {
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import PeriodRecords from "./period-records";
-import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
+import { RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import { fs, CARD_PAD as SHARED_CARD_PAD } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 
@@ -39,16 +39,14 @@ import { useLang } from "@/lib/i18n";
  *
  *   • A REAL WEEK. "This week" is MONDAY → SUNDAY now, not a rolling seven days
  *     that reports last Friday under a label claiming the current week.
- *   • A DATE FILTER — the shared aurora/range-filter.tsx, in the iOS 26
- *     segmented-control idiom: a neutral pill at rest that turns into a clear
- *     glass lens on touch, scrubs under a drag, and springs between segments,
- *     with the label it lands on taking the foreground. Week / 7 days /
- *     30 days / YTD, with the fifth segment opening a sheet of individual
- *     months. The choice persists per device. It became a shared component
- *     when the Endurance section grew a second view of it — one control, two
- *     callers, rather than the four copies that would otherwise exist, and
- *     ONE period: both read core's TODAY_RANGE_STORE_KEY, so scrubbing either
- *     moves both.
+ *   • A DATE FILTER — now the CLUSTER's, not this card's. It sits on the
+ *     Progress headline row as a chip carrying the span, with every period
+ *     behind it in a sheet (aurora/range-filter.tsx). It used to be a
+ *     full-width segmented bar nested under this card's own head, which
+ *     read as this card's control while actually scoping the whole
+ *     retrospective — Endurance included. The choice persists per device
+ *     and is SHARED: core's TODAY_RANGE_STORE_KEY, so the Endurance chip
+ *     and this card can never disagree about the window.
  *   • FIGURES THAT OPEN. Every column is a button; pressing one expands the
  *     card's lower compartment, carrying the groups the total is made of and
  *     the sessions underneath them. "41.6 km" becomes 39 km of running, 600 m
@@ -174,8 +172,8 @@ export default function AuroraWeekVerdict({
 
   // The chosen period, persisted per device under the PROGRESS key — the
   // shared filter owns the reading, the storage and the midnight re-derive.
-  const { range, pick: setRange } = useActivityRange(TODAY_RANGE_STORE_KEY);
-  const { title, span } = useRangeLabels(range);
+  const { range } = useActivityRange(TODAY_RANGE_STORE_KEY);
+  const { title } = useRangeLabels(range);
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [all, setAll] = useState(false);
@@ -195,11 +193,9 @@ export default function AuroraWeekVerdict({
 
   // A new period is a new breakdown: the open column's group filter and its
   // "show all" must not carry over into a window they were never chosen in.
-  const pick = (id: string) => {
-    setRange(id);
-    setGroup(null);
-    setAll(false);
-  };
+  // It reacts to the RANGE rather than to a press, because the control that
+  // changes it is the cluster's head chip now, outside this card entirely.
+  useEffect(() => { setGroup(null); setAll(false); }, [range.id]);
 
   const v: ActivityVerdict = useMemo(() => activityVerdict(sessions, range, bw), [sessions, range, bw]);
   const summary = useMemo(() => activitySummary(sessions, range, bw), [sessions, range, bw]);
@@ -291,13 +287,10 @@ export default function AuroraWeekVerdict({
     <div style={{ marginTop: 24 }}>
       {/* Explore-standard head: display-face title left, mono meta right. The
           head names the window so no figure below it needs a qualifier. */}
-      <RangeHead title={title} meta={span} />
-
-      {/* ── THE DATE FILTER — the shared control (aurora/range-filter.tsx):
-          neutral pill at rest, clear glass lens on touch/drag, per the iOS 26
-          system control, with the Month segment intercepting to its picker
-          sheet. Shared because the Endurance section carries one too. ────── */}
-      <RangeFilter range={range} sessions={sessions} onPick={pick} />
+      {/* The head names the window; the SPAN and the control both moved up to
+          the cluster's headline row (aurora/range-filter.tsx), where a filter
+          that scopes the whole retrospective belongs. */}
+      <RangeHead title={title} />
 
       <div style={{
         background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28,

@@ -54,7 +54,7 @@ import { fs, space,
   type ScheduledDay,
   type LogbookDay,
 } from "@hybrid/core";
-import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
+import { sportForDiscipline, hasEnduranceHistory, TODAY_RANGE_STORE_KEY } from "@hybrid/core";
 import { CARD_PAD, roleText } from "@/lib/ui";
 import { useSession } from "@/lib/session";
 import { runHubTransition } from "@/lib/use-screen-transition";
@@ -83,6 +83,7 @@ import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 import GroupMark from "./group-mark";
 import SectionSeam from "./section-seam";
+import { RangeFilter } from "./range-filter";
 import { AuroraIcon } from "./icons";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
 import ReadinessFace from "./readiness-face";
@@ -983,7 +984,16 @@ export default function AuroraToday({
           a strength records rail and a strength-favourites rail to reach their
           own sport, under a single headline claiming all of it was "Progress".
           It is its own section now, below the seam. ═════ */}
-      <GroupMark label={t("w.home.group.progress")} />
+      {/* THE PERIOD, at cluster altitude. The filter used to be a full-width
+          segmented bar nested under the This-week card's own head — three
+          levels down, reading as that card's control while actually scoping
+          BOTH clusters. It is a chip on the headline row now, which is where
+          the Explore SectionHead grammar puts a head-level control, and the
+          Endurance headline carries the identical one on the same period. */}
+      <GroupMark
+        label={t("w.home.group.progress")}
+        right={<RangeFilter storeKey={TODAY_RANGE_STORE_KEY} sessions={sessions} />}
+      />
 
       {/* ───── (a) THIS WEEK — the verdict card, and the screen's date filter
           (Endurance shows the same one again, on the same period). A verdict
@@ -1025,7 +1035,11 @@ export default function AuroraToday({
       {hasEnduranceHistory(sessions) && (
         <>
           <SectionSeam />
-          <GroupMark label={t("endurance.title")} mt={24} />
+          <GroupMark
+            label={t("endurance.title")}
+            mt={24}
+            right={<RangeFilter storeKey={TODAY_RANGE_STORE_KEY} sessions={sessions} />}
+          />
 
           {/* ───── (a) THE LEAD — the section's opener, and it is a SENTENCE:
               how many sports, and which carried them. That is the one thing

@@ -1,24 +1,29 @@
 /**
- * THE DATE FILTER'S VIEW MODEL — everything a range control needs to draw
- * itself, in one place, because there is now more than one of them.
+ * THE DATE FILTER'S VIEW MODEL — the words a range control and the block heads
+ * under it print, in one place, because there is more than one of them.
  *
- * The segmented control (Week / 7 days / 30 days / YTD / a month) was written
- * inside the This-week verdict card, and its two clients each kept their own
- * copy of the segment list, the short-label map, the "which segment is lit"
- * arithmetic and the span-end rule. That was already two copies of one control.
- * Splitting Today's retrospective into PROGRESS and ENDURANCE — each with its
- * own period — would have made it four, and four copies of a control is how
- * "last 30 days" ends up meaning two different windows on one screen.
+ * The filter was written inside the This-week verdict card, and its two clients
+ * each kept their own copy of how a period names itself and which days its span
+ * covers. That was already two copies. Splitting Today's retrospective into
+ * PROGRESS and ENDURANCE — each carrying the control — would have made it four,
+ * and four copies is how "last 30 days" ends up meaning two different windows
+ * on one screen.
  *
- * So the shape of the control lives here and the clients only render it. What
- * stays with the client is the part that genuinely is a client concern: the
- * LOCALE-formatted month name (Intl lives in the app, not in core) and the
+ * It is deliberately SMALL. It used to also carry a segment list, a short-label
+ * map and the "which segment is lit" arithmetic, for a five-segment bar that
+ * sat under the verdict card's head — three levels below the clusters it
+ * actually scoped. The control is a chip on the cluster's headline row now,
+ * opening the period sheet it always had, so the segments and everything that
+ * described them are gone.
+ *
+ * What stays with the client is the part that genuinely is a client concern:
+ * the LOCALE-formatted month name (Intl lives in the app, not in core) and the
  * storage of the athlete's choice.
  *
- * Nothing here computes training. It is the filter's geometry, and every figure
- * it filters still comes from activity-window.ts.
+ * Nothing here computes training. It is the filter's vocabulary, and every
+ * figure it filters still comes from activity-window.ts.
  */
-import { ACTIVITY_RANGE_PRESETS, type ActivityRange } from "./activity-window";
+import type { ActivityRange } from "./activity-window";
 
 /**
  * TODAY HAS ONE PERIOD, and this is its key.
@@ -42,59 +47,6 @@ import { ACTIVITY_RANGE_PRESETS, type ActivityRange } from "./activity-window";
  * saying so. Today's two blocks are not that, and pass this.
  */
 export const TODAY_RANGE_STORE_KEY = "hybrid.today.range";
-
-/**
- * The segment labels are SHORTER than the card's own title for the same period
- * ("7 days" under a card headed "Last 7 days") — a segmented control that wraps
- * is a segmented control that has stopped being one.
- */
-export const ACTIVITY_RANGE_SHORT_KEY: Record<string, string> = {
-  week: "w.home.act.sWeek", d7: "w.home.act.sD7", d30: "w.home.act.sD30", ytd: "w.home.act.sYtd",
-};
-
-/** The trailing segment, which opens the month sheet rather than selecting. */
-export const MONTH_SEGMENT_ID = "month";
-
-export interface ActivityRangeSegment {
-  /** Preset id, or MONTH_SEGMENT_ID for the trailing one. */
-  id: string;
-  /** i18n key for the label. Null on the month segment while a month is in
-   *  force — there the client prints the localized month name instead. */
-  labelKey: string | null;
-  /** True for the trailing segment: it INTERCEPTS to the picker sheet instead
-   *  of selecting, and carries the ▾ that says so. */
-  isMonth: boolean;
-  /** The month id ("m:2026-07") the segment should print, when one is in
-   *  force. Null otherwise. */
-  monthId: string | null;
-}
-
-/** The control's segments, in filter order: the presets, then the month. */
-export function activityRangeSegments(range: ActivityRange): ActivityRangeSegment[] {
-  const onMonth = range.kind === "month";
-  return [
-    ...ACTIVITY_RANGE_PRESETS.map((p) => ({
-      id: p.id,
-      labelKey: ACTIVITY_RANGE_SHORT_KEY[p.id] ?? p.labelKey,
-      isMonth: false,
-      monthId: null,
-    })),
-    {
-      id: MONTH_SEGMENT_ID,
-      labelKey: onMonth ? null : "w.home.act.sMonth",
-      isMonth: true,
-      monthId: onMonth ? range.id : null,
-    },
-  ];
-}
-
-/** Which segment the thumb rests on. The month segment only takes it once a
- *  month is actually in force — opening the picker and dismissing it must not
- *  leave the pill somewhere the card isn't. */
-export function activityRangeSegIndex(range: ActivityRange, segments: ActivityRangeSegment[]): number {
-  if (range.kind === "month") return segments.length - 1;
-  return Math.max(0, segments.findIndex((s) => s.id === range.id));
-}
 
 /** i18n key for the block head's title. Null for a month, which the client
  *  formats from `range.id` through its own locale. */
