@@ -2,7 +2,7 @@
 
 import { useMemo, type CSSProperties } from "react";
 import {
-  ENDURANCE_METRICS, enduranceDeltaPct, enduranceDirection, enduranceMetricKey,
+  ENDURANCE_METRICS, TODAY_RANGE_STORE_KEY, enduranceDeltaPct, enduranceDirection, enduranceMetricKey,
   enduranceValue, enduranceWindow, groupDistanceDisplay, kmValue, sliceName,
   type BodyweightInput, type EnduranceMetric, type EnduranceSlice, type LoggedSession,
   type VerdictDirection,
@@ -46,10 +46,11 @@ import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./rang
 
 const C = (v: string) => `var(--color-${v})`;
 
-/** The filter's choice, per block. Progress keeps `hybrid.today.range`: a
- *  period belongs to the card it sits above, and scrubbing this section's
- *  window must not silently rewrite one the athlete can't see. */
-const STORE_KEY = "hybrid.today.endRange";
+/** ONE PERIOD FOR THE SCREEN. This card's filter and the Progress card's are
+ *  the same filter shown twice: both read core's TODAY_RANGE_STORE_KEY, so
+ *  scrubbing either one moves both. The alternative — a key per block — let
+ *  "Last 30 days" mean two windows at once, with the disagreeing card a scroll
+ *  away and nothing on screen admitting it. */
 
 const kicker: CSSProperties = {
   fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em",
@@ -72,7 +73,7 @@ export default function AuroraEnduranceSummary({
   bw?: BodyweightInput;
 }) {
   const { t } = useLang();
-  const { range, pick } = useActivityRange(STORE_KEY);
+  const { range, pick } = useActivityRange(TODAY_RANGE_STORE_KEY);
   const { title, span } = useRangeLabels(range);
 
   const w = useMemo(() => enduranceWindow(sessions, range, bw), [sessions, range, bw]);

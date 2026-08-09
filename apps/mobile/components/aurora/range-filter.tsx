@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -26,12 +26,18 @@ import { useToday } from "../../lib/use-today";
  * same rule the rail tails follow (aurora/rail-tail.tsx): five rails once drew
  * five different tails because each sized its own.
  *
- * WHAT IS SHARED and what is not. The SHAPE of the control is core's
+ * WHAT IS SHARED. The SHAPE of the control is core's
  * (activity-range-view.ts): the segment list, which one is lit, the span the
- * head prints. The CHOICE is per-block: each caller passes its own storage key,
- * so the Progress period and the Endurance period are independent — a filter
- * belongs to the card it sits above, and scrubbing one section's window must not
- * silently rewrite a card the athlete cannot see.
+ * head prints. The CHOICE is shared too — every block passing the same key
+ * reads one period and moves together the instant any one of them is scrubbed.
+ * Today's two sections both pass core's TODAY_RANGE_STORE_KEY, because they are
+ * the same filter shown twice, not two filters. See that constant for why.
+ *
+ * THAT LIVENESS IS THE WHOLE POINT OF THE STORE BELOW. A shared storage key
+ * alone would leave two mounted controls disagreeing until the next launch —
+ * the worse half of the bug, since the disagreeing card is a scroll away and
+ * nothing on screen admits it. So the choice lives in a module store the hook
+ * subscribes to, and AsyncStorage is only where it is kept between visits.
  */
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -45,25 +51,59 @@ export interface RangeLabels {
   monthLabel: (id: string, long?: boolean) => string;
 }
 
+/* ── the shared choice ──────────────────────────────────────────────────────
+ * One entry per key, and every hook reading that key subscribes to it. Module
+ * scope rather than a React context: the two consumers sit at opposite ends of
+ * a long screen with unrelated subtrees between them, and threading a provider
+ * around the whole of Today to join two filters would be a lot of plumbing for
+ * one string. Mirrors web. ─────────────────────────────────────────────────── */
+
+const chosen = new Map<string, string>();
+const watchers = new Map<string, Set<() => void>>();
+/** Keys already read back from storage — the read happens once per key, not
+ *  once per mounted control. */
+const hydrated = new Set<string>();
+
+const readChoice = (key: string) => chosen.get(key) ?? DEFAULT_ACTIVITY_RANGE;
+
+function writeChoice(key: string, id: string) {
+  if (chosen.get(key) === id) return;
+  chosen.set(key, id);
+  for (const notify of watchers.get(key) ?? []) notify();
+}
+
+function watchChoice(key: string, notify: () => void) {
+  let set = watchers.get(key);
+  if (!set) { set = new Set(); watchers.set(key, set); }
+  set.add(notify);
+  return () => { set!.delete(notify); };
+}
+
 /**
- * The chosen period, persisted per device under `storeKey`. A stale or unknown
- * id resolves to the week rather than blanking the card. `today` is an explicit
- * input so an app left backgrounded across midnight re-derives the week rather
- * than holding on to yesterday's.
+ * The chosen period. Shared by every caller passing the same `storeKey` and
+ * persisted per device under it. A stale or unknown id resolves to the week
+ * rather than blanking the card. `today` is an explicit input so an app left
+ * backgrounded across midnight re-derives the week rather than holding on to
+ * yesterday's.
  */
 export function useActivityRange(storeKey: string): {
   range: ActivityRange;
   pick: (id: string) => void;
 } {
   const today = useToday();
-  const [rangeId, setRangeId] = useState<string>(DEFAULT_ACTIVITY_RANGE);
+  const rangeId = useSyncExternalStore(
+    useCallback((notify: () => void) => watchChoice(storeKey, notify), [storeKey]),
+    useCallback(() => readChoice(storeKey), [storeKey]),
+  );
 
   useEffect(() => {
-    AsyncStorage.getItem(storeKey).then((v) => { if (v) setRangeId(v); }).catch(() => {});
+    if (hydrated.has(storeKey)) return;
+    hydrated.add(storeKey);
+    AsyncStorage.getItem(storeKey).then((v) => { if (v) writeChoice(storeKey, v); }).catch(() => {});
   }, [storeKey]);
 
   const pick = useCallback((id: string) => {
-    setRangeId(id);
+    writeChoice(storeKey, id);
     AsyncStorage.setItem(storeKey, id).catch(() => {});
   }, [storeKey]);
 

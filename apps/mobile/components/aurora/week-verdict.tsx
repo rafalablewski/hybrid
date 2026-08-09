@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  activityVerdict, activitySummary, activityDetailKey,
+  activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
   groupDistanceDisplay, fmtKm, kmValue,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
   figureDeltaPct, figureDirection,
@@ -48,8 +48,9 @@ import { leading, fs, F, PressScale, cardShadow, PressScale as Pressable, FIXED_
  *     with the label it lands on taking the foreground. Week / 7 days /
  *     30 days / YTD, with the fifth segment opening a sheet of individual
  *     months. Persisted per device. It became a shared component when the
- *     Endurance section grew a filter of its own — one control, two callers,
- *     rather than the four copies that would otherwise exist.
+ *     Endurance section grew a second view of it — one control, two callers,
+ *     rather than the four copies that would otherwise exist, and ONE period:
+ *     both read core's TODAY_RANGE_STORE_KEY, so scrubbing either moves both.
  *   • FIGURES THAT OPEN. Every column is a button; pressing one expands the
  *     card's lower compartment, carrying the groups the total is made of and
  *     the sessions underneath them. "41.6 km" becomes 39 km of running, 600 m
@@ -78,9 +79,8 @@ import { leading, fs, F, PressScale, cardShadow, PressScale as Pressable, FIXED_
  * still holds the tone, so the resting card is unchanged.
  */
 
-/** THE PROGRESS CLUSTER'S period. Endurance keeps its own
- *  (`hybrid.today.endRange`): a filter belongs to the card it sits above. */
-const STORE_KEY = "hybrid.today.range";
+/** ONE PERIOD FOR THE SCREEN — core's TODAY_RANGE_STORE_KEY, which the
+ *  Endurance section's card reads too, so the two filters move together. */
 /** Set once the athlete has opened any column — see the hint below. */
 const HINT_KEY = "hybrid.today.actHinted";
 const ROWS_SHOWN = 5;
@@ -178,7 +178,7 @@ export default function AuroraWeekVerdict({
 
   // The chosen period, persisted per device under the PROGRESS key — the
   // shared filter owns the reading, the storage and the midnight re-derive.
-  const { range, pick: setRange } = useActivityRange(STORE_KEY);
+  const { range, pick: setRange } = useActivityRange(TODAY_RANGE_STORE_KEY);
   const { title, span } = useRangeLabels(range);
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);

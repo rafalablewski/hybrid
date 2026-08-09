@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import {
   ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE, MONTH_SEGMENT_ID,
   activityMonths, activityRangeSegIndex, activityRangeSegments, activityRangeSpanEnd,
@@ -25,12 +25,18 @@ import { useToday } from "@/lib/use-today";
  * same rule the rail tails follow (aurora/rail-tail.tsx): five rails once drew
  * five different tails because each sized its own.
  *
- * WHAT IS SHARED and what is not. The SHAPE of the control is core's
+ * WHAT IS SHARED. The SHAPE of the control is core's
  * (activity-range-view.ts): the segment list, which one is lit, the span the
- * head prints. The CHOICE is per-block: each caller passes its own storage key,
- * so the Progress period and the Endurance period are independent — a filter
- * belongs to the card it sits above, and scrubbing one section's window must not
- * silently rewrite a card the athlete cannot see.
+ * head prints. The CHOICE is shared too — every block passing the same key
+ * reads one period and moves together the instant any one of them is scrubbed.
+ * Today's two sections both pass core's TODAY_RANGE_STORE_KEY, because they are
+ * the same filter shown twice, not two filters. See that constant for why.
+ *
+ * THAT LIVENESS IS THE WHOLE POINT OF THE STORE BELOW. A shared storage key
+ * alone would leave two mounted controls disagreeing until the next launch —
+ * the worse half of the bug, since the disagreeing card is a scroll away and
+ * nothing on screen admits it. So the choice lives in a module store the hook
+ * subscribes to, and localStorage is only where it is kept between visits.
  */
 
 const C = (v: string) => `var(--color-${v})`;
@@ -51,30 +57,67 @@ export interface RangeLabels {
   monthLabel: (id: string, long?: boolean) => string;
 }
 
+/* ── the shared choice ──────────────────────────────────────────────────────
+ * One entry per key, and every hook reading that key subscribes to it. Module
+ * scope rather than a React context: the two consumers sit at opposite ends of
+ * a long screen with unrelated subtrees between them, and threading a provider
+ * around the whole of Today to join two filters would be a lot of plumbing for
+ * one string. ────────────────────────────────────────────────────────────── */
+
+const chosen = new Map<string, string>();
+const watchers = new Map<string, Set<() => void>>();
+/** Keys already read back from storage — the read happens once per key, not
+ *  once per mounted control. */
+const hydrated = new Set<string>();
+
+const readChoice = (key: string) => chosen.get(key) ?? DEFAULT_ACTIVITY_RANGE;
+
+function writeChoice(key: string, id: string) {
+  if (chosen.get(key) === id) return;
+  chosen.set(key, id);
+  for (const notify of watchers.get(key) ?? []) notify();
+}
+
+function watchChoice(key: string, notify: () => void) {
+  let set = watchers.get(key);
+  if (!set) { set = new Set(); watchers.set(key, set); }
+  set.add(notify);
+  return () => { set!.delete(notify); };
+}
+
 /**
- * The chosen period, persisted per device under `storeKey`.
+ * The chosen period. Shared by every caller passing the same `storeKey` and
+ * persisted per device under it.
  *
- * Read after mount so the server and the first client paint agree; a stale or
- * unknown id resolves to the week rather than blanking the card. `today` is an
- * explicit input so a tab left open across midnight re-derives the week rather
- * than holding on to yesterday's.
+ * The server snapshot and the pre-hydration client snapshot are both the
+ * DEFAULT, so the server paint and the first client paint agree; the saved
+ * choice is read back in an effect and a stale or unknown id resolves to the
+ * week rather than blanking the card. `today` is an explicit input so a tab
+ * left open across midnight re-derives the week rather than holding on to
+ * yesterday's.
  */
 export function useActivityRange(storeKey: string): {
   range: ActivityRange;
   pick: (id: string) => void;
 } {
   const today = useToday();
-  const [rangeId, setRangeId] = useState<string>(DEFAULT_ACTIVITY_RANGE);
+  const rangeId = useSyncExternalStore(
+    useCallback((notify: () => void) => watchChoice(storeKey, notify), [storeKey]),
+    useCallback(() => readChoice(storeKey), [storeKey]),
+    () => DEFAULT_ACTIVITY_RANGE,
+  );
 
   useEffect(() => {
+    if (hydrated.has(storeKey)) return;
+    hydrated.add(storeKey);
     try {
       const saved = localStorage.getItem(storeKey);
-      if (saved) setRangeId(saved);
+      if (saved) writeChoice(storeKey, saved);
     } catch { /* storage disabled — the week is a fine default */ }
   }, [storeKey]);
 
   const pick = useCallback((id: string) => {
-    setRangeId(id);
+    writeChoice(storeKey, id);
     try { localStorage.setItem(storeKey, id); } catch { /* ignore */ }
   }, [storeKey]);
 

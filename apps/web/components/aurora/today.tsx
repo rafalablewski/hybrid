@@ -985,8 +985,9 @@ export default function AuroraToday({
           It is its own section now, below the seam. ═════ */}
       <GroupMark label={t("w.home.group.progress")} />
 
-      {/* ───── (a) THIS WEEK — the verdict card, and the cluster's date filter.
-          A verdict with its working-out shown. Replaces the Statistics and
+      {/* ───── (a) THIS WEEK — the verdict card, and the screen's date filter
+          (Endurance shows the same one again, on the same period). A verdict
+          with its working-out shown. Replaces the Statistics and
           Analytics destinations on Today (both are now promotedTo "today" in
           core nav.ts). It also renders (b) RECORDS directly underneath, because
           a PR belongs to the period this filter is showing — same window, one
@@ -1026,11 +1027,13 @@ export default function AuroraToday({
           <SectionSeam />
           <GroupMark label={t("endurance.title")} mt={24} />
 
-          {/* ───── (a) THIS WEEK — the section's own summary card and its own
-              filter: efforts / distance / time for the period, each against its
-              own baseline, then what the time was made of. The figures are a
-              SLICE of the verdict card's above (core endurance-window.ts reads
-              the same activitySummary), never a second opinion. ───── */}
+          {/* ───── (a) THIS WEEK — the section's own summary card, under a
+              second view of the SCREEN's filter (both read core's
+              TODAY_RANGE_STORE_KEY, so scrubbing either moves both): efforts /
+              distance / time for the period, each against its own baseline,
+              then what the time was made of. The figures are a SLICE of the
+              verdict card's above (core endurance-window.ts reads the same
+              activitySummary), never a second opinion. ───── */}
           <AuroraEnduranceSummary sessions={sessions} bw={bw} />
 
           {/* ───── (b…) ONE LANE PER SPORT — a full-bleed rail per logged
