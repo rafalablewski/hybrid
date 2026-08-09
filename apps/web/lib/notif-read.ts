@@ -2,79 +2,115 @@
 
 import { useSyncExternalStore } from "react";
 import {
-  DEFAULT_NOTIF_READ,
-  markAllNotifsRead,
-  markNotifRead,
+  createNotifSync,
+  normalizeNotifCache,
   normalizeNotifRead,
+  DEFAULT_NOTIF_READ,
+  type NotifOp,
   type NotifReadState,
+  type NotifSyncCache,
+  type NotifSyncReply,
 } from "@hybrid/core";
 
 /**
- * Which notifications you have already seen — persisted per device
- * (localStorage), shared by the bell badge and the notifications screen through
- * one store, so the two can never disagree.
+ * Which notifications you have already seen — per ACCOUNT, synced through
+ * /api/notifications/state, with localStorage as the offline cache.
  *
- * Per-device is the same contract as the logger preferences: the state is small
- * and idempotent (reading on your phone and again on your laptop costs you one
- * extra glance, never a lost notification), and it needs no migration on a
- * database the sandbox cannot reach. Server-side sync is tracked as
- * `prefs-cross-device-sync`.
+ * It used to be per-device on the logger-prefs contract: small, idempotent,
+ * costing you at worst one extra glance. That argument held right up until a
+ * row could be DELETED. A badge that disagrees between your laptop and your
+ * phone is a nuisance; a notification you deliberately threw away coming back
+ * on the other device is the app forgetting something you told it.
  *
+ * All of the interesting behaviour — optimistic apply, the offline queue,
+ * rebasing onto server truth without reverting a swipe still in flight — lives
+ * in @hybrid/core's createNotifSync, so this file is only the four ports.
  * Mirrors apps/mobile/lib/notif-read.ts.
  */
 const KEY = "hybrid.notifRead";
+const ENDPOINT = "/api/notifications/state";
 
-let state: NotifReadState = DEFAULT_NOTIF_READ;
-let hydrated = false;
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
+const sync = createNotifSync({
+  load: async () => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(KEY);
+      return raw ? normalizeNotifCache(JSON.parse(raw), normalizeNotifRead) : null;
+    } catch {
+      // Keep the default — everything unread, which is the safe direction.
+      return null;
+    }
+  },
+  save: (cache: NotifSyncCache) => {
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(cache));
+    } catch {
+      /* a full/blocked store must not break the screen */
+    }
+  },
+  pull: async () => reply(await request("GET")),
+  push: async (ops: NotifOp[]) => reply(await request("POST", { ops })),
+});
 
-function hydrate(): void {
-  if (hydrated || typeof window === "undefined") return;
-  hydrated = true;
+async function request(method: "GET" | "POST", body?: unknown): Promise<Response | null> {
   try {
-    const raw = window.localStorage.getItem(KEY);
-    if (raw) state = normalizeNotifRead(JSON.parse(raw));
+    return await fetch(ENDPOINT, {
+      method,
+      ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
+    });
   } catch {
-    /* keep the default: everything unread, which is the safe direction */
+    // Offline. The queue holds; nothing is lost.
+    return null;
   }
 }
 
-function persist(next: NotifReadState): void {
-  state = next;
+/** A non-OK answer is a real one: signed out, or not migrated. Either way the
+ *  server is not storing for us, and this device stays its own source of truth. */
+async function reply(res: Response | null): Promise<NotifSyncReply | null> {
+  if (!res?.ok) return null;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(next));
+    const d = (await res.json()) as { state?: unknown; synced?: boolean };
+    return { state: normalizeNotifRead(d.state), synced: d.synced === true };
   } catch {
-    /* a full/blocked store must not break the screen */
+    return null;
   }
-  emit();
+}
+
+/** Re-drain the queue when the tab comes back — the moment connectivity most
+ *  often returns, and the same signal react-query already revalidates on. */
+if (typeof window !== "undefined") {
+  window.addEventListener("focus", () => sync.flush());
+  window.addEventListener("online", () => sync.flush());
 }
 
 /** Mark one row read (tapping it). */
 export function readNotification(id: string): void {
-  hydrate();
-  persist(markNotifRead(state, id));
+  sync.dispatch({ kind: "read", id });
 }
 
-/** Mark every row currently on screen read. */
+/** Put one row back to unread (swipe right). */
+export function unreadNotification(id: string): void {
+  sync.dispatch({ kind: "unread", id });
+}
+
+/** Delete one row (swipe left) — a tombstone, since the list is a projection. */
+export function dismissNotification(id: string): void {
+  sync.dispatch({ kind: "dismiss", id });
+}
+
+/** The passive sweep: mark what the screen has just shown as seen. */
+export function sweepNotifications(items: { id: string; at: number }[]): void {
+  sync.dispatch({ kind: "sweep", items, now: Date.now() });
+}
+
+/** Mark every row currently on screen read — the explicit action. */
 export function readAllNotifications(items: { id: string; at: number }[]): void {
-  hydrate();
-  persist(markAllNotifsRead(state, items));
-}
-
-function subscribe(l: () => void): () => void {
-  hydrate();
-  listeners.add(l);
-  return () => listeners.delete(l);
+  sync.dispatch({ kind: "markAll", items, now: Date.now() });
 }
 
 /** The current read state. The server render uses the default (all unread) and
  *  the client hydrates — a badge that briefly over-counts beats one that hides
  *  a notification. */
 export function useNotifRead(): NotifReadState {
-  return useSyncExternalStore(
-    subscribe,
-    () => state,
-    () => DEFAULT_NOTIF_READ,
-  );
+  return useSyncExternalStore(sync.subscribe, sync.get, () => DEFAULT_NOTIF_READ);
 }

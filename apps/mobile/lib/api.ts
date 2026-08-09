@@ -907,6 +907,39 @@ export async function fetchAssignments(): Promise<Assignment[]> {
   }
 }
 
+/**
+ * The notification read state, per account. Both of these resolve NULL on any
+ * failure rather than an empty state, and the distinction matters: null means
+ * "the server is not storing for us" (offline, signed out, or the table not yet
+ * migrated), which tells the store to keep trusting the device — an empty state
+ * would instead wipe what this phone already knew. See lib/notif-read.ts.
+ */
+export async function fetchNotifState(): Promise<{ state: unknown; synced: boolean } | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/notifications/state`, { headers: await authHeaders() });
+    if (!res.ok) return null;
+    const d = (await res.json()) as { state?: unknown; synced?: boolean };
+    return { state: d.state, synced: d.synced === true };
+  } catch {
+    return null;
+  }
+}
+
+export async function pushNotifOps(ops: unknown[]): Promise<{ state: unknown; synced: boolean } | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/notifications/state`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ ops }),
+    });
+    if (!res.ok) return null;
+    const d = (await res.json()) as { state?: unknown; synced?: boolean };
+    return { state: d.state, synced: d.synced === true };
+  } catch {
+    return null;
+  }
+}
+
 export async function updateAssignment(id: string, status: "completed" | "skipped" | "assigned"): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/assignments/${id}`, {
