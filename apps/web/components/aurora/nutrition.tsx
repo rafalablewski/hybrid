@@ -14,6 +14,7 @@ import {
   recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats, recipeCookView, DOCK_RAIL,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   canSaveRecipe, emptyUserRecipe, recipeToLog, type UserRecipe, type RecipeSource,
+  type QuickAddCandidate, type QuickAddDraft, type QuickAddMatch,
   type CopyPlan, type CopyableEntry,
   nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
@@ -42,6 +43,7 @@ import WaterCard from "./water";
 import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type RecipeRow } from "./user-recipes";
 import CopyDaySheet from "./copy-day";
 import NutritionTrends from "./nutrition-trends";
+import QuickAdd from "./quick-add";
 
 // The Create Food form's blank state — one constant, so the reset paths can
 // never fall out of step with the fields the form actually has.
@@ -713,6 +715,55 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   useEffect(() => () => { writeDeepLink({ food: undefined, source: undefined }); }, []);
   const [qty, setQty] = useState(1);
   const openPortion = (base: PortionBase) => { setQty(1); setError(""); setPortion(base); };
+
+  // ── QUICK ADD — the athlete's OWN foods, ranked for a typed phrase.
+  // Recents first (the food you logged yesterday is a better answer to two
+  // words than one you saved in March), then products, then saved meals.
+  const quickAddCandidates: QuickAddCandidate[] = useMemo(() => [
+    ...recent.map((r) => ({
+      id: r.key, name: r.name, subname: r.subname ?? null, servingLabel: r.serving,
+      // A recent carries no serving weight, so a gram phrase against one is
+      // routed to the portion editor rather than converted (see quick-add.ts).
+      servingGrams: null,
+      facts: { kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat, satFat: null, sugar: null, fiber: null, salt: null },
+      source: "recent" as const,
+    })),
+    ...products.map((p) => ({
+      id: p.id, name: p.name, subname: p.subname ?? null, servingLabel: p.servingLabel,
+      servingGrams: p.servingGrams ?? null,
+      facts: { kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat ?? null, sugar: p.sugar ?? null, fiber: p.fiber ?? null, salt: p.salt ?? null },
+      source: "product" as const,
+      verifiedId: p.verifiedId ?? null,
+    })),
+    ...meals.map((m) => ({
+      id: m.id, name: m.name, subname: m.subname ?? null, servingLabel: `1 ${t("w.recovery.nutrition.serving")}`,
+      servingGrams: null,
+      facts: { kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: m.satFat ?? null, sugar: m.sugar ?? null, fiber: m.fiber ?? null, salt: m.salt ?? null },
+      source: "meal" as const,
+    })),
+  ], [recent, products, meals, t]);
+
+  // A quick-add commits straight to the diary — per single serving with a
+  // separate quantity, the same shape every other logging path writes, so the
+  // Diary's stepper rescales it afterwards.
+  const logQuickAdd = async (draft: QuickAddDraft) => {
+    const ok = await logEntry({
+      name: draft.name, subname: draft.subname, source: mealType,
+      kcal: draft.facts.kcal, protein: draft.facts.protein, carbs: draft.facts.carbs, fat: draft.facts.fat,
+      satFat: draft.facts.satFat, sugar: draft.facts.sugar, fiber: draft.facts.fiber, salt: draft.facts.salt,
+      qty: draft.qty, verifiedId: draft.verifiedId,
+    });
+    if (ok) { await load(); await loadLogs(); revalidate.recovery(); }
+  };
+  // A phrase whose quantity could NOT be computed opens the portion editor
+  // instead of logging a number nobody worked out.
+  const portionForQuickAdd = (m: QuickAddMatch) => openPortion({
+    name: m.candidate.name, subname: m.candidate.subname, subtitle: m.candidate.servingLabel,
+    serving: m.candidate.servingLabel,
+    kcal: m.candidate.facts.kcal, protein: m.candidate.facts.protein, carbs: m.candidate.facts.carbs, fat: m.candidate.facts.fat,
+    satFat: m.candidate.facts.satFat, sugar: m.candidate.facts.sugar, fiber: m.candidate.facts.fiber, salt: m.candidate.facts.salt,
+    source: mealType, verifiedId: m.candidate.verifiedId ?? undefined,
+  });
 
   // Log a saved meal → opens the portion editor (default 1×); the SAME
   // energyIntake/protein/carbs/fat signals as a manual add, scaled by quantity.
@@ -1538,6 +1589,18 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             )}
           </div>
         </Sheet>
+
+        {/* QUICK ADD — above the database search, because it answers from foods
+            already saved and answers instantly. The search below it is the
+            fallback for a food this athlete has never logged. */}
+        <div style={{ marginBottom: 16 }}>
+          <QuickAdd
+            candidates={quickAddCandidates}
+            onLog={logQuickAdd}
+            onPortion={portionForQuickAdd}
+            entryName={t("w.recovery.nutrition.quickEntry")}
+          />
+        </div>
 
         {/* Search — text or barcode */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px" }}>
