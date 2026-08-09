@@ -119,7 +119,7 @@ describe("privacy gate — the full visibility × relation contract", () => {
 });
 
 describe("activity feed", () => {
-  it("emits session + PR items, newest first, PR above its session", () => {
+  it("posts ONE item per workout, newest first, with the records it set on it", () => {
     const feed = buildSocialFeed(
       [
         {
@@ -132,11 +132,15 @@ describe("activity feed", () => {
       ],
       { now: NOW },
     );
-    // newest session (a2) and its PR come first
-    expect(feed[0]!.subjectId).toBe("a2");
-    expect(feed[0]!.kind).toBe("pr");
-    expect(feed[1]!.kind).toBe("session");
-    expect(feed[1]!.subjectId).toBe("a2");
+    // Two sessions → two posts. A record is a LINE on its workout, never a
+    // second card putting the same session in the stream twice.
+    expect(feed).toHaveLength(2);
+    expect(feed.map((f) => f.kind)).toEqual(["session", "session"]);
+    expect(feed[0]!.subjectId).toBe("a2"); // newest first
+    expect(feed[0]!.detail!.prs).toEqual([
+      expect.objectContaining({ lift: "Back Squat", topLoadKg: 130, previousTopLoadKg: 100, firstEver: false }),
+    ]);
+    expect(feed[1]!.detail!.prs![0]).toMatchObject({ lift: "Back Squat", firstEver: true });
     // every item carries an anchor for kudos/comments
     expect(feed.every((f) => f.subjectType && f.subjectId)).toBe(true);
   });

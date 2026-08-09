@@ -13,8 +13,10 @@ import {
   sportDistance,
   sportPace,
   sportPageModel,
+  sportPaceReading,
   sportPaceUnit,
   sportSessions,
+  sportVolumeReading,
   SPORT_PAGE_RECENT,
 } from "./sport-page";
 import { OLYMPIC_SPORTS } from "./olympic-sports";
@@ -145,6 +147,22 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     expect(m.primary.kind).toBe("time");
   });
 
+  it("prints every timed figure in hours AND minutes, carrying its own units", () => {
+    const m = sportPageModel("Tennis", MIXED, { now: NOW });
+    // 75 + 60 logged minutes. This used to read "2:15 h" as the hero and a
+    // flat "2" in the totals row — the athlete had logged the 15.
+    expect(m.primary.value).toBe("2h 15min");
+    expect(m.primary.unit).toBeNull();
+    expect(m.totals.find((c) => c.id === "hours")!.value).toBe("2h 15min");
+    expect(m.totals.find((c) => c.id === "hours")!.unit).toBeNull();
+    // The week cell and the longest session are durations too, so neither
+    // trails a separate "min" for the label to name a second time.
+    expect(m.totals.find((c) => c.id === "week")!.value).toBe("1h 15min");
+    expect(m.totals.find((c) => c.id === "week")!.unit).toBeNull();
+    expect(m.bests.find((b) => b.id === "longestSession")!.value).toBe("1h 15min");
+    expect(m.bests.find((b) => b.id === "longestSession")!.unit).toBeNull();
+  });
+
   it("reads a pool sport in METRES at a per-hundred pace", () => {
     const swims = [effort("s1", "Threshold set", "swimming", 2, 2.4, 45)];
     const m = sportPageModel("Swimming", swims, { now: NOW });
@@ -196,6 +214,71 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     expect(m.bests.find((b) => b.id === "fastest")!.provider).toBe("apple");
     expect(m.bests.find((b) => b.id === "biggestWeek")!.provider).toBeNull();
     expect(m.bests.find((b) => b.id === "biggestWeek")!.sessionId).toBeNull();
+  });
+});
+
+describe("holding a chart — the figure under the finger", () => {
+  it("reads a volume bar in the sport's own unit, with the week's efforts", () => {
+    const m = sportPageModel("Running", RUNS, { now: NOW });
+    const held = sportVolumeReading(m, m.weeks.length - 1)!;
+    // Formatted by sportDistance, so it inherits its trailing-zero rule.
+    expect(held.value).toBe("26");
+    expect(held.unit).toBe("km");
+    expect(held.efforts).toBe(2); // the 18 km and the 8 km
+    expect(held.weekStart).toBe(m.weeks.at(-1)!.weekStart);
+    expect(held.best).toBe(true); // the biggest of the eight
+  });
+
+  it("reads a POOL week in metres, not kilometres", () => {
+    const swims = [effort("s1", "Threshold set", "swimming", 2, 2.4, 45)];
+    const m = sportPageModel("Swimming", swims, { now: NOW });
+    const held = sportVolumeReading(m, m.weeks.length - 1)!;
+    expect(held.value).toBe("2 400");
+    expect(held.unit).toBe("m");
+  });
+
+  it("reads a TIMED sport's bar as a duration — it has no distance to state", () => {
+    const m = sportPageModel("Tennis", MIXED, { now: NOW });
+    const held = sportVolumeReading(m, m.weeks.length - 1)!;
+    // The figure brings its own units, so the readout prints none beside it.
+    expect(held.value).toBe("1h 15min");
+    expect(held.unit).toBe("");
+  });
+
+  it("names the pace point's OWN week — the trend skips the unpaced ones", () => {
+    // Two paced weeks eight weeks apart: the trend holds two points but they
+    // are buckets 0 and 7, so an index read off the volume bars would date the
+    // second point six weeks early.
+    const spread = [
+      effort("p1", "Tempo", "running", 2, 10, 40),
+      effort("p2", "Tempo", "running", 51, 10, 50),
+    ];
+    const m = sportPageModel("Running", spread, { now: NOW });
+    expect(m.pace!.trend).toHaveLength(2);
+    expect(m.pace!.weekStarts).toEqual([m.weeks[0]!.weekStart, m.weeks.at(-1)!.weekStart]);
+    const held = sportPaceReading(m, 1)!;
+    expect(held.value).toBe("4:00");
+    expect(held.unit).toBe("/km");
+    expect(held.weekStart).toBe(m.weeks.at(-1)!.weekStart);
+    expect(held.best).toBe(true); // 4:00 beats the 5:00 week
+    expect(held.efforts).toBeNull(); // a pace point counts no efforts
+  });
+
+  it("renders a held pace at the sport's own split", () => {
+    const swims = [
+      effort("s1", "Set", "swimming", 2, 2, 40),
+      effort("s2", "Set", "swimming", 9, 2, 44),
+    ];
+    const m = sportPageModel("Swimming", swims, { now: NOW });
+    expect(sportPaceReading(m, 0)!.value).toBe("2:12"); // 44 min / 2 km, per 100 m
+    expect(sportPaceReading(m, 0)!.unit).toBe("/100m");
+  });
+
+  it("returns nothing for an index off the series, or a chart that isn't there", () => {
+    const m = sportPageModel("Running", RUNS, { now: NOW });
+    expect(sportVolumeReading(m, -1)).toBeNull();
+    expect(sportVolumeReading(m, 99)).toBeNull();
+    expect(sportPaceReading(sportPageModel("Tennis", MIXED, { now: NOW }), 0)).toBeNull();
   });
 });
 

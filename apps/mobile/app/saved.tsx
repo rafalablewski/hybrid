@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, RefreshControl } from "react-native";
-import { FEED_SAVED_PAGE, orderBySaved, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
+import { router } from "expo-router";
+import { FEED_SAVED_PAGE, feedPostPath, orderBySaved, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
 import { Loading, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
 import { AuroraScreen, GUTTER } from "../components/aurora/kit";
 import type { HeroScrollProps } from "../components/aurora/hero";
@@ -13,7 +14,7 @@ import { useNavScrollProps } from "../lib/nav-scroll";
 import { Empty, ProfileModal, SButton } from "../components/social-kit";
 import { useConfirm } from "../components/aurora/confirm";
 import FeedCard from "../components/feed-card";
-import { Comments } from "../components/feed-view";
+import { Comments } from "../components/feed-comments";
 
 /**
  * SAVED — the shelf behind the feed's bookmark (mobile). Twin of
@@ -102,6 +103,8 @@ export default function SavedScreen() {
       onOpenProfile={(h) => setDrawer(h)}
       onKudos={() => cheer(item)}
       onComments={() => setOpen(open === item.id ? null : item.id)}
+      // A saved row opens the same post screen the feed's rows open.
+      onOpen={() => { setOpen(null); router.push(feedPostPath(item)); }}
       onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
       onAuthorChanged={authorChanged}
     >

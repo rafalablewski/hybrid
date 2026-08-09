@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, TextInput, ScrollView } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -7,24 +7,31 @@ import {
   LEVELS,
   SPORT_PAGE_WEEKS,
   ago,
+  durationUnits, formatDuration,
   heroMetaLine,
   markerHistory,
   recordMarker,
+  scrubPosition,
   sportDistance,
   sportPace,
   sportFromSlug,
   sportMarkPaths,
   sportPageModel,
+  sportPaceReading,
+  sportVolumeReading,
   transferSessionBlocks,
   type LoggedSession,
   type SportBest,
+  type SportChartReading,
   type SportPageModel,
   type SportStore,
+  type SportWeek,
 } from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
 
@@ -90,6 +97,13 @@ export default function AuroraSportPage() {
     [name, sessions, levelIdx, markers],
   );
 
+  // The two held charts. Both hooks run every render — a sport with no pace
+  // simply holds a series of zero points, which reads as "nothing held".
+  const volumeScrub = useChartScrub(m.weeks.length, "band");
+  const paceScrub = useChartScrub(m.pace?.trend.length ?? 0, "point", 10 / 326);
+  const volumeRead = volumeScrub.index >= 0 ? sportVolumeReading(m, volumeScrub.index) : null;
+  const paceRead = paceScrub.index >= 0 ? sportPaceReading(m, paceScrub.index) : null;
+
   const persist = (next: SportStore) => {
     setStore(next);
     AsyncStorage.setItem(STORE_KEY, JSON.stringify(next)).catch(() => {});
@@ -112,12 +126,16 @@ export default function AuroraSportPage() {
   const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: 1.2 });
   const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
+  const u = durationUnits(t);
   const unitLabel = m.distanceUnit === "m" ? t("w.train.sportPage.metres") : t("w.train.sportPage.kilometres");
-  const totalLabel = (id: string, unit: string | null) =>
+  // The week cell reads "This week" whatever the sport measures: a timed
+  // sport's figure now carries its own units ("1h 15min"), so the label that
+  // used to name them ("Min this week") would be naming them twice.
+  const totalLabel = (id: string) =>
     id === "efforts" ? t("w.train.sportPage.efforts")
       : id === "distance" ? unitLabel
       : id === "hours" ? t("w.train.sportPage.hours")
-      : unit ? t("w.train.sportPage.thisWeek") : t("w.train.sportPage.minThisWeek");
+      : t("w.train.sportPage.thisWeek");
   const bestLabel = (b: SportBest) =>
     b.id === "fastest" ? t("w.train.sportPage.fastest")
       : b.id === "longest" ? t("w.train.sportPage.longest")
@@ -130,7 +148,7 @@ export default function AuroraSportPage() {
       : t("w.train.sportPage.timeLogged");
   const weeksMeta = t("w.train.sportPage.weeksAvg")
     .replace("{weeks}", String(SPORT_PAGE_WEEKS))
-    .replace("{avg}", m.hasDistance ? `${sportDistance(m.distanceUnit === "m" ? m.weekAvg / 1000 : m.weekAvg, m.distanceUnit)} ${m.distanceUnit}` : `${Math.round(m.weekAvg)} min`);
+    .replace("{avg}", m.hasDistance ? `${sportDistance(m.distanceUnit === "m" ? m.weekAvg / 1000 : m.weekAvg, m.distanceUnit)} ${m.distanceUnit}` : formatDuration(m.weekAvg, u));
 
   /** The Explore SectionHead: display-face title left, mono meta right. */
   const SectionHead = ({ title, meta }: { title: string; meta?: string }) => (
@@ -147,6 +165,18 @@ export default function AuroraSportPage() {
       : <Text style={label()}>{t("w.train.sportPage.markerTyped")}</Text>;
 
   const dividerTop = { borderTopWidth: 1, borderTopColor: C.line } as const;
+
+  /** The held figure, placed on the side of the plot the finger is not on. */
+  const chartReadout = (read: SportChartReading | null, count: number) =>
+    read ? (
+      <ChartReadout
+        read={read}
+        C={C}
+        side={readoutSide(read.index, count)}
+        when={t("chart.weekOf").replace("{date}", fmtDate(read.weekStart))}
+        note={read.efforts != null ? t("w.train.sportPage.effortsMeta").replace("{n}", String(read.efforts)) : undefined}
+      />
+    ) : null;
 
   return (
     <AuroraScreen
@@ -235,7 +265,7 @@ export default function AuroraSportPage() {
         {m.totals.map((cell, i) => (
           <View key={cell.id} style={{ flex: 1, alignItems: "center", paddingVertical: space.lg, borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.heading, color: C.chalk }}>{cell.value}</Text>
-            <Text style={{ ...label(), fontSize: fs.nano, marginTop: 6, textAlign: "center" }}>{totalLabel(cell.id, cell.unit)}</Text>
+            <Text style={{ ...label(), fontSize: fs.nano, marginTop: 6, textAlign: "center" }}>{totalLabel(cell.id)}</Text>
           </View>
         ))}
       </View>
@@ -250,7 +280,14 @@ export default function AuroraSportPage() {
           {/* ── VOLUME ── */}
           <View style={{ marginTop: space.xxl }}>
             <SectionHead title={t("w.train.sportPage.volume")} meta={weeksMeta} />
-            <VolumeBars weeks={m.weeks} avg={m.weekAvg} C={C} />
+            <VolumeBars
+              weeks={m.weeks}
+              avg={m.weekAvg}
+              C={C}
+              held={volumeScrub.index}
+              bind={volumeScrub.bind}
+              readout={chartReadout(volumeRead, m.weeks.length)}
+            />
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm }}>
               <Text style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</Text>
               <Text style={mono(fs.nano)}>{t("w.train.sportPage.thisWeek")}</Text>
@@ -272,7 +309,14 @@ export default function AuroraSportPage() {
                   </View>
                 ))}
               </View>
-              <PaceTrend trend={m.pace.trend} prIndex={m.pace.prIndex} C={C} />
+              <PaceTrend
+                trend={m.pace.trend}
+                prIndex={m.pace.prIndex}
+                C={C}
+                held={paceScrub.index}
+                bind={paceScrub.bind}
+                readout={chartReadout(paceRead, m.pace.trend.length)}
+              />
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm }}>
                 <Text style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</Text>
                 <Text style={mono(fs.nano)}>{t("w.train.sportPage.fasterHigher")}</Text>
@@ -412,7 +456,7 @@ export default function AuroraSportPage() {
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk }}>
-                  {m.hasDistance ? `${sportDistance(e.distanceKm, m.distanceUnit)} ${m.distanceUnit}` : `${e.minutes} min`}
+                  {m.hasDistance ? `${sportDistance(e.distanceKm, m.distanceUnit)} ${m.distanceUnit}` : formatDuration(e.minutes, u)}
                 </Text>
                 {e.secPerKm != null && <Text style={{ ...mono(fs.micro), marginTop: 4 }}>{sportPace(e.secPerKm, m.pacePer)} {m.paceUnit}</Text>}
               </View>
@@ -424,12 +468,15 @@ export default function AuroraSportPage() {
   );
 }
 
+/* ── holding a chart ─────────────────────────────────────────────────────── */
+
 /* ── the charts — the web twin's geometry, drawn with react-native-svg ────── */
 
-function VolumeBars({ weeks, avg, C }: { weeks: { value: number }[]; avg: number; C: Palette }) {
+function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]; avg: number; C: Palette; held: number; bind: ScrubBind; readout: ReactNode }) {
   const max = Math.max(...weeks.map((w) => w.value), 1);
+  const pos = scrubPosition(held, { count: weeks.length, mode: "band" });
   return (
-    <View style={{ height: 110, flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
+    <View {...bind} style={{ height: 110, flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
       {weeks.map((w, i) => (
         <View
           key={i}
@@ -437,19 +484,25 @@ function VolumeBars({ weeks, avg, C }: { weeks: { value: number }[]; avg: number
             flex: 1,
             height: Math.max(3, (w.value / max) * 110),
             borderRadius: 3,
-            backgroundColor: i === weeks.length - 1 ? C.lime : `${C.lime}6b`,
+            // Held, the finger's week is the lit one — the "this week" accent
+            // would otherwise compete with the answer the athlete asked for.
+            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : `${C.lime}6b`,
           }}
         />
       ))}
       {avg > 0 && (
         <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: (avg / max) * 110, borderTopWidth: 1, borderTopColor: `${C.ash}8c`, borderStyle: "dashed" }} />
       )}
+      {held >= 0 && (
+        <View pointerEvents="none" style={{ position: "absolute", left: `${pos * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: `${C.ash}8c` }} />
+      )}
+      {readout}
     </View>
   );
 }
 
 /** Reversed, so FASTER sits higher. Same viewBox, padding and stroke as web. */
-function PaceTrend({ trend, prIndex, C }: { trend: number[]; prIndex: number; C: Palette }) {
+function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]; prIndex: number; C: Palette; held: number; bind: ScrubBind; readout: ReactNode }) {
   const W = 326, H = 118, PAD = 10;
   const min = Math.min(...trend), max = Math.max(...trend);
   const span = Math.max(1, max - min);
@@ -457,8 +510,9 @@ function PaceTrend({ trend, prIndex, C }: { trend: number[]; prIndex: number; C:
   const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
   const area = `${d} L${pts[pts.length - 1]![0].toFixed(1)} ${H} L${pts[0]![0].toFixed(1)} ${H} Z`;
   const pr = pts[Math.min(Math.max(prIndex, 0), pts.length - 1)]!;
+  const hit = held >= 0 ? pts[held] : null;
   return (
-    <View style={{ height: H }}>
+    <View {...bind} style={{ height: H }}>
       <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         <Defs>
           <LinearGradient id="sportPaceFill" x1="0" y1="0" x2="0" y2="1">
@@ -469,6 +523,9 @@ function PaceTrend({ trend, prIndex, C }: { trend: number[]; prIndex: number; C:
         <Path d={area} fill="url(#sportPaceFill)" />
         <Path d={d} fill="none" stroke={C.lime} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </Svg>
+      {!!hit && (
+        <View pointerEvents="none" style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: `${C.ash}8c` }} />
+      )}
       {/* The PR dot is a View, not a circle: the path is stretched to the
           column's width and a circle inside a stretched viewBox is an ellipse. */}
       <View
@@ -481,6 +538,19 @@ function PaceTrend({ trend, prIndex, C }: { trend: number[]; prIndex: number; C:
           borderRadius: 999, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink,
         }}
       />
+      {!!hit && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: `${(hit[0] / W) * 100}%`,
+            top: `${(hit[1] / H) * 100}%`,
+            width: 13, height: 13, marginLeft: -6.5, marginTop: -6.5,
+            borderRadius: 999, backgroundColor: C.chalk, borderWidth: 2, borderColor: C.ink,
+          }}
+        />
+      )}
+      {readout}
     </View>
   );
 }

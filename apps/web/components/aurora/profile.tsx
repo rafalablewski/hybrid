@@ -15,7 +15,6 @@ import { fs, space,
   sessionVolume,
   totalVolume,
   athleteId as makeAthleteId,
-  canSeeHPI,
   type BadgeAccent,
   type Achievement,
   type HeatCell,
@@ -26,13 +25,11 @@ import { fs, space,
 } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
-import { usePersona } from "@/lib/persona";
 import { useFitnessLevel } from "@/lib/use-fitness-level";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
 import { ArrowGlyph } from "./cta-label";
-import PrivateTab from "./private-tab";
 
 /**
  * AURORA Profile · "You" (web) — the SOCIAL layout: a cover banner, an
@@ -44,11 +41,10 @@ import PrivateTab from "./private-tab";
  * Kept at parity with the mobile client.
  *
  * Privacy: HPI is PRIVATE — deliberately absent from the public highlight grid
- * and every follower-facing surface. It lives only in a clearly-marked
- * "Private · only you" card at the bottom (this screen is always your own
- * profile). Every metric is computed from the athlete's real logged sessions +
- * recovery signals via @hybrid/core engines — empty history degrades gracefully
- * (no fabricated numbers).
+ * and every follower-facing surface. It lives on Performance, behind the Full
+ * gate, and this screen never restates it. Every metric here is computed from
+ * the athlete's real logged sessions + recovery signals via @hybrid/core
+ * engines — empty history degrades gracefully (no fabricated numbers).
  */
 const C = (v: string) => `var(--color-${v})`;
 
@@ -64,7 +60,7 @@ const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "
 const badgeInk = (accent: BadgeAccent): string =>
   accent === "gold" ? C("gold") : accent === "lime" ? accentText("lime") : accent === "chalk" ? C("chalk") : C("ash");
 
-type TabId = "overview" | "prs" | "activity" | "private";
+type TabId = "overview" | "prs" | "activity";
 
 export default function AuroraProfile({
   sessions,
@@ -83,8 +79,6 @@ export default function AuroraProfile({
   const { session, entitlement } = useSession();
   const prefs = useLoggerPrefs();
   const units = prefs.units;
-  // HPI is a Full feature — free (casual) users see a locked teaser, not the score.
-  const showHpi = canSeeHPI(usePersona());
 
   const [tab, setTab] = useState<TabId>("overview");
 
@@ -121,9 +115,9 @@ export default function AuroraProfile({
   }, []);
 
   // ----- real data, computed from logged sessions -----
-  // HPI / readiness / injury-risk belong to the Cockpit — the Private tab LINKS
-  // there instead of recomputing them, so the profile never duplicates the
-  // command center. Everything below feeds the PUBLIC grid (PRs, streak, tonnage).
+  // HPI / readiness / injury-risk belong to Performance and are not recomputed
+  // here, so the profile never duplicates the command center. Everything below
+  // feeds the PUBLIC grid (PRs, streak, tonnage).
   const hasData = sessions.length > 0;
 
   const bw = useBodyweightLookup();
@@ -360,16 +354,16 @@ export default function AuroraProfile({
         ))}
       </div>
 
-      {/* TABS — Overview / PRs / Activity */}
+      {/* TABS — Overview / PRs / Activity.
+          There is no 4th "Private" tab: it held a link to Performance, a link
+          to Settings and Body & progress, so two thirds of it duplicated
+          doorways the app already has. Body & progress moved to Nutrition →
+          Body, next to the weigh-in its targets are steered by. */}
       <div style={{ display: "flex", marginTop: 16, borderBottom: `1px solid ${C("line")}` }}>
         {([
           { id: "overview" as const, label: t("w.account.profile.tab-overview") },
           { id: "prs" as const, label: t("w.account.profile.tab-prs") },
           { id: "activity" as const, label: t("w.account.profile.tab-activity") },
-          // 4th, owner-only tab — this screen is always your own profile.
-          // (The lock renders as a drawn AuroraIcon beside the label, not an
-          // emoji inside the string — see the tab renderer below.)
-          { id: "private" as const, label: t("w.account.profile.tab-private") },
         ]).map((tb) => {
           const on = tab === tb.id;
           return (
@@ -380,12 +374,7 @@ export default function AuroraProfile({
               onClick={() => setTab(tb.id)}
               style={{ flex: 1, textAlign: "center", padding: "12px 0", position: "relative", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: fs.caption, whiteSpace: "nowrap", color: on ? C("chalk") : C("ash") }}
             >
-              {tb.id === "private" ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, verticalAlign: "middle" }}>
-                  <AuroraIcon name="lock" size={13} />
-                  {tb.label}
-                </span>
-              ) : tb.label}
+              {tb.label}
               {on && <span style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, background: C("lime") }} />}
             </button>
           );
@@ -515,20 +504,6 @@ export default function AuroraProfile({
             })}
           </div>
         </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────────────
-          PRIVATE tab — identity & self-tracking with no other home. HPI /
-          readiness / injury-risk are NOT duplicated; the Command-center row LINKS
-          to the Cockpit. Body & Journal are Full features (locked teaser for
-          free). Curating the public grid lives on Overview (press & hold a card);
-          privacy & visibility are managed in Settings. */}
-      {tab === "private" && (
-        <PrivateTab
-          isFull={showHpi}
-          units={units}
-          nav={(screen) => go(screen, `/${screen}`)()}
-        />
       )}
 
     </div>

@@ -96,6 +96,53 @@ describe("the opened post", () => {
     expect(v.exercises[0]!.summary).toContain("5.4");
   });
 
+  it("carries the whole ledger of figures — mins, tonnage, sets, reps, distance, pace", () => {
+    const v = feedWorkoutView(session());
+    // The CARD's row leads, unchanged, so the post can't contradict the row.
+    expect(v.stats.slice(0, 3).map((s) => s.key)).toEqual(["duration", "volume", "sets"]);
+    expect(v.stats.map((s) => s.key)).toEqual(["duration", "volume", "sets", "distance", "reps", "pace"]);
+    expect(v.totals.minutes).toBe(64);
+    expect(v.totals.sets).toBe(7);
+    // 5 + 5 + 6 warm-up/working/drop squat reps, 8 + 8 RDL, 10 split squat.
+    expect(v.totals.reps).toBe(47);
+    expect(v.totals.volumeKg).toBeGreaterThan(0);
+    expect(v.totals.distanceKm).toBe(5);
+    expect(v.totals.paceSecPerKm).toBe(360); // 30 min over 5 km
+  });
+
+  it("gives every exercise its own figures — sets, reps and the tonnage that adds up", () => {
+    const v = feedWorkoutView(session());
+    const squat = v.exercises[0]!;
+    expect(squat).toMatchObject({ setCount: 4, reps: 21 });
+    // The parts sum to the header's tonnage (warm-ups excluded from both).
+    const sum = v.exercises.reduce((n, e) => n + e.volumeKg, 0);
+    expect(sum).toBe(v.totals.volumeKg);
+    // A run carries its distance, its clock and its pace instead of sets.
+    expect(v.exercises[3]).toMatchObject({ distanceKm: 5, minutes: 30, pace: "6:00 /km" });
+  });
+
+  it("derives pace from the DEVICE's seconds, never from the rounded minutes beside it", () => {
+    const v = feedWorkoutView(
+      session({
+        blocks: [{ kind: "cardio", name: "Easy Run", distance: 5, minutes: 30 }],
+        device: { provider: "apple", uuid: "hk-1", activityLabel: "Running", start: "2026-03-02T17:30:00.000Z", end: "2026-03-02T17:57:52.000Z", durationSec: 1_672, durationMin: 27.9, distanceKm: 5.42 },
+      }),
+    );
+    // 1672 s over 5.42 km = 5:09 /km — from 28 min it would read 5:10.
+    expect(v.totals.paceSecPerKm).toBe(Math.round(1672 / 5.42));
+    expect(v.stats.find((s) => s.key === "pace")).toMatchObject({ device: true });
+    expect(v.exercises[0]!.pace).toBe("5:08 /km");
+  });
+
+  it("lists the records the workout set, and nothing when it set none", () => {
+    expect(feedWorkoutView(session()).prs).toEqual([]);
+    const prs = [
+      { lift: "Back Squat", topLoadKg: 160, e1rmKg: 180, previousTopLoadKg: 150, deltaPct: 6.67, firstEver: false },
+      { lift: "Split Squat", topLoadKg: 40, firstEver: true },
+    ];
+    expect(feedWorkoutView(session(), prs).prs).toEqual(prs);
+  });
+
   it("never carries the private post-workout reflection", () => {
     const v = feedWorkoutView(session({ note: "shoulder felt off", mood: 2, tags: ["tired"] }));
     expect(JSON.stringify(v)).not.toContain("shoulder felt off");

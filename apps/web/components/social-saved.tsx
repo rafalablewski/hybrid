@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FEED_SAVED_PAGE, fs, leading, orderBySaved, tracking } from "@hybrid/core";
+import { FEED_SAVED_PAGE, feedSubjectKey, fs, leading, orderBySaved, tracking } from "@hybrid/core";
 import type { FeedItemView, KudosResponse, Relation, SavedFeedResponse } from "@hybrid/core";
 import { C, Btn, EmptyState, jsend } from "./social-ui";
 import { ProfileDrawer } from "./social-profile";
 import FeedCard from "./feed-card";
-import { Comments } from "./social-feed";
+import { Comments } from "./feed-comments";
 import { HubMasthead } from "./aurora/hub-masthead";
 import { useLang } from "@/lib/i18n";
 import { forgetSavedPosts, syncSaved, useFeedSaved } from "@/lib/feed-actions";
@@ -37,7 +37,14 @@ import { useIsMobile } from "@/lib/use-media-query";
  * that reverses.
  */
 
-export default function SocialSaved({ onNavigate }: { onNavigate?: (screen: string) => void } = {}) {
+export default function SocialSaved({
+  onNavigate,
+  onOpenPost,
+}: {
+  onNavigate?: (screen: string) => void;
+  /** A saved row opens the same post page the feed's rows open. */
+  onOpenPost?: (key: string, item: FeedItemView) => void;
+} = {}) {
   const { t } = useLang();
   const isMobile = useIsMobile();
   const units = useLoggerPrefs().units;
@@ -116,6 +123,7 @@ export default function SocialSaved({ onNavigate }: { onNavigate?: (screen: stri
               onOpenProfile={(h) => setDrawer(h)}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
+              onOpen={onOpenPost ? () => { setOpen(null); onOpenPost(feedSubjectKey(item), item); } : undefined}
               onDelete={item.subjectType === "post" && item.mine ? () => del(item) : undefined}
               onAuthorChanged={authorChanged}
             >

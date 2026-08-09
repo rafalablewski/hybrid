@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { buildLiveNow, buildSocialFeed, rankFeed, type FeedSignals, type FeedSubjectInput, type Relation } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { tableMissing, recentSessionsByUsers, recentPostsByUsers, authorCards, blockedIdsFor } from "@/lib/social";
+import { reactionKeys, tableMissing, recentSessionsByUsers, recentPostsByUsers, authorCards, blockedIdsFor } from "@/lib/social";
 
 // The activity feed: my active followees' recent sessions + PRs, built by the
 // core engine, enriched with kudos/comment counts and whether I've cheered each
@@ -55,8 +55,9 @@ export async function GET(request: Request) {
 
     const items = buildSocialFeed(subjects, { windowDays: WINDOW_DAYS, limit: 50 });
 
-    // kudos + comments for the items on screen
-    const keys = items.map((i) => ({ subjectType: i.subjectType, subjectId: i.subjectId }));
+    // kudos + comments for the items on screen. A workout's reactions include
+    // the ones given to the PR card it used to have beside it (lib/social.ts).
+    const { pairs: keys, keyOf } = reactionKeys(items);
     const [kudos, myKudos, comments] = keys.length
       ? await Promise.all([
           prisma.kudos.groupBy({ by: ["subjectType", "subjectId"], _count: { _all: true }, where: { OR: keys } }),
@@ -65,9 +66,14 @@ export async function GET(request: Request) {
         ])
       : [[], [], []];
 
-    const kCount = new Map((kudos as { subjectType: string; subjectId: string; _count: { _all: number } }[]).map((k) => [`${k.subjectType}:${k.subjectId}`, k._count._all]));
-    const cCount = new Map((comments as { subjectType: string; subjectId: string; _count: { _all: number } }[]).map((c) => [`${c.subjectType}:${c.subjectId}`, c._count._all]));
-    const mine = new Set((myKudos as { subjectType: string; subjectId: string }[]).map((k) => `${k.subjectType}:${k.subjectId}`));
+    const tally = (rows: { subjectType: string; subjectId: string; _count: { _all: number } }[]) => {
+      const m = new Map<string, number>();
+      for (const r of rows) m.set(keyOf(r), (m.get(keyOf(r)) ?? 0) + r._count._all);
+      return m;
+    };
+    const kCount = tally(kudos as { subjectType: string; subjectId: string; _count: { _all: number } }[]);
+    const cCount = tally(comments as { subjectType: string; subjectId: string; _count: { _all: number } }[]);
+    const mine = new Set((myKudos as { subjectType: string; subjectId: string }[]).map(keyOf));
 
     const enriched = items.map((i) => {
       const key = `${i.subjectType}:${i.subjectId}`;

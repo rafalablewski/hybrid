@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { alsoTodayCopy, sessionIcon, sessionMeta, type LoggedSession, type WeightUnit } from "@hybrid/core";
+import { alsoTodayCopy, isRated, sessionIcon, sessionMeta, type LoggedSession, type WeightUnit } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -26,6 +26,16 @@ import { ArrowGlyph } from "./cta-label";
 // instead ("a match, a run, a swim — it lands here"), because a "0" is not
 // worth a surface.
 //
+// A ROW CAN ALSO BE RATED FROM HERE. A session the app has no effort rating for
+// counts for nothing in training load (core/session-feel.ts, feel-schedule's
+// `isRated`), and the two ways a session arrives unrated — imported off a watch,
+// quick-logged after the fact — are exactly the two that never pass the finish
+// screen where the question normally gets asked. The answer used to live only
+// at the bottom of the session's Wrapped, six panels down; nobody scrolls there
+// to volunteer a number. So the ask sits on the row, opening the rating sheet
+// directly. It is a plain lime word, not a chip: a bordered box at the end of a
+// row reads as a second thing in the list (see the exit rule in CLAUDE.md).
+//
 // Mirrors the web twin (aurora/done-floor.tsx) exactly.
 export default function DoneFloor({
   rows,
@@ -39,6 +49,7 @@ export default function DoneFloor({
   onOpen,
   onLog,
   onDone,
+  onRate,
 }: {
   /** every session logged on the VIEWED day, plan-fulfilling ones included. */
   rows: LoggedSession[];
@@ -57,6 +68,9 @@ export default function DoneFloor({
   onOpen: (sessionId: string) => void;
   onLog: () => void;
   onDone: () => void;
+  /** Opens the rating sheet for a session nobody has rated. Omitted where the
+   *  host can't present a sheet — the rows then simply don't offer it. */
+  onRate?: (session: LoggedSession) => void;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -91,22 +105,41 @@ export default function DoneFloor({
       <View style={{ marginTop: rows.length > 0 ? 4 : 6, gap: 4 }}>
         {rows.map((s) => {
           const onPlanRow = planIds.has(s.id);
+          // The ask, only where there is genuinely no answer. A rated row says
+          // nothing about it: the rating is on the summary, and a row that
+          // reported its own state twice would be louder than the training.
+          const ask = onRate && !isRated(s);
           return (
-            <Pressable key={s.id} onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
-              <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, 0.16) }}>
-                <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
-                {/* NO CLOCK TIME HERE — see the web twin. The trailing "21:33" was
-                    the record's save time masquerading as the workout's time; the
-                    row states what was done, nothing else. */}
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
-              </View>
-              {onPlanRow ? (
-                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
+            // Two targets, one row: the row opens the session, the word rates it.
+            <View key={s.id} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Pressable onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, 0.16) }}>
+                  <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                  {/* NO CLOCK TIME HERE — see the web twin. The trailing "21:33" was
+                      the record's save time masquerading as the workout's time; the
+                      row states what was done, nothing else. */}
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
+                </View>
+                {onPlanRow ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
+                ) : null}
+              </Pressable>
+              {ask ? (
+                <Pressable
+                  onPress={() => onRate!(s)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("session.feel.rateA11y").replace("{title}", s.title)}
+                  accessibilityHint={t("session.feel.rateUnrated")}
+                  style={{ paddingVertical: 8, paddingLeft: 4 }}
+                >
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
+                </Pressable>
               ) : null}
-            </Pressable>
+            </View>
           );
         })}
         {isToday ? (

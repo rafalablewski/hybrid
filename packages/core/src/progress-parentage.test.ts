@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { activitySummary, resolveActivityRange } from "./activity-window";
-import { parentageHours, progressParentage } from "./progress-parentage";
+import { parentageDuration, progressParentage } from "./progress-parentage";
 import { enduranceLanes } from "./endurance-lanes";
 import { exerciseWidgetCards, movementsTrained } from "./exercise-widget";
 import { addLocalDays } from "./day-key";
@@ -73,10 +73,10 @@ describe("progressParentage", () => {
     expect(p.distanceKm).toBe(10); // the 30 km long run is outside the week
   });
 
-  it("parentageHours prints canonical minutes at one decimal", () => {
-    expect(parentageHours(90)).toBe(1.5);
-    expect(parentageHours(0)).toBe(0);
-    expect(parentageHours(125)).toBe(2.1);
+  it("parentageDuration prints canonical minutes as hours and minutes", () => {
+    expect(parentageDuration(90)).toBe("1h 30min");
+    expect(parentageDuration(0)).toBe("0min");
+    expect(parentageDuration(125)).toBe("2h 5min");
   });
 });
 

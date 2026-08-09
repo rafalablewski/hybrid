@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   feelSchedule,
   hasImmediateRead,
+  isRated,
+  unratedSessions,
   msUntilNextRead,
   IMMEDIATE_WINDOW_H,
   RECOVERY_DUE_H,
@@ -84,6 +86,31 @@ describe("what counts as an immediate read", () => {
 
   it("effort alone is not a spentness read", () => {
     expect(hasImmediateRead(session({ feel: 4, feelLoggedAt: iso(0.5 * H) }))).toBe(false);
+  });
+});
+
+describe("the rating backlog — a session nobody was ever asked about", () => {
+  it("is about EFFORT, not about which window the answer landed in", () => {
+    // The next morning's answer misses the immediate read and still rates the
+    // session: the load model wants the number, not the punctuality.
+    const late = session({ completedAt: iso(20 * H), feel: 3, feelLoggedAt: iso(1 * H) });
+    expect(hasImmediateRead(late)).toBe(false);
+    expect(isRated(late)).toBe(true);
+  });
+
+  it("an imported workout lands unrated — nobody typed it, so nobody was asked", () => {
+    expect(isRated(session())).toBe(false);
+    expect(isRated(session({ feel: 0 }))).toBe(false);
+    expect(isRated(session({ fatigue: 4 }))).toBe(false);
+  });
+
+  it("hands back only the unrated ones, freshest first", () => {
+    const rows = [
+      session({ id: "old", completedAt: iso(30 * H) }),
+      session({ id: "rated", completedAt: iso(2 * H), feel: 4 }),
+      session({ id: "new", completedAt: iso(1 * H) }),
+    ];
+    expect(unratedSessions(rows).map((s) => s.id)).toEqual(["new", "old"]);
   });
 });
 

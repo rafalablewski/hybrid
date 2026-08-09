@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { weeklyVolumeTrend, exerciseTable, weeklyMuscleSets, fmtRowChange } from "./analytics";
+import { weeklyVolumeTrend, exerciseTable, weeklyMuscleSets, fmtRowChange, volumeTrendReading } from "./analytics";
 import type { LoggedSession } from "./session";
 
 const NOW = new Date("2026-06-16T12:00:00.000Z").getTime();
@@ -89,5 +89,31 @@ describe("training analytics hub", () => {
   it("drops movements with no activity in the period", () => {
     const rows = exerciseTable(sessions, "8w", NOW);
     expect(rows.every((r) => r.sessions > 0)).toBe(true);
+  });
+});
+
+describe("volumeTrendReading — a held Trends band", () => {
+  const weeks = [
+    { weekStart: "2026-06-01T00:00:00.000Z", sets: 42, tonnage: 18_400 },
+    { weekStart: "2026-06-08T00:00:00.000Z", sets: 0, tonnage: 0 },
+    { weekStart: "2026-06-15T00:00:00.000Z", sets: 56, tonnage: 24_100 },
+  ];
+
+  it("reads the SETS band as a bare count and the TONNAGE band in the athlete's unit", () => {
+    expect(volumeTrendReading(weeks, 0, "sets", "kg")).toMatchObject({ value: "42", unit: "", best: false });
+    expect(volumeTrendReading(weeks, 0, "tonnage", "kg")).toMatchObject({ value: "18.4", unit: "t" });
+    expect(volumeTrendReading(weeks, 2, "tonnage", "lb")!.unit).toBe("lb");
+  });
+
+  it("marks the peak week, and never marks an empty one", () => {
+    expect(volumeTrendReading(weeks, 2, "sets", "kg")!.best).toBe(true);
+    expect(volumeTrendReading(weeks, 1, "sets", "kg")!.best).toBe(false);
+    expect(volumeTrendReading(weeks, 1, "sets", "kg")!.value).toBe("0");
+  });
+
+  it("carries the week it read, and returns nothing off the end", () => {
+    expect(volumeTrendReading(weeks, 2, "sets", "kg")!.weekStart).toBe(weeks[2]!.weekStart);
+    expect(volumeTrendReading(weeks, 3, "sets", "kg")).toBeNull();
+    expect(volumeTrendReading(weeks, -1, "sets", "kg")).toBeNull();
   });
 });

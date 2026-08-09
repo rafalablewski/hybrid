@@ -1,9 +1,10 @@
 import type { LoggedSession, PacePoint } from "./session";
+import type { ChartReading } from "../chart-scrub";
 import type { MuscleGroup } from "./types";
 import { setsForVolume, effectiveSetLoadKg, topLoadSeries } from "./session";
 import { gymExercise, loadUnitCount } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
-import { kgToUnit, type WeightUnit } from "../units";
+import { fmtTonnage, kgToUnit, splitFigure, type WeightUnit } from "../units";
 import { musclesFor } from "./movements";
 import { exerciseHistory } from "./records";
 import { exerciseDashboard, periodCutoff, type ExercisePeriod } from "./exercise";
@@ -60,6 +61,28 @@ export function weeklyVolumeTrend(sessions: LoggedSession[], weeks = 8, now = Da
     out.push({ weekStart: new Date(from).toISOString(), sets, tonnage: Math.round(tonnage) });
   }
   return out;
+}
+
+/**
+ * The figure under a held finger on a Trends measure band, in the athlete's own
+ * unit. `measure` picks which of the week's two numbers is being read, because
+ * the two bands draw the SAME series object through two different lines.
+ *
+ * The band's resting figure is this week's; a held one is another week's, so
+ * the two are formatted by the same call and cannot drift apart.
+ */
+export function volumeTrendReading(
+  weeks: WeekVolume[],
+  index: number,
+  measure: "sets" | "tonnage",
+  units: WeightUnit,
+): ChartReading | null {
+  const w = weeks[index];
+  if (!w) return null;
+  const value = measure === "sets" ? w.sets : w.tonnage;
+  const peak = Math.max(...weeks.map((x) => (measure === "sets" ? x.sets : x.tonnage)));
+  const [v, u] = measure === "sets" ? [String(w.sets), ""] : splitFigure(fmtTonnage(w.tonnage, units));
+  return { index, weekStart: w.weekStart, value: v, unit: u, efforts: null, best: value > 0 && value === peak };
 }
 
 /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { alsoTodayCopy, sessionIcon, sessionMeta, fs, type LoggedSession, type WeightUnit } from "@hybrid/core";
+import { alsoTodayCopy, isRated, sessionIcon, sessionMeta, fs, type LoggedSession, type WeightUnit } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { ArrowGlyph } from "./cta-label";
 
@@ -26,6 +26,16 @@ const C = (v: string) => `var(--color-${v})`;
 // instead ("a match, a run, a swim — it lands here"), because a "0" is not
 // worth a surface.
 //
+// A ROW CAN ALSO BE RATED FROM HERE. A session the app has no effort rating for
+// counts for nothing in training load (core/session-feel.ts, feel-schedule's
+// `isRated`), and the two ways a session arrives unrated — imported off a watch,
+// quick-logged after the fact — are exactly the two that never pass the finish
+// screen where the question normally gets asked. The answer used to live only
+// at the bottom of the session's Wrapped, six panels down; nobody scrolls there
+// to volunteer a number. So the ask sits on the row, opening the rating sheet
+// directly. It is a plain lime word, not a chip: a bordered box at the end of a
+// row reads as a second thing in the list (see the exit rule in CLAUDE.md).
+//
 // Mirrors the mobile twin (aurora/done-floor.tsx) exactly.
 export default function DoneFloor({
   rows,
@@ -39,6 +49,7 @@ export default function DoneFloor({
   onOpen,
   onLog,
   onDone,
+  onRate,
 }: {
   /** every session logged on the VIEWED day, plan-fulfilling ones included. */
   rows: LoggedSession[];
@@ -57,6 +68,9 @@ export default function DoneFloor({
   onOpen: (sessionId: string) => void;
   onLog: () => void;
   onDone: () => void;
+  /** Opens the rating sheet for a session nobody has rated. Omitted where the
+   *  host can't present a sheet — the rows then simply don't offer it. */
+  onRate?: (session: LoggedSession) => void;
 }) {
   const { t } = useLang();
   const quiet = `color-mix(in srgb, ${C("ash")} 60%, transparent)`;
@@ -91,27 +105,48 @@ export default function DoneFloor({
       <div style={{ marginTop: rows.length > 0 ? 4 : 6, display: "flex", flexDirection: "column", gap: 4 }}>
         {rows.map((s) => {
           const onPlanRow = planIds.has(s.id);
+          // The ask, only where there is genuinely no answer. A rated row says
+          // nothing about it: the rating is on the summary, and a row that
+          // reported its own state twice would be louder than the training.
+          const ask = onRate && !isRated(s);
           return (
-            <button className="pressable" type="button" key={s.id} onClick={() => onOpen(s.id)} style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
-              <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C(onPlanRow ? "lime" : "blue")} 16%, transparent)` }}>
-                {sessionIcon(s)}
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
-                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {/* NO CLOCK TIME HERE. This line used to end with the session's
-                      startedAt as "21:33" — which reads as WHEN YOU TRAINED but,
-                      for a quick-logged sport, is stamped at save time: it is the
-                      moment the record was typed, not the moment the swim
-                      happened. The row says what was DONE; when it was entered is
-                      bookkeeping and belongs nowhere on Today. */}
-                  {sessionMeta(s, units, bw(s.startedAt))}
+            // Two targets, one row: the row opens the session, the word rates
+            // it. Nesting one control inside another is invalid markup, so the
+            // row is a flex container holding both as siblings.
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button className="pressable" type="button" onClick={() => onOpen(s.id)} style={{ flex: 1, minWidth: 0, textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: "8px 0", cursor: "pointer", color: C("chalk") }}>
+                <span style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 18, background: `color-mix(in srgb, ${C(onPlanRow ? "lime" : "blue")} 16%, transparent)` }}>
+                  {sessionIcon(s)}
                 </span>
-              </span>
-              {onPlanRow && (
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)", flexShrink: 0 }}>{t("w.home.today.kPlan")}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontWeight: 700, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</span>
+                  <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {/* NO CLOCK TIME HERE. This line used to end with the session's
+                        startedAt as "21:33" — which reads as WHEN YOU TRAINED but,
+                        for a quick-logged sport, is stamped at save time: it is the
+                        moment the record was typed, not the moment the swim
+                        happened. The row says what was DONE; when it was entered is
+                        bookkeeping and belongs nowhere on Today. */}
+                    {sessionMeta(s, units, bw(s.startedAt))}
+                  </span>
+                </span>
+                {onPlanRow && (
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)", flexShrink: 0 }}>{t("w.home.today.kPlan")}</span>
+                )}
+              </button>
+              {ask && (
+                <button
+                  className="pressable"
+                  type="button"
+                  onClick={() => onRate!(s)}
+                  title={t("session.feel.rateUnrated")}
+                  aria-label={t("session.feel.rateA11y").replace("{title}", s.title)}
+                  style={{ flexShrink: 0, background: "none", border: "none", padding: "8px 0 8px 4px", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--lime-text)" }}
+                >
+                  {t("session.feel.rate")}
+                </button>
               )}
-            </button>
+            </div>
           );
         })}
         {isToday && (

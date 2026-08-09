@@ -9,6 +9,8 @@ import {
   paceDeltaArrow,
   paceTrendPoints,
   volumeBars,
+  laneVolumeReading,
+  lanePaceReading,
   LANE_ORDERS,
   LANE_CAP,
 } from "./endurance-lanes";
@@ -278,5 +280,55 @@ describe("volumeBars", () => {
 
   it("is all-zero when nothing has distance", () => {
     expect(volumeBars([{ weekStart: "", km: 0, minutes: 30, seconds: 1800, efforts: 1 }])).toEqual([0]);
+  });
+});
+
+describe("holding a lane's chart", () => {
+  it("reads a volume week as the tile's own figure — this week's quantity, another week", () => {
+    const [run] = enduranceLanes(SESSIONS, { now: NOW });
+    const held = laneVolumeReading(run!, 7)!;
+    expect(held.value).toBe("8"); // the 8 km run two days ago
+    expect(held.unit).toBe("km");
+    expect(held.efforts).toBe(1);
+    expect(held.weekStart).toBe(run!.thisWeek.weekStart);
+    expect(held.best).toBe(false); // the 18 km long-run week is bigger
+    expect(laneVolumeReading(run!, 6)!.best).toBe(true);
+  });
+
+  it("names a pace point's OWN week — the trend skips the weeks with nothing paced", () => {
+    const [run] = enduranceLanes(SESSIONS, { now: NOW });
+    // Three efforts, three separate weeks, but they are buckets 5, 6 and 7 —
+    // an index read off the volume strip would date every one of them wrong.
+    expect(run!.paceTrend).toHaveLength(3);
+    expect(run!.paceTrendWeeks).toEqual([run!.weeks[5]!.weekStart, run!.weeks[6]!.weekStart, run!.weeks[7]!.weekStart]);
+    const held = lanePaceReading(run!, 2)!;
+    expect(held.weekStart).toBe(run!.thisWeek.weekStart);
+    expect(held.value).toBe("5:45"); // 8 km in 46 min
+    expect(held.unit).toBe("/km");
+    expect(held.efforts).toBeNull();
+  });
+
+  it("reads a CYCLING point as a speed, and a SWIM at its own split", () => {
+    const [, bike, swim] = enduranceLanes(SESSIONS, { now: NOW });
+    const ride = lanePaceReading(bike!, 1)!; // 42 km in 84 min
+    expect(ride.value).toBe("30");
+    expect(ride.unit).toBe("km/h");
+    const s = lanePaceReading(swim!, 0)!; // 1.8 km in 30 min
+    expect(s.value).toBe("1:40");
+    expect(s.unit).toBe("/100m");
+  });
+
+  it("marks the FASTEST point as the best, on a pace and on a speed alike", () => {
+    const [run] = enduranceLanes(SESSIONS, { now: NOW });
+    const fastest = run!.paceTrend.indexOf(Math.min(...run!.paceTrend));
+    expect(lanePaceReading(run!, fastest)!.best).toBe(true);
+    expect(run!.paceTrend.map((_, i) => lanePaceReading(run!, i)!.best).filter(Boolean)).toHaveLength(1);
+  });
+
+  it("returns nothing for an index off either series", () => {
+    const [run] = enduranceLanes(SESSIONS, { now: NOW });
+    expect(laneVolumeReading(run!, -1)).toBeNull();
+    expect(laneVolumeReading(run!, 8)).toBeNull();
+    expect(lanePaceReading(run!, 3)).toBeNull();
   });
 });

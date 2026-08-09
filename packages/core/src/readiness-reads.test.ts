@@ -7,6 +7,8 @@ import {
   readTrend,
   readClearance,
   readReports,
+  undoableRead,
+  READ_UNDO_MIN,
   spentFromReadiness,
   MIN_RELOG_GAP_H,
   POST_SESSION_LOCK_H,
@@ -82,6 +84,36 @@ describe("re-log gate", () => {
     const g = readGate({ lastReadAt: T0 - 40 * H, lastSessionEnd: T0 - 40 * H, now: T0 });
     expect(g.open).toBe(true);
     expect(g.wanted).toBe(false);
+  });
+});
+
+describe("taking back a mis-tap", () => {
+  const read = (at: number, value = 3) => ({ at, value });
+
+  it("offers the read just given back", () => {
+    expect(undoableRead([read(T0)], T0 + 30_000)?.at).toBe(T0);
+  });
+
+  it("stops offering it once the window has run out", () => {
+    expect(undoableRead([read(T0)], T0 + READ_UNDO_MIN * 60_000)).toBeNull();
+    expect(undoableRead([read(T0)], T0 + 2 * H)).toBeNull();
+  });
+
+  it("only ever offers the LAST read — an earlier one is a measurement, not a slip", () => {
+    const reads = [read(T0), read(T0 + 5 * H)];
+    expect(undoableRead(reads, T0 + 5 * H + 60_000)?.at).toBe(T0 + 5 * H);
+    // …and the morning's read is untouchable even while the evening's is fresh.
+    expect(undoableRead([reads[0]!], T0 + 5 * H + 60_000)).toBeNull();
+  });
+
+  it("has nothing to offer on a day with no reads", () => {
+    expect(undoableRead([], T0)).toBeNull();
+  });
+
+  it("treats a read stamped slightly ahead of the clock as just-given", () => {
+    // The client stamps its own optimistic read; a skewed device must not lose
+    // its undo because the server's clock is a second behind.
+    expect(undoableRead([read(T0 + 2_000)], T0)?.at).toBe(T0 + 2_000);
   });
 });
 

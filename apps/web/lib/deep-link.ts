@@ -44,9 +44,18 @@ export type DeepLinkParams = {
   source?: string;
   /** which sport's page is open, as its slug (see core `sportSlug`) */
   sport?: string;
+  /** which POST is open, as its `<subjectType>:<subjectId>` key (core
+   *  `feedSubjectKey`) — what makes a shared post land ON the post. */
+  post?: string;
 };
 
-const KEYS: (keyof DeepLinkParams)[] = ["s", "food", "source", "sport"];
+const KEYS: (keyof DeepLinkParams)[] = ["s", "food", "source", "sport", "post"];
+
+/** A post key carries a colon (`session:abc`); every other param we own is a
+ *  plain id. Both are still bounded and pattern-checked — this is the one place
+ *  an attacker-controlled string becomes screen state. */
+const PATTERN: Partial<Record<keyof DeepLinkParams, RegExp>> = { post: /^[A-Za-z0-9_:-]+$/ };
+const DEFAULT_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 // ── The pure half ──────────────────────────────────────────────────────────
 // Parsing and serialising are plain string functions so they can be tested
@@ -69,7 +78,7 @@ export function parseDeepLink(search: string): DeepLinkParams {
   const out: DeepLinkParams = {};
   for (const k of KEYS) {
     const v = q.get(k);
-    if (v && v.length <= 64 && /^[A-Za-z0-9_-]+$/.test(v)) out[k] = v;
+    if (v && v.length <= 80 && (PATTERN[k] ?? DEFAULT_PATTERN).test(v)) out[k] = v;
   }
   return out;
 }

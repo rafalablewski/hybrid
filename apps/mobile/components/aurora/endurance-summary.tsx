@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { View, Text } from "react-native";
 import {
-  TODAY_RANGE_STORE_KEY, enduranceDirection, enduranceLead, enduranceWindow, sliceName,
+  TODAY_RANGE_STORE_KEY, durationUnits, enduranceDirection, enduranceLead, enduranceWindow,
+  formatDuration, sliceName,
   type BodyweightInput, type LoggedSession, type VerdictDirection,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -74,12 +75,18 @@ export default function AuroraEnduranceSummary({
     .replace("{n}", String(lead.sports))
     .replace("{s}", lead.lead ? sliceName(lead.lead, t) : "");
 
-  // The working-out, split so only the DELTA takes the tone — "5.4 h" and "on
-  // your average" are context, and colouring the whole line would give a
+  // The working-out, split so only the DELTA takes the tone — the duration and
+  // "on your average" are context, and colouring the whole line would give a
   // 12% week the weight of a headline. `whyCold` carries no {d}, so the split
   // yields one part and the tone never appears.
-  const hours = Math.round(w.totals.minutes / 6) / 10;
-  const [whyBefore, whyAfter] = t(lead.whyKey).replace("{h}", String(hours)).split("{d}");
+  //
+  // The time goes through the app's ONE duration formatter, so this line and
+  // the verdict card's HOURS column print a span the same way. It used to be
+  // decimal hours — "5.4 h" for 324 minutes, which is not a duration anybody
+  // reads, and which the card above had already stopped printing.
+  const [whyBefore, whyAfter] = t(lead.whyKey)
+    .replace("{h}", formatDuration(w.totals.minutes, durationUnits(t)))
+    .split("{d}");
   const delta = lead.deltaPct;
 
   /** Direction as a text colour — the SEMANTIC channel (terracotta down,

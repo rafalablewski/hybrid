@@ -18,6 +18,7 @@
  */
 import { activitySummary, resolveActivityRange } from "./activity-window";
 import type { BodyweightInput } from "./bodyweight";
+import { formatDuration, type DurationUnits } from "./duration";
 import type { LoggedSession } from "./engines/session";
 
 export interface ProgressParentage {
@@ -65,5 +66,13 @@ export function progressParentage(
   };
 }
 
-/** Canonical minutes → the one-decimal hours figure the clients print. */
-export const parentageHours = (minutes: number): number => Math.round(minutes / 6) / 10;
+/**
+ * Canonical minutes → the duration string the clients quote.
+ *
+ * This used to be `parentageHours`, a one-decimal hours NUMBER, and the head
+ * read "1.1 of 5.2 h this week" — tenths of an hour, which nobody converts back
+ * to minutes in their head. It prints hours and minutes now, through the one
+ * shared formatter, so the head, the tile beneath it and the verdict column
+ * above it all say the same thing in the same shape.
+ */
+export const parentageDuration = (minutes: number, u?: DurationUnits): string => formatDuration(minutes, u);

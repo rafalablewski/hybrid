@@ -1,15 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
-import Svg, { Polyline, Polygon, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import Svg, { Polyline, Polygon, Circle, Line, Defs, LinearGradient, Stop } from "react-native-svg";
 import {
   activeDisciplines, enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
-  DISCIPLINE_META, LANE_CAP, ago,
+  laneVolumeReading, lanePaceReading,
+  DISCIPLINE_META, LANE_CAP, ago, durationUnits, formatDuration,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { useChartScrub, type ScrubBind } from "./chart-scrub";
 import { GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
 import RailTail from "./rail-tail";
@@ -48,6 +50,10 @@ const ORDER_KEY: Record<LaneOrder, string> = {
 };
 
 const TILE_H = 118;
+
+/** The week a held point covers, in the tile's own label voice. */
+const weekLabel = (t: (k: string) => string, iso: string) =>
+  t("chart.weekOf").replace("{date}", iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
 export default function AuroraEnduranceLanes({
   sessions,
@@ -267,13 +273,21 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
  *
  * Fixed width, shared minimum height so a rail's cards sit on one baseline
  * however differently they're filled.
+ *
+ * `bind` makes the WHOLE TILE the target of its own held chart. The strip
+ * inside is 24dp tall — a fair chart and an unfair touch target — so the press
+ * lands anywhere on the card while the fraction is still measured against the
+ * drawing (the hook's `plotRef`). Holding swaps the LABEL for the week and the
+ * FIGURE for that week's value, which is the stock-app reading and costs the
+ * tile no extra row: nothing moves, because nothing was added.
  */
-function Tile({ w, label, foot, footRight, children }: {
-  w: number; label: string; foot?: string; footRight?: React.ReactNode; children: React.ReactNode;
+function Tile({ w, label, foot, footRight, bind, children }: {
+  w: number; label: string; foot?: string; footRight?: React.ReactNode; bind?: ScrubBind; children: React.ReactNode;
 }) {
   const { palette: C } = useTheme();
   return (
     <View
+      {...(bind ?? {})}
       style={{
         width: w, minHeight: TILE_H, gap: 6,
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
@@ -322,7 +336,9 @@ function SummaryTile({ lane }: { lane: EnduranceLane }) {
       </View>
       <View style={{ gap: 3, marginTop: "auto" }}>
         <MetaRow l="KM" r={String(lane.distanceKm)} strong />
-        <MetaRow l="H" r={String(Math.round(lane.minutes / 6) / 10)} strong />
+        {/* TIME, not "H": the figure is hours AND minutes now, so the row's
+            label names the quantity rather than repeating the unit inside it. */}
+        <MetaRow l="TIME" r={formatDuration(lane.minutes, durationUnits(t))} strong />
       </View>
     </Tile>
   );
@@ -339,14 +355,22 @@ function VolumeTile({ lane }: { lane: EnduranceLane }) {
   // per week, countable at a glance — so a caption naming the count is the
   // chart's own axis set in words. It goes where the window is NOT visible
   // (TrendTile, whose line has no per-week marks to count), and nowhere else.
+  //
+  // HELD, the same two slots answer for another week: the label says which, the
+  // figure says how much. The strip's eight bars were the whole point of the
+  // tile and the only thing on it that named no numbers.
+  const scrub = useChartScrub(lane.weeks.length, "band");
+  const read = scrub.index >= 0 ? laneVolumeReading(lane, scrub.index) : null;
   return (
-    <Tile w={178} label={t("w.home.end.volumeWeek")}>
+    <Tile w={178} label={read ? weekLabel(t, read.weekStart) : t("w.home.end.volumeWeek")} bind={scrub.bind}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.thisWeek.km}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>km</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: read?.best ? txt(C, C.lime) : C.chalk }}>
+          {read ? read.value : lane.thisWeek.km}
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? read.unit : "km"}</Text>
       </View>
-      <View style={{ marginTop: "auto" }}>
-        <HistoryStrip bars={volumeBars(lane.weeks)} color={C.blue} />
+      <View ref={scrub.plotRef} style={{ marginTop: "auto" }}>
+        <HistoryStrip bars={volumeBars(lane.weeks)} color={C.blue} held={scrub.index} />
       </View>
     </Tile>
   );
@@ -367,10 +391,16 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
   const xy = pts.map((p, i) => [(i / (pts.length - 1)) * TREND_W, 3 + p * (TREND_H - 6)] as const);
   const line = xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const end = xy[xy.length - 1]!;
+  // The line runs edge to edge, so its points carry no inset — the first is at
+  // 0 and the last at the full width.
+  const scrub = useChartScrub(pts.length, "point");
+  const read = scrub.index >= 0 ? lanePaceReading(lane, scrub.index) : null;
+  const hit = scrub.index >= 0 ? xy[scrub.index] : null;
   return (
     <Tile
       w={176}
-      label={t("w.home.end.paceLatest")}
+      label={read ? weekLabel(t, read.weekStart) : t("w.home.end.paceLatest")}
+      bind={scrub.bind}
       foot={t("w.home.end.window8")}
       footRight={delta ? (
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, delta.faster ? C.lime : C.red) }}>
@@ -378,10 +408,10 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
         </Text>
       ) : undefined}
     >
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>
-        {formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: read?.best ? txt(C, C.lime) : C.chalk }}>
+        {read ? `${read.value} ${read.unit}` : formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
       </Text>
-      <View style={{ marginTop: "auto" }}>
+      <View ref={scrub.plotRef} style={{ marginTop: "auto" }}>
         <Svg width={TREND_W} height={TREND_H}>
           <Defs>
             <LinearGradient id={`lane-${lane.discipline}`} x1="0" y1="0" x2="0" y2="1">
@@ -391,7 +421,9 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
           </Defs>
           <Polygon points={`0,${TREND_H} ${line} ${TREND_W},${TREND_H}`} fill={`url(#lane-${lane.discipline})`} />
           <Polyline points={line} fill="none" stroke={C.blue} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round" />
+          {!!hit && <Line x1={hit[0]} x2={hit[0]} y1={0} y2={TREND_H} stroke={C.ash} strokeWidth={1} strokeOpacity={0.55} />}
           <Circle cx={end[0]} cy={end[1]} r={2.4} fill={C.blue} stroke={C.ink2} strokeWidth={1.4} />
+          {!!hit && <Circle cx={hit[0]} cy={hit[1]} r={2.8} fill={C.chalk} stroke={C.ink2} strokeWidth={1.4} />}
         </Svg>
       </View>
     </Tile>

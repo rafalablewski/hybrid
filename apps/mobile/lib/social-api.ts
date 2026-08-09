@@ -6,7 +6,7 @@ import type {
   ConnectionsResponse,
   FeedResponse,
   SavedFeedResponse,
-  FeedSessionResponse,
+  FeedPostResponse,
   KudosResponse,
   CommentsResponse,
   LeaderboardResponse,
@@ -58,9 +58,11 @@ export const getFeed = () => sapi<FeedResponse>("/api/social/feed");
 /** Resolve saved (subjectType:subjectId) keys back into cards. POST because
  *  the key list is the request body, not because it mutates anything. */
 export const getSavedFeed = (keys: string[]) => sapi<SavedFeedResponse>("/api/social/saved", "POST", { keys });
-/** The whole workout behind a feed post (the opened card) — privacy-gated
- *  server-side, so a session the viewer may not see never arrives. */
-export const getFeedSession = (id: string) => sapi<FeedSessionResponse>(`/api/social/session/${id}`);
+/** ONE POST — the card AND the whole workout behind it, in one privacy-gated
+ *  read (a post the viewer may not see never arrives). The post screen's only
+ *  fetch, so a shared link lands with nothing else loaded. */
+export const getFeedPost = (subjectType: string, subjectId: string) =>
+  sapi<FeedPostResponse>(`/api/social/post/${encodeURIComponent(subjectType)}/${encodeURIComponent(subjectId)}`);
 export const createPost = (b: unknown) => sapi<MutationResult>("/api/social/posts", "POST", b);
 export const deletePost = (id: string) => sapi<MutationResult>(`/api/social/posts/${id}`, "DELETE");
 export const toggleKudos = (b: unknown) => sapi<KudosResponse>("/api/social/kudos", "POST", b);

@@ -267,8 +267,11 @@ export interface EnduranceLead {
   sports: number;
   /** The biggest slice by time; null when the window holds nothing. */
   lead: EnduranceSlice | null;
-  /** i18n key for the mono line under the sentence. Interpolates `{h}` and,
-   *  unless the window has no baseline to move from, `{d}`. */
+  /** i18n key for the mono line under the sentence. `{h}` takes the section's
+   *  time ALREADY FORMATTED through `formatDuration` — the string carries no
+   *  unit of its own, so this line and the verdict card's hours column can't
+   *  print a span two ways. `{d}` takes the signed delta, and is absent from
+   *  the key entirely when there is no baseline to move from. */
   whyKey: string;
   /** The section's minutes — canonical, the client renders the hours. */
   minutes: number;
