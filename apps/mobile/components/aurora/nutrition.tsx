@@ -97,6 +97,7 @@ import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type Rec
 import CopyDaySheet from "./copy-day";
 import NutritionTrends from "./nutrition-trends";
 import QuickAdd from "./quick-add";
+import BarcodeScanSheet from "./barcode-scan";
 import TargetSheet, { TargetMismatchLine } from "./target-sheet";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
@@ -1061,6 +1062,22 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     return () => clearTimeout(id);
   }, [foodQuery]);
 
+  // ── BARCODE SCAN — the camera half of a flow that already worked.
+  // A scanned code is handed to the SAME barcode lookup a typed one uses, so
+  // the two cannot resolve differently. The code also lands in the search box:
+  // if the database has never heard of it, the athlete is left holding it and
+  // can create the food from there rather than re-reading the pack.
+  const [scanSheet, setScanSheet] = useState(false);
+  const onScanned = useCallback(async (code: string) => {
+    setScanSheet(false);
+    setFoodQuery(code);
+    setSearching(true);
+    const foods = await searchFoods(code, { barcode: true });
+    setFoodResults(foods);
+    setSearching(false);
+    if (foods.length === 0) setFoodMsg(t("w.recovery.nutrition.scan.notFound"));
+  }, [t]);
+
   // Log a database food → opens the portion editor (serving × quantity), which
   // also offers to save it into the library.
   const logFood = (food: FoodHit) => openPortion({
@@ -1596,6 +1613,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           </View>
         </Sheet>
 
+        <BarcodeScanSheet visible={scanSheet} onClose={() => setScanSheet(false)} onCode={onScanned} />
+
         {/* QUICK ADD — above the database search, because it answers from foods
             already saved and answers instantly. The search below it is the
             fallback for a food this athlete has never logged. */}
@@ -1612,7 +1631,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 16 }}>
           <AuroraIcon name="search" size={18} color={C.ash} />
           <TextInput value={foodQuery} onChangeText={setFoodQuery} placeholder={t("w.recovery.nutrition.searchPh")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.subtitle, color: C.chalk, padding: 0 }} />
-          {q ? <Pressable onPress={() => setFoodQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")}><IClose size={18} color={C.ash} /></Pressable> : <IBarcode size={20} color={C.ash} />}
+          {q ? (
+            <Pressable onPress={() => setFoodQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")}><IClose size={18} color={C.ash} /></Pressable>
+          ) : (
+            <Pressable onPress={() => { setFoodMsg(""); setScanSheet(true); }} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scan.title")} hitSlop={8}>
+              <IBarcode size={20} color={C.ash} />
+            </Pressable>
+          )}
         </View>
 
         {/* Quick Log + Create Food */}

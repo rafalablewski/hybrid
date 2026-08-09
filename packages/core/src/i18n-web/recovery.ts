@@ -263,6 +263,15 @@ export const web_recovery = {
     "w.recovery.nutrition.maintenance": "Maintenance",
     "w.recovery.nutrition.weightTrendLc": "weight trend",
     "w.recovery.nutrition.trainingFuel": "kcal training fuel",
+    // ── Barcode scan ─────────────────────────────────────────────────────
+    "w.recovery.nutrition.scan.title": "Scan a barcode",
+    "w.recovery.nutrition.scan.aim": "Hold the barcode inside the frame",
+    "w.recovery.nutrition.scan.reading": "Looking it up…",
+    "w.recovery.nutrition.scan.needsCamera": "The scanner needs the camera. Nothing is recorded — the frame is only read for a barcode.",
+    "w.recovery.nutrition.scan.deniedCamera": "Camera access is off for HYBRID. You can turn it on in your device settings.",
+    "w.recovery.nutrition.scan.allow": "Allow the camera",
+    "w.recovery.nutrition.scan.typeInstead": "You can also type or paste a barcode into the search box.",
+    "w.recovery.nutrition.scan.notFound": "No food found for that barcode. Create it and it's yours from now on.",
     // ── Manual targets ───────────────────────────────────────────────────
     "w.recovery.nutrition.tg.title": "Your targets",
     "w.recovery.nutrition.tg.adaptive": "Adaptive",
@@ -814,6 +823,15 @@ export const web_recovery = {
     "w.recovery.nutrition.maintenance": "Utrzymanie",
     "w.recovery.nutrition.weightTrendLc": "trend wagi",
     "w.recovery.nutrition.trainingFuel": "kcal paliwa treningowego",
+    // ── Skan kodu ────────────────────────────────────────────────────────
+    "w.recovery.nutrition.scan.title": "Zeskanuj kod",
+    "w.recovery.nutrition.scan.aim": "Trzymaj kod w ramce",
+    "w.recovery.nutrition.scan.reading": "Szukam…",
+    "w.recovery.nutrition.scan.needsCamera": "Skaner potrzebuje aparatu. Nic nie jest nagrywane — obraz służy tylko do odczytu kodu.",
+    "w.recovery.nutrition.scan.deniedCamera": "Dostęp do aparatu jest wyłączony. Możesz go włączyć w ustawieniach urządzenia.",
+    "w.recovery.nutrition.scan.allow": "Zezwól na aparat",
+    "w.recovery.nutrition.scan.typeInstead": "Możesz też wpisać lub wkleić kod w polu wyszukiwania.",
+    "w.recovery.nutrition.scan.notFound": "Nie znaleziono produktu dla tego kodu. Dodaj go, a zostanie u Ciebie.",
     // ── Cele ręczne ──────────────────────────────────────────────────────
     "w.recovery.nutrition.tg.title": "Twoje cele",
     "w.recovery.nutrition.tg.adaptive": "Adaptacyjne",
@@ -1359,6 +1377,15 @@ export const web_recovery = {
     "w.recovery.nutrition.maintenance": "Erhaltung",
     "w.recovery.nutrition.weightTrendLc": "Gewichtstrend",
     "w.recovery.nutrition.trainingFuel": "kcal Trainingsenergie",
+    // ── Barcode-Scan ─────────────────────────────────────────────────────
+    "w.recovery.nutrition.scan.title": "Barcode scannen",
+    "w.recovery.nutrition.scan.aim": "Halte den Barcode in den Rahmen",
+    "w.recovery.nutrition.scan.reading": "Wird gesucht…",
+    "w.recovery.nutrition.scan.needsCamera": "Der Scanner braucht die Kamera. Es wird nichts aufgezeichnet — das Bild wird nur nach einem Barcode gelesen.",
+    "w.recovery.nutrition.scan.deniedCamera": "Der Kamerazugriff ist deaktiviert. Du kannst ihn in den Geräteeinstellungen aktivieren.",
+    "w.recovery.nutrition.scan.allow": "Kamera erlauben",
+    "w.recovery.nutrition.scan.typeInstead": "Du kannst einen Barcode auch in die Suche eingeben oder einfügen.",
+    "w.recovery.nutrition.scan.notFound": "Kein Lebensmittel zu diesem Barcode. Lege es an, dann gehört es dir.",
     // ── Manuelle Ziele ───────────────────────────────────────────────────
     "w.recovery.nutrition.tg.title": "Deine Ziele",
     "w.recovery.nutrition.tg.adaptive": "Adaptiv",
