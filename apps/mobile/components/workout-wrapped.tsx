@@ -630,7 +630,7 @@ export function WorkoutWrapped({
       />
 
       {/* ── SHARE SHEET ── */}
-      <Sheet visible={sheetOpen} onClose={() => setSheetOpen(false)} title={t("session.wrapped.chooseStory")} scroll={false}>
+      <Sheet visible={sheetOpen} onClose={() => setSheetOpen(false)} title={t("session.wrapped.chooseStory")}>
             <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "baseline", marginBottom: 16 }}>
               <Pressable onPress={() => setSheetOpen(false)}><Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>{t("summary.doneToday")}</Text></Pressable>
             </View>

@@ -176,7 +176,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   // content-sized panel it would collapse to zero height — an empty sheet with
   // no movement to tap, which is exactly no way to add an exercise.
   return (
-    <Sheet visible={visible} onClose={close} title={title} scroll={false} fill detents={["large"]}>
+    <Sheet visible={visible} onClose={close} title={title} scroll={false} fill>
           <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
             <Pressable onPress={close} hitSlop={10}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.builder.close")}</Text>

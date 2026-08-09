@@ -102,7 +102,7 @@ export default function ExerciseFavouritesSheet({
   );
 
   return (
-    <Sheet visible={visible} onClose={onClose} title={t("w.home.exw.addTitle")} sub={t("w.home.exw.addSub")} detents={["large"]}>
+    <Sheet visible={visible} onClose={onClose} title={t("w.home.exw.addTitle")} sub={t("w.home.exw.addSub")}>
       {entries.length === 0 ? (
         <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, paddingVertical: 12 }}>{t("w.home.exw.addEmpty")}</Text>
       ) : (
