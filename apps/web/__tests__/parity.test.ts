@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { NAV_ITEMS, CAPABILITIES } from "@hybrid/core";
@@ -155,5 +155,59 @@ describe("the sheet's elongation", () => {
     for (const [name, src] of [["web", webSheet], ["mobile", mobileSheet]] as const) {
       expect(src, `${name} sheet releases on a stale velocity`).toMatch(/releaseVelocity\(/);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A SHEET NEVER RESERVES THE TAB BAR
+//
+// The rule is old and was already written down: a sheet is presented over the
+// bottom bar and covers it, so it must not pad for it. What made that rule
+// unobeyable on mobile is that the number it was handed already had the bar in
+// it — a screen inside the iOS 26 native tab bar reports a bottom safe-area
+// inset of bar + accessory + home indicator, and `sheetPadBottom` MAXes against
+// exactly that. Every sheet in the app grew a dead band the height of the bar,
+// which is what the second bug report was: "the text disappears behind a black
+// element at the bottom".
+//
+// So the pad's input is now the WINDOW's inset (lib/layout.ts
+// `sheetInsetBottom`), and this test holds every mobile sheet surface to it.
+// ---------------------------------------------------------------------------
+describe("a sheet's bottom pad", () => {
+  const MOBILE_ROOT = join(REPO_ROOT, "apps", "mobile");
+  const walkTsx = (dir: string, out: string[] = []): string[] => {
+    for (const name of readdirSync(dir)) {
+      if (name === "node_modules" || name === ".expo") continue;
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walkTsx(full, out);
+      else if (/\.tsx?$/.test(name)) out.push(full);
+    }
+    return out;
+  };
+
+  it("takes the WINDOW's inset on mobile, never the screen's", () => {
+    const offenders: string[] = [];
+    for (const file of walkTsx(MOBILE_ROOT)) {
+      const src = readFileSync(file, "utf8");
+      for (const m of src.matchAll(/sheetPadBottom\(([^)]*)\)/g)) {
+        const arg = (m[1] ?? "").trim();
+        // No argument at all is fine (the pad falls back to its floor); an
+        // argument must have gone through sheetInsetBottom.
+        if (arg && !arg.startsWith("sheetInsetBottom(")) {
+          offenders.push(`${file.split("apps/mobile/")[1]}: sheetPadBottom(${arg})`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      "a sheet covers the tab bar — pass sheetInsetBottom(insets.bottom), not the screen's inset",
+    ).toEqual([]);
+  });
+
+  it("keeps the pad a MAX against the inset, never a sum", () => {
+    // The original bug this token exists for. `insets.bottom + 20` is what put
+    // 54dp under every mobile sheet before sheetPadBottom existed.
+    const scale = readFileSync(join(REPO_ROOT, "packages", "core", "src", "scale.ts"), "utf8");
+    expect(scale).toMatch(/sheetPadBottom = \(insetBottom = 0\) => Math\.max\(/);
   });
 });

@@ -15,6 +15,7 @@ import {
   type SheetDetent,
 } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
+import { sheetInsetBottom } from "../../lib/layout";
 import { useSheetRecede } from "../../lib/sheet-recede";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
@@ -133,7 +134,10 @@ export default function Sheet({
   // sheets are full-height, which is what a sheet holding its own scroller
   // wants anyway; a SHORT sheet must let this component do the scrolling.
   const padTop = 12;
-  const padBottom = sheetPadBottom(insets.bottom);
+  // The WINDOW's inset, not this screen's — a sheet covers the tab bar, and a
+  // screen inside the native tab bar reports an inset with the bar folded in
+  // (see lib/layout.ts `sheetInsetBottom`).
+  const padBottom = sheetPadBottom(sheetInsetBottom(insets.bottom));
   const border = 1;
   const measures = scroll && !fill;
   const [headerH, setHeaderH] = useState<number | null>(null);
