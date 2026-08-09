@@ -612,7 +612,7 @@
   <section class="band concept">
     <div class="split">
       <div>
-        <div class="kicker"><b>Concept 02</b> — What's Left</div>
+        <div class="kicker"><b>Concept 02</b> — What's Left <b>— BUILT</b></div>
         <h2>The subject is the gap, not the box.</h2>
         <p class="thesis">Nobody opens this screen to search. They open it because the day still owes them something.</p>
         <p class="why">
@@ -646,6 +646,22 @@
           <dt>Both clients</dt><dd>Identical. <span class="off">Not the removed sticky HUD: this lives in the picker's header, where the decision is being made.</span></dd>
         </dl>
         <div class="tags"><span class="tag go">Try it — tap a row</span><span class="tag">accent means go again</span></div>
+
+        <div class="built">
+          <div class="kicker" style="margin-bottom: 10px;">As built</div>
+          <p class="why">
+            Shipped on both clients. <code>packages/core/src/nutrition-gap.ts</code> computes the
+            remainder once for both, and doing so retired two copies of the same 5 % tolerance that
+            were living in the two clients under two different names — the hub's ring and this
+            header can no longer disagree about whether you are over. Two decisions and one
+            omission:
+          </p>
+          <dl class="ledger">
+            <dt>No target, no header</dt><dd><span class="off">It renders nothing until there is an energy target to be short of. A header reading "2 000 left" against a number nobody set is the confident-wrong-number failure this app is built to avoid — the same reason the targets card asks for a weigh-in instead.</span></dd>
+            <dt>The word follows the sign, the colour follows the band</dt><dd><span class="off">50 past a 2 000 target reads "50 kcal over" and is drawn calmly, because it is inside the tolerance. Two different questions; reading the word off the tolerance flag printed "50 kcal left" at 2 050 logged.</span></dd>
+            <dt>The re-ordering was NOT built</dt><dd><b>Deliberately.</b> <span class="off">Recent is already ranked by the hour (04), and two rankings competing for one list is the drift this codebase keeps removing. What you actually eat at this hour beats what arithmetic says fits. The overshoot mark survives: a row that would take the day past target reads its figure line in sand.</span></dd>
+          </dl>
+        </div>
       </div>
 
       <div class="stage">
@@ -923,6 +939,23 @@
           <dt>Both clients</dt><dd>Identical. <span class="off">Web renders the tray as the sheet's own footer; mobile pins it above the home indicator.</span></dd>
         </dl>
         <div class="tags"><span class="tag go">Try it — add a few, tap a chip to drop it</span></div>
+
+        <div class="built">
+          <div class="kicker" style="margin-bottom: 10px;">Not built — and why</div>
+          <p class="why">
+            This concept's premise was <strong>"the current screen commits on every tap and throws
+            you back to the diary"</strong>. That stopped being true when 01 and 04 shipped: a tap
+            logs and the screen stays put, so three foods is now three taps with no round trips to
+            undo. What the tray would still add — a running total before committing, and an undo
+            before the fact — costs <em>a second tap on every single-food log</em>, which is the
+            common case, to save one on the rarer multi-food case. That is the wrong way round.
+          </p>
+          <p class="why">
+            The salvageable half is the undo: a strip of what you just logged, removable, without
+            changing the one-tap commit. If the diary's own stepper and delete are not enough, that
+            is the version worth drawing — not this one.
+          </p>
+        </div>
       </div>
 
       <div class="stage">
@@ -1058,16 +1091,17 @@
     <div class="kicker">If you only build one thing</div>
     <h2>01 and 02 are the spine. The rest bolt on.</h2>
     <p class="why">
-      They are not six alternatives so much as one screen at six depths. <strong>One Field</strong>
-      fixes the hierarchy, <strong>What's Left</strong> gives the screen a subject, and the other four
-      are refinements that each survive on their own.
+      They were never six alternatives so much as one screen at six depths. <strong>One Field</strong>
+      fixed the hierarchy, <strong>What's Left</strong> gave the screen a subject, and <strong>21:12</strong>
+      gave it something to say before you type. Three are built. Of the rest, one was superseded by
+      what shipped and two are the same question asked twice.
     </p>
 
     <div class="spine">
       <div class="cell">
         <div class="k">Built</div>
-        <h3>01 One Field <span style="color: var(--accent);">— shipped</span></h3>
-        <p>One input, the source line beneath, one ranked list under that. It deleted five containers, returned the accent to <em>go</em>, and gave the screen a floor — while keeping every source and every way to log. <strong>02 What's Left</strong> is the natural next layer: the gap as the header, above the field.</p>
+        <h3>01 One Field + 02 What's Left <span style="color: var(--accent);">— shipped</span></h3>
+        <p>The gap as the header, one input under it, the source line, then one ranked list. Five containers gone, the accent back to meaning <em>go</em>, the screen given both a subject and a floor — while keeping every source and every way to log.</p>
       </div>
       <div class="cell">
         <div class="k">Built</div>
@@ -1075,9 +1109,9 @@
         <p>What the list shows before you type. Pure gain — no new surface, no new schema, and it turns the empty 55 % into the fastest path in the app. <strong>05 The Tray</strong> is the next one worth building.</p>
       </div>
       <div class="cell">
-        <div class="k">Then</div>
-        <h3>05 The Tray, when logging is plural</h3>
-        <p>Worth it the moment the diary shows more than one entry per meal, which it already does most evenings.</p>
+        <div class="k">Superseded</div>
+        <h3>05 The Tray — not built</h3>
+        <p>One-tap logging removed the round trips the tray existed to spare. It would now cost a tap on every single-food log to save one on the rarer multi-food case. See the note on the concept itself.</p>
       </div>
       <div class="cell">
         <div class="k">Style, not structure</div>

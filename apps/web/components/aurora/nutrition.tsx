@@ -24,7 +24,7 @@ import {
   type MicroFacts, type VerifiedStamp,
   type Recipe, type RecipeCollection, type NutritionMealPart, type MealPartDef,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
-  recordLog, usualAtHour,
+  recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
   type PickerSourceKey,
 } from "@hybrid/core";
 import { fs, space, CARD_PAD, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
@@ -57,7 +57,7 @@ import {
 import { PantryScreen, UndoBar, UNDO_MS } from "./pantry";
 import GroupMark from "./group-mark";
 import {
-  readQuickFoods, writeQuickFoods, Glyph, RailHead, MarkPlate, VerifiedMark, FactsPanel, FoodRow, SourceLine, PickerDoor,
+  readQuickFoods, writeQuickFoods, Glyph, RailHead, MarkPlate, VerifiedMark, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap,
   IClose, IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock, presetGlyph, railScroller, type QuickFood,
 } from "./nutrition-kit";
 
@@ -583,7 +583,23 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
       satFat: draft.facts.satFat, sugar: draft.facts.sugar, fiber: draft.facts.fiber, salt: draft.facts.salt,
       qty: draft.qty, verifiedId: draft.verifiedId,
     });
-    if (ok) { await load(); await loadLogs(); revalidate.recovery(); }
+    if (!ok) return;
+    // ── INTO THE RECENTS MRU. This is the picker's PRIMARY commit path now, and
+    //    it was the one path that never wrote here — so nothing logged by typing
+    //    entered Recent, and nothing stamped the hour history the "at this hour"
+    //    ranking reads from (core/hour-recents.ts). A macro line has no food
+    //    behind it and no serving, so it stays out: the MRU's identity is a food
+    //    PLUS its serving, and an unnamed quick entry is neither.
+    if (draft.serving) {
+      pushRecent({
+        key: `${draft.name}|${draft.serving}`,
+        name: draft.name, subname: draft.subname, serving: draft.serving,
+        kcal: draft.facts.kcal, protein: draft.facts.protein, carbs: draft.facts.carbs, fat: draft.facts.fat,
+        satFat: draft.facts.satFat, sugar: draft.facts.sugar, fiber: draft.facts.fiber, salt: draft.facts.salt,
+        servingGrams: draft.servingGrams, verifiedId: draft.verifiedId,
+      });
+    }
+    await load(); await loadLogs(); revalidate.recovery();
   };
   // A phrase whose quantity could NOT be computed opens the portion editor
   // instead of logging a number nobody worked out.
@@ -850,6 +866,9 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
     // timer that re-rendered all of them for a label one of them shows would
     // be paying for the clock everywhere it is not on screen.
     if (view !== "add") return;
+    // Read it on ENTRY too: the picker opened at 21:12 from a screen mounted at
+    // 08:00 would otherwise greet the athlete with breakfast for half a minute.
+    setClockMinute(Math.floor(Date.now() / 60000));
     const id = setInterval(() => setClockMinute(Math.floor(Date.now() / 60000)), 30000);
     return () => clearInterval(id);
   }, [view]);
@@ -1077,10 +1096,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // manual path cannot add it two different ways.
   const adaptiveBase = useMemo(() => adaptiveTargets(signals, { goal, trainingKcal: 0 }), [signals, goal]);
   const targets = useMemo(() => resolveTargets(adaptiveBase, targetOverride, trainingKcal), [adaptiveBase, targetOverride, trainingKcal]);
+  // ── THE GAP — what the day still owes. Against TODAY's totals, never the
+  //    diary's scrubbed day: the picker writes to today, so a header reading
+  //    yesterday's remainder would be answering a question nobody asked.
+  const pickerGap = useMemo(() => nutritionGap(today, targets), [today, targets]);
   const mismatch = useMemo(() => targetMismatch(targets), [targets]);
   // Over-budget grace: the ring AND the centre number flip red past the SAME
   // 5% threshold, so the two can never disagree.
-  const KCAL_OVER_FACTOR = 1.05;
+  // Where 'over' begins — the shared band, so the hub's ring and the picker's
+  // header cannot disagree about it (core/nutrition-gap.ts).
+  const KCAL_OVER_FACTOR = KCAL_OVER_TOLERANCE;
   const kcalOver = today.kcal > targets.kcal * KCAL_OVER_FACTOR;
   const maint = useMemo(() => estimateMaintenance(signals, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(signals).slice(0, 7), [signals]);
@@ -1526,6 +1551,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
           // A row that jumped the queue says WHY: the count is the
           // evidence, not an ornament.
           meta={`${Math.round(food.kcal)} kcal  –  ${food.serving || t("w.recovery.nutrition.serving")}${isRecent && days ? `  –  ${t("w.recovery.nutrition.pick.atThisHour").replace("{n}", String(days))}` : ""}`}
+          // The one thing the row cannot be read off the screen: whether THIS
+          // food takes the day past its target. A statement, never a block — an
+          // athlete who wants the extra 400 kcal is not asking permission.
+          over={wouldOvershoot(pickerGap, food.kcal)}
           // ONE TAP on a recent. An MRU entry is a food PLUS its
           // serving, so re-logging it needs no question answering —
           // the portion editor is still one tap away on the row body,
@@ -1585,6 +1614,10 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             )}
           </div>
         </Sheet>
+
+        {/* THE GAP first — the screen's subject. It renders only when there is
+            a target to be short of. */}
+        {pickerGap ? <DayGap C={C} gap={pickerGap} /> : null}
 
         {/* THE ONE FIELD. Quick add and the database search were two boxes
             asking the same question; this is that question, asked once. */}

@@ -8,7 +8,7 @@ import {
   pickerSourceLabelKey,
   pickerSubmit,
 } from "./food-picker";
-import type { QuickAddCandidate, QuickAddVocab } from "./quick-add";
+import { macroDraft, quickAddDraft, type QuickAddCandidate, type QuickAddVocab } from "./quick-add";
 import type { NutritionFacts } from "./food-facts";
 
 const facts = (over: Partial<NutritionFacts> = {}): NutritionFacts => ({
@@ -255,5 +255,38 @@ describe("pickerSubmit — Enter commits what is on screen", () => {
   it("does nothing when nothing was understood", () => {
     expect(pickerSubmit(pickerAnswer("zupa", library)).kind).toBe("none");
     expect(pickerSubmit(pickerAnswer("", library)).kind).toBe("none");
+  });
+});
+
+describe("a macro line that also names something", () => {
+  it("asks the database about the leftover name — 'Whey Protein 80' is a tub, too", () => {
+    const a = pickerAnswer("Whey Protein 80", library);
+    // The macro reading survives: it is a row you tap, not an action taken.
+    if (a.kind !== "macros") throw new Error("expected macros");
+    expect(a.macros.facts.protein).toBe(80);
+    // …and the name still reaches the database, so both answers are on screen.
+    expect(a.macros.name).toBe("Whey");
+    expect(pickerRemoteQuery(a)).toBe("Whey");
+  });
+
+  it("spends no round trip on a clean macro line", () => {
+    const a = pickerAnswer("40g protein", library);
+    if (a.kind !== "macros") throw new Error("expected macros");
+    expect(a.macros.name).toBe("");
+    expect(pickerRemoteQuery(a)).toBeNull();
+  });
+
+  it("carries the serving on a food draft, so the caller can write the recents MRU", () => {
+    const a = pickerAnswer("whey 60g", library);
+    if (a.kind !== "matches") throw new Error("expected matches");
+    const draft = quickAddDraft(a.matches[0]!);
+    expect(draft.serving).toBe("30 g");
+    expect(draft.servingGrams).toBe(30);
+  });
+
+  it("gives a macro line no serving — it has no food behind it, so no MRU entry", () => {
+    const a = pickerAnswer("500 kcal", library);
+    if (a.kind !== "macros") throw new Error("expected macros");
+    expect(macroDraft(a.macros, "Quick entry").serving).toBeNull();
   });
 });

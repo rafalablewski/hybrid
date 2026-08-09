@@ -26,11 +26,14 @@
  * lists, not better.
  *
  * ── THE NETWORK IS THE LAST RESORT, NOT THE FIRST ─────────────────────────
- * `pickerRemoteQuery` is deliberately narrow. A macro line never reaches the
- * network — there is no food in "40g protein" to look up — and neither does a
- * single character. The community database answers only when the athlete's own
- * foods could not, which is also the ranking the screen shows: yours first,
- * the world under a section head.
+ * `pickerRemoteQuery` is deliberately narrow. A CLEAN macro line never reaches
+ * the network — there is no food in "40g protein" to look up — and neither does
+ * a single character. The exception is a macro reading that left WORDS behind:
+ * "Whey Protein 80" is a macro claim by the grammar and a tub on a shelf in real
+ * life, so the leftover name is asked as well and both answers are on screen.
+ * The community database otherwise answers only when the athlete's own foods
+ * could not, which is also the ranking the screen shows: yours first, the world
+ * under a section head.
  *
  * Pure + unit-tested, and shared, so the phone and the browser cannot disagree
  * about what one field means (parity rule).
@@ -112,7 +115,7 @@ export type PickerAnswer =
   /** nothing typed — the screen browses the four sources instead */
   | { kind: "resting" }
   /** a macro line: "40g protein", "500 kcal". No food, so no lookup. */
-  | { kind: "macros"; macros: QuickAddMacros; query: null }
+  | { kind: "macros"; macros: QuickAddMacros; query: string | null }
   /** a named food, ranked against everything the athlete has saved. `matches`
    *  may be empty — that is a real answer ("nothing of yours matches"), and the
    *  caller falls through to the community database and the create tail. */
@@ -143,7 +146,12 @@ export function pickerAnswer(
   if (!raw) return { kind: "resting" };
 
   const parsed = parseQuickAdd(raw, opts.vocab ?? QUICK_ADD_VOCAB);
-  if (parsed.kind === "macros") return { kind: "macros", macros: parsed, query: null };
+  // A macro reading keeps whatever words it could not account for, because a
+  // line like "Whey Protein 80" is BOTH a macro claim and the name of a tub on
+  // a shelf. The interpretation row still offers the macro; the leftover name
+  // also goes to the database, so the athlete chooses between two visible
+  // answers instead of the grammar choosing for them silently.
+  if (parsed.kind === "macros") return { kind: "macros", macros: parsed, query: parsed.name || null };
 
   // `unknown` is a phrase with no name in it — bare digits, most usefully a
   // typed barcode. It has nothing to rank against the library, but it is still
@@ -168,8 +176,9 @@ export function pickerAnswer(
  * a round trip to answer a question nobody asked.
  */
 export function pickerRemoteQuery(answer: PickerAnswer, minLength = 2): string | null {
-  if (answer.kind !== "matches") return null;
-  return answer.query.length >= minLength ? answer.query : null;
+  if (answer.kind === "resting") return null;
+  const query = answer.query;
+  return query != null && query.length >= minLength ? query : null;
 }
 
 /**

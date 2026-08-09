@@ -1,0 +1,112 @@
+/**
+ * WHAT THE DAY STILL OWES.
+ *
+ * Nobody opens the food picker to search. They open it because the day still
+ * owes them something — and until now the picker never said what. The figure
+ * lived one screen away on the hub's ring, and the arithmetic behind it lived
+ * INLINE in both clients, under two different names for the same constant
+ * (KCAL_OVER_THRESHOLD on the phone, KCAL_OVER_FACTOR in the browser). Two
+ * copies of one sum is how the ring and the header end up disagreeing about
+ * whether you are over.
+ *
+ * ── A TARGET YOU DO NOT HAVE IS NOT A GAP ─────────────────────────────────
+ * `nutritionGap` returns NULL when there is no usable energy target, and the
+ * caller renders nothing. That is the same discipline the targets card already
+ * follows: until maintenance can be estimated from the athlete's own weight
+ * trend, the screen asks for a weigh-in rather than presenting a population
+ * default as a personal number. A header reading "2 000 left" against a target
+ * nobody set would be a confident wrong number, which is the failure this
+ * codebase is built to avoid.
+ *
+ * ── A MACRO NOBODY SET STAYS UNSET ────────────────────────────────────────
+ * Per-field manual targets mean protein can be fixed while carbs keep adapting
+ * (see nutrition-targets.ts). A macro with no target reports `want: null` and
+ * is skipped by the caller — never drawn as a bar at 0 %, which would read as
+ * "you have eaten none of your carbs" when the truth is "you have no carb
+ * target".
+ *
+ * ── OVER IS A BAND, NOT A LINE ────────────────────────────────────────────
+ * Landing on 2 003 against 2 000 is not overeating, it is arithmetic. The 5 %
+ * tolerance is the one both clients were already applying to the ring; it lives
+ * here now so they cannot drift apart on where "over" begins.
+ *
+ * Pure + unit-tested, and shared (parity rule).
+ */
+
+/** Where "over" begins: 5 % past the target, not one kilocalorie past it. */
+export const KCAL_OVER_TOLERANCE = 1.05;
+
+export type GapMacroKey = "protein" | "carbs" | "fat";
+export const GAP_MACROS: readonly GapMacroKey[] = ["protein", "carbs", "fat"];
+
+export interface GapFigure {
+  have: number;
+  /** null when no target is set for this figure — never 0, which is a target */
+  want: number | null;
+  /** want − have; null when there is no target. Negative means over. */
+  left: number | null;
+  /** 0–100, clamped for drawing. 0 when there is no target. */
+  pct: number;
+  /** past the tolerance band, not merely past the number */
+  over: boolean;
+}
+
+export interface NutritionGap {
+  kcal: GapFigure;
+  macros: { key: GapMacroKey; figure: GapFigure }[];
+}
+
+export interface MacroTotals {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+const usable = (n: number | null | undefined): n is number =>
+  typeof n === "number" && Number.isFinite(n) && n > 0;
+
+const figure = (have: number, want: number | null | undefined, tolerance: number): GapFigure => {
+  const h = Number.isFinite(have) ? Math.max(0, have) : 0;
+  if (!usable(want)) return { have: h, want: null, left: null, pct: 0, over: false };
+  return {
+    have: h,
+    want,
+    left: Math.round(want - h),
+    pct: Math.min(100, Math.max(0, (h / want) * 100)),
+    over: h > want * tolerance,
+  };
+};
+
+/**
+ * What is left of today, against the targets in force.
+ *
+ * `null` means "no energy target yet" — the caller shows nothing rather than a
+ * number nobody set.
+ */
+export function nutritionGap(
+  have: MacroTotals,
+  want: Partial<MacroTotals> | null | undefined,
+  tolerance = KCAL_OVER_TOLERANCE,
+): NutritionGap | null {
+  if (!want || !usable(want.kcal)) return null;
+  return {
+    kcal: figure(have.kcal, want.kcal, tolerance),
+    macros: GAP_MACROS.map((key) => ({ key, figure: figure(have[key], want[key], tolerance) })),
+  };
+}
+
+/**
+ * Would logging this take the day past its energy target?
+ *
+ * Used to mark a row that would put the athlete over — the one piece of
+ * information the row cannot already be read off the screen, since it needs
+ * today's running total and the target as well as the food's own figure. It is
+ * a STATEMENT, never a block: an athlete who wants the extra 400 kcal is not
+ * asking permission.
+ */
+export function wouldOvershoot(gap: NutritionGap | null, kcal: number, tolerance = KCAL_OVER_TOLERANCE): boolean {
+  if (!gap || gap.kcal.want == null) return false;
+  if (!Number.isFinite(kcal) || kcal <= 0) return false;
+  return gap.kcal.have + kcal > gap.kcal.want * tolerance;
+}

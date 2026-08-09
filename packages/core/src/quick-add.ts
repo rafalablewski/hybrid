@@ -99,6 +99,15 @@ export interface QuickAddMacros {
   facts: Partial<Pick<NutritionFacts, "kcal" | "protein" | "carbs" | "fat">>;
   /** kcal derived from the macros at 4·4·9 when none was typed */
   derivedKcal: boolean;
+  /** THE WORDS THE READING DID NOT ACCOUNT FOR, if any.
+   *
+   *  "Whey Protein 80" is a macro line by the grammar — and it is also the name
+   *  of a tub on a shelf. The reading is kept (it is a row you tap, not an
+   *  action taken) and so is the leftover name, so the caller can ALSO ask the
+   *  database about "Whey" and let the athlete pick between two visible
+   *  answers. Empty for a clean macro line like "40g protein", which has no
+   *  food in it and must not spend a round trip pretending otherwise. */
+  name: string;
 }
 
 export interface QuickAddFood {
@@ -175,6 +184,12 @@ const macroFieldOf = (word: string, v: QuickAddVocab): keyof QuickAddMacros["fac
  * control feel like a syntax rather than a sentence.
  */
 function readMacros(tokens: string[], v: QuickAddVocab): QuickAddMacros | null {
+  const leftovers = (used: Set<number>): string[] =>
+    tokens.filter((tok, i) =>
+      !used.has(i) &&
+      !NUMBER_RE.test(tok) &&
+      !isMassUnit(tok) &&
+      !v.times.includes(tok.toLowerCase()));
   const facts: QuickAddMacros["facts"] = {};
   let found = false;
   /** did any field bind through a ONE-LETTER abbreviation? see the guard below */
@@ -216,14 +231,8 @@ function readMacros(tokens: string[], v: QuickAddVocab): QuickAddMacros | null {
   // This matters more since the picker merged its two fields (food-picker.ts):
   // a misread used to cost a wrong row under a field whose search box still
   // worked, and now it costs the only input on the screen.
-  if (viaAbbrev) {
-    const leftoverName = tokens.some((tok, i) =>
-      !used.has(i) &&
-      !NUMBER_RE.test(tok) &&
-      !isMassUnit(tok) &&
-      !v.times.includes(tok.toLowerCase()));
-    if (leftoverName) return null;
-  }
+  const rest = leftovers(used);
+  if (viaAbbrev && rest.length) return null;
 
   // A line naming only macros still has to log an energy figure, or the day's
   // ring would not move. 4·4·9 is the same derivation the manual form uses.
@@ -232,7 +241,7 @@ function readMacros(tokens: string[], v: QuickAddVocab): QuickAddMacros | null {
     const k = Math.round((facts.protein ?? 0) * 4 + (facts.carbs ?? 0) * 4 + (facts.fat ?? 0) * 9);
     if (k > 0) { facts.kcal = k; derivedKcal = true; }
   }
-  return { kind: "macros", facts, derivedKcal };
+  return { kind: "macros", facts, derivedKcal, name: rest.join(" ").trim() };
 }
 
 /** Food lookup: a name, and how much of it. */
@@ -379,6 +388,11 @@ export interface QuickAddDraft {
   facts: NutritionFacts;
   qty: number;
   verifiedId: string | null;
+  /** the food's own serving, so the caller can write it back to the recents
+   *  MRU — whose identity is the food PLUS its serving. A macro line has no
+   *  food behind it and so no serving; it does not belong in the MRU. */
+  serving: string | null;
+  servingGrams: number | null;
 }
 
 export function quickAddDraft(match: QuickAddMatch): QuickAddDraft {
@@ -389,6 +403,8 @@ export function quickAddDraft(match: QuickAddMatch): QuickAddDraft {
     facts: c.facts,
     qty: match.qty,
     verifiedId: c.verifiedId ?? null,
+    serving: c.servingLabel,
+    servingGrams: c.servingGrams ?? null,
   };
 }
 
@@ -408,5 +424,7 @@ export function macroDraft(m: QuickAddMacros, name: string): QuickAddDraft {
     },
     qty: 1,
     verifiedId: null,
+    serving: null,
+    servingGrams: null,
   };
 }

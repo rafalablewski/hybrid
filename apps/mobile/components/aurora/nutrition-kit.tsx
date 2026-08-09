@@ -5,7 +5,7 @@ import { SvgXml } from "react-native-svg";
 import {
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
   PICKER_SOURCES, pickerSourceLabelKey,
-  type MicroFacts, type NutritionFacts, type NutritionGlyphName, type PickerSourceKey, type SourceMark,
+  type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
 } from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
@@ -172,6 +172,74 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
 // row by. Both now delegate to their client's SwipeRow, which means one set of
 // physics from @hybrid/core (velocity projection, rubber-band, full-swipe).
 /**
+ * THE DAY GAP — what the day still owes, at the top of the picker.
+ *
+ * Nobody opens this screen to search; they open it because the day is short of
+ * something. So the picker says what, in the Builder's One Number vocabulary: a
+ * display-weight mono figure, a quiet sentence under it, and the macros as thin
+ * meters. It reads through the SAME arithmetic the hub's ring does
+ * (core/nutrition-gap.ts) so the two can never disagree about whether you are
+ * over, and it renders NOTHING when there is no target yet — a header reading
+ * "2 000 left" against a number nobody set would be a confident wrong number.
+ *
+ * This is the picker's own header, not the sticky HUD that was removed
+ * (nutrition-hud): it sits where the decision is being made and scrolls with it.
+ * Web twin: aurora/nutrition-kit.tsx DayGap.
+ */
+export function DayGap({ C, gap }: {
+  C: ReturnType<typeof useTheme>["palette"]; gap: NutritionGap;
+}) {
+  const { t } = useLang();
+  const left = gap.kcal.left ?? 0;
+  // The WORD follows the sign and the COLOUR follows the band. They are two
+  // different questions: 50 past a 2 000 target is "50 over" (it is), drawn
+  // calmly (it is inside the 5 % tolerance). Reading the word off the tolerance
+  // flag printed "50 kcal left" at 2 050 logged.
+  const isOver = left < 0;
+  const tone = gap.kcal.over ? txt(C, C.amber) : txt(C, C.lime);
+  const macros = gap.macros.filter((m) => m.figure.want != null);
+  return (
+    <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 18 }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+        <Text
+          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 44, letterSpacing: tracking.display, lineHeight: 46, color: tone }}
+        >
+          {Math.abs(left)}
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          {t(isOver ? "w.recovery.nutrition.pick.kcalOver" : "w.recovery.nutrition.pick.kcalLeft")}
+        </Text>
+      </View>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8 }}>
+        {t("w.recovery.nutrition.pick.ofTarget")
+          .replace("{a}", String(Math.round(gap.kcal.have)))
+          .replace("{b}", String(Math.round(gap.kcal.want ?? 0)))}
+      </Text>
+      {macros.length ? (
+        <View style={{ flexDirection: "row", gap: 16, marginTop: 18 }}>
+          {macros.map((m) => (
+            <View key={m.key} style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6, marginBottom: 6 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+                  {t(`w.recovery.nutrition.${m.key}`)}
+                </Text>
+                <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: C.chalk }}>
+                  {Math.round(m.figure.have)}/{Math.round(m.figure.want ?? 0)}
+                </Text>
+              </View>
+              <View style={{ height: 3, borderRadius: 2, backgroundColor: C.line, overflow: "hidden" }}>
+                <View style={{ width: `${m.figure.pct}%`, height: "100%", borderRadius: 2, backgroundColor: m.figure.over ? txt(C, C.amber) : txt(C, C.lime) }} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/**
  * THE SOURCE LINE — Recent / Favorites / Meals / Foods, kept, with the box gone.
  *
  * The four sources are four different questions (what did I just eat, what do I
@@ -264,8 +332,13 @@ export function PickerDoor({ C, title, icon, onPress, last }: {
   );
 }
 
-export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
+export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
   C: ReturnType<typeof useTheme>["palette"]; name: string; subname?: string | null; meta: string; onAdd: () => void;
+  /** This food would take the day past its energy target. Said in SAND on the
+   *  figure line — the sport/caution accent, never the alert red, because going
+   *  over is a fact about the day and not an injury. It changes nothing about
+   *  what the row does. */
+  over?: boolean;
   /** tapping the row BODY, when that means something different from the ⊕ —
    *  a verified item opens its page; everything else just adds. */
   onOpen?: () => void;
@@ -281,7 +354,7 @@ export function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starre
           {verified ? <VerifiedMark C={C} /> : null}
           {subname ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{subname}</Text> : null}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{meta}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: over ? txt(C, C.amber) : C.ash, marginTop: 3 }}>{meta}</Text>
       </Pressable>
       {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
       {chevron ? <IChevRight size={18} color={C.ash} /> : null}

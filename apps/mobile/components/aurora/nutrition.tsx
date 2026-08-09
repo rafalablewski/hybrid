@@ -57,7 +57,7 @@ import {
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
   sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
-  recordLog, usualAtHour,
+  recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -96,7 +96,7 @@ import NutritionTrends from "./nutrition-trends";
 import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
-  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor,
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap,
   IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
@@ -127,7 +127,9 @@ type MealType = string;
 const MEAL_TYPES = DEFAULT_MEAL_PART_KEYS;
 // Over-target: the calorie ring and its number flip red past the SAME 5% grace
 // band (web parity — one threshold, both surfaces).
-const KCAL_OVER_THRESHOLD = 1.05;
+// Where 'over' begins — the shared band, so the hub's ring and the picker's
+// header cannot disagree about it (core/nutrition-gap.ts).
+const KCAL_OVER_THRESHOLD = KCAL_OVER_TOLERANCE;
 const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunrise" : m === "lunch" ? "sun" : m === "dinner" ? "moon" : m === "snack" ? "cup" : "bowl";
 /** A serving weight recovered from its label, EXACT conversions only — a
  *  volume weight is an assumption (see serving-units.ts) and must not be
@@ -591,7 +593,23 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       satFat: draft.facts.satFat, sugar: draft.facts.sugar, fiber: draft.facts.fiber, salt: draft.facts.salt,
       qty: draft.qty, verifiedId: draft.verifiedId,
     });
-    if (ok) { loadLogs(); refetch(); revalidate.recovery(); }
+    if (!ok) return;
+    // ── INTO THE RECENTS MRU. This is the picker's PRIMARY commit path now, and
+    //    it was the one path that never wrote here — so nothing logged by typing
+    //    entered Recent, and nothing stamped the hour history the "at this hour"
+    //    ranking reads from (core/hour-recents.ts). A macro line has no food
+    //    behind it and no serving, so it stays out: the MRU's identity is a food
+    //    PLUS its serving, and an unnamed quick entry is neither.
+    if (draft.serving) {
+      pushRecent({
+        key: `${draft.name}|${draft.serving}`,
+        name: draft.name, subname: draft.subname, serving: draft.serving,
+        kcal: draft.facts.kcal, protein: draft.facts.protein, carbs: draft.facts.carbs, fat: draft.facts.fat,
+        satFat: draft.facts.satFat, sugar: draft.facts.sugar, fiber: draft.facts.fiber, salt: draft.facts.salt,
+        servingGrams: draft.servingGrams, verifiedId: draft.verifiedId,
+      });
+    }
+    loadLogs(); refetch(); revalidate.recovery();
   };
   // A phrase whose quantity could NOT be computed opens the portion editor
   // instead of logging a number nobody worked out.
@@ -836,6 +854,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // timer that re-rendered all of them for a label one of them shows would
     // be paying for the clock everywhere it is not on screen.
     if (view !== "add") return;
+    // Read it on ENTRY too: the picker opened at 21:12 from a screen mounted at
+    // 08:00 would otherwise greet the athlete with breakfast for half a minute.
+    setClockMinute(Math.floor(Date.now() / 60000));
     const id = setInterval(() => setClockMinute(Math.floor(Date.now() / 60000)), 30000);
     return () => clearInterval(id);
   }, [view]);
@@ -995,6 +1016,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // manual path cannot add it two different ways.
   const adaptiveBase = useMemo(() => adaptiveTargets(sig, { goal, trainingKcal: 0 }), [signals, goal]);
   const targets = useMemo(() => resolveTargets(adaptiveBase, targetOverride, trainingKcal), [adaptiveBase, targetOverride, trainingKcal]);
+  // ── THE GAP — what the day still owes. Against TODAY's totals, never the
+  //    diary's scrubbed day: the picker writes to today, so a header reading
+  //    yesterday's remainder would be answering a question nobody asked.
+  const pickerGap = useMemo(() => nutritionGap(today, targets), [today, targets]);
   const mismatch = useMemo(() => targetMismatch(targets), [targets]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
@@ -1411,6 +1436,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           // A row that jumped the queue says WHY: the count is the
           // evidence, not an ornament.
           meta={`${Math.round(food.kcal)} kcal  –  ${food.serving || t("w.recovery.nutrition.serving")}${isRecent && days ? `  –  ${t("w.recovery.nutrition.pick.atThisHour").replace("{n}", String(days))}` : ""}`}
+          // The one thing the row cannot be read off the screen: whether THIS
+          // food takes the day past its target. A statement, never a block — an
+          // athlete who wants the extra 400 kcal is not asking permission.
+          over={wouldOvershoot(pickerGap, food.kcal)}
           // ONE TAP on a recent. An MRU entry is a food PLUS its
           // serving, so re-logging it needs no question answering —
           // the portion editor is still one tap away on the row body,
@@ -1471,6 +1500,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </Sheet>
 
         <BarcodeScanSheet visible={scanSheet} onClose={() => setScanSheet(false)} onCode={onScanned} />
+
+        {/* THE GAP first — the screen's subject. It renders only when there is
+            a target to be short of. */}
+        {pickerGap ? <DayGap C={C} gap={pickerGap} /> : null}
 
         {/* THE ONE FIELD. Quick add and the database search were two boxes
             asking the same question; this is that question, asked once. */}

@@ -309,6 +309,10 @@ export const web_recovery = {
     "w.recovery.nutrition.pick.usualHour": "At this hour you usually eat",
     "w.recovery.nutrition.pick.atThisHour": "{n} days at this hour",
     "w.recovery.nutrition.pick.everythingElse": "Everything else",
+    // The gap — what the day still owes, at the top of the picker.
+    "w.recovery.nutrition.pick.kcalLeft": "kcal left today",
+    "w.recovery.nutrition.pick.kcalOver": "kcal over today",
+    "w.recovery.nutrition.pick.ofTarget": "{a} of {b} logged",
     // The parser's VOCABULARY. These are the words it recognises when you type,
     // not labels — keep them lowercase, comma-separated, and include the short
     // forms people actually use.
@@ -897,6 +901,9 @@ export const web_recovery = {
     "w.recovery.nutrition.pick.usualHour": "O tej porze zwykle jesz",
     "w.recovery.nutrition.pick.atThisHour": "{n} dni o tej porze",
     "w.recovery.nutrition.pick.everythingElse": "Pozostałe",
+    "w.recovery.nutrition.pick.kcalLeft": "kcal do końca dnia",
+    "w.recovery.nutrition.pick.kcalOver": "kcal ponad limit",
+    "w.recovery.nutrition.pick.ofTarget": "{a} z {b} zapisane",
     "w.recovery.nutrition.qa.vocabKcal": "kcal,kalorie,kal",
     "w.recovery.nutrition.qa.vocabProtein": "bialko,białko,bialka,białka,protein,b",
     "w.recovery.nutrition.qa.vocabCarbs": "wegle,węgle,weglowodany,węglowodany,w",
@@ -1479,6 +1486,9 @@ export const web_recovery = {
     "w.recovery.nutrition.pick.usualHour": "Um diese Zeit isst du meistens",
     "w.recovery.nutrition.pick.atThisHour": "{n} Tage um diese Zeit",
     "w.recovery.nutrition.pick.everythingElse": "Alles andere",
+    "w.recovery.nutrition.pick.kcalLeft": "kcal heute übrig",
+    "w.recovery.nutrition.pick.kcalOver": "kcal heute drüber",
+    "w.recovery.nutrition.pick.ofTarget": "{a} von {b} erfasst",
     "w.recovery.nutrition.qa.vocabKcal": "kcal,kalorien,kal",
     "w.recovery.nutrition.qa.vocabProtein": "protein,eiweiss,eiweiß,p",
     "w.recovery.nutrition.qa.vocabCarbs": "kohlenhydrate,kh,carbs,k",
