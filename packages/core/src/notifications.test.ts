@@ -371,7 +371,8 @@ describe("normalizeNotifOp — this is a request body, not our data", () => {
   it("bounds the ids one op can carry", () => {
     const many = Array.from({ length: 400 }, (_, i) => ({ id: `n${i}`, at: NOW }));
     const op = normalizeNotifOp({ kind: "sweep", items: many, now: NOW }, NOW);
-    expect(op!.kind === "sweep" && op.items.length).toBe(200);
+    if (op?.kind !== "sweep") throw new Error("expected a sweep op");
+    expect(op.items).toHaveLength(200);
   });
 });
 
