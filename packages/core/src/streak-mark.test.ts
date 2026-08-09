@@ -119,7 +119,9 @@ describe("the streak mark guard — no screen may draw its own", () => {
 
   it("sources its own count, so no two surfaces can disagree", () => {
     for (const file of MARK_COMPONENTS) {
-      expect(code(file), file).toMatch(/streak\(sessions, 1\)/);
+      // The bare call is the STRICT streak — a component passing options here
+      // would be loosening the run rule for one surface only.
+      expect(code(file), file).toMatch(/streak\(sessions\)/);
     }
   });
 

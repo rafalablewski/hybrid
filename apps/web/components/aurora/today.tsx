@@ -334,10 +334,6 @@ export default function AuroraToday({
   // never "2 days ago" — clumsy as a headline, worse inflected in PL/DE).
   // The naming rule lives in @hybrid/core masthead.ts so mobile can't drift.
   const mast = masthead(dayTs);
-  // "Back to today" re-anchors BOTH the lifted day scope and the rail's own
-  // internal selection (via resetToken) in one tap.
-  const [railResetToken, setRailResetToken] = useState(0);
-  const backToToday = () => { setRailDay(null); setRailResetToken((n) => n + 1); };
   // Sessions logged on the VIEWED day — the confirmation loop. A finished
   // prescribed session and a quick sport log both land here the moment they
   // save, so Today shows "you did this" instead of forever prompting "Start".
@@ -559,9 +555,8 @@ export default function AuroraToday({
   useEffect(() => {
     setDateStr(new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }));
   }, []);
-  // FIRST-RUN CHOOSER state (new user: no plan, no history) — hoisted because
-  // the masthead's caption line says "Free" when the chooser (or its demoted
-  // logbook-mode form) renders. With history the logbook rail takes over.
+  // FIRST-RUN CHOOSER state (new user: no plan, no history). With history the
+  // logbook rail takes over.
   const firstRun = !plan && !loading && !hasData;
   // Masthead strings for the viewed day: headline, caption date, and (beyond
   // ±1 day, where the headline stops saying it) the scrub-distance tag. The
@@ -666,29 +661,19 @@ export default function AuroraToday({
           The headline NAMES THE VIEWED DAY (masthead() in @hybrid/core): "Today"
           until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1, the
           weekday name beyond — a static "Today" over Friday's session would lie
-          in the largest type on screen. Off today, a "Back to today" return
-          affordance renders beneath, teal, in the same spot every time. Mirrors
-          mobile home.tsx. */}
+          in the largest type on screen. Off today, the scrub distance rides the
+          caption line as the mono tag; the rail's today chip is the way back.
+          Mirrors mobile home.tsx. */}
       <HubMasthead
         eyebrow={mastCaption}
-        meta={firstRun || (logbookMode && !mastTag) ? t("w.home.today.badgeFree") : mastTag}
-        metaTone={!firstRun && !(logbookMode && !mastTag) && mastTag ? "accent" : "plain"}
+        meta={mastTag}
+        metaTone="accent"
         title={mastTitle}
         mark={
           // Kyoto Hour hanko — the app's vermilion seal, stamped beside the true
           // "Today" only (never the scrubbed days). Hidden in Aurora via CSS
           // (.hanko-seal). Mirrors mobile home.tsx.
           dayIsToday ? <span className="hanko-seal" aria-hidden>力</span> : null
-        }
-        accessory={
-          !dayIsToday ? (
-            <button className="pressable"
-              onClick={backToToday}
-              style={{ background: "none", border: "none", padding: 0, marginTop: 4, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--blue-text)" }}
-            >
-              <CtaLabel size={12}>{`${t("w.home.today.backToToday")} →`}</CtaLabel>
-            </button>
-          ) : null
         }
       />
 
@@ -722,7 +707,6 @@ export default function AuroraToday({
           onStart={onStart}
           onNavigate={onNavigate}
           onSelectDay={setRailDay}
-          resetToken={railResetToken}
           doneFloor={doneFloor}
         />
       ) : logbookMode ? (
@@ -737,7 +721,6 @@ export default function AuroraToday({
             onLog={() => onStart()}
             onNavigate={onNavigate}
             onSelectDay={setRailDay}
-            resetToken={railResetToken}
             doneFloor={doneFloor}
           />
           <div style={{ margin: "24px 0 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
@@ -768,8 +751,7 @@ export default function AuroraToday({
            to start?" question was retired with the masthead redesign (the page
            already opens with "Today", and three cards titled
            Follow a plan / Build your own / Log a workout need no sentence
-           announcing that a choice is available); "Free" is said ONCE on the
-           masthead's caption line. Each full-width card wears the Go-Full
+           announcing that a choice is available). Each full-width card wears the Go-Full
            anatomy with its corner glow, the hue confined to glyph + CTA, and
            IS the start — no separate Start pill. Mirrored on mobile. */
         <div data-tour="today-plan" style={{ marginTop: 16 }}>

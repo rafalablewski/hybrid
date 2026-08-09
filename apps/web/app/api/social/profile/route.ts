@@ -40,24 +40,27 @@ export async function PUT(request: Request) {
   if (!handle || !isValidHandle(handle))
     return NextResponse.json({ error: "Handle must be 3–20 chars: a–z, 0–9, _" }, { status: 400 });
 
+  // A missing/invalid visibility NEVER rewrites a stored choice — the update
+  // simply leaves the column alone. Only a brand-new profile falls back to the
+  // app's default, PUBLIC (every workout publishes to the feed automatically;
+  // the athlete opts DOWN to followers-only or private).
   const visibility =
     b.visibility === "public" || b.visibility === "private" || b.visibility === "followers"
       ? b.visibility
-      : "followers";
+      : undefined;
   const data = {
     handle,
     displayName: typeof b.displayName === "string" ? b.displayName.trim().slice(0, 60) || null : null,
     bio: typeof b.bio === "string" ? b.bio.trim().slice(0, 280) || null : null,
     avatarUrl: typeof b.avatarUrl === "string" ? b.avatarUrl.trim().slice(0, 500) || null : null,
-    visibility,
     showcase: (b.showcase && typeof b.showcase === "object" ? b.showcase : {}) as object,
   };
 
   try {
     const profile = await prisma.socialProfile.upsert({
       where: { userId: me.id },
-      update: data,
-      create: { userId: me.id, ...data },
+      update: { ...data, ...(visibility ? { visibility } : {}) },
+      create: { userId: me.id, ...data, visibility: visibility ?? "public" },
     });
     return NextResponse.json({ profile });
   } catch (e) {

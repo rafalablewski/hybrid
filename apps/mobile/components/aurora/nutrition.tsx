@@ -55,7 +55,10 @@ import {
   per100g, emptyNutritionDay, panelStatus,
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
-  sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection, } from "@hybrid/core";
+  sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
+  dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
+  recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
+  type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
@@ -92,11 +95,11 @@ import WaterCard from "./water";
 import { UserRecipeShelf, UserRecipeEditor, toUserRecipe, toRecipeBody, type RecipeRow } from "./user-recipes";
 import CopyDaySheet from "./copy-day";
 import NutritionTrends from "./nutrition-trends";
-import QuickAdd from "./quick-add";
+import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
-  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow,
-  IClose, IChevDown, IChevRight, IPlus, IBarcode, ITrash, IBolt, IClock, IPlusBox,
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap,
+  IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
 import {
@@ -126,7 +129,9 @@ type MealType = string;
 const MEAL_TYPES = DEFAULT_MEAL_PART_KEYS;
 // Over-target: the calorie ring and its number flip red past the SAME 5% grace
 // band (web parity — one threshold, both surfaces).
-const KCAL_OVER_THRESHOLD = 1.05;
+// Where 'over' begins — the shared band, so the hub's ring and the picker's
+// header cannot disagree about it (core/nutrition-gap.ts).
+const KCAL_OVER_THRESHOLD = KCAL_OVER_TOLERANCE;
 const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunrise" : m === "lunch" ? "sun" : m === "dinner" ? "moon" : m === "snack" ? "cup" : "bowl";
 /** A serving weight recovered from its label, EXACT conversions only — a
  *  volume weight is an assumption (see serving-units.ts) and must not be
@@ -138,7 +143,12 @@ const exactGrams = (label: string | null | undefined): number | null => {
 // A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
-type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null };
+type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null }
+  /** WHEN this exact (food, serving) was logged — epoch ms, capped. Written
+   *  on every log; read by usualAtHour so the picker can open on what this
+   *  athlete actually eats at this time of day. Per-device, like the MRU
+   *  itself; an entry saved before this shipped simply has no history yet. */
+  & { logs?: number[] | null };
 
 // Small stroke icons for the redesigned flows (close, chevron, barcode, trash,
 // restart, star, bolt, plus-box) — inline react-native-svg so the mockup chrome
@@ -196,7 +206,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // The picker sources: Recent / Favorites (per-device MRU) and the two personal
   // libraries — full MEALS and single PRODUCTS — so any part of the day can be
   // filled with either a saved meal or a product.
-  const [foodTab, setFoodTab] = useState<"recent" | "favorites" | "meals" | "personal">("personal");
+  // The source line's selection. Opens on RECENT, not Foods: the list you
+  // want at 21:12 is what you just ate, not the whole library.
+  const [foodTab, setFoodTab] = useState<PickerSourceKey>("recent");
   const [quickLog, setQuickLog] = useState(false); // the Quick Log sheet
   // Create form (blend: title plate + macro hero) — one form for a PRODUCT or a
   // MEAL. Name + the personal Subname on the plate; serving + unit (products
@@ -214,7 +226,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const [mealComps, setMealComps] = useState<MealComp[]>([]);
   const [compPicker, setCompPicker] = useState(false); // the "Add product" sheet
   const [compQuery, setCompQuery] = useState("");
-  const openCreate = (mode: "product" | "meal") => { setCreateMode(mode); setMealComps([]); setCreateForm(BLANK_CREATE_FORM); setView("create"); };
+  // `name` seeds the form from the picker's unmatched query: the door says
+  // "New food: zupa", so arriving at an empty Name field would be the screen
+  // forgetting the word it just quoted back.
+  const openCreate = (mode: "product" | "meal", name = "") => { setCreateMode(mode); setMealComps([]); setCreateForm({ ...BLANK_CREATE_FORM, name }); setView("create"); };
   // Add a saved product to the meal being composed (or bump its serving count if
   // already added); remove / re-count keep the summed macros in sync.
   const addMealComp = (p: FoodProductRow) => setMealComps((xs) => {
@@ -251,7 +266,19 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     AsyncStorage.getItem("hybrid.nutrition.recent").then((r) => { if (r) try { setRecent(JSON.parse(r) as QuickFood[]); } catch { /* corrupt */ } }).catch(() => {});
     AsyncStorage.getItem("hybrid.nutrition.favorites").then((r) => { if (r) try { setFavorites(JSON.parse(r) as QuickFood[]); } catch { /* corrupt */ } }).catch(() => {});
   }, []);
-  const pushRecent = (q: QuickFood) => setRecent((xs) => { const next = [q, ...xs.filter((x) => x.key !== q.key)].slice(0, 20); AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {}); return next; });
+  // Every log STAMPS the entry, carrying forward the hours it was already
+  // logged at, so the picker can open on what this athlete eats at this time
+  // of day (core/hour-recents.ts). Per-device, no schema change.
+  const pushRecent = (q: QuickFood) => setRecent((xs) => {
+    const prev = xs.find((x) => x.key === q.key);
+    // The STORED history wins: the caller's copy can be a snapshot taken
+    // before the last write (a double tap, or a favourite holding a frozen
+    // copy of the entry), and stamping that would drop a log.
+    const stamped = { ...q, logs: recordLog(prev?.logs ?? q.logs, Date.now()) };
+    const next = [stamped, ...xs.filter((x) => x.key !== q.key)].slice(0, 20);
+    AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {});
+    return next;
+  });
   const isFavorite = (key: string) => favorites.some((x) => x.key === key);
   const toggleFavorite = (q: QuickFood) => setFavorites((xs) => { const next = xs.some((x) => x.key === q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; AsyncStorage.setItem("hybrid.nutrition.favorites", JSON.stringify(next)).catch(() => {}); return next; });
   const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
@@ -506,7 +533,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // ── QUICK ADD — the athlete's OWN foods, ranked for a typed phrase.
   // Recents first (the food you logged yesterday is a better answer to two
   // words than one you saved in March), then products, then saved meals.
-  const quickAddCandidates: QuickAddCandidate[] = useMemo(() => [
+  //
+  // ALL FOUR SOURCES, IN RANK ORDER, DEDUPED. The four lists overlap by design
+  // — a product you starred and logged yesterday is legitimately in three of
+  // them — so the order here decides which provenance a ranked row keeps, and
+  // dedupeCandidates drops the repeats (see core/food-picker.ts).
+  const quickAddCandidates: QuickAddCandidate[] = useMemo(() => dedupeCandidates([
     ...recent.map((r) => ({
       id: r.key, name: r.name, subname: r.subname ?? null, servingLabel: r.serving,
       // A recent carries no serving weight, so a gram phrase against one is
@@ -516,6 +548,25 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       source: "recent" as const,
       verifiedId: r.verifiedId ?? null,
     })),
+    // A favourite is a per-device STAR over a food that lives somewhere else, so
+    // the star must not become the record: a favourite of a saved product is
+    // resolved back to the PRODUCT here, because the stored QuickFood carries no
+    // serving weight, no micros and no verified id, and dedupeCandidates would
+    // then let that thinner copy win (it ranks above `product`). What survives
+    // is the product's data with the favourite's rank.
+    ...favorites.map((q) => {
+      const prod = q.key.startsWith("p:") ? products.find((x) => x.id === q.key.slice(2)) : null;
+      const f = prod
+        ? { name: prod.name, subname: prod.subname ?? null, serving: prod.servingLabel, grams: prod.servingGrams ?? exactGrams(prod.servingLabel), kcal: prod.kcal, protein: prod.protein, carbs: prod.carbs, fat: prod.fat, satFat: prod.satFat ?? null, sugar: prod.sugar ?? null, fiber: prod.fiber ?? null, salt: prod.salt ?? null, verifiedId: prod.verifiedId ?? null }
+        : { name: q.name, subname: q.subname ?? null, serving: q.serving, grams: q.servingGrams ?? exactGrams(q.serving), kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat ?? null, sugar: q.sugar ?? null, fiber: q.fiber ?? null, salt: q.salt ?? null, verifiedId: q.verifiedId ?? null };
+      return {
+        id: `fav:${q.key}`, name: f.name, subname: f.subname, servingLabel: f.serving,
+        servingGrams: f.grams,
+        facts: { kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat, satFat: f.satFat, sugar: f.sugar, fiber: f.fiber, salt: f.salt },
+        source: "favorite" as const,
+        verifiedId: f.verifiedId,
+      };
+    }),
     ...products.map((p) => ({
       id: p.id, name: p.name, subname: p.subname ?? null, servingLabel: p.servingLabel,
       // Derived from the LABEL when the product never recorded a weight — the
@@ -532,7 +583,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       facts: { kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: m.satFat ?? null, sugar: m.sugar ?? null, fiber: m.fiber ?? null, salt: m.salt ?? null },
       source: "meal" as const,
     })),
-  ], [recent, products, meals, t]);
+  ]), [recent, favorites, products, meals, t]);
 
   // A quick-add commits straight to the diary — per single serving with a
   // separate quantity, the same shape every other logging path writes, so the
@@ -544,7 +595,23 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       satFat: draft.facts.satFat, sugar: draft.facts.sugar, fiber: draft.facts.fiber, salt: draft.facts.salt,
       qty: draft.qty, verifiedId: draft.verifiedId,
     });
-    if (ok) { loadLogs(); refetch(); revalidate.recovery(); }
+    if (!ok) return;
+    // ── INTO THE RECENTS MRU. This is the picker's PRIMARY commit path now, and
+    //    it was the one path that never wrote here — so nothing logged by typing
+    //    entered Recent, and nothing stamped the hour history the "at this hour"
+    //    ranking reads from (core/hour-recents.ts). A macro line has no food
+    //    behind it and no serving, so it stays out: the MRU's identity is a food
+    //    PLUS its serving, and an unnamed quick entry is neither.
+    if (draft.serving) {
+      pushRecent({
+        key: `${draft.name}|${draft.serving}`,
+        name: draft.name, subname: draft.subname, serving: draft.serving,
+        kcal: draft.facts.kcal, protein: draft.facts.protein, carbs: draft.facts.carbs, fat: draft.facts.fat,
+        satFat: draft.facts.satFat, sugar: draft.facts.sugar, fiber: draft.facts.fiber, salt: draft.facts.salt,
+        servingGrams: draft.servingGrams, verifiedId: draft.verifiedId,
+      });
+    }
+    loadLogs(); refetch(); revalidate.recovery();
   };
   // A phrase whose quantity could NOT be computed opens the portion editor
   // instead of logging a number nobody worked out.
@@ -763,24 +830,61 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     if (ok) { setFoodMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
   };
 
-  // ── Food search — Open Food Facts (free, no key) via searchFoods → the
-  //    /api/nutrition/search proxy. One box takes text OR a barcode; debounced; a
-  //    hit can be logged to today or saved to the library.
+  // ── THE ONE FIELD. `foodQuery` is now the picker's ONLY input: quick add and
+  //    the database search were two boxes asking the same question, ninety
+  //    pixels apart, in the same shape with the same left-hand glyph.
   const [foodQuery, setFoodQuery] = useState("");
   const [foodResults, setFoodResults] = useState<FoodHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [foodMsg, setFoodMsg] = useState("");
+
+  // ONE READ OF THE GRAMMAR, shared by the field, the list beneath it and the
+  // search below that, so the three cannot disagree about what was typed. Quick
+  // add is not a second box any more; it is what this field does FIRST.
+  const pickVocab = useMemo(() => quickAddVocab(t), [t]);
+  const answer = useMemo(
+    () => pickerAnswer(foodQuery, quickAddCandidates, { vocab: pickVocab }),
+    [foodQuery, quickAddCandidates, pickVocab],
+  );
+
+  // ── THE HOUR — what this athlete actually eats around now (core/hour-recents).
+  //    Recomputed on the minute rather than on every render, so a picker left
+  //    open across 21:59 → 22:00 does not keep answering yesterday's question.
+  const [clockMinute, setClockMinute] = useState(() => Math.floor(Date.now() / 60000));
   useEffect(() => {
-    const q = foodQuery.trim();
-    if (q.length < 2) { setFoodResults([]); setSearching(false); return; }
+    // Only while the picker is open: this screen is seventeen views, and a
+    // timer that re-rendered all of them for a label one of them shows would
+    // be paying for the clock everywhere it is not on screen.
+    if (view !== "add") return;
+    // Read it on ENTRY too: the picker opened at 21:12 from a screen mounted at
+    // 08:00 would otherwise greet the athlete with breakfast for half a minute.
+    setClockMinute(Math.floor(Date.now() / 60000));
+    const id = setInterval(() => setClockMinute(Math.floor(Date.now() / 60000)), 30000);
+    return () => clearInterval(id);
+  }, [view]);
+  const usuals = useMemo(() => usualAtHour(recent, clockMinute * 60000), [recent, clockMinute]);
+  const usualDays = useMemo(() => new Map(usuals.map((u) => [u.item.key, u.days])), [usuals]);
+  const clockLabel = useMemo(() => {
+    const d = new Date(clockMinute * 60000);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }, [clockMinute]);
+
+  // ── Food search — Open Food Facts (free, no key) via searchFoods → the
+  //    /api/nutrition/search proxy. Debounced, and driven by the PARSED query
+  //    rather than the raw text: "kefir 200g" asks the database about kefir, and
+  //    a macro line never reaches the network at all, because there is no food
+  //    in "40g protein" to look up (see core pickerRemoteQuery).
+  const remoteQuery = pickerRemoteQuery(answer);
+  useEffect(() => {
+    if (!remoteQuery) { setFoodResults([]); setSearching(false); return; }
     setSearching(true);
     const id = setTimeout(async () => {
-      const foods = await searchFoods(q);
+      const foods = await searchFoods(remoteQuery);
       setFoodResults(foods);
       setSearching(false);
     }, 350);
     return () => clearTimeout(id);
-  }, [foodQuery]);
+  }, [remoteQuery]);
 
   // ── BARCODE SCAN — the camera half of a flow that already worked.
   // A scanned code is handed to the SAME barcode lookup a typed one uses, so
@@ -909,11 +1013,21 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const [y, m, d] = diaryDay.split("-").map(Number);
     return new Date(y!, m! - 1, d!).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   }, [diaryDay]);
+  // HOME-HERO DAY SCOPE — the hero ring shares the Diary's viewed day
+  // (diaryDay), so its ‹ › stepper reviews any past day's ring + macros in
+  // place (web parity). Today reads todayNutrition; a past day reads the same
+  // dailyNutrition row the Diary's summary shows.
+  const heroIsToday = diaryDay === localTodayKey();
+  const heroDay = heroIsToday ? today : daySummary;
   // The engine's own figures, WITHOUT the training bump — resolveTargets is the
   // single place that decides whether the bump applies, so the adaptive and the
   // manual path cannot add it two different ways.
   const adaptiveBase = useMemo(() => adaptiveTargets(sig, { goal, trainingKcal: 0 }), [signals, goal]);
   const targets = useMemo(() => resolveTargets(adaptiveBase, targetOverride, trainingKcal), [adaptiveBase, targetOverride, trainingKcal]);
+  // ── THE GAP — what the day still owes. Against TODAY's totals, never the
+  //    diary's scrubbed day: the picker writes to today, so a header reading
+  //    yesterday's remainder would be answering a question nobody asked.
+  const pickerGap = useMemo(() => nutritionGap(today, targets), [today, targets]);
   const mismatch = useMemo(() => targetMismatch(targets), [targets]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
@@ -1301,11 +1415,67 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
   // ============ ADD TO MEAL — the food picker ============
   if (view === "add") {
+    // RECENT, SPLIT BY THE CLOCK: the usuals for this hour are drawn under
+    // their own head, and everything else follows under its own. The hour is a
+    // RANKING of Recent, not a fifth source beside it.
+    const usualKeys = new Set(usuals.map((u) => u.item.key));
+    const restOfRecent = recent.filter((r) => !usualKeys.has(r.key));
     const foods: QuickFood[] =
       foodTab === "recent" ? recent
       : foodTab === "favorites" ? favorites
-      : products.map((p) => ({ key: `p:${p.id}`, name: p.name, subname: p.subname, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat }));
-    const q = foodQuery.trim();
+      : products.map((p) => ({ key: `p:${p.id}`, name: p.name, subname: p.subname, serving: p.servingLabel, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat,
+          // Carried so STARRING one keeps the whole food — a favourite is stored
+          // as this shape, and a stripped copy loses the serving weight (and so
+          // the gram conversion), the micros and the verified provenance.
+          satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, verifiedId: p.verifiedId }));
+    const sourceCounts: Record<PickerSourceKey, number> = {
+      recent: recent.length, favorites: favorites.length, meals: meals.length, personal: products.length,
+    };
+    // ONE row renderer, used by both groups of the hour split below.
+    const recentRow = (food: QuickFood) => {
+              const prodId = food.key.startsWith("p:") ? food.key.slice(2) : null;
+      const days = usualDays.get(food.key);
+      const isRecent = foodTab === "recent";
+      return (
+        <FoodRow
+          key={food.key} C={C}
+          name={food.name}
+          subname={food.subname}
+          // A row that jumped the queue says WHY: the count is the
+          // evidence, not an ornament.
+          meta={`${Math.round(food.kcal)} kcal  –  ${food.serving || t("w.recovery.nutrition.serving")}${isRecent && days ? `  –  ${t("w.recovery.nutrition.pick.atThisHour").replace("{n}", String(days))}` : ""}`}
+          // The one thing the row cannot be read off the screen: whether THIS
+          // food takes the day past its target. A statement, never a block — an
+          // athlete who wants the extra 400 kcal is not asking permission.
+          over={wouldOvershoot(pickerGap, food.kcal)}
+          // ONE TAP on a recent. An MRU entry is a food PLUS its
+          // serving, so re-logging it needs no question answering —
+          // the portion editor is still one tap away on the row body,
+          // for the evening the amount is different.
+          onAdd={() => { const p = prodId ? products.find((x) => x.id === prodId) : null; if (p) logProduct(p); else if (isRecent) relogRecent(food); else logQuickFood(food); }}
+          onOpen={isRecent && !prodId ? () => logQuickFood(food) : undefined}
+          starred={isFavorite(food.key)}
+          onStar={() => toggleFavorite(food)}
+          onDelete={prodId ? () => removeProduct(prodId) : undefined}
+        />
+      );
+    };
+
+    // The two doors at the end of the list. Both LEAVE — Quick Log opens a
+    // sheet, New food opens a screen — so both wear the exit rule's ring.
+    const doors = (
+      <>
+        <PickerDoor C={C} title={t("w.recovery.nutrition.quickLog")} icon={<IBolt size={16} color={C.ash} />} onPress={() => setQuickLog(true)} />
+        <PickerDoor
+          C={C} last
+          title={answer.kind === "matches" && answer.matches.length === 0 && answer.query
+            ? t("w.recovery.nutrition.pick.newNamed").replace("{v}", answer.query)
+            : t("w.recovery.nutrition.pick.newFood")}
+          icon={<IPlus size={17} color={C.ash} strokeWidth={2.2} />}
+          onPress={() => openCreate("product", answer.kind === "matches" ? answer.query : "")}
+        />
+      </>
+    );
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(
@@ -1313,6 +1483,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
           </Pressable>,
           () => setView("home"),
+          // BACK, not a second dismiss chevron: the head used to draw a ⌄ on the
+          // left and the meal switcher a ⌄ beside the title — one glyph, two
+          // jobs, on the same row.
+          { icon: "back" },
         )}
 
         <Sheet visible={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
@@ -1335,102 +1509,118 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
         <BarcodeScanSheet visible={scanSheet} onClose={() => setScanSheet(false)} onCode={onScanned} />
 
-        {/* QUICK ADD — above the database search, because it answers from foods
-            already saved and answers instantly. The search below it is the
-            fallback for a food this athlete has never logged. */}
-        <View style={{ marginBottom: 16 }}>
-          <QuickAdd
-            candidates={quickAddCandidates}
-            onLog={logQuickAdd}
-            onPortion={portionForQuickAdd}
-            entryName={t("w.recovery.nutrition.quickEntry")}
-          />
-        </View>
+        {/* THE GAP first — the screen's subject. It renders only when there is
+            a target to be short of. */}
+        {pickerGap ? <DayGap C={C} gap={pickerGap} /> : null}
 
-        {/* Search — text or barcode */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 16 }}>
-          <AuroraIcon name="search" size={18} color={C.ash} />
-          <TextInput value={foodQuery} onChangeText={setFoodQuery} placeholder={t("w.recovery.nutrition.searchPh")} placeholderTextColor={C.ash} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.subtitle, color: C.chalk, padding: 0 }} />
-          {q ? (
-            <Pressable onPress={() => setFoodQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")}><IClose size={18} color={C.ash} /></Pressable>
-          ) : (
-            <Pressable onPress={() => { setFoodMsg(""); setScanSheet(true); }} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scan.title")} hitSlop={8}>
-              <IBarcode size={20} color={C.ash} />
-            </Pressable>
-          )}
-        </View>
+        {/* THE ONE FIELD. Quick add and the database search were two boxes
+            asking the same question; this is that question, asked once. */}
+        <PickerField
+          value={foodQuery}
+          onChange={setFoodQuery}
+          onSubmit={() => {
+            // Enter commits the FIRST interpretation — the one on screen.
+            const s = pickerSubmit(answer);
+            if (s.kind === "macros") { logQuickAdd(macroDraft(s.macros, t("w.recovery.nutrition.quickEntry"))); setFoodQuery(""); }
+            else if (s.kind === "log") { logQuickAdd(quickAddDraft(s.match)); setFoodQuery(""); }
+            else if (s.kind === "portion") portionForQuickAdd(s.match);
+          }}
+          onScan={() => { setFoodMsg(""); setScanSheet(true); }}
+        />
 
-        {/* Quick Log + Create Food */}
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
-          <Pressable onPress={() => setQuickLog(true)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16 }}><IBolt size={18} color={C.chalk} /><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.quickLog")}</Text></Pressable>
-          <Pressable onPress={() => openCreate("product")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16 }}><IPlusBox size={18} color={C.chalk} /><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.createFood")}</Text></Pressable>
-        </View>
-
-        {/* Tabs */}
-        <View style={{ flexDirection: "row", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 4, gap: 4, marginTop: 16 }}>
-          {(["recent", "favorites", "meals", "personal"] as const).map((tab) => (
-            <Pressable key={tab} onPress={() => setFoodTab(tab)} style={{ flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: "center", backgroundColor: foodTab === tab ? C.lime : "transparent" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: foodTab === tab ? C.onAccent : C.ash }}>{t(`w.recovery.nutrition.tab.${tab}`)}</Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {q.length >= 2 ? (
-          <View style={{ marginTop: 8 }}>
-            {searching ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16 }}>{t("w.recovery.nutrition.searching")}</Text>
-            ) : foodResults.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
-            ) : foodResults.map((food, i) => (
-              <FoodRow
-                key={`${food.id || food.code}-${i}`} C={C}
-                name={food.name}
-                subname={food.brand}
-                meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`}
-                onAdd={() => logFood(food)}
-                onOpen={food.verified && food.id ? () => openFoodPage(food.id!, "add") : undefined}
-                verified={food.verified}
-                chevron
-              />
-            ))}
+        {/* A one-tap add is invisible unless the screen says so. Same confirmation
+            line the hub and the diary already use; a FAILED write is already
+            surfaced by logEntry's notify(), so this slot only carries success. */}
+        {mealMsg ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
+            <AuroraIcon name="check" size={13} color={txt(C, C.lime)} />
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{mealMsg}</Text>
           </View>
-        ) : foodTab === "meals" ? (
-          /* Full saved MEALS — log one to the current part of the day, or swipe
-             to delete. The counterpart to the Products (personal) tab. */
-          <View style={{ marginTop: 8 }}>
-            {meals.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
-            ) : meals.map((m) => (
-              <FoodRow
-                key={m.id} C={C}
-                name={m.name}
-                subname={m.subname}
-                meta={`${Math.round(m.kcal)} kcal  –  ${Math.round(m.protein)}P ${Math.round(m.carbs)}C ${Math.round(m.fat)}F`}
-                onAdd={() => logMeal(m)}
-                onDelete={() => removeMeal(m.id)}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={{ marginTop: 8 }}>
-            {foods.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
-            ) : foods.map((food) => {
-              const prodId = food.key.startsWith("p:") ? food.key.slice(2) : null;
-              return (
+        ) : null}
+
+        {answer.kind === "resting" ? (
+          /* AT REST — all four sources, switchable, with the box gone. */
+          <>
+            <View style={{ marginTop: 16 }}>
+              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
+            </View>
+            {foodTab === "meals" ? (
+              meals.length === 0 ? (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
+              ) : meals.map((m) => (
                 <FoodRow
-                  key={food.key} C={C}
-                  name={food.name}
-                  subname={food.subname}
-                  meta={`${Math.round(food.kcal)} kcal  –  ${food.serving || t("w.recovery.nutrition.serving")}`}
-                  onAdd={() => { const p = prodId ? products.find((x) => x.id === prodId) : null; p ? logProduct(p) : logQuickFood(food); }}
-                  starred={isFavorite(food.key)}
-                  onStar={() => toggleFavorite(food)}
-                  onDelete={prodId ? () => removeProduct(prodId) : undefined}
+                  key={m.id} C={C}
+                  name={m.name}
+                  subname={m.subname}
+                  meta={`${Math.round(m.kcal)} kcal  –  ${Math.round(m.protein)}P ${Math.round(m.carbs)}C ${Math.round(m.fat)}F`}
+                  onAdd={() => logMeal(m)}
+                  onDelete={() => removeMeal(m.id)}
                 />
-              );
-            })}
-          </View>
+              ))
+            ) : foods.length === 0 ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
+            ) : foodTab === "recent" && usuals.length ? (
+              /* THE HOUR. The app knows the clock and the meal, so Recent
+                 opens on what this athlete actually eats around now — and
+                 the head covers ONLY those rows. The rest of the MRU follows
+                 under its own head, because a recent that happens to sit in
+                 this list is not a habit and must not be labelled as one.
+                 A cold start has no habit, so `usuals` is empty and the list
+                 stays exactly as it was — no empty state, nothing claimed. */
+              <>
+                <ASection flat title={t("w.recovery.nutrition.pick.usualHour")} meta={clockLabel} />
+                {usuals.map((u) => recentRow(u.item))}
+                {restOfRecent.length ? (
+                  <>
+                    <ASection flat title={t("w.recovery.nutrition.pick.everythingElse")} />
+                    {restOfRecent.map(recentRow)}
+                  </>
+                ) : null}
+              </>
+            ) : foods.map(recentRow)}
+            {doors}
+          </>
+        ) : (
+          /* TYPED — what the grammar understood, then the athlete's own foods
+             ranked across ALL FOUR sources at once (you never have to know
+             which list a food is in), then the world under a section head. */
+          <>
+            <ASection
+              flat
+              title={t("w.recovery.nutrition.pick.understood")}
+              meta={answer.kind === "macros" ? t("w.recovery.nutrition.pick.quickAdd") : t("w.recovery.nutrition.pick.allSources")}
+            />
+            <Understood
+              answer={answer}
+              entryName={t("w.recovery.nutrition.quickEntry")}
+              onLog={(d) => { logQuickAdd(d); setFoodQuery(""); }}
+              onPortion={portionForQuickAdd}
+            />
+            {answer.kind === "matches" && answer.matches.length === 0 ? <NoneOfYours query={answer.query} /> : null}
+
+            {remoteQuery ? (
+              <>
+                <ASection flat title={t("w.recovery.nutrition.pick.database")} meta={t("w.recovery.nutrition.pick.databaseMeta")} />
+                {searching ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6 }}>{t("w.recovery.nutrition.searching")}</Text>
+                ) : foodResults.length === 0 ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6, lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
+                ) : foodResults.map((food, i) => (
+                  <FoodRow
+                    key={`${food.id || food.code}-${i}`} C={C}
+                    name={food.name}
+                    subname={food.brand}
+                    meta={`${Math.round(food.kcal)} kcal  –  ${food.serving}`}
+                    onAdd={() => logFood(food)}
+                    onOpen={food.verified && food.id ? () => openFoodPage(food.id!, "add") : undefined}
+                    verified={food.verified}
+                    chevron
+                  />
+                ))}
+              </>
+            ) : null}
+            {doors}
+          </>
         )}
 
         {renderPortionSheet()}
@@ -2165,24 +2355,35 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       )}
 
           {/* CALORIE RING + MACROS — the hero, ONE card: ring on top, the three
-              macro hairlines beneath. The whole card presses into the Diary
-              (web parity). */}
+              macro hairlines beneath. It no longer presses into the Diary
+              (that door lives in the "Diary →" link + the bento) — instead it
+              carries the Diary's ‹ › day stepper, sharing the SAME viewed-day
+              scope, so any past day's ring is reviewed in place (web parity). */}
           <View style={{ marginTop: 16 }}>
-          <PressScale onPress={() => setView("diary")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.menuDiary")}>
-          <ACard solid style={{ paddingVertical: 24, alignItems: "center" }}>
+          <ACard solid style={{ paddingVertical: 20, alignItems: "center" }}>
             <View style={{ alignSelf: "stretch", alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
+              <View style={{ alignSelf: "stretch", flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <Pressable onPress={() => shiftDiaryDay(-1)} accessibilityLabel={t("w.recovery.nutrition.prevDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><View style={{ transform: [{ rotate: "180deg" }] }}><IChevRight size={16} color={C.chalk} /></View></Pressable>
+                <View style={{ alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.caloriesLeft")}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 2 }}>{heroIsToday ? t("w.recovery.nutrition.backToToday") : diaryDayLabel}</Text>
+                  {!heroIsToday ? <Pressable onPress={() => setDiaryDay(localTodayKey())}><CtaLabel label={`${t("w.recovery.nutrition.backToToday")} →`} color={txt(C, C.lime)} fontSize={fs.nano} font={F.mono} style={{ textTransform: "uppercase", letterSpacing: 0.9, marginTop: 2 }} /></Pressable> : null}
+                </View>
+                <Pressable onPress={() => shiftDiaryDay(1)} disabled={heroIsToday} accessibilityLabel={t("w.recovery.nutrition.nextDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><IChevRight size={16} color={heroIsToday ? C.line : C.chalk} /></Pressable>
+              </View>
               <View style={{ marginTop: 16 }}>
                 {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
-                <Ring value={targets.kcal > 0 ? (today.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
+                <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
                   <View style={{ alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: today.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - today.kcal)}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(today.kcal)} / {targets.kcal}</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - heroDay.kcal)}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(heroDay.kcal)} / {targets.kcal}</Text>
                   </View>
                 </Ring>
               </View>
               {maint.kcal != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 16, textAlign: "center" }}>{t("w.recovery.nutrition.maintenance")} {maint.kcal} kcal{maint.weightChangeKg != null ? ` — ${t("w.recovery.nutrition.weightTrendLc")} ${maint.weightChangeKg > 0 ? "+" : ""}${maint.weightChangeKg.toFixed(1)}kg/28d` : ""}</Text> : null}
-              {trainingKcal > 0 ? (
+              {/* Today's training bump only belongs to today's target — a past
+                  day's ring must not wear today's fuel badge. */}
+              {trainingKcal > 0 && heroIsToday ? (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: `${C.lime}47`, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 }}>
                   <Glyph name="spark" size={13} color={txt(C, C.lime)} strokeWidth={5} />
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>+{trainingKcal} {t("w.recovery.nutrition.trainingFuel")}</Text>
@@ -2191,7 +2392,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </View>
             {/* Macros — hairline lines beneath the hero, same card. */}
             <View style={{ alignSelf: "stretch", marginTop: 24 }}>
-              {([["w.recovery.nutrition.protein", today.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", today.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", today.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
+              {([["w.recovery.nutrition.protein", heroDay.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", heroDay.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", heroDay.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
                 <View key={label} style={{ marginTop: i ? 18 : 0 }}>
                   <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: colT }}>{t(label)}</Text>
@@ -2202,7 +2403,6 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               ))}
             </View>
           </ACard>
-          </PressScale>
           </View>
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
@@ -2502,7 +2702,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         msg={foodMsg}
         premium={{ fill: pa.fill, text: pa.text }}
         searchHint={<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8, letterSpacing: 0.9 }}>{t("w.recovery.nutrition.foodSearchHint")}</Text>}
-        dbSlot={
+        // Gated on the SAME condition as the fetch below the picker: the
+        // search only fires for a query that names a food, so a block that
+        // rendered on the raw text would sit on a permanent "no results".
+        dbSlot={remoteQuery ? (
           <View style={{ marginTop: 26 }}>
             <GroupMark label={t("w.recovery.nutrition.pn.fromDatabase")} mt={0} />
             {searching ? (
@@ -2529,7 +2732,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               </View>
             ))}
           </View>
-        }
+        ) : null}
       />
       {pendingDelete ? (
         <UndoBar label={t("w.recovery.nutrition.pn.deleted").replace("{v}", pendingDelete.name)} onUndo={undoDeleteProduct} />

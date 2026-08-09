@@ -5,10 +5,10 @@ import { Loading, F, fs, leading, serifIf, tracking, useScreenBottomPad, useHubD
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import type { FeedItemView, LiveAthlete, Relation } from "@hybrid/core";
+import type { FeedItemView, LiveAthlete, OwnProfile, Relation } from "@hybrid/core";
 import { colors, feedPostPath, seedPerson, userPagePath } from "@hybrid/core";
-import { getFeed, toggleKudos, createPost, deletePost } from "../lib/social-api";
-import { Empty, SButton } from "./social-kit";
+import { getFeed, getMyProfile, toggleKudos, createPost, deletePost } from "../lib/social-api";
+import { Avatar, Empty, SButton } from "./social-kit";
 import { GUTTER, RADIUS } from "./aurora/kit";
 import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
@@ -44,6 +44,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
+  // My own face beside the composer — the one identity the feed response
+  // doesn't carry, so the screen fetches it once itself.
+  const [me, setMe] = useState<OwnProfile | null>(null);
+  useEffect(() => { getMyProfile().then((r) => setMe(r.profile ?? null)).catch(() => {}); }, []);
 
   const load = useCallback(
     () =>
@@ -173,17 +177,48 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
       <FeedLiveStrip live={live} onOpen={(h) => { if (h) router.push(userPagePath(h)); }} />
 
-      {/* COMPOSER — ALWAYS OPEN, the X idiom (twin of web social-feed.tsx):
-          the input sits at the head of the stream with no card chrome — the
-          stream's own hairlines bound it — and Share stays dead until there's
-          something to share. The collapsed one-line pill it replaces was a
-          door in front of an empty page. */}
-      <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -GUTTER }} />
-      <View style={{ paddingTop: 2, paddingBottom: 10 }}>
-        <TextInput value={text} onChangeText={setText} multiline maxLength={500} placeholder={t("w.social.sharePlaceholder")} placeholderTextColor={C.ash} style={{ minHeight: 48, color: C.chalk, fontSize: fs.note, fontFamily: F.reg }} />
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 10 }}>
-          <Pressable onPress={() => setAttachPr((v) => !v)}><Text style={{ color: attachPr ? txt(C, colors.lime) : C.ash, fontSize: fs.body, fontFamily: F.bold }}>{attachPr ? "☑" : "☐"} {t("w.social.attachPr")}</Text></Pressable>
-          <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+      {/* COMPOSER — the X compose box's grammar, not a card: my avatar beside
+          a bare auto-growing field, then one accent glyph row with the Share
+          pill on its right, the whole block running edge to edge between two
+          hairlines. No fill, no border, no radius, no open/close state — the
+          box is always one tap from typing, and the pill sits dimmed until
+          there is something to post. It bleeds under the screen gutter exactly
+          like the timeline rows below it, so its hairline and the stream's run
+          the same edge-to-edge width. Twin of web's Composer
+          (apps/web/components/social-feed.tsx). */}
+      <View style={{ marginHorizontal: -GUTTER, paddingHorizontal: GUTTER, paddingTop: 10, paddingBottom: 8, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+          <Avatar url={me?.avatarUrl} name={me?.displayName} handle={me?.handle} size={40} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            {/* Bare and one line tall until the text needs more — the X idiom:
+                the placeholder IS the invitation, at heading size. */}
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              multiline
+              maxLength={500}
+              placeholder={t("w.social.sharePlaceholder")}
+              placeholderTextColor={C.ash}
+              style={{ color: C.chalk, fontSize: fs.heading, lineHeight: leading(fs.heading), fontFamily: F.reg, paddingTop: 7, paddingBottom: 2, paddingHorizontal: 0, textAlignVertical: "top" }}
+            />
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
+              {/* The one attachment this product has — the latest PR — as an
+                  accent glyph in X's toolbar position. It fills when attached. */}
+              <Pressable
+                onPress={() => setAttachPr((v) => !v)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityState={{ selected: attachPr }}
+                accessibilityLabel={t("w.social.attachPr")}
+              >
+                <Svg width={19} height={19} viewBox="0 0 18 18" fill={attachPr ? txt(C, colors.lime) : "none"}>
+                  <Circle cx={9} cy={6.8} r={4.1} stroke={txt(C, colors.lime)} strokeWidth={1.5} />
+                  <Path d="M6.6 10.3 5.2 15.2l3.8-1.9 3.8 1.9-1.4-4.9" fill="none" stroke={txt(C, colors.lime)} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </Pressable>
+              <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+            </View>
+          </View>
         </View>
       </View>
 

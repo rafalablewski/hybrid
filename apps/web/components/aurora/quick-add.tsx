@@ -1,182 +1,176 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import {
   macroDraft,
-  parseQuickAdd,
   quickAddDraft,
-  quickAddVocab,
-  resolveQuickAdd,
-  type QuickAddCandidate,
+  PROVENANCE_KEY,
+  type PickerAnswer,
   type QuickAddDraft,
   type QuickAddMatch,
 } from "@hybrid/core";
 import { fs } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { IBarcode, IClose } from "./nutrition-kit";
 
 const C = (v: string) => `var(--color-${v})`;
 
 /**
- * QUICK ADD (web) — the twin of apps/mobile/components/aurora/quick-add.tsx.
+ * THE PICKER FIELD (web) — the twin of apps/mobile/components/aurora/quick-add.tsx.
  *
- * One field, parsed live by @hybrid/core. It sits at the top of the food picker
- * rather than behind a new screen, because a control whose whole promise is
- * speed cannot be reached through navigation.
+ * This used to be quick add sitting ABOVE a database search: two inputs, ninety
+ * pixels apart, in the same shape with the same left-hand glyph. It is now the
+ * screen's ONE field, and quick add is what it does FIRST — the grammar still
+ * runs over every keystroke (see core/food-picker.ts), so "40g protein" is still
+ * a macro line and "chicken 200g" still resolves to two servings of this
+ * athlete's chicken. What was lost is only the duplicate box, and the mono
+ * caption underneath that explained how to use it: a field that needs a manual
+ * is a field that is not finished, so the question moved into the placeholder.
  *
- * ── IT SHOWS ITS WORKING ──────────────────────────────────────────────────
- * A parser that acts on an interpretation the user never saw is a guessing
- * machine. So the field renders WHAT IT UNDERSTOOD as a row you tap — the food
- * it matched, the quantity it computed, the macros it read — and does nothing
- * until you tap it. "chicken 200g" resolving to the wrong chicken is then a
- * visible mistake, not a wrong entry discovered three days later in the diary.
+ * IT STILL SHOWS ITS WORKING. The interpretation is a ROW YOU TAP, never an
+ * action already taken, so a phrase that resolved to the wrong chicken is a
+ * visible mistake rather than a wrong entry found three days later in the diary.
+ * And a gram phrase against a food with no serving weight on record opens the
+ * portion editor instead of logging one serving of an unknown weight.
  *
- * ── AN UNCONVERTIBLE QUANTITY OPENS THE PORTION EDITOR ────────────────────
- * Grams only become servings when the food's serving weight is on record. When
- * it is not, the engine flags `needsPortion` and the row says so and routes to
- * the editor rather than logging 1 serving of an unknown weight.
- *
- * It searches the athlete's OWN foods only — never the network. A quick add
- * that waited on a request would not be quick, and "chicken" should resolve to
- * the chicken this athlete eats, not to a stranger's guess.
+ * The parent owns the text (it also drives the database search off it) and the
+ * ANSWER — one read of the grammar, shared, so the field and the screen below it
+ * can never disagree about what was typed.
  */
-export default function QuickAdd({
-  candidates,
-  onLog,
-  onPortion,
-  entryName,
-}: {
-  /** the athlete's own foods: recents, products, saved meals */
-  candidates: QuickAddCandidate[];
-  /** commit a draft to the diary */
-  onLog: (draft: QuickAddDraft) => void;
-  /** open the portion editor for a match whose quantity could not be computed */
-  onPortion: (match: QuickAddMatch) => void;
-  /** localized name for a macro-only entry ("Quick entry") */
-  entryName: string;
+
+/** The field. The screen's one container; everything else is type on the ground. */
+export function PickerField({ value, onChange, onSubmit, onScan }: {
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: () => void;
+  /** Point-and-scan, where the client has a camera for it. The browser does
+   *  not (see the nutrition-barcode-camera capability, which is mobile-only and
+   *  still waiting on a device check), so on web the glyph stays a HINT: a
+   *  typed barcode is a perfectly good query, and the field takes one. */
+  onScan?: () => void;
 }) {
   const { t } = useLang();
-  const [text, setText] = useState("");
-
-  // The vocabulary is the athlete's language, not English — see quick-add.ts.
-  const vocab = useMemo(() => quickAddVocab(t), [t]);
-  const parsed = useMemo(() => parseQuickAdd(text, vocab), [text, vocab]);
-  const matches = useMemo(() => resolveQuickAdd(parsed, candidates), [parsed, candidates]);
-
-  const typed = text.trim().length > 0;
-  const mono = (extra: React.CSSProperties = {}): React.CSSProperties => ({
-    fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".08em",
-    textTransform: "uppercase", color: C("ash"), ...extra,
-  });
-
-  const commit = (draft: QuickAddDraft) => { onLog(draft); setText(""); };
-
-  // The macro line, spelled back in the athlete's own terms.
-  const macroPhrase = parsed.kind === "macros"
-    ? [
-        parsed.facts.kcal != null ? `${parsed.facts.kcal} kcal` : null,
-        parsed.facts.protein != null ? `${parsed.facts.protein} g ${t("w.recovery.nutrition.protein")}` : null,
-        parsed.facts.carbs != null ? `${parsed.facts.carbs} g ${t("w.recovery.nutrition.carbs")}` : null,
-        parsed.facts.fat != null ? `${parsed.facts.fat} g ${t("w.recovery.nutrition.fat")}` : null,
-      ].filter(Boolean).join(", ")
-    : "";
+  const typed = value.trim().length > 0;
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, background: C("ink"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "12px 16px" }}>
-        <AuroraIcon name="bolt" size={17} color={C("ash")} />
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            // Enter commits the FIRST interpretation, which is the one on
-            // screen — never a second-best the reader cannot see.
-            if (e.key !== "Enter") return;
-            if (parsed.kind === "macros") commit(macroDraft(parsed, entryName));
-            else if (matches[0] && !matches[0].needsPortion) commit(quickAddDraft(matches[0]));
-            else if (matches[0]) onPortion(matches[0]);
-          }}
-          placeholder={t("w.recovery.nutrition.qa.placeholder")}
-          aria-label={t("w.recovery.nutrition.qa.hint")}
-          style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}
-        />
-        {typed && (
-          <button className="pressable" onClick={() => setText("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", fontSize: 17, lineHeight: 1 }}>×</button>
-        )}
-      </div>
-
-      {!typed && (
-        <div style={{ ...mono({ textTransform: "none", letterSpacing: 0 }), marginTop: 8, lineHeight: 1.5 }}>
-          {t("w.recovery.nutrition.qa.hint")}
-        </div>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "13px 16px" }}>
+      <AuroraIcon name="search" size={18} color={C("ash")} />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") onSubmit(); }}
+        placeholder={t("w.recovery.nutrition.pick.placeholder")}
+        aria-label={t("w.recovery.nutrition.pick.placeholder")}
+        style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.bodyLg }}
+      />
+      {typed ? (
+        <button className="pressable" onClick={() => onChange("")} aria-label={t("w.recovery.nutrition.clear")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+          <IClose size={18} color={C("ash")} />
+        </button>
+      ) : onScan ? (
+        // Scanning is the same question asked with a camera, so it stays the
+        // field's trailing glyph rather than becoming a control of its own.
+        <button className="pressable" onClick={onScan} aria-label={t("w.recovery.nutrition.scan.title")} style={{ background: "none", border: "none", color: C("ash"), cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}>
+          <IBarcode size={20} color={C("ash")} />
+        </button>
+      ) : (
+        <IBarcode size={20} color={C("ash")} />
       )}
+    </div>
+  );
+}
 
-      {/* WHAT IT UNDERSTOOD — a row you tap, never an action already taken. */}
-      {typed && parsed.kind === "macros" && (
+/** WHAT IT UNDERSTOOD — the macro line, or the athlete's own foods ranked across
+ *  all four sources. Each row says where it came from, because one list mixing
+ *  four sources without saying so is worse than four lists, not better. */
+export function Understood({ answer, entryName, onLog, onPortion }: {
+  answer: PickerAnswer;
+  entryName: string;
+  onLog: (draft: QuickAddDraft) => void;
+  onPortion: (match: QuickAddMatch) => void;
+}) {
+  const { t } = useLang();
+  const rowStyle: React.CSSProperties = {
+    width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+    background: "none", border: "none", borderBottom: `1px solid ${C("line")}`,
+    padding: "12px 6px", cursor: "pointer", color: C("chalk"),
+  };
+  const tagStyle: React.CSSProperties = {
+    flexShrink: 0, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: fs.nano,
+    letterSpacing: ".1em", textTransform: "uppercase", color: C("ash"),
+  };
+
+  if (answer.kind === "macros") {
+    const f = answer.macros.facts;
+    const phrase = [
+      f.kcal != null && !answer.macros.derivedKcal ? `${f.kcal} kcal` : null,
+      f.protein != null ? `${f.protein} g ${t("w.recovery.nutrition.protein")}` : null,
+      f.carbs != null ? `${f.carbs} g ${t("w.recovery.nutrition.carbs")}` : null,
+      f.fat != null ? `${f.fat} g ${t("w.recovery.nutrition.fat")}` : null,
+    ].filter(Boolean).join(", ") || `${f.kcal ?? 0} kcal`;
+    return (
+      <button className="pressable" onClick={() => onLog(macroDraft(answer.macros, entryName))} style={rowStyle}>
+        <span style={{ width: 44, height: 44, borderRadius: 999, border: "1.6px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <AuroraIcon name="add" size={18} color="var(--lime-text)" />
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle }}>
+            {t("w.recovery.nutrition.qa.logMacros").replace("{v}", phrase)}
+          </span>
+          <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>
+            {answer.macros.derivedKcal ? `${f.kcal} kcal – ${t("w.recovery.nutrition.qa.derived")}` : `${f.kcal} kcal`}
+          </span>
+        </span>
+      </button>
+    );
+  }
+
+  if (answer.kind !== "matches" || answer.matches.length === 0) return null;
+
+  return (
+    <>
+      {answer.matches.map((m) => (
         <button
+          key={m.candidate.id}
           className="pressable"
-          onClick={() => commit(macroDraft(parsed, entryName))}
-          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "14px 2px 4px", marginTop: 10, cursor: "pointer", color: C("chalk") }}
+          onClick={() => (m.needsPortion ? onPortion(m) : onLog(quickAddDraft(m)))}
+          style={rowStyle}
         >
-          <span style={{ width: 34, height: 34, borderRadius: 999, border: "1.6px solid var(--color-lime)", color: "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-            <AuroraIcon name="add" size={15} color="var(--lime-text)" />
+          <span style={{ width: 44, height: 44, borderRadius: 999, border: `1.6px solid ${m.needsPortion ? C("line") : "var(--color-lime)"}`, color: m.needsPortion ? C("ash") : "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <AuroraIcon name={m.needsPortion ? "chevron-down" : "add"} size={18} color={m.needsPortion ? C("ash") : "var(--lime-text)"} />
           </span>
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body }}>
-              {t("w.recovery.nutrition.qa.logMacros").replace("{v}", macroPhrase)}
+            <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.subtitle, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {m.candidate.name}
             </span>
-            {parsed.derivedKcal && (
-              <span style={{ ...mono({ textTransform: "none", letterSpacing: 0 }), display: "block", marginTop: 2 }}>
-                {t("w.recovery.nutrition.qa.derived")}
+            {/* The QUANTITY it computed, stated — this is the number the reader
+                is being asked to approve. */}
+            {m.needsPortion ? (
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: "var(--amber-text)", marginTop: 3 }}>
+                {t("w.recovery.nutrition.qa.needsPortion")}
+              </span>
+            ) : (
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), marginTop: 3 }}>
+                {t("w.recovery.nutrition.qa.servings").replace("{n}", String(m.qty)).replace("{v}", m.candidate.servingLabel)}
+                {"  –  "}
+                {Math.round(m.candidate.facts.kcal * m.qty)} kcal
               </span>
             )}
           </span>
+          <span style={tagStyle}>{t(PROVENANCE_KEY[m.candidate.source])}</span>
         </button>
-      )}
+      ))}
+    </>
+  );
+}
 
-      {typed && parsed.kind === "food" && (
-        matches.length === 0 ? (
-          <div style={{ ...mono({ textTransform: "none", letterSpacing: 0, fontSize: fs.caption }), marginTop: 12, padding: "0 2px", lineHeight: 1.6 }}>
-            {t("w.recovery.nutrition.qa.noMatch")}
-          </div>
-        ) : (
-          <div style={{ marginTop: 10 }}>
-            {matches.map((m, i) => (
-              <button
-                key={m.candidate.id}
-                className="pressable"
-                onClick={() => (m.needsPortion ? onPortion(m) : commit(quickAddDraft(m)))}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, padding: "12px 2px", cursor: "pointer", color: C("chalk") }}
-              >
-                <span style={{ width: 34, height: 34, borderRadius: 999, border: `1.6px solid ${m.needsPortion ? C("line") : "var(--color-lime)"}`, color: m.needsPortion ? C("ash") : "var(--lime-text)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-                  <AuroraIcon name={m.needsPortion ? "chevron-down" : "add"} size={15} color={m.needsPortion ? C("ash") : "var(--lime-text)"} style={m.needsPortion ? { transform: "rotate(-90deg)" } : undefined} />
-                </span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontFamily: "var(--font-display)", fontWeight: i === 0 ? 700 : 600, fontSize: fs.body, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {m.candidate.name}
-                  </span>
-                  {/* The QUANTITY it computed, stated — this is the number the
-                      reader is being asked to approve. */}
-                  {m.needsPortion ? (
-                    <span style={{ ...mono({ textTransform: "none", letterSpacing: 0, color: "var(--amber-text)" }), display: "block", marginTop: 2 }}>
-                      {t("w.recovery.nutrition.qa.needsPortion")}
-                    </span>
-                  ) : (
-                    <span style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 2 }}>
-                      <span style={mono({ textTransform: "none", letterSpacing: 0 })}>
-                        {t("w.recovery.nutrition.qa.servings").replace("{n}", String(m.qty)).replace("{v}", m.candidate.servingLabel)}
-                      </span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
-                        {Math.round(m.candidate.facts.kcal * m.qty)} kcal
-                      </span>
-                    </span>
-                  )}
-                </span>
-              </button>
-            ))}
-          </div>
-        )
-      )}
+/** The line the screen shows when nothing of the athlete's own matched — said
+ *  once, above the database results, rather than as an error. */
+export function NoneOfYours({ query }: { query: string }) {
+  const { t } = useLang();
+  return (
+    <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), padding: "14px 6px", lineHeight: 1.6 }}>
+      {t("w.recovery.nutrition.pick.noneYours").replace("{v}", query)}
     </div>
   );
 }

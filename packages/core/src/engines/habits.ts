@@ -1,7 +1,7 @@
 /**
  * Habits & streaks — the consistency layer.
  *
- * Everyday adherence, not physiology: forgiving day-streaks, weekly consistency,
+ * Everyday adherence, not physiology: strict day-streaks, weekly consistency,
  * and a 0..100 habit-strength score (how automatic the routine has become). Pure
  * data + math; reads only logged-session dates so it works for any client.
  */
@@ -24,7 +24,7 @@ export function activeDays(sessions: LoggedSession[]): string[] {
 }
 
 export interface StreakInfo {
-  /** active days in the current run (0 once the streak has lapsed) */
+  /** consecutive active days in the current run (0 once the streak has broken) */
   current: number;
   /** best run ever */
   longest: number;
@@ -32,17 +32,19 @@ export interface StreakInfo {
   lastActive: string | null;
   /** whole days since the last active day (null if none) */
   daysSinceLast: number | null;
-  /** the streak is still saveable today */
+  /** the run can still be extended by training today */
   alive: boolean;
 }
 
 /**
- * Forgiving day-streak: two active days stay in the same run as long as no more
- * than `graceDays` rest days fall between them. The current run stays "alive"
- * while today is within `graceDays` of the last active day — so a planned rest
- * day never punishes the user.
+ * Strict day-streak: a run is CONSECUTIVE local calendar days with at least one
+ * session — any full day without training ends it. The only latitude is that
+ * "today" is never judged before it's over: a run whose last active day was
+ * yesterday still shows today (training today would extend it), and drops to 0
+ * only once today has passed without a session.
  */
-export function streak(sessions: LoggedSession[], graceDays = 1, now = Date.now()): StreakInfo {
+export function streak(sessions: LoggedSession[], opts: { now?: number } = {}): StreakInfo {
+  const now = opts.now ?? Date.now();
   const days = activeDays(sessions);
   if (days.length === 0) return { current: 0, longest: 0, lastActive: null, daysSinceLast: null, alive: false };
 
@@ -52,13 +54,12 @@ export function streak(sessions: LoggedSession[], graceDays = 1, now = Date.now(
   let longest = 1;
   let run = 1;
   for (let i = 1; i < nums.length; i++) {
-    if (nums[i]! - nums[i - 1]! <= graceDays + 1) run++;
-    else run = 1;
+    run = nums[i]! - nums[i - 1]! === 1 ? run + 1 : 1;
     if (run > longest) longest = run;
   }
   const lastNum = nums[nums.length - 1]!;
   const daysSinceLast = todayNum(now) - lastNum;
-  const alive = daysSinceLast <= graceDays;
+  const alive = daysSinceLast <= 1;
   return {
     current: alive ? run : 0,
     longest,

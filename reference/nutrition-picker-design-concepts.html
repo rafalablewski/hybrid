@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYBRID — Add to meal: six concepts</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=JetBrains+Mono:wght@400;700&family=Shippori+Mincho:wght@700&display=swap");
+
+  /* ───────────────────────────────────────────────────────────────────────
+     DOC PALETTE — the app's own two themes, verbatim.
+     light  = KYOTO HOUR  (packages/core/src/theme/palette.ts THEMES.light)
+     dark   = AURORA      (theme/tokens.ts + THEMES.dark)
+     The phone frames are ALWAYS Aurora dark — they are renders of the dark
+     app — so they carry their own scoped token set below.
+     ─────────────────────────────────────────────────────────────────────── */
+  :root {
+    --bg: #f6f3ea; --surface: #fcfaf3; --sunk: #f1ece0;
+    --line: #e6e1d2; --line-soft: #efe9db;
+    --fg: #2b2a26; --muted: #6f6b5e;
+    --accent: #44584c;        /* pine */
+    --accent-soft: #44584c1f;
+    --warn: #a3442f;          /* hanko vermilion — the fault marks */
+    --display: "Shippori Mincho", "Archivo", Georgia, serif;
+    --display-weight: 700;
+    --body: "Archivo", system-ui, -apple-system, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c0d0c; --surface: #141614; --sunk: #101210;
+      --line: #242724; --line-soft: #1c1e1c;
+      --fg: #f3f4ef; --muted: #8b8f86;
+      --accent: #c6f84f;
+      --accent-soft: #c6f84f1a;
+      --warn: #d56f3e;
+      --display: "Archivo", system-ui, sans-serif;
+      --display-weight: 800;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c0d0c; --surface: #141614; --sunk: #101210;
+    --line: #242724; --line-soft: #1c1e1c;
+    --fg: #f3f4ef; --muted: #8b8f86;
+    --accent: #c6f84f;
+    --accent-soft: #c6f84f1a;
+    --warn: #d56f3e;
+    --display: "Archivo", system-ui, sans-serif;
+    --display-weight: 800;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: var(--body); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding: clamp(32px, 6vw, 80px) clamp(16px, 4vw, 40px) 120px;
+  }
+  ::selection { background: var(--accent-soft); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  main { max-width: 1180px; margin: 0 auto; }
+  .kicker {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase; color: var(--muted);
+  }
+  .kicker b { color: var(--accent); font-weight: 700; }
+  code { font-family: var(--mono); font-size: .92em; }
+
+  /* ── masthead ─────────────────────────────────────────────────────────── */
+  .mast { max-width: 74ch; margin-bottom: clamp(48px, 8vw, 88px); }
+  .mast h1 {
+    font-family: var(--display); font-weight: var(--display-weight);
+    font-size: clamp(34px, 6.4vw, 62px); line-height: 1.04;
+    letter-spacing: -.022em; text-wrap: balance; margin: 14px 0 20px;
+  }
+  .lede { font-size: clamp(16px, 1.5vw, 18.5px); line-height: 1.62; color: var(--muted); max-width: 66ch; }
+  .lede + .lede { margin-top: 14px; }
+  .lede strong { color: var(--fg); font-weight: 600; }
+
+  /* ── the diagnosis ────────────────────────────────────────────────────── */
+  .band { border-top: 1px solid var(--line); padding-top: clamp(28px, 4vw, 44px); margin-top: clamp(48px, 7vw, 88px); }
+  .band > .kicker { margin-bottom: 10px; }
+  .band h2 {
+    font-family: var(--display); font-weight: var(--display-weight);
+    font-size: clamp(24px, 3.4vw, 34px); line-height: 1.14;
+    letter-spacing: -.018em; text-wrap: balance; margin-bottom: 12px;
+  }
+  .band .why { color: var(--muted); max-width: 62ch; font-size: 15.5px; line-height: 1.66; }
+  .band .why em { color: var(--fg); font-style: normal; font-weight: 600; }
+
+  .split { display: grid; gap: clamp(28px, 4vw, 56px); align-items: start; }
+  @media (min-width: 1000px) { .split { grid-template-columns: minmax(0, 1fr) 390px; } }
+  .split > * { min-width: 0; }
+  .stage { width: min(390px, 100%); justify-self: center; position: sticky; top: 32px; }
+  @media (max-width: 999px) { .stage { position: static; } }
+
+  .faults { display: flex; flex-direction: column; gap: 2px; margin-top: 28px; }
+  .fault { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 16px; padding: 15px 0; border-top: 1px solid var(--line); align-items: start; }
+  .fault:last-child { border-bottom: 1px solid var(--line); }
+  .fault .n { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--warn); padding-top: 4px; font-variant-numeric: tabular-nums; }
+  .fault h3 { font-size: 16.5px; font-weight: 600; letter-spacing: -.01em; margin-bottom: 3px; }
+  .fault p { font-size: 14.5px; line-height: 1.6; color: var(--muted); }
+  .fault code { font-family: var(--mono); font-size: 12.5px; color: var(--fg); background: var(--sunk); padding: 1px 5px; border-radius: 4px; }
+
+  /* ── concepts ─────────────────────────────────────────────────────────── */
+  .thesis {
+    font-family: var(--display); font-weight: var(--display-weight);
+    font-size: clamp(19px, 2vw, 22px); line-height: 1.34; letter-spacing: -.012em;
+    color: var(--fg); margin: 0 0 14px; max-width: 40ch; text-wrap: balance;
+  }
+  .why + .why { margin-top: 12px; }
+
+  .ledger { margin-top: 26px; display: flex; flex-direction: column; }
+  .ledger dt {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--muted); padding-top: 14px;
+  }
+  .ledger dd { font-size: 14.5px; line-height: 1.6; color: var(--fg); padding: 3px 0 13px; border-bottom: 1px solid var(--line); }
+  .ledger dd b { font-weight: 600; }
+  .ledger dd .off { color: var(--muted); }
+
+  .built { margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--line); }
+  .built .ledger { margin-top: 14px; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
+  .tag {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px;
+  }
+  .tag.go { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+
+  /* ── PHONE FRAME — always Aurora dark (it is a render of the dark app) ── */
+  .frame {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --fline: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86; --lime: #c6f84f; --on-accent: #101401;
+    --teal: #6cb6bd; --sand: #d0cd94; --terra: #d56f3e; --gold: #b58a24;
+    width: 100%; background: var(--ink); color: var(--chalk);
+    border: 1px solid #23261f; border-radius: 42px; overflow: hidden;
+    box-shadow: 0 30px 70px -40px rgba(0,0,0,.85), 0 2px 0 rgba(255,255,255,.03) inset;
+    font-family: var(--body); position: relative;
+  }
+  .frame button, .frame input { font-family: inherit; }
+  .f-screen { display: flex; flex-direction: column; min-height: 668px; }
+  .f-status {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 26px 8px; font-family: var(--mono); font-size: 13px; font-weight: 700;
+    color: var(--chalk); font-variant-numeric: tabular-nums;
+  }
+  .f-status .r { font-size: 10px; letter-spacing: .12em; color: var(--ash); font-weight: 400; }
+  .f-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 14px; }
+  .f-head .back { width: 40px; height: 40px; display: grid; place-items: center; color: var(--ash); flex: none; }
+  .f-head .ttl { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; font-weight: 800; font-size: 19px; letter-spacing: -.015em; }
+  .f-head .ttl .cv { color: var(--ash); font-size: 13px; }
+  .f-head .rt { width: 40px; height: 40px; display: grid; place-items: center; color: var(--ash); flex: none; }
+  .f-body { flex: 1; padding: 0 12px 14px; display: flex; flex-direction: column; min-height: 0; }
+  .f-foot { padding: 10px 12px 16px; }
+  .f-tabbar {
+    margin: 0 14px 12px; border: 1px solid var(--fline); border-radius: 999px;
+    background: rgba(20,22,20,.9); display: flex; justify-content: space-around;
+    padding: 8px 6px; flex: none;
+  }
+  .f-tabbar span { font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); }
+  .f-tabbar span.on { color: var(--lime); }
+
+  /* frame vocabulary */
+  .f-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .f-sechead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 22px 2px 8px; }
+  .f-sechead .t { font-weight: 800; font-size: 17px; letter-spacing: -.012em; color: var(--chalk); }
+  .f-sechead .m { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); }
+  .f-row {
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    padding: 12px 4px; border: none; border-bottom: 1px solid var(--fline);
+    background: none; color: var(--chalk); cursor: pointer; font-size: 15px;
+  }
+  .f-row:last-of-type { border-bottom: none; }
+  .f-row .nm { flex: 1; min-width: 0; }
+  .f-row .nm b { display: block; font-weight: 600; font-size: 15.5px; letter-spacing: -.008em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .f-row .nm i { display: block; font-style: normal; font-family: var(--mono); font-size: 11px; color: var(--ash); margin-top: 3px; letter-spacing: .01em; }
+  .f-ring {
+    width: 44px; height: 44px; border-radius: 999px; border: 1.6px solid var(--lime);
+    display: grid; place-items: center; color: var(--lime); flex: none; font-size: 19px; line-height: 1;
+  }
+  .f-ring.q { border-color: var(--fline); color: var(--ash); }
+  .f-ring.sm { width: 34px; height: 34px; font-size: 15px; }
+  .f-field {
+    display: flex; align-items: center; gap: 11px; background: var(--ink2);
+    border: 1px solid var(--fline); border-radius: 16px; padding: 0 15px;
+  }
+  .f-field input {
+    flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--chalk);
+    font-size: 15.5px; padding: 14px 0; font-family: var(--body);
+  }
+  .f-field input::placeholder { color: var(--ash); }
+  .f-glyph { color: var(--ash); flex: none; display: grid; place-items: center; }
+  .f-fig { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 700; color: var(--chalk); flex: none; }
+  .f-hint { font-family: var(--mono); font-size: 10.5px; color: var(--ash); line-height: 1.55; }
+
+  /* the "before" reproduction — faults outlined and counted */
+  .marked { position: relative; outline: 1px solid color-mix(in srgb, var(--terra) 62%, transparent); outline-offset: 2px; border-radius: 17px; }
+  .marked::after {
+    content: attr(data-n); position: absolute; top: -9px; right: 8px;
+    font-family: var(--mono); font-size: 9px; font-weight: 700; color: var(--terra);
+    background: var(--ink); padding: 0 5px; letter-spacing: .1em;
+  }
+  /* THE SOURCE LINE — the four sources kept; the pill bar's box and its lime
+     fill dropped. Weight and a rule carry the selection, so switching costs no
+     container and not a scrap of the accent. */
+  .f-src { display: flex; gap: 19px; border-bottom: 1px solid var(--fline); padding: 0 4px; margin-top: 16px; flex: none; }
+  .f-src button, .f-src span { background: none; border: none; padding: 0 0 11px; margin-bottom: -1px; color: var(--ash); font-size: 13.5px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; letter-spacing: -.006em; white-space: nowrap; }
+  .f-src .on { color: var(--chalk); font-weight: 700; border-bottom-color: var(--chalk); }
+  .f-src .ct { font-family: var(--mono); font-size: 9.5px; font-weight: 700; color: var(--ash); margin-left: 5px; }
+
+  .f-seg { display: flex; background: var(--ink2); border: 1px solid var(--fline); border-radius: 16px; padding: 4px; gap: 4px; }
+  .f-seg span { flex: 1; text-align: center; border-radius: 12px; padding: 9px 0; font-size: 12.5px; font-weight: 600; color: var(--ash); }
+  .f-seg span.on { background: var(--lime); color: var(--on-accent); font-weight: 700; }
+  .f-btn2 { display: flex; gap: 12px; }
+  .f-btn2 button {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--ink2); border: 1px solid var(--fline); border-radius: 16px;
+    padding: 16px 0; color: var(--chalk); font-size: 15px; font-weight: 600; font-family: var(--body); cursor: pointer;
+  }
+  .f-cardrow { background: #0a0b0a; display: flex; align-items: center; gap: 16px; padding: 14px 12px; margin: 0 -12px; }
+  .f-dead { flex: 1; min-height: 150px; }
+  .f-deadnote {
+    align-self: center; margin-top: auto; margin-bottom: auto;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--terra) 78%, transparent);
+  }
+
+  /* C1 — one field */
+  .f-answer { border-top: 1px solid var(--fline); margin-top: 4px; }
+  .f-tail { display: flex; align-items: center; gap: 12px; padding: 16px 4px 4px; color: var(--ash); }
+  .f-tail .plus { font-family: var(--mono); font-size: 17px; color: var(--ash); }
+  .f-tail b { font-weight: 600; font-size: 14.5px; color: var(--ash); }
+
+  /* C2 — what's left */
+  .f-gap { padding: 4px 4px 18px; }
+  .f-gap .big { display: flex; align-items: baseline; gap: 8px; }
+  .f-gap .big b { font-family: var(--mono); font-weight: 700; font-size: 46px; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .f-gap .big i { font-style: normal; font-family: var(--mono); font-size: 12px; color: var(--ash); letter-spacing: .1em; text-transform: uppercase; }
+  .f-gap .sub { font-family: var(--mono); font-size: 11px; color: var(--ash); margin-top: 8px; letter-spacing: .04em; }
+  .f-bars { display: flex; gap: 16px; margin-top: 18px; }
+  .f-bars div { flex: 1; }
+  .f-bars .t { display: flex; justify-content: space-between; gap: 6px; font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); margin-bottom: 6px; }
+  .f-bars .t b { color: var(--chalk); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .f-bars .track { height: 3px; background: var(--fline); border-radius: 2px; overflow: hidden; }
+  .f-bars .fill { height: 100%; background: var(--lime); border-radius: 2px; transition: width .5s cubic-bezier(.22,.8,.28,1); }
+  .f-delta { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--chalk); flex: none; font-variant-numeric: tabular-nums; }
+  .f-row.done { opacity: .42; }
+  .f-row.done .f-delta { color: var(--ash); }
+
+  /* C3 — the ledger */
+  .f-lrow { display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--fline); padding: 13px 4px; color: var(--chalk); cursor: pointer; }
+  .f-lrow .nm { flex: 1; min-width: 0; font-weight: 600; font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.008em; }
+  .f-lrow .por { font-family: var(--mono); font-size: 11px; color: var(--ash); flex: none; }
+  .f-lrow .kc { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--chalk); flex: none; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* C4 — the hour */
+  .f-hourhead { padding: 2px 4px 18px; }
+  .f-hourhead .ln1 { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+  .f-hourhead .ln2 { font-weight: 800; font-size: 27px; letter-spacing: -.02em; margin-top: 8px; line-height: 1.16; }
+  .f-usual { display: flex; align-items: center; gap: 16px; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--fline); padding: 17px 4px; color: var(--chalk); cursor: pointer; }
+  .f-usual .nm { flex: 1; min-width: 0; }
+  .f-usual .nm b { display: block; font-weight: 700; font-size: 18px; letter-spacing: -.014em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .f-usual .nm i { display: block; font-style: normal; font-family: var(--mono); font-size: 11px; color: var(--ash); margin-top: 4px; }
+  .f-usual .kc { font-family: var(--mono); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
+
+  /* C5 — the tray */
+  .f-tray { border-top: 1px solid var(--fline); background: rgba(16,18,16,.96); padding: 12px 12px 16px; margin: 0 -12px; }
+  .f-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; min-height: 32px; align-items: center; }
+  .f-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid color-mix(in srgb, var(--lime) 42%, var(--fline)); background: color-mix(in srgb, var(--lime) 9%, transparent); color: var(--chalk); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .f-chip .x { font-family: var(--mono); font-size: 12px; color: var(--ash); }
+  .f-chip .g { font-family: var(--mono); font-size: 11px; color: var(--lime); }
+  .f-trayempty { font-family: var(--mono); font-size: 10.5px; color: var(--ash); }
+  .f-commit { width: 100%; border: none; border-radius: 999px; background: var(--lime); color: var(--on-accent); font-weight: 700; font-size: 15.5px; font-family: var(--body); padding: 15px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .f-commit .n { font-family: var(--mono); font-size: 12.5px; opacity: .72; font-variant-numeric: tabular-nums; }
+  .f-commit:disabled { background: var(--ink2); color: var(--ash); border: 1px solid var(--fline); cursor: default; }
+
+  /* C6 — the shelf (full-bleed rails, the exercise-widget idiom) */
+  .f-rail { display: flex; gap: 10px; overflow-x: auto; margin: 0 -12px; padding: 2px 12px 6px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .f-rail::-webkit-scrollbar { display: none; }
+  .f-tile {
+    flex: none; width: 132px; scroll-snap-align: start; background: var(--card);
+    border: 1px solid var(--fline); border-radius: 20px; padding: 13px; text-align: left;
+    color: var(--chalk); cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-height: 104px;
+  }
+  .f-tile b { font-weight: 600; font-size: 14px; letter-spacing: -.01em; line-height: 1.25; }
+  .f-tile i { font-style: normal; font-family: var(--mono); font-size: 10.5px; color: var(--ash); }
+  .f-tile .kc { margin-top: auto; font-family: var(--mono); font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .f-railtail { flex: none; width: 84px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; background: none; border: none; color: var(--ash); cursor: pointer; }
+  .f-railtail .ring { width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--fline); display: grid; place-items: center; color: var(--ash); font-size: 16px; }
+  .f-railtail span { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; }
+
+  /* closing */
+  .spine { display: grid; gap: 14px; margin-top: 28px; }
+  @media (min-width: 720px) { .spine { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .spine .cell { border: 1px solid var(--line); border-radius: 18px; padding: 18px 18px 20px; background: var(--surface); }
+  .spine .cell .k { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  .spine .cell h3 { font-size: 17px; font-weight: 600; letter-spacing: -.012em; margin: 8px 0 6px; }
+  .spine .cell p { font-size: 14.5px; line-height: 1.6; color: var(--muted); }
+
+  .deadlist { margin-top: 24px; display: flex; flex-direction: column; }
+  .deadlist li { list-style: none; display: flex; gap: 14px; align-items: baseline; padding: 11px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+  .deadlist li:last-child { border-bottom: 1px solid var(--line); }
+  .deadlist .x { font-family: var(--mono); font-size: 12px; color: var(--warn); flex: none; }
+  .deadlist b { font-weight: 600; }
+  .deadlist span { color: var(--muted); }
+
+  footer { margin-top: clamp(56px, 8vw, 96px); border-top: 1px solid var(--line); padding-top: 24px; font-family: var(--mono); font-size: 11px; line-height: 1.9; color: var(--muted); letter-spacing: .04em; }
+  footer b { color: var(--fg); font-weight: 700; }
+
+
+  .ic { display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .ic.thin { stroke-width: 1.8; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute">
+    <defs>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.3 16.3 21 21"/></symbol>
+      <symbol id="i-barcode" viewBox="0 0 24 24"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16M6.5 12h11"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7.5"/></symbol>
+      <symbol id="i-chev-down" viewBox="0 0 24 24"><path d="M6 9.5 12 15.5 18 9.5"/></symbol>
+      <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="M9 5.5 15.5 12 9 18.5"/></symbol>
+      <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="M15 5.5 8.5 12 15 18.5"/></symbol>
+      <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+      <symbol id="i-plusbox" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8.5v7M8.5 12h7"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.2 14.6 8.5l5.9.9-4.3 4.1 1 5.8L12 17.8l-5.2 1.5 1-5.8L3.5 9.4l5.9-.9z"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7M20.5 3.5V9H15"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- ══════════════ MASTHEAD ══════════════ -->
+  <header class="mast">
+    <div class="kicker"><b>Hybrid</b> — Nutrition, add to meal</div>
+    <h1>Six containers, one question.</h1>
+    <p class="lede">
+      The Snacks picker asks one thing — <strong>what did you eat?</strong> — and answers it with six
+      containers of near-identical weight, two text fields that look alike, four tabs that hide
+      three-quarters of your own food, and a screen that runs out of content at 40 % and leaves the
+      rest black. Nothing on it is louder than anything else, so nothing on it is the subject.
+    </p>
+    <p class="lede">
+      Below: what the current screen is actually doing, then six concepts. Each takes <strong>one
+      organizing idea all the way</strong> rather than tidying the six boxes, and each is drawn in
+      the app's own vocabulary — Explore section heads, the rail-tail grammar, the sheet-pad rule,
+      chartreuse reserved for <em>go</em>. Every one is specified for both clients; web and mobile
+      ship together.
+    </p>
+    <p class="lede">
+      <strong>Nothing here removes a source or a way to log.</strong> Recent, Favorites, Meals and
+      Foods all stay, and so does quick add. What every concept drops is the <em>pill bar</em> — the
+      box drawn around those four, and the accent spent on which one is selected.
+    </p>
+  </header>
+
+  <!-- ══════════════ DIAGNOSIS ══════════════ -->
+  <section class="band">
+    <div class="split">
+      <div>
+        <div class="kicker">The screen today</div>
+        <h2>Everything is a box, so nothing is a subject.</h2>
+        <p class="why">
+          Reproduced at left, with each container outlined. The faults are not decoration errors —
+          they are hierarchy errors. Six peers cannot rank themselves, and the athlete has to
+          <em>read</em> the screen to work out which control is the one they want.
+        </p>
+
+        <div class="faults">
+          <div class="fault"><div class="n">01</div><div>
+            <h3>Six containers, no subject</h3>
+            <p>Quick add, its caption, search, two buttons, the tab bar, the result. Same radius, same hairline, same fill. The eye has nowhere to land first.</p>
+          </div></div>
+          <div class="fault"><div class="n">02</div><div>
+            <h3>Two fields that look the same</h3>
+            <p>Quick add and search sit 90 px apart in the same shape with the same left-hand glyph. Two inputs stacked is the interface admitting it doesn't know which question it's asking.</p>
+          </div></div>
+          <div class="fault"><div class="n">03</div><div>
+            <h3>The accent is spent on which list you're in</h3>
+            <p>Chartreuse is the app's one <em>go</em> colour. Here the loudest chartreuse object is a <b>tab</b> — a statement about which list you're looking at — and the second is a 64 px add ring on a row. Nothing on screen is go.</p>
+          </div></div>
+          <div class="fault"><div class="n">04</div><div>
+            <h3>A manual under a control</h3>
+            <p><code>Type what you ate. Numbers, units and your own foods.</code> A field that needs a caption to be understood is a field that isn't finished — and the caption is set in mono, which this app reserves for figures.</p>
+          </div></div>
+          <div class="fault"><div class="n">05</div><div>
+            <h3>The screen has no floor</h3>
+            <p>One result, then roughly 55 % black down to a tab bar floating alone. The picker knows dozens of foods this athlete eats and shows one.</p>
+          </div></div>
+          <div class="fault"><div class="n">06</div><div>
+            <h3>Rare work priced like constant work</h3>
+            <p><b>Create Food</b> is used a handful of times ever and takes a third of the screen's top, at the same weight as logging, which happens every day.</p>
+          </div></div>
+          <div class="fault"><div class="n">07</div><div>
+            <h3>The result breaks the column</h3>
+            <p>The one row sits on a black card running wider than everything above it, with no hairline — a different material for no reason, at the exact moment the screen finally has something to say.</p>
+          </div></div>
+        </div>
+        <div class="tags">
+          <span class="tag">6 containers</span>
+          <span class="tag">2 text fields</span>
+          <span class="tag">55 % empty</span>
+          <span class="tag">2 chevrons, 1 glyph</span>
+          <span class="tag">75 % of the library, hidden</span>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="frame" aria-label="The Snacks picker as it ships today, with each container outlined">
+          <div class="f-screen">
+            <div class="f-status"><span>21:12</span><span class="r">77 %</span></div>
+            <div class="f-head">
+              <div class="back"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-chev-left"/></svg></div>
+              <div class="ttl">Snacks <span class="cv"><svg class="ic" width="15" height="15" aria-hidden="true"><use href="#i-chev-down"/></svg></span></div>
+              <div class="rt"></div>
+            </div>
+            <div class="f-body">
+              <div class="f-field marked" data-n="1"><span class="f-glyph"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-bolt"/></svg></span><input value="chicken 200g, or 40g protein" readonly tabindex="-1" aria-hidden="true"></div>
+              <p class="f-hint marked" data-n="2" style="margin: 12px 2px 14px;">Type what you ate. Numbers, units and your own foods.</p>
+              <div class="f-field marked" data-n="3"><span class="f-glyph"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg></span><input placeholder="Search foods, brands, barcodes" readonly tabindex="-1" aria-hidden="true"><span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span></div>
+              <div class="f-btn2 marked" data-n="4" style="margin-top: 14px;">
+                <button type="button" tabindex="-1"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-bolt"/></svg> Quick Log</button>
+                <button type="button" tabindex="-1"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-plusbox"/></svg> Create Food</button>
+              </div>
+              <div class="f-seg marked" data-n="5" style="margin-top: 16px;">
+                <span>Recent</span><span>Favorites</span><span>Meals</span><span class="on">Foods</span>
+              </div>
+              <div class="f-cardrow marked" data-n="6" style="margin-top: 16px; border-radius: 0;">
+                <div class="f-ring"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-plus"/></svg></div>
+                <div class="nm" style="flex:1">
+                  <b style="font-weight:700;font-size:16px;">Kefir Krasnystaw</b>
+                  <i class="f-mono" style="display:block;font-style:normal;font-size:11px;color:var(--ash);margin-top:4px;">50 kcal &nbsp;–&nbsp; 100 gram</i>
+                </div>
+                <span style="color: var(--ash);"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-star"/></svg></span>
+              </div>
+              <div class="f-dead"><p class="f-deadnote">55 % of the screen, saying nothing</p></div>
+            </div>
+            <div class="f-tabbar">
+              <span>Today</span><span class="on">Nutrition</span><span>Train</span><span>Messages</span><span>Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ THE CONSTRAINT ══════════════ -->
+  <section class="band">
+    <div class="split">
+      <div>
+        <div class="kicker">The fixed points</div>
+        <h2>Four sources stay. Quick add stays. The box goes.</h2>
+        <p class="why">
+          Recent, Favorites, Meals and Foods are not four versions of one list to be pruned down —
+          they are four different questions (<em>what did I just eat</em>, <em>what do I always
+          eat</em>, <em>what have I built</em>, <em>what have I saved</em>), and quick add is the
+          fastest path in the whole app. So none of the six concepts removes any of them.
+        </p>
+        <p class="why">
+          What every concept removes is the <em>treatment</em>. The fault was never that four
+          sources exist; it is that they are wrapped in a bordered, filled, radiused bar — a seventh
+          container — and that the selected one wears <em>chartreuse</em>, the colour this app
+          reserves for go. A tab is not a go. It is a statement about which list you are looking at,
+          and it should be the quietest thing on the screen, not the loudest.
+        </p>
+        <p class="why">
+          The replacement is one shared component, drawn once and used everywhere: <strong>the
+          source line</strong>. Same four labels, same order, same job — selection carried by
+          <em>weight and a rule</em> instead of a fill. No border, no radius, no tint, no accent. It
+          costs one row of type and zero containers.
+        </p>
+        <p class="why">
+          Two of the six don't switch at all: the Ledger and the Shelf show <em>all four at once</em>
+          as section heads and as shelves, which is the stronger answer to the real complaint — that
+          three-quarters of your own library is invisible at any moment. Both approaches keep the
+          four; they differ on whether you pick a list or see them all.
+        </p>
+
+        <dl class="ledger">
+          <dt>Quick add</dt><dd><b>Kept, and promoted.</b> <span class="off">It is not a second search box — it is the first thing the one field does. Type <code>40g protein</code> or <code>chicken 200g</code> in Concept 01's mock and the grammar still answers.</span></dd>
+          <dt>Quick Log</dt><dd><b>Kept</b> <span class="off">— the fast kcal-and-macro sheet survives as a tail row at the end of the list, where a rarely-used door belongs, rather than as a third of the screen's top.</span></dd>
+          <dt>Create Food</dt><dd><b>Kept</b> <span class="off">— same tail, bare <code>+</code>, no ring: it grows the library in place, it doesn't go anywhere.</span></dd>
+          <dt>Barcode</dt><dd><b>Kept</b> <span class="off">— it stays the field's trailing glyph, because scanning is the same question asked with a camera.</span></dd>
+        </dl>
+      </div>
+
+      <div class="stage">
+        <div class="frame" aria-label="The pill bar as it ships today, above its replacement">
+          <div class="f-screen" style="min-height: 0;">
+            <div style="padding: 26px 12px 8px;">
+              <div class="f-sechead" style="margin: 0 2px 12px;"><span class="t">Today</span><span class="m">A seventh container</span></div>
+              <div class="f-seg">
+                <span>Recent</span><span>Favorites</span><span>Meals</span><span class="on">Foods</span>
+              </div>
+              <p class="f-hint" style="margin: 12px 2px 0; color: var(--terra);">
+                Border, fill, radius, and the go accent — on a control that goes nowhere.
+              </p>
+            </div>
+            <div style="padding: 30px 12px 34px; border-top: 1px solid var(--fline); margin-top: 14px;">
+              <div class="f-sechead" style="margin: 0 2px 4px;"><span class="t">The source line</span><span class="m">Shared</span></div>
+              <div class="f-src" style="margin-top: 12px;">
+                <span>Recent<b class="ct">4</b></span>
+                <span>Favorites<b class="ct">3</b></span>
+                <span>Meals<b class="ct">2</b></span>
+                <span class="on">Foods<b class="ct">8</b></span>
+              </div>
+              <p class="f-hint" style="margin: 14px 2px 0;">
+                Same four, same order, same job. Weight and a rule carry the selection. The counts
+                are the Explore section head's mono meta, moved onto the label they describe.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 01 ══════════════ -->
+  <section class="band concept">
+    <div class="split">
+      <div>
+        <div class="kicker"><b>Concept 01</b> — One Field <b>— BUILT</b></div>
+        <h2>One question, one field.</h2>
+        <p class="thesis">The grammar and the database are not two features. They are two answers to the same sentence.</p>
+        <p class="why">
+          Quick add already parses <em>what you ate</em>; search already looks it up. Splitting them into
+          two identical boxes makes the athlete choose a <em>mechanism</em> before they've said a word.
+          Here there is one field. You type, and every source answers underneath it in one ranked
+          list: what the grammar understood first — the row you tap to approve, exactly as quick-add
+          already works — then your own foods, then the world under a section head.
+        </p>
+        <p class="why">
+          The barcode stays where it already is, as the field's trailing glyph, because scanning is
+          the same question asked with a camera. At rest — nothing typed — the four sources sit
+          under the field on the source line, and the screen has a floor before you touch it.
+          <strong>Tap through them in the mock;</strong> all four are there, counted, with no box
+          around them.
+        </p>
+        <p class="why">
+          The thing that makes the merge worth it: once you type, <em>the answer ranks across all
+          four at once</em>. Today you have to know which list a food is in before you can look for
+          it — and the honest answer is usually "the one I'm not on". A saved meal, a favourite and
+          an own-brand product compete in one ordered list, each labelled with where it came from.
+        </p>
+        <p class="why">
+          <em>Quick Log</em> and <em>Create Food</em> fall to the tail of the list as bare <code>+</code>
+          affordances. Per the exit rule, no ring: they grow the library in place, they don't go anywhere.
+        </p>
+
+        <dl class="ledger">
+          <dt>Containers</dt><dd><b>6 → 1.</b> <span class="off">One field. The source line is type on a hairline, not a box.</span></dd>
+          <dt>Sources</dt><dd><b>All four, always.</b> <span class="off">Switchable at rest; ranked together the moment you type.</span></dd>
+          <dt>The accent</dt><dd><b>Returns to go.</b> <span class="off">Chartreuse appears only on the ring that commits the interpretation on screen.</span></dd>
+          <dt>Costs</dt><dd>Provenance has to be legible per row <span class="off">— a mono tag on the right (RECENT / FAVORITES / MEALS / FOODS / OFF), since one list now mixes sources.</span></dd>
+          <dt>Both clients</dt><dd>Identical. <span class="off">The ranking lives in <code>packages/core</code> beside <code>resolveQuickAdd</code>, so neither client can drift.</span></dd>
+        </dl>
+        <div class="tags"><span class="tag go">Try it — type, and tap the sources</span><span class="tag">keeps quick add</span><span class="tag">keeps all four sources</span></div>
+
+        <div class="built">
+          <div class="kicker" style="margin-bottom: 10px;">As built</div>
+          <p class="why">
+            Shipped on both clients. The ranking, the answer model and the four-source dedupe live in
+            <code>packages/core/src/food-picker.ts</code> so the phone and the browser cannot read one
+            field two ways. Three things landed differently from the sketch above, and the sketch was
+            the one that was wrong:
+          </p>
+          <dl class="ledger">
+            <dt>The tails wear a ring</dt><dd><b>Not bare pluses.</b> <span class="off">The exit rule is ring = leaves, bare = grows in place — and both of these leave (Quick Log opens a sheet, New food opens a screen). They are door rows of the list, taking its own hairline and chevron. A bare <code>+</code> would have promised something that grows.</span></dd>
+            <dt>It opens on Recent</dt><dd><span class="off">The old tab bar defaulted to Foods, the whole library. At 21:12 the list you want is what you just ate.</span></dd>
+            <dt>Web's barcode is a hint</dt><dd><span class="off">Point-and-scan is a camera capability the browser side doesn't have, so the glyph is live on mobile and static on web. A TYPED barcode works on both — the field takes one and asks the database.</span></dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="frame">
+          <div class="f-screen">
+            <div class="f-status"><span>21:12</span><span class="r">77 %</span></div>
+            <div class="f-head">
+              <div class="back"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-chev-left"/></svg></div>
+              <div class="ttl">Snacks <span class="cv"><svg class="ic" width="15" height="15" aria-hidden="true"><use href="#i-chev-down"/></svg></span></div>
+              <div class="rt"></div>
+            </div>
+            <div class="f-body">
+              <div class="f-field">
+                <span class="f-glyph"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg></span>
+                <input id="c1-input" type="text" placeholder="What did you eat?" aria-label="What did you eat?" autocomplete="off">
+                <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
+              </div>
+              <div id="c1-out" class="f-answer" style="margin-top: 10px;"></div>
+            </div>
+            <div class="f-tabbar">
+              <span>Today</span><span class="on">Nutrition</span><span>Train</span><span>Messages</span><span>Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 02 ══════════════ -->
+  <section class="band concept">
+    <div class="split">
+      <div>
+        <div class="kicker"><b>Concept 02</b> — What's Left <b>— BUILT</b></div>
+        <h2>The subject is the gap, not the box.</h2>
+        <p class="thesis">Nobody opens this screen to search. They open it because the day still owes them something.</p>
+        <p class="why">
+          So the screen states that first, in the app's display-weight mono, the way the Builder's
+          One Number readout does: <em>612 kcal left, 48 g protein</em>. Everything below is measured
+          against it. Each row carries a delta — what it does to the gap — right-aligned in a tabular
+          column, and the list is ordered by <em>what closes this best</em>, not by what you happened to
+          log last March.
+        </p>
+        <p class="why">
+          This is the concept that finally earns the accent. The chartreuse figure at the top is the
+          one number on screen, it moves when you log, and the rings that move it are the only other
+          accented things. Log something and watch the header fall — the screen answers, rather than
+          waiting to be searched.
+        </p>
+        <p class="why">
+          It also makes over-logging visible: a row that would push protein past target reads its
+          delta in sand, not chartreuse, and the bar carries past the tick. No warning copy needed.
+        </p>
+        <p class="why">
+          Quick add sits directly under the gap, and the source line under that — so the reading
+          order is <em>what you owe</em>, <em>say it</em>, <em>or pick it from one of your four
+          lists</em>. The ordering only rearranges the list you are on; it never moves a food
+          between sources.
+        </p>
+
+        <dl class="ledger">
+          <dt>Hierarchy</dt><dd><b>One figure, then rows.</b> <span class="off">The picker inherits the Today masthead's grammar — a caption, one big number, a quiet sentence.</span></dd>
+          <dt>Ordering</dt><dd>By fit to the remaining gap <span class="off">— protein-dense foods rise when protein is what's short, within whichever source you're on.</span></dd>
+          <dt>Costs</dt><dd>The gap must be honest <span class="off">— it reads through the same targets engine the rings do, never a second copy of the maths.</span></dd>
+          <dt>Both clients</dt><dd>Identical. <span class="off">Not the removed sticky HUD: this lives in the picker's header, where the decision is being made.</span></dd>
+        </dl>
+        <div class="tags"><span class="tag go">Try it — tap a row</span><span class="tag">accent means go again</span></div>
+
+        <div class="built">
+          <div class="kicker" style="margin-bottom: 10px;">As built</div>
+          <p class="why">
+            Shipped on both clients. <code>packages/core/src/nutrition-gap.ts</code> computes the
+            remainder once for both, and doing so retired two copies of the same 5 % tolerance that
+            were living in the two clients under two different names — the hub's ring and this
+            header can no longer disagree about whether you are over. Two decisions and one
+            omission:
+          </p>
+          <dl class="ledger">
+            <dt>No target, no header</dt><dd><span class="off">It renders nothing until there is an energy target to be short of. A header reading "2 000 left" against a number nobody set is the confident-wrong-number failure this app is built to avoid — the same reason the targets card asks for a weigh-in instead.</span></dd>
+            <dt>The word follows the sign, the colour follows the band</dt><dd><span class="off">50 past a 2 000 target reads "50 kcal over" and is drawn calmly, because it is inside the tolerance. Two different questions; reading the word off the tolerance flag printed "50 kcal left" at 2 050 logged.</span></dd>
+            <dt>The re-ordering was NOT built</dt><dd><b>Deliberately.</b> <span class="off">Recent is already ranked by the hour (04), and two rankings competing for one list is the drift this codebase keeps removing. What you actually eat at this hour beats what arithmetic says fits. The overshoot mark survives: a row that would take the day past target reads its figure line in sand.</span></dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="frame">
+          <div class="f-screen">
+            <div class="f-status"><span>21:12</span><span class="r">77 %</span></div>
+            <div class="f-head">
+              <div class="back"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-chev-left"/></svg></div>
+              <div class="ttl">Snacks <span class="cv"><svg class="ic" width="15" height="15" aria-hidden="true"><use href="#i-chev-down"/></svg></span></div>
+              <div class="rt" id="c2-reset" role="button" tabindex="0" title="Reset" aria-label="Reset the demo"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-reset"/></svg></div>
+            </div>
+            <div class="f-body">
+              <div class="f-gap">
+                <div class="big"><b id="c2-kcal" style="color: var(--lime);">612</b><i>kcal left today</i></div>
+                <div class="sub" id="c2-sub">Your last meal — 3 100 target, 2 488 logged</div>
+                <div class="f-bars">
+                  <div><div class="t"><span>Protein</span><b id="c2-pv">142/190</b></div><div class="track"><div class="fill" id="c2-pb" style="width: 74%;"></div></div></div>
+                  <div><div class="t"><span>Carbs</span><b id="c2-cv">268/320</b></div><div class="track"><div class="fill" id="c2-cb" style="width: 83%;"></div></div></div>
+                  <div><div class="t"><span>Fat</span><b id="c2-fv">71/86</b></div><div class="track"><div class="fill" id="c2-fb" style="width: 82%;"></div></div></div>
+                </div>
+              </div>
+              <div class="f-field" style="background: none; padding: 0 13px;">
+                <span class="f-glyph"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-bolt"/></svg></span>
+                <input placeholder="What did you eat?" aria-label="What did you eat?" autocomplete="off">
+                <span class="f-glyph"><svg class="ic thin" width="18" height="18" aria-hidden="true"><use href="#i-barcode"/></svg></span>
+              </div>
+              <div class="f-src">
+                <span class="on">Recent<b class="ct">4</b></span>
+                <span>Favorites<b class="ct">3</b></span>
+                <span>Meals<b class="ct">2</b></span>
+                <span>Foods<b class="ct">8</b></span>
+              </div>
+              <div id="c2-list" style="margin-top: 4px;"></div>
+            </div>
+            <div class="f-tabbar">
+              <span>Today</span><span class="on">Nutrition</span><span>Train</span><span>Messages</span><span>Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 03 ══════════════ -->
+  <section class="band concept">
+    <div class="split">
+      <div>
+        <div class="kicker"><b>Concept 03</b> — The Ledger</div>
+        <h2>Delete every container.</h2>
+        <p class="thesis">A list of foods does not need boxes to be a list of foods.</p>
+        <p class="why">
+          The most restrained of the six, and the one closest to what the rest of the app already
+          does well. No cards, no pill bar, no tinted tab, no fill of any kind: Explore-standard
+          section heads (bold display title left, mono meta right), hairline rows, and one
+          right-aligned tabular column of figures running the full height of the screen. Whitespace
+          does the grouping that six borders were doing badly.
+        </p>
+        <p class="why">
+          It doesn't switch sources — it <em>shows all four</em>. Recent, Favorites, Meals and Foods
+          become the four section heads of one continuous column, in that order, each with its count
+          on the right. Nothing is hidden behind a tap, and the source line isn't needed because the
+          heads already say where you are as you scroll past them.
+        </p>
+        <p class="why">
+          Because the figures line up in a real column, the screen becomes readable as a
+          <em>table</em> — you can compare 133 against 63 against 190 at a glance, which is the actual
+          question when you're standing in a kitchen at 21:12. The quick-add field sits above,
+          unadorned, and the whole screen is legible in one look.
+        </p>
+        <p class="why">
+          It is also the cheapest to build: it deletes code rather than adding it, and it is the
+          natural home for the sources that already exist — a verified source is a mark beside the
+          name, not another badge in another box.
+        </p>
+
+        <dl class="ledger">
+          <dt>Vocabulary</dt><dd><b>Type and hairlines only.</b> <span class="off">Exactly the Explore <code>SectionHead</code> the design rules name as the golden standard.</span></dd>
+          <dt>Sources</dt><dd><b>All four visible</b> <span class="off">— four heads in one column, no switcher, nothing behind a tap.</span></dd>
+          <dt>Figures</dt><dd>One tabular mono column <span class="off">— comparison becomes possible for the first time.</span></dd>
+          <dt>Costs</dt><dd>Quietest of the six <span class="off">— nothing shouts, so the add target has to stay a full 44 px even without a ring around it.</span></dd>
+          <dt>Both clients</dt><dd>Identical, and largely already written.</dd>
+        </dl>
+        <div class="tags"><span class="tag">−5 containers</span><span class="tag">all four visible</span><span class="tag">deletes code</span></div>
+      </div>
+
+      <div class="stage">
+        <div class="frame">
+          <div class="f-screen">
+            <div class="f-status"><span>21:12</span><span class="r">77 %</span></div>
+            <div class="f-head">
+              <div class="back"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-chev-left"/></svg></div>
+              <div class="ttl">Snacks <span class="cv"><svg class="ic" width="15" height="15" aria-hidden="true"><use href="#i-chev-down"/></svg></span></div>
+              <div class="rt"></div>
+            </div>
+            <div class="f-body">
+              <div class="f-field" style="background: none; border-color: var(--fline);">
+                <span class="f-glyph"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg></span>
+                <input placeholder="What did you eat?" aria-label="What did you eat?" autocomplete="off">
+                <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
+              </div>
+
+              <div class="f-sechead" style="margin-top: 20px;"><span class="t">Recent</span><span class="m">4</span></div>
+              <button class="f-lrow" type="button"><span class="nm">Skyr naturalny</span><span class="por">150 g</span><span class="kc">95</span></button>
+              <button class="f-lrow" type="button"><span class="nm">Kabanosy drobiowe</span><span class="por">2 sticks</span><span class="kc">110</span></button>
+              <button class="f-lrow" type="button"><span class="nm">Kefir Krasnystaw</span><span class="por">100 g</span><span class="kc">50</span></button>
+
+              <div class="f-sechead"><span class="t">Favorites</span><span class="m">3</span></div>
+              <button class="f-lrow" type="button"><span class="nm">Twaróg półtłusty</span><span class="por">100 g</span><span class="kc">133</span></button>
+              <button class="f-lrow" type="button"><span class="nm">Whey isolate</span><span class="por">30 g</span><span class="kc">118</span></button>
+
+              <div class="f-sechead"><span class="t">Meals</span><span class="m">2</span></div>
+              <button class="f-lrow" type="button"><span class="nm">Owsianka + whey</span><span class="por">1 bowl</span><span class="kc">422</span></button>
+              <button class="f-lrow" type="button"><span class="nm">Kurczak + ryż</span><span class="por">1 plate</span><span class="kc">610</span></button>
+
+              <div class="f-sechead"><span class="t">Foods</span><span class="m">8</span></div>
+              <button class="f-lrow" type="button"><span class="nm">Masło orzechowe</span><span class="por">30 g</span><span class="kc">190</span></button>
+              <button class="f-lrow" type="button"><span class="nm">Banan</span><span class="por">1 medium</span><span class="kc">105</span></button>
+
+              <div class="f-tail" style="border-top: 1px solid var(--fline); margin-top: 4px;">
+                <span class="plus"><svg class="ic" width="19" height="19" aria-hidden="true"><use href="#i-plus"/></svg></span><b>New food</b>
+              </div>
+            </div>
+            <div class="f-tabbar">
+              <span>Today</span><span class="on">Nutrition</span><span>Train</span><span>Messages</span><span>Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 04 ══════════════ -->
+  <section class="band concept">
+    <div class="split">
+      <div>
+        <div class="kicker"><b>Concept 04</b> — 21:12 <b>— BUILT</b></div>
+        <h2>The app knows the hour. Use it.</h2>
+        <p class="thesis">You do not eat a database at 21:12. You eat one of four things, and the app has watched you do it for months.</p>
+        <p class="why">
+          The screenshot is taken at 21:12 with the meal already set to Snacks, and the screen still
+          opens as a blank search. This concept opens instead on <em>what this athlete actually eats at
+          this hour</em>: a short list of large subjects, each carrying the portion it was last logged
+          at, each one tap. No portion sheet for a food whose portion has never varied — that is a
+          question the app already knows the answer to.
+        </p>
+        <p class="why">
+          Nothing below it is lost — quick add and the four sources sit directly under the hour
+          block, in the same order they have now. This concept only changes <em>what greets you</em>:
+          the top of Recent, re-sorted by the clock, instead of an empty field. The hour list IS
+          Recent; Favorites, Meals and Foods are one tap away on the source line, exactly as they
+          are today.
+        </p>
+        <p class="why">
+          The typographic move that makes it work: those rows are set at 18/700, bigger than any row
+          elsewhere in the app. They are the content, not a list of candidates. And the dead 55 %
+          becomes the screen's actual subject.
+        </p>
+
+        <dl class="ledger">
+          <dt>Data</dt><dd><b>Already on device.</b> <span class="off">The recents MRU plus each entry's timestamp — no model, no network, no new schema.</span></dd>
+          <dt>Taps to log</dt><dd><b>3 → 1</b> <span class="off">for the food you eat most nights.</span></dd>
+          <dt>Sources</dt><dd><b>Untouched.</b> <span class="off">The hour block is the top of Recent; the source line below it keeps all four.</span></dd>
+          <dt>Costs</dt><dd>A cold start has no history <span class="off">— day one falls back to Concept 01's list, and says so in one line rather than showing an empty state.</span></dd>
+          <dt>Both clients</dt><dd>Identical. <span class="off">The hour-bucketing belongs in core beside <code>quick-add.ts</code>; it is a grammar, not a guess.</span></dd>
+        </dl>
+        <div class="tags"><span class="tag">3 taps → 1</span><span class="tag">uses the empty 55 %</span></div>
+
+        <div class="built">
+          <div class="kicker" style="margin-bottom: 10px;">As built</div>
+          <p class="why">
+            Shipped on both clients, on top of 01. The ranking is
+            <code>packages/core/src/hour-recents.ts</code> — memory, not prediction: a count of
+            what actually happened, with the count kept so a row can say why it moved. Three
+            decisions worth recording:
+          </p>
+          <dl class="ledger">
+            <dt>The field stayed at the top</dt><dd><b>The sketch put the hour block above it.</b> <span class="off">A screen whose primary control moves depending on whether you have a habit yet is worse than a mock not matched exactly. The hour is a ranking of Recent, drawn under the source line — which is what the argument above actually says.</span></dd>
+            <dt>The head covers only the habits</dt><dd><span class="off">"At this hour you usually eat" sits over the qualifying rows; the rest of the MRU follows under "Everything else". A recent that happens to sit in Recent is not a habit and must not be labelled as one.</span></dd>
+            <dt>Two days minimum, then silence</dt><dd><span class="off">Once is a coincidence. Nothing qualifying means the list stays in plain MRU order and the screen says nothing — a cold start has no empty state to show.</span></dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="frame">
+          <div class="f-screen">
+            <div class="f-status"><span>21:12</span><span class="r">77 %</span></div>
+            <div class="f-head">
+              <div class="back"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-chev-left"/></svg></div>
+              <div class="ttl">Snacks <span class="cv"><svg class="ic" width="15" height="15" aria-hidden="true"><use href="#i-chev-down"/></svg></span></div>
+              <div class="rt"><svg class="ic" width="19" height="19" aria-hidden="true"><use href="#i-search"/></svg></div>
+            </div>
+            <div class="f-body">
+              <div class="f-hourhead">
+                <div class="ln1">Tuesday, 21:12</div>
+                <div class="ln2">At this hour you usually eat</div>
+              </div>
+              <button class="f-usual" type="button">
+                <span class="f-ring"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-plus"/></svg></span>
+                <span class="nm"><b>Twaróg półtłusty</b><i>200 g — logged 14 nights</i></span>
+                <span class="kc">266</span>
+              </button>
+              <button class="f-usual" type="button">
+                <span class="f-ring"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-plus"/></svg></span>
+                <span class="nm"><b>Kefir Krasnystaw</b><i>250 g — logged 9 nights</i></span>
+                <span class="kc">125</span>
+              </button>
+              <button class="f-usual" type="button">
+                <span class="f-ring"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-plus"/></svg></span>
+                <span class="nm"><b>Skyr naturalny</b><i>150 g — logged 7 nights</i></span>
+                <span class="kc">95</span>
+              </button>
+
+              <div class="f-sechead"><span class="t">Anything else</span><span class="m">Your library</span></div>
+              <div class="f-field" style="background: none;">
+                <span class="f-glyph"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg></span>
+                <input placeholder="Name it, or scan it" aria-label="Name it, or scan it" autocomplete="off">
+                <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
+              </div>
+              <div class="f-src">
+                <span class="on">Recent<b class="ct">4</b></span>
+                <span>Favorites<b class="ct">3</b></span>
+                <span>Meals<b class="ct">2</b></span>
+                <span>Foods<b class="ct">8</b></span>
+              </div>
+              <button class="f-row" type="button" style="margin-top: 4px;">
+                <span class="f-ring sm"><svg class="ic" width="16" height="16" aria-hidden="true"><use href="#i-plus"/></svg></span>
+                <span class="nm"><b>Wedel gorzka 64 %</b><i>2 squares</i></span>
+                <span class="f-fig">60 kcal</span>
+              </button>
+            </div>
+            <div class="f-tabbar">
+              <span>Today</span><span class="on">Nutrition</span><span>Train</span><span>Messages</span><span>Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 05 ══════════════ -->
+  <section class="band concept">
+    <div class="split">
+      <div>
+        <div class="kicker"><b>Concept 05</b> — The Tray</div>
+        <h2>A snack is rarely one food.</h2>
+        <p class="thesis">The current screen commits on every tap and throws you back to the diary. Three foods means the same journey three times.</p>
+        <p class="why">
+          So let the picker accumulate. Tapping adds to a tray that sums live at the foot of the
+          screen, and one commit writes the lot. The tray is the only filled surface on the screen,
+          which is exactly right — it is the only thing holding a decision that hasn't happened yet.
+        </p>
+        <p class="why">
+          It matches how the builder already treats a routine: compose, watch the number grow, save
+          once. And it makes a mistake cheap — a wrong tap is a chip you flick off, not a diary entry
+          you have to go and find.
+        </p>
+        <p class="why">
+          It is also the concept that gets the most out of keeping four sources, because a tray
+          <em>survives switching between them</em>: pull the yoghurt from Recent, the whey from
+          Favorites and the oats from Meals, and commit once. Today each of those is a separate
+          round trip through a separate tab.
+        </p>
+        <p class="why">
+          The tray obeys the sheet rule exactly: its pad is <code>sheetPadBottom(insetBottom)</code>, one
+          number, a maximum and never a sum, and nothing inside it trails a pad of its own. It covers
+          the tab bar rather than reserving clearance for it.
+        </p>
+
+        <dl class="ledger">
+          <dt>Journeys</dt><dd><b>3 foods → 1 commit</b> <span class="off">instead of three round trips through the diary.</span></dd>
+          <dt>Sources</dt><dd><b>All four, and the tray outlives them</b> <span class="off">— switch lists mid-build without losing what you've picked.</span></dd>
+          <dt>Undo</dt><dd>Free, and before the fact <span class="off">— tap a chip to drop it.</span></dd>
+          <dt>Costs</dt><dd>A state that can be abandoned <span class="off">— leaving with a full tray must ask, once, rather than silently discarding.</span></dd>
+          <dt>Both clients</dt><dd>Identical. <span class="off">Web renders the tray as the sheet's own footer; mobile pins it above the home indicator.</span></dd>
+        </dl>
+        <div class="tags"><span class="tag go">Try it — add a few, tap a chip to drop it</span></div>
+
+        <div class="built">
+          <div class="kicker" style="margin-bottom: 10px;">Not built — and why</div>
+          <p class="why">
+            This concept's premise was <strong>"the current screen commits on every tap and throws
+            you back to the diary"</strong>. That stopped being true when 01 and 04 shipped: a tap
+            logs and the screen stays put, so three foods is now three taps with no round trips to
+            undo. What the tray would still add — a running total before committing, and an undo
+            before the fact — costs <em>a second tap on every single-food log</em>, which is the
+            common case, to save one on the rarer multi-food case. That is the wrong way round.
+          </p>
+          <p class="why">
+            The salvageable half is the undo: a strip of what you just logged, removable, without
+            changing the one-tap commit. If the diary's own stepper and delete are not enough, that
+            is the version worth drawing — not this one.
+          </p>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="frame">
+          <div class="f-screen">
+            <div class="f-status"><span>21:12</span><span class="r">77 %</span></div>
+            <div class="f-head">
+              <div class="back"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-chev-left"/></svg></div>
+              <div class="ttl">Snacks <span class="cv"><svg class="ic" width="15" height="15" aria-hidden="true"><use href="#i-chev-down"/></svg></span></div>
+              <div class="rt"></div>
+            </div>
+            <div class="f-body">
+              <div class="f-field" style="background: none;">
+                <span class="f-glyph"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg></span>
+                <input placeholder="What did you eat?" aria-label="What did you eat?" autocomplete="off">
+                <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
+              </div>
+              <div class="f-src">
+                <span class="on">Recent<b class="ct">4</b></span>
+                <span>Favorites<b class="ct">3</b></span>
+                <span>Meals<b class="ct">2</b></span>
+                <span>Foods<b class="ct">8</b></span>
+              </div>
+              <div id="c5-list" style="margin-top: 4px;"></div>
+            </div>
+            <div class="f-foot" style="padding: 0;">
+              <div class="f-tray">
+                <div class="f-chips" id="c5-chips"><span class="f-trayempty">Tap to build this snack</span></div>
+                <button class="f-commit" id="c5-commit" type="button" disabled>Log to Snacks <span class="n" id="c5-sum">0 kcal</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONCEPT 06 ══════════════ -->
+  <section class="band concept">
+    <div class="split">
+      <div>
+        <div class="kicker"><b>Concept 06</b> — The Shelf</div>
+        <h2>Stop hiding three-quarters of the athlete's own food.</h2>
+        <p class="thesis">The four sources are exactly right. Making them <em>exclusive</em> is what's wrong: at any moment, 75 % of what this athlete has saved is one tap away and invisible.</p>
+        <p class="why">
+          Tabs are the right control when the lists are alternatives. These aren't — recents,
+          favourites, saved meals and your own foods are all <em>yours</em>, and the answer is usually in
+          whichever one you're not looking at. So all four stay and none of them hides: each becomes
+          a shelf, one full-bleed rail per source, scrolling under the physical edge exactly as the
+          exercise-widget rail does — negative margins the width of the gutter, matching internal
+          padding, so resting cards still align with the content column.
+        </p>
+        <p class="why">
+          Each rail ends in the shared rail tail, and the grammar is the one the rules already fix:
+          a <em>ringed arrow leaves</em> — it opens that source as a full screen. It is never a bordered
+          box, because a filled card at the end of a row of foods reads as one more food that turned
+          out to be empty.
+        </p>
+        <p class="why">
+          This is also the only concept that scales visibly with the athlete: the shelves get longer
+          as the library grows, which is a quietly good feeling and something the tab bar could never
+          express.
+        </p>
+
+        <dl class="ledger">
+          <dt>Visible library</dt><dd><b>25 % → 100 %.</b> <span class="off">All four sources on one screen, nothing exclusive, nothing behind a tap.</span></dd>
+          <dt>The accent</dt><dd><b>Freed.</b> <span class="off">No selected tab to tint, so chartreuse can go back to meaning go.</span></dd>
+          <dt>Costs</dt><dd><b>Vertical budget.</b> <span class="off">Four rails is a scrolling screen, not a glance — the fourth shelf sits below the fold. Depth per source is the lever: three tiles and a tail, then "See all".</span></dd>
+          <dt>Both clients</dt><dd>Identical, via the shared <code>rail-tail.tsx</code> and the published gutter var <span class="off">— never a local copy; the drift is the whole problem.</span></dd>
+        </dl>
+        <div class="tags"><span class="tag go">Try it — the rails scroll under the edge</span><span class="tag">all four, all visible</span></div>
+      </div>
+
+      <div class="stage">
+        <div class="frame">
+          <div class="f-screen">
+            <div class="f-status"><span>21:12</span><span class="r">77 %</span></div>
+            <div class="f-head">
+              <div class="back"><svg class="ic" width="20" height="20" aria-hidden="true"><use href="#i-chev-left"/></svg></div>
+              <div class="ttl">Snacks <span class="cv"><svg class="ic" width="15" height="15" aria-hidden="true"><use href="#i-chev-down"/></svg></span></div>
+              <div class="rt"></div>
+            </div>
+            <div class="f-body">
+              <div class="f-field" style="background: none;">
+                <span class="f-glyph"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg></span>
+                <input placeholder="What did you eat?" aria-label="What did you eat?" autocomplete="off">
+                <span class="f-glyph"><svg class="ic thin" width="19" height="19" aria-hidden="true"><use href="#i-barcode"/></svg></span>
+              </div>
+
+              <div class="f-sechead"><span class="t">Recent</span><span class="m">4</span></div>
+              <div class="f-rail">
+                <button class="f-tile" type="button"><b>Twaróg półtłusty</b><i>200 g</i><span class="kc">266 kcal</span></button>
+                <button class="f-tile" type="button"><b>Kefir Krasnystaw</b><i>250 g</i><span class="kc">125 kcal</span></button>
+                <button class="f-tile" type="button"><b>Skyr naturalny</b><i>150 g</i><span class="kc">95 kcal</span></button>
+                <button class="f-railtail" type="button"><span class="ring"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-chev-right"/></svg></span><span>See all</span></button>
+              </div>
+
+              <div class="f-sechead"><span class="t">Favorites</span><span class="m">3</span></div>
+              <div class="f-rail">
+                <button class="f-tile" type="button"><b>Whey isolate</b><i>30 g scoop</i><span class="kc">118 kcal</span></button>
+                <button class="f-tile" type="button"><b>Masło orzechowe</b><i>30 g</i><span class="kc">190 kcal</span></button>
+                <button class="f-tile" type="button"><b>Twaróg półtłusty</b><i>100 g</i><span class="kc">133 kcal</span></button>
+                <button class="f-railtail" type="button"><span class="ring"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-chev-right"/></svg></span><span>See all</span></button>
+              </div>
+
+              <div class="f-sechead"><span class="t">Meals</span><span class="m">2</span></div>
+              <div class="f-rail">
+                <button class="f-tile" type="button"><b>Owsianka + whey</b><i>1 bowl</i><span class="kc">422 kcal</span></button>
+                <button class="f-tile" type="button"><b>Kurczak + ryż</b><i>1 plate</i><span class="kc">610 kcal</span></button>
+                <button class="f-railtail" type="button"><span class="ring"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-chev-right"/></svg></span><span>See all</span></button>
+              </div>
+
+              <div class="f-sechead"><span class="t">Foods</span><span class="m">8</span></div>
+              <div class="f-rail">
+                <button class="f-tile" type="button"><b>Kabanosy drobiowe</b><i>1 stick</i><span class="kc">55 kcal</span></button>
+                <button class="f-tile" type="button"><b>Banan</b><i>1 medium</i><span class="kc">105 kcal</span></button>
+                <button class="f-tile" type="button"><b>Chicken breast</b><i>100 g</i><span class="kc">165 kcal</span></button>
+                <button class="f-railtail" type="button"><span class="ring"><svg class="ic" width="17" height="17" aria-hidden="true"><use href="#i-chev-right"/></svg></span><span>See all</span></button>
+              </div>
+
+              <div class="f-tail" style="border-top: 1px solid var(--fline); margin-top: 18px;">
+                <span class="plus"><svg class="ic" width="19" height="19" aria-hidden="true"><use href="#i-plus"/></svg></span><b>New food</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ THE SPINE ══════════════ -->
+  <section class="band">
+    <div class="kicker">If you only build one thing</div>
+    <h2>01 and 02 are the spine. The rest bolt on.</h2>
+    <p class="why">
+      They were never six alternatives so much as one screen at six depths. <strong>One Field</strong>
+      fixed the hierarchy, <strong>What's Left</strong> gave the screen a subject, and <strong>21:12</strong>
+      gave it something to say before you type. Three are built. Of the rest, one was superseded by
+      what shipped and two are the same question asked twice.
+    </p>
+
+    <div class="spine">
+      <div class="cell">
+        <div class="k">Built</div>
+        <h3>01 One Field + 02 What's Left <span style="color: var(--accent);">— shipped</span></h3>
+        <p>The gap as the header, one input under it, the source line, then one ranked list. Five containers gone, the accent back to meaning <em>go</em>, the screen given both a subject and a floor — while keeping every source and every way to log.</p>
+      </div>
+      <div class="cell">
+        <div class="k">Built</div>
+        <h3>04 The Hour <span style="color: var(--accent);">— shipped</span></h3>
+        <p>What the list shows before you type. Pure gain — no new surface, no new schema, and it turns the empty 55 % into the fastest path in the app. <strong>05 The Tray</strong> is the next one worth building.</p>
+      </div>
+      <div class="cell">
+        <div class="k">Superseded</div>
+        <h3>05 The Tray — not built</h3>
+        <p>One-tap logging removed the round trips the tray existed to spare. It would now cost a tap on every single-food log to save one on the rarer multi-food case. See the note on the concept itself.</p>
+      </div>
+      <div class="cell">
+        <div class="k">Style, not structure</div>
+        <h3>03 The Ledger and 06 The Shelf</h3>
+        <p>Two answers to the same question — how four sources are drawn when none of them hides. The Ledger stacks them as four heads in one column; the Shelf gives each a full-bleed rail. The Ledger is quieter and cheaper; the Shelf shows the library growing. Pick one, don't ship both.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 40px;">
+      <div class="kicker">What dies in all six</div>
+      <ul class="deadlist">
+        <li><span class="x">✕</span><span><b>The second text field — not quick add.</b> The grammar stays and gets the whole field; what goes is the duplicate box beneath it.</span></li>
+        <li><span class="x">✕</span><span><b>The pill BAR — not the four sources.</b> Recent, Favorites, Meals and Foods all stay; the border, the fill, the radius and the chartreuse selected-state go. They become the source line, or four section heads, or four shelves.</span></li>
+        <li><span class="x">✕</span><span><b>The instructional mono caption.</b> The placeholder carries it, or the field is wrong.</span></li>
+        <li><span class="x">✕</span><span><b>Card chrome on Quick Log and Create Food.</b> They become bare <code>+</code> tails — they grow the library, they don't go anywhere.</span></li>
+        <li><span class="x">✕</span><span><b>The black full-bleed result card.</b> Rows sit in the content column on a hairline, like every other list in the app.</span></li>
+        <li><span class="x">✕</span><span><b>The doubled chevron in the header.</b> Back is <code>‹</code>; the meal switcher keeps the <code>⌄</code>.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <b>HYBRID</b> — Nutrition → add to meal. Six concepts, drawn in Aurora (dark) and Kyoto Hour (light).<br>
+    Palette and faces are the app's own: Archivo, JetBrains Mono, Shippori Mincho, and the tokens from
+    <b>packages/core/src/theme</b>. Mocks are live — type, tap, scroll.<br>
+    Current screen: <b>apps/mobile/components/aurora/nutrition.tsx</b> (view <b>add</b>) and its web twin.
+  </footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  // The athlete's own library — the foods behind the screenshot.
+  // `lists` is the point of the revision: a food belongs to as many of the four
+  // sources as it really belongs to, and every concept keeps all four.
+  var LIB = [
+    { name: "Kefir Krasnystaw",  serving: "100 g",   grams: 100, kcal: 50,  p: 3.4,  c: 4.1, f: 2.0,  lists: ["recent", "foods"] },
+    { name: "Twaróg półtłusty",  serving: "100 g",   grams: 100, kcal: 133, p: 18.0, c: 3.5, f: 5.0,  lists: ["recent", "favorites", "foods"] },
+    { name: "Skyr naturalny",    serving: "150 g",   grams: 150, kcal: 95,  p: 17.0, c: 5.0, f: 0.3,  lists: ["recent", "foods"] },
+    { name: "Kabanosy drobiowe", serving: "1 stick", grams: 17.5, kcal: 55, p: 5.0,  c: 0.5, f: 3.7,  lists: ["recent", "foods"] },
+    { name: "Whey isolate",      serving: "30 g",    grams: 30,  kcal: 118, p: 25.0, c: 1.5, f: 1.0,  lists: ["favorites", "foods"] },
+    { name: "Masło orzechowe",   serving: "30 g",    grams: 30,  kcal: 190, p: 7.0,  c: 5.0, f: 16.0, lists: ["favorites", "foods"] },
+    { name: "Chicken breast",    serving: "100 g",   grams: 100, kcal: 165, p: 31.0, c: 0.0, f: 3.6,  lists: ["foods"] },
+    { name: "Banan",             serving: "1 medium",grams: 118, kcal: 105, p: 1.3,  c: 27.0,f: 0.4,  lists: ["foods"] },
+    { name: "Owsianka + whey",   serving: "1 bowl",  grams: 0,   kcal: 422, p: 34.0, c: 52.0,f: 8.0,  lists: ["meals"] },
+    { name: "Kurczak + ryż",     serving: "1 plate", grams: 0,   kcal: 610, p: 52.0, c: 68.0,f: 12.0, lists: ["meals"] },
+    { name: "Chicken breast, grilled", serving: "100 g", grams: 100, kcal: 172, p: 30.0, c: 0.0, f: 5.4, off: true, lists: [] }
+  ];
+  var SOURCES = [
+    { key: "recent",    label: "Recent" },
+    { key: "favorites", label: "Favorites" },
+    { key: "meals",     label: "Meals" },
+    { key: "foods",     label: "Foods" }
+  ];
+  var inList = function (food, key) { return food.lists.indexOf(key) > -1; };
+  var listOf = function (key) { return LIB.filter(function (f) { return inList(f, key); }); };
+  // The provenance tag a ranked row carries, since one list now mixes sources.
+  var provenance = function (food) {
+    if (food.off) return "OFF";
+    for (var i = 0; i < SOURCES.length; i++) {
+      if (inList(food, SOURCES[i].key)) return SOURCES[i].label.toUpperCase();
+    }
+    return "";
+  };
+
+  var fold = function (s) {
+    return s.toLowerCase()
+      .replace(/ł/g, "l")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  };
+  var svgIcon = function (name, size) {
+    var NS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "ic");
+    svg.setAttribute("width", size);
+    svg.setAttribute("height", size);
+    svg.setAttribute("aria-hidden", "true");
+    var use = document.createElementNS(NS, "use");
+    use.setAttribute("href", "#i-" + name);
+    svg.appendChild(use);
+    return svg;
+  };
+  var el = function (tag, cls, txt) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+  };
+  var round = function (n) { return Math.round(n); };
+
+  /* ─────────────── CONCEPT 01 — one field ─────────────── */
+  var c1in = document.getElementById("c1-input");
+  var c1out = document.getElementById("c1-out");
+  var c1Source = "recent";
+
+  // A deliberately small echo of core's quick-add grammar: a macro keyword takes
+  // the number on either side; a food line is a name plus a mass or a count.
+  var MACRO = { protein: "p", bialko: "p", carbs: "c", weglowodany: "c", fat: "f", tluszcz: "f", kcal: "kcal", cal: "kcal" };
+
+  function parse(raw) {
+    var text = fold(raw.trim());
+    if (!text) return { kind: "empty" };
+    var facts = {}, found = false;
+    var re = /(\d+(?:[.,]\d+)?)\s*(?:g|gram|grams)?\s*(protein|bialko|carbs|weglowodany|fat|tluszcz|kcal|cal)|(protein|bialko|carbs|weglowodany|fat|tluszcz|kcal|cal)\s*(\d+(?:[.,]\d+)?)/g;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var key = MACRO[m[2] || m[3]];
+      var val = parseFloat((m[1] || m[4]).replace(",", "."));
+      facts[key] = val; found = true;
+    }
+    if (found) {
+      if (facts.kcal == null) {
+        facts.kcal = round((facts.p || 0) * 4 + (facts.c || 0) * 4 + (facts.f || 0) * 9);
+        facts.derived = true;
+      }
+      return { kind: "macros", facts: facts };
+    }
+    var qty = null, unitGrams = null;
+    var g = text.match(/(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l|oz)\b/);
+    if (g) {
+      var n = parseFloat(g[1].replace(",", "."));
+      unitGrams = g[2] === "kg" || g[2] === "l" ? n * 1000 : g[2] === "oz" ? n * 28.35 : n;
+    } else {
+      var cnt = text.match(/(?:^|\s)(\d+(?:[.,]\d+)?)\s*(?:x\s*)?/);
+      if (cnt) qty = parseFloat(cnt[1].replace(",", "."));
+    }
+    var name = text.replace(/[\d.,]+\s*(kg|g|ml|l|oz|x)?/g, " ").replace(/\s+/g, " ").trim();
+    return { kind: "food", name: name, grams: unitGrams, qty: qty };
+  }
+
+  function rank(name) {
+    if (!name) return [];
+    return LIB
+      .map(function (food) {
+        var n = fold(food.name);
+        var score = n === name ? 4 : n.indexOf(name) === 0 ? 3 : n.indexOf(" " + name) > -1 ? 2 : n.indexOf(name) > -1 ? 1 : 0;
+        if (score && inList(food, "recent")) score += 0.4;
+        else if (score && !food.off) score += 0.2;
+        return { food: food, score: score };
+      })
+      .filter(function (r) { return r.score > 0; })
+      .sort(function (a, b) { return b.score - a.score; })
+      .map(function (r) { return r.food; });
+  }
+
+  function row(opts) {
+    var b = el("button", "f-row");
+    b.type = "button";
+    var ring = el("span", "f-ring sm" + (opts.quiet ? " q" : ""));
+    ring.appendChild(svgIcon(opts.quiet ? "chev-down" : "plus", 16));
+    var nm = el("span", "nm");
+    nm.appendChild(el("b", null, opts.title));
+    nm.appendChild(el("i", null, opts.meta));
+    b.appendChild(ring);
+    b.appendChild(nm);
+    if (opts.right) {
+      var r = el("span", "f-fig", opts.right);
+      if (opts.rightMuted) r.style.color = "var(--ash)";
+      b.appendChild(r);
+    }
+    return b;
+  }
+
+  function head(title, meta) {
+    var h = el("div", "f-sechead");
+    h.appendChild(el("span", "t", title));
+    h.appendChild(el("span", "m", meta));
+    return h;
+  }
+
+  function renderC1() {
+    var raw = c1in.value;
+    var p = parse(raw);
+    c1out.innerHTML = "";
+
+    if (p.kind === "empty") {
+      // THE SOURCE LINE — all four, always, selection carried by weight and a
+      // rule. No box, no fill, no accent.
+      var line = el("div", "f-src");
+      line.setAttribute("role", "tablist");
+      SOURCES.forEach(function (src) {
+        var b = el("button");
+        b.type = "button";
+        b.className = src.key === c1Source ? "on" : "";
+        b.setAttribute("role", "tab");
+        b.setAttribute("aria-selected", src.key === c1Source ? "true" : "false");
+        b.appendChild(document.createTextNode(src.label));
+        b.appendChild(el("b", "ct", String(listOf(src.key).length)));
+        b.addEventListener("click", function () { c1Source = src.key; renderC1(); });
+        line.appendChild(b);
+      });
+      c1out.appendChild(line);
+
+      listOf(c1Source).forEach(function (food) {
+        c1out.appendChild(row({ title: food.name, meta: food.serving, right: food.kcal + " kcal" }));
+      });
+
+      // The two rare doors, at the end of the thing, bare — they grow the
+      // library rather than going anywhere.
+      [["Quick Log"], ["New food"]].forEach(function (t) {
+        var tail = el("div", "f-tail");
+        var tp = el("span", "plus");
+        tp.appendChild(svgIcon("plus", 19));
+        tail.appendChild(tp);
+        tail.appendChild(el("b", null, t[0]));
+        c1out.appendChild(tail);
+      });
+      return;
+    }
+
+    if (p.kind === "macros") {
+      var f = p.facts;
+      var parts = [];
+      if (f.p != null) parts.push(f.p + " g protein");
+      if (f.c != null) parts.push(f.c + " g carbs");
+      if (f.f != null) parts.push(f.f + " g fat");
+      c1out.appendChild(head("Understood", "Quick add"));
+      c1out.appendChild(row({
+        title: "Log " + (parts.length ? parts.join(", ") : f.kcal + " kcal"),
+        meta: f.derived ? f.kcal + " kcal, derived at 4·4·9" : f.kcal + " kcal",
+        right: f.kcal + " kcal"
+      }));
+      return;
+    }
+
+    var hits = rank(p.name);
+    if (!hits.length) {
+      c1out.appendChild(head("No match", "Yet"));
+      var miss = el("p", "f-hint");
+      miss.style.padding = "14px 4px";
+      miss.textContent = "Nothing in your foods matches “" + p.name + "”. Search Open Food Facts, scan it, or add it.";
+      c1out.appendChild(miss);
+      var t2 = el("div", "f-tail");
+      var t2p = el("span", "plus");
+      t2p.appendChild(svgIcon("plus", 19));
+      t2.appendChild(t2p);
+      t2.appendChild(el("b", null, "New food: " + p.name));
+      c1out.appendChild(t2);
+      return;
+    }
+
+    var mine = hits.filter(function (h) { return !h.off; });
+    var world = hits.filter(function (h) { return h.off; });
+
+    if (mine.length) {
+      // Ranked ACROSS all four sources — you never have to know which list a
+      // food is in — so every row says where it came from.
+      c1out.appendChild(head("Understood", "All four sources"));
+      mine.forEach(function (food) {
+        var q = 1, meta;
+        if (p.grams && food.grams) {
+          q = Math.round((p.grams / food.grams) * 100) / 100;
+          meta = q + " × " + food.serving + " — " + round(food.kcal * q) + " kcal";
+        } else if (p.grams && !food.grams) {
+          // Grams against a food with no serving weight on record is unanswerable.
+          c1out.appendChild(row({ title: food.name, meta: "Needs a portion — no serving weight on record", quiet: true }));
+          return;
+        } else if (p.qty) {
+          q = p.qty;
+          meta = q + " × " + food.serving + " — " + round(food.kcal * q) + " kcal";
+        } else {
+          meta = food.serving + " — " + food.kcal + " kcal";
+        }
+        c1out.appendChild(row({ title: food.name, meta: meta, right: provenance(food), rightMuted: true }));
+      });
+    }
+    if (world.length) {
+      c1out.appendChild(head("Open Food Facts", "The world"));
+      world.forEach(function (food) {
+        c1out.appendChild(row({ title: food.name, meta: food.serving + " — " + food.kcal + " kcal", right: "OFF", rightMuted: true }));
+      });
+    }
+  }
+
+  if (c1in) {
+    c1in.addEventListener("input", renderC1);
+    renderC1();
+  }
+
+  /* ─────────────── CONCEPT 02 — what's left ─────────────── */
+  var TARGET = { kcal: 3100, p: 190, c: 320, f: 86 };
+  var START = { kcal: 2488, p: 142, c: 268, f: 71 };
+  var c2 = { kcal: START.kcal, p: START.p, c: START.c, f: START.f };
+  var C2FOODS = [
+    { name: "Twaróg półtłusty", serving: "200 g", kcal: 266, p: 36, c: 7, f: 10 },
+    { name: "Whey isolate", serving: "30 g scoop", kcal: 118, p: 25, c: 1.5, f: 1 },
+    { name: "Skyr naturalny", serving: "150 g", kcal: 95, p: 17, c: 5, f: 0.3 },
+    { name: "Kefir Krasnystaw", serving: "250 g", kcal: 125, p: 8.5, c: 10, f: 5 },
+    { name: "Masło orzechowe", serving: "30 g", kcal: 190, p: 7, c: 5, f: 16 }
+  ];
+  var c2list = document.getElementById("c2-list");
+
+  function paintC2() {
+    var left = TARGET.kcal - c2.kcal;
+    var kEl = document.getElementById("c2-kcal");
+    kEl.textContent = Math.abs(left);
+    kEl.style.color = left < 0 ? "var(--sand)" : "var(--lime)";
+    kEl.nextElementSibling.textContent = left < 0 ? "kcal over today" : "kcal left today";
+    document.getElementById("c2-sub").textContent =
+      "Your last meal — " + TARGET.kcal.toLocaleString("en").replace(",", " ") + " target, " + c2.kcal.toLocaleString("en").replace(",", " ") + " logged";
+    [["p", "c2-pv", "c2-pb"], ["c", "c2-cv", "c2-cb"], ["f", "c2-fv", "c2-fb"]].forEach(function (k) {
+      var have = round(c2[k[0]]), want = TARGET[k[0]];
+      document.getElementById(k[1]).textContent = have + "/" + want;
+      var pct = Math.min(100, (have / want) * 100);
+      var bar = document.getElementById(k[2]);
+      bar.style.width = pct + "%";
+      bar.style.background = have > want ? "var(--sand)" : "var(--lime)";
+    });
+  }
+
+  function renderC2() {
+    if (!c2list) return;
+    c2list.innerHTML = "";
+    var needP = TARGET.p - c2.p;
+    var sorted = C2FOODS.slice().sort(function (a, b) {
+      // What closes the gap best: protein per kcal, while protein is short.
+      if (needP <= 0) return a.kcal - b.kcal;
+      return (b.p / b.kcal) - (a.p / a.kcal);
+    });
+    sorted.forEach(function (food) {
+      var b = el("button", "f-row" + (food.logged ? " done" : ""));
+      b.type = "button";
+      var ring = el("span", "f-ring sm");
+      ring.appendChild(svgIcon(food.logged ? "check" : "plus", 16));
+      if (food.logged) { ring.style.borderColor = "var(--fline)"; ring.style.color = "var(--ash)"; }
+      var nm = el("span", "nm");
+      nm.appendChild(el("b", null, food.name));
+      nm.appendChild(el("i", null, food.serving + " — " + food.kcal + " kcal"));
+      var over = (c2.p + food.p) > TARGET.p;
+      var d = el("span", "f-delta", "+" + round(food.p) + " P");
+      if (over && !food.logged) d.style.color = "var(--sand)";
+      b.appendChild(ring); b.appendChild(nm); b.appendChild(d);
+      b.addEventListener("click", function () {
+        if (food.logged) return;
+        food.logged = true;
+        c2.kcal += food.kcal; c2.p += food.p; c2.c += food.c; c2.f += food.f;
+        paintC2(); renderC2();
+      });
+      c2list.appendChild(b);
+    });
+  }
+
+  var c2reset = document.getElementById("c2-reset");
+  if (c2reset) {
+    var reset = function () {
+      c2 = { kcal: START.kcal, p: START.p, c: START.c, f: START.f };
+      C2FOODS.forEach(function (f) { delete f.logged; });
+      paintC2(); renderC2();
+    };
+    c2reset.addEventListener("click", reset);
+    c2reset.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); reset(); } });
+  }
+  paintC2(); renderC2();
+
+  /* ─────────────── CONCEPT 05 — the tray ─────────────── */
+  var C5FOODS = [
+    { name: "Twaróg półtłusty", serving: "200 g", kcal: 266 },
+    { name: "Kefir Krasnystaw", serving: "250 g", kcal: 125 },
+    { name: "Kabanosy drobiowe", serving: "2 sticks", kcal: 110 },
+    { name: "Wedel gorzka 64 %", serving: "2 squares", kcal: 60 },
+    { name: "Banan", serving: "1 medium", kcal: 105 }
+  ];
+  var tray = [];
+  var c5list = document.getElementById("c5-list");
+  var c5chips = document.getElementById("c5-chips");
+  var c5sum = document.getElementById("c5-sum");
+  var c5commit = document.getElementById("c5-commit");
+
+  function paintTray() {
+    c5chips.innerHTML = "";
+    if (!tray.length) {
+      c5chips.appendChild(el("span", "f-trayempty", "Tap to build this snack"));
+    } else {
+      tray.forEach(function (food, i) {
+        var chip = el("button", "f-chip");
+        chip.type = "button";
+        chip.appendChild(document.createTextNode(food.name));
+        chip.appendChild(el("span", "g", food.kcal));
+        var x = el("span", "x");
+        x.appendChild(svgIcon("close", 12));
+        chip.appendChild(x);
+        chip.setAttribute("aria-label", "Remove " + food.name);
+        chip.addEventListener("click", function () { tray.splice(i, 1); paintTray(); });
+        c5chips.appendChild(chip);
+      });
+    }
+    var total = tray.reduce(function (a, b) { return a + b.kcal; }, 0);
+    c5sum.textContent = total + " kcal";
+    c5commit.disabled = !tray.length;
+    c5commit.firstChild.nodeValue = tray.length > 1 ? "Log " + tray.length + " to Snacks " : "Log to Snacks ";
+  }
+
+  if (c5list) {
+    C5FOODS.forEach(function (food) {
+      var b = el("button", "f-row");
+      b.type = "button";
+      var ring = el("span", "f-ring sm");
+      ring.appendChild(svgIcon("plus", 16));
+      var nm = el("span", "nm");
+      nm.appendChild(el("b", null, food.name));
+      nm.appendChild(el("i", null, food.serving));
+      b.appendChild(ring); b.appendChild(nm);
+      b.appendChild(el("span", "f-fig", food.kcal + " kcal"));
+      b.addEventListener("click", function () { tray.push(food); paintTray(); });
+      c5list.appendChild(b);
+    });
+    paintTray();
+  }
+})();
+</script>
+</body></html>

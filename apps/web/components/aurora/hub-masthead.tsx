@@ -32,16 +32,12 @@ export function HubMasthead({
   title,
   /** Rendered inline after the title (the Kyoto Hour hanko). Decorative only. */
   mark,
-  /** Rendered UNDER the title. The one thing that may grow the block, and only
-   *  for a transient state — Dashboard's "Back to today". Not a subtitle. */
-  accessory,
 }: {
   eyebrow?: string | null;
   meta?: ReactNode;
   metaTone?: HubMetaTone;
   title: string;
   mark?: ReactNode;
-  accessory?: ReactNode;
 }) {
   const type = hubTitleType(title);
   const metaColor = metaTone === "accent" ? "var(--amber-text)" : metaTone === "fresh" ? "var(--lime-text)" : C("ash");
@@ -97,8 +93,6 @@ export function HubMasthead({
         {title}
         {mark}
       </h1>
-
-      {accessory}
     </div>
   );
 }
