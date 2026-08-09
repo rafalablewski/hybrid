@@ -125,6 +125,10 @@ export interface FeedWorkoutView {
 
 const isStrength = (b: SessionBlock): b is StrengthBlock => b.kind === "strength";
 
+/** The i18n key for a SET COUNT, singular or plural. One exercise really can
+ *  have one set, and "1 sets" is the kind of thing a training app cannot say. */
+export const setCountKey = (n: number): string => (n === 1 ? "feed.session.set" : "feed.session.sets");
+
 const num = (s: string | undefined): number | null => {
   const n = parseFloat(s ?? "");
   return Number.isFinite(n) ? n : null;

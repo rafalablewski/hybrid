@@ -5,6 +5,7 @@ import {
   feedFigureText,
   feedStatText,
   feedWorkoutView,
+  setCountKey,
   colors,
   type FeedPrLine,
   type FeedStat,
@@ -118,7 +119,7 @@ function Exercise({ ex, units }: { ex: FeedWorkoutExercise; units: WeightUnit })
   // feed card has never had room for. A spaced en dash joins them.
   const vol = ex.volumeKg > 0 ? feedFigureText(ex.volumeKg, units) : null;
   const meta = [
-    ex.setCount > 0 ? t("feed.session.sets").replace("{n}", String(ex.setCount)) : null,
+    ex.setCount > 0 ? t(setCountKey(ex.setCount)).replace("{n}", String(ex.setCount)) : null,
     ex.reps > 0 ? `${ex.reps} ${t("feed.stat.reps")}` : null,
     vol ? `${vol.value} ${vol.unit}` : null,
     ex.distanceKm != null ? `${ex.distanceKm} ${t("feed.stat.distance")}` : null,
@@ -172,7 +173,7 @@ export function FeedWorkout({ session, units, prs = [] }: { session: LoggedSessi
   const meta = [
     fmtDate(w.startedAt),
     t("feed.session.exercises").replace("{n}", String(w.exerciseCount)),
-    ...(w.setCount > 0 ? [t("feed.session.sets").replace("{n}", String(w.setCount))] : []),
+    ...(w.setCount > 0 ? [t(setCountKey(w.setCount)).replace("{n}", String(w.setCount))] : []),
   ].join(" – ");
   return (
     <View>
