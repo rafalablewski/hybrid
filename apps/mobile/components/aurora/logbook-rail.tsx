@@ -89,7 +89,7 @@ export default function AuroraLogbookRail({
 
   // The athlete's current run — the done-today card's corner reports it in
   // place of a date the week strip has already shown (core day-stamp.ts).
-  const streakDays = useMemo(() => streak(sessions, 1).current, [sessions]);
+  const streakDays = useMemo(() => streak(sessions).current, [sessions]);
 
   return (
     <View

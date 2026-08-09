@@ -149,7 +149,7 @@ export default function AuroraWeekRail({
 
   // The athlete's current run — what the done-today card's corner reports in
   // place of a date the week strip has already shown (see core day-stamp.ts).
-  const streakDays = useMemo(() => streak(sessions, 1).current, [sessions]);
+  const streakDays = useMemo(() => streak(sessions).current, [sessions]);
 
   if (!schedule || !schedule.days.length) return null;
   const sel = schedule.days[selectedIndex] ?? schedule.days[schedule.todayIndex]!;
