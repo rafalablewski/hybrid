@@ -1,0 +1,449 @@
+import { useEffect, useState } from "react";
+import { View, Text, TextInput, Share } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import {
+  canEnrolProgram,
+  canReviewCoach,
+  feedPostPath,
+  followsUser,
+  fs,
+  leading,
+  tracking,
+  resolveUserPageTab,
+  userPageActions,
+  userPageRelation,
+  userPageTabs,
+  userShare,
+  LEVEL_KEY,
+} from "@hybrid/core";
+import type {
+  CompareResult,
+  FeedItemView,
+  ProgramPreviewDay,
+  ProgramPreviewItem,
+  ProgramPreviewWeek,
+  Relation,
+  SharedLift,
+  StorefrontProgram,
+  StorefrontReview,
+  UserPageResponse,
+  UserPageTabId,
+} from "@hybrid/core";
+import { F, Loading, PressScale as Pressable, serifIf } from "../../lib/ui";
+import { AuroraScreen, ACard, AChip, cardStack } from "../../components/aurora/kit";
+import { useTheme, txt } from "../../lib/theme";
+import { useLang } from "../../lib/i18n";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
+import { useConfirm } from "../../components/aurora/confirm";
+import {
+  blockUser, enrollProgram, follow, getCompare, getUserPage, postReview, reportTarget, toggleKudos, unfollow,
+} from "../../lib/social-api";
+import { Avatar, Empty, SButton, Stars, levelInk } from "../../components/social-kit";
+import FeedCard from "../../components/feed-card";
+import { Comments } from "../../components/feed-comments";
+
+/**
+ * THE INDIVIDUAL USER PAGE (mobile) — twin of apps/web/components/user-page.tsx.
+ *
+ * One page per person, at `/u/<handle>` (core `userPagePath`). It replaced two
+ * sheets that disagreed about the same human — the profile modal (who they are)
+ * and the coach modal (what they sell) — for the same reasons the post screen
+ * replaced its sheet: a sheet has no address, and it could only ever open a
+ * handle the screen underneath had already loaded.
+ *
+ * A COACH'S PAGE IS AN ATHLETE'S PAGE, plus a coaching tab. Which tabs exist,
+ * which verbs the viewer gets, and who may review or enrol are decided in core
+ * (user-page.ts), so this screen and the web page cannot drift.
+ */
+
+export default function UserScreen() {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const { confirm, notify } = useConfirm();
+  const units = useLoggerPrefs().units;
+  const params = useLocalSearchParams<{ handle?: string }>();
+  const handle = (typeof params.handle === "string" ? params.handle : "").toLowerCase();
+
+  const [data, setData] = useState<UserPageResponse | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [tab, setTab] = useState<UserPageTabId>("overview");
+  const [cmp, setCmp] = useState<CompareResult | null>(null);
+  const [thread, setThread] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = async () => {
+    const d = await getUserPage(handle);
+    if (!d?.profile) { setFailed(true); return; }
+    setFailed(false);
+    setData(d);
+  };
+  useEffect(() => { setData(null); setCmp(null); load(); /* eslint-disable-next-line */ }, [handle]);
+
+  const p = data?.profile;
+  const rel = data ? userPageRelation(data) : "none";
+  const tabs = data ? userPageTabs(data) : [];
+  const shown = resolveUserPageTab(tabs, tab);
+  const name = p?.displayName || (p ? `@${p.handle}` : `@${handle}`);
+  const hero = { rank: "title" as const, title: name, eyebrow: `@${p?.handle ?? handle}` };
+
+  const run = async (key: string, fn: () => Promise<void>) => { setBusy(key); try { await fn(); } finally { setBusy(null); } };
+  const doShare = () => { if (p) void Share.share({ message: `${userShare(p).text}\n${userShare(p).url}` }); };
+  const doBlock = async () => {
+    const ok = await confirm({ title: t("w.social.block"), message: t("w.social.blockConfirm").replace("{h}", handle), confirmLabel: t("w.social.block"), destructive: true });
+    if (!ok) return;
+    await blockUser({ handle });
+    router.back();
+  };
+  const doReport = async () => {
+    if (!p?.userId) return;
+    const ok = await confirm({ title: t("w.social.report"), message: t("w.social.reportConfirm").replace("{h}", handle), confirmLabel: t("w.social.report"), destructive: true });
+    if (!ok) return;
+    await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" });
+    void notify(t("w.social.reportThanks"));
+  };
+  /** A kudos must never wait on the network to look given. */
+  const cheer = async (item: FeedItemView) => {
+    const patch = (fn: (x: FeedItemView) => FeedItemView) =>
+      setData((d) => (d ? { ...d, activity: d.activity.map((x) => (x.id === item.id ? fn(x) : x)) } : d));
+    patch((x) => ({ ...x, kudos: x.kudos + (x.kudosedByMe ? -1 : 1), kudosedByMe: !x.kudosedByMe }));
+    const r = await toggleKudos({ subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
+    patch((x) => ({ ...x, kudos: r.kudos ?? x.kudos, kudosedByMe: r.kudosedByMe ?? x.kudosedByMe }));
+  };
+
+  if (failed) {
+    return (
+      <AuroraScreen hero={{ rank: "title", title: `@${handle}` }}>
+        <Empty title={t("w.user.missing")} sub={t("w.user.missingSub")} />
+      </AuroraScreen>
+    );
+  }
+  if (!data || !p) {
+    return <AuroraScreen hero={hero}><Loading /></AuroraScreen>;
+  }
+
+  const actions = userPageActions(data);
+  const coach = data.coach;
+  const label = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const, color: C.ash };
+
+  return (
+    <AuroraScreen hero={hero}>
+      {/* ── WHO ── the person, at the size a page allows. */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+        <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.title }}>
+            {name}{p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}
+          </Text>
+          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.caption }}>@{p.handle}</Text>
+          {/* The earned level, as one word — gated server-side by the same
+              privacy rule as the stats, and never carrying the ratio behind it. */}
+          {data.fitnessLevel ? (
+            <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: levelInk(C, data.fitnessLevel.accent), borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, marginTop: 6 }}>
+              <Text style={{ ...label, fontFamily: F.monoBold, color: levelInk(C, data.fitnessLevel.accent) }}>{t(LEVEL_KEY[data.fitnessLevel.level])}</Text>
+            </View>
+          ) : null}
+          {coach?.headline ? (
+            <Text style={{ color: txt(C, C.lime), fontFamily: F.bold, fontSize: fs.body, marginTop: 6 }}>{coach.headline}</Text>
+          ) : null}
+        </View>
+      </View>
+
+      {p.bio ? <Text style={{ color: C.chalk, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 14 }}>{p.bio}</Text> : null}
+
+      {/* ── THE COUNTS ── who they reach, and how much they train. */}
+      <View style={{ flexDirection: "row", marginTop: 14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line, paddingVertical: 10 }}>
+        {[
+          { v: data.counts.followers.toLocaleString(), l: t("w.user.followers") },
+          { v: data.counts.following.toLocaleString(), l: t("w.user.following") },
+          ...(data.stats ? [{ v: data.stats.totalSessions.toLocaleString(), l: t("w.social.statSessions") }] : []),
+        ].map((f) => (
+          <View key={f.l} style={{ flex: 1, alignItems: "center" }}>
+            <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle }}>{f.v}</Text>
+            <Text style={{ ...label, marginTop: 2 }}>{f.l}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* ── THE VERBS ── ordered by core, so both clients offer the same ones. */}
+      <View style={{ flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+        {actions.map((a) => {
+          const l = t(a.labelKey);
+          if (a.id === "follow") return <SButton key={a.id} label={l} small disabled={busy === "f"} onPress={() => run("f", async () => { await follow({ handle }); await load(); })} />;
+          if (a.id === "unfollow") return <SButton key={a.id} label={`${l} ✓`} ghost small disabled={busy === "f"} onPress={() => run("f", async () => { await unfollow({ handle }); await load(); })} />;
+          if (a.id === "requested") return <SButton key={a.id} label={l} ghost small disabled />;
+          if (a.id === "compare") return <SButton key={a.id} label={l} ghost small onPress={async () => { const r = await getCompare(handle); setCmp(r.compare ?? null); }} />;
+          if (a.id === "coaching") return <SButton key={a.id} label={l} ghost small onPress={() => setTab("coaching")} />;
+          return <SButton key={a.id} label={l} ghost small onPress={doShare} />;
+        })}
+      </View>
+
+      {/* ── THE TABS ── a person with one tab gets no tab row at all. */}
+      {tabs.length > 1 ? (
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
+          {tabs.map((x) => <AChip key={x.id} label={t(x.labelKey)} selected={shown === x.id} onPress={() => setTab(x.id)} />)}
+        </View>
+      ) : null}
+
+      {shown === "overview" ? <Overview data={data} cmp={cmp} name={name} /> : null}
+      {shown === "coaching" && coach ? <Coaching data={data} handle={handle} onReload={load} /> : null}
+      {shown === "activity" ? (
+        data.activity.length === 0 ? (
+          <Empty title={t("w.user.noActivity")} sub={t("w.user.noActivitySub").replace("{n}", name)} />
+        ) : (
+          <View style={{ marginTop: 12 }}>
+            {data.activity.map((item) => (
+              <FeedCard
+                key={item.id}
+                item={item}
+                units={units}
+                onOpenProfile={(h: string) => { if (h && h !== p.handle) router.push(`/u/${h}`); }}
+                onKudos={() => cheer(item)}
+                onComments={() => setThread(thread === item.id ? null : item.id)}
+                onOpen={() => { setThread(null); router.push(feedPostPath(item)); }}
+                onAuthorChanged={({ blocked }: { authorId: string; relation?: Relation; blocked?: boolean }) => { if (blocked) router.back(); }}
+              >
+                {thread === item.id ? <Comments item={item} /> : null}
+              </FeedCard>
+            ))}
+          </View>
+        )
+      ) : null}
+
+      {/* ── THE QUIET VERBS ── never beside the ones you're meant to use. */}
+      {rel !== "self" ? (
+        <View style={{ flexDirection: "row", gap: 16, marginTop: 24, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
+          <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.bold }}>⚐ {t("w.social.report")}</Text></Pressable>
+          <Pressable onPress={doBlock}><Text style={{ color: txt(C, C.red), fontSize: fs.caption, fontFamily: F.bold }}>⊘ {t("w.social.block")}</Text></Pressable>
+        </View>
+      ) : null}
+    </AuroraScreen>
+  );
+}
+
+/* ── OVERVIEW ─────────────────────────────────────────────────────────────── */
+
+function Overview({ data, cmp, name }: { data: UserPageResponse; cmp: CompareResult | null; name: string }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const stats = data.stats;
+  const label = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const, color: C.ash };
+
+  if (!data.canViewResults) {
+    const rel = userPageRelation(data);
+    return (
+      <View style={{ marginTop: 16, backgroundColor: C.ink2, borderRadius: 14, padding: 16 }}>
+        <Text style={{ color: C.ash, fontSize: fs.body, lineHeight: leading(fs.body) }}>
+          🔒 {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : followsUser(rel) ? "" : t("w.social.followToSee")}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      {stats ? (
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+          {[
+            { l: t("w.social.statVolume"), v: `${Math.round(stats.totalVolumeKg / 1000)}t` },
+            { l: t("w.social.statStreak"), v: `${stats.currentStreak}d` },
+            { l: t("w.social.statSessions"), v: stats.totalSessions.toLocaleString() },
+          ].map((s) => (
+            <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 14, paddingVertical: 12, alignItems: "center" }}>
+              <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle }}>{s.v}</Text>
+              <Text style={{ ...label, marginTop: 2 }}>{s.l}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {stats && stats.topLifts.length > 0 ? (
+        <>
+          <SectionHead title={t("w.social.topLifts")} />
+          {stats.topLifts.map((l) => (
+            <View key={l.lift} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line }}>
+              <Text style={{ color: C.chalk, fontSize: fs.body }}>{l.lift}</Text>
+              <Text style={{ color: txt(C, C.lime), fontFamily: F.mono, fontSize: fs.body }}>{l.topLoad} kg</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {cmp ? (
+        <>
+          <SectionHead title={`${t("w.social.you")} ${cmp.score.a} — ${cmp.score.b} ${name}`} />
+          {[...cmp.lines, ...cmp.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
+            <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
+              <Text style={{ flex: 1, textAlign: "right", fontFamily: F.mono, color: l.leader === "a" ? C.lime : C.chalk }}>{l.a}{l.unit}</Text>
+              <Text style={{ width: 120, textAlign: "center", color: C.ash, fontSize: fs.nano }}>{l.label}</Text>
+              <Text style={{ flex: 1, fontFamily: F.mono, color: l.leader === "b" ? C.lime : C.chalk }}>{l.b}{l.unit}</Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+    </>
+  );
+}
+
+/* ── COACHING ─────────────────────────────────────────────────────────────── */
+
+function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: string; onReload: () => Promise<void> }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const { notify } = useConfirm();
+  const coach = data.coach!;
+  const [preview, setPreview] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [body, setBody] = useState("");
+  const [enrolling, setEnrolling] = useState<string | null>(null);
+
+  return (
+    <>
+      <View style={{ marginTop: 16 }}>
+        {coach.rating !== null ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Stars rating={coach.rating} />
+            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.nano }}>{coach.reviews.length} {t("w.coaches.reviews").toLowerCase()}</Text>
+          </View>
+        ) : null}
+        {coach.bio ? <Text style={{ color: C.chalk, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 10 }}>{coach.bio}</Text> : null}
+        {coach.specialties.length > 0 || coach.sports.length > 0 ? (
+          <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+            {[...coach.specialties, ...coach.sports].map((s) => (
+              <View key={s} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
+                <Text style={{ color: C.chalk, fontSize: fs.caption }}>{s}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        <View style={{ flexDirection: "row", gap: 14, flexWrap: "wrap", marginTop: 10 }}>
+          {coach.priceNote ? <Text style={{ color: C.ash, fontSize: fs.caption }}>{coach.priceNote}</Text> : null}
+          <Text style={{ color: coach.acceptingClients ? txt(C, C.lime) : C.ash, fontSize: fs.caption }}>
+            {coach.acceptingClients ? t("w.user.takingClients") : t("w.user.notTakingClients")}
+          </Text>
+        </View>
+        {coach.isMyCoach ? <Text style={{ color: txt(C, C.lime), fontSize: fs.caption, marginTop: 10 }}>✓ {t("w.coaches.isYourCoach")}</Text> : null}
+      </View>
+
+      <SectionHead title={t("w.coaches.onlinePrograms")} meta={coach.programs.length ? String(coach.programs.length) : undefined} />
+      {coach.programs.length === 0 ? (
+        <Text style={{ color: C.ash, fontSize: fs.caption }}>{t("w.coaches.noPublished")}</Text>
+      ) : coach.programs.map((p: StorefrontProgram) => (
+        <ACard key={p.id} style={cardStack}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: fs.body }}>{p.name}</Text>
+              <Text style={{ color: C.ash, fontSize: fs.caption }}>{[p.goal, p.level, p.weeks ? `${p.weeks} ${t("w.coaches.weeks")}` : null].filter(Boolean).join(" – ")}</Text>
+            </View>
+            {p.enrollmentStatus ? (
+              <Text style={{ color: p.enrollmentStatus === "active" ? C.lime : C.amber, fontFamily: F.mono, fontSize: fs.caption }}>
+                {p.enrollmentStatus === "active" ? `${t("w.coaches.enrolled")} ✓` : t("w.social.requested")}
+              </Text>
+            ) : canEnrolProgram(data, p) ? (
+              <SButton
+                label={enrolling === p.id ? t("w.coaches.starting") : t("w.coaches.start")}
+                small
+                disabled={!!enrolling}
+                onPress={async () => {
+                  if (enrolling) return;
+                  setEnrolling(p.id);
+                  const r = await enrollProgram(p.id);
+                  setEnrolling(null);
+                  if (r.error) { void notify(t("common.error"), r.error); return; }
+                  await onReload();
+                }}
+              />
+            ) : null}
+          </View>
+          {p.summary ? <Text style={{ color: C.chalk, fontSize: fs.caption, marginTop: 8, lineHeight: leading(fs.caption) }}>{p.summary}</Text> : null}
+          {Array.isArray(p.preview) && p.preview.length > 0 ? (
+            <>
+              {/* An expander GROWS in place — bare +/−, never an arrow, and
+                  never the accent: it goes nowhere. */}
+              <Pressable onPress={() => setPreview(preview === p.id ? null : p.id)}>
+                <Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.bold, marginTop: 8 }}>
+                  {preview === p.id ? `− ${t("w.coaches.hidePreview")}` : `＋ ${t("w.coaches.previewPlan")}`}
+                </Text>
+              </Pressable>
+              {preview === p.id ? (
+                <View style={{ marginTop: 8 }}>
+                  {p.preview.map((w: ProgramPreviewWeek, wi: number) => (
+                    <View key={wi} style={{ marginBottom: 8 }}>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.coaches.week")} {wi + 1}</Text>
+                      {w.days.map((d: ProgramPreviewDay, di: number) => (
+                        <View key={di} style={{ marginTop: 4 }}>
+                          <Text style={{ color: C.chalk, fontSize: fs.caption, fontFamily: F.bold }}>{d.day || `${t("w.coaches.day")} ${di + 1}`}</Text>
+                          <Text style={{ color: C.ash, fontSize: fs.caption }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" – ") || "—"}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </>
+          ) : null}
+        </ACard>
+      ))}
+
+      <SectionHead title={t("w.coaches.reviews")} meta={coach.reviews.length ? String(coach.reviews.length) : undefined} />
+      {canReviewCoach(data) ? (
+        <View style={{ alignSelf: "flex-start", marginBottom: 12 }}>
+          <SButton label={reviewOpen ? t("common.cancel") : t("w.coaches.writeReview")} ghost small onPress={() => setReviewOpen((o) => !o)} />
+        </View>
+      ) : null}
+      {reviewOpen ? (
+        <ACard style={cardStack}>
+          <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Pressable key={n} onPress={() => setRating(n)} accessibilityLabel={String(n)}>
+                <Text style={{ fontSize: 24, color: n <= rating ? C.gold : C.line }}>★</Text>
+              </Pressable>
+            ))}
+          </View>
+          <TextInput
+            value={body}
+            onChangeText={setBody}
+            multiline
+            placeholder={t("w.coaches.reviewPlaceholder")}
+            placeholderTextColor={C.ash}
+            style={{ minHeight: 56, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: fs.caption }}
+          />
+          <View style={{ marginTop: 8, alignSelf: "flex-start" }}>
+            <SButton label={t("w.coaches.submitReview")} small onPress={async () => {
+              const r = await postReview(handle, { rating, body });
+              if (r.error) { void notify(t("common.error"), r.error); return; }
+              setReviewOpen(false); setBody("");
+              await onReload();
+            }} />
+          </View>
+        </ACard>
+      ) : null}
+      {coach.reviews.length === 0 ? (
+        <Text style={{ color: C.ash, fontSize: fs.caption }}>{t("w.social.noReviews")}</Text>
+      ) : coach.reviews.map((rv: StorefrontReview) => (
+        <View key={rv.id} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+          <Pressable onPress={() => rv.author?.handle && router.push(`/u/${rv.author.handle}`)}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
+              <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: fs.caption }}>{rv.author?.displayName || `@${rv.author?.handle}`}</Text>
+              <Text style={{ color: C.gold, fontSize: fs.caption }}>{"★".repeat(rv.rating)}</Text>
+            </View>
+          </Pressable>
+          {rv.body ? <Text style={{ color: C.ash, fontSize: fs.caption, marginTop: 6, lineHeight: leading(fs.caption) }}>{rv.body}</Text> : null}
+        </View>
+      ))}
+    </>
+  );
+}
+
+/** A section label with its count on the RIGHT — the Explore SectionHead
+ *  grammar: no marker on the left, ever. */
+function SectionHead({ title, meta }: { title: string; meta?: string }) {
+  const { palette: C, scheme } = useTheme();
+  return (
+    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 22, marginBottom: 10 }}>
+      <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle }}>{title}</Text>
+      {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{meta}</Text> : null}
+    </View>
+  );
+}

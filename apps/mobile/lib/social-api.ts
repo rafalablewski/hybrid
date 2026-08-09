@@ -1,6 +1,7 @@
 import type {
   OwnProfileResponse,
   PublicProfileResponse,
+  UserPageResponse,
   SearchResponse,
   SuggestionsResponse,
   ConnectionsResponse,
@@ -48,6 +49,11 @@ export async function sapi<T = unknown>(path: string, method = "GET", body?: unk
 export const getMyProfile = () => sapi<OwnProfileResponse>("/api/social/profile");
 export const putMyProfile = (b: unknown) => sapi<MutationResult>("/api/social/profile", "PUT", b);
 export const getProfile = (handle: string) => sapi<PublicProfileResponse>(`/api/social/profile/${handle}`);
+/** THE PERSON — the whole page in one read: their card, their privacy-gated
+ *  results, their follow counts, their coaching if they coach, and their recent
+ *  posts. The individual user page's only fetch, so a link to somebody works
+ *  with nothing else loaded. */
+export const getUserPage = (handle: string) => sapi<UserPageResponse>(`/api/social/user/${encodeURIComponent(handle)}`);
 export const searchPeople = (q: string) => sapi<SearchResponse>(`/api/social/search?q=${encodeURIComponent(q)}`);
 export const follow = (b: unknown) => sapi<MutationResult>("/api/social/follow", "POST", b);
 export const unfollow = (b: unknown) => sapi<MutationResult>("/api/social/follow", "DELETE", b);

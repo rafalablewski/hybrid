@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { feedSubjectKey, fs, leading, tracking } from "@hybrid/core";
 import type { FeedItemView, FeedResponse, KudosResponse, LiveAthlete, MutationResult, Relation } from "@hybrid/core";
 import { C, useSocialTheme, card, Btn, EmptyState, jget, jsend } from "./social-ui";
-import { ProfileDrawer } from "./social-profile";
 import { CosignInbox } from "./pr-attestation";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
@@ -81,9 +80,13 @@ function Composer({ onPosted }: { onPosted: () => void }) {
 
 export default function SocialFeed({
   onNavigate,
+  onOpenUser,
   onOpenPost,
 }: {
   onNavigate?: (screen: string) => void;
+  /** A person, on their own page (the shell's `user` screen). An avatar in the
+   *  stream opens the whole human, not a peek at them. */
+  onOpenUser?: (handle: string) => void;
   /** Open a post on its OWN page (components/feed-post.tsx). Every post opens
    *  the same way — mine and everyone else's — because the post is what was
    *  shared and what carries the thread. The shell owns the screen switch, so
@@ -94,7 +97,6 @@ export default function SocialFeed({
   const isMobile = useIsMobile();
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
-  const [drawer, setDrawer] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("forYou");
   const [live, setLive] = useState<LiveAthlete[]>([]);
@@ -217,7 +219,7 @@ export default function SocialFeed({
       </div>
 
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
-      <FeedLiveStrip live={live} onOpen={(h) => setDrawer(h)} />
+      <FeedLiveStrip live={live} onOpen={(h) => onOpenUser?.(h)} />
 
       <Composer onPosted={load} />
 
@@ -239,7 +241,7 @@ export default function SocialFeed({
               key={item.id}
               item={item}
               units={units}
-              onOpenProfile={(h) => setDrawer(h)}
+              onOpenProfile={(h) => onOpenUser?.(h)}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
               // EVERY post opens its own page — a workout, a record, a status
@@ -266,8 +268,6 @@ export default function SocialFeed({
           </div>
         </>
       )}
-
-      {drawer && <ProfileDrawer handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
     </div>
   );
 }

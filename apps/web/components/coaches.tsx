@@ -5,150 +5,24 @@ import { useEffect, useState } from "react";
 import type {
   CoachCard,
   CoachesResponse,
-  CoachStorefrontResponse,
   CoachProfileResponse,
   CoachProgramsResponse,
   CoachProgramData,
   CoachEnrollmentsResponse,
-  StorefrontProgram,
-  StorefrontReview,
-  ProgramPreviewWeek,
-  ProgramPreviewDay,
-  ProgramPreviewItem,
   EnrollmentRow,
   MutationResult,
 } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy } from "./social-ui";
-import { useDialog } from "../lib/use-dialog";
 import { useLang } from "@/lib/i18n";
 
-// ---------------- Coach detail (storefront a client sees) ----------------
-function CoachDetail({ handle, onClose }: { handle: string; onClose: () => void }) {
-  const { t } = useLang();
-  const [data, setData] = useState<CoachStorefrontResponse | null>(null);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [rating, setRating] = useState(5);
-  const [body, setBody] = useState("");
-  const [preview, setPreview] = useState<string | null>(null);
-  const busy = useBusy();
-  const dialogRef = useDialog<HTMLDivElement>(onClose);
-
-  const load = () => jget<CoachStorefrontResponse>(`/api/coaches/${handle}`).then(setData);
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
-
-  const enroll = (programId: string) => busy.run(programId, async () => {
-    const r = await jsend<MutationResult>("/api/coaches/enroll", "POST", { programId });
-    if (r.error) alert(r.error);
-    await load();
-  });
-  const submitReview = () => busy.run("rev", async () => {
-    const r = await jsend<MutationResult>(`/api/coaches/${handle}/reviews`, "POST", { rating, body });
-    if (r.error) { alert(r.error); return; }
-    setReviewOpen(false); setBody("");
-    await load();
-  });
-
-  const c = data?.coach;
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "min(520px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button className="pressable" aria-label={t("common.close")} onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
-        </div>
-        {!data || !c ? <EmptyState title={t("common.loading")} /> : (
-          <>
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-              <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={64} />
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C("chalk") }}>{c.name || `@${c.handle}`}</span>
-                  {c.coachVerified && <VerifiedTick />}
-                </div>
-                <div style={{ color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 13 }}>@{c.handle}</div>
-                <div style={{ marginTop: 4 }}><Stars rating={data.rating} /></div>
-              </div>
-            </div>
-            {c.headline && <div style={{ color: accentText("lime"), fontWeight: 600, marginTop: 12 }}>{c.headline}</div>}
-            {c.bio && <p style={{ color: C("chalk"), fontSize: 14, lineHeight: 1.6, marginTop: 8 }}>{c.bio}</p>}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-              {c.specialties?.map((s: string) => <span key={s} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 999, background: C("ink2"), color: C("chalk"), border: `1px solid ${C("line")}` }}>{s}</span>)}
-            </div>
-            {c.priceNote && <div style={{ color: C("ash"), fontSize: 13, marginTop: 10 }}>💳 {c.priceNote}</div>}
-            {data.isMyCoach && <div style={{ marginTop: 10, color: accentText("lime"), fontSize: 13 }}>✓ {t("w.coaches.isYourCoach")}</div>}
-
-            {/* Programs */}
-            <div style={{ marginTop: 22, fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>{t("w.coaches.onlinePrograms")}</div>
-            {data.programs.length === 0 ? (
-              <div style={{ color: C("ash"), fontSize: 13, marginTop: 8 }}>{t("w.coaches.noPublished")}</div>
-            ) : data.programs.map((p: StorefrontProgram) => (
-              <div key={p.id} style={{ ...card(true, { marginTop: 10, padding: 14 }) }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                  <div>
-                    <div style={{ color: C("chalk"), fontFamily: "var(--font-display)", fontWeight: 700 }}>{p.name}</div>
-                    <div style={{ color: C("ash"), fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} ${t("w.coaches.weeks")}` : null].filter(Boolean).join(" – ")}</div>
-                  </div>
-                  {p.enrollmentStatus ? (
-                    <span style={{ fontSize: 12, color: p.enrollmentStatus === "active" ? C("lime") : C("ash"), fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{p.enrollmentStatus === "active" ? `${t("w.coaches.enrolled")} ✓` : t("w.social.requested")}</span>
-                  ) : data.isMe ? null : (
-                    <Btn small onClick={() => enroll(p.id)} disabled={busy.is(p.id)}>{t("w.coaches.startProgram")}</Btn>
-                  )}
-                </div>
-                {p.summary && <p style={{ color: C("chalk"), fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>{p.summary}</p>}
-                {Array.isArray(p.preview) && p.preview.length > 0 && (
-                  <>
-                    <button className="pressable" onClick={() => setPreview(preview === p.id ? null : p.id)} style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", color: accentText("lime"), fontSize: 12, fontFamily: "var(--font-display)", fontWeight: 700, padding: 0 }}>
-                      {preview === p.id ? `${t("w.coaches.hidePreview")} ▲` : `${t("w.coaches.previewPlan")} ▼`}
-                    </button>
-                    {preview === p.id && (
-                      <div style={{ marginTop: 8 }}>
-                        {p.preview.map((w: ProgramPreviewWeek, wi: number) => (
-                          <div key={wi} style={{ marginBottom: 8 }}>
-                            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: C("ash") }}>{t("w.coaches.week")} {wi + 1}</div>
-                            {w.days.map((d: ProgramPreviewDay, di: number) => (
-                              <div key={di} style={{ marginTop: 4 }}>
-                                <div style={{ color: C("chalk"), fontSize: 13, fontWeight: 600 }}>{d.day || `${t("w.coaches.day")} ${di + 1}`}</div>
-                                <div style={{ color: C("ash"), fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" – ") || "—"}</div>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
-
-            {/* Reviews */}
-            <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk") }}>{t("w.coaches.reviews")} ({data.reviews.length})</span>
-              {data.isMyCoach && !data.isMe && <Btn ghost small onClick={() => setReviewOpen((o) => !o)}>{reviewOpen ? t("common.cancel") : t("w.coaches.writeReview")}</Btn>}
-            </div>
-            {reviewOpen && (
-              <div style={card(true, { marginTop: 10, padding: 14 })}>
-                <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-                  {[1, 2, 3, 4, 5].map((n) => <button className="pressable" key={n} onClick={() => setRating(n)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: n <= rating ? C("gold") : C("line") }}>★</button>)}
-                </div>
-                <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder={t("w.coaches.reviewPlaceholder")} style={{ width: "100%", minHeight: 60, padding: 10, borderRadius: 12, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 13 }} />
-                <div style={{ marginTop: 8 }}><Btn small onClick={submitReview} disabled={busy.is("rev")}>{t("w.coaches.submitReview")}</Btn></div>
-              </div>
-            )}
-            {data.reviews.map((rv: StorefrontReview) => (
-              <div key={rv.id} style={{ padding: "10px 0", borderBottom: `1px solid ${C("line")}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
-                  <span style={{ color: C("chalk"), fontWeight: 600, fontSize: 13 }}>{rv.author?.displayName || `@${rv.author?.handle}`}</span>
-                  <span style={{ color: C("gold"), fontSize: 12 }}>{"★".repeat(rv.rating)}</span>
-                </div>
-                {rv.body && <p style={{ color: C("ash"), fontSize: 13, margin: "6px 0 0", lineHeight: 1.5 }}>{rv.body}</p>}
-              </div>
-            ))}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+/**
+ * THE MARKETPLACE — the directory, and a coach's own storefront EDITOR.
+ *
+ * Reading a coach is not here: tapping one opens their PAGE
+ * (components/user-page.tsx), where coaching is a tab on the person rather than
+ * a separate storefront drawer. A coach is one human with more to offer, not a
+ * second kind of profile.
+ */
 
 // ---------------- Coach's own storefront editor ----------------
 function Storefront() {
@@ -241,13 +115,12 @@ function Storefront() {
 }
 
 // ---------------- Marketplace directory ----------------
-export default function Coaches() {
+export default function Coaches({ onOpenUser }: { onOpenUser?: (handle: string) => void } = {}) {
   const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [tab, setTab] = useState<"browse" | "storefront">("browse");
   const [q, setQ] = useState("");
   const [coaches, setCoaches] = useState<CoachCard[] | null>(null);
-  const [detail, setDetail] = useState<string | null>(null);
   const [isCoach, setIsCoach] = useState(false);
 
   const load = () => jget<CoachesResponse>(`/api/coaches${q.trim() ? `?q=${encodeURIComponent(q)}` : ""}`).then((r) => setCoaches(r.coaches ?? []));
@@ -273,7 +146,7 @@ export default function Coaches() {
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {coaches.map((c) => (
-                <button className="pressable" key={c.userId} onClick={() => setDetail(c.handle)} style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}>
+                <button className="pressable" key={c.userId} onClick={() => onOpenUser?.(c.handle)} style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                     <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -295,7 +168,6 @@ export default function Coaches() {
           )}
         </>
       )}
-      {detail && <CoachDetail handle={detail} onClose={() => { setDetail(null); load(); }} />}
     </div>
   );
 }

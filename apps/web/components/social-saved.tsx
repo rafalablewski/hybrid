@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { FEED_SAVED_PAGE, feedSubjectKey, fs, leading, orderBySaved, tracking } from "@hybrid/core";
 import type { FeedItemView, KudosResponse, Relation, SavedFeedResponse } from "@hybrid/core";
 import { C, Btn, EmptyState, jsend } from "./social-ui";
-import { ProfileDrawer } from "./social-profile";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
 import { HubMasthead } from "./aurora/hub-masthead";
@@ -39,9 +38,12 @@ import { useIsMobile } from "@/lib/use-media-query";
 
 export default function SocialSaved({
   onNavigate,
+  onOpenUser,
   onOpenPost,
 }: {
   onNavigate?: (screen: string) => void;
+  /** A person, on their own page (the shell's `user` screen). */
+  onOpenUser?: (handle: string) => void;
   /** A saved row opens the same post page the feed's rows open. */
   onOpenPost?: (key: string, item: FeedItemView) => void;
 } = {}) {
@@ -52,7 +54,6 @@ export default function SocialSaved({
   const [items, setItems] = useState<FeedItemView[] | null>(null);
   const [hidden, setHidden] = useState(0);
   const [shown, setShown] = useState(FEED_SAVED_PAGE);
-  const [drawer, setDrawer] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
 
@@ -120,7 +121,7 @@ export default function SocialSaved({
               key={item.id}
               item={item}
               units={units}
-              onOpenProfile={(h) => setDrawer(h)}
+              onOpenProfile={(h) => onOpenUser?.(h)}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
               onOpen={onOpenPost ? () => { setOpen(null); onOpenPost(feedSubjectKey(item), item); } : undefined}
@@ -157,8 +158,6 @@ export default function SocialSaved({
           </div>
         </>
       )}
-
-      {drawer && <ProfileDrawer handle={drawer} onClose={() => setDrawer(null)} />}
     </div>
   );
 }

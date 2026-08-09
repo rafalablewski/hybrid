@@ -89,6 +89,7 @@ const SocialDiscover = dynamic(() => import("./social-discover"), { ssr: false }
 const SocialSaved = dynamic(() => import("./social-saved"), { ssr: false });
 const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: false });
 const CoachesScreen = dynamic(() => import("./coaches"), { ssr: false });
+const UserPage = dynamic(() => import("./user-page"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
 import PremiumAccentStyle from "./premium-accent-style";
 import CoachInviteBanner from "./coach-invite-banner";
@@ -272,12 +273,34 @@ export default function AppShell() {
     setScreen("post");
   };
 
+  // THE PERSON — one page per human, coach or not (components/user-page.tsx).
+  // Every place that used to peek at somebody in a drawer now goes here, so
+  // there is one surface for a person and it has an address.
+  const [userFocus, setUserFocus] = useState("");
+  const [userReturn, setUserReturn] = useState("feed");
+  const openUser = (handle: string) => {
+    if (!handle) return;
+    if (screen !== "user") setUserReturn(screen);
+    // The sub-target is written BEFORE the screen, so the pushed history entry
+    // carries the handle with it (same reason as the post and the sport page).
+    writeDeepLink({ u: handle.toLowerCase() });
+    setUserFocus(handle.toLowerCase());
+    setScreen("user");
+  };
+
   /** Which screen a deep link actually resolves to. A `sportpage` link carries
    *  the sport as a slug; one that names no catalog sport (an older build, a
    *  mangled paste) lands on the sport INDEX rather than on an empty page. A
    *  `post` link carries the post's key; one that names no readable subject
    *  lands on the FEED rather than on an empty page. */
-  const landing = (p: { s?: string; sport?: string; post?: string }): string => {
+  const landing = (p: { s?: string; sport?: string; post?: string; u?: string }): string => {
+    if (p.s === "user") {
+      // A person link that names nobody lands on Find friends rather than on an
+      // empty page — the same degradation rule the sport and post links follow.
+      if (!p.u) return "discover";
+      setUserFocus(p.u.toLowerCase());
+      return "user";
+    }
     if (p.s === "post") {
       const ref = parseFeedSubjectKey(p.post);
       if (!ref) return "feed";
@@ -336,6 +359,22 @@ export default function AppShell() {
       postParamWritten.current = false;
     }
   }, [screen, postFocus]);
+
+  // A person's address is `?s=user&u=<handle>`; leaving it drops the handle, so
+  // a stale link can never point at someone you are no longer looking at. Same
+  // ref-guard as the sport and post params above, and for the same reason.
+  const userParamWritten = useRef(false);
+  useEffect(() => {
+    if (screen === "user") {
+      if (userFocus) {
+        writeDeepLink({ u: userFocus });
+        userParamWritten.current = true;
+      }
+    } else if (userParamWritten.current) {
+      writeDeepLink({ u: undefined });
+      userParamWritten.current = false;
+    }
+  }, [screen, userFocus]);
 
   // The upgrade paywall is a slide-up sheet OVERLAY (not a screen), so it appears
   // over whatever you're on. `navigate` centralises the intercept so any
@@ -1071,15 +1110,19 @@ export default function AppShell() {
             soften under Aurora), like the tools below. Everyone (casual+). The
             Explore screen that used to front these is gone: its coach rail sits
             on Today and each destination below is reached from More. */}
-        {screen === "feed" && <SocialFeed onNavigate={setScreen} onOpenPost={openPost} />}
+        {screen === "feed" && <SocialFeed onNavigate={setScreen} onOpenPost={openPost} onOpenUser={openUser} />}
+        {/* ONE PERSON, on their own page — who they are, how they train, and,
+            if they coach, what they coach. `?s=user&u=<handle>` is its address,
+            so a profile can be shared the way a post can. */}
+        {screen === "user" && <UserPage handle={userFocus} onBack={() => popTo(userReturn, true)} onOpenUser={openUser} onOpenPost={openPost} />}
         {/* ONE POST, on its own page — a workout with every figure, the records
             it set and its thread. `?s=post&post=<type>:<id>` is its address, so
             a shared link lands here rather than at the top of the stream. */}
-        {screen === "post" && <FeedPost postKey={postFocus} initial={postItem} onBack={() => popTo(postReturn, true)} onOpenSession={openSession} />}
-        {screen === "discover" && <SocialDiscover />}
-        {screen === "saved" && <SocialSaved onNavigate={setScreen} onOpenPost={openPost} />}
-        {screen === "leaderboard" && <SocialLeaderboard />}
-        {screen === "coaches" && <CoachesScreen />}
+        {screen === "post" && <FeedPost postKey={postFocus} initial={postItem} onBack={() => popTo(postReturn, true)} onOpenSession={openSession} onOpenProfile={openUser} />}
+        {screen === "discover" && <SocialDiscover onOpenUser={openUser} />}
+        {screen === "saved" && <SocialSaved onNavigate={setScreen} onOpenPost={openPost} onOpenUser={openUser} />}
+        {screen === "leaderboard" && <SocialLeaderboard onOpenUser={openUser} />}
+        {screen === "coaches" && <CoachesScreen onOpenUser={openUser} />}
 
         {/* Tools available in BOTH templates (Aurora-styled when active, classic
             otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}

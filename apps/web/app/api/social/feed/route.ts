@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { buildLiveNow, buildSocialFeed, rankFeed, type FeedSignals, type FeedSubjectInput, type Relation } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
-import { reactionKeys, tableMissing, recentSessionsByUsers, recentPostsByUsers, authorCards, blockedIdsFor } from "@/lib/social";
+import { enrichReactions, tableMissing, recentSessionsByUsers, recentPostsByUsers, authorCards, blockedIdsFor } from "@/lib/social";
 
 // The activity feed: my active followees' recent sessions + PRs, built by the
 // core engine, enriched with kudos/comment counts and whether I've cheered each
@@ -57,34 +57,7 @@ export async function GET(request: Request) {
 
     // kudos + comments for the items on screen. A workout's reactions include
     // the ones given to the PR card it used to have beside it (lib/social.ts).
-    const { pairs: keys, keyOf } = reactionKeys(items);
-    const [kudos, myKudos, comments] = keys.length
-      ? await Promise.all([
-          prisma.kudos.groupBy({ by: ["subjectType", "subjectId"], _count: { _all: true }, where: { OR: keys } }),
-          prisma.kudos.findMany({ where: { userId: me.id, OR: keys }, select: { subjectType: true, subjectId: true } }),
-          prisma.comment.groupBy({ by: ["subjectType", "subjectId"], _count: { _all: true }, where: { OR: keys } }),
-        ])
-      : [[], [], []];
-
-    const tally = (rows: { subjectType: string; subjectId: string; _count: { _all: number } }[]) => {
-      const m = new Map<string, number>();
-      for (const r of rows) m.set(keyOf(r), (m.get(keyOf(r)) ?? 0) + r._count._all);
-      return m;
-    };
-    const kCount = tally(kudos as { subjectType: string; subjectId: string; _count: { _all: number } }[]);
-    const cCount = tally(comments as { subjectType: string; subjectId: string; _count: { _all: number } }[]);
-    const mine = new Set((myKudos as { subjectType: string; subjectId: string }[]).map(keyOf));
-
-    const enriched = items.map((i) => {
-      const key = `${i.subjectType}:${i.subjectId}`;
-      return {
-        ...i,
-        kudos: kCount.get(key) ?? 0,
-        comments: cCount.get(key) ?? 0,
-        kudosedByMe: mine.has(key),
-        mine: i.author.id === me.id,
-      };
-    });
+    const enriched = await enrichReactions(items, me.id);
 
     // ---- RANKING (core/feed-rank.ts) ------------------------------------
     // The signals we can compute HONESTLY today. Gym, program and strength

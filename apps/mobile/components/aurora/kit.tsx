@@ -111,7 +111,9 @@ export function AuroraScreen({
   top,
   hubTab,
 }: {
-  children: ReactNode;
+  /** Optional because a screen that hands its own list to `scroller` has no
+   *  body left for the shell to render — the list IS the body. */
+  children?: ReactNode;
   /** THE HERO. Give a screen a `hero` and AuroraScreen hands the whole shell to
    *  the HERO SYSTEM (components/aurora/hero.tsx): the system's rail at the
    *  system's y, the one nav button, the one title ramp, the one metadata

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { parseDeepLink, applyDeepLink, sportPageUrl, verifiedFoodUrl, verifiedSourceUrl } from "../lib/deep-link";
-import { sportFromSlug, sportSlug } from "@hybrid/core";
+import { sportFromSlug, sportSlug, userPageUrl } from "@hybrid/core";
 
 /**
  * Deep links are the ONE place in the app where an attacker-controlled string —
@@ -160,5 +160,26 @@ describe("a sport page has an address", () => {
   it("leaving the page drops the slug, so a stale address can't point at it", () => {
     const open = applyDeepLink("", { s: "sportpage", sport: "swimming" });
     expect(parseDeepLink(applyDeepLink(open, { s: "today", sport: undefined }))).toEqual({ s: "today" });
+  });
+});
+
+describe("a person has an address", () => {
+  it("carries the handle, which the parser already accepts", () => {
+    expect(parseDeepLink("?s=user&u=ada")).toEqual({ s: "user", u: "ada" });
+  });
+
+  it("the shared profile link reads back through the parser that will land it", () => {
+    const url = userPageUrl("Ada");
+    expect(parseDeepLink(url.slice(url.indexOf("?")))).toEqual({ s: "user", u: "ada" });
+  });
+
+  it("drops a mangled handle rather than passing it to a lookup", () => {
+    expect(parseDeepLink("?s=user&u=../../etc/passwd").u).toBeUndefined();
+    expect(parseDeepLink("?s=user&u=<script>").u).toBeUndefined();
+  });
+
+  it("leaving the page drops the handle, so a stale address can't point at it", () => {
+    const open = applyDeepLink("", { s: "user", u: "ada" });
+    expect(parseDeepLink(applyDeepLink(open, { s: "feed", u: undefined }))).toEqual({ s: "feed" });
   });
 });

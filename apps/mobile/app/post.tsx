@@ -6,6 +6,7 @@ import {
   feedHeadlineText,
   feedSubjectKey,
   parseFeedSubjectKey,
+  userPagePath,
   type FeedItemView,
   type Relation,
 } from "@hybrid/core";
@@ -15,7 +16,7 @@ import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { getFeedPost, toggleKudos } from "../lib/social-api";
-import { Avatar, Empty, ProfileModal } from "../components/social-kit";
+import { Avatar, Empty } from "../components/social-kit";
 import { Comments } from "../components/feed-comments";
 import { FeedActions } from "../components/feed-card";
 import { FeedWorkout } from "../components/feed-workout";
@@ -50,7 +51,6 @@ export default function PostScreen() {
   // Either shape resolves: two params (what `feedPostPath` writes) or the one
   // `type:id` key kudos, comments and saves already use.
   const ref = parseFeedSubjectKey(typeof params.key === "string" ? params.key : `${params.type ?? ""}:${params.id ?? ""}`);
-  const [drawer, setDrawer] = useState<string | null>(null);
   const [menu, setMenu] = useState<FeedMenuAnchor | null>(null);
   // The comment button has nothing to expand here — the thread is already open
   // below — so it puts the cursor in the box instead.
@@ -106,7 +106,7 @@ export default function PostScreen() {
           screen of its own the post is the only thing here, so the person
           leads it. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Pressable onPress={() => setDrawer(item.author.handle)}>
+        <Pressable onPress={() => item.author.handle && router.push(userPagePath(item.author.handle))}>
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={44} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -162,7 +162,6 @@ export default function PostScreen() {
         relation={item.relation}
         onAuthorChanged={authorChanged}
       />
-      {drawer ? <ProfileModal handle={drawer} onClose={() => setDrawer(null)} /> : null}
     </AuroraScreen>
   );
 }
