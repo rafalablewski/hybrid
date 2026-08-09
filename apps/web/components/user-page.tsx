@@ -109,6 +109,34 @@ function Figure({ value, label, onClick }: { value: string; label: string; onCli
   );
 }
 
+/** THE DOOR AT THE END OF A LIST — it GROWS the list in place, so it takes the
+ *  app's expander grammar: a bare ＋, in ash, with no ring and no arrow. An
+ *  arrow would promise a destination; there isn't one, there is just more of
+ *  what you are already reading. (CLAUDE.md, the exit grammar.) */
+function LoadMore({ label, busy, busyLabel, onLoad }: { label: string; busy: boolean; busyLabel: string; onLoad: () => void }) {
+  return (
+    <button
+      className="pressable"
+      onClick={onLoad}
+      disabled={busy}
+      style={{ display: "block", width: "100%", marginTop: 14, background: "none", border: "none", padding: "6px 0", cursor: busy ? "default" : "pointer", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption, textAlign: "center" }}
+    >
+      {busy ? busyLabel : `＋ ${label}`}
+    </button>
+  );
+}
+
+/** The quiet line at the true end of a list. Only shown when the end is OURS
+ *  rather than theirs — "no more we can reach" is a different claim from "no
+ *  more exist", and the page should not let the reader confuse them. */
+function ListEnd({ text }: { text: string }) {
+  return (
+    <p style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C("ash"), textAlign: "center", padding: "14px 0 4px" }}>
+      {text}
+    </p>
+  );
+}
+
 /* ── PEOPLE ───────────────────────────────────────────────────────────────── */
 
 /** Who follows them, and who they follow. Rows carry no follow button of their
@@ -121,16 +149,36 @@ function People({ handle, tab, onTab, onOpenUser }: {
   onOpenUser?: (handle: string) => void;
 }) {
   const { t } = useLang();
-  const [data, setData] = useState<UserPagePeopleResponse | null>(null);
+  const [people, setPeople] = useState<PersonCard[] | null>(null);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [more, setMore] = useState(false);
+
+  const url = (c?: string | null) =>
+    `/api/social/user/${encodeURIComponent(handle)}/people?tab=${tab}${c ? `&cursor=${encodeURIComponent(c)}` : ""}`;
 
   useEffect(() => {
     let alive = true;
-    setData(null);
-    jget<UserPagePeopleResponse>(`/api/social/user/${encodeURIComponent(handle)}/people?tab=${tab}`)
-      .then((d) => { if (alive) setData(d); })
-      .catch(() => { if (alive) setData({ tab, people: [], truncated: false } as UserPagePeopleResponse); });
+    setPeople(null); setCursor(null);
+    jget<UserPagePeopleResponse>(url())
+      .then((d) => { if (alive) { setPeople(d.people ?? []); setCursor(d.nextCursor ?? null); } })
+      .catch(() => { if (alive) { setPeople([]); setCursor(null); } });
     return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handle, tab]);
+
+  // APPEND, never replace: the rows you already read stay put, and the cursor
+  // guarantees the next page starts exactly where this one stopped.
+  const loadMore = async () => {
+    if (!cursor || more) return;
+    setMore(true);
+    try {
+      const d = await jget<UserPagePeopleResponse>(url(cursor));
+      setPeople((prev) => [...(prev ?? []), ...(d.people ?? [])]);
+      setCursor(d.nextCursor ?? null);
+    } finally {
+      setMore(false);
+    }
+  };
 
   const side = (id: PeopleTab, label: string) => (
     <button
@@ -154,13 +202,13 @@ function People({ handle, tab, onTab, onOpenUser }: {
         {side("followers", t("w.user.followers"))}
         {side("following", t("w.user.following"))}
       </div>
-      {!data ? (
+      {!people ? (
         <EmptyState title={t("common.loading")} />
-      ) : data.people.length === 0 ? (
+      ) : people.length === 0 ? (
         <EmptyState title={t(tab === "followers" ? "w.user.noFollowers" : "w.user.noFollowing")} />
       ) : (
         <>
-          {data.people.map((c: PersonCard) => (
+          {people.map((c: PersonCard) => (
             <button
               className="pressable"
               key={c.userId}
@@ -174,11 +222,7 @@ function People({ handle, tab, onTab, onOpenUser }: {
               </span>
             </button>
           ))}
-          {data.truncated && (
-            <p style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C("ash"), textAlign: "center", padding: "14px 0 4px" }}>
-              {t("w.user.peopleBound").replace("{n}", String(data.people.length))}
-            </p>
-          )}
+          {cursor && <LoadMore label={t("w.user.loadMorePeople")} busy={more} busyLabel={t("w.user.loading")} onLoad={loadMore} />}
         </>
       )}
     </div>
@@ -215,6 +259,9 @@ export default function UserPage({
   const [compare, setCompare] = useState<CompareResult | null>(null);
   const [thread, setThread] = useState<string | null>(null);
   const [peopleTab, setPeopleTab] = useState<PeopleTab>("followers");
+  // The timeline pages independently of the rest of the payload: page 1 arrives
+  // with the person, older pages arrive one door-press at a time.
+  const [older, setOlder] = useState(false);
   const busy = useBusy();
   // What the row that opened us already knew (core/person-seed.ts). It paints
   // the identity on the FIRST frame; the fetch confirms it a moment later.
@@ -253,6 +300,26 @@ export default function UserPage({
     patch((x) => ({ ...x, kudos: x.kudos + (x.kudosedByMe ? -1 : 1), kudosedByMe: !x.kudosedByMe }));
     const r = await jsend<KudosResponse>("/api/social/kudos", "POST", { subjectType: item.subjectType, subjectId: item.subjectId, ownerId: item.author.id });
     patch((x) => ({ ...x, kudos: r.kudos ?? x.kudos, kudosedByMe: r.kudosedByMe ?? x.kudosedByMe }));
+  };
+  /** APPEND the next page of their timeline. The cursor is the server's, so the
+   *  page continues exactly where the last one stopped even if they have
+   *  trained since. */
+  const loadOlder = async () => {
+    if (!data?.activityCursor || older) return;
+    setOlder(true);
+    try {
+      const d = await jget<{ items: FeedItemView[]; nextCursor: string | null; capped: boolean }>(
+        `/api/social/user/${encodeURIComponent(handle)}/activity?cursor=${encodeURIComponent(data.activityCursor)}`,
+      );
+      setData((prev) => (prev ? {
+        ...prev,
+        activity: [...prev.activity, ...(d.items ?? [])],
+        activityCursor: d.nextCursor ?? null,
+        activityCapped: d.capped ?? prev.activityCapped,
+      } : prev));
+    } finally {
+      setOlder(false);
+    }
   };
   const doBlock = () => {
     if (!window.confirm(t("w.social.blockConfirm").replace("{h}", handle))) return;
@@ -429,13 +496,14 @@ export default function UserPage({
                   )}
                 </FeedCard>
               ))}
-              {/* The cap, said out loud. A list that stops silently reads as
-                  "this is everything they have ever done". */}
-              {data.activityTruncated && (
-                <p style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C("ash"), textAlign: "center", padding: "14px 0 4px" }}>
-                  {t("w.user.activityBound").replace("{n}", String(data.activity.length))}
-                </p>
-              )}
+              {/* More to read → the door. Nothing more → say WHY it stopped,
+                  but only when the stop is ours: a timeline that simply ran out
+                  of workouts is allowed to just end. */}
+              {data.activityCursor
+                ? <LoadMore label={t("w.user.loadOlder")} busy={older} busyLabel={t("w.user.loading")} onLoad={loadOlder} />
+                : data.activityCapped
+                  ? <ListEnd text={t("w.user.activityCapped").replace("{n}", String(data.activity.length))} />
+                  : null}
             </div>
           )
         )}

@@ -1,5 +1,5 @@
 import { relationTo, canViewResults, profileStats, estimateFitnessLevel, badgeFor, type Visibility } from "@hybrid/core";
-import type { BadgeAccent, FitnessLevel, PublicProfile, ProfileStats, Relation, FollowState } from "@hybrid/core";
+import type { BadgeAccent, FitnessLevel, LoggedSession, PublicProfile, ProfileStats, Relation, FollowState } from "@hybrid/core";
 import { prisma } from "@/lib/db";
 import { edgesFor, allSessionsFor, blockedIdsFor } from "@/lib/social";
 
@@ -22,6 +22,20 @@ export interface PublicProfileRead {
   fitnessLevel: { level: FitnessLevel; accent: BadgeAccent } | null;
   /** The db user id, for callers that need to keep reading (activity, coach). */
   userId: string;
+  /**
+   * The athlete's own history, as loaded for the stats — null behind the
+   * privacy gate.
+   *
+   * Handed back rather than thrown away because the TIMELINE is built from it.
+   * That is not an optimisation, it is a correctness requirement:
+   * `buildSocialFeed` decides whether a session set a record by comparing it
+   * against everything EARLIER IN THE ARRAY IT IS GIVEN, so a page built from
+   * only an older slice would judge its oldest session against nothing and
+   * invent a first-ever PR. Building every page from the one full history keeps
+   * the badges honest — and costs one query fewer than the windowed read it
+   * replaced, since this load was already happening for the stats.
+   */
+  sessions: LoggedSession[] | null;
 }
 
 /** `null` means "not found" as far as the viewer is concerned — including the
@@ -101,5 +115,6 @@ export async function loadPublicProfile(viewerId: string, handle: string): Promi
     stats,
     fitnessLevel: badge ? { level: badge.level, accent: badge.accent } : null,
     userId: profile.userId,
+    sessions,
   };
 }

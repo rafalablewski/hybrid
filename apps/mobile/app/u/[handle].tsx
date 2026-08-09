@@ -43,7 +43,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useConfirm } from "../../components/aurora/confirm";
 import { HeroAccessory } from "../../components/aurora/hero";
 import {
-  blockUser, enrollProgram, follow, getCompare, getUserPage, getUserPeople, postReview, reportTarget, toggleKudos, unfollow,
+  blockUser, enrollProgram, follow, getCompare, getUserActivity, getUserPage, getUserPeople, postReview, reportTarget, toggleKudos, unfollow,
 } from "../../lib/social-api";
 import { Avatar, Empty, SButton, Stars, levelInk } from "../../components/social-kit";
 import FeedCard from "../../components/feed-card";
@@ -77,6 +77,9 @@ export default function UserScreen() {
   const [cmp, setCmp] = useState<CompareResult | null>(null);
   const [thread, setThread] = useState<string | null>(null);
   const [peopleTab, setPeopleTab] = useState<PeopleTab>("followers");
+  // The timeline pages independently of the rest of the payload: page 1 arrives
+  // with the person, older pages one door-press at a time.
+  const [older, setOlder] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   // What the row that opened us already knew (core/person-seed.ts) — the first
   // frame paints the person, not a spinner where the person will be.
@@ -112,6 +115,25 @@ export default function UserScreen() {
     await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" });
     void notify(t("w.social.reportThanks"));
   };
+  /** APPEND the next page of their timeline. The cursor is the server's, so the
+   *  page continues exactly where the last one stopped even if they have
+   *  trained since. */
+  const loadOlder = async () => {
+    if (!data?.activityCursor || older) return;
+    setOlder(true);
+    try {
+      const d = await getUserActivity(handle, data.activityCursor);
+      setData((prev) => (prev ? {
+        ...prev,
+        activity: [...prev.activity, ...(d.items ?? [])],
+        activityCursor: d.nextCursor ?? null,
+        activityCapped: d.capped ?? prev.activityCapped,
+      } : prev));
+    } finally {
+      setOlder(false);
+    }
+  };
+
   /** A kudos must never wait on the network to look given. */
   const cheer = async (item: FeedItemView) => {
     const patch = (fn: (x: FeedItemView) => FeedItemView) =>
@@ -273,12 +295,13 @@ export default function UserScreen() {
                 {thread === item.id ? <Comments item={item} /> : null}
               </FeedCard>
             ))}
-            {/* The cap, said out loud. A list that stops silently reads as
-                "this is everything they have ever done". */}
-            {data.activityTruncated ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, textAlign: "center", paddingVertical: 14 }}>
-                {t("w.user.activityBound").replace("{n}", String(data.activity.length))}
-              </Text>
+            {/* More to read → the door. Nothing more → say WHY it stopped, but
+                only when the stop is ours: a timeline that simply ran out of
+                workouts is allowed to just end. */}
+            {data.activityCursor ? (
+              <LoadMore label={t("w.user.loadOlder")} busy={older} busyLabel={t("w.user.loading")} onLoad={loadOlder} />
+            ) : data.activityCapped ? (
+              <ListEnd text={t("w.user.activityCapped").replace("{n}", String(data.activity.length))} />
             ) : null}
           </View>
         )
@@ -379,6 +402,32 @@ function Overview({ data, cmp, name, onCompare, busy }: {
   );
 }
 
+/** THE DOOR AT THE END OF A LIST — it GROWS the list in place, so it takes the
+ *  app's expander grammar: a bare ＋, in ash, no ring and no arrow. An arrow
+ *  would promise a destination; there isn't one, there is just more of what you
+ *  are already reading. Web twin: LoadMore in components/user-page.tsx. */
+function LoadMore({ label, busy, busyLabel, onLoad }: { label: string; busy: boolean; busyLabel: string; onLoad: () => void }) {
+  const { palette: C } = useTheme();
+  return (
+    <Pressable onPress={onLoad} disabled={busy} style={{ paddingVertical: 12 }}>
+      <Text style={{ color: C.ash, fontFamily: F.bold, fontSize: fs.caption, textAlign: "center" }}>
+        {busy ? busyLabel : `＋ ${label}`}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** The quiet line at the true end of a list — shown only when the end is OURS
+ *  rather than theirs. */
+function ListEnd({ text }: { text: string }) {
+  const { palette: C } = useTheme();
+  return (
+    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, textAlign: "center", paddingVertical: 14 }}>
+      {text}
+    </Text>
+  );
+}
+
 /* ── PEOPLE ───────────────────────────────────────────────────────────────── */
 
 /** Who follows them, and who they follow. Rows carry no follow button of their
@@ -387,14 +436,34 @@ function Overview({ data, cmp, name, onCompare, busy }: {
 function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab: (t: PeopleTab) => void }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const [data, setData] = useState<UserPagePeopleResponse | null>(null);
+  const [people, setPeople] = useState<PersonCard[] | null>(null);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [more, setMore] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    setData(null);
-    getUserPeople(handle, tab).then((d) => { if (alive) setData(d); });
+    setPeople(null); setCursor(null);
+    getUserPeople(handle, tab).then((d) => {
+      if (!alive) return;
+      setPeople(d.people ?? []);
+      setCursor(d.nextCursor ?? null);
+    });
     return () => { alive = false; };
   }, [handle, tab]);
+
+  // APPEND, never replace: the rows already read stay put, and the cursor
+  // guarantees the next page starts exactly where this one stopped.
+  const loadMore = async () => {
+    if (!cursor || more) return;
+    setMore(true);
+    try {
+      const d = await getUserPeople(handle, tab, cursor);
+      setPeople((prev) => [...(prev ?? []), ...(d.people ?? [])]);
+      setCursor(d.nextCursor ?? null);
+    } finally {
+      setMore(false);
+    }
+  };
 
   const side = (id: PeopleTab, l: string) => (
     <Pressable onPress={() => onTab(id)} accessibilityState={{ selected: tab === id }} style={{ paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: tab === id ? C.chalk : "transparent" }}>
@@ -408,13 +477,13 @@ function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab:
         {side("followers", t("w.user.followers"))}
         {side("following", t("w.user.following"))}
       </View>
-      {!data ? (
+      {!people ? (
         <Loading />
-      ) : data.people.length === 0 ? (
+      ) : people.length === 0 ? (
         <Empty title={t(tab === "followers" ? "w.user.noFollowers" : "w.user.noFollowing")} />
       ) : (
         <>
-          {data.people.map((c: PersonCard) => (
+          {people.map((c: PersonCard) => (
             <Pressable
               key={c.userId}
               onPress={() => router.push(userPagePath(c.handle))}
@@ -427,11 +496,7 @@ function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab:
               </View>
             </Pressable>
           ))}
-          {data.truncated ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, textAlign: "center", paddingVertical: 14 }}>
-              {t("w.user.peopleBound").replace("{n}", String(data.people.length))}
-            </Text>
-          ) : null}
+          {cursor ? <LoadMore label={t("w.user.loadMorePeople")} busy={more} busyLabel={t("w.user.loading")} onLoad={loadMore} /> : null}
         </>
       )}
     </View>
