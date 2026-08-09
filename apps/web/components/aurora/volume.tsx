@@ -208,7 +208,7 @@ export default function AuroraVolume({ sessions, unified = false, compact = fals
   // the app navigates, and they still see the panel they tapped from.
   const openModelFromSheet = onOpenModel ? () => { setSource(false); onOpenModel(); } : undefined;
   const sourceSheet = (
-    <Sheet open={source} onClose={() => setSource(false)} title={t("w.analyze.vol.whose")} detents={["medium", "large"]}>
+    <Sheet open={source} onClose={() => setSource(false)} title={t("w.analyze.vol.whose")} detents={["medium"]}>
       <SourceBody
         resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys}
         adaptive={prefs.adaptiveLandmarks} onOpenModel={openModelFromSheet} ml={ml}

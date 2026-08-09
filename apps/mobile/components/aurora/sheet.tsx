@@ -7,7 +7,9 @@ import {
   springToRN,
   durations,
   sheetGesture,
+  sheetSnaps,
   resolveSheetRelease,
+  releaseVelocity,
   rubberBand,
   sheetPadBottom,
   type SheetDetent,
@@ -28,21 +30,37 @@ import { F } from "../../lib/ui";
  *
  * `visible` mounts it; the entrance/exit animation is driven internally and the
  * node is kept alive through the exit so callers just flip a boolean. Pass
- * `scroll={false}` when the child owns its own scroll container.
+ * `scroll={false}` when the child owns its own scroll container — and only
+ * then: that hands the panel's whole column to the child, so such a sheet is
+ * FULL HEIGHT (see the measurement note below). A short sheet lets this
+ * component do the scrolling and rests exactly as tall as what it holds.
  *
  * THE HANDLE IS A GESTURE, not a decoration. This component drew iOS's universal
  * 40×4 "drag me" glyph and bound nothing to it, so the first thing a fluent user
  * tries did nothing — worse than having no handle, because a handle-less sheet
- * at least teaches "tap outside". Now: the panel tracks the finger 1:1 downward
- * and rubber-bands upward, the scrim AND the parent's recede interpolate on the
+ * at least teaches "tap outside". Now: the panel tracks the finger 1:1 in both
+ * directions between its stops (and rubber-bands only past the top, where there
+ * is nothing left to uncover), the scrim AND the parent's recede interpolate on the
  * same drag input (so the whole stack is attached to your hand rather than
  * playing an animation at you), and the release is decided by VELOCITY
  * PROJECTION in @hybrid/core `resolveSheetRelease` — a flick moves one detent,
  * or dismisses from the smallest. This is the interruptibility springs were
  * chosen for in motion.ts and which nothing previously exercised.
  *
- * DETENTS. `detents` defaults to ["large"], which is the old single-height
- * behaviour. Pass ["medium","large"] for a sheet that opens short and expands.
+ * EVERY SHEET ELONGATES. The panel is ALWAYS laid out at the `large` height and
+ * translated down to its resting stop, so one drag from the bottom to the top
+ * grows it to full and the way back down shortens it again before it dismisses.
+ * By default the resting stop is the sheet's own CONTENT height (measured, so a
+ * short sheet still looks exactly as short as what it holds) — the panel below
+ * that line is off-screen until you pull it up. Before this, a content-sized
+ * sheet had exactly ONE stop and the handle's upward direction did nothing: it
+ * rubber-banded and fell back, which reads as broken rather than as "no".
+ *
+ * DETENTS. `detents` adds stops between the content height and full
+ * (`["medium"]` puts one at half the screen). It is only ever ADDITIVE: the
+ * shortest stop is where the sheet rests, so declaring `medium` never inflates
+ * a two-button sheet to half the screen. The stops come from @hybrid/core
+ * `sheetSnaps`, shared with web so the two land identically.
  *
  * THE BOTTOM PAD IS THE SHEET'S, not the caller's. It comes from @hybrid/core
  * `sheetPadBottom`, the one number both clients read, and it is MAX'd against
@@ -65,7 +83,7 @@ export default function Sheet({
   children,
   scroll = true,
   fill = false,
-  detents = ["large"],
+  detents,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -76,12 +94,12 @@ export default function Sheet({
   sub?: ReactNode;
   children: ReactNode;
   scroll?: boolean;
-  /** Take the FULL height of the largest detent instead of sizing to content.
-   *  Required whenever the child owns a FLEXING body (`flex: 1`, typically its
-   *  own ScrollView): a content-sized panel has no height for a flex child to
-   *  fill, so the child collapses to zero and its content disappears. */
+  /** The child owns a FLEXING body (`flex: 1`, typically its own ScrollView) and
+   *  fills the panel. Such a sheet has no natural height to rest at, so it is
+   *  full-height — see the measurement note in the body. */
   fill?: boolean;
-  /** Resting heights, smallest first. Defaults to a single full-height sheet. */
+  /** Extra stops between the content height and full. Additive — the shortest
+   *  stop still decides where the sheet rests. */
   detents?: SheetDetent[];
 }) {
   const { palette: C } = useTheme();
@@ -96,26 +114,45 @@ export default function Sheet({
   const recede = useSheetRecede();
   const reduced = useReducedMotion();
 
-  // A SINGLE-detent sheet stays CONTENT-SIZED (capped at `large`) — which is
-  // what every short sheet in the app relies on; forcing them all to a fixed
-  // height would leave Quick Log and Readiness mostly empty. A multi-detent
-  // sheet needs a fixed height because expanding needs a target — and so does
-  // a `fill` sheet, whose child flexes into the panel rather than filling it.
-  const expandable = detents.length > 1;
-  const fixedH = expandable || fill;
-  const maxH = Math.round(screenH * sheetGesture.detents[detents[detents.length - 1] ?? "large"]);
-  // Measured height of a content-sized panel; the fixed height when it's fixed.
-  const [measured, setMeasured] = useState(maxH);
-  const panelH = fixedH ? maxH : measured;
-  // Detent offsets, ascending (0 = largest/open).
+  // The panel is ALWAYS the full `large` height, translated down to its stop —
+  // that is what gives every sheet somewhere to grow into. `panelH` is
+  // therefore both the layout height and the dismissed offset.
+  const panelH = Math.round(screenH * sheetGesture.detents.large);
+  // What the sheet is naturally worth: the chrome plus what it holds. Measured
+  // rather than assumed, so a three-row sheet still rests three rows tall — a
+  // declared detent adds a stop above that, it does not inflate the sheet to
+  // fill it.
+  //
+  // ONLY a sheet that owns its scroller can be measured, and that is not a
+  // limitation of the measuring — it is what the two modes MEAN. `scroll` puts
+  // the children in this component's ScrollView, whose content size is their
+  // natural height however tall the scroller is. `scroll={false}` (and `fill`)
+  // hand the panel's column to the child, which is typically a ScrollView of
+  // its own: RN gives every ScrollView flexGrow 1, so such a child takes the
+  // whole panel by construction and there is no shorter height to find. Those
+  // sheets are full-height, which is what a sheet holding its own scroller
+  // wants anyway; a SHORT sheet must let this component do the scrolling.
+  const padTop = 12;
+  const padBottom = sheetPadBottom(insets.bottom);
+  const border = 1;
+  const measures = scroll && !fill;
+  const [headerH, setHeaderH] = useState<number | null>(null);
+  const [contentH, setContentH] = useState<number | null>(null);
+  // RN sizes border-box, so the panel's own border is part of the height the
+  // resting stop has to leave room for — as are both pads.
+  const naturalH = headerH != null && contentH != null ? border * 2 + padTop + headerH + contentH + padBottom : null;
+  // Stops, ascending (0 = open at full height). Shared with web.
   const snaps = useMemo(
-    () => (expandable
-      ? detents.map((d) => maxH - Math.round(screenH * sheetGesture.detents[d])).sort((a, b) => a - b)
-      : [0]),
-    [detents, maxH, screenH, expandable],
+    () => sheetSnaps(panelH, detents, measures ? naturalH : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panelH, detents?.join(","), measures, naturalH],
   );
   const openY = snaps[0] ?? 0;
-  const restY = snaps[snaps.length - 1] ?? 0; // the SMALLEST detent — where it opens to
+  const restY = snaps[snaps.length - 1] ?? 0; // the SMALLEST height — where it opens to
+  // Don't animate in before the resting stop is known, or the entrance lands at
+  // full height and the measurement snaps it short afterwards. The panel is
+  // off-screen while this resolves (one layout pass), so nothing is visible.
+  const ready = !measures || naturalH != null;
 
   const y = useRef(new Animated.Value(panelH)).current;
   const yNow = useRef(panelH);
@@ -129,32 +166,14 @@ export default function Sheet({
       .start(({ finished }) => { if (finished) then?.(); });
   };
 
-  // The entrance must run ONCE per open. Without this latch it re-fires when
-  // onLayout reports the measured height (panelH changes), which would drop the
-  // panel back off-screen and spring it up a second time.
+  // The entrance must run ONCE per open, and only once the resting stop is
+  // known. Without this latch it re-fires on every measurement, which would
+  // drop the panel back off-screen and spring it up a second time.
   const entered = useRef(false);
   useEffect(() => {
     if (visible) {
       setRender(true);
       recede.open();
-      if (entered.current) return () => recede.close();
-      entered.current = true;
-      if (reduced) {
-        // Reduce Motion SUBSTITUTES a cross-dissolve: the panel fades in place
-        // rather than travelling. Never removed — the user still needs to
-        // perceive that a sheet appeared.
-        y.setValue(restY);
-      } else {
-        y.setValue(panelH);
-        // The entrance rides the real sheet SPRING. It used to run
-        // Easing.out(Easing.cubic) at the spring's DURATION, which is a
-        // different curve wearing the right number: no overshoot, so the panel
-        // landed dead while its web twin — running the exact spring as a
-        // generated linear() — settled with the small arrival energy that makes
-        // a sheet feel like an object. springToRN existed for this the whole
-        // time and was already used correctly three files away.
-        springTo(restY);
-      }
       return () => recede.close();
     }
     entered.current = false;
@@ -164,11 +183,55 @@ export default function Sheet({
         duration: reduced ? durations.reduced : durations.fast,
         easing: reduced ? Easing.linear : Easing.in(Easing.cubic),
         useNativeDriver: true,
-      }).start(({ finished }) => { if (finished) setRender(false); });
+      }).start(({ finished }) => {
+        if (!finished) return;
+        setRender(false);
+        // Forget the measurement WITH the unmount, never before it: dropping it
+        // mid-exit would re-range the scrim, and dropping it while the children
+        // stay mounted would leave nothing to re-report it on the next open.
+        setHeaderH(null);
+        setContentH(null);
+      });
     }
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, reduced, panelH, restY]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visible, reduced, panelH]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!visible || !render || !ready || entered.current) return;
+    entered.current = true;
+    if (reduced) {
+      // Reduce Motion SUBSTITUTES a cross-dissolve: the panel fades in place
+      // rather than travelling. Never removed — the user still needs to
+      // perceive that a sheet appeared.
+      y.setValue(restY);
+    } else {
+      y.setValue(panelH);
+      // The entrance rides the real sheet SPRING. It used to run
+      // Easing.out(Easing.cubic) at the spring's DURATION, which is a
+      // different curve wearing the right number: no overshoot, so the panel
+      // landed dead while its web twin — running the exact spring as a
+      // generated linear() — settled with the small arrival energy that makes
+      // a sheet feel like an object. springToRN existed for this the whole
+      // time and was already used correctly three files away.
+      springTo(restY);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, render, ready, reduced]);
+
+  // RE-FIT. The content can change height under a sheet that is already up (a
+  // list loads, a section expands). If it is sitting at its content stop and
+  // hasn't been dragged, follow the new one — an expanded sheet, or one the
+  // hand is holding, is left exactly where it was put.
+  const dragging = useRef(false);
+  const prevRest = useRef(restY);
+  useEffect(() => {
+    const from = prevRest.current;
+    prevRest.current = restY;
+    if (!entered.current || dragging.current || Math.abs(restY - from) <= 2) return;
+    if (Math.abs(yNow.current - from) <= 2) springTo(restY);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restY]);
 
   // THE DRAG. Claimed only on a clear vertical move so a horizontal swipe or a
   // tap inside the sheet still works; the inner ScrollView keeps its own
@@ -178,8 +241,12 @@ export default function Sheet({
   const pan = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_, g) => g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx) * 1.6,
+        // EITHER direction, not just down — up is the elongation. Still only on
+        // a clear VERTICAL move, so a horizontal swipe or a tap inside the
+        // sheet is left alone.
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx) * 1.6,
         onPanResponderGrant: () => {
+          dragging.current = true;
           drag.current = { startY: yNow.current, last: 0, t: Date.now(), v: 0 };
           y.stopAnimation((v) => { drag.current.startY = v; });
         },
@@ -190,13 +257,19 @@ export default function Sheet({
           drag.current.t = now;
           drag.current.last = g.dy;
           const raw = drag.current.startY + g.dy;
-          // Downward tracks the finger exactly; upward past the largest detent
-          // rubber-bands, so the panel never leaves the top.
+          // The panel tracks the finger 1:1 in BOTH directions between the
+          // stops — that is the elongation, and it has to be continuous to read
+          // as one. Only past the top does it rubber-band, so the sheet never
+          // leaves the top edge.
           y.setValue(raw >= openY ? raw : openY - rubberBand(openY - raw, 0, sheetGesture.resist));
         },
         onPanResponderRelease: () => {
+          dragging.current = false;
           const from = yNow.current;
-          const { target, dismiss } = resolveSheetRelease(from, drag.current.v, panelH, snaps);
+          // A gesture that was being HELD releases at rest, not at the speed of
+          // whatever it did a moment ago (@hybrid/core `releaseVelocity`).
+          const v = releaseVelocity(drag.current.v, Date.now() - drag.current.t);
+          const { target, dismiss } = resolveSheetRelease(from, v, panelH, snaps);
           if (dismiss) {
             haptic.light();
             // Hand back to the `visible` effect so the caller's state and the
@@ -208,6 +281,7 @@ export default function Sheet({
           springTo(target);
         },
         onPanResponderTerminate: () => {
+          dragging.current = false;
           const { target } = resolveSheetRelease(yNow.current, 0, panelH, snaps);
           springTo(target === panelH ? restY : target);
         },
@@ -220,7 +294,11 @@ export default function Sheet({
 
   // The scrim and the parent's recede BOTH read the drag position, so pulling
   // the sheet down brings the screen behind it back in step with your finger.
-  const progress = y.interpolate({ inputRange: [openY, panelH], outputRange: [1, 0], extrapolate: "clamp" });
+  // The range runs from the RESTING stop, not from fully-open: presentation is
+  // complete the moment the sheet has arrived, and elongating it further is not
+  // "more presented". Ranging it from 0 would open every content-sized sheet on
+  // a fraction of its scrim.
+  const progress = y.interpolate({ inputRange: [Math.min(restY, panelH - 1), panelH], outputRange: [1, 0], extrapolate: "clamp" });
   const scrimOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, motion.scrimWithRecede] });
   const panelOpacity = reduced ? progress : 1;
 
@@ -245,21 +323,22 @@ export default function Sheet({
           box-none lets taps on the empty area fall through to the scrim. */}
       <KeyboardAvoidingView style={{ flex: 1, justifyContent: "flex-end" }} behavior={Platform.OS === "ios" ? "padding" : undefined} pointerEvents="box-none">
         <Animated.View
-          onLayout={(e) => { if (!fixedH) setMeasured(Math.round(e.nativeEvent.layout.height)); }}
           style={{
-            ...(fixedH ? { height: maxH } : { maxHeight: maxH }),
+            // ALWAYS the full height, resting translated down: the part below
+            // the resting line is the room the sheet grows into.
+            height: panelH,
             backgroundColor: C.ink2,
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
-            borderWidth: 1,
+            borderWidth: border,
             borderColor: C.line,
             paddingHorizontal: 20,
-            paddingTop: 12,
+            paddingTop: padTop,
             // ONE pad under the last row — @hybrid/core `sheetPadBottom`. The
             // home-indicator inset is its FLOOR, not an addition: `insets.bottom
             // + 20` was 54dp on any notched iPhone against the web twin's 24,
             // and every child that trailed its own pad stacked on top of that.
-            paddingBottom: sheetPadBottom(insets.bottom),
+            paddingBottom: padBottom,
             transform: [{ translateY: y }],
             opacity: panelOpacity,
             shadowColor: "#000",
@@ -271,16 +350,35 @@ export default function Sheet({
         >
           {/* The grab area owns the pan. Keeping it off the scrollable body is
               what lets a list inside the sheet scroll normally. */}
-          <View {...pan.panHandlers} accessible accessibilityRole="adjustable" accessibilityLabel="Drag to resize or dismiss">
+          <View
+            {...pan.panHandlers}
+            onLayout={(e) => setHeaderH(Math.round(e.nativeEvent.layout.height))}
+            accessible
+            accessibilityRole="adjustable"
+            accessibilityLabel="Drag to resize or dismiss"
+          >
             {header}
           </View>
           {/* No contentContainer pad on the scroller: the panel's own
-              paddingBottom sits BELOW it, so anything here is a second pad. */}
+              paddingBottom sits BELOW it, so anything here is a second pad.
+              onContentSizeChange reports the content's NATURAL height whatever
+              the scroller was given, which is what the resting stop is made of
+              — and it re-reports when the content changes, so the sheet re-fits
+              rather than holding a stale height. */}
           {scroll ? (
-            <ScrollView style={fixedH ? { flex: 1 } : undefined} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={{ flex: 1 }}
+              onContentSizeChange={measures ? (_, h) => setContentH(Math.round(h)) : undefined}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               {children}
             </ScrollView>
           ) : (
+            // Straight into the panel's column, never through a wrapper: a
+            // child that flexes (its own ScrollView, `fill`'s flexing body)
+            // needs the panel's definite height to resolve against, and an
+            // intermediate auto-height View is exactly what takes that away.
             children
           )}
         </Animated.View>

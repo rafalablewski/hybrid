@@ -105,3 +105,55 @@ describe("web ↔ mobile parity", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// THE SHEET ELONGATES ON BOTH CLIENTS
+//
+// A sheet grows to full on one drag up and shortens on the way back. That is
+// one behaviour built out of three pieces which are easy to lose one at a time,
+// and losing any one of them is silent: the handle still draws, the sheet still
+// opens, and only the upward direction quietly stops doing anything.
+//   • the panel is laid out at the FULL height and translated down to its stop
+//     (a content-SIZED panel has no room above it to grow into),
+//   • the stops come from core's `sheetSnaps`, so `0` — full — is always one of
+//     them, on both clients,
+//   • the drag is claimed in BOTH directions (mobile's PanResponder had a
+//     downward-only gate, which is exactly how this would regress).
+// ---------------------------------------------------------------------------
+describe("the sheet's elongation", () => {
+  const webSheet = readFileSync(join(APP_ROOT, "components", "aurora", "sheet.tsx"), "utf8");
+  const mobileSheet = readFileSync(join(REPO_ROOT, "apps", "mobile", "components", "aurora", "sheet.tsx"), "utf8");
+
+  it("takes its stops from core on both clients", () => {
+    for (const [name, src] of [["web", webSheet], ["mobile", mobileSheet]] as const) {
+      expect(src, `${name} sheet no longer reads core's sheetSnaps`).toMatch(/sheetSnaps\(/);
+      // A local sort of hand-built detent offsets is how the two drifted before.
+      expect(src, `${name} sheet computes its own detent offsets again`).not.toMatch(/detents\[[^\]]+\]\s*\)\s*\.sort/);
+    }
+  });
+
+  it("lays the panel out at the full height rather than sizing it to content", () => {
+    // Web: a fixed vh height on the panel, not a maxHeight that hugs content.
+    expect(webSheet).toMatch(/height: `\$\{sheetGesture\.detents\.large \* 100\}vh`/);
+    expect(webSheet).not.toMatch(/maxHeight: `\$\{sheetGesture\.detents/);
+    // Mobile: the panel's height IS panelH, the same number the dismiss uses.
+    expect(mobileSheet).toMatch(/const panelH = Math\.round\(screenH \* sheetGesture\.detents\.large\)/);
+    expect(mobileSheet).toMatch(/height: panelH,/);
+  });
+
+  it("claims the drag in both directions", () => {
+    // The gate was `g.dy > 6` — down only. Up must be claimed too, or the
+    // elongation is unreachable however the stops are computed.
+    const gate = mobileSheet.match(/onMoveShouldSetPanResponder: \(_, g\) =>([^\n]+)/)?.[1] ?? "";
+    expect(gate).toContain("Math.abs(g.dy)");
+    expect(gate).not.toMatch(/[^.]\bg\.dy >/);
+  });
+
+  it("forgets a held gesture's speed before deciding where to land", () => {
+    // Drag up, hold to read what you uncovered, let go — the release must not
+    // fire on the velocity from a moment ago and take the sheet away.
+    for (const [name, src] of [["web", webSheet], ["mobile", mobileSheet]] as const) {
+      expect(src, `${name} sheet releases on a stale velocity`).toMatch(/releaseVelocity\(/);
+    }
+  });
+});

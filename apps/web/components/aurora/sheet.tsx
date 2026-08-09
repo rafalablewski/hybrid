@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { motion, sheetGesture, resolveSheetRelease, rubberBand, sheetPadBottom, type SheetDetent } from "@hybrid/core";
+import { motion, sheetGesture, sheetSnaps, resolveSheetRelease, releaseVelocity, rubberBand, sheetPadBottom, type SheetDetent } from "@hybrid/core";
 import { haptic } from "@/lib/haptics";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -21,14 +21,27 @@ const C = (v: string) => `var(--color-${v})`;
  *
  * THE HANDLE IS A GESTURE. Both clients drew iOS's 40×4 "drag me" glyph and
  * bound nothing to it, so the first thing a fluent user tries did nothing. The
- * panel now tracks the pointer 1:1 downward and rubber-bands upward; the scrim
+ * panel now tracks the pointer 1:1 in both directions between its stops, and
+ * rubber-bands only past the top, where there is nothing left to uncover; the scrim
  * and the parent's recede interpolate on the SAME drag input (via the
  * --sheet-p custom property, see globals.css) so the whole stack is attached to
  * the hand; and the release is decided by velocity projection in @hybrid/core
  * `resolveSheetRelease` — shared with mobile so the two snap identically.
  *
- * DETENTS. `detents` defaults to ["large"] (the old single-height behaviour).
- * Pass ["medium","large"] for a sheet that opens short and expands.
+ * EVERY SHEET ELONGATES. The panel is ALWAYS laid out at the `large` height and
+ * translated down to its resting stop, so one drag from the bottom to the top
+ * grows it to full and the way back down shortens it again before it dismisses.
+ * By default the resting stop is the sheet's own CONTENT height (measured, so a
+ * short sheet still looks exactly as short as what it holds) — the panel below
+ * that line is off-screen until you pull it up. Before this, a content-sized
+ * sheet had exactly ONE stop and the handle's upward direction did nothing: it
+ * rubber-banded and fell back, which reads as broken rather than as "no".
+ *
+ * DETENTS. `detents` adds stops between the content height and full
+ * (`["medium"]` puts one at half the screen). It is only ever ADDITIVE: the
+ * shortest stop is where the sheet rests, so declaring `medium` never inflates
+ * a two-button sheet to half the screen. The stops come from @hybrid/core
+ * `sheetSnaps`, shared with mobile so the two land identically.
  *
  * THE BOTTOM PAD IS THE SHEET'S, not the caller's. It comes from @hybrid/core
  * `sheetPadBottom`, the one number both clients read, and it is MAX'd against
@@ -59,7 +72,7 @@ export default function Sheet({
   children,
   maxWidth = 640,
   label,
-  detents = ["large"],
+  detents,
 }: {
   open: boolean;
   onClose: () => void;
@@ -70,7 +83,8 @@ export default function Sheet({
   children: ReactNode;
   maxWidth?: number;
   label?: string;
-  /** Resting heights, smallest first. Defaults to a single full-height sheet. */
+  /** Extra stops between the content height and full. Additive — the shortest
+   *  stop still decides where the sheet rests. */
   detents?: SheetDetent[];
 }) {
   // `mounted` keeps the node alive through the exit animation; `y` is the
@@ -78,24 +92,31 @@ export default function Sheet({
   // detent, the drag and the dismissal.
   const [mounted, setMounted] = useState(open);
   const panelRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  // The panel is ALWAYS the full `large` height (see the header): `panelH` is
+  // both its layout height and its dismissed offset.
   const [panelH, setPanelH] = useState(0);
+  // What the sheet is naturally worth — the chrome plus what it holds. Measured
+  // rather than assumed, so a three-row sheet still rests three rows tall.
+  const [naturalH, setNaturalH] = useState<number | null>(null);
   const yRef = useRef(0);
   const drag = useRef<{ from: number; y0: number; t: number; last: number; v: number } | null>(null);
+  const dragging = useRef(false);
+  const entered = useRef(false);
 
-  // A SINGLE-detent sheet stays CONTENT-SIZED (height auto, capped) — which is
-  // what every short sheet in the app relies on; forcing them all to a fixed
-  // 92vh would leave Quick Log and Readiness mostly empty. Only a multi-detent
-  // sheet needs a fixed height, because expanding requires a known target.
-  const expandable = detents.length > 1;
-  const snaps = useMemo(() => {
-    if (!panelH || !expandable) return [0];
-    const largest = sheetGesture.detents[detents[detents.length - 1] ?? "large"];
-    return detents
-      .map((d) => Math.round(panelH * (1 - sheetGesture.detents[d] / largest)))
-      .sort((a, b) => a - b);
-  }, [detents, panelH, expandable]);
+  const snaps = useMemo(
+    () => (panelH ? sheetSnaps(panelH, detents, naturalH) : [0]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panelH, detents?.join(","), naturalH],
+  );
   const openY = snaps[0] ?? 0;
   const restY = snaps[snaps.length - 1] ?? 0;
+  // Don't animate in before the resting stop is known, or the entrance lands at
+  // full height and the measurement snaps it short afterwards. The panel is
+  // off-screen while this resolves (one frame), so nothing is visible.
+  const ready = !!panelH && naturalH != null;
 
   // Write the position straight to the DOM. A drag must not re-render React on
   // every pointermove — the panel IS the finger, and a render loop is exactly
@@ -105,7 +126,12 @@ export default function Sheet({
     const el = panelRef.current;
     if (!el) return;
     const h = panelH || el.offsetHeight || 1;
-    const p = Math.max(0, Math.min(1, 1 - y / h));
+    // Presentation is complete the moment the sheet has ARRIVED at its resting
+    // stop; elongating it further is not "more presented". Ranging this from
+    // fully-open instead would open every content-sized sheet on a fraction of
+    // its scrim, since a short sheet rests most of a panel-height down.
+    const rest = Math.min(restY, h - 1);
+    const p = Math.max(0, Math.min(1, 1 - (y - rest) / (h - rest)));
     el.style.transition = animate ? "transform var(--d-sheet) var(--e-sheet)" : "none";
     el.style.transform = `translateY(${y}px)`;
     const scrim = el.parentElement;
@@ -114,23 +140,64 @@ export default function Sheet({
       scrim.style.background = `rgba(0,0,0,${(motion.scrimWithRecede * p).toFixed(4)})`;
     }
     document.documentElement.style.setProperty("--sheet-p", p.toFixed(4));
-  }, [panelH]);
+  }, [panelH, restY]);
 
-  // Measure, then run the entrance from below.
+  // MEASURE. The panel's own height (a fixed 92vh, so this only moves when the
+  // viewport does) and the natural height of what it holds — chrome included,
+  // since the resting stop has to leave room for the pad under the last row.
   useEffect(() => {
     if (!mounted) return;
     const el = panelRef.current;
     if (!el) return;
-    const h = el.offsetHeight;
-    setPanelH(h);
-    place(h, false);
-    // Open to the SMALLEST detent (for a single-detent sheet that is simply 0).
-    const largest = sheetGesture.detents[detents[detents.length - 1] ?? "large"];
-    const to = expandable ? Math.round(h * (1 - sheetGesture.detents[detents[0] ?? "large"] / largest)) : 0;
-    const r = requestAnimationFrame(() => requestAnimationFrame(() => place(to, true)));
-    return () => cancelAnimationFrame(r);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const read = () => {
+      setPanelH(el.offsetHeight);
+      const head = headRef.current;
+      const inner = innerRef.current;
+      if (!head || !inner) return;
+      const cs = getComputedStyle(el);
+      const px = (v: string) => parseFloat(v) || 0;
+      setNaturalH(Math.round(
+        px(cs.paddingTop) + px(cs.paddingBottom) + px(cs.borderTopWidth) + px(cs.borderBottomWidth) +
+        head.offsetHeight +
+        (bodyRef.current ? px(getComputedStyle(bodyRef.current).marginTop) : 0) +
+        inner.offsetHeight,
+      ));
+    };
+    read();
+    // The content can change height under a sheet that is already up (a list
+    // loads, a section expands) — re-read it rather than hold a stale stop.
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    if (innerRef.current) ro.observe(innerRef.current);
+    if (headRef.current) ro.observe(headRef.current);
+    return () => ro.disconnect();
   }, [mounted]);
+
+  // Park it off-screen before the first paint, so the entrance has somewhere to
+  // come from and an unmeasured panel is never shown at full height.
+  useEffect(() => {
+    if (!mounted || !panelH || entered.current) return;
+    place(panelH, false);
+  }, [mounted, panelH, place]);
+
+  // ENTRANCE — once, and only once the resting stop is known.
+  useEffect(() => {
+    if (!mounted || !open || !ready || entered.current) return;
+    entered.current = true;
+    const r = requestAnimationFrame(() => requestAnimationFrame(() => place(restY, true)));
+    return () => cancelAnimationFrame(r);
+  }, [mounted, open, ready, restY, place]);
+
+  // RE-FIT. If the sheet is sitting at its content stop and hasn't been
+  // dragged, follow the new one — an expanded sheet, or one the hand is
+  // holding, is left exactly where it was put.
+  const prevRest = useRef(restY);
+  useEffect(() => {
+    const from = prevRest.current;
+    prevRest.current = restY;
+    if (!entered.current || dragging.current || Math.abs(restY - from) <= 2) return;
+    if (Math.abs(yRef.current - from) <= 2) place(restY, true);
+  }, [restY, place]);
 
   useEffect(() => {
     if (open) { setMounted(true); return; }
@@ -152,8 +219,16 @@ export default function Sheet({
       }
     }
     document.documentElement.style.setProperty("--sheet-p", "0");
+    entered.current = false;
     let done = false;
-    const finish = () => { if (!done) { done = true; setMounted(false); } };
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setMounted(false);
+      // Forget the measurement WITH the unmount, so the next open re-measures
+      // from what it will actually hold rather than entering on a stale stop.
+      setNaturalH(null);
+    };
     const onEnd = (e: TransitionEvent) => { if (e.propertyName === "transform") finish(); };
     el?.addEventListener("transitionend", onEnd);
     const t = setTimeout(finish, 400);
@@ -194,6 +269,7 @@ export default function Sheet({
   }, [mounted, onClose]);
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    dragging.current = true;
     drag.current = { from: yRef.current, y0: e.clientY, t: performance.now(), last: e.clientY, v: 0 };
     document.documentElement.dataset.sheetDragging = "";
     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -207,15 +283,22 @@ export default function Sheet({
     d.t = now;
     d.last = e.clientY;
     const raw = d.from + (e.clientY - d.y0);
+    // The panel tracks the pointer 1:1 in BOTH directions between the stops —
+    // that is the elongation, and it has to be continuous to read as one. Only
+    // past the top does it rubber-band, so the sheet never leaves the top edge.
     place(raw >= openY ? raw : openY - rubberBand(openY - raw, 0, sheetGesture.resist), false);
   };
   const onUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     drag.current = null;
+    dragging.current = false;
     delete document.documentElement.dataset.sheetDragging;
     if (!d) return;
     try { (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId); } catch { /* already released */ }
-    const { target, dismiss } = resolveSheetRelease(yRef.current, d.v, panelH || 1, snaps);
+    // A gesture that was being HELD releases at rest, not at the speed of
+    // whatever it did a moment ago (@hybrid/core `releaseVelocity`).
+    const v = releaseVelocity(d.v, performance.now() - d.t);
+    const { target, dismiss } = resolveSheetRelease(yRef.current, v, panelH || 1, snaps);
     if (dismiss) { haptic.light(); onClose(); return; }
     if (Math.abs(target - yRef.current) > 2 && snaps.length > 1) haptic.light();
     place(target, true);
@@ -238,9 +321,9 @@ export default function Sheet({
         style={{
           width: "100%",
           maxWidth,
-          ...(expandable
-            ? { height: `${sheetGesture.detents[detents[detents.length - 1] ?? "large"] * 100}vh` }
-            : { maxHeight: `${sheetGesture.detents.large * 100}vh` }),
+          // ALWAYS the full height, resting translated down: the part below the
+          // resting line is the room the sheet grows into.
+          height: `${sheetGesture.detents.large * 100}vh`,
           background: C("ink2"),
           borderTopLeftRadius: 28,
           borderTopRightRadius: 28,
@@ -259,6 +342,7 @@ export default function Sheet({
         {/* The grab area owns the pointer. Keeping it off the scrollable body is
             what lets a list inside the sheet scroll normally. */}
         <div
+          ref={headRef}
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
@@ -270,7 +354,13 @@ export default function Sheet({
           {title && <div style={{ fontFamily: "var(--font-heading)", fontWeight: 900, fontSize: 22, letterSpacing: "-.02em", color: C("chalk") }}>{title}</div>}
           {sub && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: C("ash"), margin: "4px 0 0" }}>{sub}</div>}
         </div>
-        <div style={{ marginTop: title || sub ? 16 : 0, overflowY: "auto", flex: 1, minHeight: 0 }}>{children}</div>
+        {/* The body fills the panel; the wrapper inside it is what carries the
+            content's NATURAL height, which is what the resting stop is made of.
+            The body itself cannot: it is the flexing box, so it is always as
+            tall as the panel. */}
+        <div ref={bodyRef} style={{ marginTop: title || sub ? 16 : 0, overflowY: "auto", flex: 1, minHeight: 0 }}>
+          <div ref={innerRef}>{children}</div>
+        </div>
       </div>
     </div>,
     document.body,
