@@ -23,7 +23,9 @@
 // apps/mobile/lib/healthkit.ts and only the phone can perform a match (web
 // renders the result and can unlink).
 
+import { deviceActivityVerdict, type DeviceActivityVerdict } from "./device-activity";
 import { kmOrMeters } from "./distance";
+import type { SessionBlock } from "./engines/session";
 import { sportDistanceUnit, sportPacePerMeters, displaySportDistance } from "./olympic-sports";
 
 /** A workout as read from the athlete's device, frozen at match time. Stored
@@ -261,16 +263,41 @@ export function deviceDistanceLabel(km: number, activityLabel: string): string {
  *  around the log time would miss the real workout. */
 export const DEVICE_MATCH_WINDOW_H = 24;
 
-/** A candidate as the picker ranks it — the workout plus its score. */
+/** What the ranker is given about the session it is matching. `title`/`blocks`
+ *  are what say WHAT THE TRAINING WAS — without them the score is back to the
+ *  clock alone, which is how a tennis recording came to be recommended for a
+ *  logged ride. Optional so a caller with only an interval still works. */
+export interface MatchableSession {
+  startedAt: string;
+  completedAt?: string | null;
+  durationMin?: number | null;
+  title?: string;
+  blocks?: SessionBlock[];
+}
+
+/** A candidate as the picker ranks it — the workout, its score, and whether it
+ *  is even the same KIND of training. */
 export interface RankedDeviceWorkout {
   workout: DeviceWorkout;
   /** 0..1 — how likely this device workout IS the logged session. */
   score: number;
+  /** Sport agreement (device-activity.ts). `"different"` candidates are demoted
+   *  but kept — the athlete may have started the wrong workout type on the
+   *  watch — and the picker labels them so the demotion is legible. */
+  activity: DeviceActivityVerdict;
 }
 
 /**
- * Score one device workout against the logged session: time proximity first,
- * duration similarity second.
+ * How much a contradicting sport costs a candidate. A multiplier, not a
+ * subtraction, so it can never flip the ordering WITHIN the contradicting set:
+ * if tennis is all the watch has, tennis still leads the list — it just can't
+ * outrank a recording that actually agrees with what you logged.
+ */
+const WRONG_SPORT_FACTOR = 0.35;
+
+/**
+ * Score one device workout against the logged session: sport agreement first,
+ * then time proximity, then duration similarity.
  *
  * The session's clock interval is UNRELIABLE for quick-logged sports —
  * startedAt == completedAt == "when I opened the log sheet" — so the score
@@ -280,10 +307,19 @@ export interface RankedDeviceWorkout {
  * duration, a device workout of similar length gets up to a 20% boost — that is
  * what separates the 55-min tennis match from the 10-min walk logged the same
  * afternoon.
+ *
+ * WHAT THE CLOCK CANNOT SEE is what the training was. Log a ride, and a tennis
+ * match the watch recorded in the same hour scored exactly as well as the ride
+ * itself — so the picker offered tennis, top of the list, with nothing to say
+ * it was a different sport. A contradiction now costs the candidate most of its
+ * score (WRONG_SPORT_FACTOR) rather than removing it: the athlete may have
+ * started the wrong workout type on the watch and knows the tennis recording IS
+ * their ride. Agreement and "can't tell" are treated alike — see
+ * device-activity.ts for why that has to be so.
  */
 export function deviceMatchScore(
-  session: { startedAt: string; completedAt?: string | null; durationMin?: number | null },
-  workout: { start: string; end: string; durationMin: number },
+  session: MatchableSession,
+  workout: { start: string; end: string; durationMin: number; activityLabel?: string },
 ): number {
   const s0 = Date.parse(session.startedAt);
   const s1 = session.completedAt ? Date.parse(session.completedAt) : s0;
@@ -303,16 +339,31 @@ export function deviceMatchScore(
     const ratio = Math.min(logged, workout.durationMin) / Math.max(logged, workout.durationMin);
     durationScore = ratio;
   }
-  return Math.round((timeScore * 0.8 + durationScore * 0.2) * 1000) / 1000;
+  const sport = matchActivityVerdict(session, workout) === "different" ? WRONG_SPORT_FACTOR : 1;
+  return Math.round((timeScore * 0.8 + durationScore * 0.2) * sport * 1000) / 1000;
+}
+
+/** The sport verdict for a candidate, or `"unknown"` when the caller passed no
+ *  session identity to judge it against. */
+function matchActivityVerdict(
+  session: MatchableSession,
+  workout: { activityLabel?: string },
+): DeviceActivityVerdict {
+  if (session.title == null && session.blocks == null) return "unknown";
+  return deviceActivityVerdict({ title: session.title ?? "", blocks: session.blocks ?? [] }, workout);
 }
 
 /** Rank candidates for the picker, best first; zero-score workouts drop out. */
 export function rankDeviceWorkouts(
-  session: { startedAt: string; completedAt?: string | null; durationMin?: number | null },
+  session: MatchableSession,
   workouts: DeviceWorkout[],
 ): RankedDeviceWorkout[] {
   return workouts
-    .map((workout) => ({ workout, score: deviceMatchScore(session, workout) }))
+    .map((workout) => ({
+      workout,
+      score: deviceMatchScore(session, workout),
+      activity: matchActivityVerdict(session, workout),
+    }))
     .filter((r) => r.score > 0)
     .sort((a, b) => b.score - a.score);
 }

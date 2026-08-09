@@ -23,11 +23,12 @@
 // concurrent sync is idempotent) and both clients run it to SHOW what an import
 // will do before the athlete taps. Same function, same answer.
 
+import { deviceActivityVerdict, sportForDeviceActivity } from "./device-activity";
 import { doneReceipt } from "./done-receipt";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 import { cardioDiscipline } from "./engines/session";
 import { kmValue } from "./distance";
-import { displaySportDistance, olympicSport, sportDistanceUnit } from "./olympic-sports";
+import { displaySportDistance, sportDistanceUnit } from "./olympic-sports";
 import type { DeviceWorkout } from "./session-device";
 
 /** How far back an import reads the device store, days. Two weeks covers a
@@ -53,71 +54,6 @@ export const DEVICE_IMPORT_MIN_MIN = 5;
  *  hours. Deliberately much tighter than DEVICE_MATCH_WINDOW_H: that window is
  *  for a human picking from a ranked list, this one decides unattended. */
 export const DEVICE_IMPORT_ATTACH_H = 3;
-
-/**
- * HealthKit activity → the catalog sport it IS, keyed by the label squashed to
- * letters only ("Cross Country Skiing" → "crosscountryskiing"). Only entries
- * where the mapping is UNAMBIGUOUS are here: HealthKit's `hockey` covers both
- * ice and field, its `skatingSports` covers speed, short-track and figure, so
- * those keep the device's own wording rather than guess a sport wrong.
- *
- * A hit means the imported session is a first-class catalog sport — its icon,
- * its distance unit, its PR handling. A miss is not a failure: the recording's
- * own label becomes the title and `cardioDiscipline` classifies it from the
- * name, exactly as a typed-in "Treadmill" is classified today.
- */
-const ACTIVITY_SPORT: Record<string, string> = {
-  running: "Running",
-  cycling: "Cycling",
-  handcycling: "Cycling",
-  swimming: "Swimming",
-  swimbikerun: "Triathlon",
-  openwaterswimming: "Open Water Swimming",
-  rowing: "Rowing",
-  waterpolo: "Water Polo",
-  sailing: "Sailing",
-  surfingsports: "Surfing",
-  tennis: "Tennis",
-  tabletennis: "Table Tennis",
-  badminton: "Badminton",
-  squash: "Squash",
-  soccer: "Football",
-  americanfootball: "Football",
-  basketball: "Basketball",
-  volleyball: "Volleyball",
-  handball: "Handball",
-  baseball: "Baseball",
-  softball: "Softball",
-  rugby: "Rugby Sevens",
-  golf: "Golf",
-  climbing: "Climbing",
-  boxing: "Boxing",
-  wrestling: "Wrestling",
-  fencing: "Fencing",
-  archery: "Archery",
-  equestriansports: "Equestrian",
-  gymnastics: "Artistic Gymnastics",
-  crosscountryskiing: "Cross-Country Skiing",
-  downhillskiing: "Alpine Skiing",
-  snowboarding: "Snowboarding",
-  curling: "Curling",
-};
-
-const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-/**
- * The catalog sport a device recording is, or null when the catalog has no
- * unambiguous answer. Checks the explicit map first, then the catalog itself —
- * so a label that already reads as a sport name ("Judo", "Diving") resolves
- * without needing a row here.
- */
-export function sportForDeviceActivity(activityLabel: string): string | null {
-  const label = (activityLabel || "").trim();
-  if (!label) return null;
-  const mapped = ACTIVITY_SPORT[squash(label)];
-  if (mapped) return mapped;
-  return olympicSport(label) ? label : null;
-}
 
 /** What the imported session is CALLED: the catalog sport when the recording is
  *  one, else the device's own label ("Functional Strength Training"). */
@@ -251,8 +187,16 @@ const loggedMinutes = (s: LoggedSession): number | null => {
  * Anything short of these stays unmatched and imports as its own session — a
  * duplicate the athlete can delete is recoverable; a recording silently welded
  * onto the wrong session is not.
+ *
+ * And BEFORE either shape, the two have to be the same kind of training. The
+ * clock alone said a tennis recording was the ride you logged at the same hour;
+ * `deviceActivityVerdict` is what stops that. It only refuses a genuine
+ * contradiction — both sides named, and named different things — so a vague
+ * watch label ("Other") or a free-text title ("Morning session") still matches
+ * exactly as before.
  */
 function sameSession(session: LoggedSession, w: DeviceWorkout): boolean {
+  if (deviceActivityVerdict(session, w) === "different") return false;
   const s0 = Date.parse(session.startedAt);
   const s1 = session.completedAt ? Date.parse(session.completedAt) : s0;
   const w0 = Date.parse(w.start);

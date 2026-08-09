@@ -8,7 +8,6 @@ import {
   deviceWorkoutBlocks,
   deviceWorkoutTitle,
   planDeviceImport,
-  sportForDeviceActivity,
 } from "./device-import";
 import { deviceMarkFor } from "./device-marks";
 import { deviceSourceLabel, type DeviceWorkout } from "./session-device";
@@ -33,31 +32,6 @@ const session = (over: Partial<LoggedSession> = {}): LoggedSession => ({
   completedAt: T(8),
   blocks: [],
   ...over,
-});
-
-describe("sportForDeviceActivity", () => {
-  it("maps HealthKit activity labels onto the ONE sport catalog", () => {
-    expect(sportForDeviceActivity("Running")).toBe("Running");
-    expect(sportForDeviceActivity("Soccer")).toBe("Football");
-    expect(sportForDeviceActivity("Cross Country Skiing")).toBe("Cross-Country Skiing");
-    expect(sportForDeviceActivity("Table Tennis")).toBe("Table Tennis");
-    expect(sportForDeviceActivity("Swim Bike Run")).toBe("Triathlon");
-  });
-
-  it("resolves a label that IS a catalog name without needing a mapping row", () => {
-    expect(sportForDeviceActivity("Judo")).toBe("Judo");
-    expect(sportForDeviceActivity("Diving")).toBe("Diving");
-  });
-
-  it("returns null rather than guessing when the device's label is ambiguous", () => {
-    // HealthKit's `hockey` covers ice AND field; `skatingSports` covers speed,
-    // short-track and figure. Guessing would file the session under a sport the
-    // athlete doesn't play.
-    expect(sportForDeviceActivity("Hockey")).toBeNull();
-    expect(sportForDeviceActivity("Skating Sports")).toBeNull();
-    expect(sportForDeviceActivity("Functional Strength Training")).toBeNull();
-    expect(sportForDeviceActivity("")).toBeNull();
-  });
 });
 
 describe("deviceWorkoutTitle / deviceWorkoutBlocks", () => {
@@ -163,6 +137,20 @@ describe("planDeviceImport", () => {
     const s = session({ startedAt: T(7), completedAt: T(7, 4) });
     const items = planDeviceImport([short], [s], { minMinutes: 0 });
     expect(items[0]!).toMatchObject({ action: "attach", sessionId: "s1" });
+  });
+
+  it("refuses to attach a recording of a DIFFERENT sport", () => {
+    // Logged Cycling 07:10–08:10, the watch recorded Tennis 07:00–08:00. The
+    // clocks agree perfectly and it is still not the same session — so it lands
+    // as its own row, which the athlete can delete, rather than being welded
+    // onto the ride, which they cannot undo.
+    const s = session({ title: "Cycling", startedAt: T(7, 10), completedAt: T(8, 10) });
+    expect(planDeviceImport([workout({ activityLabel: "Tennis" })], [s])[0]!.action).toBe("create");
+  });
+
+  it("still attaches when the recording's label is too vague to contradict", () => {
+    const s = session({ title: "Cycling", startedAt: T(7, 10), completedAt: T(8, 10) });
+    expect(planDeviceImport([workout({ activityLabel: "Other" })], [s])[0]!.action).toBe("attach");
   });
 
   it("does nothing to a recording already carried by a session", () => {
