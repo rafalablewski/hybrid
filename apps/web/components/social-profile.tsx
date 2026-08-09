@@ -2,162 +2,19 @@
 
 import { accentText } from "@/lib/ui";
 import { useEffect, useState } from "react";
-import { fs, normalizeHandle, isValidHandle, AVATAR_PRESETS, LEVEL_KEY } from "@hybrid/core";
-import type { PublicProfileResponse, OwnProfileResponse, CompareResponse, CompareResult, SharedLift, MutationResult } from "@hybrid/core";
-import { useDialog } from "../lib/use-dialog";
+import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
+import type { PublicProfileResponse, OwnProfileResponse, MutationResult } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
-import {
-  C, useSocialTheme, card, Avatar, Btn, Pill, FollowButton, EmptyState, ScreenHead, Stars,
-  VerifiedTick, jget, jsend, useBusy,
-} from "./social-ui";
+import { C, useSocialTheme, card, Avatar, Btn, Pill, EmptyState, jget, jsend } from "./social-ui";
 
-interface Stats { totalSessions: number; totalVolumeKg: number; currentStreak: number; topLifts: { lift: string; topLoad: number }[] }
+/**
+ * The profile EDITOR. Viewing SOMEBODY ELSE is not here any more: a person has
+ * their own page now (components/user-page.tsx, `?s=user&u=<handle>`), and the
+ * drawer this file used to carry was the reason a coach existed twice in the
+ * product — once as an athlete you could peek at, once as a storefront.
+ */
 
-/** The training-level badge on someone else's profile. Same palette ramp as the
- *  owner's own chip in aurora/profile.tsx — ash and chalk for the lower tiers,
- *  the lime accent-text tone for advanced, gold reserved for elite. */
-function LevelChip({ level }: { level: NonNullable<PublicProfileResponse["fitnessLevel"]> }) {
-  const { t } = useLang();
-  const ink = level.accent === "gold" ? C("gold")
-    : level.accent === "lime" ? accentText("lime")
-    : level.accent === "chalk" ? C("chalk") : C("ash");
-  return (
-    <span style={{
-      // fs.nano is the floor: there is no rung below it, and this is the mono +
-      // uppercase + tracked kicker — the least legible combination available.
-      fontFamily: "var(--font-mono)", fontSize: fs.nano, fontWeight: 700, letterSpacing: ".08em",
-      textTransform: "uppercase", border: `1px solid ${ink}`, color: ink,
-      borderRadius: 999, padding: "3px 8px", whiteSpace: "nowrap",
-    }}>
-      {t(LEVEL_KEY[level.level])}
-    </span>
-  );
-}
 interface MyProfile { handle: string; displayName: string | null; bio: string | null; visibility: string; avatarUrl: string | null }
-
-function StatRow({ stats }: { stats: Stats | null }) {
-  const { t } = useLang();
-  if (!stats) return null;
-  const items = [
-    { label: t("w.social.statSessions"), value: stats.totalSessions.toLocaleString() },
-    { label: t("w.social.statVolume"), value: `${Math.round(stats.totalVolumeKg / 1000)}t` },
-    { label: t("w.social.statStreak"), value: `${stats.currentStreak}d` },
-  ];
-  return (
-    <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-      {items.map((i) => (
-        <div key={i.label} style={{ flex: 1, textAlign: "center", padding: "10px 6px", background: C("ink2"), borderRadius: 12 }}>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C("chalk") }}>{i.value}</div>
-          <div style={{ fontSize: 11, color: C("ash"), textTransform: "uppercase", letterSpacing: 0.5 }}>{i.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ----- A slide-over for viewing ANY user's public profile (reused by feed / discover / leaderboard).
-export function ProfileDrawer({ handle, onClose }: { handle: string; onClose: () => void }) {
-  const { t } = useLang();
-  const [data, setData] = useState<PublicProfileResponse | null>(null);
-  const [compare, setCompare] = useState<CompareResult | null>(null);
-  const busy = useBusy();
-  const dialogRef = useDialog<HTMLDivElement>(onClose);
-
-  const load = () => jget<PublicProfileResponse>(`/api/social/profile/${handle}`).then(setData);
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
-
-  const p = data?.profile;
-  // A pending follow request lives in `followState`, NOT `relation` (which is
-  // self/none/following/…), so fold it in — otherwise the "Requested" button +
-  // "request is pending" copy never show for a private account you've asked to follow.
-  const relation: string = data?.followState === "requested" ? "requested" : (data?.relation ?? "none");
-
-  const doFollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "POST", { handle }); await load(); });
-  const doUnfollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "DELETE", { handle }); await load(); });
-  const runCompare = () => busy.run("c", async () => { const r = await jget<CompareResponse>(`/api/social/compare?handle=${handle}`); setCompare(r.compare ?? null); });
-  const doBlock = () => { if (!window.confirm(t("w.social.blockConfirm").replace("{h}", handle))) return; busy.run("b", async () => { await jsend("/api/social/block", "POST", { handle }); onClose(); }); };
-  const doReport = () => { if (!p?.userId) return; if (!window.confirm(t("w.social.reportConfirm").replace("{h}", handle))) return; busy.run("r", async () => { await jsend("/api/reports", "POST", { targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" }); alert(t("w.social.reportThanks")); }); };
-
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: "min(460px, 100%)", height: "100%", background: C("ink"), borderLeft: `1px solid ${C("line")}`, padding: 20, overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button className="pressable" aria-label={t("common.close")} onClick={onClose} style={{ background: "none", border: "none", color: C("ash"), fontSize: 22, cursor: "pointer" }}>×</button>
-        </div>
-        {!data || !p ? (
-          <EmptyState title={t("common.loading")} />
-        ) : (
-          <>
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-              <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 20, color: C("chalk") }}>{p.displayName || `@${p.handle}`}</span>
-                  {p.coachVerified && <VerifiedTick />}
-                  {/* The earned level, as one word. Server-side it sits behind
-                      the same privacy gate as the stats, so a private account's
-                      level never reaches this client at all — and the ratio
-                      behind it never travels, because the PR tiles below are
-                      public and a viewer could divide one by the other. */}
-                  {data?.fitnessLevel && <LevelChip level={data.fitnessLevel} />}
-                </div>
-                <div style={{ color: C("ash"), fontFamily: "var(--font-mono)", fontSize: 13 }}>@{p.handle}</div>
-              </div>
-            </div>
-            {p.bio && <p style={{ color: C("chalk"), fontSize: 14, lineHeight: 1.5, marginTop: 12 }}>{p.bio}</p>}
-            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-              <FollowButton relation={relation} onFollow={doFollow} onUnfollow={doUnfollow} busy={busy.is("f")} />
-              {data?.canViewResults && relation !== "self" && <Btn ghost small onClick={runCompare} disabled={busy.is("c")}>{t("w.social.compare")}</Btn>}
-              {p.isCoach && <Btn ghost small onClick={() => { window.location.hash = `coaches`; }}>{t("w.social.viewCoaching")} →</Btn>}
-            </div>
-
-            {data?.canViewResults ? (
-              <StatRow stats={data.stats} />
-            ) : (
-              <div style={{ marginTop: 14, padding: 14, background: C("ink2"), borderRadius: 12, color: C("ash"), fontSize: 13 }}>
-                🔒 {t("w.social.privateResults")} {relation === "requested" ? t("w.social.followPending") : t("w.social.followToSee")}
-              </div>
-            )}
-
-            {data.canViewResults && data.stats && data.stats.topLifts.length > 0 && (
-              <div style={{ marginTop: 14 }}>
-                <div style={{ fontSize: 12, color: C("ash"), textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{t("w.social.topLifts")}</div>
-                {data.stats.topLifts.map((l) => (
-                  <div key={l.lift} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
-                    <span style={{ color: C("chalk") }}>{l.lift}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", color: accentText("lime") }}>{l.topLoad} kg</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {relation !== "self" && (
-              <div style={{ display: "flex", gap: 16, marginTop: 18, borderTop: `1px solid ${C("line")}`, paddingTop: 14 }}>
-                <button className="pressable" onClick={doReport} disabled={busy.is("r")} style={{ background: "none", border: "none", cursor: "pointer", color: C("ash"), fontSize: 12, fontFamily: "var(--font-display)" }}>⚐ {t("w.social.report")}</button>
-                <button className="pressable" onClick={doBlock} disabled={busy.is("b")} style={{ background: "none", border: "none", cursor: "pointer", color: accentText("red"), fontSize: 12, fontFamily: "var(--font-display)" }}>⊘ {t("w.social.block")}</button>
-              </div>
-            )}
-
-            {compare && (
-              <div style={{ marginTop: 18 }}>
-                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, color: C("chalk"), marginBottom: 8 }}>
-                  {t("w.social.you")} {compare.score.a} — {compare.score.b} {p.displayName || "@" + p.handle}
-                </div>
-                {[...compare.lines, ...compare.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${C("line")}` }}>
-                    <span style={{ textAlign: "right", fontFamily: "var(--font-mono)", color: l.leader === "a" ? C("lime") : C("chalk") }}>{l.a}{l.unit}</span>
-                    <span style={{ fontSize: 11, color: C("ash"), textAlign: "center", whiteSpace: "nowrap" }}>{l.label}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", color: l.leader === "b" ? C("lime") : C("chalk") }}>{l.b}{l.unit}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ----- The EDIT form (handle · name · bio · avatar · privacy/visibility).
 // Lives in Settings AND the dedicated Edit-profile surface — NOT inline on the

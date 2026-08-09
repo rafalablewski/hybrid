@@ -47,9 +47,12 @@ export type DeepLinkParams = {
   /** which POST is open, as its `<subjectType>:<subjectId>` key (core
    *  `feedSubjectKey`) — what makes a shared post land ON the post. */
   post?: string;
+  /** whose PAGE is open, as their @handle (core `userPageHref`) — what makes a
+   *  shared profile land ON the person. */
+  u?: string;
 };
 
-const KEYS: (keyof DeepLinkParams)[] = ["s", "food", "source", "sport", "post"];
+const KEYS: (keyof DeepLinkParams)[] = ["s", "food", "source", "sport", "post", "u"];
 
 /** A post key carries a colon (`session:abc`); every other param we own is a
  *  plain id. Both are still bounded and pattern-checked — this is the one place

@@ -5,119 +5,25 @@ import { Loading, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
+import { seedPerson, userPagePath } from "@hybrid/core";
 import type {
-  CoachCard, CoachStorefrontResponse, CoachProfileResponse, CoachProgramData,
-  CoachEnrollmentsResponse, StorefrontProgram, StorefrontReview, ProgramPreviewWeek,
-  ProgramPreviewDay, ProgramPreviewItem, EnrollmentRow,
+  CoachCard, CoachProfileResponse, CoachProgramData,
+  CoachEnrollmentsResponse, EnrollmentRow,
 } from "@hybrid/core";
 import {
-  getCoaches, getCoach, enrollProgram, postReview,
-  getCoachProfile, putCoachProfile, getCoachPrograms, patchProgram, getEnrollments, respondEnrollment,
+  getCoaches, getCoachProfile, putCoachProfile, getCoachPrograms, patchProgram, getEnrollments, respondEnrollment,
 } from "../lib/social-api";
 import { Avatar, Stars, Empty, SButton } from "../components/social-kit";
 import { GlassToggle } from "../components/glass-toggle";
 import { useConfirm } from "../components/aurora/confirm";
-import Sheet from "../components/aurora/sheet";
 
-// ---- coach detail (what a client sees) ----
-function CoachModal({ handle, onClose }: { handle: string; onClose: () => void }) {
-  const { notify } = useConfirm();
-  const C = useTheme().palette;
-  const { t } = useLang();
-  const [data, setData] = useState<CoachStorefrontResponse | null>(null);
-  const [rating, setRating] = useState(5);
-  const [body, setBody] = useState("");
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [enrolling, setEnrolling] = useState<string | null>(null);
-  const load = () => getCoach(handle).then(setData);
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
-  const c = data?.coach;
-  return (
-    <Sheet visible onClose={onClose}>
-          <>
-            {!data || !c ? <Loading /> : (
-              <>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-                  <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={64} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}</Text>
-                    <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{c.handle}</Text>
-                    <View style={{ marginTop: 4 }}><Stars rating={data.rating} /></View>
-                  </View>
-                </View>
-                {c.headline ? <Text style={{ color: txt(C, C.lime), fontWeight: "600", marginTop: 12 }}>{c.headline}</Text> : null}
-                {c.bio ? <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 22, marginTop: 8 }}>{c.bio}</Text> : null}
-                <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-                  {c.specialties?.map((s: string) => <View key={s} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}><Text style={{ color: C.chalk, fontSize: 12 }}>{s}</Text></View>)}
-                </View>
-                {c.priceNote ? <Text style={{ color: C.ash, fontSize: 13, marginTop: 10 }}>💳 {c.priceNote}</Text> : null}
-                {data.isMyCoach ? <Text style={{ color: txt(C, C.lime), fontSize: 13, marginTop: 10 }}>✓ {t("w.coaches.isYourCoach")}</Text> : null}
-
-                <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 22, marginBottom: 6 }}>{t("w.coaches.onlinePrograms")}</Text>
-                {data.programs.length === 0 ? <Text style={{ color: C.ash, fontSize: 13 }}>{t("w.coaches.noPublished")}</Text> : data.programs.map((p: StorefrontProgram) => (
-                  <View key={p.id} style={{ backgroundColor: C.ink2, borderRadius: 16, padding: 14, marginBottom: 10 }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{p.name}</Text>
-                        <Text style={{ color: C.ash, fontSize: 12 }}>{[p.goal, p.level, p.weeks ? `${p.weeks} ${t("w.coaches.weeks")}` : null].filter(Boolean).join(" – ")}</Text>
-                      </View>
-                      {p.enrollmentStatus ? <Text style={{ color: p.enrollmentStatus === "active" ? C.lime : C.amber, fontFamily: F.mono, fontSize: 12 }}>{p.enrollmentStatus === "active" ? `${t("w.coaches.enrolled")} ✓` : t("w.social.requested")}</Text>
-                        : data.isMe ? null : <SButton label={enrolling === p.id ? t("w.coaches.starting") : t("w.coaches.start")} small disabled={!!enrolling} onPress={async () => { if (enrolling) return; setEnrolling(p.id); const r = await enrollProgram(p.id); setEnrolling(null); if (r.error) { notify(t("common.error"), r.error); return; } load(); }} />}
-                    </View>
-                    {p.summary ? <Text style={{ color: C.chalk, fontSize: 13, marginTop: 8, lineHeight: 19 }}>{p.summary}</Text> : null}
-                    {Array.isArray(p.preview) && p.preview.length > 0 && (
-                      <>
-                        <Pressable onPress={() => setPreview(preview === p.id ? null : p.id)}><Text style={{ color: txt(C, C.lime), fontSize: 12, fontFamily: F.bold, marginTop: 8 }}>{preview === p.id ? `${t("w.coaches.hidePreview")} ▲` : `${t("w.coaches.previewPlan")} ▼`}</Text></Pressable>
-                        {preview === p.id && (
-                          <View style={{ marginTop: 8 }}>
-                            {p.preview.map((w: ProgramPreviewWeek, wi: number) => (
-                              <View key={wi} style={{ marginBottom: 8 }}>
-                                <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, textTransform: "uppercase", letterSpacing: 0.5 }}>{t("w.coaches.week")} {wi + 1}</Text>
-                                {w.days.map((d: ProgramPreviewDay, di: number) => (
-                                  <View key={di} style={{ marginTop: 4 }}>
-                                    <Text style={{ color: C.chalk, fontSize: 12.5, fontFamily: F.bold }}>{d.day || `${t("w.coaches.day")} ${di + 1}`}</Text>
-                                    <Text style={{ color: C.ash, fontSize: 12 }}>{d.items.map((it: ProgramPreviewItem) => `${it.name}${it.sr ? ` ${it.sr}` : ""}`).join(" – ") || "—"}</Text>
-                                  </View>
-                                ))}
-                              </View>
-                            ))}
-                          </View>
-                        )}
-                      </>
-                    )}
-                  </View>
-                ))}
-
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 22 }}>
-                  <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{t("w.coaches.reviews")} ({data.reviews.length})</Text>
-                  {data.isMyCoach && !data.isMe && <SButton label={reviewOpen ? t("common.cancel") : t("w.coaches.writeReview")} ghost small onPress={() => setReviewOpen((o) => !o)} />}
-                </View>
-                {reviewOpen && (
-                  <View style={{ backgroundColor: C.ink2, borderRadius: 16, padding: 14, marginTop: 10 }}>
-                    <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
-                      {[1, 2, 3, 4, 5].map((n) => <Pressable key={n} onPress={() => setRating(n)}><Text style={{ fontSize: 24, color: n <= rating ? C.gold : C.line }}>★</Text></Pressable>)}
-                    </View>
-                    <TextInput value={body} onChangeText={setBody} multiline placeholder={t("w.coaches.reviewPlaceholder")} placeholderTextColor={C.ash} style={{ minHeight: 56, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: 13 }} />
-                    <View style={{ marginTop: 8 }}><SButton label={t("w.coaches.submitReview")} small onPress={async () => { const r = await postReview(handle, { rating, body }); if (r.error) { notify(t("common.error"), r.error); return; } setReviewOpen(false); setBody(""); load(); }} /></View>
-                  </View>
-                )}
-                {data.reviews.map((rv: StorefrontReview) => (
-                  <View key={rv.id} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
-                      <Text style={{ color: C.chalk, fontWeight: "600", fontSize: 13 }}>{rv.author?.displayName || `@${rv.author?.handle}`}</Text>
-                      <Text style={{ color: C.gold, fontSize: 12 }}>{"★".repeat(rv.rating)}</Text>
-                    </View>
-                    {rv.body ? <Text style={{ color: C.ash, fontSize: 13, marginTop: 6, lineHeight: 19 }}>{rv.body}</Text> : null}
-                  </View>
-                ))}
-              </>
-            )}
-          </>
-    </Sheet>
-  );
-}
+/**
+ * THE MARKETPLACE (mobile) — the directory, and a coach's own storefront EDITOR.
+ *
+ * Reading a coach happens on their PAGE (/u/<handle>), where coaching is a tab
+ * on the person rather than a sheet of its own — a coach is one human with more
+ * to offer, not a second kind of profile.
+ */
 
 // ---- coach's own storefront ----
 function Storefront() {
@@ -193,7 +99,6 @@ export default function CoachesScreen() {
   const [tab, setTab] = useState<"browse" | "storefront">("browse");
   const [q, setQ] = useState("");
   const [coaches, setCoaches] = useState<CoachCard[] | null>(null);
-  const [detail, setDetail] = useState<string | null>(null);
   const [isCoach, setIsCoach] = useState(false);
 
   const load = () => getCoaches(q.trim() || undefined).then((r) => setCoaches(r.coaches ?? []));
@@ -213,7 +118,7 @@ export default function CoachesScreen() {
         <>
           <ASearch value={q} onChange={setQ} placeholder={t("w.coaches.search")} />
           {!coaches ? <Loading /> : coaches.length === 0 ? <Empty title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} /> : coaches.map((c) => (
-            <Pressable key={c.userId} onPress={() => setDetail(c.handle)}>
+            <Pressable key={c.userId} onPress={() => { seedPerson({ handle: c.handle, displayName: c.name, avatarUrl: c.avatarUrl, coachVerified: c.coachVerified }); router.push(userPagePath(c.handle)); }}>
               <ACard style={cardStack}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                   <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
@@ -231,7 +136,6 @@ export default function CoachesScreen() {
           ))}
         </>
       )}
-      {detail && <CoachModal handle={detail} onClose={() => { setDetail(null); load(); }} />}
     </AuroraScreen>
   );
 }

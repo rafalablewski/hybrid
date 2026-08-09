@@ -14,6 +14,7 @@ import {
   sessionVolume,
   totalVolume,
   athleteId,
+  userPagePath,
   type BadgeAccent,
   type LoggedSession,
   type Achievement,
@@ -309,6 +310,15 @@ export default function AuroraProfile() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}><Text style={{ opacity: 0.75 }}>HYBRID ID</Text>{"  "}{athleteId(email || name || "")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, opacity: 0.75 }}>{t("w.account.profile.member-since")} {createdYear}</Text>
         </View>
+        {/* VIEW AS OTHERS SEE IT — your own individual user page. It is the only
+            honest preview of what your visibility setting actually does, and
+            without it the page's `self` state was unreachable from the app. It
+            LEAVES, so it takes the arrow; it is a door, so it wears no card. */}
+        {socialP?.profile?.handle ? (
+          <Pressable onPress={() => router.push(userPagePath(socialP.profile.handle))} style={{ alignSelf: "flex-start", marginTop: 10 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>{t("w.user.viewAsOthers")}  ›</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {/* SOCIAL COUNTS — followers / following / (derived) friends rank. */}

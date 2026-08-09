@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { relativeTime, splitNotifications, type NotifItem } from "@hybrid/core";
+import { relativeTime, seedPerson, splitNotifications, userPagePath, type NotifItem } from "@hybrid/core";
 import { respondFollow, respondEnrollment } from "../lib/social-api";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -95,7 +95,14 @@ export default function Notifications() {
     if (a.kind === "session") router.push(`/session/${a.sessionId}`);
     else if (a.kind === "checkin") router.push("/checkin");
     else if (a.kind === "calendar") router.push("/calendar");
-    else if (a.kind === "social") router.push("/feed");
+    // A social notification is ABOUT somebody. Now that a person has a page, it
+    // opens them rather than dropping you at the top of the feed to go looking.
+    else if (a.kind === "social") {
+      if (a.handle) {
+        if (n.social?.actor) seedPerson({ handle: a.handle, displayName: n.social.actor.displayName, avatarUrl: n.social.actor.avatarUrl });
+        router.push(userPagePath(a.handle));
+      } else router.push("/feed");
+    }
   };
 
   const accentColor = (a: NotifItem["accent"]) => (a === "lime" ? C.lime : a === "blue" ? C.blue : a === "violet" ? C.violet : C.amber);

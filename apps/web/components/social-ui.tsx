@@ -4,6 +4,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { fs, leading } from "@hybrid/core";
 import { useTemplate } from "@/lib/use-template";
 import { useLang } from "@/lib/i18n";
+import type { PersonSeed } from "@hybrid/core";
 
 // Shared primitives for the social + marketplace screens — kept here so the
 // feed, discover, leaderboard, profile and coaches screens stay consistent and
@@ -11,6 +12,11 @@ import { useLang } from "@/lib/i18n";
 // "template-aware, not a bespoke fork" pattern, like Statistics/Notifications).
 
 export const C = (v: string) => `var(--color-${v})`;
+
+/** Open a person's page. The optional second argument is what the calling row
+ *  ALREADY knows about them (core `seedPerson`), so the page paints the
+ *  identity on its first frame instead of a spinner. */
+export type OpenUser = (handle: string, card?: PersonSeed) => void;
 
 export function useSocialTheme() {
   const aurora = useTemplate().template === "aurora";
@@ -128,6 +134,7 @@ export function Btn({
   ghost,
   small,
   disabled,
+  full,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -135,6 +142,9 @@ export function Btn({
   ghost?: boolean;
   small?: boolean;
   disabled?: boolean;
+  /** Stretch to the container. For a surface whose whole offer is ONE verb —
+   *  a person's page — so the action never has to be hunted for. */
+  full?: boolean;
 }) {
   return (
     <button className="pressable"
@@ -152,6 +162,7 @@ export function Btn({
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.5 : 1,
         whiteSpace: "nowrap",
+        width: full ? "100%" : undefined,
       }}
     >
       {children}

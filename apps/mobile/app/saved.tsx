@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, RefreshControl } from "react-native";
 import { router } from "expo-router";
-import { FEED_SAVED_PAGE, feedPostPath, orderBySaved, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
+import { FEED_SAVED_PAGE, feedPostPath, orderBySaved, seedPerson, userPagePath, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
 import { Loading, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
 import { AuroraScreen, GUTTER } from "../components/aurora/kit";
 import type { HeroScrollProps } from "../components/aurora/hero";
@@ -11,7 +11,7 @@ import { getSavedFeed, toggleKudos, deletePost } from "../lib/social-api";
 import { forgetSavedPosts, syncSaved, useFeedSaved } from "../lib/feed-actions";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScrollProps } from "../lib/nav-scroll";
-import { Empty, ProfileModal, SButton } from "../components/social-kit";
+import { Empty, SButton } from "../components/social-kit";
 import { useConfirm } from "../components/aurora/confirm";
 import FeedCard from "../components/feed-card";
 import { Comments } from "../components/feed-comments";
@@ -49,7 +49,6 @@ export default function SavedScreen() {
   const [hidden, setHidden] = useState(0);
   const [shown, setShown] = useState(FEED_SAVED_PAGE);
   const [open, setOpen] = useState<string | null>(null);
-  const [drawer, setDrawer] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const keys = saved.ids.slice(0, shown);
@@ -100,7 +99,7 @@ export default function SavedScreen() {
     <FeedCard
       item={item}
       units={units}
-      onOpenProfile={(h) => setDrawer(h)}
+      onOpenProfile={(h) => { if (h) { seedPerson(item.author); router.push(userPagePath(h)); } }}
       onKudos={() => cheer(item)}
       onComments={() => setOpen(open === item.id ? null : item.id)}
       // A saved row opens the same post screen the feed's rows open.
@@ -169,8 +168,6 @@ export default function SavedScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.lime} colors={[C.lime]} />}
         />
       )}
-    >
-      {drawer ? <ProfileModal handle={drawer} onClose={() => setDrawer(null)} /> : null}
-    </AuroraScreen>
+    />
   );
 }

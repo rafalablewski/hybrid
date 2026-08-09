@@ -11,7 +11,10 @@ import Sheet from "./aurora/sheet";
 
 /** The level chip's ink — the palette's existing ramp, no new colours. Mirrors
  *  badgeInk in aurora/profile.tsx and LevelChip on web. */
-const levelInk = (C: ReturnType<typeof useTheme>["palette"], accent: BadgeAccent): string =>
+/** The level chip's ink — ash and chalk for the lower tiers, the lime
+ *  accent-text tone for advanced, gold reserved for elite. Exported because the
+ *  user page paints the same chip; web's twin lives in components/user-page.tsx. */
+export const levelInk = (C: ReturnType<typeof useTheme>["palette"], accent: BadgeAccent): string =>
   accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
 
 export function initials(name?: string | null, handle?: string) {
@@ -45,11 +48,14 @@ export function Stars({ rating, size = 13 }: { rating: number | null; size?: num
   );
 }
 
-export function SButton({ label, onPress, ghost, tone, small, disabled }: { label: string; onPress?: () => void; ghost?: boolean; tone?: string; small?: boolean; disabled?: boolean }) {
+/** `full` stretches the button to its container and centres the label — for a
+ *  surface whose whole offer is ONE verb (a person's page), so the action never
+ *  has to be hunted for among equals. Web twin: Btn's `full` in social-ui.tsx. */
+export function SButton({ label, onPress, ghost, tone, small, disabled, full }: { label: string; onPress?: () => void; ghost?: boolean; tone?: string; small?: boolean; disabled?: boolean; full?: boolean }) {
   const C = useTheme().palette;
   const t = tone ?? C.lime;
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={{ paddingVertical: small ? 7 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: 999, borderWidth: 1, borderColor: ghost ? C.line : t, backgroundColor: ghost ? "transparent" : t, opacity: disabled ? 0.5 : 1 }}>
+    <Pressable onPress={onPress} disabled={disabled} style={{ paddingVertical: small ? 7 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: 999, borderWidth: 1, borderColor: ghost ? C.line : t, backgroundColor: ghost ? "transparent" : t, opacity: disabled ? 0.5 : 1, alignSelf: full ? "stretch" : undefined, alignItems: full ? "center" : undefined }}>
       <Text style={{ color: ghost ? C.chalk : C.onAccent, fontFamily: F.bold, fontWeight: "700", fontSize: small ? 12 : 13 }}>{label}</Text>
     </Pressable>
   );
@@ -67,103 +73,3 @@ export function Empty({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-// A modal showing any user's public profile (reused by feed / discover / leaderboard).
-export function ProfileModal({ handle, onClose }: { handle: string; onClose: () => void }) {
-  const { confirm, notify } = useConfirm();
-  const C = useTheme().palette;
-  const { t } = useLang();
-  const [data, setData] = useState<PublicProfileResponse | null>(null);
-  const [cmp, setCmp] = useState<CompareResult | null>(null);
-  const load = () => getProfile(handle).then(setData);
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [handle]);
-  const p = data?.profile;
-  // A pending follow request lives in `followState`, NOT `relation`, so fold it in
-  // — otherwise the "Requested" button + "Request pending" copy never show.
-  const rel: string = data?.followState === "requested" ? "requested" : (data?.relation ?? "none");
-  const following = rel === "following" || rel === "friend" || rel === "close";
-
-  const doBlock = async () => {
-    const ok = await confirm({ title: t("w.social.block"), message: t("w.social.blockConfirm").replace("{h}", handle), confirmLabel: t("w.social.block"), destructive: true });
-    if (!ok) return;
-    await blockUser({ handle });
-    onClose();
-  };
-  const doReport = async () => {
-    if (!p?.userId) return;
-    const ok = await confirm({ title: t("w.social.report"), message: t("w.social.reportConfirm").replace("{h}", handle), confirmLabel: t("w.social.report"), destructive: true });
-    if (!ok) return;
-    await reportTarget({ targetType: "socialProfile", targetId: p.userId, reason: "inappropriate" });
-    void notify(t("w.social.reportThanks"));
-  };
-
-  return (
-    <Sheet visible onClose={onClose}>
-          <>
-            {!data || !p ? <Loading /> : (
-              <>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-                  <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={64} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 20 }}>{p.displayName || `@${p.handle}`} {p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}>✓</Text> : null}</Text>
-                    {/* The earned level, as one word — gated server-side by the
-                        same privacy rule as the stats, and never carrying the
-                        ratio behind it. Mirrors web's LevelChip. */}
-                    {data?.fitnessLevel ? (
-                      <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: levelInk(C, data.fitnessLevel.accent), borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, marginTop: 6 }}>
-                        <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: levelInk(C, data.fitnessLevel.accent) }}>
-                          {t(LEVEL_KEY[data.fitnessLevel.level])}
-                        </Text>
-                      </View>
-                    ) : null}
-                    <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 13 }}>@{p.handle}</Text>
-                  </View>
-                </View>
-                {p.bio ? <Text style={{ color: C.chalk, fontSize: 14, lineHeight: 21, marginTop: 12 }}>{p.bio}</Text> : null}
-                <View style={{ flexDirection: "row", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-                  {rel !== "self" && (rel === "requested"
-                    ? <SButton label={t("w.social.requested")} ghost small disabled />
-                    : following
-                      ? <SButton label={rel === "friend" || rel === "close" ? `${t("w.social.friends")} ✓` : t("w.social.following")} ghost small onPress={async () => { await unfollow({ handle }); load(); }} />
-                      : <SButton label={rel === "follower" ? t("w.social.followBack") : t("w.social.follow")} small onPress={async () => { await follow({ handle }); load(); }} />)}
-                  {data?.canViewResults && rel !== "self" && <SButton label={t("w.social.compare")} ghost small onPress={async () => { const r = await getCompare(handle); setCmp(r.compare ?? null); }} />}
-                </View>
-                {data?.canViewResults ? (
-                  data?.stats && (
-                    <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-                      {[{ l: t("w.social.statSessions"), v: data.stats.totalSessions }, { l: t("w.social.statVolume"), v: `${Math.round(data.stats.totalVolumeKg / 1000)}t` }, { l: t("w.social.statStreak"), v: `${data.stats.currentStreak}d` }].map((s) => (
-                        <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 12, padding: 12, alignItems: "center" }}>
-                          <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "800", fontSize: 18 }}>{s.v}</Text>
-                          <Text style={{ color: C.ash, fontSize: 11 }}>{s.l}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )
-                ) : (
-                  <View style={{ marginTop: 16, backgroundColor: C.ink2, borderRadius: 12, padding: 16 }}>
-                    <Text style={{ color: C.ash, fontSize: 13 }}>🔒 {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : t("w.social.followToSee")}</Text>
-                  </View>
-                )}
-                {rel !== "self" && (
-                  <View style={{ flexDirection: "row", gap: 16, marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>
-                    <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: 12, fontFamily: F.bold }}>⚐ {t("w.social.report")}</Text></Pressable>
-                    <Pressable onPress={doBlock}><Text style={{ color: txt(C, C.red), fontSize: 12, fontFamily: F.bold }}>⊘ {t("w.social.block")}</Text></Pressable>
-                  </View>
-                )}
-                {cmp && (
-                  <View style={{ marginTop: 16 }}>
-                    <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 8 }}>{t("w.social.you")} {cmp.score.a} — {cmp.score.b} {p.displayName || "@" + p.handle}</Text>
-                    {[...cmp.lines, ...cmp.sharedLifts.map((s: SharedLift) => ({ ...s, label: s.lift, unit: "kg" }))].map((l, i: number) => (
-                      <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                        <Text style={{ flex: 1, textAlign: "right", fontFamily: F.mono, color: l.leader === "a" ? C.lime : C.chalk }}>{l.a}{l.unit}</Text>
-                        <Text style={{ width: 120, textAlign: "center", color: C.ash, fontSize: 11 }}>{l.label}</Text>
-                        <Text style={{ flex: 1, fontFamily: F.mono, color: l.leader === "b" ? C.lime : C.chalk }}>{l.b}{l.unit}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </>
-            )}
-          </>
-    </Sheet>
-  );
-}

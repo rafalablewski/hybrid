@@ -38,6 +38,49 @@ export function reactionKeys(items: { subjectType: string; subjectId: string }[]
   return { pairs, keyOf: (row) => `${canonicalSubjectType(row.subjectType)}:${row.subjectId}` };
 }
 
+/**
+ * Hang the viewer-relative reaction state on a set of feed items: how many
+ * kudos and comments each carries, and whether this viewer gave one.
+ *
+ * The feed computes this, the post screen computes this, and now a person's
+ * page computes it for their own timeline — so it lives here rather than being
+ * spelled three times. It reads through `reactionKeys`, so a workout's count
+ * still includes the kudos given to the PR card it used to have beside it.
+ */
+export async function enrichReactions<T extends { subjectType: string; subjectId: string; author: { id: string } }>(
+  items: T[],
+  viewerId: string,
+): Promise<(T & { kudos: number; comments: number; kudosedByMe: boolean; mine: boolean })[]> {
+  const { pairs, keyOf } = reactionKeys(items);
+  const [kudos, myKudos, comments] = pairs.length
+    ? await Promise.all([
+        prisma.kudos.groupBy({ by: ["subjectType", "subjectId"], _count: { _all: true }, where: { OR: pairs } }),
+        prisma.kudos.findMany({ where: { userId: viewerId, OR: pairs }, select: { subjectType: true, subjectId: true } }),
+        prisma.comment.groupBy({ by: ["subjectType", "subjectId"], _count: { _all: true }, where: { OR: pairs } }),
+      ])
+    : [[], [], []];
+
+  const tally = (rows: { subjectType: string; subjectId: string; _count: { _all: number } }[]) => {
+    const m = new Map<string, number>();
+    for (const r of rows) m.set(keyOf(r), (m.get(keyOf(r)) ?? 0) + r._count._all);
+    return m;
+  };
+  const kCount = tally(kudos as { subjectType: string; subjectId: string; _count: { _all: number } }[]);
+  const cCount = tally(comments as { subjectType: string; subjectId: string; _count: { _all: number } }[]);
+  const mineSet = new Set((myKudos as { subjectType: string; subjectId: string }[]).map(keyOf));
+
+  return items.map((i) => {
+    const key = `${canonicalSubjectType(i.subjectType)}:${i.subjectId}`;
+    return {
+      ...i,
+      kudos: kCount.get(key) ?? 0,
+      comments: cCount.get(key) ?? 0,
+      kudosedByMe: mineSet.has(key),
+      mine: i.author.id === viewerId,
+    };
+  });
+}
+
 /** Materialize a coach program's weeks into dated Assignments for one client —
  *  the "deliver the program" step shared by accepting a ProgramEnrollment AND
  *  accepting a CoachLink that originated from an enrolment. Idempotent: clears
