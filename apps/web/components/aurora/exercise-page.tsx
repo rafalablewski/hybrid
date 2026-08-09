@@ -1,25 +1,31 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, ResponsiveContainer, XAxis, YAxis, ReferenceLine, Tooltip } from "recharts";
+import { AreaChart, Area, BarChart, Bar, Cell, LineChart, Line, ResponsiveContainer, XAxis, YAxis, ReferenceDot, ReferenceLine, Tooltip } from "recharts";
 import {
   SHARED_ELEMENTS,
   exercisePageModel,
+  exerciseSlideGeometry,
+  exerciseSlideReading,
   fmtWeight,
   fmtTonnage,
   paceClock,
   kgToUnit,
+  scrubPosition,
   fs,
   space,
+  type ChartReading,
   type ExercisePageSlide,
   type ExercisePeriod,
   type LoggedSession,
+  type ScrubMode,
   type WeightUnit,
 } from "@hybrid/core";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
 import { tip, mono, ASH, VIOLET } from "@/lib/ui";
+import { ChartReadout, readoutSide, useChartScrub, SCRUB_STYLE_IN_RAIL } from "./chart-scrub";
 import { kindStroke, TickerDelta, upHex, downHex } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
 import { useTheme } from "@/lib/use-theme";
@@ -44,6 +50,53 @@ const splitVal = (s: string): { v: string; u: string } => {
   const i = s.lastIndexOf(" ");
   return i < 0 ? { v: s, u: "" } : { v: s.slice(0, i), u: s.slice(i + 1) };
 };
+
+/**
+ * What a chart needs to answer a held finger: how many points it has, how they
+ * occupy the width, and — per index — the figure (from core, where the units
+ * live) and the sentence naming it (from here, where the language lives).
+ *
+ * A slide with no series to read (a scatter, a surface, the rep-max grid, the
+ * consistency map, the meter rows) simply gets none, and its chart never binds
+ * the gesture. Parity: the same type in the mobile twin.
+ */
+interface Held {
+  count: number;
+  mode: ScrubMode;
+  read: (i: number) => ChartReading | null;
+  when: (i: number) => string;
+}
+
+/**
+ * A recharts plot, made holdable.
+ *
+ * recharts owns the geometry, so the gesture has to be measured against the
+ * PLOT AREA rather than the container — hence the inset overlay carrying the
+ * hook's `plotRef`: inside it, point `i` sits at exactly `scrubPosition()` of
+ * the width, which is the same arithmetic recharts used to place it. The
+ * crosshair and the held dot are recharts' own ReferenceLine/ReferenceDot, so
+ * they land in DATA space and cannot drift from the series they mark.
+ *
+ * The slides are SWIPED, so the style is the in-rail one: a drag belongs to the
+ * pager, and holding still is what asks the chart a question.
+ */
+function useSlideScrub(held: Held | undefined, margins: { left: number; right: number }) {
+  const scrub = useChartScrub(held?.count ?? 0, held?.mode ?? "band");
+  const index = held && scrub.index >= 0 && scrub.index < held.count ? scrub.index : -1;
+  const read = index >= 0 ? held!.read(index) : null;
+  const frame = (children: React.ReactNode) => (
+    <div {...(held ? scrub.bind : {})} style={{ position: "relative", ...(held ? SCRUB_STYLE_IN_RAIL : null) }}>
+      {children}
+      <div
+        ref={scrub.plotRef}
+        aria-hidden
+        style={{ position: "absolute", left: margins.left, right: margins.right, top: 0, bottom: 0, pointerEvents: "none" }}
+      />
+      {!!read && <ChartReadout read={read} side={readoutSide(index, held!.count)} when={held!.when(index)} />}
+    </div>
+  );
+  return { index, frame };
+}
 
 interface Hero {
   v: string;
@@ -116,9 +169,12 @@ function CornerLabels({ l, r }: { l?: string; r?: string }) {
   );
 }
 
-function TrendChart({ data, stroke, reversed, fmt, id }: { data: { x: string; y: number; pr?: boolean }[]; stroke: string; reversed?: boolean; fmt: (v: number) => string; id: string }) {
+function TrendChart({ data, stroke, reversed, fmt, id, held }: { data: { x: string; y: number; pr?: boolean }[]; stroke: string; reversed?: boolean; fmt: (v: number) => string; id: string; held?: Held }) {
+  const scrub = useSlideScrub(held, { left: 6, right: 6 });
+  const hit = scrub.index;
   return (
     <>
+      {scrub.frame(
       <ResponsiveContainer width="100%" height={230}>
         <AreaChart data={data} margin={{ top: 14, right: 6, bottom: 4, left: 6 }}>
           <defs>
@@ -129,35 +185,54 @@ function TrendChart({ data, stroke, reversed, fmt, id }: { data: { x: string; y:
           </defs>
           <XAxis dataKey="x" hide />
           <YAxis hide domain={["auto", "auto"]} reversed={reversed} />
-          <Tooltip contentStyle={tip} formatter={(v) => fmt(Number(v))} />
+          {/* No <Tooltip>: the held readout IS the tooltip now, and it says the
+              same thing on a phone, where a hover does not exist. */}
+          {!held && <Tooltip contentStyle={tip} formatter={(v) => fmt(Number(v))} />}
           <Area
             type="monotone" dataKey="y" stroke={stroke} strokeWidth={2.5} fill={`url(#${id})`} isAnimationActive={false}
             dot={(p: { cx?: number; cy?: number; payload?: { pr?: boolean }; index?: number }) =>
               p.payload?.pr
                 ? <circle key={p.index} cx={p.cx} cy={p.cy} r={4.5} fill={stroke} stroke={INK_HEX} strokeWidth={2} />
                 : <g key={p.index} />}
-            activeDot={{ r: 4, fill: stroke, stroke: INK_HEX, strokeWidth: 2 }}
           />
+          {hit >= 0 && data[hit] && (
+            <ReferenceLine x={data[hit]!.x} stroke={ASH} strokeOpacity={0.55} strokeWidth={1} />
+          )}
+          {hit >= 0 && data[hit] && (
+            <ReferenceDot x={data[hit]!.x} y={data[hit]!.y} r={5} fill={C("chalk")} stroke={INK_HEX} strokeWidth={2} />
+          )}
         </AreaChart>
-      </ResponsiveContainer>
+      </ResponsiveContainer>,
+      )}
       <CornerLabels l={data[0]?.x} r={data.at(-1)?.x} />
     </>
   );
 }
 
-function TonnageChart({ weeks, units, t }: { weeks: { baseKg: number; hardKg: number }[]; units: WeightUnit; t: (k: string) => string }) {
+function TonnageChart({ weeks, units, t, held }: { weeks: { baseKg: number; hardKg: number }[]; units: WeightUnit; t: (k: string) => string; held?: Held }) {
+  const scrub = useSlideScrub(held, { left: 0, right: 0 });
+  const hit = scrub.index;
+  const dim = (i: number) => (hit >= 0 && i !== hit ? 0.4 : 1);
   const data = weeks.map((w, i) => ({ i, base: Math.round(kgToUnit(w.baseKg, units)), hard: Math.round(kgToUnit(w.hardKg, units)), baseKg: w.baseKg, hardKg: w.hardKg }));
   return (
     <>
+      {scrub.frame(
       <ResponsiveContainer width="100%" height={230}>
         <BarChart data={data} margin={{ top: 14, right: 0, bottom: 4, left: 0 }} barCategoryGap="18%">
           <XAxis dataKey="i" hide />
           <YAxis hide />
-          <Tooltip contentStyle={tip} formatter={(_v, key, item) => fmtTonnage(key === "base" ? (item?.payload as { baseKg: number }).baseKg : (item?.payload as { hardKg: number }).hardKg, units)} />
-          <Bar dataKey="base" stackId="t" fill={DEEP_BASE} name={t("w.analyze.ex.tonnageBase")} isAnimationActive={false} radius={[2, 2, 2, 2]} />
-          <Bar dataKey="hard" stackId="t" fill={DEEP_HARD} name={t("w.analyze.ex.tonnageHard")} isAnimationActive={false} radius={[3, 3, 0, 0]} />
+          {!held && <Tooltip contentStyle={tip} formatter={(_v, key, item) => fmtTonnage(key === "base" ? (item?.payload as { baseKg: number }).baseKg : (item?.payload as { hardKg: number }).hardKg, units)} />}
+          {/* Held, every week but the finger's recedes — the chart answers one
+              question at a time. */}
+          <Bar dataKey="base" stackId="t" fill={DEEP_BASE} name={t("w.analyze.ex.tonnageBase")} isAnimationActive={false} radius={[2, 2, 2, 2]}>
+            {data.map((d) => <Cell key={d.i} fillOpacity={dim(d.i)} />)}
+          </Bar>
+          <Bar dataKey="hard" stackId="t" fill={DEEP_HARD} name={t("w.analyze.ex.tonnageHard")} isAnimationActive={false} radius={[3, 3, 0, 0]}>
+            {data.map((d) => <Cell key={d.i} fillOpacity={dim(d.i)} />)}
+          </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </ResponsiveContainer>,
+      )}
       <CornerLabels l={t("w.analyze.exp.weeksAgo").replace("{n}", String(weeks.length))} r={t("w.analyze.exp.now")} />
       <div style={{ display: "flex", gap: 16, marginTop: 8, fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><i style={{ width: 9, height: 9, borderRadius: 3, background: DEEP_BASE }} />{t("w.analyze.ex.tonnageBase")}</span>
@@ -167,38 +242,46 @@ function TonnageChart({ weeks, units, t }: { weeks: { baseKg: number; hardKg: nu
   );
 }
 
-function MinutesChart({ weeks, stroke, t }: { weeks: { minutes: number }[]; stroke: string; t: (k: string) => string }) {
+function MinutesChart({ weeks, stroke, t, held }: { weeks: { minutes: number }[]; stroke: string; t: (k: string) => string; held?: Held }) {
+  const scrub = useSlideScrub(held, { left: 0, right: 0 });
+  const hit = scrub.index;
   const data = weeks.map((w, i) => ({ i, y: w.minutes }));
   return (
     <>
+      {scrub.frame(
       <ResponsiveContainer width="100%" height={230}>
         <BarChart data={data} margin={{ top: 14, right: 0, bottom: 4, left: 0 }} barCategoryGap="18%">
           <XAxis dataKey="i" hide />
           <YAxis hide />
-          <Tooltip contentStyle={tip} formatter={(v) => `${v} min`} />
-          <Bar dataKey="y" fill={stroke} isAnimationActive={false} radius={[3, 3, 2, 2]} />
+          {!held && <Tooltip contentStyle={tip} formatter={(v) => `${v} min`} />}
+          <Bar dataKey="y" fill={stroke} isAnimationActive={false} radius={[3, 3, 2, 2]}>
+            {data.map((d) => <Cell key={d.i} fillOpacity={hit >= 0 && d.i !== hit ? 0.4 : 1} />)}
+          </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </ResponsiveContainer>,
+      )}
       <CornerLabels l={t("w.analyze.exp.weeksAgo").replace("{n}", String(weeks.length))} r={t("w.analyze.exp.now")} />
     </>
   );
 }
 
-function DeltasChart({ runs }: { runs: { date: string; deltaSec: number }[] }) {
+function DeltasChart({ runs, held }: { runs: { date: string; deltaSec: number }[]; held?: Held }) {
   const { theme } = useTheme();
+  const scrub = useSlideScrub(held, { left: 6, right: 6 });
+  const hit = scrub.index;
   const data = runs.map((r) => ({ x: fmtDate(r.date), y: r.deltaSec }));
-  return (
+  return scrub.frame(
     <ResponsiveContainer width="100%" height={230}>
       <BarChart data={data} margin={{ top: 24, right: 6, bottom: 4, left: 6 }} barCategoryGap="28%">
         <XAxis dataKey="x" hide />
         <YAxis hide />
         <ReferenceLine y={0} stroke={LINE_HEX} />
-        <Tooltip contentStyle={tip} formatter={(v) => `${Number(v) > 0 ? "+" : ""}${v} s/km`} />
+        {!held && <Tooltip contentStyle={tip} formatter={(v) => `${Number(v) > 0 ? "+" : ""}${v} s/km`} />}
         <Bar dataKey="y" isAnimationActive={false} radius={[3, 3, 3, 3]}>
-          {data.map((d, i) => <Cell key={i} fill={d.y < 0 ? upHex(theme) : downHex(theme)} />)}
+          {data.map((d, i) => <Cell key={i} fill={d.y < 0 ? upHex(theme) : downHex(theme)} fillOpacity={hit >= 0 && i !== hit ? 0.4 : 1} />)}
         </Bar>
       </BarChart>
-    </ResponsiveContainer>
+    </ResponsiveContainer>,
   );
 }
 
@@ -447,13 +530,29 @@ function ConsistencyDots({ weekly, foot }: { weekly: number[]; foot: string }) {
 }
 
 function SlideChart({ slide, stroke, units, t }: { slide: ExercisePageSlide; stroke: string; units: WeightUnit; t: (k: string) => string }) {
+  // What a held finger reads on THIS slide — the figure from core (units), the
+  // sentence from here (language). A slide core reports no geometry for is one
+  // whose cells already name themselves, and it binds no gesture.
+  const geo = exerciseSlideGeometry(slide);
+  const held: Held | undefined = geo
+    ? {
+        count: geo.count,
+        mode: geo.mode,
+        read: (i) => exerciseSlideReading(slide, i, units),
+        when: (i) => {
+          const r = exerciseSlideReading(slide, i, units);
+          const d = r?.weekStart ? fmtDate(r.weekStart) : "";
+          return geo.by === "week" ? t("chart.weekOf").replace("{date}", d) : d;
+        },
+      }
+    : undefined;
   switch (slide.kind) {
     case "weightTrend":
-      return <TrendChart id={`exp-weight`} data={slide.points.map((p) => ({ x: fmtDate(p.date), y: Math.round(kgToUnit(p.weightKg, units)), pr: p.pr }))} stroke={stroke} fmt={(v) => `${v} ${units}`} />;
+      return <TrendChart id={`exp-weight`} data={slide.points.map((p) => ({ x: fmtDate(p.date), y: Math.round(kgToUnit(p.weightKg, units)), pr: p.pr }))} stroke={stroke} fmt={(v) => `${v} ${units}`} held={held} />;
     case "paceTrend":
-      return <TrendChart id={`exp-pace`} data={slide.points.map((p) => ({ x: fmtDate(p.date), y: p.secPerKm }))} stroke={stroke} reversed fmt={(v) => `${paceClock(v)} /km`} />;
+      return <TrendChart id={`exp-pace`} data={slide.points.map((p) => ({ x: fmtDate(p.date), y: p.secPerKm }))} stroke={stroke} reversed fmt={(v) => `${paceClock(v)} /km`} held={held} />;
     case "tonnage":
-      return <TonnageChart weeks={slide.weeks} units={units} t={t} />;
+      return <TonnageChart weeks={slide.weeks} units={units} t={t} held={held} />;
     case "zones":
       return (
         <MeterRows
@@ -470,11 +569,11 @@ function SlideChart({ slide, stroke, units, t }: { slide: ExercisePageSlide; str
     case "compare":
       return <CompareChart slide={slide} units={units} t={t} />;
     case "weeklyMinutes":
-      return <MinutesChart weeks={slide.weeks} stroke={stroke} t={t} />;
+      return <MinutesChart weeks={slide.weeks} stroke={stroke} t={t} held={held} />;
     case "paceCurve":
       return <PaceCurveChart slide={slide} stroke={stroke} t={t} />;
     case "runDeltas":
-      return <DeltasChart runs={slide.runs} />;
+      return <DeltasChart runs={slide.runs} held={held} />;
     case "consistency":
       return <ConsistencyHeat slide={slide} foot={t("w.analyze.exp.consistencyFoot")} t={t} />;
   }
