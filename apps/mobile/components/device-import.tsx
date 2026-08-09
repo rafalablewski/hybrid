@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import {
   DEVICE_IMPORT_DAYS,
+  DEVICE_IMPORT_MIN_MIN,
   DEVICE_IMPORT_PROVIDERS,
-  deviceImportCounts,
   deviceImportMeta,
   deviceSourceLabel,
   feelSamples,
@@ -23,6 +23,9 @@ import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../li
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 
+/** Under the unattended floor — shown, but not switched on for you. */
+const brief = (i: DeviceImportItem): boolean => i.workout.durationMin < DEVICE_IMPORT_MIN_MIN;
+
 /**
  * DEVICE IMPORT — "I trained on my watch; put it in the app."
  *
@@ -35,6 +38,13 @@ import Sheet from "./aurora/sheet";
  *
  * Rows are individually excludable — the watch catches a 6-minute walk to the
  * shop and calls it a workout, and the athlete gets the final word on that.
+ * Which is why the sheet plans with NO duration floor (`minMinutes: 0`) and
+ * switches the brief ones off instead of hiding them: DEVICE_IMPORT_MIN_MIN is
+ * the floor for what an unattended sync WRITES, and using it to filter the list
+ * as well meant a short recording — a warm-up swim, a sprint session, a walk
+ * the athlete actually counts — simply wasn't there, indistinguishable from the
+ * watch having recorded nothing, while the summary's match picker offered that
+ * same recording without complaint.
  *
  * AND IT ENDS IN THE ONE QUESTION THE WATCH CANNOT ANSWER. A recording carries
  * every figure of the session except how hard it felt — the value session load,
@@ -99,8 +109,13 @@ export function DeviceImportSheet({
       setPhase("error");
       return;
     }
-    setItems(planDeviceImport(workouts, sessionsRef.current));
-    setExcluded(new Set());
+    // No floor on what is SHOWN (see the header) — the brief recordings arrive
+    // in the plan and start switched off, so the athlete decides.
+    const planned = planDeviceImport(workouts, sessionsRef.current, { minMinutes: 0 });
+    setItems(planned);
+    setExcluded(
+      new Set(planned.filter((i) => i.action !== "linked" && brief(i)).map((i) => i.workout.uuid)),
+    );
     setLanded([]);
     setAnswered(false);
     setPhase("list");
@@ -114,7 +129,6 @@ export function DeviceImportSheet({
     () => items.filter((i) => i.action !== "linked" && !excluded.has(i.workout.uuid)),
     [items, excluded],
   );
-  const counts = deviceImportCounts(items);
 
   /**
    * THE REFETCH IS TOLD ON THE WAY OUT, not the moment the write lands.
@@ -240,12 +254,18 @@ export function DeviceImportSheet({
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5 }}>
                         {when(w.start)} – {deviceImportMeta(w).join(" – ")}
                       </Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: done ? C.ash : txt(C, C.lime), marginTop: 4 }}>
+                      {/* A brief recording says WHY it is off rather than what
+                          it would do — tapping it on switches the line back to
+                          the action, so the athlete reads a consequence only
+                          once they've asked for one. */}
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: off ? C.ash : txt(C, C.lime), marginTop: 4 }}>
                         {item.action === "linked"
                           ? t("device.import.already")
-                          : item.action === "attach"
-                            ? t("device.import.joins").replace("{title}", item.sessionTitle ?? "")
-                            : t("device.import.adds")}
+                          : off && brief(item)
+                            ? t("device.import.brief")
+                            : item.action === "attach"
+                              ? t("device.import.joins").replace("{title}", item.sessionTitle ?? "")
+                              : t("device.import.adds")}
                       </Text>
                     </View>
                     {!done && (
@@ -270,11 +290,13 @@ export function DeviceImportSheet({
             </ScrollView>
           )}
 
-          {phase === "list" && counts.pending > 0 && (
+          {/* Driven by what is actually SWITCHED ON, not by what the plan holds:
+              with every row excluded there is nothing to import, and a disabled
+              "Import 0" is a button pretending to be an option. */}
+          {phase === "list" && pending.length > 0 && (
             <Pressable
               onPress={() => void run()}
-              disabled={pending.length === 0}
-              style={{ marginTop: 6, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center", opacity: pending.length === 0 ? 0.4 : 1 }}
+              style={{ marginTop: 6, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center" }}
             >
               <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>
                 {t("device.import.cta").replace("{n}", String(pending.length))}

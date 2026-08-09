@@ -146,6 +146,25 @@ describe("planDeviceImport", () => {
     expect(items).toHaveLength(0);
   });
 
+  it("keeps the short ones when the caller lowers the floor", () => {
+    // The floor is what an UNATTENDED sync writes. A sheet the athlete is
+    // looking at asks for everything and switches the brief ones off itself —
+    // hiding them made the import claim the watch had recorded nothing while
+    // the summary's match picker offered the very same recording.
+    const short = workout({ durationMin: DEVICE_IMPORT_MIN_MIN - 1 });
+    expect(planDeviceImport([short], [], { minMinutes: 0 })).toHaveLength(1);
+    expect(planDeviceImport([short], [], { minMinutes: 0 })[0]!.action).toBe("create");
+    // And the default is unchanged, so the server's plan still refuses it.
+    expect(planDeviceImport([short], [])).toHaveLength(0);
+  });
+
+  it("still plans a short recording against the log rather than duplicating it", () => {
+    const short = workout({ durationMin: 4, end: T(7, 4) });
+    const s = session({ startedAt: T(7), completedAt: T(7, 4) });
+    const items = planDeviceImport([short], [s], { minMinutes: 0 });
+    expect(items[0]!).toMatchObject({ action: "attach", sessionId: "s1" });
+  });
+
   it("does nothing to a recording already carried by a session", () => {
     const s = session({ device: workout() });
     const items = planDeviceImport([workout()], [s]);
