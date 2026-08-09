@@ -36,6 +36,8 @@ import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
 import { useHeroCollapse } from "./cover-hero";
 import { HeroNav } from "./hero";
+import { AppHeader } from "./app-header";
+import { HubMasthead } from "./hub-masthead";
 import { DockRail } from "./dock-rail";
 import { NutritionHubBento } from "./nutrition-hub";
 import BodyProgress from "./body-progress";
@@ -2147,14 +2149,21 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
 
   return (
     <div style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* Hub masthead (home), or a sub-screen back-header. The Pantry draws its
-          OWN head, because its head carries a control — the search in the right
-          slot — and this one has no slot to put it in. */}
+      {/* THE TAB ROOT'S CHROME, or a sub-screen back-header. The Pantry draws
+          its OWN head, because its head carries a control — the search in the
+          right slot — and this one has no slot to put it in.
+          At the root: the shared APP HEADER (aurora/app-header.tsx — avatar,
+          the HYBRID lockup with the day-streak, the bell) over the shared HUB
+          MASTHEAD, which is exactly what Today puts above its own first content
+          row. Nutrition is a bottom-nav destination of its own, so it wears the
+          app's identity strip like the other root does; and the head under it
+          is the shared component rather than the hand-rolled mono line plus
+          `fontSize: 34` <h1> that used to sit here. */}
       {view === "home" ? (
-        <div>
-          {greeting && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 3 }}>{greeting}</div>}
-          <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>{t("w.recovery.nutrition.title")}</h1>
-        </div>
+        <>
+          <AppHeader onNavigate={onNavigate} />
+          <HubMasthead eyebrow={greeting || null} title={t("w.recovery.nutrition.title")} />
+        </>
       ) : view === "foods" ? null : (
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="pressable" onClick={() => setView("home")} aria-label={t("w.recovery.nutrition.back")} style={{ width: 44, height: 44, borderRadius: 16, border: `1px solid ${C("line")}`, background: "var(--back-surface)", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><AuroraIcon name="back" size={18} color={C("chalk")} /></button>

@@ -3,6 +3,7 @@ import { View, Text, Modal, ScrollView, StyleSheet, Animated, Easing, Linking, P
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, type Href } from "expo-router";
 import {
+  avatarInitials,
   groupedNavWithLocks,
   AURORA_NAV_ICONS,
   SIDE_MENU_PRIMARY,
@@ -69,10 +70,14 @@ export default function AuroraSideMenu({
 }: {
   open: boolean;
   onClose: () => void;
-  /** Switch the Today hub in place. */
-  onHubTab: (tab: TodayTabId) => void;
-  /** Which hub view is showing, so its row reads as the current one. */
-  activeHub: TodayTabId;
+  /** Switch the Today hub in place — passed only when the drawer is opened
+   *  FROM the hub. Opened from another tab root (Nutrition), there is no hub on
+   *  screen to switch, so the three hub rows route to their standalone screens
+   *  instead of pretending to move a control the athlete cannot see. */
+  onHubTab?: (tab: TodayTabId) => void;
+  /** Which hub view is showing, so its row reads as the current one. Undefined
+   *  off the hub, where none of the three is current. */
+  activeHub?: TodayTabId;
 }) {
   const C = useTheme().palette;
   const pa = usePremiumAccent();
@@ -102,7 +107,7 @@ export default function AuroraSideMenu({
 
   const label = (id: string, fallback: string) => { const k = `nav.${id}`; const v = t(k); return v === k ? fallback : v; };
   const groupLabel = (g: NavGroup) => { const k = `nav.group.${g}`; const v = t(k); return v === k ? GROUP_LABEL[g] : v; };
-  const initials = ((name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!).join("") || "·").toUpperCase();
+  const initials = avatarInitials(name);
 
   const goHref = (href: Href) => { onClose(); router.push(href); };
   const goId = (id: string) => {
@@ -114,7 +119,13 @@ export default function AuroraSideMenu({
     else Linking.openURL(WEB_APP_URL).catch(() => {});
   };
   const pick = (row: SideMenuRow) => {
-    if (row.target.kind === "hub") { onClose(); onHubTab(row.target.tab); return; }
+    if (row.target.kind === "hub") {
+      // In the hub: switch it in place. Off the hub: the same three
+      // destinations as full screens (NAV_HREF today/performance/feed).
+      if (onHubTab) { onClose(); onHubTab(row.target.tab); return; }
+      goId(row.target.tab === "dashboard" ? "today" : row.target.tab);
+      return;
+    }
     goId(row.target.screen);
   };
 

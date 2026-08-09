@@ -56,6 +56,14 @@ function hits(pattern: RegExp): string[] {
   return found;
 }
 
+/** The source line a "path:line" hit points at — for the rules that exempt a
+ *  SANCTIONED declaration from their own pattern. */
+function lineAt(site: string): string {
+  const path = site.slice(0, site.lastIndexOf(":"));
+  const line = Number(site.slice(site.lastIndexOf(":") + 1));
+  return (FILES.find((f) => f.path === path)?.text ?? "").split("\n")[line - 1] ?? "";
+}
+
 /** A ratchet: report the overage with the offending sites, so a failure tells
  *  you WHERE, not just that a number moved. */
 function expectAtMost(found: string[], ceiling: number, rule: string) {
@@ -164,11 +172,7 @@ describe("touch targets", () => {
     // apps/web/__tests__/dock-rail.test.ts, which checks both clients together.
     const SANCTIONED = /\bDockChip\b/;
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
-      .filter((site) => {
-        const [path, line] = [site.slice(0, site.lastIndexOf(":")), Number(site.slice(site.lastIndexOf(":") + 1))];
-        const text = FILES.find((f) => f.path === path)?.text ?? "";
-        return !SANCTIONED.test(text.split("\n")[line - 1] ?? "");
-      });
+      .filter((site) => !SANCTIONED.test(lineAt(site)));
     expectAtMost(decls, 9, "chip-shaped component → Chip, AChip or DockChip");
   });
 });
@@ -187,7 +191,18 @@ describe("section headers", () => {
     // as a component. What still matches this pattern are genuinely different
     // objects: ColHead (a table column), WeekHeader, PickerSection, FieldLabel,
     // AppleHealthSection and LeavePlanSection (whole sections, not their heads).
-    const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Section|Head|SubHead)[A-Za-z]*\s*\(/gm);
+    //
+    // AppHeader is NOT a section head and is excluded rather than counted. It
+    // is the app's identity row — the lockup every tab root wears — and it is
+    // itself the shared component for that thing (packages/core/src/
+    // app-header.ts plus the two twins, guarded by app-header.test.ts), the
+    // same standing DockChip has in the chip rule above. The pattern reaches it
+    // only because "Header" contains "Head", and admitting it by raising the
+    // ceiling would spend a RATCHET on the very kind of component the ratchet
+    // exists to produce.
+    const SANCTIONED = /\bAppHeader\b/;
+    const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Section|Head|SubHead)[A-Za-z]*\s*\(/gm)
+      .filter((site) => !SANCTIONED.test(lineAt(site)));
     expectAtMost(decls, 8, "section-header component → ASection");
   });
 });
