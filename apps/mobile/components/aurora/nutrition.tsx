@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions, type LayoutChangeEvent } from "react-native";
-import Svg, { Path, Rect, Circle, SvgXml } from "react-native-svg";
+import { ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+import Svg, { SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -41,27 +41,21 @@ import {
   trainingEnergyOnDay,
   localDayKey,
   localTodayKey,
-  NUTRITION_GLYPHS,
   sumMealComponents, recipeToMeal,
   nutritionHubSeries,
   RECIPES, formatIngredient, recipeById, recipeCoverView,
-  recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeTileView, recipeCardStats, recipeCookView,
+  recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeCardStats, recipeCookView,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   type NutritionMealPart, type MealPartDef,
   type NutritionGoal,
   type MealPreset,
-  type WeightPoint,
-  type NutritionNudge,
-  type NutritionSummary,
   type NutritionGlyphName,
   type FoodHit,
-  type MicroFacts, type NutritionFacts, type VerifiedStamp,
-  nutritionPanel, per100g, scaleFacts, emptyNutritionDay, panelStatus,
+  type MicroFacts, type VerifiedStamp,
+  per100g, emptyNutritionDay, panelStatus,
   VERIFIED_SOURCES, verifiedFoodsBySource as vfBySource,
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
-  sourceCheckedOn, kj, verifiedFreshness, type SourceMark, 
-  type Recipe, type RecipeCollection, type RecipeCookView,
-} from "@hybrid/core";
+  sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
@@ -83,9 +77,9 @@ import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, tracking, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, AField, APill, AHeading, DockRail, DockChip, GUTTER, RADIUS, CARD_PAD, Ring, withAlpha, ASection } from "./kit";
+import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
-import { CoverScreen, COVER_GUTTER, type CoverScreenApi } from "../plan-hero";
+import { CoverScreen, type CoverScreenApi } from "../plan-hero";
 import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
@@ -98,6 +92,17 @@ import CopyDaySheet from "./copy-day";
 import NutritionTrends from "./nutrition-trends";
 import QuickAdd from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
+import {
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow,
+  IClose, IChevDown, IChevRight, IPlus, IBarcode, ITrash, IBolt, IClock, IPlusBox,
+  presetGlyph, macroKcal,
+} from "./nutrition-kit";
+import {
+  collectionTitle, CollectionRail, RecipeShelf, RecipeTile, CookPlate, RecipeCard,
+} from "./recipe-library";
+import {
+  CDivider, WeightTrend, NutritionNudgeLine, SummaryDashboard, OnboardingGoal, QuadTile, Cell,
+} from "./nutrition-panels";
 import TargetSheet, { TargetMismatchLine } from "./target-sheet";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
@@ -109,24 +114,6 @@ const GOALS: { id: NutritionGoal; labelKey: string }[] = [
 // One monoline icon voice for the whole Nutrition surface (no emoji) — the shared
 // 72×72 stroke paths as true vectors, at the same weight as AuroraSvgIcon so they
 // sit beside the app's kit icons as one family.
-function Glyph({ name, size = 22, color = "#fff", strokeWidth = 6 }: { name: NutritionGlyphName; size?: number; color?: string; strokeWidth?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 72 72" fill="none">
-      {NUTRITION_GLYPHS[name].map((d, i) => (
-        <Path key={i} d={d} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-      ))}
-    </Svg>
-  );
-}
-// Meal presets read as times of day — the one place a glyph carries meaning.
-const presetGlyph = (id: string): NutritionGlyphName => id.startsWith("breakfast") ? "sunrise" : id.startsWith("lunch") ? "sun" : id.startsWith("dinner") ? "moon" : "cup";
-// kcal implied by protein/carbs/fat (4·4·9) — the live readout in the builders.
-const macroKcal = (protein: string, carbs: string, fat: string) => Math.round((parseFloat(protein) || 0) * 4 + (parseFloat(carbs) || 0) * 4 + (parseFloat(fat) || 0) * 9);
-
-// The Nutrition subpage is a HUB: a focused landing (view "home") + sub-screens
-// reached from a menu, plus the redesigned add-to-meal / create-food / recipes
-// flows. "add" is the meal-food picker, "create" the Create Food form, and
-// recipes → recipe → cook is the read-only recipes library.
 type NutView = "home" | "log" | "insights" | "diary" | "body" | "meals" | "foods" | "add" | "create" | "recipes" | "collection" | "recipe" | "cook" | "food" | "source" | "sources" | "myRecipe";
 // The part of the day a log is attributed to, carried into the Signal `source`.
 // The four built-ins plus any custom parts a Full user added — a plain key
@@ -152,213 +139,6 @@ type QuickFood = { key: string; name: string; subname?: string | null; serving: 
 // Small stroke icons for the redesigned flows (close, chevron, barcode, trash,
 // restart, star, bolt, plus-box) — inline react-native-svg so the mockup chrome
 // renders exactly, at the same monoline weight as the rest of the surface.
-type IconProps = { size?: number; color?: string; strokeWidth?: number; fill?: boolean };
-function SvgIcon({ size = 20, color = "#fff", strokeWidth = 2, d, fill = false }: IconProps & { d: string }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"}><Path d={d} stroke={fill ? "none" : color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
-}
-const IClose = (p: IconProps) => <SvgIcon {...p} d="M6 6l12 12M18 6L6 18" strokeWidth={p.strokeWidth ?? 2.2} />;
-const IChevDown = (p: IconProps) => <SvgIcon {...p} d="M6 9l6 6 6-6" strokeWidth={p.strokeWidth ?? 2.4} />;
-const IChevRight = (p: IconProps) => <SvgIcon {...p} d="M9 6l6 6-6 6" strokeWidth={p.strokeWidth ?? 2.2} />;
-const IPlus = (p: IconProps) => <SvgIcon {...p} d="M12 6v12M6 12h12" strokeWidth={p.strokeWidth ?? 2.2} />;
-const IBarcode = (p: IconProps) => <SvgIcon {...p} d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16M6.5 12h11" strokeWidth={p.strokeWidth ?? 1.9} />;
-const ITrash = (p: IconProps) => <SvgIcon {...p} d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6" strokeWidth={p.strokeWidth ?? 1.9} />;
-const IBolt = (p: IconProps) => <SvgIcon {...p} d="M13 2L4 14h7l-1 8 9-12h-7z" strokeWidth={p.strokeWidth ?? 2} />;
-function IStar({ size = 20, color = "#fff", strokeWidth = 1.8, fill = false }: IconProps) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"}><Path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17.8 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
-}
-function IClock({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="13" r="8" stroke={color} strokeWidth={strokeWidth} /><Path d="M12 9v4l2.5 2.5M9 2h6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
-}
-function IPlusBox({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Rect x="3" y="3" width="18" height="18" rx="5" stroke={color} strokeWidth={strokeWidth} /><Path d="M12 8v8M8 12h8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" /></Svg>;
-}
-
-// ── THE RECIPES LIBRARY — the Plans tab, on food ────────────────────────────
-//
-// Three levels, one object at three compressions, exactly as Plans does it:
-// the library root (a soft cover + shelves of covers), a collection (its own
-// cover + the recipes as cards), and the recipe itself. Web parity:
-// apps/web/components/aurora/nutrition.tsx.
-
-/** A collection's display name — the meals borrow the meal-part vocabulary the
- *  rest of nutrition uses, the cross-cut borrows the filter chip's. */
-function collectionTitle(key: RecipeCollection, t: (k: string) => string): string {
-  return key === "highProtein" ? t("w.recovery.nutrition.recipeFilter.highProtein") : t(`w.recovery.nutrition.meal.${key}`);
-}
-
-/** One recipe tile — cover ink in both themes, like the covers they expand into. */
-const TILE_INK = "#0c0d0c";
-const TILE_W = 172;
-const TILE_H = 140;
-
-/** The collection chips, riding the scaffold's `rail` slot so they dock beneath
- *  the collapsed bar and stay reachable at any scroll position. They JUMP, they
- *  don't filter — the shelves already ARE the collections, so narrowing to one
- *  would just empty the screen, which is why they are `role="anchor"` chips
- *  that can never light up (packages/core/src/dock-rail.ts). Web twin: the
- *  same name. */
-function CollectionRail({ keys, onJump }: { keys: RecipeCollection[]; onJump: (key: RecipeCollection) => void }) {
-  const { t } = useLang();
-  return (
-    // The gutter is the COVER scaffold's (16), not the app's GUTTER (12): a
-    // resting chip has to line up with the shelf heads it sits above.
-    <DockRail label={t("w.recovery.nutrition.jumpToCollection")} gutter={COVER_GUTTER}>
-      {keys.map((k) => (
-        <DockChip key={k} role="anchor" label={collectionTitle(k, t)} onPress={() => onJump(k)} />
-      ))}
-    </DockRail>
-  );
-}
-
-/** One collection = one full-bleed shelf. The head is the way IN to the
- *  collection's own screen, and it states the COUNT so a two-card peek is never
- *  mistaken for the whole shelf. */
-function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
-  shelf: { key: RecipeCollection; recipes: Recipe[] };
-  openCollection: (key: RecipeCollection) => void;
-  openRecipe: (r: Recipe) => void;
-  onLayout: (e: LayoutChangeEvent) => void;
-}) {
-  const { palette: C, scheme } = useTheme();
-  const { t } = useLang();
-  const n = shelf.recipes.length;
-  return (
-    <View onLayout={onLayout} style={{ marginTop: 20 }}>
-      <Pressable
-        onPress={() => openCollection(shelf.key)}
-        accessibilityRole="button"
-        style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}
-      >
-        <Text accessibilityRole="header" style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{collectionTitle(shelf.key, t)}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
-          {n} {n === 1 ? t("w.recovery.nutrition.recipeCount") : t("w.recovery.nutrition.recipesCount")} →
-        </Text>
-      </Pressable>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -COVER_GUTTER }}
-        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_GUTTER }}
-      >
-        {shelf.recipes.map((r) => <RecipeTile key={r.id} recipe={r} onOpen={() => openRecipe(r)} />)}
-      </ScrollView>
-    </View>
-  );
-}
-
-/** A recipe as a COVER, not a card — the tile the Plans shelves carry, so
- *  tapping one expands it into the same poster at screen scale. The dish emoji
- *  stays FULL COLOUR (a ghosted emoji is a grey smudge, not a dish), which is
- *  the one thing separating a recipe tile from a goal tile. */
-function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe; onOpen: () => void; width?: number }) {
-  const { scheme } = useTheme();
-  const { t } = useLang();
-  const tile = recipeTileView(recipe, { mins: (n) => `${n} ${t("w.recovery.nutrition.min")}`, kcal: (n) => `${n} kcal` });
-  return (
-    <Pressable
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`${tile.title} – ${tile.meta}`}
-      style={{ width, height: TILE_H, borderRadius: RADIUS.card, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.07)", backgroundColor: TILE_INK, padding: 12, justifyContent: "space-between" }}
-    >
-      {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
-          15% @ 46% → 0x26, then ink) — web parity: nutrition.tsx RecipeTile */}
-      <LinearGradient pointerEvents="none" colors={[`${tile.accent}85`, `${tile.accent}26`, `${tile.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
-      <Text pointerEvents="none" style={{ position: "absolute", top: -4, right: -6, fontSize: 78, lineHeight: 84 }}>{tile.glyph}</Text>
-      <LinearGradient pointerEvents="none" colors={["#0c0d0c00", "#0c0d0ca8", "#0c0d0c"]} locations={[0.34, 0.78, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
-      <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.9, color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
-      <View>
-        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: leading(16, "tight"), letterSpacing: -0.5, color: "#fff" }}>{tile.title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: "rgba(255,255,255,0.7)", marginTop: 5 }}>{tile.meta}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
-/** The cook screen's PLATE — the recipe cover compressed into a card: the same
- *  duotone wash and full-colour dish, the meal as the chip, the dish as the
- *  title, the step counter where the cover puts its time, and one tick per step
- *  along the bottom edge. The back button is the cover's own HeroNav, so the
- *  screen no longer carries a centred title that repeats the plate's. */
-function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () => void }) {
-  const { palette: C, scheme } = useTheme();
-  return (
-    <View style={{ height: 150, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: TILE_INK, marginTop: 2 }}>
-      {/* alpha-over-ink stops matching web's color-mix wash — web parity */}
-      <LinearGradient pointerEvents="none" colors={[`${cook.accent}85`, `${cook.accent}26`, `${cook.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
-      <Text pointerEvents="none" style={{ position: "absolute", top: -16, right: -10, fontSize: 118, lineHeight: 126 }}>{cook.glyph}</Text>
-      <LinearGradient pointerEvents="none" colors={["#0c0d0c00", "#0c0d0c8c", "#0c0d0c"]} locations={[0.38, 0.8, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
-      <View style={{ position: "absolute", top: 10, left: 10, right: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <HeroNav onPress={onBack} fromLabel={cook.title} material="glass" />
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: "rgba(255,255,255,0.85)" }}>{cook.count}</Text>
-      </View>
-      <View style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
-        <View style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "700", letterSpacing: 0.9, textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
-        </View>
-        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: -0.8, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
-      </View>
-      {/* one tick per step — the method's length, stated by the plate itself */}
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 2 }}>
-        {Array.from({ length: cook.steps }, (_, i) => (
-          <View key={i} style={{ flex: 1, height: 3, backgroundColor: i <= cook.index ? C.lime : "rgba(255,255,255,0.18)" }} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-/** A recipe on the COLLECTION screen — the plan card's anatomy: an eyebrow, the
- *  dish, its three differentiating numbers as a rule-topped hem, and the note. */
-function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => void }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const stats = recipeCardStats(recipe, {
-    energy: t("w.recovery.nutrition.energy"),
-    protein: t("w.recovery.nutrition.protein"),
-    time: t("w.recovery.nutrition.time"),
-    min: t("w.recovery.nutrition.min"),
-  });
-  return (
-    <Pressable onPress={onOpen} accessibilityRole="button">
-      <ACard style={{ marginBottom: 12 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t(`w.recovery.nutrition.meal.${recipe.meal}`)}</Text>
-          {recipe.highProtein && (
-            <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.recipeFilter.highProtein")}</Text>
-            </View>
-          )}
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 }}>
-          <Text style={{ fontSize: 24 }}>{recipe.emoji}</Text>
-          <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, flexShrink: 1 }}>{recipe.name}</Text>
-        </View>
-        <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
-          {stats.map((st) => (
-            <View key={st.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.14), paddingTop: 8 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.heading, lineHeight: leading(fs.heading, "tight"), letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
-                {st.value}
-                {!!st.unit && <Text style={{ fontSize: 12, color: C.ash }}>{st.unit}</Text>}
-              </Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{st.label}</Text>
-            </View>
-          ))}
-        </View>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{recipe.note}</Text>
-      </ACard>
-    </Pressable>
-  );
-}
-
-// The head above a screen-level rail — the Explore SectionHead anatomy: a bold
-// display-face title with the action as small mono uppercase on the RIGHT of
-// the same row. No marker before the title (the no-decorative-dot rule).
-// A food row in the picker — a lime add-circle, name + macro meta, and either a
-// chevron (a DB hit), a favourite star, or a trash affordance (a personal item).
-// The row body + the add-circle both open the portion editor.
-// The Create Food form's blank state — one constant, so the reset paths can
-// never fall out of step with the fields the form actually has.
 const BLANK_CREATE_FORM = {
   name: "", subname: "", serving: "", unit: "gram",
   kcal: "", carbs: "", protein: "", fat: "",
@@ -367,129 +147,6 @@ const BLANK_CREATE_FORM = {
 
 // The HYBRID Verified mark — the same quiet lime tick the verified-coach badge
 // uses, so "checked by us" reads identically wherever it appears in the app.
-function VerifiedMark({ C, size = 13 }: { C: ReturnType<typeof useTheme>["palette"]; size?: number }) {
-  const { t } = useLang();
-  return (
-    <Text accessibilityLabel={t("w.recovery.nutrition.verified")} style={{ fontFamily: F.mono, fontSize: size, lineHeight: size + 2, color: txt(C, C.lime) }}>✓</Text>
-  );
-}
-
-// The operator's mark, or — when we hold no artwork for them — their name set
-// in OUR display face inside a hairline chip. The fallback is deliberately
-// typographic: visibly ours, so it can never be taken for an approximation of
-// somebody's logo. One renderer for the product page and the provenance card.
-function SourceMarkView({ C, src, height }: {
-  C: ReturnType<typeof useTheme>["palette"]; src: { name: string; mark?: SourceMark }; height: number;
-}) {
-  if (!src.mark) {
-    return (
-      <Text style={{ fontFamily: F.black, fontSize: Math.round(height * 0.48), letterSpacing: 0.9, color: C.chalk, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 8 }}>
-        {src.name}
-      </Text>
-    );
-  }
-  return <SvgXml xml={src.mark.svg} height={height} width={Math.min(168, height * src.mark.aspect)} accessibilityLabel={src.mark.alt} />;
-}
-
-/**
- * MARK PLATE — the operator's own logo on a card, given a field to sit on.
- *
- * A logo dropped straight onto the app's charcoal is at the mercy of whatever
- * the artwork assumes: MAX's wordmark is one evenodd path whose keylines are
- * true HOLES, so on ink they fill with ink and the letterforms close up. Real
- * brand sheets solve this the same way we do here — give the mark a neutral
- * plate and let it own that rectangle. The plate is a hairlined tile a touch
- * lighter than the card, deliberately NOT white: a white slab in a dark UI
- * reads as a broken image, and on the Kyoto Hour washi it would read as a
- * sticker. Parity with web aurora/nutrition.tsx MarkPlate.
- */
-function MarkPlate({ C, src, height = 34, full }: {
-  C: ReturnType<typeof useTheme>["palette"]; src: { name: string; mark?: SourceMark }; height?: number; full?: boolean;
-}) {
-  return (
-    <View
-      style={{
-        alignSelf: full ? "stretch" : "flex-start",
-        height: height + 22,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 16,
-        borderRadius: 16,
-        backgroundColor: withAlpha(C.chalk, 0.07),
-        borderWidth: 1,
-        borderColor: C.line,
-        overflow: "hidden",
-      }}
-    >
-      <SourceMarkView C={C} src={src} height={height} />
-    </View>
-  );
-}
-
-// The nutrition-facts panel — rendered from the SAME core function the web
-// screen uses (nutritionPanel), so the two clients can never disagree about
-// what a food says. A field the food never stated shows an em dash, NEVER
-// "0 g": an unstated sugar content is not a sugar-free food.
-function FactsPanel({ C, facts, per100, scale = 1 }: {
-  C: ReturnType<typeof useTheme>["palette"]; facts: NutritionFacts; per100?: NutritionFacts | null; scale?: number;
-}) {
-  const { t } = useLang();
-  // Scale through CORE, never by hand: scaleFacts is the one place that knows a
-  // scaled unknown stays unknown, and a second copy of that rule here would be
-  // free to drift from the one the log actually writes.
-  const rows = nutritionPanel(scale === 1 ? facts : scaleFacts(facts, scale));
-  const p100 = per100 ? nutritionPanel(per100) : null;
-  return (
-    <View style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingBottom: 8 }}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingTop: 12, paddingBottom: 8 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.facts.title")}</Text>
-        {p100 ? <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.facts.per100")}</Text> : null}
-      </View>
-      {rows.map((r, i) => (
-        <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: r.sub ? F.reg : F.bold, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C.ash : C.chalk, paddingLeft: r.sub ? 14 : 0 }}>{t(r.labelKey)}</Text>
-          {r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{r.note}</Text> : null}
-          <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: r.sub ? fs.caption : fs.body, color: r.value ? C.chalk : C.ash, minWidth: 64, textAlign: "right" }}>{r.value ?? "—"}</Text>
-          {p100 ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, minWidth: 62, textAlign: "right" }}>{p100[i]!.value ?? "—"}</Text> : null}
-        </View>
-      ))}
-      {rows.some((r) => !r.value) ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, paddingTop: 8, lineHeight: leading(fs.nano) }}>{t("w.recovery.nutrition.facts.notStatedNote")}</Text>
-      ) : null}
-    </View>
-  );
-}
-
-function FoodRow({ C, name, subname, meta, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
-  C: ReturnType<typeof useTheme>["palette"]; name: string; subname?: string | null; meta: string; onAdd: () => void;
-  /** tapping the row BODY, when that means something different from the ⊕ —
-   *  a verified item opens its page; everything else just adds. */
-  onOpen?: () => void;
-  chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void; verified?: VerifiedStamp;
-}) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 12, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line }}>
-      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`Add ${name}`} style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
-      <Pressable onPress={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>
-          {verified ? <VerifiedMark C={C} /> : null}
-          {subname ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{subname}</Text> : null}
-        </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{meta}</Text>
-      </Pressable>
-      {onStar ? <Pressable onPress={onStar} accessibilityLabel="Favorite" hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
-      {onDelete ? <Pressable onPress={onDelete} accessibilityLabel="Delete" hitSlop={8} style={{ padding: 4 }}><ITrash size={20} color={C.ash} /></Pressable> : null}
-      {chevron ? <IChevRight size={18} color={C.ash} /> : null}
-    </View>
-  );
-}
-
-/** AURORA Nutrition (mobile) — the adaptive macro tracker on one restrained
- *  system, in parity with the web screen: the calorie tick-ring is the hero,
- *  macros read as hairline lines, iconography is one monoline voice, and colour
- *  appears only where it means something. Same engine + Signal logging + personal
- *  library. `compact` renders the focused Today "Add a meal" sheet. */
 export default function AuroraNutrition({ compact = false, root = false, onNavigateFull, onUpgrade, openFood, openSource }: {
   compact?: boolean;
   /** Rendered as a BOTTOM-NAV tab root (app/(tabs)/nutrition.tsx) rather than a
@@ -2465,7 +2122,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           </View>
 
           {/* One plain-spoken nudge — a quiet line, not a boxed card. */}
-          <NutritionNudge nudge={nudge} />
+          <NutritionNudgeLine nudge={nudge} />
 
           {/* WATER — its own card directly under the energy hero, because it is
               a target the athlete acts on hourly, not a figure they review. It
@@ -3093,289 +2750,3 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 }
 
 // A labelled hairline divider for the compact Add-a-meal sheet.
-function CDivider({ label, tier, premium }: { label: string; tier?: string; premium?: boolean }) {
-  const { palette: C } = useTheme();
-  const pa = usePremiumAccent();
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, marginBottom: 12 }}>
-      <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
-        {tier ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, borderWidth: 1, borderColor: premium ? `${pa.fill}73` : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
-      </View>
-      <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
-    </View>
-  );
-}
-
-// Bodyweight-trend chart — the mobile parity of the web recharts LineChart
-// (aurora/nutrition.tsx). No react-native-svg line: it reuses the native
-// bar-trend idiom on the EWMA-smoothed weight series, with the raw latest weight
-// + span dates so it reads as a trend at a glance.
-function WeightTrend({ points, color }: { points: WeightPoint[]; color: string }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const series = points.map((p) => p.smoothed);
-  const max = Math.max(...series), min = Math.min(...series), range = max - min || 1;
-  const first = points[0]!, latest = points[points.length - 1]!;
-  return (
-    <View style={{ marginTop: 12 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{latest.smoothed} kg <Text style={{ color: C.ash }}>{t("w.recovery.nutrition.trend")}</Text></Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{latest.raw} kg {t("w.recovery.nutrition.raw")}</Text>
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", height: 64, gap: series.length > 40 ? 1 : 2 }}>
-        {series.map((v, i) => (
-          <View key={i} style={{ flex: 1, height: 6 + ((v - min) / range) * 58, borderRadius: 2, backgroundColor: i === series.length - 1 ? color : `${color}55` }} />
-        ))}
-      </View>
-      {points.length > 1 && (
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{first.date.slice(5)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{latest.date.slice(5)}</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-
-// The coach-voiced "what now?" line — a quiet row (spark glyph + text), coloured
-// by kind. No boxed card, no accent bar: it reads like a note, not an alert.
-function NutritionNudge({ nudge }: { nudge: NutritionNudge }) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const text =
-    nudge.kind === "cold-start" ? t("w.recovery.nutrition.nudgeColdStart")
-    : nudge.kind === "protein" ? `${nudge.gap}${t("w.recovery.nutrition.nudgeProteinSuffix")}`
-    : nudge.kind === "calories-left" ? `${nudge.gap} ${t("w.recovery.nutrition.nudgeCalSuffix")}`
-    : nudge.kind === "over" ? `${nudge.gap} ${t("w.recovery.nutrition.nudgeOverSuffix")}`
-    : t("w.recovery.nutrition.nudgeOnTrack");
-  const accent = nudge.kind === "over" ? txt(C, C.red) : nudge.kind === "on-track" ? txt(C, C.lime) : txt(C, C.blue);
-  return (
-    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, paddingHorizontal: 4, paddingTop: 16, paddingBottom: 2 }}>
-      {nudge.kind === "on-track"
-        ? <AuroraIcon name="check" size={17} color={accent} style={{ marginTop: 1 }} />
-        : <View style={{ marginTop: 1 }}><Glyph name="spark" size={17} color={accent} strokeWidth={5} /></View>}
-      <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{text}</Text>
-    </View>
-  );
-}
-
-// The SUMMARY dashboard — a week/month rollup of stat tiles + macro balance.
-// The goal overview. Its own 7/30 toggle was REMOVED when the trends screen
-// above it gained a 7/30/90 one: two window controls on one screen, offering
-// different spans, is a screen that cannot say what period it is describing.
-function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgrade, full }: { summary: NutritionSummary; window: number; goal: NutritionGoal; weightChangeKg: number | null; onUpgrade: () => void; full: boolean }) {
-  const { palette: C } = useTheme();
-  const pa = usePremiumAccent();
-  const { t } = useLang();
-  const goalLabel = t(goal === "lose" ? "w.recovery.nutrition.goalLose" : goal === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
-  // Generic stats stay neutral (ash); the macro-average tile keeps its violet.
-  const tiles: [string, string, string, string][] = [
-    [t("w.recovery.nutrition.avgIntake"), summary.avgKcal != null ? String(summary.avgKcal) : "—", t("w.recovery.nutrition.perDay"), C.ash],
-    [t("w.recovery.nutrition.adherence"), summary.adherencePct != null ? String(summary.adherencePct) : "—", t("w.recovery.nutrition.ofDays"), C.ash],
-    [t("w.recovery.nutrition.proteinHit"), `${summary.proteinHitDays}/${summary.loggedDays}`, t("w.recovery.nutrition.daysUnit"), C.ash],
-    [t("w.recovery.nutrition.protein"), summary.avgProtein != null ? `${summary.avgProtein}g` : "—", t("w.recovery.nutrition.perDay").replace("kcal", "avg"), txt(C, C.violet)],
-  ];
-  return (
-    <ACard solid style={{ marginTop: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.summary")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t(`w.recovery.nutrition.an.window${window}`)}</Text>
-      </View>
-      {summary.loggedDays === 0 ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12 }}>{t("w.recovery.nutrition.summaryEmpty")}</Text>
-      ) : (
-        <>
-          {/* Goal-progress strip — goal + measured 28-day weight change. */}
-          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 16 }}>
-            <View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.goalProgress")} — {goalLabel}</Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, marginTop: 4 }}>{weightChangeKg != null ? `${weightChangeKg > 0 ? "+" : ""}${weightChangeKg.toFixed(1)} kg` : "—"}</Text>
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t("w.recovery.nutrition.per28d")}</Text>
-          </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
-            {tiles.map(([label, val, unit, col]) => (
-              <View key={label} style={{ width: "47%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: col }}>{label}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: 23, letterSpacing: -0.5, color: C.chalk, marginTop: 6 }}>{val}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{unit}</Text>
-              </View>
-            ))}
-          </View>
-          {summary.macroSplit ? (
-            <View style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("w.recovery.nutrition.macroBalance")}</Text>
-              {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.violet, txt(C, C.violet)]] as const).map(([label, pct, col, colT]) => (
-                <View key={label} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: colT, width: 52 }}>{t(label)}</Text>
-                  <View style={{ flex: 1, height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink2, overflow: "hidden" }}><View style={{ width: `${pct}%`, height: 4, borderRadius: RADIUS.pill, backgroundColor: col }} /></View>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, width: 30, textAlign: "right" }}>{pct}%</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-          {!full ? (
-            <Pressable onPress={onUpgrade} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: `${pa.fill}17`, borderWidth: 1, borderColor: `${pa.fill}4d`, borderRadius: 16, padding: 16 }}>
-              <Glyph name="spark" size={19} color={pa.text} strokeWidth={5} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.deepInsights")}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.recovery.nutrition.deepInsightsSub")}</Text>
-              </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text>
-            </Pressable>
-          ) : null}
-        </>
-      )}
-    </ACard>
-  );
-}
-
-// The guided 3-step onboarding: goal → activity + weigh-in → ✦ trial. Choice
-// cards carry no emoji — the label, sub and radio do the work.
-const MACT: { id: string; labelKey: string; subKey: string }[] = [
-  { id: "light", labelKey: "w.recovery.nutrition.actLight", subKey: "w.recovery.nutrition.actLightSub" },
-  { id: "moderate", labelKey: "w.recovery.nutrition.actModerate", subKey: "w.recovery.nutrition.actModerateSub" },
-  { id: "high", labelKey: "w.recovery.nutrition.actHigh", subKey: "w.recovery.nutrition.actHighSub" },
-];
-function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinueFree, currentWeightKg }: { goal: NutritionGoal; setGoal: (g: NutritionGoal) => void; onUpgrade: () => void; onWeighIn: (kg: number) => void; onContinueFree: () => void; currentWeightKg?: number }) {
-  const { palette: C } = useTheme();
-  const pa = usePremiumAccent();
-  const { t } = useLang();
-  const [step, setStep] = useState(0);
-  const [activity, setActivity] = useState("moderate");
-  const [weight, setWeight] = useState("");
-  const GOAL_OPTS: { id: NutritionGoal; label: string; sub: string }[] = [
-    { id: "lose", label: t("w.recovery.nutrition.goalLose"), sub: t("w.recovery.nutrition.goalLoseSub") },
-    { id: "maintain", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
-    { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
-  ];
-  /* The wizard OPTION ROW — the app's standard for this lives in the onboarding
-     wizard (aurora/onboarding.tsx `Choice`, and the web twin): RADIUS.field at
-     padding 16, a 1px border that swaps line → lime when picked, and a lime wash
-     at 8% behind it. This row drew its selected state by widening its own border
-     to 2 and taking a pixel off the padding to compensate — so picking an option
-     nudged its label; web meanwhile faked the same second border with a shadow
-     ring, on a row it had built at the CARD radius. One control, two shapes and
-     two techniques. Now both read the standard. */
-  const choice = (on: boolean, label: string, sub: string, onPress: () => void) => (
-    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: on ? withAlpha(C.lime, 0.08) : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16, marginBottom: 10 }}>
-      <View style={{ flex: 1 }}><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{sub}</Text></View>
-      <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={C.onAccent} /> : null}</View>
-    </Pressable>
-  );
-  const primary = (label: string, onPress: () => void) => (
-    <Pressable onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", marginTop: 6 }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: C.onAccent }}>{label}</Text></Pressable>
-  );
-  return (
-    <View style={{ marginTop: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        {step > 0 ? <Pressable onPress={() => setStep((s) => s - 1)} accessibilityLabel={t("w.recovery.nutrition.back")} style={{ width: 36, height: 36, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={16} color={C.chalk} /></Pressable> : null}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepOf").replace("{n}", String(step + 1))}</Text>
-      </View>
-      <View style={{ height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink, overflow: "hidden", marginTop: 12 }}><View style={{ width: `${((step + 1) / 3) * 100}%`, height: 4, backgroundColor: C.lime }} /></View>
-
-      {step === 0 ? (
-        <View style={{ marginTop: 24 }}>
-          <AHeading style={{ fontSize: fs.title }}>{t("w.recovery.nutrition.pickGoal")}</AHeading>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickGoalSub")}</Text>
-          {GOAL_OPTS.map((o) => choice(goal === o.id, o.label, o.sub, () => setGoal(o.id)))}
-          {primary(t("w.recovery.nutrition.continue"), () => setStep(1))}
-        </View>
-      ) : null}
-
-      {step === 1 ? (
-        <View style={{ marginTop: 24 }}>
-          <AHeading style={{ fontSize: fs.title }}>{t("w.recovery.nutrition.pickActivity")}</AHeading>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickActivitySub")}</Text>
-          {MACT.map((a) => choice(activity === a.id, t(a.labelKey), t(a.subKey), () => setActivity(a.id)))}
-          <ACard solid style={{ marginTop: 4 }}>
-            {currentWeightKg != null ? (
-              /* Profile already has a weight — reuse it, don't ask again. */
-              <>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.currentWeight")}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, marginTop: 6 }}>{currentWeightKg}<Text style={{ fontFamily: F.mono, fontSize: 14, color: C.ash }}> kg</Text></Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6 }}>{t("w.recovery.nutrition.weightFromProfile")}</Text>
-              </>
-            ) : (
-              <>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addWeighIn")}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 5 }}>{t("w.recovery.nutrition.addWeighInSub")}</Text>
-                <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-                  <TextInput value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="kg" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.addWeighIn")} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 12, textAlign: "center" }} />
-                  <Pressable onPress={() => { const kg = parseFloat(weight); if (Number.isFinite(kg) && kg > 0) onWeighIn(kg); }} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.field, paddingHorizontal: 16, justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.save")}</Text></Pressable>
-                </View>
-              </>
-            )}
-          </ACard>
-          {primary(t("w.recovery.nutrition.continue"), () => setStep(2))}
-        </View>
-      ) : null}
-
-      {step === 2 ? (
-        <View style={{ marginTop: 24 }}>
-          <ACard solid style={{ alignItems: "center", paddingVertical: 20, backgroundColor: `${pa.fill}14`, borderColor: `${pa.fill}4d` }}>
-            <View style={{ backgroundColor: `${pa.fill}28`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
-            <AHeading style={{ fontSize: 22, marginTop: 16, textAlign: "center" }}>{t("w.recovery.nutrition.trialTitle")}</AHeading>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.trialSub")}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, marginTop: 16 }}>$9.99<Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text></Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3 }}>{t("w.recovery.nutrition.trialNote")}</Text>
-            <Pressable onPress={onUpgrade} style={{ alignSelf: "stretch", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 16, marginTop: 16 }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: pa.ink }}>{t("w.recovery.nutrition.startTrial")}</Text><Glyph name="chevron" size={15} color={pa.ink} strokeWidth={6} /></Pressable>
-          </ACard>
-          {/* The FREE alternative — a limited plan to start on now, no card
-              needed. Full is the trial card above; this is the way out that
-              isn't an upgrade. */}
-          <ACard solid style={{ marginTop: 12 }}>
-            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.freePlanTitle")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.recovery.nutrition.freePlanSub")}</Text>
-            </View>
-            <View style={{ marginTop: 12 }}>
-              {["w.recovery.nutrition.freeBulletLogging", "w.recovery.nutrition.freeBulletMeals", "w.recovery.nutrition.freeBulletProducts", "w.recovery.nutrition.freeBulletInsights"].map((k) => (
-                <View key={k} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
-                  <AuroraIcon name="check" size={15} color={txt(C, C.lime)} />
-                  <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{t(k)}</Text>
-                </View>
-              ))}
-            </View>
-            <Pressable onPress={onContinueFree} accessibilityRole="button" style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.continueFree")}</Text>
-            </Pressable>
-          </ACard>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-// One quadrant tile of the compact Add-a-meal entry: a labelled big-number field
-// (kcal / protein / carbs / fat) in the macro's own colour.
-function QuadTile({ field, label, unit, color, value, onChange }: { field: string; label: string; unit: string; color: string; value: string; onChange: (v: string) => void }) {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ flexGrow: 1, flexBasis: "46%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color }}>{label}</Text>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, marginTop: 4 }}>
-        <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} testID={`quad-${field}`} style={{ flex: 1, fontFamily: F.black, fontSize: 26, letterSpacing: -1, color: C.chalk, paddingVertical: 2 }} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 6 }}>{unit}</Text>
-      </View>
-    </View>
-  );
-}
-
-function Cell({ value, onChange, ph, inputRef }: { value: string; onChange: (v: string) => void; ph: string; inputRef?: React.RefObject<TextInput | null> }) {
-  const { palette: C } = useTheme();
-  return (
-    <TextInput
-      ref={inputRef}
-      value={value}
-      onChangeText={onChange}
-      placeholder={ph}
-      placeholderTextColor={C.ash}
-      keyboardType="numeric"
-      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 8, paddingVertical: 12, textAlign: "center" }}
-    />
-  );
-}
