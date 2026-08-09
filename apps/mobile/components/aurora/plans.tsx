@@ -156,8 +156,17 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
       <Animated.ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        onLayout={(e) => setRail((r) => ({ ...r, view: e.nativeEvent.layout.width }))}
-        onContentSizeChange={(w) => setRail((r) => ({ ...r, content: w }))}
+        // Read the measurement OUT of the event, THEN update. A functional
+        // setState body doesn't run when you call it — React replays it during
+        // the next render, and by then RN has released the pooled layout event
+        // and nulled its `nativeEvent`. Reading `e.nativeEvent.layout` from
+        // inside the updater is what crashed this whole screen in release
+        // ("Cannot read property 'layout' of null").
+        onLayout={(e) => {
+          const view = e.nativeEvent.layout.width;
+          setRail((r) => (r.view === view ? r : { ...r, view }));
+        }}
+        onContentSizeChange={(w) => setRail((r) => (r.content === w ? r : { ...r, content: w }))}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
         // Cancel the SCAFFOLD's child padding, not the screen gutter — a

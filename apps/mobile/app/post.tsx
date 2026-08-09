@@ -99,6 +99,7 @@ export default function PostScreen() {
   const headline = feedHeadlineText(item, t);
   const session = q.data?.session;
   const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: false });
+  const handle = item.author.handle ? `@${item.author.handle}` : null;
 
   return (
     <AuroraScreen hero={hero} backLabel={t("feed.post.back")}>
@@ -109,14 +110,21 @@ export default function PostScreen() {
         <Pressable onPress={() => setDrawer(item.author.handle)}>
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={44} />
         </Pressable>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
-            {item.author.displayName || (item.author.handle ? `@${item.author.handle}` : t("w.social.you"))}
+        {/* ONE line — avatar, name, handle, time — exactly as the row reads it
+            (feed-card.tsx): the name and the handle shrink, the time never does. */}
+        <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
+            {item.author.displayName || handle || t("w.social.you")}
           </Text>
-          {/* A spaced en dash joins the meta line — never a middot. */}
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
-            {[item.author.handle ? `@${item.author.handle}` : null, item.when].filter(Boolean).join(" – ")}
-          </Text>
+          {handle && item.author.displayName ? (
+            <Text numberOfLines={1} style={{ flexShrink: 4, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{handle}</Text>
+          ) : null}
+          {item.when ? (
+            // A spaced en dash divides the two ash figures — never a middot.
+            <Text numberOfLines={1} style={{ flexShrink: 0, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
+              {handle && item.author.displayName ? "– " : ""}{item.when}
+            </Text>
+          ) : null}
         </View>
         {menuRows.length > 0 ? (
           <MoreButton onOpen={setMenu} label={t("feed.menu.title")} color={C.ash} />

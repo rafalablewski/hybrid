@@ -401,8 +401,10 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
 
   // "Why you're seeing this" — a ranked card from someone the viewer doesn't
   // follow must be able to say why it's here, or it shouldn't be here at all.
+  // It rides ABOVE the row as a kicker: identity is one line now, and the
+  // reason is about the FEED's choice, not about the person.
   const reason = item.reason ? t(item.reason.key) : null;
-  const meta = [item.author.handle ? `@${item.author.handle}` : null, item.when, reason].filter(Boolean) as string[];
+  const handle = item.author.handle ? `@${item.author.handle}` : null;
 
   return (
     <article
@@ -415,17 +417,36 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         borderBottom: `1px solid ${C("line")}`,
       }}
     >
-      {/* ZONE A — identity */}
+      {/* "Why you're seeing this" — a kicker over the row, because it is the
+          feed explaining ITSELF, not a fact about the athlete. */}
+      {reason && (
+        <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{reason}</div>
+      )}
+
+      {/* ZONE A — identity, ONE line: avatar, name, handle, time. The name and
+          the handle are the parts that can be any length, so they are the parts
+          that shrink (the handle first — a name is what you recognise); the
+          timestamp never shrinks and never wraps, so a post always says when. */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button className="pressable" onClick={() => onOpenProfile(item.author.handle)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }} aria-label={item.author.displayName ?? item.author.handle}>
+        <button className="pressable" onClick={() => onOpenProfile(item.author.handle)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", flexShrink: 0 }} aria-label={item.author.displayName ?? item.author.handle}>
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={36} />
         </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: display, fontWeight: 700, fontSize: fs.note, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {item.author.displayName || (item.author.handle ? `@${item.author.handle}` : t("w.social.you"))}
-          </div>
-          {/* A spaced en dash joins the meta line — never a middot. */}
-          <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta.join(" – ")}</div>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontFamily: display, fontWeight: 700, fontSize: fs.note, color: C("chalk"), minWidth: 0, flexShrink: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {item.author.displayName || handle || t("w.social.you")}
+          </span>
+          {/* The handle only earns its own slot when the name isn't already it. */}
+          {handle && item.author.displayName ? (
+            <span style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), minWidth: 0, flexShrink: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{handle}</span>
+          ) : null}
+          {item.when && (
+            // A spaced en dash divides the two ash figures — never a middot.
+            // (Flex gaps alone can't: handle and time are the same face and
+            // colour, so with only space between them they read as one string.)
+            <span style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), flexShrink: 0, whiteSpace: "nowrap" }}>
+              {(handle && item.author.displayName) ? <span aria-hidden="true">– </span> : null}{item.when}
+            </span>
+          )}
         </div>
         {/* ZONE A, right — the overflow menu. This corner used to hold a bare ×
             on your own posts: an unlabelled destructive control, and nothing at
