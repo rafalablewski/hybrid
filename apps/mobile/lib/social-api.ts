@@ -3,6 +3,7 @@ import type {
   PublicProfileResponse,
   UserPageResponse,
   UserPagePeopleResponse,
+  FeedItemView,
   SearchResponse,
   SuggestionsResponse,
   ConnectionsResponse,
@@ -56,8 +57,16 @@ export const getProfile = (handle: string) => sapi<PublicProfileResponse>(`/api/
 export const getUserPage = (handle: string) => sapi<UserPageResponse>(`/api/social/user/${encodeURIComponent(handle)}`);
 /** One side of someone's follow graph — its own read, because a page should not
  *  pay for a list nobody has asked to see yet. */
-export const getUserPeople = (handle: string, tab: "followers" | "following") =>
-  sapi<UserPagePeopleResponse>(`/api/social/user/${encodeURIComponent(handle)}/people?tab=${tab}`);
+export const getUserPeople = (handle: string, tab: "followers" | "following", cursor?: string | null) =>
+  sapi<UserPagePeopleResponse>(
+    `/api/social/user/${encodeURIComponent(handle)}/people?tab=${tab}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
+  );
+/** PAGES 2+ of a person's timeline — page 1 rides on getUserPage, so opening
+ *  somebody still costs one request. */
+export const getUserActivity = (handle: string, cursor: string) =>
+  sapi<{ items: FeedItemView[]; nextCursor: string | null; capped: boolean }>(
+    `/api/social/user/${encodeURIComponent(handle)}/activity?cursor=${encodeURIComponent(cursor)}`,
+  );
 export const searchPeople = (q: string) => sapi<SearchResponse>(`/api/social/search?q=${encodeURIComponent(q)}`);
 export const follow = (b: unknown) => sapi<MutationResult>("/api/social/follow", "POST", b);
 export const unfollow = (b: unknown) => sapi<MutationResult>("/api/social/follow", "DELETE", b);
