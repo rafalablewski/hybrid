@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, seedPerson, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 // The AI coach screen, reached from the Cockpit module tile (see below).
 const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { AuroraIcon } from "./aurora/icons";
@@ -80,6 +80,8 @@ const AuroraCalendar = dynamic(() => import("./aurora/calendar"), { ssr: false }
 const AuroraForcePlate = dynamic(() => import("./aurora/forceplate"), { ssr: false });
 const AuroraProgress = dynamic(() => import("./aurora/progress"), { ssr: false });
 const AccountSettings = dynamic(() => import("./account-settings"), { ssr: false });
+const AuroraMessages = dynamic(() => import("./aurora/messages"), { ssr: false });
+const AuroraHelpCenter = dynamic(() => import("./aurora/help-center"), { ssr: false });
 const IntervalTimerScreen = dynamic(() => import("./interval-timer"), { ssr: false });
 const NotificationsScreen = dynamic(() => import("./notifications"), { ssr: false });
 const StatisticsScreen = dynamic(() => import("./statistics"), { ssr: false });
@@ -89,6 +91,7 @@ const SocialDiscover = dynamic(() => import("./social-discover"), { ssr: false }
 const SocialSaved = dynamic(() => import("./social-saved"), { ssr: false });
 const SocialLeaderboard = dynamic(() => import("./social-leaderboard"), { ssr: false });
 const CoachesScreen = dynamic(() => import("./coaches"), { ssr: false });
+const UserPage = dynamic(() => import("./user-page"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
 import PremiumAccentStyle from "./premium-accent-style";
 import CoachInviteBanner from "./coach-invite-banner";
@@ -141,32 +144,15 @@ export default function AppShell() {
   const { theme, toggle } = useTheme();
   const aurora = useTemplate().template === "aurora";
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
-  // On phones/tablets the fixed sidebar becomes an off-canvas drawer (hamburger
-  // + scrim); on desktop it stays the sticky collapsible rail. Mirrors the admin
-  // console shell (components/admin/panel.tsx).
+  // The sidebar is the DESKTOP rail and nothing else now. On phones it used to
+  // become an off-canvas springboard drawer — a second, hidden copy of the nav
+  // that no control could actually open (the hamburger that opened it went with
+  // the mobile header, and nothing replaced it). Mobile navigation is the pill
+  // bar plus the SIDE MENU behind the Today header's avatar
+  // (aurora/side-menu.tsx), which is where the springboard lives now, so the
+  // rail simply does not render below the breakpoint.
   const isMobile = useIsMobile();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  // Springboard parity: on the mobile drawer the nav is a searchable GRID of
-  // feature launcher tiles (the same "Springboard" as the mobile app's More tab)
-  // instead of one long grouped scroll; the desktop rail keeps every group
-  // expanded (it has the room). `moreSearch` filters the tiles by label.
-  const [moreSearch, setMoreSearch] = useState("");
   const railCollapsed = collapsed && !isMobile;
-  useEffect(() => {
-    if (!isMobile) setDrawerOpen(false);
-  }, [isMobile]);
-  // Reset the springboard search each time the drawer closes.
-  useEffect(() => {
-    if (!drawerOpen) setMoreSearch("");
-  }, [drawerOpen]);
-  useEffect(() => {
-    if (!isMobile || !drawerOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [isMobile, drawerOpen]);
   // Prefer the Signal ontology when it has recovery data; fall back to the
   // legacy biometrics path so historical readings still drive the Performance State.
   const bio = bioFromSignals ?? bioFromBiometrics;
@@ -227,6 +213,14 @@ export default function AppShell() {
     setShowTour(false);
     try { localStorage.setItem("hybrid.tourSeen", "1"); } catch { /* ignore */ }
   };
+  // REPLAY — the Help center's first row. The tour only renders on Today (its
+  // anchors live there), so this clears the seen-flag, arms it, and navigates,
+  // rather than trying to draw it over the Help screen.
+  const replayTour = () => {
+    try { localStorage.removeItem("hybrid.tourSeen"); } catch { /* ignore */ }
+    setShowTour(true);
+    setScreen("today");
+  };
   // Seed blocks for the logger when "Start" comes from an enrolled named plan
   // (the plan day prefills the session). Cleared on any manual nav so a normal
   // Log entry starts empty.
@@ -272,12 +266,37 @@ export default function AppShell() {
     setScreen("post");
   };
 
+  // THE PERSON — one page per human, coach or not (components/user-page.tsx).
+  // Every place that used to peek at somebody in a drawer now goes here, so
+  // there is one surface for a person and it has an address.
+  const [userFocus, setUserFocus] = useState("");
+  const [userReturn, setUserReturn] = useState("feed");
+  const openUser = (handle: string, card?: { handle: string; displayName?: string | null; avatarUrl?: string | null; coachVerified?: boolean }) => {
+    if (!handle) return;
+    // Hand over what the row already knows, so the page paints the person on
+    // its first frame instead of a spinner (core/person-seed.ts).
+    if (card?.handle) seedPerson(card);
+    if (screen !== "user") setUserReturn(screen);
+    // The sub-target is written BEFORE the screen, so the pushed history entry
+    // carries the handle with it (same reason as the post and the sport page).
+    writeDeepLink({ u: handle.toLowerCase() });
+    setUserFocus(handle.toLowerCase());
+    setScreen("user");
+  };
+
   /** Which screen a deep link actually resolves to. A `sportpage` link carries
    *  the sport as a slug; one that names no catalog sport (an older build, a
    *  mangled paste) lands on the sport INDEX rather than on an empty page. A
    *  `post` link carries the post's key; one that names no readable subject
    *  lands on the FEED rather than on an empty page. */
-  const landing = (p: { s?: string; sport?: string; post?: string }): string => {
+  const landing = (p: { s?: string; sport?: string; post?: string; u?: string }): string => {
+    if (p.s === "user") {
+      // A person link that names nobody lands on Find friends rather than on an
+      // empty page — the same degradation rule the sport and post links follow.
+      if (!p.u) return "discover";
+      setUserFocus(p.u.toLowerCase());
+      return "user";
+    }
     if (p.s === "post") {
       const ref = parseFeedSubjectKey(p.post);
       if (!ref) return "feed";
@@ -336,6 +355,22 @@ export default function AppShell() {
       postParamWritten.current = false;
     }
   }, [screen, postFocus]);
+
+  // A person's address is `?s=user&u=<handle>`; leaving it drops the handle, so
+  // a stale link can never point at someone you are no longer looking at. Same
+  // ref-guard as the sport and post params above, and for the same reason.
+  const userParamWritten = useRef(false);
+  useEffect(() => {
+    if (screen === "user") {
+      if (userFocus) {
+        writeDeepLink({ u: userFocus });
+        userParamWritten.current = true;
+      }
+    } else if (userParamWritten.current) {
+      writeDeepLink({ u: undefined });
+      userParamWritten.current = false;
+    }
+  }, [screen, userFocus]);
 
   // The upgrade paywall is a slide-up sheet OVERLAY (not a screen), so it appears
   // over whatever you're on. `navigate` centralises the intercept so any
@@ -433,37 +468,14 @@ export default function AppShell() {
       {/* ambient field — drifting accent blobs the glass surfaces refract */}
       <GlassField />
 
-      {/* scrim — only on mobile while the drawer is open; taps close it */}
-      {isMobile && drawerOpen && (
-        <div
-          onClick={() => setDrawerOpen(false)}
-          aria-hidden
-          style={{ position: "fixed", inset: 0, zIndex: 59, background: "rgba(0,0,0,.5)", backdropFilter: "blur(2px)" }}
-        />
-      )}
-
-      {/* sidebar — sticky rail on desktop, off-canvas drawer on mobile */}
+      {/* sidebar — the DESKTOP rail. Below the breakpoint it is not rendered at
+          all: mobile navigation is the pill bar plus the side menu behind the
+          Today header's avatar. */}
+      {!isMobile && (
       <aside
         className="lg-sidebar"
         style={
-          isMobile
-            ? {
-                width: 256,
-                maxWidth: "85vw",
-                borderRight: `1px solid ${LINE}`,
-                padding: "24px 16px",
-                position: "fixed",
-                top: 0,
-                left: 0,
-                height: "100vh",
-                display: "flex",
-                flexDirection: "column",
-                zIndex: 60,
-                transform: drawerOpen ? "translateX(0)" : "translateX(-100%)",
-                transition: "transform .28s cubic-bezier(.22,1,.36,1)",
-                boxShadow: drawerOpen ? "0 24px 60px -20px rgba(0,0,0,.7)" : "none",
-              }
-            : {
+            {
                 width: railCollapsed ? 72 : 240,
                 borderRight: `1px solid ${LINE}`,
                 padding: railCollapsed ? "24px 10px" : "24px 16px",
@@ -515,7 +527,6 @@ export default function AppShell() {
                 setPendingBlocks(undefined);
                 if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `sidebar-${id}` }); setUpgradeOpen(true); }
                 else setScreen(id === "log" ? "train" : id);
-                setDrawerOpen(false);
               };
               return (
                 <button className="pressable"
@@ -551,96 +562,6 @@ export default function AppShell() {
               );
             };
 
-            // MOBILE DRAWER — the Springboard: a searchable grid of launcher
-            // tiles grouped by cluster (parity with the mobile app's More tab).
-            if (isMobile) {
-              const navName = (id: string, fb: string) => (t(`nav.${id}`) === `nav.${id}` ? fb : t(`nav.${id}`));
-              const goItem = (id: string, locked: boolean) => {
-                setPendingBlocks(undefined);
-                if (locked) { track(FUNNEL.upgradeEntryClick, { client: "web", source: `more-${id}` }); setUpgradeOpen(true); }
-                else setScreen(id === "log" ? "train" : id);
-                setDrawerOpen(false);
-              };
-              const qy = moreSearch.trim().toLowerCase();
-              const totalTools = navGroups.reduce((n, g) => n + g.items.length, 0);
-              const springboard = navGroups
-                .map(({ group, items }) => ({ group, items: items.filter(({ item }) => !qy || navName(item.id, item.label).toLowerCase().includes(qy)) }))
-                .filter((g) => g.items.length > 0);
-              return (
-                <div>
-                  {/* Unlock Full — the accent membership CARD (kicker → title →
-                      blurb → Go Full pill), matching the mobile More tab + pill-nav
-                      sheet. Casual only; the plain sidebar entry is desktop-only. */}
-                  {showUpgradeEntry && isEnabled("nav.upgrade") && (
-                    <button className="pressable"
-                      onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "more" }); openUpgrade(); setDrawerOpen(false); }}
-                      style={{ position: "relative", overflow: "hidden", display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 18, padding: 18, borderRadius: 22, background: INK, border: `1px solid color-mix(in srgb, var(--color-lime) 50%, transparent)`, boxShadow: "0 10px 26px -10px color-mix(in srgb, var(--color-lime) 32%, transparent)" }}
-                    >
-                      <span aria-hidden style={{ position: "absolute", top: -54, right: -44, width: 168, height: 168, borderRadius: 84, background: "color-mix(in srgb, var(--color-lime) 16%, transparent)", pointerEvents: "none" }} />
-                      <span style={{ ...mono, display: "block", fontSize: fs.nano, letterSpacing: ".12em", color: LIME_T }}>{t("w.home.pillnav.upgradeKicker")}</span>
-                      <span style={{ ...disp, display: "block", fontWeight: 900, fontSize: 22, color: CHALK, marginTop: 8, letterSpacing: "-.02em" }}>{t("nav.upgrade")}</span>
-                      <span style={{ ...mono, display: "block", fontSize: fs.micro, color: ASH, marginTop: 5, maxWidth: 240 }}>{t("w.home.pillnav.upgradeBlurb")}</span>
-                      <span style={{ ...disp, display: "inline-flex", alignItems: "center", gap: space.sm, marginTop: 14, background: LIME, color: ON_ACCENT, borderRadius: 999, padding: "9px 18px", fontWeight: 700, fontSize: fs.body }}>{t("w.home.pillnav.goFull")}</span>
-                    </button>
-                  )}
-
-                  {/* Search — filters the tiles below by label. */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 9, background: INK2, border: `1px solid ${LINE}`, borderRadius: 15, padding: "11px 13px" }}>
-                    {aurora ? <AuroraIcon name="search" size={17} strokeWidth={2.6} /> : <span style={{ ...mono, color: ASH }}>⌕</span>}
-                    <input
-                      value={moreSearch}
-                      onChange={(e) => setMoreSearch(e.target.value)}
-                      placeholder={`Search ${totalTools} tools & screens`}
-                      aria-label="Search tools"
-                      style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: CHALK, ...disp, fontSize: fs.body }}
-                    />
-                    {moreSearch && (
-                      <button className="pressable" onClick={() => setMoreSearch("")} aria-label="Clear search" style={{ background: "none", border: "none", cursor: "pointer", color: ASH, ...mono, fontSize: fs.body }}>✕</button>
-                    )}
-                  </div>
-
-                  {springboard.map(({ group, items }) => {
-                    return (
-                      <div key={group} style={{ marginTop: 18 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px", marginBottom: 10 }}>
-                          <Mono s={{ fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase" }} c={ASH}>{groupLabel(group)}</Mono>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8 }}>
-                          {items.map(({ item, locked }) => {
-                            const label = navName(item.id, item.label);
-                            const ic = aurora ? AURORA_NAV_ICONS[item.id] : undefined;
-                            const iconColor = locked ? ASH : "var(--color-chalk)";
-                            return (
-                              <button className="pressable"
-                                key={item.id}
-                                data-tour={`nav-${item.id}`}
-                                onClick={() => goItem(item.id, locked)}
-                                title={locked ? `${label} (Full)` : label}
-                                aria-label={locked ? `${label} (Full)` : label}
-                                style={{ position: "relative", minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, background: INK2, border: `1px solid ${LINE}`, borderRadius: 14, padding: "12px 4px", cursor: "pointer", opacity: locked ? 0.6 : 1 }}
-                              >
-                                <AuroraIcon name={ic ?? "info"} size={22} color={iconColor} strokeWidth={2.4} />
-                                <span style={{ ...disp, fontSize: 11, fontWeight: 600, lineHeight: 1.15, textAlign: "center", color: iconColor, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{label}</span>
-                                {locked && (
-                                  <span aria-hidden style={{ position: "absolute", top: 6, right: 6, display: "grid", placeItems: "center" }}>
-                                    <AuroraIcon name="lock" size={11} color="var(--premium-accent-text)" strokeWidth={2.4} />
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {qy && springboard.length === 0 && (
-                    <Mono s={{ display: "block", marginTop: 16, padding: "0 2px" }} c={ASH}>No tools match “{moreSearch}”.</Mono>
-                  )}
-                </div>
-              );
-            }
-
             // DESKTOP RAIL — every group expanded (there's room).
             return navGroups.map(({ group, items }) => (
               <div key={group} style={{ marginBottom: 14 }}>
@@ -663,7 +584,7 @@ export default function AppShell() {
               CARD version inside its springboard branch above. */}
           {!isMobile && showUpgradeEntry && isEnabled("nav.upgrade") && (
             <button className="pressable"
-              onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); openUpgrade(); setDrawerOpen(false); }}
+              onClick={() => { track(FUNNEL.upgradeEntryClick, { client: "web", source: "sidebar" }); openUpgrade(); }}
               title={railCollapsed ? "Unlock Full" : undefined}
               style={{
                 width: "100%",
@@ -735,7 +656,7 @@ export default function AppShell() {
           </div>
           {session.role === "admin" && (
             <button className="pressable"
-              onClick={() => { setDrawerOpen(false); router.push("/admin"); }}
+              onClick={() => router.push("/admin")}
               title={railCollapsed ? "Admin console" : undefined}
               style={{
                 width: "100%",
@@ -806,6 +727,7 @@ export default function AppShell() {
           </button>
         </div>
       </aside>
+      )}
 
       {/* main — extra bottom room in Aurora so the floating pill nav never overlaps */}
       {/* minWidth:0 lets this flex child shrink past its content's intrinsic
@@ -927,7 +849,7 @@ export default function AppShell() {
             bio={bio ?? undefined}
             macro={macro}
             currentWeek={currentWeek}
-            onNavigate={navigate}
+            onNavigate={navigate} onOpenUser={openUser}
           />
         )}
 
@@ -1071,23 +993,34 @@ export default function AppShell() {
             soften under Aurora), like the tools below. Everyone (casual+). The
             Explore screen that used to front these is gone: its coach rail sits
             on Today and each destination below is reached from More. */}
-        {screen === "feed" && <SocialFeed onNavigate={setScreen} onOpenPost={openPost} />}
+        {screen === "feed" && <SocialFeed onNavigate={setScreen} onOpenPost={openPost} onOpenUser={openUser} />}
+        {/* ONE PERSON, on their own page — who they are, how they train, and,
+            if they coach, what they coach. `?s=user&u=<handle>` is its address,
+            so a profile can be shared the way a post can. */}
+        {screen === "user" && <UserPage handle={userFocus} onBack={() => popTo(userReturn, true)} onOpenUser={openUser} onOpenPost={openPost} />}
         {/* ONE POST, on its own page — a workout with every figure, the records
             it set and its thread. `?s=post&post=<type>:<id>` is its address, so
             a shared link lands here rather than at the top of the stream. */}
-        {screen === "post" && <FeedPost postKey={postFocus} initial={postItem} onBack={() => popTo(postReturn, true)} onOpenSession={openSession} />}
-        {screen === "discover" && <SocialDiscover />}
-        {screen === "saved" && <SocialSaved onNavigate={setScreen} onOpenPost={openPost} />}
-        {screen === "leaderboard" && <SocialLeaderboard />}
-        {screen === "coaches" && <CoachesScreen />}
+        {screen === "post" && <FeedPost postKey={postFocus} initial={postItem} onBack={() => popTo(postReturn, true)} onOpenSession={openSession} onOpenProfile={openUser} />}
+        {/* MESSAGES — the bottom bar's fourth destination (it took More's slot;
+            see @hybrid/core nav-bar.ts). A placeholder that says so — direct
+            messages are tracked as `direct-messages` (planned). */}
+        {screen === "messages" && <AuroraMessages />}
+        {screen === "discover" && <SocialDiscover onOpenUser={openUser} />}
+        {screen === "saved" && <SocialSaved onNavigate={setScreen} onOpenPost={openPost} onOpenUser={openUser} />}
+        {screen === "leaderboard" && <SocialLeaderboard onOpenUser={openUser} />}
+        {screen === "coaches" && <CoachesScreen onOpenUser={openUser} />}
 
         {/* Tools available in BOTH templates (Aurora-styled when active, classic
             otherwise) — embedded in the shell so the sidebar + ⌘K reach them. */}
-        {screen === "notifications" && <NotificationsScreen embedded onNavigate={navigate} onOpenSession={openSession} />}
+        {screen === "notifications" && <NotificationsScreen embedded onNavigate={navigate} onOpenSession={openSession} onOpenUser={openUser} />}
         {screen === "timer" && <IntervalTimerScreen embedded />}
         {screen === "statistics" && <StatisticsScreen embedded />}
 
         {screen === "settings" && <AccountSettings />}
+
+        {/* HELP CENTER — the side menu's last footer row. */}
+        {screen === "help" && <AuroraHelpCenter onNavigate={navigate} onReplayTour={replayTour} />}
         </div>
       </main>
 

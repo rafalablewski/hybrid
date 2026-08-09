@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { View, Text, ScrollView, FlatList } from "react-native";
 import { useRouter } from "expo-router";
-import { LEADERBOARD_METRICS, type LeaderboardMetric } from "@hybrid/core";
+import { LEADERBOARD_METRICS, seedPerson, userPagePath, type LeaderboardMetric } from "@hybrid/core";
 import { Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { getLeaderboard } from "../lib/social-api";
-import { Avatar, Empty, ProfileModal } from "../components/social-kit";
+import { Avatar, Empty } from "../components/social-kit";
 import { useNavScrollProps } from "../lib/nav-scroll";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
@@ -18,14 +18,13 @@ export default function LeaderboardScreen() {
   const router = useRouter();
   const [metric, setMetric] = useState<LeaderboardMetric>("volume");
   const [board, setBoard] = useState<any[] | null>(null);
-  const [drawer, setDrawer] = useState<string | null>(null);
 
   useEffect(() => { setBoard(null); getLeaderboard(metric).then((r: any) => setBoard(r.board ?? [])); }, [metric]);
   const padBottom = useScreenBottomPad();
   const navScroll = useNavScrollProps();
 
   const renderRow = ({ item: r }: { item: any }) => (
-    <Pressable onPress={() => !r.isMe && setDrawer(r.handle)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
+    <Pressable onPress={() => { if (!r.isMe && r.handle) { seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
       <Text style={{ width: 28, textAlign: "center", fontFamily: F.bold, fontWeight: "800", color: r.rank <= 3 ? C.amber : C.ash, fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</Text>
       <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
       <View style={{ flex: 1 }}>
@@ -64,7 +63,6 @@ export default function LeaderboardScreen() {
           />
         </ACard>
       )}
-      {drawer && <ProfileModal handle={drawer} onClose={() => setDrawer(null)} />}
     </AuroraScreen>
   );
 }

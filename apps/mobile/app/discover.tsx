@@ -5,18 +5,18 @@ import { F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import type { PersonCard } from "@hybrid/core";
+import { seedPerson, userPagePath, type PersonCard } from "@hybrid/core";
 import { searchPeople, getSuggestions, follow, unfollow } from "../lib/social-api";
-import { Avatar, Empty, ProfileModal, SButton } from "../components/social-kit";
+import { Avatar, Empty, SButton } from "../components/social-kit";
 
-function Row({ p, onChanged, onOpen }: { p: PersonCard; onChanged: () => void; onOpen: (h: string) => void }) {
+function Row({ p, onChanged, onOpen }: { p: PersonCard; onChanged: () => void; onOpen: (h: string, card?: PersonCard) => void }) {
   const C = useTheme().palette;
   const { t } = useLang();
   const rel: string = p.relation ?? "none";
   const following = rel === "following" || rel === "friend" || rel === "close";
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-      <Pressable onPress={() => onOpen(p.handle)} style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+      <Pressable onPress={() => onOpen(p.handle, p)} style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
         <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={42} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "600" }}>{p.displayName || `@${p.handle}`}{p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}</Text>
@@ -39,7 +39,6 @@ export default function DiscoverScreen() {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<PersonCard[] | null>(null);
   const [sugg, setSugg] = useState<PersonCard[]>([]);
-  const [drawer, setDrawer] = useState<string | null>(null);
 
   const loadSugg = () => getSuggestions().then((r) => setSugg(r.suggestions ?? []));
   useEffect(() => { loadSugg(); }, []);
@@ -54,14 +53,13 @@ export default function DiscoverScreen() {
     <AuroraScreen hero={{ rank: "title", title: t("w.social.findFriends"), meta: [t("w.social.findFriendsSub")] }}>
       <ASearch value={q} onChange={setQ} placeholder={t("w.social.searchPeople")} autoFocus />
       {results !== null ? (
-        <ACard style={cardStack}>{results.length === 0 ? <Empty title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={setDrawer} />)}</ACard>
+        <ACard style={cardStack}>{results.length === 0 ? <Empty title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
       ) : (
         <>
           <Text style={{ color: C.ash, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</Text>
-          <ACard style={cardStack}>{sugg.length === 0 ? <Empty title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={setDrawer} />)}</ACard>
+          <ACard style={cardStack}>{sugg.length === 0 ? <Empty title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
         </>
       )}
-      {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); refresh(); }} />}
     </AuroraScreen>
   );
 }

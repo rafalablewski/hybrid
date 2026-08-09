@@ -86,11 +86,12 @@ model User {
   journalEntries   JournalEntry[]
   hiddenHighlights HiddenHighlight[]
   highlightOrder   HighlightOrder?
-  templates        WorkoutTemplate[]
-  savedMeals       SavedMeal[]
-  foodProducts     FoodProduct[]
-  foodLogs         FoodLog[]
-  userRecipes      UserRecipe[]
+  notificationState NotificationState?
+  templates         WorkoutTemplate[]
+  savedMeals        SavedMeal[]
+  foodProducts      FoodProduct[]
+  foodLogs          FoodLog[]
+  userRecipes       UserRecipe[]
   planDayOverrides PlanDayOverride[]
   assignments      Assignment[]      @relation("assignmentAthlete")
   assignmentsMade  Assignment[]      @relation("assignmentCoach")
@@ -608,6 +609,30 @@ model HighlightOrder {
   userId    String   @unique
   keys      String[]
   updatedAt DateTime @updatedAt
+}
+
+// Which notifications this ACCOUNT has seen, held unread, or thrown away — the
+// server-side home of @hybrid/core's NotifReadState (packages/core/notifications.ts),
+// one row per user. It began per-device (localStorage / AsyncStorage) on the
+// logger-prefs contract, and that held right up until a row could be DELETED: a
+// badge that disagrees across devices is a nuisance, but a notification you threw
+// away on the phone reappearing on the laptop is the app forgetting something you
+// told it. Clients write DECISIONS (NotifOp) through /api/notifications/state and
+// keep their local copy as an offline cache, so two devices never have to have
+// their states merged — the server applies the ops in arrival order.
+//
+// `seenAt` is the watermark (everything stamped at or before it is read); the
+// three id sets are the exceptions a watermark can't express — see the engine.
+// Each is bounded to NOTIF_READ_ID_CAP (200) by the reducer, so the row stays
+// small: a read state is not a log. reference/sql-notification-state.sql.
+model NotificationState {
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String    @id
+  seenAt       DateTime?
+  readIds      String[]  @default([])
+  unreadIds    String[]  @default([])
+  dismissedIds String[]  @default([])
+  updatedAt    DateTime  @updatedAt
 }
 
 // A reusable workout the coach (or athlete) builds once and assigns many times.

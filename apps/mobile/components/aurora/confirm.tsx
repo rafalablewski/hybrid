@@ -119,8 +119,6 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         visible={pending != null}
         onClose={() => settle(false)}
         title={pending?.title}
-        scroll={false}
-        detents={["medium"]}
       >
         <View style={{ gap: space.md }}>
           {pending?.message ? (

@@ -280,7 +280,7 @@ describe("presentation", () => {
     // release and parent recede, so the gesture a user learns on Today died on
     // the controls they touch most. All eleven now present through Sheet.
     //
-    // TWO exemptions, and neither is a bottom sheet — each is a different
+    // THREE exemptions, and none is a bottom sheet — each is a different
     // presentation with no panel to drag:
     //   • tour.tsx — a full-screen coach-mark overlay.
     //   • feed-menu.tsx — the post's ⋯ menu, a small card ANCHORED to the glyph
@@ -289,7 +289,12 @@ describe("presentation", () => {
     //     row itself on Android), so it renders in its own native window and is
     //     placed from the anchor's measured rect. Presenting it as a sheet is
     //     what this change REVERSED — see the file header.
-    const EXEMPT = ["components/aurora/sheet.tsx", "components/tour.tsx", "components/feed-menu.tsx"];
+    //   • side-menu.tsx — the side DRAWER behind the Today header's avatar. It
+    //     is anchored to the LEFT edge and full-height; Sheet is bottom-anchored
+    //     with vertical detents, so there is no panel here for its drag,
+    //     detents or velocity release to act on. It must be a Modal so it draws
+    //     over the native tab bar, which no in-tree view can.
+    const EXEMPT = ["components/aurora/sheet.tsx", "components/tour.tsx", "components/feed-menu.tsx", "components/aurora/side-menu.tsx"];
     const raw = hits(/<Modal\b/g).filter((h) => !EXEMPT.some((f) => h.startsWith(f)));
     expect(raw).toEqual([]);
   });

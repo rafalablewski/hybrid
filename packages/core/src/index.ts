@@ -19,6 +19,7 @@ export * from "./checkin-scales";
 export * from "./feel-timing";
 export * from "./feel-schedule";
 export * from "./notifications";
+export * from "./notif-sync";
 export * from "./readiness-reads";
 export * from "./readiness-read-explain";
 export * from "./day-key";
@@ -99,8 +100,11 @@ export * from "./feed-live";
 export * from "./feed-rank";
 export * from "./feed-card";
 export * from "./feed-actions";
+export * from "./feed-cursor";
 export * from "./feed-workout";
 export * from "./social";
+export * from "./user-page";
+export * from "./person-seed";
 export * from "./stats";
 export * from "./activity-window";
 export * from "./activity-range-view";
@@ -144,6 +148,8 @@ export * from "./email";
 export * from "./format";
 export * from "./social-dto";
 export * from "./nav-bar";
+export * from "./side-menu";
+export * from "./help";
 
 /** Sprint marker so both clients can show what's wired up. */
 export const CORE_VERSION = "0.1.0-sprint2";

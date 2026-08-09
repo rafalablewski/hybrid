@@ -6,6 +6,8 @@ import {
   feedHeadlineText,
   feedSubjectKey,
   parseFeedSubjectKey,
+  seedPerson,
+  userPagePath,
   type FeedItemView,
   type Relation,
 } from "@hybrid/core";
@@ -15,7 +17,7 @@ import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { getFeedPost, toggleKudos } from "../lib/social-api";
-import { Avatar, Empty, ProfileModal } from "../components/social-kit";
+import { Avatar, Empty } from "../components/social-kit";
 import { Comments } from "../components/feed-comments";
 import { FeedActions } from "../components/feed-card";
 import { FeedWorkout } from "../components/feed-workout";
@@ -50,7 +52,6 @@ export default function PostScreen() {
   // Either shape resolves: two params (what `feedPostPath` writes) or the one
   // `type:id` key kudos, comments and saves already use.
   const ref = parseFeedSubjectKey(typeof params.key === "string" ? params.key : `${params.type ?? ""}:${params.id ?? ""}`);
-  const [drawer, setDrawer] = useState<string | null>(null);
   const [menu, setMenu] = useState<FeedMenuAnchor | null>(null);
   // The comment button has nothing to expand here — the thread is already open
   // below — so it puts the cursor in the box instead.
@@ -99,6 +100,7 @@ export default function PostScreen() {
   const headline = feedHeadlineText(item, t);
   const session = q.data?.session;
   const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: false });
+  const handle = item.author.handle ? `@${item.author.handle}` : null;
 
   return (
     <AuroraScreen hero={hero} backLabel={t("feed.post.back")}>
@@ -106,17 +108,24 @@ export default function PostScreen() {
           screen of its own the post is the only thing here, so the person
           leads it. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Pressable onPress={() => setDrawer(item.author.handle)}>
+        <Pressable onPress={() => { if (item.author.handle) { seedPerson(item.author); router.push(userPagePath(item.author.handle)); } }}>
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={44} />
         </Pressable>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
-            {item.author.displayName || (item.author.handle ? `@${item.author.handle}` : t("w.social.you"))}
+        {/* ONE line — avatar, name, handle, time — exactly as the row reads it
+            (feed-card.tsx): the name and the handle shrink, the time never does. */}
+        <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
+            {item.author.displayName || handle || t("w.social.you")}
           </Text>
-          {/* A spaced en dash joins the meta line — never a middot. */}
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
-            {[item.author.handle ? `@${item.author.handle}` : null, item.when].filter(Boolean).join(" – ")}
-          </Text>
+          {handle && item.author.displayName ? (
+            <Text numberOfLines={1} style={{ flexShrink: 4, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{handle}</Text>
+          ) : null}
+          {item.when ? (
+            // A spaced en dash divides the two ash figures — never a middot.
+            <Text numberOfLines={1} style={{ flexShrink: 0, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
+              {handle && item.author.displayName ? "– " : ""}{item.when}
+            </Text>
+          ) : null}
         </View>
         {menuRows.length > 0 ? (
           <MoreButton onOpen={setMenu} label={t("feed.menu.title")} color={C.ash} />
@@ -162,7 +171,6 @@ export default function PostScreen() {
         relation={item.relation}
         onAuthorChanged={authorChanged}
       />
-      {drawer ? <ProfileModal handle={drawer} onClose={() => setDrawer(null)} /> : null}
     </AuroraScreen>
   );
 }

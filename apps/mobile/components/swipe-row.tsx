@@ -5,11 +5,12 @@ import { fs, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { haptic } from "../lib/haptics";
 
-// Swipe a set row left to reveal a Delete action — for sets added by accident.
+// Swipe a row left to reveal a Delete action — for sets added by accident.
 // Built on Animated + PanResponder (no native gesture-handler dependency, so it
 // works in the existing dev build). Only claims clearly-horizontal drags, so the
 // numeric inputs still focus on tap and the list still scrolls vertically.
-// Shared by the live logger (app/workout.tsx) and the Builder's set ledger.
+// Shared by the live logger (app/workout.tsx), the Builder's set ledger and the
+// notifications list.
 //
 // THE RELEASE RULE is velocity projection, not displacement: the row commits
 // from where the finger is HEADING (@hybrid/core projectSwipe), so a fast flick
@@ -19,27 +20,47 @@ import { haptic } from "../lib/haptics";
 // iOS full-swipe. Every constant is shared with the web twin
 // (apps/web/components/swipe-row.tsx) because the two had drifted on all of
 // them while each claiming to mirror the other.
-export default function SwipeRow({ children, onDelete, label, background }: {
+//
+// A row can also carry a LEADING action, revealed by swiping RIGHT (the
+// notifications list uses it for "Unread"). Both sides obey the same grammar:
+// a short swipe OPENS the action so it can be tapped, a full swipe COMMITS it
+// outright. The leading action then settles home — it changes the row's state
+// rather than removing it, so running it off the edge would be a lie.
+export default function SwipeRow({ children, onDelete, label, leading, background, radius = 12, marginBottom = 6 }: {
   children: ReactNode;
   onDelete: () => void;
   label: string;
-  /** Row surface colour — must match the host card so the covered delete button
+  /** The action revealed by swiping RIGHT, so it sits on the LEFT edge.
+   *  Non-destructive by contract: the row settles back home after it runs. */
+  leading?: { label: string; onAction: () => void; color?: string };
+  /** Row surface colour — must match the host card so the covered actions
    *  can't bleed through (defaults to the live logger's card token). */
   background?: string;
+  /** Corner radius of the revealed actions — match the wrapped row. */
+  radius?: number;
+  /** Outer spacing (the wrapped row should drop its own margin). */
+  marginBottom?: number;
 }) {
   const C = useTheme().palette;
   const tx = useRef(new Animated.Value(0)).current;
-  const openRef = useRef(false);
+  /** Which action is open: -1 delete (right edge), 0 closed, 1 leading. */
+  const sideRef = useRef<-1 | 0 | 1>(0);
   const widthRef = useRef(0);
   // Latched so the full-swipe haptic fires ONCE as you cross, not every frame.
   const armedRef = useRef(false);
+  // The PanResponder is built once, so it would close over the first render's
+  // props. Read the leading action through a ref kept current each render.
+  const leadingRef = useRef(leading);
+  leadingRef.current = leading;
 
-  const settle = (to: number) => {
-    Animated.spring(tx, { toValue: to, useNativeDriver: true, ...springToRN(springs.slide) }).start();
+  const settle = (to: -1 | 0 | 1) => {
+    sideRef.current = to;
+    Animated.spring(tx, { toValue: to * swipe.action, useNativeDriver: true, ...springToRN(springs.slide) }).start();
   };
 
   const commitDelete = () => {
     haptic.warning();
+    sideRef.current = 0;
     // Run the row off the edge before removing it, so the delete has a
     // direction instead of a disappearance. The list closes the gap (see the
     // host's animated list).
@@ -50,53 +71,85 @@ export default function SwipeRow({ children, onDelete, label, background }: {
     }).start(() => onDelete());
   };
 
+  const commitLeading = () => {
+    const l = leadingRef.current;
+    if (!l) return;
+    haptic.light();
+    settle(0);
+    l.onAction();
+  };
+
+  /** Where the finger has dragged to, with the right side closed off when
+   *  there's no leading action to reveal. */
+  const offset = (dx: number): number => {
+    const raw = sideRef.current * swipe.action + dx;
+    return leadingRef.current ? raw : Math.min(0, raw);
+  };
+
   const pan = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
       onPanResponderMove: (_, g) => {
-        const base = openRef.current ? -swipe.action : 0;
-        const raw = Math.min(0, base + g.dx);
-        const full = -(widthRef.current * swipe.fullAt);
+        const raw = offset(g.dx);
+        const full = widthRef.current * swipe.fullAt;
         // Rubber-band only between the action width and the full-swipe point;
-        // past that the row must keep tracking the finger, because it is about
-        // to be thrown away and resistance would fight the gesture.
-        tx.setValue(raw < full ? raw : rubberBand(raw, swipe.action, swipe.max - swipe.action));
-        const crossed = raw < full;
+        // past that the row must keep tracking the finger, because the action
+        // is about to commit and resistance would fight the gesture.
+        const crossed = raw < -full || (!!leadingRef.current && raw > full);
+        tx.setValue(crossed ? raw : rubberBand(raw, swipe.action, swipe.max - swipe.action));
         if (crossed !== armedRef.current) {
           armedRef.current = crossed;
           if (crossed) haptic.light();
         }
       },
       onPanResponderRelease: (_, g) => {
-        const base = openRef.current ? -swipe.action : 0;
-        const raw = Math.min(0, base + g.dx);
-        // g.vx is px/ms; the shared rule is in px/s.
-        const projected = projectSwipe(raw, g.vx * 1000);
+        const raw = offset(g.dx);
+        const full = widthRef.current * swipe.fullAt;
         armedRef.current = false;
-        if (raw < -(widthRef.current * swipe.fullAt)) { commitDelete(); return; }
-        const open = projected < -swipe.action * swipe.openAt;
-        if (open !== openRef.current) haptic.light();
-        openRef.current = open;
-        settle(open ? -swipe.action : 0);
+        if (raw < -full) { commitDelete(); return; }
+        if (leadingRef.current && raw > full) { commitLeading(); return; }
+        // g.vx is px/ms; the shared rule is in px/s.
+        const p = projectSwipe(raw, g.vx * 1000);
+        const next: -1 | 0 | 1 = p < -swipe.action * swipe.openAt ? -1 : leadingRef.current && p > swipe.action * swipe.openAt ? 1 : 0;
+        if (next !== sideRef.current) haptic.light();
+        settle(next);
       },
       onPanResponderTerminate: () => {
         armedRef.current = false;
-        settle(openRef.current ? -swipe.action : 0);
+        settle(sideRef.current);
       },
     }),
   ).current;
 
+  const action = (col: string, text: string, onPress: () => void, edge: "left" | "right") => (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={{
+        position: "absolute",
+        ...(edge === "left" ? { left: 0 } : { right: 0 }),
+        top: 0,
+        bottom: 0,
+        width: swipe.action,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: col,
+        borderRadius: radius,
+      }}
+    >
+      {/* A solid accent fill, so the label is chalk rather than the accent-TEXT
+          channel (which is tuned to sit on ink). */}
+      <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{text}</Text>
+    </Pressable>
+  );
+
   return (
     <View
-      style={{ position: "relative", marginBottom: 6, overflow: "hidden" }}
+      style={{ position: "relative", marginBottom, overflow: "hidden" }}
       onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width; }}
     >
-      <Pressable
-        onPress={commitDelete}
-        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: swipe.action, alignItems: "center", justifyContent: "center", backgroundColor: C.red, borderRadius: 12 }}
-      >
-        <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{label}</Text>
-      </Pressable>
+      {leading && action(leading.color ?? C.red, leading.label, commitLeading, "left")}
+      {action(C.red, label, commitDelete, "right")}
       <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: background ?? C.card }} {...pan.panHandlers}>
         {children}
       </Animated.View>

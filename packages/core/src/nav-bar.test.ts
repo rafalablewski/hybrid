@@ -4,12 +4,22 @@ import { AURORA_NAV_TABS, AURORA_NAV_GEOMETRY, formatSessionElapsed } from "./na
 describe("aurora nav bar contract", () => {
   it("carries five destinations, within Apple's iPhone ceiling", () => {
     expect(AURORA_NAV_TABS).toHaveLength(5);
-    expect(AURORA_NAV_TABS.map((t) => t.id)).toEqual(["today", "nutrition", "train", "more", "profile"]);
+    expect(AURORA_NAV_TABS.map((t) => t.id)).toEqual(["today", "nutrition", "train", "messages", "profile"]);
+  });
+
+  it("spends the fourth slot on a destination, not on a directory", () => {
+    // More was a springboard of ~40 launcher tiles — a directory of screens,
+    // which nobody's daily loop includes opening. It moved to the side menu
+    // behind the Today header's avatar (side-menu.ts), and the slot went to
+    // Messages: a place with its own unread state that you come back to.
+    const ids = AURORA_NAV_TABS.map((t) => t.id) as string[];
+    expect(ids).not.toContain("more");
+    expect(ids[3]).toBe("messages");
   });
 
   it("spends the second slot on a daily loop, not on discovery", () => {
     // Explore was a discovery surface whose blocks were all previews of screens
-    // that still live in More; eating happens several times a day. The bar's
+    // that still live in the side menu; eating happens several times a day. The bar's
     // scarcest slot goes to the recurring loop.
     const ids = AURORA_NAV_TABS.map((t) => t.id) as string[];
     expect(ids).not.toContain("explore");

@@ -1717,7 +1717,7 @@ export default function Workout() {
           single top-level exit, and the irreversible one is reached through a
           menu and then a confirm. Anything added here later inherits that
           protection for free. */}
-      <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")} scroll={false} detents={["medium"]}>
+      <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")}>
         <Pressable
           onPress={discard}
           accessibilityRole="button"
@@ -1876,7 +1876,7 @@ function ExerciseSheet({
 function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () => void; t: (k: string) => string }) {
   const C = useTheme().palette;
   return (
-    <Sheet visible={visible} onClose={onClose} title={t("w.train.blocks.rpeHelpTitle")} scroll={false}>
+    <Sheet visible={visible} onClose={onClose} title={t("w.train.blocks.rpeHelpTitle")}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: leading(fs.body), marginBottom: 16 }}>{RPE_INTRO}</Text>
           <View style={{ flexDirection: "row", marginBottom: 6 }}>
             <Text style={{ width: 40, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>RPE</Text>

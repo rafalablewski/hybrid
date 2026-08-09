@@ -214,7 +214,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
   // underneath leaves the panel sitting over the screen it just sent you to.
   const openModelFromSheet = onOpenModel ? () => { setSource(false); onOpenModel(); } : undefined;
   const sourceSheet = (
-    <Sheet visible={source} onClose={() => setSource(false)} title={t("w.analyze.vol.whose")} detents={["medium", "large"]}>
+    <Sheet visible={source} onClose={() => setSource(false)} title={t("w.analyze.vol.whose")} detents={["medium"]}>
       <SourceBody
         resolved={resolved} tested={replay} profile={profile} measuredKeys={measuredKeys}
         adaptive={prefs.adaptiveLandmarks} onOpenModel={openModelFromSheet} ml={ml}

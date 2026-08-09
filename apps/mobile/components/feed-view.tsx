@@ -6,9 +6,9 @@ import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type { FeedItemView, LiveAthlete, Relation } from "@hybrid/core";
-import { colors, feedPostPath } from "@hybrid/core";
+import { colors, feedPostPath, seedPerson, userPagePath } from "@hybrid/core";
 import { getFeed, toggleKudos, createPost, deletePost } from "../lib/social-api";
-import { Empty, ProfileModal, SButton } from "./social-kit";
+import { Empty, SButton } from "./social-kit";
 import { ACard, cardStack, GUTTER, RADIUS } from "./aurora/kit";
 import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
@@ -38,7 +38,6 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItemView[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
-  const [drawer, setDrawer] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<FeedTab>("forYou");
   const [live, setLive] = useState<LiveAthlete[]>([]);
@@ -173,7 +172,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       </View>
 
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
-      <FeedLiveStrip live={live} onOpen={(h) => setDrawer(h)} />
+      <FeedLiveStrip live={live} onOpen={(h) => { if (h) router.push(userPagePath(h)); }} />
 
       {/* COMPOSER — deliberately underweighted: in this product the workout is
           the post, so the blank page stays a one-line invitation until wanted. */}
@@ -209,7 +208,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       <FeedCard
         item={item}
         units={units}
-        onOpenProfile={(h) => setDrawer(h)}
+        onOpenProfile={(h) => { if (h) { seedPerson(item.author); router.push(userPagePath(h)); } }}
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
         // EVERY post opens its own screen — a workout, a record, a status
@@ -277,7 +276,6 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       // can't reach the physical edge.
       <AuroraScreen scroll={false} hubTab={hub} padding={0}>
         {list({ ...navScroll, contentContainerStyle: { paddingHorizontal: GUTTER, paddingTop: 16, paddingBottom: padBottom } })}
-        {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
       </AuroraScreen>
     );
   }
@@ -287,8 +285,6 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       // GUTTER — the app's screen gutter the rows' full-bleed margins assume;
       // the hub shape above uses the same value.
       scroller={(scrollProps: HeroScrollProps) => list({ ...scrollProps, contentContainerStyle: [scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER }] })}
-    >
-      {drawer && <ProfileModal handle={drawer} onClose={() => { setDrawer(null); load(); }} />}
-    </AuroraScreen>
+    />
   );
 }

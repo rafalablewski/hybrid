@@ -66,6 +66,7 @@ export default function AuroraProfile({
   sessions,
   bio,
   onNavigate,
+  onOpenUser,
 }: {
   sessions: LoggedSession[];
   bio?: Biometrics;
@@ -73,6 +74,8 @@ export default function AuroraProfile({
   currentWeek?: number;
   /** In-shell navigation (keeps the sidebar); falls back to a route push. */
   onNavigate?: (screen: string) => void;
+  /** Your OWN public page — what everyone else sees. */
+  onOpenUser?: (handle: string) => void;
 }) {
   const router = useRouter();
   const { t } = useLang();
@@ -342,6 +345,20 @@ export default function AuroraProfile({
           <div><span style={{ opacity: 0.75 }}>HYBRID ID</span>&nbsp;&nbsp;{athleteId}</div>
           <div style={{ opacity: 0.75 }}>{t("w.account.profile.member-since")} {memberSince}</div>
         </div>
+        {/* VIEW AS OTHERS SEE IT — your own individual user page. It is the only
+            honest preview of what your visibility setting actually does, and
+            without it the page's `self` state was unreachable from the app. It
+            LEAVES, so it takes the arrow; it is a door, so it wears no card. */}
+        {socialP?.profile?.handle && (
+          <button
+            className="pressable"
+            onClick={() => (onOpenUser ? onOpenUser(socialP.profile!.handle) : router.push(`/app?s=user&u=${socialP.profile!.handle}`))}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, background: "none", border: "none", padding: 0, cursor: "pointer", color: accentText("lime"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}
+          >
+            {t("w.user.viewAsOthers")}
+            <ArrowGlyph size={14} />
+          </button>
+        )}
       </div>
 
       {/* SOCIAL COUNTS — followers / following / (derived) friends rank. */}
