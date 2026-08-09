@@ -128,6 +128,7 @@ export function Btn({
   ghost,
   small,
   disabled,
+  full,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -135,6 +136,9 @@ export function Btn({
   ghost?: boolean;
   small?: boolean;
   disabled?: boolean;
+  /** Stretch to the container. For a surface whose whole offer is ONE verb —
+   *  a person's page — so the action never has to be hunted for. */
+  full?: boolean;
 }) {
   return (
     <button className="pressable"
@@ -152,6 +156,7 @@ export function Btn({
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.5 : 1,
         whiteSpace: "nowrap",
+        width: full ? "100%" : undefined,
       }}
     >
       {children}

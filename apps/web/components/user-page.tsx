@@ -10,8 +10,9 @@ import {
   leading,
   tracking,
   followsUser,
+  canCompareWith,
   resolveUserPageTab,
-  userPageActions,
+  userPageAction,
   userPageRelation,
   userPageTabs,
   userShare,
@@ -35,9 +36,9 @@ import type {
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
-import { HeroScreen } from "./aurora/hero";
+import { HeroAccessory, HeroScreen } from "./aurora/hero";
 import {
-  C, useSocialTheme, card, Avatar, Btn, Pill, EmptyState, Stars, VerifiedTick, jget, jsend, useBusy,
+  C, useSocialTheme, card, Avatar, Btn, EmptyState, Stars, VerifiedTick, jget, jsend, useBusy,
 } from "./social-ui";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
@@ -193,11 +194,20 @@ export default function UserPage({
     );
   }
 
-  const actions = userPageActions(data);
+  const action = userPageAction(data);
   const coach = data.coach;
 
   return (
-    <HeroScreen hero={hero} back={onBack} backLabel={t("common.back")}>
+    <HeroScreen
+      hero={hero}
+      back={onBack}
+      backLabel={t("common.back")}
+      /* SHARE lives in the rail's trailing slot — the app's own home for a
+         screen-level utility, and where every OS the app ships on puts it. It
+         used to be a fourth button in a row of four, which is how a page ends
+         up with no centre. */
+      accessory={<HeroAccessory label={t("w.user.share")} onClick={doShare} onDark={false} />}
+    >
       <div style={{ maxWidth: 640 }}>
         {/* ── WHO ── the person, at the size a page allows. */}
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
@@ -229,30 +239,53 @@ export default function UserPage({
           {data.stats && <Figure value={data.stats.totalSessions.toLocaleString()} label={t("w.social.statSessions")} />}
         </div>
 
-        {/* ── THE VERBS ── ordered by core, so both clients offer the same ones
-            in the same places. */}
-        <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-          {actions.map((a) => {
-            const label = t(a.labelKey);
-            if (a.id === "follow") return <Btn key={a.id} small onClick={doFollow} disabled={busy.is("f")}>{label}</Btn>;
-            if (a.id === "unfollow") return <Btn key={a.id} ghost small onClick={doUnfollow} disabled={busy.is("f")}>{label} ✓</Btn>;
-            if (a.id === "requested") return <Btn key={a.id} ghost small disabled>{label}</Btn>;
-            if (a.id === "compare") return <Btn key={a.id} ghost small onClick={runCompare} disabled={busy.is("c")}>{label}</Btn>;
-            if (a.id === "coaching") return <Btn key={a.id} ghost small onClick={() => setTab("coaching")}>{label}</Btn>;
-            return <Btn key={a.id} ghost small onClick={doShare}>{label}</Btn>;
-          })}
-        </div>
+        {/* ── THE ONE BUTTON ── full width, because a page with one action
+            should not make you look for it. Core decides which verb it is. */}
+        {action && (
+          <div style={{ marginTop: 14 }}>
+            <Btn
+              ghost={!action.primary}
+              onClick={action.id === "follow" ? doFollow : action.id === "unfollow" ? doUnfollow : undefined}
+              disabled={busy.is("f") || action.id === "requested"}
+              full
+            >
+              {action.id === "unfollow" ? `${t(action.labelKey)} ✓` : t(action.labelKey)}
+            </Btn>
+          </div>
+        )}
 
-        {/* ── THE TABS ── overview / coaching / activity, as core allows. A
-            person with one tab gets no tab row at all. */}
+        {/* ── THE TABS ── navigation, and therefore NOT buttons: text on a
+            rule, with the accent under the one you're on. They used to be
+            pills sitting under a row of pills, which made a field of seven
+            equal-looking controls out of two different kinds of thing. */}
         {tabs.length > 1 && (
-          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            {tabs.map((x) => <Pill key={x.id} active={shown === x.id} onClick={() => setTab(x.id)}>{t(x.labelKey)}</Pill>)}
+          <div role="tablist" style={{ display: "flex", gap: 22, marginTop: 20, borderBottom: `1px solid ${C("line")}` }}>
+            {tabs.map((x) => {
+              const on = shown === x.id;
+              return (
+                <button
+                  key={x.id}
+                  role="tab"
+                  aria-selected={on}
+                  className="pressable"
+                  onClick={() => setTab(x.id)}
+                  style={{
+                    background: "none", border: "none", padding: "0 0 10px", cursor: "pointer",
+                    fontFamily: "var(--font-display)", fontSize: fs.body, fontWeight: on ? 700 : 500,
+                    color: on ? C("chalk") : C("ash"),
+                    borderBottom: `2px solid ${on ? C("lime") : "transparent"}`,
+                    marginBottom: -1,
+                  }}
+                >
+                  {t(x.labelKey)}
+                </button>
+              );
+            })}
           </div>
         )}
 
         {shown === "overview" && (
-          <Overview data={data} compare={compare} name={name} />
+          <Overview data={data} compare={compare} name={name} onCompare={runCompare} busy={busy.is("c")} />
         )}
 
         {shown === "coaching" && coach && (
@@ -301,7 +334,13 @@ export default function UserPage({
 
 /* ── OVERVIEW ─────────────────────────────────────────────────────────────── */
 
-function Overview({ data, compare, name }: { data: UserPageResponse; compare: CompareResult | null; name: string }) {
+function Overview({ data, compare, name, onCompare, busy }: {
+  data: UserPageResponse;
+  compare: CompareResult | null;
+  name: string;
+  onCompare: () => void;
+  busy: boolean;
+}) {
   const { t } = useLang();
   const stats = data.stats;
 
@@ -343,6 +382,21 @@ function Overview({ data, compare, name }: { data: UserPageResponse; compare: Co
             ))}
           </div>
         </>
+      )}
+
+      {/* COMPARE — an expander, at the foot of the figures it compares against.
+          It doesn't leave, so it wears no arrow and no ring, and it is ash
+          rather than the accent: the accent is the "go" colour, and an
+          expander never goes anywhere. (CLAUDE.md, the exit grammar.) */}
+      {canCompareWith(data) && !compare && (
+        <button
+          className="pressable"
+          onClick={onCompare}
+          disabled={busy}
+          style={{ display: "block", marginTop: 16, background: "none", border: "none", padding: 0, cursor: "pointer", color: C("ash"), fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.caption }}
+        >
+          {busy ? `${t("w.user.comparing")}` : `＋ ${t("w.user.compareWith")}`}
+        </button>
       )}
 
       {compare && (

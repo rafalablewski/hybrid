@@ -48,11 +48,14 @@ export function Stars({ rating, size = 13 }: { rating: number | null; size?: num
   );
 }
 
-export function SButton({ label, onPress, ghost, tone, small, disabled }: { label: string; onPress?: () => void; ghost?: boolean; tone?: string; small?: boolean; disabled?: boolean }) {
+/** `full` stretches the button to its container and centres the label — for a
+ *  surface whose whole offer is ONE verb (a person's page), so the action never
+ *  has to be hunted for among equals. Web twin: Btn's `full` in social-ui.tsx. */
+export function SButton({ label, onPress, ghost, tone, small, disabled, full }: { label: string; onPress?: () => void; ghost?: boolean; tone?: string; small?: boolean; disabled?: boolean; full?: boolean }) {
   const C = useTheme().palette;
   const t = tone ?? C.lime;
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={{ paddingVertical: small ? 7 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: 999, borderWidth: 1, borderColor: ghost ? C.line : t, backgroundColor: ghost ? "transparent" : t, opacity: disabled ? 0.5 : 1 }}>
+    <Pressable onPress={onPress} disabled={disabled} style={{ paddingVertical: small ? 7 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: 999, borderWidth: 1, borderColor: ghost ? C.line : t, backgroundColor: ghost ? "transparent" : t, opacity: disabled ? 0.5 : 1, alignSelf: full ? "stretch" : undefined, alignItems: full ? "center" : undefined }}>
       <Text style={{ color: ghost ? C.chalk : C.onAccent, fontFamily: F.bold, fontWeight: "700", fontSize: small ? 12 : 13 }}>{label}</Text>
     </Pressable>
   );

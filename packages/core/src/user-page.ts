@@ -148,45 +148,63 @@ export function resolveUserPageTab(
   return tabs.some((t) => t.id === want) ? (want as UserPageTabId) : "overview";
 }
 
-/* ── ACTIONS ─────────────────────────────────────────────────────────────── */
+/* ── THE ONE ACTION ──────────────────────────────────────────────────────── */
 
-/** The verbs the page offers, in the order both clients render them. */
-export type UserPageActionId = "follow" | "unfollow" | "requested" | "compare" | "coaching" | "share";
+/**
+ * ONE BUTTON. That is the whole rule, and it exists because the first cut broke
+ * it: the page carried FOUR buttons (Follow, See coaching, Compare, Share) in a
+ * row, immediately above THREE tab chips of the identical shape — seven
+ * pill-shaped controls, in two rows, in one costume, where two of the rows were
+ * not even the same kind of thing. Buttons act; tabs navigate. Dressing them
+ * alike made the page read as a field of equal choices with no centre.
+ *
+ * So each of the other three was put where it actually belongs:
+ *
+ *   • SEE COACHING was deleted outright. It navigated to the Coaching TAB —
+ *     which is on screen, one row below, already. A second door to a room you
+ *     can already see the door to is not an affordance, it is noise.
+ *   • COMPARE moved INSIDE Overview, as an expander at the foot of the stats it
+ *     fills in. It was never a page-level verb: it doesn't leave, it grows a
+ *     panel in place (see the app's exit grammar — bare ＋/− grows, a ringed
+ *     glyph leaves), and it belongs beside the figures it compares against.
+ *   • SHARE moved to the hero rail's trailing slot, which is the app's own home
+ *     for a screen-level utility, and where a share control sits in every OS
+ *     the app ships on.
+ *
+ * What is left is the single verb the page exists to offer: the follow state.
+ */
+export type UserPageActionId = "follow" | "unfollow" | "requested";
 
 export interface UserPageAction {
   id: UserPageActionId;
   labelKey: string;
-  /** Primary = filled; the rest are ghosts. Exactly one action is ever
-   *  primary, so the page has one obvious next move. */
+  /** Filled and unmissable. Only an OFFER is primary: once you already follow
+   *  them the button stays, quietly, because "unfollow" is a thing the page
+   *  must let you do and never a thing it should urge. */
   primary: boolean;
 }
 
-/**
- * Which actions this viewer gets on this page.
- *
- * The follow verb is the primary one for a stranger; once you already follow
- * them there is no primary, because "unfollow" is not something a page should
- * be urging. Compare needs their results, so it sits behind the same gate the
- * stats do. Coaching jumps to the coaching tab — it only appears when there is
- * a coaching tab to jump to and the viewer isn't already their client.
- */
-export function userPageActions(
-  d: Pick<UserPageResponse, "relation" | "followState" | "canViewResults" | "coach">,
-): UserPageAction[] {
+/** The page's one button — `null` on your own page, which has nothing to offer
+ *  you that the rail and the tabs don't already carry. */
+export function userPageAction(
+  d: Pick<UserPageResponse, "relation" | "followState">,
+): UserPageAction | null {
   const rel = userPageRelation(d);
-  const out: UserPageAction[] = [];
-  if (rel === "self") {
-    out.push({ id: "share", labelKey: "w.user.share", primary: false });
-    return out;
+  if (rel === "self") return null;
+  if (rel === "requested") return { id: "requested", labelKey: "w.social.requested", primary: false };
+  if (followsUser(rel)) {
+    return { id: "unfollow", labelKey: rel === "following" ? "w.social.following" : "w.social.friends", primary: false };
   }
-  if (rel === "requested") out.push({ id: "requested", labelKey: "w.social.requested", primary: false });
-  else if (followsUser(rel)) out.push({ id: "unfollow", labelKey: rel === "following" ? "w.social.following" : "w.social.friends", primary: false });
-  else out.push({ id: "follow", labelKey: rel === "follower" ? "w.social.followBack" : "w.social.follow", primary: true });
+  return { id: "follow", labelKey: rel === "follower" ? "w.social.followBack" : "w.social.follow", primary: true };
+}
 
-  if (d.coach && !d.coach.isMyCoach) out.push({ id: "coaching", labelKey: "w.user.seeCoaching", primary: false });
-  if (d.canViewResults) out.push({ id: "compare", labelKey: "w.social.compare", primary: false });
-  out.push({ id: "share", labelKey: "w.user.share", primary: false });
-  return out;
+/** Whether Overview offers the head-to-head expander. It reads their results,
+ *  so it sits behind the same gate the stats do, and there is nothing to
+ *  compare yourself against on your own page. */
+export function canCompareWith(
+  d: Pick<UserPageResponse, "relation" | "followState" | "canViewResults">,
+): boolean {
+  return d.canViewResults && userPageRelation(d) !== "self";
 }
 
 /** Only an ACTIVE client of the coach may review them, and never themselves —

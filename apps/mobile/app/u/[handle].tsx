@@ -9,8 +9,9 @@ import {
   fs,
   leading,
   tracking,
+  canCompareWith,
   resolveUserPageTab,
-  userPageActions,
+  userPageAction,
   userPageRelation,
   userPageTabs,
   userShare,
@@ -30,11 +31,12 @@ import type {
   UserPageTabId,
 } from "@hybrid/core";
 import { F, Loading, PressScale as Pressable, serifIf } from "../../lib/ui";
-import { AuroraScreen, ACard, AChip, cardStack } from "../../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack } from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useConfirm } from "../../components/aurora/confirm";
+import { HeroAccessory } from "../../components/aurora/hero";
 import {
   blockUser, enrollProgram, follow, getCompare, getUserPage, postReview, reportTarget, toggleKudos, unfollow,
 } from "../../lib/social-api";
@@ -121,12 +123,18 @@ export default function UserScreen() {
     return <AuroraScreen hero={hero}><Loading /></AuroraScreen>;
   }
 
-  const actions = userPageActions(data);
+  const action = userPageAction(data);
   const coach = data.coach;
   const label = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const, color: C.ash };
 
   return (
-    <AuroraScreen hero={hero}>
+    <AuroraScreen
+      hero={hero}
+      /* SHARE lives in the rail's trailing slot — the app's own home for a
+         screen-level utility, and where iOS puts it. It used to be a fourth
+         button in a row of four, which is how a page ends up with no centre. */
+      accessory={<HeroAccessory label={t("w.user.share")} onPress={doShare} onDark={false} />}
+    >
       {/* ── WHO ── the person, at the size a page allows. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
         <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} />
@@ -164,27 +172,56 @@ export default function UserScreen() {
         ))}
       </View>
 
-      {/* ── THE VERBS ── ordered by core, so both clients offer the same ones. */}
-      <View style={{ flexDirection: "row", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-        {actions.map((a) => {
-          const l = t(a.labelKey);
-          if (a.id === "follow") return <SButton key={a.id} label={l} small disabled={busy === "f"} onPress={() => run("f", async () => { await follow({ handle }); await load(); })} />;
-          if (a.id === "unfollow") return <SButton key={a.id} label={`${l} ✓`} ghost small disabled={busy === "f"} onPress={() => run("f", async () => { await unfollow({ handle }); await load(); })} />;
-          if (a.id === "requested") return <SButton key={a.id} label={l} ghost small disabled />;
-          if (a.id === "compare") return <SButton key={a.id} label={l} ghost small onPress={async () => { const r = await getCompare(handle); setCmp(r.compare ?? null); }} />;
-          if (a.id === "coaching") return <SButton key={a.id} label={l} ghost small onPress={() => setTab("coaching")} />;
-          return <SButton key={a.id} label={l} ghost small onPress={doShare} />;
-        })}
-      </View>
-
-      {/* ── THE TABS ── a person with one tab gets no tab row at all. */}
-      {tabs.length > 1 ? (
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
-          {tabs.map((x) => <AChip key={x.id} label={t(x.labelKey)} selected={shown === x.id} onPress={() => setTab(x.id)} />)}
+      {/* ── THE ONE BUTTON ── full width, because a page with one action
+          should not make you look for it. Core decides which verb it is. */}
+      {action ? (
+        <View style={{ marginTop: 14 }}>
+          <SButton
+            label={action.id === "unfollow" ? `${t(action.labelKey)} ✓` : t(action.labelKey)}
+            ghost={!action.primary}
+            full
+            disabled={busy === "f" || action.id === "requested"}
+            onPress={action.id === "follow"
+              ? () => run("f", async () => { await follow({ handle }); await load(); })
+              : action.id === "unfollow"
+                ? () => run("f", async () => { await unfollow({ handle }); await load(); })
+                : undefined}
+          />
         </View>
       ) : null}
 
-      {shown === "overview" ? <Overview data={data} cmp={cmp} name={name} /> : null}
+      {/* ── THE TABS ── navigation, and therefore NOT buttons: text on a rule,
+          with the accent under the one you're on. They used to be chips under a
+          row of pills, which made a field of seven equal-looking controls out
+          of two different kinds of thing. */}
+      {tabs.length > 1 ? (
+        <View style={{ flexDirection: "row", gap: 22, marginTop: 20, borderBottomWidth: 1, borderBottomColor: C.line }}>
+          {tabs.map((x) => {
+            const on = shown === x.id;
+            return (
+              <Pressable
+                key={x.id}
+                onPress={() => setTab(x.id)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: on }}
+                style={{ paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent", marginBottom: -1 }}
+              >
+                <Text style={{ fontFamily: on ? F.bold : F.reg, fontSize: fs.body, color: on ? C.chalk : C.ash }}>{t(x.labelKey)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+
+      {shown === "overview" ? (
+        <Overview
+          data={data}
+          cmp={cmp}
+          name={name}
+          busy={busy === "c"}
+          onCompare={() => run("c", async () => { const r = await getCompare(handle); setCmp(r.compare ?? null); })}
+        />
+      ) : null}
       {shown === "coaching" && coach ? <Coaching data={data} handle={handle} onReload={load} /> : null}
       {shown === "activity" ? (
         data.activity.length === 0 ? (
@@ -222,7 +259,13 @@ export default function UserScreen() {
 
 /* ── OVERVIEW ─────────────────────────────────────────────────────────────── */
 
-function Overview({ data, cmp, name }: { data: UserPageResponse; cmp: CompareResult | null; name: string }) {
+function Overview({ data, cmp, name, onCompare, busy }: {
+  data: UserPageResponse;
+  cmp: CompareResult | null;
+  name: string;
+  onCompare: () => void;
+  busy: boolean;
+}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const stats = data.stats;
@@ -266,6 +309,18 @@ function Overview({ data, cmp, name }: { data: UserPageResponse; cmp: CompareRes
             </View>
           ))}
         </>
+      ) : null}
+
+      {/* COMPARE — an expander, at the foot of the figures it compares against.
+          It doesn't leave, so it wears no arrow and no ring, and it is ash
+          rather than the accent: the accent is the "go" colour, and an expander
+          never goes anywhere. (CLAUDE.md, the exit grammar.) */}
+      {canCompareWith(data) && !cmp ? (
+        <Pressable onPress={onCompare} disabled={busy} style={{ alignSelf: "flex-start", marginTop: 16 }}>
+          <Text style={{ color: C.ash, fontFamily: F.bold, fontSize: fs.caption }}>
+            {busy ? t("w.user.comparing") : `＋ ${t("w.user.compareWith")}`}
+          </Text>
+        </Pressable>
       ) : null}
 
       {cmp ? (

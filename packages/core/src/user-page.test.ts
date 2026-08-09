@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
+  canCompareWith,
   canEnrolProgram,
   canReviewCoach,
   followsUser,
   isOwnUserPage,
   resolveUserPageTab,
-  userPageActions,
+  userPageAction,
   userPagePath,
   userPageRelation,
   userPageTabs,
@@ -89,33 +90,42 @@ describe("resolveUserPageTab", () => {
   });
 });
 
-describe("userPageActions", () => {
-  it("a stranger's page leads with Follow, and it is the only primary", () => {
-    const a = userPageActions(page());
-    expect(a[0]).toMatchObject({ id: "follow", primary: true });
-    expect(a.filter((x) => x.primary)).toHaveLength(1);
+describe("the ONE action", () => {
+  it("a stranger's page leads with Follow, and it is the primary", () => {
+    expect(userPageAction(page())).toMatchObject({ id: "follow", primary: true });
   });
   it("someone who follows me offers Follow back", () => {
-    expect(userPageActions(page({ relation: "follower" }))[0].labelKey).toBe("w.social.followBack");
+    expect(userPageAction(page({ relation: "follower" }))!.labelKey).toBe("w.social.followBack");
   });
-  it("a followed page has no primary — unfollow is never urged", () => {
-    const a = userPageActions(page({ relation: "following", followState: "following" }));
-    expect(a[0].id).toBe("unfollow");
-    expect(a.some((x) => x.primary)).toBe(false);
+  it("a followed page keeps the button but stops urging it", () => {
+    const a = userPageAction(page({ relation: "following", followState: "following" }))!;
+    expect(a.id).toBe("unfollow");
+    expect(a.primary).toBe(false);
   });
   it("a pending request shows Requested, not Follow", () => {
-    expect(userPageActions(page({ followState: "requested" }))[0].id).toBe("requested");
+    expect(userPageAction(page({ followState: "requested" }))!.id).toBe("requested");
   });
-  it("Compare sits behind the results gate", () => {
-    expect(userPageActions(page()).some((x) => x.id === "compare")).toBe(true);
-    expect(userPageActions(page({ canViewResults: false })).some((x) => x.id === "compare")).toBe(false);
+  it("my own page has no button at all", () => {
+    expect(userPageAction(page({ relation: "self" }))).toBeNull();
   });
-  it("the coaching jump appears for a coach, and not once you are their client", () => {
-    expect(userPageActions(page({ coach: coach() })).some((x) => x.id === "coaching")).toBe(true);
-    expect(userPageActions(page({ coach: coach({ isMyCoach: true }) })).some((x) => x.id === "coaching")).toBe(false);
+  it("is ONE control — the coaching jump and share are not page verbs", () => {
+    // The first cut returned four buttons above three identically-shaped tab
+    // chips. Coaching duplicated a tab that is already on screen; share belongs
+    // in the hero rail; compare belongs inside Overview. This asserts the
+    // signature that made those impossible: one action, or none.
+    const a = userPageAction(page({ coach: coach() }));
+    expect(a).not.toBeNull();
+    expect(Object.keys(a!)).toEqual(["id", "labelKey", "primary"]);
   });
-  it("my own page offers only Share — no follow, no compare with myself", () => {
-    expect(userPageActions(page({ relation: "self" })).map((x) => x.id)).toEqual(["share"]);
+});
+
+describe("canCompareWith", () => {
+  it("sits behind the results gate", () => {
+    expect(canCompareWith(page())).toBe(true);
+    expect(canCompareWith(page({ canViewResults: false }))).toBe(false);
+  });
+  it("is absent on your own page — there is no head-to-head with yourself", () => {
+    expect(canCompareWith(page({ relation: "self" }))).toBe(false);
   });
 });
 
