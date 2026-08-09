@@ -90,11 +90,14 @@ export interface UserPageResponse extends Degradable, ApiError {
    *  renders, so a person's page and the stream can't describe one workout two
    *  ways. */
   activity: FeedItemView[];
-  /** True when the timeline hit its cap and there is older training the page is
-   *  NOT showing. The page says so out loud: a list that stops without saying
-   *  it stopped reads as "this is everything they have done", which for an
-   *  athlete of ten years is a lie by omission. */
-  activityTruncated: boolean;
+  /** Feed to /api/social/user/[handle]/activity for the next page; `null` when
+   *  the timeline has been walked to its end. */
+  activityCursor: string | null;
+  /** The timeline reached the SESSION CAP rather than the athlete's actual
+   *  first workout — so "no more pages" means "no more we can reach", not "no
+   *  more exist". The page says which of the two it is, because a list that
+   *  stops without saying why reads as "this is everything they have done". */
+  activityCapped: boolean;
 }
 
 /** GET /api/social/user/[handle]/people?tab=… — one side of someone's follow
@@ -105,12 +108,22 @@ export type PeopleTab = "followers" | "following";
 export interface UserPagePeopleResponse extends Degradable, ApiError {
   tab: PeopleTab;
   people: PersonCard[];
-  /** More than the page returns. Same honesty rule as the timeline. */
-  truncated: boolean;
+  /** Feed back as `?cursor=` for the next page; `null` at the end of the list. */
+  nextCursor: string | null;
 }
 
-/** How many people one read returns. */
-export const PEOPLE_PAGE_MAX = 100;
+/** How many people one read returns. Smaller than the old one-shot cap of 100:
+ *  with a cursor there is no reason to pay for a hundred rows nobody scrolled
+ *  to, and a short page reaches the screen sooner. */
+export const PEOPLE_PAGE_MAX = 30;
+
+/** How many timeline items one read returns. */
+export const ACTIVITY_PAGE_MAX = 15;
+
+/** The ceiling on how far back a person's timeline can be walked — the same cap
+ *  `allSessionsFor` applies when loading their history. Named here so the
+ *  clients can say "this is as far as we go" honestly. */
+export const ACTIVITY_SESSION_CAP = 400;
 
 /* ── RELATION ────────────────────────────────────────────────────────────── */
 

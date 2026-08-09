@@ -93,6 +93,7 @@ export * from "./feed-live";
 export * from "./feed-rank";
 export * from "./feed-card";
 export * from "./feed-actions";
+export * from "./feed-cursor";
 export * from "./feed-workout";
 export * from "./social";
 export * from "./user-page";
