@@ -457,6 +457,16 @@ export const SHARED_ELEMENTS = {
    *  identically in two places to make that guarantee, and a shared element
    *  that lies mid-flight is worse than a hard cut. */
   sessionHero: "hybrid-session-hero",
+  /** A GOAL/PLAN COVER, tile-sized in the library ⇄ the same poster at screen
+   *  scale on the screen it opens.
+   *
+   *  The only pair in the app that wants FULL MATCHED GEOMETRY rather than a
+   *  travelling figure, and it is the one that earns it: the tile and the hero
+   *  are the same recipe (core `goalCoverView` / `planCoverView` — one accent
+   *  wash, one ghost glyph, one display title) drawn at two sizes. The Plans
+   *  stack already calls itself "one object at three compressions"; this is the
+   *  compression happening in front of you instead of being cut to. */
+  planCover: "hybrid-plan-cover",
 } as const;
 
 export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELEMENTS];

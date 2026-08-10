@@ -63,6 +63,38 @@ export function runHubTransition(apply: () => void): void {
 }
 
 /**
+ * A move INSIDE one screen that still opens or closes a thing — the Plans stack
+ * (library → goal → plan detail and back), which is a real navigation the shell
+ * knows nothing about because it lives in the screen's own state.
+ *
+ * Without this there was nowhere to hang a shared element on the app's best
+ * candidate for one: a goal tile and the screen it opens are the SAME cover
+ * recipe at two sizes (core `goalCoverView`), and the move between them was a
+ * hard cut. `runScreenTransition` cannot serve it — nothing about the shell's
+ * `screen` changes — so this is the same machinery with the direction fixed at
+ * `replace`: the surface cross-dissolves while the armed cover travels, which
+ * is the shared-element rule anyway (the thing in flight owns the motion).
+ */
+export function runStackTransition(apply: () => void): void {
+  const doc = typeof document !== "undefined" ? document.documentElement : null;
+  const start =
+    typeof document !== "undefined"
+      ? (document as Document & { startViewTransition?: (cb: () => void) => unknown }).startViewTransition
+      : undefined;
+  if (!doc || typeof start !== "function") {
+    apply();
+    releaseSharedElements();
+    return;
+  }
+  doc.dataset.navKind = "replace";
+  doc.dataset.navDir = "none";
+  const transition = start.call(document, () => {
+    flushSync(apply);
+  }) as { finished?: Promise<unknown> } | undefined;
+  void Promise.resolve(transition?.finished).catch(() => {}).finally(releaseSharedElements);
+}
+
+/**
  * Run one screen change as a transition. Shared by the forward setter and the
  * Back/Forward handler, so a history move animates exactly like the navigation
  * that created it — only inverted.

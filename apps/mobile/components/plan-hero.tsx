@@ -5,10 +5,11 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HERO, HERO_INK, HERO_INLINE_TITLE, heroGeometry, heroRailPin, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { HERO, HERO_INK, HERO_INLINE_TITLE, SHARED_ELEMENTS, heroGeometry, heroRailPin, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
 import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
+import { useSharedSurfaceTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 import { leading, fs, F, serifIf, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
@@ -188,6 +189,7 @@ export function CoverScreen({
   rail,
   dock,
   scrollApi,
+  shared,
   children,
 }: {
   cover: CoverSpec;
@@ -199,6 +201,11 @@ export function CoverScreen({
   dock?: ReactNode;
   /** filled with the scroll handle, so a `rail` can jump the content. */
   scrollApi?: { current: CoverScreenApi | null };
+  /** This cover is the DESTINATION of the tile that opened it — the same recipe
+   *  at two sizes, so the tile grows into it rather than the screen cutting to
+   *  it. The clone flies OVER this cover and dissolves onto it, so a screen with
+   *  no armed source simply never sees a flight. */
+  shared?: boolean;
   children?: ReactNode;
 }) {
   const { palette: C, scheme } = useTheme();
@@ -302,6 +309,10 @@ export function CoverScreen({
   // SVG gradient ids are document-global; scope per mount so stacked covers
   // (push navigation) can't cross-reference. useId's ":" is illegal in url().
   const hotspotId = `cover-hotspot-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  // The tile that opened this screen grows into THIS box. Measured on mount and
+  // claimed against whatever was armed; nothing armed means no flight, and the
+  // cover was already drawn where it belongs either way.
+  const { ref: coverRef } = useSharedSurfaceTarget(shared ? SHARED_ELEMENTS.planCover : "");
   return (
     <View style={{ flex: 1, backgroundColor: C.ink }}>
       {/* the cover is fixed-dark even in the light theme → light status icons */}
@@ -392,6 +403,7 @@ export function CoverScreen({
 
           {/* ── the cover: pinned overlay, slides up by exactly the scroll ── */}
           <Animated.View
+            ref={coverRef}
             pointerEvents="box-none"
             style={{ position: "absolute", top: 0, left: 0, right: 0, height: heroH, zIndex: 20, overflow: "hidden", backgroundColor: COVER_INK, transform: [{ translateY: heroShift }] }}
           >

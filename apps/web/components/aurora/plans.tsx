@@ -2,7 +2,7 @@
 
 import { CARD_PAD, accentText } from "@/lib/ui";
 import { useEffect, useRef, useState } from "react";
-import { fs, space, DOCK_RAIL, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
+import { fs, space, DOCK_RAIL, GOAL_TREE, SHARED_ELEMENTS, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRevalidate } from "@/lib/use-invalidate";
@@ -12,6 +12,8 @@ import ProgramDays from "../program-days";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { CoverHero, useHeroCollapse, COVER_INK, COVER_BAR } from "./cover-hero";
+import { armSharedElement } from "@/lib/shared-element";
+import { runStackTransition } from "@/lib/use-screen-transition";
 import { DockRail, DockChip } from "./dock-rail";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -38,11 +40,16 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
 
   if (plan && goal) {
     const program = programFor(plan.id);
-    if (program) return <PercentDetail goal={goal} plan={plan} program={program} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
-    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
+    const back = () => runStackTransition(() => setPlanId(null));
+    if (program) return <PercentDetail goal={goal} plan={plan} program={program} back={back} onEnrolled={onEnrolled} />;
+    return <Detail goal={goal} plan={plan} back={back} onEnrolled={onEnrolled} />;
   }
-  if (goal) return <List goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
-  return <Library query={query} setQuery={setQuery} pick={setGoalId} />;
+  // Every move in the stack runs as a real transition, so the cover armed by the
+  // tile has something to fly during. Back too: the poster shrinks to the tile
+  // it came from, which is what makes the pair a relationship rather than an
+  // effect on the way in.
+  if (goal) return <List goal={goal} pick={(id) => runStackTransition(() => setPlanId(id))} back={() => runStackTransition(() => { setGoalId(null); setPlanId(null); })} />;
+  return <Library query={query} setQuery={setQuery} pick={(id) => runStackTransition(() => setGoalId(id))} />;
 }
 
 /** The library ROOT — its OWN component, not an early-return branch of
@@ -202,7 +209,16 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
   const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <button className="pressable"
-      onClick={onOpen}
+      // THE TILE IS THE POSTER, SEEN SMALL. Arming it at click time makes the
+      // browser interpolate this 172×140 tile into the full-bleed cover on the
+      // screen it opens, instead of cutting between two drawings of the same
+      // recipe. Armed imperatively rather than through state because
+      // startViewTransition snapshots synchronously — a state update would not
+      // have committed by then (lib/shared-element documents this).
+      onClick={(e) => {
+        armSharedElement(e.currentTarget, SHARED_ELEMENTS.planCover);
+        onOpen();
+      }}
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
@@ -255,7 +271,7 @@ function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void
   const rule = `color-mix(in srgb, ${C("chalk")} 14%, transparent)`;
   return (
     <div ref={rootRef} style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <CoverHero cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} />
+      <CoverHero cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} shared />
       {goal.plans.length === 0 && <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 16 }}>{t("w.train.plans.noPlansYet")}</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg, marginTop: 16 }}>
         {goal.plans.map((p) => {

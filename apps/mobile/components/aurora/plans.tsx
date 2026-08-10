@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Animated, View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { useSharedSurfaceSource } from "../../lib/shared-element";
 import { ACard, AField, GUTTER, RADIUS, withAlpha, DockRail, DockChip } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
@@ -214,16 +215,15 @@ function ShelfTrack({ x, view, content }: { x: Animated.Value; view: number; con
  *  tapping one expands it into the same poster at screen scale. A goal with no
  *  authored programs keeps its colour but at 45%, and says so, instead of
  *  printing "0 plans". */
-function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
-  const { palette: C, scheme } = useTheme();
-  const cover = goalCoverView(goal);
-  const reduce = useReducedMotion();
+/** The tile's FACE, drawn once and used twice: by the tile itself, and by the
+ *  clone that flies into the goal screen. Two drawings of the same recipe is
+ *  precisely the drift this codebase keeps out of clients, and a flying clone
+ *  that differs from the thing it flew off is the most visible version of it. */
+function GoalTileFace({ cover, pressed }: { cover: ReturnType<typeof goalCoverView>; pressed: boolean }) {
+  const { scheme } = useTheme();
   return (
-    <Pressable
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`${goal.name} – ${cover.count}`}
-      style={({ pressed }) => ({
+    <View
+      style={{
         width: TILE_W,
         height: TILE_H,
         borderRadius: RADIUS.card,
@@ -233,27 +233,48 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
         backgroundColor: TILE_INK,
         padding: 12,
         justifyContent: "space-between",
-        transform: [{ scale: pressed && !reduce ? 0.97 : 1 }],
-      })}
+      }}
+      pointerEvents="none"
     >
-      {({ pressed }) => (
-        <>
-          <View style={[StyleSheet.absoluteFill, { opacity: cover.ready ? 1 : 0.45 }]} pointerEvents="none">
-            {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
-                15% @ 46% → 0x26, then ink) — web parity: plans.tsx tile */}
-            <LinearGradient colors={[`${cover.accent}85`, `${cover.accent}26`, `${cover.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
-          </View>
-          <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
-          <Text
-            pointerEvents="none"
-            style={{ position: "absolute", top: -12, right: -10, fontSize: 96, lineHeight: 100, color: `rgba(255,255,255,${cover.ready ? 0.09 : 0.05})`, transform: [{ translateX: pressed && !reduce ? -5 : 0 }, { translateY: pressed && !reduce ? 4 : 0 }] }}
-          >
-            {cover.glyph}
-          </Text>
-          <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.9, color: cover.ready ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>{cover.count}</Text>
-          <Text numberOfLines={3} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: 18, letterSpacing: -0.5, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
-        </>
-      )}
+      <View style={[StyleSheet.absoluteFill, { opacity: cover.ready ? 1 : 0.45 }]} pointerEvents="none">
+        {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
+            15% @ 46% → 0x26, then ink) — web parity: plans.tsx tile */}
+        <LinearGradient colors={[`${cover.accent}85`, `${cover.accent}26`, `${cover.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
+      </View>
+      <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      <Text
+        pointerEvents="none"
+        style={{ position: "absolute", top: -12, right: -10, fontSize: 96, lineHeight: 100, color: `rgba(255,255,255,${cover.ready ? 0.09 : 0.05})`, transform: [{ translateX: pressed ? -5 : 0 }, { translateY: pressed ? 4 : 0 }] }}
+      >
+        {cover.glyph}
+      </Text>
+      <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.9, color: cover.ready ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>{cover.count}</Text>
+      <Text numberOfLines={3} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: 18, letterSpacing: -0.5, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
+    </View>
+  );
+}
+
+function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
+  const cover = goalCoverView(goal);
+  const reduce = useReducedMotion();
+  // THE TILE IS THE POSTER, SEEN SMALL — so opening a goal GROWS it rather than
+  // cutting to a second drawing of the same recipe at screen scale. Armed on
+  // press with the tile's own face; the goal screen's cover claims it on mount
+  // and the clone flies between the two measured boxes.
+  const armCover = useSharedSurfaceSource();
+  const tileRef = useRef<View | null>(null);
+  return (
+    <Pressable
+      ref={tileRef}
+      onPress={() => {
+        armCover(SHARED_ELEMENTS.planCover, tileRef.current, <GoalTileFace cover={cover} pressed={false} />);
+        onOpen();
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={`${goal.name} – ${cover.count}`}
+      style={({ pressed }) => ({ transform: [{ scale: pressed && !reduce ? 0.97 : 1 }] })}
+    >
+      {({ pressed }) => <GoalTileFace cover={cover} pressed={pressed && !reduce} />}
     </Pressable>
   );
 }
@@ -290,7 +311,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
   const { t } = useLang();
   const cover = goalCoverView(goal);
   return (
-    <CoverScreen cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} backLabel={t("w.train.plans.allGoals")} back={back}>
+    <CoverScreen cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} backLabel={t("w.train.plans.allGoals")} back={back} shared>
       <View style={{ marginTop: 10 }}>
         {goal.plans.length === 0 && <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, lineHeight: leading(fs.bodyLg, "snug") }}>{t("w.train.plans.noPlansYet")}</Text>}
         {goal.plans.map((p) => {

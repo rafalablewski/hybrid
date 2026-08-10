@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { HERO, HERO_INK, HERO_INLINE_TITLE, fs, heroGeometry } from "@hybrid/core";
+import { HERO, HERO_INK, HERO_INLINE_TITLE, SHARED_ELEMENTS, fs, heroGeometry } from "@hybrid/core";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./hero";
+import { sharedElementStyle } from "@/lib/shared-element";
 
 /**
  * The COVER — the Explore PlanCover recipe at screen scale, full-bleed at the
@@ -137,7 +138,7 @@ export interface CoverSpec {
  *  columns directly on the ink) + the one-line blurb.
  *  `back` is optional: the Plans root is a top-level screen with nowhere to go
  *  back to, so it renders the bar with the label alone. */
-export function CoverHero({ cover, back, backLabel, rail, heroRef }: { cover: CoverSpec; back?: () => void; backLabel?: string; rail?: ReactNode; heroRef: React.RefObject<HTMLDivElement | null> }) {
+export function CoverHero({ cover, back, backLabel, rail, heroRef, shared }: { cover: CoverSpec; back?: () => void; backLabel?: string; rail?: ReactNode; heroRef: React.RefObject<HTMLDivElement | null>; shared?: boolean }) {
   const accent = cover.accent;
   const library = cover.variant === "library";
   const plate = cover.variant === "recipe";
@@ -152,7 +153,13 @@ export function CoverHero({ cover, back, backLabel, rail, heroRef }: { cover: Co
   const rule = `color-mix(in srgb, ${C("chalk")} 18%, transparent)`;
   return (
     <>
-      <div ref={heroRef} style={{ position: "sticky", top: -COVER_DELTA, zIndex: 30, height: COVER_H, margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 12px)) 0", overflow: "hidden", background: COVER_INK, color: "#fff" }}>
+      {/* `shared` makes this cover the DESTINATION of the tile that opened it —
+          the same recipe at two sizes, so the tile grows into the poster
+          instead of the screen cutting to it. The destination declares the name
+          statically because it is alone on its screen; the tile arms itself at
+          click time (lib/shared-element). A screen with no matching source
+          simply never sees a source armed, and the name is inert. */}
+      <div ref={heroRef} style={{ position: "sticky", top: -COVER_DELTA, zIndex: 30, height: COVER_H, margin: "calc(-1 * var(--page-pad-top, 16px)) calc(-1 * var(--page-pad-x, 12px)) 0", overflow: "hidden", background: COVER_INK, color: "#fff", ...sharedElementStyle(SHARED_ELEMENTS.planCover, !!shared) }}>
         {/* duotone wash bleeding from the top corner (Explore recipe) —
             mirrored to the LEFT on the goal emblem so the light source itself
             tells you which level you're on, and run at a SOFTER mix on the

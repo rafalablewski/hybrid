@@ -768,7 +768,10 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
 ::view-transition-new(hybrid-exercise-hero),
 ::view-transition-group(hybrid-session-hero),
 ::view-transition-old(hybrid-session-hero),
-::view-transition-new(hybrid-session-hero) {
+::view-transition-new(hybrid-session-hero),
+::view-transition-group(hybrid-plan-cover),
+::view-transition-old(hybrid-plan-cover),
+::view-transition-new(hybrid-plan-cover) {
   animation-duration: var(--d-zoom);
   animation-timing-function: var(--e-zoom);
 }
@@ -778,6 +781,13 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
 ::view-transition-old(hybrid-session-hero) { animation-name: motionDissolveOut; animation-duration: var(--d-fast); }
 ::view-transition-new(hybrid-exercise-hero),
 ::view-transition-new(hybrid-session-hero) { animation-name: motionDissolveIn;  animation-duration: var(--d-fast); }
+/* The COVER is the exception, and deliberately: it is FULL MATCHED GEOMETRY, not
+   a figure travelling. A 172×140 tile becoming a full-bleed poster changes
+   aspect as well as size, so the two snapshots must cross-fade across the WHOLE
+   flight — snapping the new one in early (the --d-fast treatment above) would
+   show it at the tile's aspect for most of the way. */
+::view-transition-old(hybrid-plan-cover) { animation-name: motionDissolveOut; }
+::view-transition-new(hybrid-plan-cover) { animation-name: motionDissolveIn; }
 
 /* ── SHEET PRESENTATION ──────────────────────────────────────────────
    The presenting screen recedes so the sheet sits on a real stack instead of
