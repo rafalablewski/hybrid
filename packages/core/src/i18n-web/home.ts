@@ -251,7 +251,14 @@ export const web_home = {
     "w.home.act.recordsTitle": "Records",
     // ENDURANCE — the section's opener. Scoped w.home.endw.* so it can never
     // be mistaken for the w.home.end.* lane strings.
-    "w.home.endw.empty": "No endurance logged in this period.",
+    // TWO WORDS, and both of them new. "No endurance logged in this period"
+    // borrowed all six: the section headline above already says "Endurance",
+    // and "in this period" is the span printed on the same row. The empty state
+    // also drops the CARD around it — a card carries a thing, and an empty
+    // period carries none (same rule as the bordered-box exit). It keeps its
+    // PLACE, which is what the block's never-disappear doctrine actually asked
+    // for; it just stops drawing chrome around a null.
+    "w.home.endw.empty": "Nothing logged",
     // The opener's SENTENCE. It says what the verdict card cannot — how many
     // sports, and which carried them — because the figures it used to print
     // (distance especially, which only these groups ever carry) were that
@@ -332,7 +339,15 @@ export const web_home = {
     // pace, and the block's head cannot be true of all three at once. The old
     // labels named the chart ("Pace trend") or repeated the footer ("Volume –
     // 8 weeks" over "8 weeks"), and the figure's own scope went unsaid.
+    // ONE WINDOW PER LANE. `scopeAll` is now the LANE HEAD's right slot — said
+    // once, above the rail — and every tile label is just its metric. The three
+    // compound strings below keep their wording and their translations, but
+    // they are no longer visible labels: they are the ACCESSIBLE names, where
+    // metric-plus-scope is still exactly right to hear.
     "w.home.end.scopeAll": "All time",
+    "w.home.end.mDistance": "Distance",
+    "w.home.end.mPace": "Pace",
+    "w.home.end.mZones": "Zones",
     "w.home.end.volumeWeek": "Volume – this week",
     "w.home.end.paceLatest": "Pace – latest week",
     "w.home.end.zonesAll": "Zones – all time",
@@ -1414,7 +1429,7 @@ export const web_home = {
     "w.home.act.empty": "Nic nie zapisano w tym okresie.",
     "w.home.act.hint": "Otwórz liczbę, żeby zobaczyć sesje za nią",
     "w.home.act.recordsTitle": "Rekordy",
-    "w.home.endw.empty": "Brak wytrzymałości w tym okresie.",
+    "w.home.endw.empty": "Nic nie zapisano",
     "w.home.endw.leadOne": "Wszystko to {s}.",
     "w.home.endw.leadMost": "{n} sportów, głównie {s}.",
     "w.home.endw.leadLed": "{n} sportów, na czele {s}.",
@@ -1471,6 +1486,9 @@ export const web_home = {
     "w.home.end.orderRecent": "Najnowsze",
     "w.home.end.orderLongest": "Najdłuższe",
     "w.home.end.scopeAll": "Cała historia",
+    "w.home.end.mDistance": "Dystans",
+    "w.home.end.mPace": "Tempo",
+    "w.home.end.mZones": "Strefy",
     "w.home.end.volumeWeek": "Objętość – ten tydzień",
     "w.home.end.paceLatest": "Tempo – ostatni tydzień",
     "w.home.end.zonesAll": "Strefy – cała historia",
@@ -2501,7 +2519,7 @@ export const web_home = {
     "w.home.act.empty": "In diesem Zeitraum nichts geloggt.",
     "w.home.act.hint": "Öffne eine Zahl für die Sessions dahinter",
     "w.home.act.recordsTitle": "Rekorde",
-    "w.home.endw.empty": "Keine Ausdauer in diesem Zeitraum erfasst.",
+    "w.home.endw.empty": "Nichts erfasst",
     "w.home.endw.leadOne": "Alles davon war {s}.",
     "w.home.endw.leadMost": "{n} Sportarten, überwiegend {s}.",
     "w.home.endw.leadLed": "{n} Sportarten, angeführt von {s}.",
@@ -2558,6 +2576,9 @@ export const web_home = {
     "w.home.end.orderRecent": "Zuletzt",
     "w.home.end.orderLongest": "Längste",
     "w.home.end.scopeAll": "Gesamt",
+    "w.home.end.mDistance": "Distanz",
+    "w.home.end.mPace": "Tempo",
+    "w.home.end.mZones": "Zonen",
     "w.home.end.volumeWeek": "Umfang – diese Woche",
     "w.home.end.paceLatest": "Tempo – letzte Woche",
     "w.home.end.zonesAll": "Zonen – gesamt",

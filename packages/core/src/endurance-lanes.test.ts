@@ -144,6 +144,60 @@ describe("enduranceLanes", () => {
     expect(lane!.last?.secPerKm).toBeNull();
     expect(lane!.paceTrend).toEqual([]);
   });
+
+  it("paces the whole history, which is NOT the latest week's pace", () => {
+    const [run] = enduranceLanes(SESSIONS, { now: NOW });
+    // 31 km in 176 min = 10 560 s → 340.6 s/km across every run ever logged.
+    expect(Math.round(run!.paceAllTime!)).toBe(341);
+    // The tile used to print the newest trend point instead — a different
+    // window from the totals sitting two cards to its left.
+    expect(Math.round(run!.paceTrend[run!.paceTrend.length - 1]!)).toBe(345);
+  });
+
+  it("counts efforts older than the trend's 8-week window", () => {
+    // The lane's charts only reach back LANE_WEEKS; its FIGURES do not. A run
+    // from last winter belongs in an all-time pace and nowhere in the trend.
+    const withOld = [...SESSIONS, effort("r0", "Winter long run", "running", 200, 10, 40)];
+    const [run] = enduranceLanes(withOld, { now: NOW });
+    // 41 km in 216 min = 12 960 s → 316.1 s/km
+    expect(Math.round(run!.paceAllTime!)).toBe(316);
+    // the trend is unchanged: three paced weeks inside the window
+    expect(run!.paceTrend).toHaveLength(3);
+  });
+
+  it("divides the history by the device's seconds, not the whole minutes it draws", () => {
+    // Same fixture as the weekly case: 46:00 + 22:00 typed, 45:20 + 21:30
+    // recorded. Off the typed minutes this reads 4 080 s / 13 km = 314 s/km;
+    // off the watch it is 4 010 / 13 = 308.
+    const week: LoggedSession[] = [
+      { id: "d1", title: "Easy run", startedAt: new Date(NOW - 2 * DAY).toISOString(), blocks: [{ kind: "cardio", name: "Easy run", discipline: "running", distance: 8, minutes: 46, seconds: 2720 }] },
+      { id: "d2", title: "Tempo run", startedAt: new Date(NOW - 3 * DAY).toISOString(), blocks: [{ kind: "cardio", name: "Tempo run", discipline: "running", distance: 5, minutes: 22, seconds: 1290 }] },
+    ] as LoggedSession[];
+    const [run] = enduranceLanes(week, { now: NOW });
+    expect(Math.round(run!.paceAllTime!)).toBe(308);
+  });
+
+  it("ignores efforts that carry no pace, and is null when none do", () => {
+    const timed = {
+      id: "x1",
+      title: "Treadmill",
+      startedAt: new Date(NOW - DAY).toISOString(),
+      blocks: [{ kind: "cardio", name: "Treadmill", discipline: "running", minutes: 30 }],
+    } as LoggedSession;
+    expect(enduranceLanes([timed], { now: NOW })[0]!.paceAllTime).toBeNull();
+    // a timed-only effort must not drag the mean of the paced ones
+    const mixed = [effort("p1", "Easy run", "running", 2, 10, 50), timed];
+    expect(Math.round(enduranceLanes(mixed, { now: NOW })[0]!.paceAllTime!)).toBe(300);
+  });
+
+  it("reconciles with the totals the rail prints beside it", () => {
+    // The whole point of one window: read across the lane and the arithmetic
+    // holds. 1.8 km in 30 min IS 1000 s/km.
+    const [swim] = enduranceLanes([effort("s1", "Threshold 100s", "swimming", 1, 1.8, 30)], { now: NOW });
+    expect(swim!.distanceKm).toBe(1.8);
+    expect(swim!.minutes).toBe(30);
+    expect(Math.round(swim!.paceAllTime!)).toBe(Math.round((30 * 60) / 1.8));
+  });
 });
 
 describe("orderLanes", () => {

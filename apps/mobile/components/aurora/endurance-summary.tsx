@@ -99,6 +99,30 @@ export default function AuroraEnduranceSummary({
 
   const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase" as const };
 
+  /* AN EMPTY PERIOD KEEPS ITS PLACE AND DROPS ITS CHROME.
+   *
+   * The block's never-disappear doctrine (above) is right, and this honours it
+   * — but keeping its PLACE is not the same as keeping its CARD. A border, a
+   * fill, a shadow and 14pt of padding drawn around "nothing happened" is the
+   * bordered-box exit all over again: a card carries a THING, and an empty
+   * period carries none, so the box reads as one more item that turned out to
+   * be blank.
+   *
+   * The kicker pair goes with it. On the populated card "This week" beside
+   * "Aug 10 – Aug 16" is the shared RangeHead idiom and stays; with no sentence
+   * under it, the two are one fact printed twice above a third line that said
+   * it a third time ("...in this period"). What is left is the line this always
+   * was: the verdict left, the span right, no panel.
+   */
+  if (lead.sports === 0) {
+    return (
+      <View style={{ marginTop: 20, marginHorizontal: 2, flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{sentence}</Text>
+        <Text numberOfLines={1} maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...kicker, color: C.ash }}>{span}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={{ marginTop: 20 }}>
       <View style={{
@@ -116,19 +140,19 @@ export default function AuroraEnduranceSummary({
           {sentence}
         </Text>
 
-        {lead.sports > 0 && (
-          <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
-            {whyBefore}
-            {whyAfter !== undefined && delta !== null && (
-              <>
-                <Text style={{ color: tone }}>
-                  {`${delta > 0 ? "+" : delta < 0 ? "−" : ""}${Math.abs(delta)}%`}
-                </Text>
-                {whyAfter}
-              </>
-            )}
-          </Text>
-        )}
+        {/* Unconditional now: the empty window returned above, so anything
+            reaching here has at least one sport and a duration to state. */}
+        <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
+          {whyBefore}
+          {whyAfter !== undefined && delta !== null && (
+            <>
+              <Text style={{ color: tone }}>
+                {`${delta > 0 ? "+" : delta < 0 ? "−" : ""}${Math.abs(delta)}%`}
+              </Text>
+              {whyAfter}
+            </>
+          )}
+        </Text>
       </View>
     </View>
   );
