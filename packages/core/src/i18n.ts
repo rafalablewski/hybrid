@@ -17,6 +17,35 @@ export const RTL_LANGS: Lang[] = [];
 /** Writing direction for a locale — "ltr" for everything currently shipped. */
 export const localeDirection = (lang: Lang): "ltr" | "rtl" => (RTL_LANGS.includes(lang) ? "rtl" : "ltr");
 
+/**
+ * Which plural form a count takes. `t()` resolves a key, not a template, so a
+ * pluralized noun is a KEY CHOICE — the same shape as `setCountKey` in
+ * feed-workout, generalized because Polish needs a third form that English and
+ * German don't have.
+ *
+ * Polish: 1 is "one"; 2–4 is "few"; everything else is "many" — except the
+ * teens (12–14) and any …12–…14, which are "many" despite ending in 2–4. Get
+ * that wrong and the app says "22 ćwiczeń" where it should say "22 ćwiczenia".
+ * English and German only ever answer "one" or "many"; a caller may register
+ * the same string under both keys.
+ */
+export type PluralForm = "one" | "few" | "many";
+
+export function pluralForm(n: number, lang: Lang): PluralForm {
+  const abs = Math.abs(Math.trunc(n));
+  if (abs === 1) return "one";
+  if (lang !== "pl") return "many";
+  const last = abs % 10;
+  const lastTwo = abs % 100;
+  if (last >= 2 && last <= 4 && !(lastTwo >= 12 && lastTwo <= 14)) return "few";
+  return "many";
+}
+
+/** The i18n key for a count of EXERCISES, in the right plural form.
+ *  "1 exercises" is the kind of thing a training app cannot say. */
+export const exerciseCountKey = (n: number, lang: Lang): string =>
+  `workout.exercises.${pluralForm(n, lang)}`;
+
 // Per-domain web-screen string bundles, merged OVER the base dictionary below so
 // the web Aurora screens can be fully localized without bloating this file.
 import { web_home } from "./i18n-web/home";
@@ -271,7 +300,21 @@ const BASE: Record<Lang, Record<string, string>> = {
     "workout.discardTitle": "Discard this session?",
     "workout.discardBody": "The sets you've logged will be lost. This can't be undone.",
     "workout.nameWorkout": "Name this session",
-    "workout.exercises": "exercises",
+    "workout.finishConfirm": "Finish this session?",
+    "workout.keepGoing": "Keep going",
+    "workout.setsQueued": "sets still queued",
+    "workout.oneSetQueued": "1 set still queued",
+    "workout.restAfter": "Rest %s after",
+    "workout.noRestTimer": "No rest timer",
+    "workout.armRest": "Rest timer",
+    "workout.nextSet": "Next",
+    "workout.setOf": "Set %s of %s",
+    "workout.sessionOptions": "Session options",
+    "workout.setOptions": "Set options",
+    "workout.setTypeWorking": "Working set",
+    "workout.exercises.one": "exercise",
+    "workout.exercises.few": "exercises",
+    "workout.exercises.many": "exercises",
     "workout.tapAsYouGo": "tap ✓ as you go",
     "workout.upNow": "Up now",
     "workout.setWord": "Set",
@@ -288,7 +331,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "workout.stopRest": "Stop",
     "workout.dismiss": "dismiss",
     "workout.set": "+ Set",
-    "workout.addSet": "+ Add set",
+    "workout.addSet": "Add set",
     "workout.specialSet": "Special set",
     "workout.dropSet": "+ Drop set",
     "workout.warmupSet": "+ Warm-up",
@@ -328,7 +371,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "workout.yourLifts": "Your lifts",
     "workout.library": "Library",
     "workout.sports": "Sports",
-    "workout.addExercise": "+ Add exercise",
+    "workout.addExercise": "Add exercise",
     "workout.close": "close",
     "workout.minSet": "Log at least one set to finish.",
     "workout.saveError": "Couldn't save — check your connection and try again.",
@@ -922,7 +965,21 @@ const BASE: Record<Lang, Record<string, string>> = {
     "workout.discardTitle": "Odrzucić tę sesję?",
     "workout.discardBody": "Zapisane serie zostaną utracone. Tej operacji nie można cofnąć.",
     "workout.nameWorkout": "Nazwij ten trening",
-    "workout.exercises": "ćwiczeń",
+    "workout.finishConfirm": "Zakończyć tę sesję?",
+    "workout.keepGoing": "Kontynuuj",
+    "workout.setsQueued": "serii w kolejce",
+    "workout.oneSetQueued": "1 seria w kolejce",
+    "workout.restAfter": "Przerwa %s po serii",
+    "workout.noRestTimer": "Bez przerwy",
+    "workout.armRest": "Minutnik przerwy",
+    "workout.nextSet": "Następna",
+    "workout.setOf": "Seria %s z %s",
+    "workout.sessionOptions": "Opcje sesji",
+    "workout.setOptions": "Opcje serii",
+    "workout.setTypeWorking": "Seria robocza",
+    "workout.exercises.one": "ćwiczenie",
+    "workout.exercises.few": "ćwiczenia",
+    "workout.exercises.many": "ćwiczeń",
     "workout.tapAsYouGo": "zaznaczaj ✓ na bieżąco",
     "workout.upNow": "Teraz",
     "workout.setWord": "Seria",
@@ -977,7 +1034,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "workout.yourLifts": "Twoje ćwiczenia",
     "workout.library": "Biblioteka",
     "workout.sports": "Sporty",
-    "workout.addExercise": "+ Dodaj ćwiczenie",
+    "workout.addExercise": "Dodaj ćwiczenie",
     "workout.close": "zamknij",
     "workout.minSet": "Zapisz przynajmniej jedną serię, aby zakończyć.",
     "workout.saveError": "Nie udało się zapisać — sprawdź połączenie i spróbuj ponownie.",
@@ -1557,7 +1614,21 @@ const BASE: Record<Lang, Record<string, string>> = {
     "workout.discardTitle": "Diese Sitzung verwerfen?",
     "workout.discardBody": "Die erfassten Sätze gehen verloren. Das lässt sich nicht rückgängig machen.",
     "workout.nameWorkout": "Benenne dieses Training",
-    "workout.exercises": "Übungen",
+    "workout.finishConfirm": "Diese Sitzung beenden?",
+    "workout.keepGoing": "Weitermachen",
+    "workout.setsQueued": "Sätze noch offen",
+    "workout.oneSetQueued": "1 Satz noch offen",
+    "workout.restAfter": "Pause %s danach",
+    "workout.noRestTimer": "Keine Pause",
+    "workout.armRest": "Pausen-Timer",
+    "workout.nextSet": "Nächster",
+    "workout.setOf": "Satz %s von %s",
+    "workout.sessionOptions": "Sitzungsoptionen",
+    "workout.setOptions": "Satzoptionen",
+    "workout.setTypeWorking": "Arbeitssatz",
+    "workout.exercises.one": "Übung",
+    "workout.exercises.few": "Übungen",
+    "workout.exercises.many": "Übungen",
     "workout.tapAsYouGo": "tippe ✓ unterwegs",
     "workout.upNow": "Jetzt",
     "workout.setWord": "Satz",
@@ -1612,7 +1683,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "workout.yourLifts": "Deine Übungen",
     "workout.library": "Bibliothek",
     "workout.sports": "Sportarten",
-    "workout.addExercise": "+ Übung hinzufügen",
+    "workout.addExercise": "Übung hinzufügen",
     "workout.close": "schließen",
     "workout.minSet": "Logge mindestens einen Satz zum Beenden.",
     "workout.saveError": "Speichern fehlgeschlagen — Verbindung prüfen und erneut versuchen.",

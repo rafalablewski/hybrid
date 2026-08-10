@@ -87,11 +87,22 @@ export function setType(s: RoleDrop): SetType {
  * whose set shapes differ, share one source of truth and can't drift.
  */
 export function cycleSetType<T extends RoleDrop>(s: T): T {
-  const next = SET_TYPE_ORDER[(SET_TYPE_ORDER.indexOf(setType(s)) + 1) % SET_TYPE_ORDER.length];
+  return setTypeTo(s, SET_TYPE_ORDER[(SET_TYPE_ORDER.indexOf(setType(s)) + 1) % SET_TYPE_ORDER.length]!);
+}
+
+/**
+ * Set a set's type OUTRIGHT, rather than stepping to the next one.
+ *
+ * Cycling is what a badge with no menu behind it has to do — tap four times to
+ * reach the fourth state, and nothing on screen says what the other three are.
+ * Once the control is a picker (the system Menu on iOS, one panel elsewhere)
+ * the type is chosen, not advanced, and both clients need the same answer.
+ */
+export function setTypeTo<T extends RoleDrop>(s: T, type: SetType): T {
   return {
     ...s,
-    role: next === "warmup" ? "warmup" : next === "cooldown" ? "cooldown" : undefined,
-    drop: next === "drop" ? true : undefined,
+    role: type === "warmup" ? "warmup" : type === "cooldown" ? "cooldown" : undefined,
+    drop: type === "drop" ? true : undefined,
   };
 }
 
@@ -615,9 +626,43 @@ export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean 
   return parts.filter(Boolean).join(", ");
 }
 
+/**
+ * The set line for a STRENGTH block, in the lift's own terms.
+ *
+ * The generic `load × reps` is only true of an externally loaded lift. A
+ * bodyweight lift carries no load at all, so it used to degrade to a row of
+ * dashes — which is exactly what the logger's "last time" reference printed
+ * above a set of pull-ups: `–×5, –×5, –×5`. The one line that exists to give
+ * the athlete something to beat said nothing.
+ *
+ * So read the lift's own load mode and measure: a bodyweight lift IS its reps
+ * (or its seconds, or its metres), a bodyweight-plus lift shows what went on
+ * the belt, and an assisted one shows what came off.
+ */
+export function strengthSetsSummary(b: StrengthBlock): string {
+  const ex = gymExercise(b.name);
+  const mode = ex?.loadMode ?? "external";
+  const suffix = ex?.measure === "time" ? " s" : ex?.measure === "distance" ? " m" : "";
+  const bare = (s: StrengthSet) => (s.reps ? `${s.reps}${suffix}` : "–");
+  return b.sets
+    .map((s) => {
+      switch (mode) {
+        case "bodyweight":
+          return bare(s);
+        case "bodyweight-plus":
+          return s.load ? `+${s.load}×${s.reps || "–"}` : bare(s);
+        case "assisted":
+          return s.load ? `−${s.load}×${s.reps || "–"}` : bare(s);
+        default:
+          return `${s.load || "–"}×${s.reps || "–"}`;
+      }
+    })
+    .join(", ");
+}
+
 /** One-line summary of any block. */
 export function blockSummary(b: SessionBlock): string {
-  if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(", ");
+  if (isStrength(b)) return strengthSetsSummary(b);
   if (isCardio(b)) return cardioSummary(b);
   return conditioningSummary(b);
 }

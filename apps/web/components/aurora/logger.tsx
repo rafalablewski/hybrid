@@ -29,6 +29,9 @@ import { fs, space,
   formatCardioPr,
   lastStrengthByLift,
   blockSummary,
+  nextSetCursor,
+  queuedSetCount,
+  setIsLoggable,
   liveSessionStats,
   livePrLifts,
   SHARED_ELEMENTS,
@@ -71,6 +74,36 @@ import { haptic } from "@/lib/haptics";
 // SessionBlock field, plus load/reps/rpe/vel/drop/role).
 type LiveSet = StrengthSet & { done?: boolean };
 const REST_PRESETS = [60, 90, 120, 180] as const;
+
+/** The dock's glass satellites — the CSS twin of the mobile `GlassSatellite`,
+ *  which on iOS 26 is a real SwiftUI button wearing interactive Liquid Glass.
+ *  Same rim grammar the logger's chevron already uses: highlight above, shade
+ *  below, a hair of body, and no drawn ring. */
+const satelliteGlass = {
+  borderRadius: 999,
+  border: "none",
+  background: "color-mix(in srgb, var(--color-chalk) 5%, transparent)",
+  boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 -1px 1px var(--inner-lo), inset 0 0 0 0.5px rgba(var(--text-rgb), 0.10)",
+  cursor: "pointer",
+} as const;
+/** A row in the options menu — one shape, so the moved preferences and the
+ *  destructive row can't drift apart. */
+const menuRow = (color: string) => ({
+  display: "flex" as const,
+  alignItems: "center" as const,
+  width: "100%",
+  padding: "14px 0",
+  fontFamily: "var(--font-display)",
+  fontWeight: 700 as const,
+  fontSize: "1.05rem",
+  color,
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  textAlign: "left" as const,
+});
+const satelliteOrb = { ...satelliteGlass, width: 44, height: 44, display: "grid", placeItems: "center", color: "var(--color-chalk)", flex: "none" } as const;
+const satellitePill = { ...satelliteGlass, height: 44, padding: "0 16px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "0.95rem", color: "var(--color-chalk)", flex: "none" } as const;
 
 type FinishData = {
   sessionId: string | null;
@@ -179,6 +212,10 @@ export default function AuroraLogger({
    * one not, is the arrangement that loses people's sessions.
    */
   const [menuOpen, setMenuOpen] = useState(false);
+  // Finish, tapped: the dock swaps to a confirm IN PLACE rather than throwing a
+  // sheet — the label the bare satellite doesn't carry, in the moment it is
+  // read. Mirrors the mobile dock exactly.
+  const [confirmFinish, setConfirmFinish] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const discarded = useRef(false);
 
@@ -295,6 +332,29 @@ export default function AuroraLogger({
   // Bank / un-bank a set (✓). Banking records the rest that preceded it and
   // starts a fresh rest countdown — unless it flows into a drop set or the next
   // exercise of a superset (you keep moving), mirroring the mobile logger.
+  // ── THE DOCK ────────────────────────────────────────────────────────────
+  // The primary lives at the bottom of the screen now, so it has to be TOLD
+  // which set it means — the shared cursor answers that, and it is the same
+  // function the mobile logger reads, so the two clients cannot disagree about
+  // what "the next set" is.
+  const cursor = nextSetCursor(blocks.map((b) => ({ sets: b.kind === "strength" ? b.sets.map((st) => ({ done: (st as LiveSet).done })) : undefined })));
+  const cursorBlock = cursor ? blocks[cursor.index] : undefined;
+  const cursorName = cursorBlock?.name ?? blocks[0]?.name ?? "";
+  const cursorSet = cursorBlock?.kind === "strength" ? cursorBlock.sets[cursor!.setIndex] : undefined;
+  const cursorTotal = cursorBlock?.kind === "strength" ? cursorBlock.sets.length : 0;
+  const canLog = !!cursorSet && setIsLoggable(cursorSet);
+  const queued = queuedSetCount(blocks.map((b) => ({ sets: b.kind === "strength" ? b.sets.map((st) => ({ done: (st as LiveSet).done })) : undefined })));
+
+  // One piece of state, three places it shows: the capsule, the dock's hint
+  // line, and (mobile) the Dynamic Island once ActivityKit lands.
+  const restLeft = restSince != null && restTarget != null ? restTarget - restNow : null;
+  const restReadout = restLeft != null ? (restLeft > 0 ? mmss(restLeft) : `+${mmss(-restLeft)}`) : mmss(prefs.restSeconds);
+  const toggleRestArmed = () => {
+    const next = !prefs.restTimer;
+    setLoggerPref("restTimer", next);
+    if (!next) setRestSince(null);
+  };
+
   const toggleDone = (blockUid: string, i: number, val: boolean) => {
     const restTaken = val && restSince != null ? Math.floor((Date.now() - restSince) / 1000) : undefined;
     setBlocks((bs) =>
@@ -325,6 +385,11 @@ export default function AuroraLogger({
     setRestSince(Date.now());
     setRestNow(0);
     restFired.current = false;
+  };
+  /** Bank the session's active set — what the docked primary does. */
+  const logActiveSet = () => {
+    if (!cursor || !cursorBlock || !canLog) return;
+    toggleDone(cursorBlock.uid, cursor.setIndex, true);
   };
 
   const pickRest = (sec: number) => {
@@ -549,28 +614,46 @@ export default function AuroraLogger({
             <AuroraIcon name="chevron-down" size={19} />
           </button>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: space.sm }}>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, letterSpacing: 1, color: paused ? C("amber") : C("chalk") }}>{mmss(elapsed)}</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: paused ? C("amber") : C("ash") }}>{paused ? t("workout.paused") : t("workout.elapsed")}</span>
+        {/* WHERE YOU ARE, then how long you have been there. The clock was the
+            largest type on the screen — which is the wrong claim: the set is
+            the content and the clock is context. Small and mono now, amber
+            when held. */}
+        <div style={{ display: "grid", justifyItems: "center", gap: 1, minWidth: 0 }}>
+          {cursorName ? (
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.body, color: C("chalk"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }}>{cursorName}</span>
+          ) : null}
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: cursorName ? fs.micro : fs.body, letterSpacing: ".14em", color: paused ? C("amber") : C("ash") }}>
+            {mmss(elapsed)}{paused ? ` – ${t("workout.paused").toUpperCase()}` : ""}
+          </span>
         </div>
-        {/* Pause keeps its place beside the clock; the ⋯ is the way in to
-            everything that must NOT be one tap. */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: space.xs }}>
-          <button className="pressable"
-            onClick={handlePause}
-            title={paused ? t("workout.go") : t("workout.paused")}
-            style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: paused ? C("ink") : C("amber"), background: paused ? C("amber") : "transparent", border: `1px solid ${C("amber")}`, borderRadius: 999, padding: "5px 14px", cursor: "pointer" }}
-          >
-            {paused ? "▶" : "❚❚"}
-          </button>
-          <button className="pressable"
-            onClick={() => setMenuOpen(true)}
-            aria-label={t("workout.moreOptions")}
-            title={t("workout.moreOptions")}
-            style={{ width: 32, height: 32, borderRadius: 999, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: fs.subtitle, letterSpacing: ".09em", color: C("ash"), background: "transparent", border: "none", cursor: "pointer" }}
-          >
-            ⋯
-          </button>
+        {/* THE TOOLBAR CAPSULE — two slots in ONE lozenge, the twin of the
+            mobile header's native GlassEffectContainer (iOS 26 fuses two real
+            SwiftUI buttons there; here it is the .liquid-glass rim grammar
+            with a hairline between the halves). The rest timer keeps its own
+            tap because you arm it mid-workout; everything that must not be one
+            tap is behind the ⋯. Pause is not here any more — it is in the dock
+            with Finish, where the thumb is. */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", alignItems: "center", borderRadius: 999, background: "color-mix(in srgb, var(--color-chalk) 5%, transparent)", boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 -1px 1px var(--inner-lo), inset 0 0 0 0.5px rgba(var(--text-rgb), 0.10)", padding: 3, gap: 2 }}>
+            <button className="pressable"
+              onClick={toggleRestArmed}
+              aria-pressed={prefs.restTimer}
+              aria-label={`${t("workout.armRest")} – ${prefs.restTimer ? restReadout : t("common.off")}`}
+              title={t("workout.armRest")}
+              style={{ display: "inline-flex", alignItems: "center", gap: 5, height: 28, padding: "0 11px", borderRadius: 999, fontFamily: "var(--font-mono)", fontSize: fs.micro, color: prefs.restTimer ? C("blue") : C("ash"), background: "transparent", border: "none", cursor: "pointer" }}
+            >
+              <AuroraIcon name="stopwatch" size={13} />
+              {prefs.restTimer ? restReadout : null}
+            </button>
+            <button className="pressable"
+              onClick={() => setMenuOpen(true)}
+              aria-label={t("workout.sessionOptions")}
+              title={t("workout.sessionOptions")}
+              style={{ height: 28, padding: "0 11px", borderRadius: 999, display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: fs.subtitle, letterSpacing: ".09em", color: C("ash"), background: "transparent", border: "none", cursor: "pointer" }}
+            >
+              ⋯
+            </button>
+          </div>
         </div>
       </div>
 
@@ -630,37 +713,11 @@ export default function AuroraLogger({
           right here and the live volume recomputes. */}
       {needsBw && <BodyweightNudge units={prefs.units} />}
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8, gap: space.sm }}>
-        {/* On-demand rest-timer switch — same persisted pref as Settings, so
-            flipping it mid-workout sticks for next time too. */}
-        <button className="pressable"
-          onClick={() => {
-            const next = !prefs.restTimer;
-            setLoggerPref("restTimer", next);
-            if (!next) setRestSince(null);
-          }}
-          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: prefs.restTimer ? C("blue") : C("ash"), background: "none", border: `1px solid ${prefs.restTimer ? C("blue") : C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}
-          title={t("loggerPrefs.restTimer")}
-        >
-          ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
-        </button>
-        <button className="pressable"
-          onClick={() => setLoggerPref("detailed", !prefs.detailed)}
-          style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}
-          title={t("w.train.logger.toggleRpeVel")}
-        >
-          {prefs.detailed ? t("w.train.logger.detailed") : t("w.train.logger.simple")}
-        </button>
-        {prefs.detailed && (
-          <button className="pressable"
-            onClick={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
-            style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash"), background: "none", border: `1px solid ${C("line")}`, borderRadius: 999, padding: "6px 16px", cursor: "pointer" }}
-            title={t("w.train.logger.logEffortAs")}
-          >
-            {prefs.rpeAsRir ? "RIR" : "RPE"}
-          </button>
-        )}
-      </div>
+      {/* The row of standing chips that used to sit here — the rest-timer
+          switch, Simple/Detailed, RPE/RIR — is gone. The timer moved into the
+          header capsule (it is a one-tap arm you reach for mid-workout); the
+          other two are PREFERENCES, consulted about once, and are rows in the
+          ⋯ menu now. */}
 
       {/* No session-title input here — the workout auto-titles itself; a name is
           only entered when saving a routine (or via the finish-screen rename). */}
@@ -710,34 +767,148 @@ export default function AuroraLogger({
         </div>
       )}
 
-      {/* One bottom action — finishing IS the save. "Save as routine" moved to
-          the finish screen (it belongs after you're done, not while logging). */}
-      <button className="pressable"
-        onClick={save}
-        disabled={saving || blocks.length === 0}
-        style={{
-          width: "100%",
-          fontFamily: "var(--font-display)",
-          fontWeight: 800,
-          fontSize: fs.note,
-          background: C("lime"),
-          color: "var(--on-accent)",
-          border: "none",
-          borderRadius: 999,
-          padding: "16px 28px",
-          cursor: saving || blocks.length === 0 ? "default" : "pointer",
-          opacity: saving || blocks.length === 0 ? 0.5 : 1,
-          boxShadow: saving || blocks.length === 0 ? "none" : `0 0 22px -6px color-mix(in srgb, ${C("lime")} 55%, transparent)`,
-        }}
-      >
-        {saving ? t("w.train.logger.saving") : t("w.train.logger.finishWorkout")}
-      </button>
+      {/* ── THE DOCK ─────────────────────────────────────────────────────────
+          One primary, pinned. The button you press thirty times used to float
+          in the page flow and travel further down it with every exercise
+          added, while the brightest, largest, lowest control on the screen
+          ENDED the session. Pause and Finish flank it as glass satellites —
+          not peers of Log set and not drawn as peers: neither is chartreuse,
+          both are 44px against the primary's 56. Twin of the mobile dock,
+          where those two are real SwiftUI glass buttons. */}
+      {blocks.length > 0 && (
+        <div
+          style={{
+            position: "sticky",
+            bottom: 0,
+            zIndex: 4,
+            marginTop: 20,
+            paddingTop: 12,
+            paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))",
+            borderTop: `1px solid ${C("line")}`,
+            background: "color-mix(in srgb, var(--color-ink2) 94%, transparent)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}
+        >
+          {confirmFinish ? (
+            /* FINISH, TAPPED — the confirm lands in the dock, in place, naming
+               what is still queued. It is what buys back the word the bare
+               satellite doesn't carry: the label lives in the moment it is
+               read rather than taxing the primary's width all session. */
+            <div aria-live="polite">
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash"), marginBottom: 10 }}>
+                {queued === 0 ? t("workout.setsWord") : queued === 1 ? t("workout.oneSetQueued") : `${queued} ${t("workout.setsQueued")}`}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+                <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: C("chalk") }}>{t("workout.finishConfirm")}</span>
+                <button className="pressable" onClick={() => setConfirmFinish(false)} style={satellitePill}>
+                  {t("workout.keepGoing")}
+                </button>
+                <button className="pressable"
+                  onClick={() => { setConfirmFinish(false); void save(); }}
+                  disabled={saving}
+                  style={{ height: 44, padding: "0 20px", borderRadius: 999, border: "none", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: fs.body, background: C("lime"), color: "var(--on-accent)", cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}
+                >
+                  {saving ? t("w.train.logger.saving") : t("workout.finish")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Says what you are about to bank and what happens after it, and
+                  becomes the rest countdown while one runs — a countdown costs
+                  a LINE rather than a banner that shoves the layout every time
+                  you finish a set. */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 10, fontFamily: "var(--font-mono)", fontSize: fs.micro, letterSpacing: ".11em", textTransform: "uppercase" }}>
+                <span style={{ color: restSince != null ? C("blue") : C("ash"), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {restSince != null
+                    ? `${restLeft != null && restLeft <= 0 ? t("workout.restDone") : t("workout.resting")} – ${restReadout}`
+                    : cursor
+                      ? `${t("workout.setWord")} ${cursor.setIndex + 1}${cursorTotal > 1 ? ` ${t("workout.ofWord")} ${cursorTotal}` : ""}`
+                      : t("workout.setsWord")}
+                </span>
+                <span style={{ color: C("ash"), whiteSpace: "nowrap" }}>
+                  {prefs.restTimer ? `${t("w.train.blocks.rest")} ${mmss(prefs.restSeconds)}` : t("workout.noRestTimer")}
+                </span>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
+                <button className="pressable"
+                  onClick={handlePause}
+                  aria-label={paused ? t("workout.resume") : t("workout.pause")}
+                  title={paused ? t("workout.resume") : t("workout.pause")}
+                  style={{ ...satelliteOrb, color: paused ? C("amber") : C("chalk") }}
+                >
+                  <AuroraIcon name={paused ? "play" : "pause"} size={18} />
+                </button>
+                {/* THE ONE FILLED SURFACE ON THE SCREEN, and 56px tall — taller
+                    than its satellites, not merely wider, because height is the
+                    dimension a thumb hits without looking. */}
+                <button className="pressable"
+                  onClick={logActiveSet}
+                  disabled={!canLog}
+                  style={{
+                    flex: 1,
+                    height: 56,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    borderRadius: 999,
+                    border: "none",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 800,
+                    fontSize: fs.subtitle,
+                    background: canLog ? C("lime") : "color-mix(in srgb, var(--color-lime) 22%, transparent)",
+                    color: canLog ? "var(--on-accent)" : C("ash"),
+                    cursor: canLog ? "pointer" : "default",
+                    boxShadow: canLog ? `0 0 22px -6px color-mix(in srgb, ${C("lime")} 55%, transparent)` : "none",
+                  }}
+                >
+                  ✓ {t("workout.logSet")}
+                </button>
+                <button className="pressable"
+                  onClick={() => setConfirmFinish(true)}
+                  aria-label={t("w.train.logger.finishWorkout")}
+                  title={t("w.train.logger.finishWorkout")}
+                  style={satelliteOrb}
+                >
+                  <AuroraIcon name="flag" size={18} />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* The ⋯ menu. One row today, and that is the point: the header carries a
           single top-level exit, and the irreversible one is reached through a
           menu and then a confirm. Anything added here later inherits that
           protection for free. */}
-      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")}>
+      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.sessionOptions")}>
+        {/* The preferences that used to stand on the screen all session as a
+            row of chips. They are consulted about once; the menu is where a
+            once-a-month decision belongs. Twin of the mobile options menu —
+            on iOS 26 that one is the system Menu fused to the timer in one
+            glass capsule. */}
+        {/* "What's RPE?" is NOT duplicated here — the block editor owns that
+            modal and renders its own trigger in the add-block row. Mobile puts
+            it in this menu because its logger has no such row. Folding the
+            editor's row into this menu is the next step and is tracked. */}
+        <button className="pressable"
+          onClick={() => setLoggerPref("detailed", !prefs.detailed)}
+          style={menuRow(C("chalk"))}
+        >
+          {prefs.detailed ? t("w.train.logger.detailed") : t("w.train.logger.simple")}
+        </button>
+        {prefs.detailed && (
+          <button className="pressable"
+            onClick={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)}
+            style={menuRow(C("chalk"))}
+          >
+            {prefs.rpeAsRir ? "RIR" : "RPE"}
+          </button>
+        )}
         <button className="pressable"
           onClick={() => { setMenuOpen(false); setDiscardOpen(true); }}
           style={{ display: "flex", alignItems: "center", width: "100%", padding: "14px 0", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: accentText("red"), background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
