@@ -36,13 +36,11 @@ describe("isHexColor", () => {
 });
 
 describe("resolvePremiumAccent", () => {
-  it("resolves a preset to its palette fill + per-theme accent text", () => {
+  it("resolves a preset to its palette fill + accent text", () => {
     const dark = resolvePremiumAccent("amber", "dark");
     expect(dark.custom).toBe(false);
     expect(dark.fill).toBe(colors.amber);
     expect(dark.text).toBe("#d0cd94"); // dark accentText.amber
-    const light = resolvePremiumAccent("amber", "light");
-    expect(light.text).toBe("#885c00"); // light accentText.amber (deep ochre)
   });
   it("resolves a custom hex to fill=text=hex with an auto ink", () => {
     const r = resolvePremiumAccent("#d0cd94");

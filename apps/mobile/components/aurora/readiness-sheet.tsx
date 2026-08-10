@@ -6,12 +6,11 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, serifIf } from "../../lib/ui";
+import { leading, fs, F } from "../../lib/ui";
 import ReadinessFace from "./readiness-face";
 import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-type Scheme = ReturnType<typeof useTheme>["scheme"];
 
 /**
  * THE READINESS EXPLAINER (mobile) — the door under the reading in Recover.
@@ -47,7 +46,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
   stamp?: string | null;
   onClose: () => void;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   // Hold the last explanation through the EXIT animation, exactly as the
   // freshness sheet does: reading `explain` directly empties the panel the
@@ -66,7 +65,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <ReadinessFace feeling={e.feeling} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 28, letterSpacing: -0.8, color: txt(C, C[READINESS_FACE[e.feeling].accent]) }}>
+              <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.8, color: txt(C, C[READINESS_FACE[e.feeling].accent]) }}>
                 {t(`w.recovery.readiness.${e.feeling}`)}
               </Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
@@ -75,7 +74,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
             </View>
           </View>
 
-          <Block C={C} scheme={scheme} head={t("w.home.read.whatHead")}>
+          <Block C={C} head={t("w.home.read.whatHead")}>
             <P C={C}>{t("w.home.read.what")}</P>
             {/* Which of the day's answers this one is. A read that has been
                 superseded is not wrong — it is what makes the later one
@@ -89,7 +88,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
               makes of it. This is the block the old single grey line stood in
               for: the note is still here, as the sentence it always was, but
               now beside the figures it was asserting. */}
-          <Block C={C} scheme={scheme} head={t("w.home.read.inputsHead")} meta={t("w.home.read.inputsMeta")}>
+          <Block C={C} head={t("w.home.read.inputsHead")} meta={t("w.home.read.inputsMeta")}>
             <View style={{ gap: 9, marginBottom: 12 }}>
               {e.rows.map((r, i) => <Row key={i} C={C} row={r} t={t} />)}
             </View>
@@ -104,7 +103,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
 
           {/* WHAT IT MOVES — the ledger, ending on the very percentage the
               prescription applies. Same shape as the freshness arithmetic. */}
-          <Block C={C} scheme={scheme} head={t("w.home.read.movesHead")}>
+          <Block C={C} head={t("w.home.read.movesHead")}>
             <P C={C}>{t(e.loadPct === 100 && e.setAdj === 0 ? "w.home.read.movesNeutral" : "w.home.read.moves")}</P>
             <View style={{ gap: 8 }}>
               {e.steps.map((s, i) => <Step key={i} C={C} step={s} t={t} />)}
@@ -114,13 +113,13 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
           {/* THE PAIR — the one thing two answers can measure that one cannot.
               Rendered only when the day's reads actually support a verdict. */}
           {e.clearance && e.clearanceKey ? (
-            <Block C={C} scheme={scheme} head={t("w.home.read.pairHead")}>
+            <Block C={C} head={t("w.home.read.pairHead")}>
               <P C={C}>{t("w.home.read.pair").replace("{n}", String(Math.round(e.clearance.gapH)))}</P>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 15, color: C.chalk }}>{t(e.clearanceKey)}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.chalk }}>{t(e.clearanceKey)}</Text>
             </Block>
           ) : null}
 
-          <Block C={C} scheme={scheme} head={t("w.home.read.nextHead")}>
+          <Block C={C} head={t("w.home.read.nextHead")}>
             <P C={C}>
               {t("w.home.read.next")
                 .replace("{gap}", String(e.consts.gapH))
@@ -132,7 +131,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
             {gateNote ? <P C={C} dim>{t(gateNote)}</P> : null}
           </Block>
 
-          <Block C={C} scheme={scheme} head={t("w.home.read.limitHead")}>
+          <Block C={C} head={t("w.home.read.limitHead")}>
             <P C={C}>{t(READINESS_LIMIT_KEY[e.feeling])}</P>
           </Block>
         </View>
@@ -144,13 +143,13 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
 /* ---------- small primitives ---------- */
 /** One section: the SectionHead idiom — display-face title left, mono meta on
  *  the RIGHT of the same row, and never a marker before it (house rule). */
-function Block({ C, scheme, head, meta, children }: {
-  C: Palette; scheme: Scheme; head: string; meta?: string; children: ReactNode;
+function Block({ C, head, meta, children }: {
+  C: Palette; head: string; meta?: string; children: ReactNode;
 }) {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
-        <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 15, color: C.chalk }}>{head}</Text>
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: 15, color: C.chalk }}>{head}</Text>
         {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{meta}</Text> : null}
       </View>
       {children}

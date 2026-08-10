@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useSession } from "@/lib/session";
 import { useClientPersonaChoice, setClientPersona } from "@/lib/persona";
-import { useTheme } from "@/lib/use-theme";
 import { useTemplate } from "@/lib/use-template";
 import { ACCOUNT_NOTIF_DEFAULTS, ACCOUNT_PRIVACY_DEFAULTS, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, FULL_BENEFITS, REST_SECONDS_CHOICES, type SettingsCategoryId, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./aurora/icons";
@@ -40,21 +39,12 @@ const LANGS: { id: "en" | "pl" | "de"; label: string }[] = [
   { id: "pl", label: "PL" },
   { id: "de", label: "DE" },
 ];
-// Theme picker swatches — a mini colour preview per template, shared shape with
-// mobile so the two Preferences screens read the same. Aurora = dark/lime,
-// Kyoto Hour = washi-light/pine.
-const THEME_SWATCHES: { id: "dark" | "light"; label: string; colors: [string, string, string] }[] = [
-  { id: "dark", label: "Aurora", colors: ["#0c0d0c", "#c6f84f", "#8b8f86"] },
-  { id: "light", label: "Kyoto Hour", colors: ["#f6f3ea", "#44584c", "#a3442f"] },
-];
-
 export default function AccountSettings() {
   const isMobile = useIsMobile();
   const { logout, session, entitlement } = useSession();
   // No stored choice = the resolvePersona default: Full for a paid account
   // (paying shouldn't require flipping a toggle), Simple for a free one.
   const personaChoice = useClientPersonaChoice() ?? (entitlement === "paid" ? "athlete" : "casual");
-  const { theme, setTheme } = useTheme();
   const { template } = useTemplate();
   // Aurora rounds everything more. The Card surfaces already adapt via the
   // template skin; here we round the controls (inputs, buttons, choice cards)
@@ -336,18 +326,6 @@ export default function AccountSettings() {
       case "preferences":
         return (
           <>
-            <Section label={t("w.account.settings.appearance")}>
-              <div style={{ display: "flex", gap: space.sm }}>
-                {THEME_SWATCHES.map((s) => (
-                  <button key={s.id} onClick={() => setTheme(s.id)} className="pressable" title={s.id === "dark" ? t("w.account.settings.theme-dark") : t("w.account.settings.theme-light")} style={{ flex: 1, textAlign: "left", padding: 12, borderRadius: rCard, cursor: "pointer", background: theme === s.id ? `color-mix(in srgb, var(--color-lime) 8%, transparent)` : "transparent", border: `1px solid ${theme === s.id ? LIME : LINE}` }}>
-                    <div style={{ display: "flex", gap: 5, marginBottom: 8 }}>
-                      {s.colors.map((c, i) => <span key={i} style={{ width: 18, height: 18, borderRadius: 6, background: c, border: `1px solid ${LINE}` }} />)}
-                    </div>
-                    <div style={{ ...disp, fontWeight: 700, fontSize: fs.note, color: theme === s.id ? txt(LIME) : txt(CHALK) }}>{s.label}</div>
-                  </button>
-                ))}
-              </div>
-            </Section>
             <Section label={t("w.account.settings.language")}>
               <div style={{ display: "flex", gap: space.sm }}>
                 {LANGS.map((l) => (
@@ -662,7 +640,7 @@ export default function AccountSettings() {
   const summary = (id: SettingsCategoryId): string => {
     switch (id) {
       case "account": return session?.name ?? "";
-      case "preferences": return `${theme === "light" ? "Kyoto Hour" : "Aurora"} – ${lang.toUpperCase()} – ${prefs.units}`;
+      case "preferences": return `${lang.toUpperCase()} – ${prefs.units}`;
       case "logger": return prefs.detailed ? t("w.account.settings.logger-detailed") : t("w.account.settings.logger-simple");
       case "notifications": return `${Object.values(notif).filter(Boolean).length}/${Object.keys(notif).length}`;
       case "privacy": return `${Object.values(priv).filter(Boolean).length}/${Object.keys(priv).length}`;

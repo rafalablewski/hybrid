@@ -67,7 +67,7 @@ export const HIT_SLOP = 8;
 // in apps/web/app/globals.css). RN has no hover, so the pill carries a soft
 // resting glow and blooms brighter on press — the same "alive, tappable" cue.
 // iOS renders the coloured shadow; Android falls back to elevation. Pass the
-// live accent (C.lime — pine under Kyoto Hour) so it tracks the theme.
+// live accent (C.lime) so it tracks the token.
 export function startGlow(accent: string, pressed = false): ViewStyle {
   return {
     shadowColor: accent,
@@ -198,8 +198,8 @@ export function HubDissolve({ active, children, onLayout }: { active: boolean; c
   );
 }
 
-// Static dark palette — kept for back-compat with screens that still reference
-// C.* directly. New code should prefer useTheme() so it follows light/dark.
+// Static palette — kept for back-compat with screens that still reference
+// C.* directly. New code should prefer useTheme().
 export const C = colors;
 
 // Loaded in app/_layout.tsx
@@ -210,27 +210,7 @@ export const F = {
   black: "Archivo_900Black",
   mono: "JetBrainsMono_400Regular",
   monoBold: "JetBrainsMono_700Bold",
-  // Kyoto Hour (light) serif display — Shippori Mincho, a Japanese book face.
-  // Used for hero headings via serifIf.
-  serifMed: "ShipporiMincho_500Medium",
-  serifSemi: "ShipporiMincho_600SemiBold",
-  serifBold: "ShipporiMincho_700Bold",
-  serifBlack: "ShipporiMincho_800ExtraBold",
 } as const;
-
-/** Heading face — the mobile twin of web's --font-heading. AURORA (dark) keeps
- *  the Archivo sans; KYOTO HOUR (light) swaps hero headings to the Shippori
- *  Mincho serif (mirroring globals.css's [data-theme="light"] --font-heading),
- *  mapping each Archivo weight to its nearest Mincho cut. */
-export const serifIf = (scheme: "dark" | "light", archivo: string = F.black): string => {
-  if (scheme !== "light") return archivo;
-  switch (archivo) {
-    case F.black: return F.serifBlack;
-    case F.bold: return F.serifBold;
-    case F.semi: return F.serifSemi;
-    default: return F.serifMed;
-  }
-};
 
 // Concentric rings fake a radial falloff — RN has no CSS blur or radial
 // gradient (and we add no native gradient dep), so we stack a few low-opacity
@@ -455,14 +435,10 @@ export function Loading() {
   );
 }
 
-/** The ONE card shadow, theme-aware — the mobile twin of web's --shadow-card.
- *  Dark: soft black lift. Light (Kyoto Hour): a warm umbra — a pure-black
- *  shadow on the washi paper reads like a hole (globals.css documents the same
- *  fix for web); this mirrors its rgba(88,74,52,…) tone. */
-export function cardShadow(scheme: "dark" | "light"): ViewStyle {
-  return scheme === "light"
-    ? { shadowColor: "#584a34", shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 }
-    : { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 };
+/** The ONE card shadow — the mobile twin of web's --shadow-card: a soft black
+ *  lift. */
+export function cardShadow(): ViewStyle {
+  return { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 };
 }
 
 /*
@@ -511,8 +487,8 @@ export function Mono({ children, style, color, numberOfLines }: { children: Reac
 /*
  * `H1` LIVED HERE and is gone: use AHeading from components/aurora/kit, which
  * now reads the same rung the Hero System's `title` rank does. H1 was 30/-1 —
- * a size on neither the type ladder nor the hero ramp — with no header role and
- * no serif swap under Kyoto Hour, on two call sites.
+ * a size on neither the type ladder nor the hero ramp — with no header role,
+ * on two call sites.
  */
 
 /**
@@ -527,8 +503,8 @@ export function Mono({ children, style, color, numberOfLines }: { children: Reac
  * at once — fill alpha (10 / 12 / 13 / 14 / 16%), radius (5 vs pill), padding
  * (8/2, 10/3, 12/3, 12/4), size (nano vs micro), face (mono vs semi) and border
  * (none vs hairline). Two of them also painted their label with the RAW accent
- * instead of routing it through `txt()`, so they failed contrast on the Kyoto
- * Hour washi — a legibility bug hiding inside a styling inconsistency.
+ * instead of routing it through `txt()` — a legibility bug hiding inside a
+ * styling inconsistency.
  *
  * `tone` is the one axis that earned a variant: `soft` is the tinted fill this
  * has always been, `outline` adds the hairline the settings tags needed to read
@@ -544,9 +520,9 @@ export function Chip({
   tone?: "soft" | "outline";
 }) {
   const { palette } = useTheme();
-  // Default (no color) = the theme's PRIMARY accent: tint from the theme fill
-  // (pine on light, chartreuse on dark) and text via the brand key so txt() maps
-  // it to the theme's accent-text tone. An explicit color keeps its own hue.
+  // Default (no color) = the PRIMARY accent: tint from the theme fill and text
+  // via the brand key so txt() maps it to the accent-text tone. An explicit
+  // color keeps its own hue.
   const key = color ?? C.lime;
   const fill = color ?? palette.lime;
   return (

@@ -10,7 +10,7 @@ import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
 import { useTheme, txt } from "../lib/theme";
-import { leading, fs, F, serifIf, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, fs, F, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { AuroraField, withAlpha } from "./aurora/kit";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./aurora/hero";
@@ -201,7 +201,7 @@ export function CoverScreen({
   scrollApi?: { current: CoverScreenApi | null };
   children?: ReactNode;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const insets = useSafeAreaInsets();
   const library = cover.variant === "library";
   const plate = cover.variant === "recipe";
@@ -304,18 +304,15 @@ export function CoverScreen({
   const hotspotId = `cover-hotspot-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <View style={{ flex: 1, backgroundColor: C.ink }}>
-      {/* the cover is fixed-dark even in the light theme → light status icons */}
+      {/* the cover is fixed-dark → light status icons */}
       <StatusBar style="light" />
       <AuroraField />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.View style={[{ flex: 1 }, entrance]}>
           {/* the cover ink bleeding into the page — glued to the CONTENT (not
               the cover), so it slides up under the pinned cover and is gone by
-              the time the collapsed bar's hairline takes over as the edge. Dark
-              only: on the light theme a dark poster meeting warm paper is a
-              real boundary, not an artifact, and a dark veil there would only
-              muddy the hem underneath it. */}
-          {scheme !== "light" && (
+              the time the collapsed bar's hairline takes over as the edge. */}
+          {(
             <Animated.View
               pointerEvents="none"
               style={{
@@ -374,7 +371,7 @@ export function CoverScreen({
                   }}
                   style={{ backgroundColor: withAlpha(C.ink, 0.88), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line, overflow: "hidden" }}
                 >
-                  <BlurView intensity={26} tint={scheme === "light" ? "light" : "dark"} style={StyleSheet.absoluteFill} />
+                  <BlurView intensity={26} tint="dark" style={StyleSheet.absoluteFill} />
                   {rail}
                 </View>
               </Animated.View>
@@ -466,7 +463,7 @@ export function CoverScreen({
               importantForAccessibility="no-hide-descendants"
               style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge + HERO.nav.hit + 8, right: HERO.gutter.edge + HERO.nav.hit + 8, height: HERO.rail.height, alignItems: "center", justifyContent: "center", zIndex: 2, opacity: compactFade, transform: [{ translateY: counter }] }}
             >
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: "#fff" }}>{cover.title}</Text>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: "#fff" }}>{cover.title}</Text>
             </Animated.View>
 
             {/* the cover proper — chip, title, meta; slides up with the frame */}

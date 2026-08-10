@@ -2245,10 +2245,9 @@ function SummaryOrb({
  *  AuroraField, and the web Finish's .ff-a/.ff-b discs at parity. RN has no
  *  cheap blur/radial primitive, so each glow is three concentric translucent
  *  circles faking the falloff — the same technique as the story-card discs.
- *  Reduce Motion parks the drift at its midpoint; KYOTO HOUR swaps the accent
- *  glow for the warm washi tones the AuroraField light retint uses. */
+ *  Reduce Motion parks the drift at its midpoint. */
 function FinishField() {
-  const { palette, scheme } = useTheme();
+  const { palette } = useTheme();
   const reduced = useReducedMotion();
   const w = Dimensions.get("window").width;
   const drift = useRef(new Animated.Value(0)).current;
@@ -2266,11 +2265,10 @@ function FinishField() {
     loop.start();
     return () => loop.stop();
   }, [reduced, drift]);
-  const japandi = scheme === "light";
-  const glowA = japandi ? "#e7e0cc" : palette.lime;
-  const glowB = japandi ? "#d9ddd0" : palette.blue;
+  const glowA = palette.lime;
+  const glowB = palette.blue;
   // Outer→inner layer alphas (they stack, so the centre reads brightest).
-  const alphas = japandi ? [0.2, 0.16, 0.13] : [0.045, 0.055, 0.07];
+  const alphas = [0.045, 0.055, 0.07];
   const layers = (color: string) =>
     [1, 0.68, 0.42].map((f, i) => {
       const d = w * f;

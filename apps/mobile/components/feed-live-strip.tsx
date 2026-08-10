@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { View, Text, ScrollView, Animated, Easing } from "react-native";
 import { colors, fs, liveElapsedText, tracking, type LiveAthlete } from "@hybrid/core";
-import { F, serifIf, PressScale as Pressable } from "../lib/ui";
+import { F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { Avatar } from "./social-kit";
@@ -17,7 +17,6 @@ import { GUTTER, RADIUS } from "./aurora/kit";
  */
 export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; onOpen: (handle: string) => void }) {
   const C = useTheme().palette;
-  const scheme = useTheme().scheme;
   const { t } = useLang();
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -39,7 +38,7 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
     <View style={{ marginBottom: 10 }} accessibilityLabel={t("feed.live.title")}>
       {/* SectionHead idiom: display title left, mono meta right — no marker. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 2, paddingBottom: 8 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.bodyLg, color: C.chalk }}>{t("feed.live.title")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t("feed.live.title")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>
           {t("feed.live.count").replace("{n}", String(live.length)).toUpperCase()}
         </Text>

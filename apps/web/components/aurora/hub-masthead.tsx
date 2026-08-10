@@ -30,7 +30,7 @@ export function HubMasthead({
   meta,
   metaTone = "plain",
   title,
-  /** Rendered inline after the title (the Kyoto Hour hanko). Decorative only. */
+  /** Rendered inline after the title. Decorative only. */
   mark,
 }: {
   eyebrow?: string | null;

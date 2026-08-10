@@ -14,7 +14,7 @@ import {
   type LoggedSession,
   type WeightUnit,
 } from "@hybrid/core";
-import { F, fs, leading, serifIf, tracking } from "../lib/ui";
+import { F, fs, leading, tracking } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { WatchGlyph } from "./feed-card";
@@ -74,12 +74,12 @@ export function StatGrid({ stats, units }: { stats: FeedStat[]; units: WeightUni
  * counting the rest.
  */
 export function PostRecords({ prs, units }: { prs: FeedPrLine[]; units: WeightUnit }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   if (!prs.length) return null;
   return (
     <View style={{ marginTop: 12 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.note, color: C.chalk }}>{t("feed.post.records")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t("feed.post.records")}</Text>
       {prs.map((pr, i) => {
         const fig = feedFigureText(pr.topLoadKg, units);
         const prev = pr.previousTopLoadKg != null ? feedFigureText(pr.previousTopLoadKg, units) : null;
@@ -166,7 +166,7 @@ function Exercise({ ex, units }: { ex: FeedWorkoutExercise; units: WeightUnit })
 }
 
 export function FeedWorkout({ session, units, prs = [] }: { session: LoggedSession; units: WeightUnit; prs?: FeedPrLine[] }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const w = feedWorkoutView(session, prs);
   // A spaced en dash joins the meta line — never a middot.
@@ -177,7 +177,7 @@ export function FeedWorkout({ session, units, prs = [] }: { session: LoggedSessi
   ].join(" – ");
   return (
     <View>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: C.chalk }}>{w.title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: C.chalk }}>{w.title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{meta}</Text>
 
       <StatGrid stats={w.stats} units={units} />

@@ -16,7 +16,7 @@ const C = (v: string) => `var(--color-${v})`;
  *  default divider every generated layout reaches for, and was retired for
  *  pure type. `mt` compensates containers that already contribute their own
  *  spacing (e.g. a grid gap), keeping the OPTICAL 36 constant. Mirrored on
- *  mobile (aurora/group-mark.tsx), where Kyoto Hour sets it in the serif.
+ *  mobile (aurora/group-mark.tsx).
  *
  *  `right` is the cluster's HEAD-LEVEL CONTROL, and it is the one thing allowed
  *  on this row besides the name — the Explore SectionHead grammar, which puts a

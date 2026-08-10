@@ -405,9 +405,8 @@ export default function AuroraPerformance({
                 </div>
                 <svg viewBox={`0 0 ${PLOT.width} ${PLOT.height + 12}`} width="100%" height={PLOT.height + 12} style={{ display: "block", marginTop: 8 }} role="img" aria-label={`${t("w.home.cockpit.last14")} — ${t("w.home.cockpit.trajectoryKey")}`}>
                   <line x1={0} y1={plot.baselineY} x2={PLOT.width} y2={plot.baselineY} stroke={LINE_HEX} strokeWidth={1} />
-                  {/* Readiness is DASH-encoded, not hue-encoded — Kyoto Hour's
-                      muted ramp can't separate two solid hues, so line style
-                      carries the identity on both themes. */}
+                  {/* Readiness is DASH-encoded, not hue-encoded — line style
+                      carries the identity, not a second solid hue. */}
                   <path d={plot.readyD} fill="none" stroke={BLUE} strokeWidth={2} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round" />
                   <path d={plot.hpiD} fill="none" stroke={LIME_HEX} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
                   <circle cx={plot.last.x} cy={plot.last.y} r={3.4} fill={LIME_HEX} />

@@ -79,7 +79,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, tracking, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { AppHeader } from "./app-header";
@@ -175,7 +175,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   openSource?: string;
 } = {}) {
   const { notify } = useConfirm();
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
@@ -1404,7 +1404,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} material="clear" />
       <View style={{ flex: 1, alignItems: "center" }}>
         {typeof title === "string" ? (
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: C.chalk }}>{title}</Text>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: C.chalk }}>{title}</Text>
         ) : (
           title
         )}
@@ -1568,11 +1568,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                  A cold start has no habit, so `usuals` is empty and the list
                  stays exactly as it was — no empty state, nothing claimed. */
               <>
-                <ASection flat title={t("w.recovery.nutrition.pick.usualHour")} meta={clockLabel} />
+                <ASection title={t("w.recovery.nutrition.pick.usualHour")} meta={clockLabel} />
                 {usuals.map((u) => recentRow(u.item))}
                 {restOfRecent.length ? (
                   <>
-                    <ASection flat title={t("w.recovery.nutrition.pick.everythingElse")} />
+                    <ASection title={t("w.recovery.nutrition.pick.everythingElse")} />
                     {restOfRecent.map(recentRow)}
                   </>
                 ) : null}
@@ -1586,7 +1586,6 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
              which list a food is in), then the world under a section head. */
           <>
             <ASection
-              flat
               title={t("w.recovery.nutrition.pick.understood")}
               meta={answer.kind === "macros" ? t("w.recovery.nutrition.pick.quickAdd") : t("w.recovery.nutrition.pick.allSources")}
             />
@@ -1600,7 +1599,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
             {remoteQuery ? (
               <>
-                <ASection flat title={t("w.recovery.nutrition.pick.database")} meta={t("w.recovery.nutrition.pick.databaseMeta")} />
+                <ASection title={t("w.recovery.nutrition.pick.database")} meta={t("w.recovery.nutrition.pick.databaseMeta")} />
                 {searching ? (
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6 }}>{t("w.recovery.nutrition.searching")}</Text>
                 ) : foodResults.length === 0 ? (
@@ -2475,7 +2474,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           {/* Title only — a rail's "see all" lives at the END OF THE RAIL as a
               tail card (aurora/rail-tail.tsx), where the thumb already is once
               the cards run out. Mirrors web. */}
-          <ASection flat title={t("w.recovery.nutrition.recipes")} />
+          <ASection title={t("w.recovery.nutrition.recipes")} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={recipeCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: GUTTER }}>
             {/* the SAME tile the library shelves carry — a recipe reads as one
                 object wherever you meet it, and the hub is where most people
@@ -2497,7 +2496,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               was previously only reachable by stumbling into one of its foods
               through search; the rail puts the companies themselves on the
               screen. */}
-          <ASection flat title={t("w.recovery.nutrition.verifiedFoods")} />
+          <ASection title={t("w.recovery.nutrition.verifiedFoods")} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={sourceCardW + 12} decelerationRate="fast" style={{ marginHorizontal: -GUTTER }} contentContainerStyle={{ gap: 12, paddingVertical: 4, paddingHorizontal: GUTTER }}>
             {VERIFIED_SOURCES.map((src) => {
               const n = vfBySource(src.id).length;

@@ -11,7 +11,7 @@ import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { ACard } from "./kit";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { DoorRow } from "./week-verdict";
 
 /**
@@ -44,7 +44,7 @@ export default function BodyProgress({
    *  view of the same weight series. */
   trend?: ReactNode;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const [metrics, setMetrics] = useState<BodyMetric[] | undefined>(undefined);
   const [form, setForm] = useState<Record<string, string>>({});
@@ -84,7 +84,7 @@ export default function BodyProgress({
   const report = has ? weeklyReport(metrics!, Date.now()) : null;
   const heightCm = metrics ? latestHeightCm(metrics) : null;
 
-  const head = { fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk } as const;
+  const head = { fontFamily: F.black, fontSize: 18, color: C.chalk } as const;
 
   return (
     <>

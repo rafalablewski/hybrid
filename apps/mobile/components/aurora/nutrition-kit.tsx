@@ -105,8 +105,7 @@ export function SourceMarkView({ C, src, height }: {
  * brand sheets solve this the same way we do here — give the mark a neutral
  * plate and let it own that rectangle. The plate is a hairlined tile a touch
  * lighter than the card, deliberately NOT white: a white slab in a dark UI
- * reads as a broken image, and on the Kyoto Hour washi it would read as a
- * sticker. Parity with web aurora/nutrition.tsx MarkPlate.
+ * reads as a broken image. Parity with web aurora/nutrition.tsx MarkPlate.
  */
 export function MarkPlate({ C, src, height = 34, full }: {
   C: ReturnType<typeof useTheme>["palette"]; src: { name: string; mark?: SourceMark }; height?: number; full?: boolean;

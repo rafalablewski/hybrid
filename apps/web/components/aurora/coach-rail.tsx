@@ -67,8 +67,8 @@ function MarqueeCard({ c, onOpen }: { c: DiscoverCoach; onOpen: () => void }) {
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, paddingRight: 16 }}>
         <span style={{ width: 46, height: 46, borderRadius: 999, boxShadow: `inset 0 0 0 1.5px ${accent}`, background: C("ink"), color: accentText, fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13, flexShrink: 0, display: "grid", placeItems: "center" }}>{initials(c.name)}</span>
         <div style={{ minWidth: 0 }}>
-          {/* Name in the display face — Mincho under Kyoto Hour — so the
-              person leads the card the way a byline leads an article. */}
+          {/* Name in the display face, so the person leads the card the
+              way a byline leads an article. */}
           {/* Name + check as flex siblings: inside one truncating box the ✓
               (rightmost inline content) would be the first thing clipped. */}
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16, letterSpacing: "-.01em", display: "flex", alignItems: "center" }}>

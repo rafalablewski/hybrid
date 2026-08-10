@@ -4,7 +4,7 @@ import {
   RECIPES, recipeCardStats, recipeCookView, recipeCoverView, recipeTileView,
   type Recipe, type RecipeCollection, type RecipeCookView,
 } from "@hybrid/core";
-import { fs, space, leading, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, space, leading, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { DockRail, DockChip, RADIUS, ACard } from "./kit";
@@ -57,7 +57,7 @@ export function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
   openRecipe: (r: Recipe) => void;
   onLayout: (e: LayoutChangeEvent) => void;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const n = shelf.recipes.length;
   return (
@@ -67,7 +67,7 @@ export function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
         accessibilityRole="button"
         style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}
       >
-        <Text accessibilityRole="header" style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{collectionTitle(shelf.key, t)}</Text>
+        <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{collectionTitle(shelf.key, t)}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
           {n} {n === 1 ? t("w.recovery.nutrition.recipeCount") : t("w.recovery.nutrition.recipesCount")} →
         </Text>
@@ -89,7 +89,6 @@ export function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
  *  stays FULL COLOUR (a ghosted emoji is a grey smudge, not a dish), which is
  *  the one thing separating a recipe tile from a goal tile. */
 export function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe; onOpen: () => void; width?: number }) {
-  const { scheme } = useTheme();
   const { t } = useLang();
   const tile = recipeTileView(recipe, { mins: (n) => `${n} ${t("w.recovery.nutrition.min")}`, kcal: (n) => `${n} kcal` });
   return (
@@ -106,7 +105,7 @@ export function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe;
       <LinearGradient pointerEvents="none" colors={["#0c0d0c00", "#0c0d0ca8", "#0c0d0c"]} locations={[0.34, 0.78, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.9, color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
       <View>
-        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: leading(16, "tight"), letterSpacing: -0.5, color: "#fff" }}>{tile.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: 16, lineHeight: leading(16, "tight"), letterSpacing: -0.5, color: "#fff" }}>{tile.title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: "rgba(255,255,255,0.7)", marginTop: 5 }}>{tile.meta}</Text>
       </View>
     </Pressable>
@@ -119,7 +118,7 @@ export function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe;
  *  along the bottom edge. The back button is the cover's own HeroNav, so the
  *  screen no longer carries a centred title that repeats the plate's. */
 export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () => void }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   return (
     <View style={{ height: 150, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: TILE_INK, marginTop: 2 }}>
       {/* alpha-over-ink stops matching web's color-mix wash — web parity */}
@@ -134,7 +133,7 @@ export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () =
         <View style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "700", letterSpacing: 0.9, textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
         </View>
-        <Text numberOfLines={2} style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: -0.8, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: -0.8, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
       </View>
       {/* one tick per step — the method's length, stated by the plate itself */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 2 }}>

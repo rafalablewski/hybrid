@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { F, fs, leading, serifIf, tracking, PressScale as Pressable, Loading } from "../lib/ui";
+import { F, fs, leading, tracking, PressScale as Pressable, Loading } from "../lib/ui";
 import { LEVEL_KEY } from "@hybrid/core";
 import type { PublicProfileResponse, CompareResult, SharedLift, BadgeAccent } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
@@ -62,12 +62,12 @@ export function SButton({ label, onPress, ghost, tone, small, disabled, full }: 
 }
 
 export function Empty({ title, sub }: { title: string; sub?: string }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   return (
     <View style={{ paddingVertical: 36, alignItems: "center" }}>
       {/* Titles read the app's heading face, empty states included — the twin
           of web's EmptyState (social-ui.tsx). */}
-      <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, marginBottom: 6 }}>{title}</Text>
+      <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle, marginBottom: 6 }}>{title}</Text>
       {sub ? <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body, textAlign: "center", lineHeight: leading(fs.body), maxWidth: 300 }}>{sub}</Text> : null}
     </View>
   );

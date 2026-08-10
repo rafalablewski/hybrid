@@ -88,9 +88,8 @@ export default function ExerciseFavouritesSheet({
         <span style={{ width: 40, height: 40, borderRadius: 12, background: C("ink"), border: `1px solid ${C("line")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 900, fontSize: 13, letterSpacing: -0.3, color: on ? "var(--lime-text)" : C("ash") }}>{e.initials}</span>
         <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: fs.bodyLg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: C("ash") }}>{days(e)}</span>
-        {/* The pinned star rides the amber TEXT tone, not the fill — the fill
-            is 1.57:1 sand-on-washi in the light theme (see the accent-channel
-            guard). */}
+        {/* The pinned star rides the amber TEXT tone, not the fill (see the
+            accent-channel guard). */}
         <span aria-hidden style={{ fontSize: 15, lineHeight: 1, color: on ? "var(--amber-text)" : C("ash"), opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</span>
       </button>
     );

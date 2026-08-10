@@ -85,7 +85,7 @@ export default function AuroraUpgrade({ open, onClose, onUpgraded }: { open: boo
       <button className="pressable"
         onClick={act}
         disabled={busy}
-        // sand (#d0cd94) is a theme-fixed LIGHT fill, so the ink on it is a fixed near-black (not --color-ink, which flips light in the light theme)
+        // sand (#d0cd94) is a LIGHT fill, so the ink on it is a fixed near-black
         style={{ width: "100%", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.subtitle, color: "var(--premium-accent-ink)", background: "var(--premium-accent)", border: "none", borderRadius: 16, padding: "16px", marginTop: 16, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
       >
         {busy ? t("w.account.upgrade.starting") : paid ? `${t("w.account.upgrade.switch-full")}` : t("w.account.upgrade.start-trial")}

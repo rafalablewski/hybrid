@@ -174,7 +174,7 @@ export default function AuroraWeekVerdict({
   /** Open one logged session from the breakdown. */
   onSession?: (id: string) => void;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t, lang } = useLang();
 
   // The chosen period, persisted per device under the PROGRESS key — the
@@ -309,7 +309,7 @@ export default function AuroraWeekVerdict({
           the card gives its own up rather than fencing the panel in. */}
       <View style={{
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28,
-        paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD, ...cardShadow(scheme),
+        paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD, ...cardShadow(),
       }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>

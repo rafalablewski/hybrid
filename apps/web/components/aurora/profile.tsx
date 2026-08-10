@@ -57,8 +57,8 @@ const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "
  * The badge's ink. The level ramp reuses the palette's existing tones rather
  * than inventing a colour per tier — ash and chalk for the lower tiers, the
  * lime accent-TEXT tone for advanced, and gold reserved for elite. Every one is
- * a per-theme AA-guarded value (palette.test.ts), so the chip clears contrast
- * on Kyoto Hour's washi card as well as on Aurora's near-black.
+ * an AA-guarded value (palette.test.ts), so the chip clears contrast on the
+ * near-black card.
  */
 const badgeInk = (accent: BadgeAccent): string =>
   accent === "gold" ? C("gold") : accent === "lime" ? accentText("lime") : accent === "chalk" ? C("chalk") : C("ash");
@@ -264,7 +264,7 @@ export default function AuroraProfile({
 
   const sectionHead = (title: string, action?: string) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 2px 12px" }}>
-      {/* Display face per the SectionHead standard — Mincho under Kyoto Hour. */}
+      {/* Display face per the SectionHead standard. */}
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, letterSpacing: "-.01em" }}>{title}</div>
       {action && <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash") }}>{action}</div>}
     </div>

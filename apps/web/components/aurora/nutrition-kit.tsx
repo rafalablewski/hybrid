@@ -144,8 +144,8 @@ export function RailHead({ title, meta, action }: {
  * brand sheets solve this the same way we do here — give the mark a neutral
  * plate and let it own that rectangle. The plate is a hairlined tile a touch
  * lighter than the card, deliberately NOT white: a white slab in a dark UI
- * reads as a broken image, and on the Kyoto Hour washi it would read as a
- * sticker. The mark is contained (never cropped, never stretched) and centred.
+ * reads as a broken image. The mark is contained (never cropped, never
+ * stretched) and centred.
  *
  * A source with no artwork keeps the WORDMARK FALLBACK — the business name set
  * in our own display face — which is honest (visibly ours) rather than an

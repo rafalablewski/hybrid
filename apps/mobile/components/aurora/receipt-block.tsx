@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { doneReceiptHero, type DoneReceipt, type DoneReceiptStat, type WeightUnit } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, serifIf, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, FIXED_FONT_SCALE } from "../../lib/ui";
 
 // ── AURORA Done receipt block (mobile) ──────────────────────────────────────
 // The finished day, as both week rails render it: the ✓, the headline, ONE
@@ -52,7 +52,7 @@ export default function ReceiptBlock({
   /** already-localized corner stamp ("Yesterday", "6-day streak"), or "". */
   stamp?: string | null;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const empty: { hero: DoneReceiptStat | null; rest: DoneReceiptStat[] } = { hero: null, rest: [] };
   const { hero, rest } = receipt ? doneReceiptHero(receipt, units) : empty;
@@ -76,7 +76,7 @@ export default function ReceiptBlock({
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
           <Text
             maxFontSizeMultiplier={FIXED_FONT_SCALE}
-            style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 19, lineHeight: HEAD_LINE, letterSpacing: -0.5, color: C.chalk }}
+            style={{ flex: 1, fontFamily: F.black, fontSize: 19, lineHeight: HEAD_LINE, letterSpacing: -0.5, color: C.chalk }}
           >
             {title}
           </Text>

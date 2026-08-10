@@ -55,10 +55,8 @@ import FeedMenu, { feedMenuFor } from "./feed-menu";
 
 const mono = "var(--font-mono)";
 const display = "var(--font-display)";
-/** The app's TITLE face (globals.css): Archivo under Aurora, the Shippori
- *  Mincho serif under Kyoto Hour. Every other screen's headings read it —
- *  a post's headline is a heading, so it reads it too, or the feed is the one
- *  tab still in sans on the light theme. */
+/** The app's TITLE face (globals.css): Archivo. Every other screen's
+ *  headings read it — a post's headline is a heading, so it reads it too. */
 const heading = "var(--font-heading)";
 
 /** The card's single accent. ALWAYS the AA-guarded `-text` channel: an accent

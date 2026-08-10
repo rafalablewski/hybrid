@@ -91,7 +91,7 @@ const GAP = 6;
 export default function FeedMenu({
   anchor, onClose, handle, authorId, mine, subjectType, subjectId, relation, onDelete, onAuthorChanged,
 }: FeedMenuProps) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const { width: screenW, height: screenH } = useWindowDimensions();
   const reduced = useReducedMotion();
@@ -165,9 +165,7 @@ export default function FeedMenu({
     ? { top: below }
     : { top: Math.max(24, anchor.y - GAP - cardH) };
 
-  const lift = scheme === "light"
-    ? ({ shadowColor: "#584934", shadowOpacity: 0.3, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 } as const)
-    : ({ shadowColor: "#000", shadowOpacity: 0.34, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 } as const);
+  const lift = { shadowColor: "#000", shadowOpacity: 0.34, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 } as const;
 
   return (
     <Modal transparent visible animationType="none" onRequestClose={close} statusBarTranslucent>

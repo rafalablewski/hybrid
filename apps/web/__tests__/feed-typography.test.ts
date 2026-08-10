@@ -17,11 +17,9 @@ import { fileURLToPath } from "node:url";
  *     captions, comments and empty states drew in the PLATFORM UI font while
  *     every other tab drew in Archivo.
  *
- *  2. THE TITLE FACE. Headings read `--font-heading` / `serifIf(scheme, …)`,
- *     which is Archivo under Aurora and the Shippori Mincho serif under Kyoto
- *     Hour. A post's headline is a heading. Hard-coding the sans left the feed
- *     as the one tab still in sans on the light theme — with its own "Now
- *     training" head, which does swap, sitting directly above it.
+ *  2. THE TITLE FACE. Headings read `--font-heading` / `F.black`/`F.bold` —
+ *     the Archivo display face. A post's headline is a heading, so it must
+ *     draw in the same face as every other heading in the product.
  *
  *  3. THE LADDER. `fs.*` (packages/core/src/scale.ts) is the only source of
  *     sizes. A hand-picked 11.5 on web against fs.micro (11) on mobile is
@@ -65,15 +63,15 @@ describe("the feed's headings read the app's TITLE face", () => {
     expect(headline.match(/fontFamily: heading/g)?.length).toBe(2);
   });
 
-  it("mobile: the post headline is set through serifIf", () => {
+  it("mobile: the post headline is set in the title face", () => {
     const src = mobile("feed-card.tsx");
     const headline = src.slice(src.indexOf("const headlineStyle"), src.indexOf("// \"Why you're seeing this\""));
-    expect(headline.match(/fontFamily: serifIf\(scheme, F\.(black|bold)\)/g)?.length).toBe(2);
+    expect(headline.match(/fontFamily: F\.(black|bold)/g)?.length).toBe(2);
   });
 
-  it("both clients' section heads already swap, and stay that way", () => {
+  it("both clients' section heads read the title face, and stay that way", () => {
     expect(web("feed-live-strip.tsx")).toContain('fontFamily: "var(--font-heading)"');
-    expect(mobile("feed-live-strip.tsx")).toContain("fontFamily: serifIf(scheme, F.black)");
+    expect(mobile("feed-live-strip.tsx")).toContain("fontFamily: F.black");
   });
 });
 

@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, leading, tracking, F, serifIf, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable, MAX_FONT_SCALE, FIXED_FONT_SCALE, HIT_TARGET, HIT_SLOP } from "../../lib/ui";
+import { fs, space, leading, tracking, F, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable, MAX_FONT_SCALE, FIXED_FONT_SCALE, HIT_TARGET, HIT_SLOP } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
@@ -390,7 +390,7 @@ export function Spark({
  * need a vertical run pass `cardStack`.
  */
 export function ACard({ children, style, solid, accent }: { children: ReactNode; style?: StyleProp<ViewStyle>; solid?: boolean; accent?: string }) {
-  const { palette, scheme } = useTheme();
+  const { palette } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED && !solid;
   const flat = StyleSheet.flatten(style) as ViewStyle | undefined;
   // When Liquid Glass is active (iOS + toggle on) the surface is a native SwiftUI
@@ -411,8 +411,8 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
           borderRadius: RADIUS.card,
           padding: CARD_PAD,
           // A touch of depth — soft, low, lifted off the field (not the heavy
-          // classic glass shadow), warm-toned on the light washi (cardShadow).
-          ...cardShadow(scheme),
+          // classic glass shadow).
+          ...cardShadow(),
         },
         accent ? { borderLeftWidth: 3, borderLeftColor: accent } : null,
         style,
@@ -866,10 +866,7 @@ export function ASegment<T extends string>({
  * in prose gets re-derived; a standard that lives in a component gets used.
  *
  * `action` makes the meta a button — a head-level CONTROL (a filter, a state
- * toggle), never a rail's "see all", which lives in the tail. `flat` drops
- * the serif swap for screens whose other heads are all sans — nutrition made
- * that call deliberately and it was right: one serif head among sans siblings
- * reads as a different screen.
+ * toggle), never a rail's "see all", which lives in the tail.
  */
 /**
  * THE METER — a labelled horizontal proportion. One row: a name on the left, its
@@ -944,7 +941,6 @@ export function ASection({
   title,
   meta,
   action,
-  flat,
   titleStyle,
   style,
 }: {
@@ -958,8 +954,6 @@ export function ASection({
    *  (a filter, a state toggle) or a meta that genuinely opens something the
    *  section itself isn't a preview of. */
   action?: () => void;
-  /** Keep the sans display face even under Kyoto Hour. */
-  flat?: boolean;
   /** The ONE escape hatch, for a head that genuinely needs a different title
    *  treatment (a state colour, a smaller rung inside a card). Deliberately one
    *  prop rather than the `titleColor` + `small` pair it replaces: a section
@@ -967,7 +961,7 @@ export function ASection({
   titleStyle?: TextStyle;
   style?: StyleProp<ViewStyle>;
 }) {
-  const { palette, scheme } = useTheme();
+  const { palette } = useTheme();
   const metaText =
     meta == null ? null : typeof meta === "string" ? (
       <Text
@@ -984,7 +978,7 @@ export function ASection({
       <Text
         accessibilityRole="header"
         maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={[{ fontFamily: flat ? F.black : serifIf(scheme, F.black), fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: palette.chalk, flexShrink: 1 }, titleStyle]}
+        style={[{ fontFamily: F.black, fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: palette.chalk, flexShrink: 1 }, titleStyle]}
       >
         {title}
       </Text>
@@ -1000,13 +994,13 @@ export function ASection({
 }
 
 export function AHeading({ children, style }: { children: ReactNode; style?: TextStyle }) {
-  const { palette, scheme } = useTheme();
+  const { palette } = useTheme();
   const type = heroTitleType(typeof children === "string" ? children : "", "title");
   return (
     <Text
       accessibilityRole="header"
       maxFontSizeMultiplier={MAX_FONT_SCALE}
-      style={[{ fontFamily: serifIf(scheme, F.black), fontSize: type.size, color: palette.chalk, lineHeight: type.lineHeight, letterSpacing: tracking.display }, style]}
+      style={[{ fontFamily: F.black, fontSize: type.size, color: palette.chalk, lineHeight: type.lineHeight, letterSpacing: tracking.display }, style]}
     >
       {children}
     </Text>

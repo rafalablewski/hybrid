@@ -17,7 +17,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, serifIf, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
@@ -142,7 +142,7 @@ export default function AuroraWeekRail({
    *  the quick-log sheet and the Done-today sheet. */
   doneFloor?: ReactNode;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const { overrides, setOverride } = usePlanOverrides(planId);
   const units = useLoggerPrefs().units;
@@ -208,7 +208,7 @@ export default function AuroraWeekRail({
     >
       {/* header: plan name + progress on one baseline row */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
           {schedule.planName}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{dayLine}</Text>
@@ -228,7 +228,6 @@ export default function AuroraWeekRail({
       <DayDetail
         key={sel.dateKey}
         C={C}
-        scheme={scheme}
         day={sel}
         receipt={receipt}
         units={units}
@@ -326,9 +325,8 @@ function LiftRow({ C, r, showSession, first }: { C: Pal; r: { name: string; sess
   );
 }
 
-function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
   C: Pal;
-  scheme: "dark" | "light";
   day: ScheduledDay;
   /** the fulfilled day's summary (null when the logged session isn't loaded). */
   receipt: DoneReceipt | null;
@@ -376,7 +374,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onSt
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Moon c={C.ash} s={26} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.home.rail.restDay")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: leading(fs.caption) }}>{t("w.home.rail.restNote")}</Text>
           </View>
         </View>
@@ -442,7 +440,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onSt
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.5, color: C.chalk, flex: 1 }}>{day.title}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk, flex: 1 }}>{day.title}</Text>
         {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
       </View>
 

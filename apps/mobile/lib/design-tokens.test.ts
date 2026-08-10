@@ -147,7 +147,7 @@ describe("touch targets", () => {
   it("RATCHET — chip implementations converge on Chip + AChip", () => {
     // Eighteen at audit time, disagreeing on fill alpha, radius, padding, size,
     // face and border — two of them painting their label with the RAW accent
-    // instead of txt(), which failed contrast on the Kyoto Hour washi. What
+    // instead of txt(), which failed contrast on the card. What
     // survives is the pair (static tag, selectable filter) plus the genuinely
     // different objects, renamed to say so: MetaPill (a status readout),
     // RailAction (an animated rail item), DayChip ×2 (date tiles), PillBtn (the
@@ -261,15 +261,14 @@ describe("loading", () => {
 
 describe("colour", () => {
   it("RATCHET — no new hex literals outside the palette", () => {
-    // 36 distinct literals at audit time. The ones that matter are #0e0f0d and
-    // #0e100d: ad-hoc surfaces between ink and ink2 that are NOT tokens and so do
-    // not flip in Kyoto Hour — in feel-prompt.tsx one sits on the same line as
-    // C.ink2, putting two states of one control at opposite ends of the value
-    // scale in the light theme.
+    // 36 distinct literals at audit time. The ones that mattered were #0e0f0d
+    // and #0e100d: ad-hoc surfaces between ink and ink2 that were NOT tokens —
+    // in feel-prompt.tsx one sat on the same line as C.ink2, putting two states
+    // of one control on two different surfaces.
     // Paid down from 148 → 136 by resolving the #0e0f0d / #0e100d family: the
-    // themed-screen uses became palette tokens (they were a real Kyoto Hour
-    // break) and the Wrapped takeover's became the named, deliberately
-    // fixed-dark HERO_TAKEOVER_INK / HERO_TAKEOVER_RAISED.
+    // themed-screen uses became palette tokens and the Wrapped takeover's
+    // became the named, deliberately fixed-dark HERO_TAKEOVER_INK /
+    // HERO_TAKEOVER_RAISED.
     expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 136, "hex literal → a palette token");
   });
 });

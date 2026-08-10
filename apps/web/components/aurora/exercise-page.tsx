@@ -28,7 +28,6 @@ import { tip, mono, ASH, VIOLET } from "@/lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, SCRUB_STYLE_IN_RAIL } from "./chart-scrub";
 import { kindStroke, TickerDelta, upHex, downHex } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
-import { useTheme } from "@/lib/use-theme";
 import { sharedElementStyle } from "@/lib/shared-element";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -266,7 +265,6 @@ function MinutesChart({ weeks, stroke, t, held }: { weeks: { minutes: number }[]
 }
 
 function DeltasChart({ runs, held }: { runs: { date: string; deltaSec: number }[]; held?: Held }) {
-  const { theme } = useTheme();
   const scrub = useSlideScrub(held, { left: 6, right: 6 });
   const hit = scrub.index;
   const data = runs.map((r) => ({ x: fmtDate(r.date), y: r.deltaSec }));
@@ -278,7 +276,7 @@ function DeltasChart({ runs, held }: { runs: { date: string; deltaSec: number }[
         <ReferenceLine y={0} stroke={LINE_HEX} />
         {!held && <Tooltip contentStyle={tip} formatter={(v) => `${Number(v) > 0 ? "+" : ""}${v} s/km`} />}
         <Bar dataKey="y" isAnimationActive={false} radius={[3, 3, 3, 3]}>
-          {data.map((d, i) => <Cell key={i} fill={d.y < 0 ? upHex(theme) : downHex(theme)} fillOpacity={hit >= 0 && i !== hit ? 0.4 : 1} />)}
+          {data.map((d, i) => <Cell key={i} fill={d.y < 0 ? upHex : downHex} fillOpacity={hit >= 0 && i !== hit ? 0.4 : 1} />)}
         </Bar>
       </BarChart>
     </ResponsiveContainer>,
@@ -597,7 +595,6 @@ export default function AuroraExercisePage({
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units, countWarmupsInVolume } = useLoggerPrefs();
-  const { theme } = useTheme();
   const [period, setPeriod] = useState<ExercisePeriod>("8w");
   const [page, setPage] = useState(0);
   const [showAll, setShowAll] = useState(false);
@@ -609,7 +606,7 @@ export default function AuroraExercisePage({
     [sessions, name, period, bw, countWarmupsInVolume],
   );
   const slides = model.slides;
-  const stroke = kindStroke(theme, model.kind);
+  const stroke = kindStroke(model.kind);
   const active = Math.min(page, slides.length - 1);
   const hero = slideHero(slides[showAll ? 0 : active]!, units, t);
 

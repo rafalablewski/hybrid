@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, type LayoutChangeEvent } from "react-native";
 import Svg, { Path, Circle, Line as SvgLine } from "react-native-svg";
 import { NUTRITION_GLYPHS, nutritionHubChart, type HubSeries, type NutritionGlyphName } from "@hybrid/core";
-import { fs, F, PressScale, serifIf } from "../../lib/ui";
+import { fs, F, PressScale } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 
@@ -87,7 +87,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
   onOpen: (dest: HubDest) => void;
 }) {
   const { t } = useLang();
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   // 0 until the tile has laid out; the chart simply holds its height until then
   // rather than drawing a line at a width it will immediately discard.
   const [chartW, setChartW] = useState(0);
@@ -135,7 +135,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
   return (
     <>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 28, marginBottom: 10, marginHorizontal: 2 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.hubTitle")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.hubTitle")}</Text>
       </View>
 
       {/* ── DIARY — the lead tile, target vs logged over the last week ── */}

@@ -183,7 +183,7 @@ export function EmptyState({ title, sub }: { title: string; sub?: string }) {
   return (
     <div style={{ textAlign: "center", padding: "40px 16px", color: C("ash") }}>
       {/* Titles read the app's heading face, empty states included (cf. the
-          Endurance empty state) — a serif head under Kyoto Hour. */}
+          Endurance empty state). */}
       <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.subtitle, color: C("chalk"), marginBottom: 6 }}>{title}</div>
       {sub && <div style={{ fontFamily: "var(--font-display)", fontSize: fs.body, lineHeight: `${leading(fs.body)}px`, maxWidth: 320, margin: "0 auto" }}>{sub}</div>}
     </div>

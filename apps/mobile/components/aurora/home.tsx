@@ -69,7 +69,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, serifIf, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
@@ -126,7 +126,7 @@ const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
  * subset (no season/Performance State), like classic.
  */
 export default function AuroraHome() {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const pa = usePremiumAccent();
   const { t } = useLang();
   const router = useRouter();
@@ -710,21 +710,6 @@ export default function AuroraHome() {
           meta={mastTag}
           metaTone="accent"
           title={mastTitle}
-          mark={
-            // Kyoto Hour hanko — the vermilion seal beside the true "Today" only
-            // (never the scrubbed days); Aurora (dark) hides it. Decorative,
-            // hence no a11y label. Mirrors web today.tsx + globals.css
-            // .hanko-seal.
-            scheme === "light" && dayIsToday ? (
-              <View
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-                style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: C.accentText.red, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-3deg" }] }}
-              >
-                <Text style={{ fontFamily: serifIf(scheme, F.semi), fontSize: 13, color: C.ink }}>力</Text>
-              </View>
-            ) : null
-          }
         />
 
         {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the
@@ -778,7 +763,7 @@ export default function AuroraHome() {
               doneFloor={doneFloor}
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
             </View>
             {/* the chooser as a snap slider — the exercise-widget rail's idiom:
@@ -839,7 +824,7 @@ export default function AuroraHome() {
             ) : null}
             {plan ? (
               <>
-                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
                 {/* One anchor — "how far in" — carried by a thin bar, not four
                     overlapping restatements of the same position. */}
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -932,7 +917,7 @@ export default function AuroraHome() {
             chooser above owns that state, and an empty card under it would be a
             second competing log CTA. */}
         {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
-          <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
+          <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow() }}>
             <DoneFloor
               rows={doneOnDay}
               planIds={fulfilledIds}
@@ -1150,7 +1135,7 @@ export default function AuroraHome() {
             characters in PL/DE it would collide with the title on a phone. Same
             anatomy the rail's own built-in header uses. */}
         <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</Text>
         </View>
         <CoachRail onOpen={() => router.push("/coaches")} headerless bleed />
@@ -1252,14 +1237,13 @@ export default function AuroraHome() {
 // natural height; the hue lives in the small glyph + CTA only — title and
 // body stay neutral. Mirrored on web (aurora/today.tsx ChooserCard).
 function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
-  const { scheme } = useTheme();
   return (
     <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20, overflow: "hidden" }}>
       {/* path-accent glow blooming from the top-right corner (Go-Full anatomy) */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <Text style={{ fontSize: 18, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "tight") }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 16 }} />
     </PressScale>
@@ -1273,14 +1257,13 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
 // reachable without re-onboarding a regular every day.
 // Mirrored on web (aurora/today.tsx StructureCard).
 function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { C: P; width: number; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
-  const { scheme } = useTheme();
   return (
     <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, overflow: "hidden" }}>
       {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <Text style={{ fontSize: 15, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
     </PressScale>
@@ -1326,7 +1309,6 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
   onPicked: () => void;
 }) {
   const { t } = useLang();
-  const { scheme } = useTheme();
   const revalidate = useRevalidate();
   const [busy, setBusy] = useState(false);
   // The rest of the check-in, in a POP-UP rather than expanded inline: the card
@@ -1534,7 +1516,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     }
   };
   return (
-    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow(scheme) }}>
+    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow() }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same

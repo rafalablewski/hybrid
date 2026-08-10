@@ -3,11 +3,10 @@ import { View, Text } from "react-native";
 import type { WearableExplain, WearableRow } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, fs, F, serifIf } from "../../lib/ui";
+import { leading, fs, F } from "../../lib/ui";
 import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-type Scheme = ReturnType<typeof useTheme>["scheme"];
 
 /**
  * THE RECOVERY-SIGNALS SHEET (mobile) — the door under the ±15 line. Mirrors
@@ -36,7 +35,7 @@ export default function WearableSheet({ explain, onClose }: {
   explain: WearableExplain | null;
   onClose: () => void;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   // Hold the last explanation through the exit animation, so the panel slides
   // down with its content rather than emptying first.
@@ -55,7 +54,7 @@ export default function WearableSheet({ explain, onClose }: {
         <View style={{ gap: 22 }}>
           {/* THE FIGURE — the same signed number the card prints. */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, letterSpacing: -1, color: txt(C, roleColor(C, totalRole)) }}>
+            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: txt(C, roleColor(C, totalRole)) }}>
               {signed(e.total)}
             </Text>
             <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>
@@ -65,7 +64,7 @@ export default function WearableSheet({ explain, onClose }: {
 
           {/* THE READINGS — value against the athlete's own baseline, with the
               source and the age, which is the whole point of this sheet. */}
-          <Block C={C} scheme={scheme} head={t("w.home.wearable.rowsHead")}>
+          <Block C={C} head={t("w.home.wearable.rowsHead")}>
             <View style={{ gap: 12 }}>
               {e.rows.map((r) => <Row key={r.metric} C={C} row={r} t={t} age={age} />)}
             </View>
@@ -74,7 +73,7 @@ export default function WearableSheet({ explain, onClose }: {
           {/* THE LEDGER — sum, rounding, and the bound when it bites. There is
               always at least one measured row to sum: neither builder returns a
               Biometrics unless a metric had a usable, recent reading. */}
-          <Block C={C} scheme={scheme} head={t("w.home.wearable.ledgerHead")}>
+          <Block C={C} head={t("w.home.wearable.ledgerHead")}>
             <View style={{ gap: 8 }}>
               <LedgerLine C={C} label={t("w.home.wearable.stepSum")} value={signed(e.raw)} />
               {e.clamped && <LedgerLine C={C} label={t("w.home.wearable.stepClamp").replace("{n}", "15")} value={signed(e.total)} />}
@@ -84,7 +83,7 @@ export default function WearableSheet({ explain, onClose }: {
           </Block>
 
           {/* WHY IT CAN VANISH — the recency rule, stated from the constant. */}
-          <Block C={C} scheme={scheme} head={t("w.home.wearable.freshHead")}>
+          <Block C={C} head={t("w.home.wearable.freshHead")}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: leading(fs.body) }}>
               {t("w.home.wearable.fresh").replace("{n}", String(e.freshDays))}
             </Text>
@@ -96,10 +95,10 @@ export default function WearableSheet({ explain, onClose }: {
 }
 
 /** SectionHead idiom — display title left, no marker in front (house rule). */
-function Block({ C, scheme, head, children }: { C: Palette; scheme: Scheme; head: string; children: ReactNode }) {
+function Block({ C, head, children }: { C: Palette; head: string; children: ReactNode }) {
   return (
     <View>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 15, color: C.chalk, marginBottom: 10 }}>{head}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 15, color: C.chalk, marginBottom: 10 }}>{head}</Text>
       {children}
     </View>
   );

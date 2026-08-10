@@ -430,14 +430,6 @@ export function heroLight(level: "container" | "item"): HeroLight {
   return level === "container" ? "left" : "right";
 }
 
-/** A cover is fixed-dark in both themes, so its status bar content is ALWAYS
- *  light. A `title` hero follows the theme — except once collapsed under a
- *  scrolled dark page, which the client resolves from `heroLayers().barred`. */
-export function heroStatusBar(rank: HeroRank, mode: HeroMode, scheme: "light" | "dark"): "light" | "dark" {
-  if (mode === "takeover" || rank === "cover") return "light";
-  return scheme === "light" ? "dark" : "light";
-}
-
 /* ── 7. THE NAVIGATION BUTTON ────────────────────────────────────────────── */
 
 /**

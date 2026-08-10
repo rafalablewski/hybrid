@@ -150,8 +150,7 @@ export default function FeedMenu({
           background: C("ink2"),
           border: `1px solid ${C("line")}`,
           borderRadius: 14,
-          // The app's own card lift — theme-aware (a warm sumi-wash on Kyoto
-          // Hour, the black bloom on Aurora), never a hardcoded black.
+          // The app's own card lift — the shared token, never a hardcoded black.
           boxShadow: "var(--shadow-card)",
           padding: 5,
           overflow: "hidden",

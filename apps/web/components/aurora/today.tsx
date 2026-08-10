@@ -107,9 +107,8 @@ const SocialFeed = dynamic(() => import("../social-feed"), { ssr: false });
 // Brand-band → colour helpers (mirror the classic Today, theme-aware via vars).
 const C = (v: string) => `var(--color-${v})`;
 const roleColor = (role: SemanticRole) => C(ROLE_COLOR[role]);
-// The ring's ticks are DRAWN marks, so they take the accent-text channel:
-// the `amber` FILL is pale sand, which on Kyoto Hour's washi paper is all but
-// invisible — and 40–59 is exactly the band an athlete needs to see.
+// The ring's ticks are DRAWN marks, so they take the accent-text channel —
+// the AA-guarded tone, not the raw fill.
 const readyColor = (v: number) => roleText(readinessRole(v));
 
 /**
@@ -669,12 +668,6 @@ export default function AuroraToday({
         meta={mastTag}
         metaTone="accent"
         title={mastTitle}
-        mark={
-          // Kyoto Hour hanko — the app's vermilion seal, stamped beside the true
-          // "Today" only (never the scrubbed days). Hidden in Aurora via CSS
-          // (.hanko-seal). Mirrors mobile home.tsx.
-          dayIsToday ? <span className="hanko-seal" aria-hidden>力</span> : null
-        }
       />
 
       {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the

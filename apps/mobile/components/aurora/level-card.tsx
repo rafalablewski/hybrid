@@ -8,7 +8,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F, serifIf, leading } from "../../lib/ui";
+import { F, leading } from "../../lib/ui";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useFitnessLevel, type FitnessLevelRead } from "../../lib/use-fitness-level";
 import { ACard, CardFoot } from "./kit";
@@ -43,7 +43,7 @@ export default function LevelCard({ sessions, read }: {
   read?: FitnessLevelRead;
 }) {
   const { t } = useLang();
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const prefs = useLoggerPrefs();
   const units: WeightUnit = prefs.units;
   const own = useFitnessLevel(sessions);
@@ -102,7 +102,7 @@ export default function LevelCard({ sessions, read }: {
       {/* BEAT 1 — the answer, before any reading has been decided on. */}
       <Text
         style={{
-          fontFamily: serifIf(scheme, F.black),
+          fontFamily: F.black,
           fontSize: level ? 38 : 24,
           lineHeight: leading(level ? 38 : 24, "snug"),
           color: level ? C.chalk : C.ash,

@@ -95,7 +95,6 @@ const UserPage = dynamic(() => import("./user-page"), { ssr: false });
 import AnnouncementBanner from "./announcement-banner";
 import PremiumAccentStyle from "./premium-accent-style";
 import CoachInviteBanner from "./coach-invite-banner";
-import { useTheme } from "@/lib/use-theme";
 import { useFlags } from "@/lib/use-flags";
 import { useSessions } from "@/lib/use-sessions";
 import { useMacrocycle } from "@/lib/use-macrocycle";
@@ -141,7 +140,6 @@ export default function AppShell() {
   // from a single pinned entry — so the upgrade's full value is clear without
   // cluttering the lean app. Shown only to the casual persona.
   const showUpgradeEntry = persona === "casual";
-  const { theme, toggle } = useTheme();
   const aurora = useTemplate().template === "aurora";
   const { collapsed, toggle: toggleCollapsed } = useCollapsible("hybrid-sidebar");
   // The sidebar is the DESKTOP rail and nothing else now. On phones it used to
@@ -753,34 +751,14 @@ export default function AppShell() {
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         {/* Desktop-only utility header (Classic shows the app kicker + screen
-            title; theme/lang controls sit on the right). The responsive/mobile
+            title; the language control sits on the right). The responsive/mobile
             web view drops this whole bar entirely — matching the native mobile
             app, which has no top header: navigation is the bottom pill nav /
-            command orb and theme + language live in Settings. */}
+            command orb and language lives in Settings. */}
         {!isMobile && (
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.md, marginBottom: 24, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: space.md, minWidth: 0 }} />
           <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-            <button className="pressable"
-              onClick={toggle}
-              title="Toggle theme"
-              aria-label="Toggle light/dark theme"
-              style={{
-                ...cond,
-                fontWeight: 700,
-                fontSize: fs.body,
-                textTransform: "uppercase",
-                letterSpacing: ".08em",
-                color: CHALK,
-                background: INK2,
-                border: `1px solid ${LINE}`,
-                borderRadius: 999,
-                padding: "8px 14px",
-                cursor: "pointer",
-              }}
-            >
-              {theme === "dark" ? "◐ Light" : "◑ Dark"}
-            </button>
             <Select
               value={lang}
               onChange={(e) => setLang(e.target.value as "en" | "pl" | "de")}

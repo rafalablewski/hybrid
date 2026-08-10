@@ -223,9 +223,7 @@ export function CoverHero({ cover, back, backLabel, rail, heroRef }: { cover: Co
 
       {/* the cover ink bleeding into the page — in normal flow (so it scrolls
           up under the sticky cover) but zero-height and z-index:-1, so it costs
-          no layout and paints BEHIND the hem it fades past. `--cover-bleed` is
-          0 on the light theme: there a dark poster meeting warm paper is a real
-          boundary, not an artifact, and a dark veil would only muddy the hem. */}
+          no layout and paints BEHIND the hem it fades past. */}
       <div aria-hidden style={{ position: "relative", height: 0, zIndex: -1, pointerEvents: "none" }}>
         <span style={{ position: "absolute", top: -BLEED_OVER, left: "calc(-1 * var(--page-pad-x, 12px))", right: "calc(-1 * var(--page-pad-x, 12px))", height: BLEED_OVER + BLEED_FADE, background: BLEED_BG, opacity: `calc(var(--cover-bleed, 1) * (1 - ${p}))` }} />
       </div>

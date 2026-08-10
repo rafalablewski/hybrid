@@ -39,11 +39,10 @@ import Sheet from "./aurora/sheet";
 // SHEET carrying the full prescription story.
 
 const HEX: Record<LoadColor, string> = { blue: BLUE, lime: LIME, amber: AMBER, red: RED, ash: ASH };
-// accent-as-TEXT variants (darken on the light theme so they keep AA).
+// accent-as-TEXT variants (the AA-guarded tones for glyphs).
 const HEX_T: Record<LoadColor, string> = { blue: BLUE_T, lime: LIME_T, amber: AMBER_T, red: RED_T, ash: ASH };
-// Theme-aware hairline — the old rgba(255,255,255,.05) was a WHITE line that
-// vanished/inverted wrong on the Kyoto light theme; mix the themed line token
-// down to the same visual weight instead.
+// Hairline — the shared line token mixed down to a whisper, instead of the
+// old hardcoded rgba(255,255,255,.05).
 const HAIR = "color-mix(in srgb, var(--color-line) 60%, transparent)";
 const mono = "var(--font-mono)";
 const disp = "var(--font-display)";

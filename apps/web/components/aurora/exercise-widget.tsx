@@ -25,22 +25,19 @@ import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useExerciseFavourites } from "@/lib/exercise-favourites";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useLang } from "@/lib/i18n";
-import { useTheme, type Theme } from "@/lib/use-theme";
 import { armSharedElement } from "@/lib/shared-element";
 
 const C = (v: string) => `var(--color-${v})`;
 
 /* Chart strokes are SVG presentation attrs (can't resolve CSS vars) — so they
- * resolve from the core THEMES palette per theme: Aurora keeps the dark accents
- * (chartreuse / lifted teal / sand), Kyoto Hour uses pine / sage-text /
- * amber-text so the chart material matches the washi palette instead of
- * dragging dark-theme teal onto light paper. Parity: the mobile
- * kindStroke(C, kind), which resolves the same channels via the palette. */
-export const kindStroke = (theme: Theme, kind: ExerciseWidgetCard["kind"]): string =>
-  kind === "strength" ? THEMES[theme].accent : kind === "cardio" ? THEMES[theme].accentText.blue : THEMES[theme].accentText.amber;
+ * resolve from the core THEMES palette: chartreuse / lifted teal / sand.
+ * Parity: the mobile kindStroke(C, kind), which resolves the same channels via
+ * the palette. */
+export const kindStroke = (kind: ExerciseWidgetCard["kind"]): string =>
+  kind === "strength" ? THEMES.dark.accent : kind === "cardio" ? THEMES.dark.accentText.blue : THEMES.dark.accentText.amber;
 /** improvement / regression bar fills (exercise-page deltas chart). */
-export const upHex = (theme: Theme): string => THEMES[theme].accent;
-export const downHex = (theme: Theme): string => THEMES[theme].accentText.red;
+export const upHex = THEMES.dark.accent;
+export const downHex = THEMES.dark.accentText.red;
 
 /** "213 kg" → { v: "213", u: "kg" } so the number can lead and the unit recede. */
 /** A strip point's date, in the card's own quiet voice. */
@@ -93,15 +90,14 @@ function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) =>
  * point's, and the footer's metric name becomes its date. The strip is 24px
  * tall; a pinned pill would cover the card.
  */
-function Card({ card, units, theme, t, onOpen }: {
+function Card({ card, units, t, onOpen }: {
   card: ExerciseWidgetCard;
   units: WeightUnit;
-  theme: Theme;
   t: (k: string) => string;
   onOpen: (name: string) => void;
 }) {
   const h = headline(card, units, t);
-  const stroke = kindStroke(theme, card.kind);
+  const stroke = kindStroke(card.kind);
   const scrub = useChartScrub(card.spark.length, "band", undefined, { inButton: true });
   const read = scrub.index >= 0 ? exerciseCardReading(card, scrub.index, units) : null;
   const when = read?.weekStart
@@ -195,7 +191,6 @@ export default function ExerciseWidgetRail({
   const { t } = useLang();
   const bw = useBodyweightLookup();
   const { units } = useLoggerPrefs();
-  const { theme } = useTheme();
   const favourites = useExerciseFavourites();
   const [adding, setAdding] = useState(false);
   const cards = useMemo(
@@ -233,7 +228,7 @@ export default function ExerciseWidgetRail({
           the rail lost theatre and the cluster gained a single voice. */}
       <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollSnapType: "x proximity", scrollbarWidth: "none", margin: "0 calc(-1 * var(--page-pad-x, 12px))", padding: "2px var(--page-pad-x, 12px) 6px" }}>
         {cards.map((card) => (
-          <Card key={card.name} card={card} units={units} theme={theme} t={t} onOpen={onOpen} />
+          <Card key={card.name} card={card} units={units} t={t} onOpen={onOpen} />
         ))}
         {/* THE ADD DOOR — the dashed ghost tile, at tile scale.
             #365 retired this rail's dashed ＋ for three good reasons: a dashed

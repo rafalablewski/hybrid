@@ -78,7 +78,7 @@ export function LiquidSeg({
    *  name per control identity — the Today hub uses "today-hub". */
   flightKey?: string;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const nativeGlass = LIQUID_GLASS_SUPPORTED;
   const reduced = useReducedMotion();
 
@@ -218,9 +218,9 @@ export function LiquidSeg({
 
   // The rest pill is deliberately NEUTRAL — the reference look — not the brand
   // chartreuse: a near-solid step of the text colour over the track.
-  const restFill = withAlpha(C.chalk, scheme === "light" ? 0.14 : 0.24);
-  const simFill = scheme === "light" ? "rgba(255,255,255,0.45)" : withAlpha(C.chalk, 0.1);
-  const simRim = scheme === "light" ? "rgba(255,255,255,0.85)" : withAlpha(C.chalk, 0.4);
+  const restFill = withAlpha(C.chalk, 0.24);
+  const simFill = withAlpha(C.chalk, 0.1);
+  const simRim = withAlpha(C.chalk, 0.4);
 
   return (
     <View
@@ -246,7 +246,7 @@ export function LiquidSeg({
               { scaleY: lift.interpolate({ inputRange: [0, 1], outputRange: [1, inflateY] }) },
             ],
             shadowColor: "#000",
-            shadowOpacity: scheme === "light" ? 0.16 : 0.3,
+            shadowOpacity: 0.3,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 4 },
           }}

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { brand } from "@hybrid/core";
 import { SessionProvider } from "@/lib/session";
 import { LanguageProvider } from "@/lib/i18n";
@@ -23,12 +22,8 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Read the persisted theme server-side so the correct `data-theme` is in the
-  // first paint — no dark→light flash for light-mode users. Mirrors the cookie
-  // written by lib/use-theme.ts. (Already force-dynamic for the CSP nonce.)
-  const theme = (await cookies()).get("hybrid-theme")?.value === "light" ? "light" : "dark";
   return (
-    <html lang="en" data-theme={theme}>
+    <html lang="en">
       <body>
         <TemplateSync />
         <QueryProvider>

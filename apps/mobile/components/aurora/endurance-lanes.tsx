@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useChartScrub, type ScrubBind } from "./chart-scrub";
 import { GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
@@ -79,7 +79,7 @@ export default function AuroraEnduranceLanes({
    *  omit it and the state and the chip both stay in here. */
   order?: LaneOrder;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const [ownOrder, setOwnOrder] = useState<LaneOrder>("trained");
   const [expanded, setExpanded] = useState(false);
@@ -116,7 +116,7 @@ export default function AuroraEnduranceLanes({
           chartreuse stays reserved for "go". Mirrors web endurance-lanes.tsx. */}
       {head && (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("endurance.title")}</Text>
           {stacked.length > 1 && <LaneOrderChip order={order} onPress={cycle} />}
         </View>
       )}
@@ -203,7 +203,7 @@ export function LaneOrderChip({ order, onPress }: { order: LaneOrder; onPress: (
 }
 
 function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: CardioDiscipline) => void; canOpen: boolean }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const zones = zonePercents(lane.zones);
   return (
@@ -216,7 +216,7 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
           each pointing somewhere different, none of them where the thumb
           actually is when the cards run out. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", marginHorizontal: 2, marginBottom: 8 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.note, color: C.chalk }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>
           {DISCIPLINE_META[lane.discipline].emoji} {t(lane.labelKey)}
         </Text>
       </View>

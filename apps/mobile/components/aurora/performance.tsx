@@ -24,7 +24,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import AuroraVolume from "./volume";
@@ -38,14 +38,12 @@ import FetchError from "./fetch-error";
 import { CtaLabel } from "./cta-label";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-type Scheme = ReturnType<typeof useTheme>["scheme"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
 const readyColor = (v: number, C: Palette) => roleColor(C, readinessRole(v));
 /**
  * A semantic role as a colour to DRAW WITH — the accent-TEXT tone, not the raw
- * fill. `roleColor` returns the fill, which is tuned to sit under something: on
- * Kyoto Hour the `amber` fill is sand #d0cd94, and an 8px sand swatch on washi
- * paper is invisible. `txt()` maps a fill to the AA-guarded tone for that theme.
+ * fill. `roleColor` returns the fill, which is tuned to sit under something;
+ * `txt()` maps a fill to the AA-guarded tone.
  */
 const rolePaint = (C: Palette, role: SemanticRole) => txt(C, roleColor(C, role));
 /**
@@ -107,7 +105,7 @@ export default function AuroraPerformance({ top }: { top?: ReactNode }) {
 }
 
 function Full({ top }: { top?: ReactNode }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   // SAFE CACHE (lib/queries.ts `Read`): each source reports whether it has a
@@ -285,12 +283,12 @@ function Full({ top }: { top?: ReactNode }) {
                 the band word itself was the raw engine identifier, English on
                 every locale. Now: label, reading, provenance. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
                   {t("w.home.cockpit.freshness")}
                 </Text>
-                <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
                   {t(hpiBandKey(state.hpi.band))}
                 </Text>
                 {/* The wearable rides the headline as the signed adjustment it
@@ -328,8 +326,8 @@ function Full({ top }: { top?: ReactNode }) {
                 ⓘ is the same affordance Today's readiness reading uses for
                 "explain THIS number". */}
             <View style={{ flexDirection: "row", marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Comp C={C} scheme={scheme} label={t("w.home.cockpit.strengthFresh")} value={`${state.hpi.components.strength}`} onExplain={() => setFreshOpen("strength")} explainLabel={t("w.home.fresh.explain")} />
-              <Comp C={C} scheme={scheme} label={t("w.home.cockpit.enduranceFresh")} value={`${state.hpi.components.endurance}`} onExplain={() => setFreshOpen("endurance")} explainLabel={t("w.home.fresh.explain")} />
+              <Comp C={C} label={t("w.home.cockpit.strengthFresh")} value={`${state.hpi.components.strength}`} onExplain={() => setFreshOpen("strength")} explainLabel={t("w.home.fresh.explain")} />
+              <Comp C={C} label={t("w.home.cockpit.enduranceFresh")} value={`${state.hpi.components.endurance}`} onExplain={() => setFreshOpen("endurance")} explainLabel={t("w.home.fresh.explain")} />
             </View>
             <FreshnessSheet explain={freshExplain} onClose={() => setFreshOpen(null)} />
             <WearableSheet explain={wearableOpen ? wearable : null} onClose={() => setWearableOpen(false)} />
@@ -365,9 +363,9 @@ function Full({ top }: { top?: ReactNode }) {
               </View>
               <Svg width="100%" height={PLOT.height + 12} viewBox={`0 0 ${PLOT.width} ${PLOT.height + 12}`} style={{ marginTop: 8 }}>
                 <Line x1={0} y1={plot.baselineY} x2={PLOT.width} y2={plot.baselineY} stroke={C.line} strokeWidth={1} />
-                {/* Readiness is DASH-encoded, not hue-encoded — Kyoto Hour's
-                    muted ramp can't separate two solid hues, so line style
-                    carries the identity on both themes and both clients. */}
+                {/* Readiness is DASH-encoded, not hue-encoded — line style
+                    carries the identity on both clients, not a second solid
+                    hue. */}
                 <Path d={plot.readyD} fill="none" stroke={C.blue} strokeWidth={2} strokeDasharray="5,4" strokeLinejoin="round" strokeLinecap="round" />
                 <Path d={plot.hpiD} fill="none" stroke={C.lime} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
                 <Circle cx={plot.last.x} cy={plot.last.y} r={3.4} fill={C.lime} />
@@ -706,8 +704,8 @@ function MetaPill({ C, children, dot, icon }: { C: Palette; children: React.Reac
  * a tap target anyone finds on a phone — with the ⓘ riding the label row as the
  * visible affordance, exactly as Today's readiness reading does it.
  */
-function Comp({ C, scheme, label, value, onExplain, explainLabel }: {
-  C: Palette; scheme: Scheme; label: string; value: string;
+function Comp({ C, label, value, onExplain, explainLabel }: {
+  C: Palette; label: string; value: string;
   onExplain: () => void; explainLabel: string;
 }) {
   return (
@@ -717,7 +715,7 @@ function Comp({ C, scheme, label, value, onExplain, explainLabel }: {
       accessibilityLabel={`${label} ${value} – ${explainLabel}`}
       style={{ flex: 1, alignItems: "center" }}
     >
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 24, color: C.chalk, letterSpacing: -0.5 }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, letterSpacing: -0.5 }}>{value}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
         {/* The glyph IS a ring — wrapping it in a second bordered circle, as the
@@ -754,7 +752,7 @@ const TEASE: { key: string }[] = [
  * With no logged training there is no figure to show and none is invented.
  */
 function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; top?: ReactNode }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   // The teaser owns its own reads — it renders instead of `Full`, so it never
   // sees that component's data.
@@ -780,12 +778,12 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
       {hasData && (
         <ACard solid>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
                 {t("w.home.cockpit.freshness")}
               </Text>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
                 {t(hpiBandKey(state.hpi.band))}
               </Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.teaseYours")}</Text>

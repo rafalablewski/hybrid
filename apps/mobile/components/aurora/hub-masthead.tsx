@@ -3,7 +3,7 @@ import { Animated, Text, View } from "react-native";
 import { HUB_MASTHEAD, HUB_MASTHEAD_HEIGHT, hubTitleType, type HubMetaTone } from "@hybrid/core";
 import { useNavScroll } from "../../lib/nav-scroll";
 import { useTheme, txt } from "../../lib/theme";
-import { F, serifIf, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 
 /**
  * THE HUB MASTHEAD — mobile.
@@ -31,8 +31,8 @@ export function HubMasthead({
   meta,
   metaTone = "plain",
   title,
-  /** Rendered inline after the title (the Kyoto Hour hanko). Decorative only —
-   *  anything with meaning belongs in a slot of its own. */
+  /** Rendered inline after the title. Decorative only — anything with
+   *  meaning belongs in a slot of its own. */
   mark,
 }: {
   eyebrow?: string | null;
@@ -41,7 +41,7 @@ export function HubMasthead({
   title: string;
   mark?: ReactNode;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const type = hubTitleType(title);
 
   // THE COLLAPSE, for all three tabs. Every hub view already publishes its
@@ -110,7 +110,7 @@ export function HubMasthead({
           maxFontSizeMultiplier={MAX_FONT_SCALE}
           numberOfLines={type.maxLines}
           style={{
-            fontFamily: serifIf(scheme, F.black),
+            fontFamily: F.black,
             fontSize: type.size,
             lineHeight: type.lineHeight,
             letterSpacing: type.tracking,

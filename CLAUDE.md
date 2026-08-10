@@ -162,7 +162,7 @@ A small dot, circle or square placed before a section label reads as AI slop.
 Never render one in front of a heading, kicker, or cluster label, on either
 client. The **golden standard is the Explore tab's `SectionHead`**: a bold
 display-face title in chalk (web `--font-heading` 800/18; mobile
-`serifIf(scheme, F.black)` 18), with any META or head-level CONTROL (a count, a
+`F.black` 18), with any META or head-level CONTROL (a count, a
 filter, "Free") as small mono uppercase on the RIGHT side of the same row —
 never a marker on the left. That right slot is NOT where a rail's "See all"
 goes; an exit lives at the end of the thing (see the rule below). SEMANTIC dots
