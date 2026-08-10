@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
-import { colors, ROLE_COLOR, type AccentKey, type SemanticRole, fs, space } from "@hybrid/core";
+import { colors, ROLE_COLOR, statSubTone, type AccentKey, type SemanticRole, fs, space } from "@hybrid/core";
 import RollingNumber from "@/components/aurora/rolling-number";
 
 // Re-export the shared scale so screens import sizing from one place:
@@ -503,9 +503,15 @@ export function Stat({
           : value}
       </div>
       {sub && (
+        // ONLY a sign-led sub carries a tone (core `statSubTone`). This used to
+        // paint every non-negative sub in the "good" accent, which meant a sub
+        // that was not a delta got congratulated — `sub={dateStr}` rendered a
+        // DATE in chartreuse, as did "not enough data" and "ARR $1.2M". The
+        // minus-marked thresholds the admin panels rely on ("−below 40") are
+        // sign-led already, so they still read as failing.
         <Mono
           s={{ fontSize: fs.caption }}
-          c={sub.startsWith("−") || sub.startsWith("↓") ? RED : LIME}
+          c={{ down: RED, up: LIME, flat: ASH }[statSubTone(sub)]}
         >
           {sub}
         </Mono>

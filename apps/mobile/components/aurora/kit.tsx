@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, serifIf, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -1054,7 +1054,9 @@ export function AStat({
   style?: StyleProp<ViewStyle>;
 }) {
   const { palette } = useTheme();
-  const down = !!sub && (sub.startsWith("−") || sub.startsWith("-") || sub.startsWith("↓"));
+  // ONLY a sign-led sub carries a tone (core `statSubTone`) — a caption, a
+  // date or a denominator is neutral, not a win.
+  const tone = statSubTone(sub);
   return (
     <ACard solid={solid} style={style}>
       <Text
@@ -1067,7 +1069,7 @@ export function AStat({
         {typeof value === "string" || typeof value === "number" ? (
           <RollingNumber
             value={String(value)}
-            style={{ fontFamily: F.black, fontSize: fs.hero, color: c ?? palette.chalk, lineHeight: leading(fs.hero, "tight") }}
+            style={{ fontFamily: F.black, fontSize: fs.hero, color: txt(palette, c ?? palette.chalk), lineHeight: leading(fs.hero, "tight") }}
           />
         ) : (
           value
@@ -1076,7 +1078,7 @@ export function AStat({
       {sub ? (
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(palette, down ? palette.red : palette.lime) }}
+          style={{ fontFamily: F.mono, fontSize: fs.caption, color: tone === "flat" ? palette.ash : txt(palette, tone === "down" ? palette.red : palette.lime) }}
         >
           {sub}
         </Text>

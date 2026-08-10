@@ -246,10 +246,16 @@ describe("the stat tile", () => {
     }
   });
 
-  it("reads a leading minus as a LOSS on both clients", () => {
-    // The sub-line's sign picks its colour. A tile that coloured a drop green
-    // on one client and red on the other would be worse than no colour at all.
-    expect(webUi).toMatch(/sub\.startsWith\("−"\)/);
-    expect(kit).toMatch(/sub\.startsWith\("−"\)/);
+  it("tones the sub-line from the SHARED rule, not a hand-rolled one", () => {
+    // A tile that coloured a drop green on one client and red on the other
+    // would be worse than no colour at all, so the rule lives in core
+    // (`statSubTone`) and both clients read it. Asserting the shared CALL
+    // rather than the old inline `sub.startsWith("−")` is the point: the
+    // inline version is exactly what drifted, and it is what painted a date
+    // in the "good" accent on web.
+    for (const [name, src] of [["web Stat", webUi], ["mobile AStat", kit]] as const) {
+      expect(src, `${name} must tone its sub through core statSubTone`).toMatch(/statSubTone\(/);
+      expect(src, `${name} is hand-rolling the sign rule again`).not.toMatch(/sub\.startsWith\(/);
+    }
   });
 });

@@ -16,7 +16,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, ASub, ASegment, AMeter } from "./kit";
+import { AuroraScreen, ACard, AStat, ASub, ASegment, AMeter } from "./kit";
 
 /**
  * AURORA Analytics — the 3-scope dashboard (Athlete / Coach / Operator), now
@@ -37,18 +37,21 @@ import { AuroraScreen, ACard, ASub, ASegment, AMeter } from "./kit";
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-/** A big stat tile — accent kicker, oversized number, optional sub. Mirrors the
- *  web AStat (which used a coloured dot); here the ACCENT IS THE NUMBER, since a
- *  dot before a label reads as decoration on mobile. */
-function AStat({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
-  const C = useTheme().palette;
+/**
+ * One cell of Analytics' two-up grid. The TILE is the kit's `AStat` — this is
+ * only the grid cell around it.
+ *
+ * It used to be a private `AStat` of the same name with its own type: a
+ * `fs.nano` label at 1.2 tracking over a 28pt figure, against the kit's
+ * `fs.micro` at 0.9 over `fs.hero`. That is exactly the drift the shared tile
+ * exists to end — and because the figures here are the ones that CHANGE (a
+ * session count, a roster's tonnage), they now roll rather than swap, which is
+ * the whole point of there being one tile.
+ */
+function StatCell({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
   return (
     <View style={{ width: "50%", padding: 5 }}>
-      <ACard style={{ padding: 16 }}>
-        <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: F.black, fontSize: 28, marginTop: 8, color: accent ? txt(C, accent) : C.chalk }}>{value}</Text>
-        {!!sub && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4 }}>{sub}</Text>}
-      </ACard>
+      <AStat label={label} value={value} sub={sub} c={accent} style={{ padding: 16 }} />
     </View>
   );
 }
@@ -167,10 +170,10 @@ function AthleteAnalytics({ sessions }: { sessions: LoggedSession[] }) {
   return (
     <>
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5, marginTop: 12 }}>
-        <AStat label={t("w.home.analytics.sessions")} value={sessions.length} accent={C.lime} />
-        <AStat label={t("w.home.analytics.totalVolume")} value={fmtTonnage(view.vol, units)} />
-        <AStat label={best ? `${best.lift} ${t("w.home.analytics.col.heaviest")}` : t("w.home.analytics.heaviest")} value={best ? fmtWeight(best.weightKg, units) : "—"} accent={C.lime} />
-        <AStat label={t("w.home.analytics.lastReadiness")} value={view.lastReadiness ?? "—"} accent={C.blue} />
+        <StatCell label={t("w.home.analytics.sessions")} value={sessions.length} accent={C.lime} />
+        <StatCell label={t("w.home.analytics.totalVolume")} value={fmtTonnage(view.vol, units)} />
+        <StatCell label={best ? `${best.lift} ${t("w.home.analytics.col.heaviest")}` : t("w.home.analytics.heaviest")} value={best ? fmtWeight(best.weightKg, units) : "—"} accent={C.lime} />
+        <StatCell label={t("w.home.analytics.lastReadiness")} value={view.lastReadiness ?? "—"} accent={C.blue} />
       </View>
 
       {view.series.length > 0 && (
@@ -220,10 +223,10 @@ function CoachAnalytics() {
   return (
     <>
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5, marginTop: 12 }}>
-        <AStat label={t("w.home.analytics.clients")} value={roster.length} accent={C.violet} />
-        <AStat label={t("w.home.analytics.avgAdherence")} value={`${avgAdh}%`} accent={C.lime} />
-        <AStat label={t("w.home.analytics.avgReadiness")} value={avgRead ?? "—"} accent={C.blue} />
-        <AStat label={t("w.home.analytics.rosterVolume")} value={`${(totalVol / 1000).toFixed(1)}k`} sub="kg" />
+        <StatCell label={t("w.home.analytics.clients")} value={roster.length} accent={C.violet} />
+        <StatCell label={t("w.home.analytics.avgAdherence")} value={`${avgAdh}%`} accent={C.lime} />
+        <StatCell label={t("w.home.analytics.avgReadiness")} value={avgRead ?? "—"} accent={C.blue} />
+        <StatCell label={t("w.home.analytics.rosterVolume")} value={`${(totalVol / 1000).toFixed(1)}k`} sub="kg" />
       </View>
 
       <AFrame title={t("w.home.analytics.adherenceByClient")} kicker={t("w.home.analytics.last7days")}>
@@ -279,10 +282,10 @@ function OperatorAnalytics() {
   return (
     <>
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5, marginTop: 12 }}>
-        <AStat label={t("w.home.analytics.totalUsers")} value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} accent={C.lime} />
-        <AStat label={t("w.home.analytics.active30d")} value={stats.mau.toLocaleString()} sub={t("w.home.analytics.trainedIn30d")} accent={C.lime} />
-        <AStat label={t("w.home.analytics.sessionsLogged")} value={stats.sessions.toLocaleString()} />
-        <AStat label={t("w.home.analytics.coaches")} value={stats.coaches.toLocaleString()} accent={C.violet} />
+        <StatCell label={t("w.home.analytics.totalUsers")} value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} accent={C.lime} />
+        <StatCell label={t("w.home.analytics.active30d")} value={stats.mau.toLocaleString()} sub={t("w.home.analytics.trainedIn30d")} accent={C.lime} />
+        <StatCell label={t("w.home.analytics.sessionsLogged")} value={stats.sessions.toLocaleString()} />
+        <StatCell label={t("w.home.analytics.coaches")} value={stats.coaches.toLocaleString()} accent={C.violet} />
       </View>
 
       {stats.planPopularity.length > 0 && (
