@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
 import { colors, ROLE_COLOR, type AccentKey, type SemanticRole, fs, space } from "@hybrid/core";
+import RollingNumber from "@/components/aurora/rolling-number";
 
 // Re-export the shared scale so screens import sizing from one place:
 //   import { fs, space } from "@/lib/ui"  →  fontSize: fs.body, gap: space.lg
@@ -489,9 +490,17 @@ export function Stat({
           color: txt(c),
           lineHeight: 1.1,
           margin: "6px 0 2px",
+          display: "flex",
         }}
       >
-        {value}
+        {/* A FIGURE rolls to its new value; anything else is rendered as given.
+            `value` is a ReactNode because a few callers compose a unit or an
+            icon into it, and rolling an arbitrary tree would be nonsense — but
+            the overwhelming majority pass a formatted number, and this is the
+            one place all thirty-one stat tiles pass through. */}
+        {typeof value === "string" || typeof value === "number"
+          ? <RollingNumber value={String(value)} />
+          : value}
       </div>
       {sub && (
         <Mono

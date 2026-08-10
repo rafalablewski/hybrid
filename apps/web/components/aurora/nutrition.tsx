@@ -29,6 +29,7 @@ import {
 } from "@hybrid/core";
 import { fs, space, CARD_PAD, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import RollingNumber from "./rolling-number";
 import { usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { AuroraIcon } from "./icons";
@@ -54,7 +55,7 @@ import {
   collectionTitle, RecipesLibrary, RecipeCollectionScreen, RecipeDetail, CookPlate, RecipeTile,
 } from "./recipe-library";
 import {
-  CDivider, NutritionNudgeLine, Ring, SummaryDashboard, OnboardingGoal, useCountUpFactor,
+  CDivider, NutritionNudgeLine, Ring, SummaryDashboard, OnboardingGoal,
 } from "./nutrition-panels";
 import { PantryScreen, UndoBar, UNDO_MS } from "./pantry";
 import GroupMark from "./group-mark";
@@ -1146,10 +1147,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // another screen is a tile you can't trust.
   const weekSummary = useMemo(() => nutritionSummary(signals, { targets, windowDays: 7 }), [signals, targets]);
   const nudge = useMemo(() => nutritionNudge(today, targets), [today, targets]);
-  // Mount count-up for the hero's kcal number (0 → target, rAF ease-out).
-  // core's statCountUp is the wrapped-slides string formatter, not a hook —
-  // the hub number is a plain int, so a 0→1 factor is all we need here.
-  const kcalCountF = useCountUpFactor();
   // ── The sticky HUD ────────────────────────────────────────────────────────
   // The one number you came for is what's LEFT, and it used to exist only at
   // the top of the hub: scroll into the picker or the libraries to choose food
@@ -2491,7 +2488,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
                 <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} color={kcalOver ? C("red") : C("lime")} size={200} center={
                   <span style={{ display: "block", textAlign: "center" }}>
-                    <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}>{Math.round((targets.kcal - heroDay.kcal) * kcalCountF)}</span>
+                    {/* THE NUMBER YOU CAME FOR, and the one that moves most: it
+                        changes every time food is logged. It used to run a
+                        MOUNT count-up (0 → value, web only) and then swap on
+                        every change after that — an entrance flourish on the
+                        one figure whose changes are the content, and a
+                        behaviour mobile never had. It rolls now, on both. */}
+                    <RollingNumber
+                      value={String(Math.round(targets.kcal - heroDay.kcal))}
+                      style={{ justifyContent: "center", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}
+                    />
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{Math.round(heroDay.kcal)} / {targets.kcal}</span>
                   </span>
                 } />

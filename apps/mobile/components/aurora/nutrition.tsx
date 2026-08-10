@@ -111,6 +111,7 @@ import {
 import TargetSheet, { TargetMismatchLine } from "./target-sheet";
 import { PantryScreen, PantrySearchToggle, UndoBar, UNDO_MS } from "./pantry";
 import GroupMark from "./group-mark";
+import { RollingNumber } from "./rolling-number";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -2375,7 +2376,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
                 <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
                   <View style={{ alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - heroDay.kcal)}</Text>
+                    {/* THE NUMBER YOU CAME FOR, and the one that moves most: it
+                        changes every time food is logged, so it rolls rather
+                        than swapping. Web parity — its side used to run a
+                        mount-only count-up this never had. */}
+                    <RollingNumber
+                      value={String(Math.round(targets.kcal - heroDay.kcal))}
+                      align="center"
+                      style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}
+                    />
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(heroDay.kcal)} / {targets.kcal}</Text>
                   </View>
                 </Ring>
