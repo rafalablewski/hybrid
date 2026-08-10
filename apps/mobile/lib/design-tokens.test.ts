@@ -64,6 +64,30 @@ function lineAt(site: string): string {
   return (FILES.find((f) => f.path === path)?.text ?? "").split("\n")[line - 1] ?? "";
 }
 
+/**
+ * `hits`, blind to comments — for the rules whose pattern is a piece of SYNTAX
+ * rather than a word, so a file that DESCRIBES what it no longer does is not
+ * failed for the description.
+ *
+ * This is not hypothetical tidiness: the sheet rule below went red on
+ * `upgrade.tsx` for its own header comment — "It used to hand-roll its own: a
+ * raw <Modal> route" — three lines above the `import Sheet from "./sheet"` that
+ * proves the rule is satisfied. The house style documents what a file was
+ * migrated off, so a guard that greps raw source will keep meeting the thing it
+ * forbids, spelled out in prose, in exactly the files that were fixed first.
+ *
+ * Deliberately NOT folded into `hits` itself: most callers there are ratchets
+ * with exact ceilings, and silently lowering their counts would spend debt
+ * headroom nobody agreed to spend. This is opt-in, per rule.
+ *
+ * Line-granular, matching `hits`: a comment-ONLY line is the whole of the false
+ * positive. A trailing comment after real code keeps its line, which is right —
+ * that line still holds code.
+ */
+function codeHits(pattern: RegExp): string[] {
+  return hits(pattern).filter((h) => !/^\s*(?:\/\/|\/?\*)/.test(lineAt(h)));
+}
+
 /** A ratchet: report the overage with the offending sites, so a failure tells
  *  you WHERE, not just that a number moved. */
 function expectAtMost(found: string[], ceiling: number, rule: string) {
@@ -314,8 +338,12 @@ describe("presentation", () => {
     //     with vertical detents, so there is no panel here for its drag,
     //     detents or velocity release to act on. It must be a Modal so it draws
     //     over the native tab bar, which no in-tree view can.
+    //
+    // `codeHits`, not `hits`: a `<Modal` inside a comment is prose, not a
+    // presentation, and the files most likely to describe one are the very
+    // files that were converted off it.
     const EXEMPT = ["components/aurora/sheet.tsx", "components/tour.tsx", "components/feed-menu.tsx", "components/aurora/side-menu.tsx"];
-    const raw = hits(/<Modal\b/g).filter((h) => !EXEMPT.some((f) => h.startsWith(f)));
+    const raw = codeHits(/<Modal\b/g).filter((h) => !EXEMPT.some((f) => h.startsWith(f)));
     expect(raw).toEqual([]);
   });
 
@@ -325,7 +353,10 @@ describe("presentation", () => {
     // suite green. `animationType="slide"` is the tell — it is what all eleven
     // converted surfaces used, and what neither a fading overlay nor an anchored
     // card has any use for. Sheet drives its own animation, so it never sets it.
-    const sliding = hits(/animationType=["{']?["']?slide/g).filter(
+    // Comment-blind for the same reason as its sibling above — this rule's own
+    // explanation quotes the attribute it forbids, and a source file explaining
+    // the same thing would fail for saying so.
+    const sliding = codeHits(/animationType=["{']?["']?slide/g).filter(
       (h) => !h.startsWith("components/aurora/sheet.tsx"),
     );
     expect(sliding).toEqual([]);
