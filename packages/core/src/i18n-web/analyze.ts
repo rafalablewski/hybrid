@@ -21,9 +21,7 @@ export const web_analyze = {
 
     // performance
     "w.analyze.perf.emptyTitle": "No training data yet",
-    "w.analyze.perf.emptyBody": "Log a session and your Performance State — HPI, readiness, fatigue and tissue-level injury risk — appears here, computed from your real training.",
     "w.analyze.perf.title": "Performance",
-    "w.analyze.perf.twinHpi": "Performance State – HPI",
     "w.analyze.perf.limiter": "limiter",
     "w.analyze.perf.strength": "Strength",
     "w.analyze.perf.endurance": "Endurance",
@@ -558,9 +556,7 @@ export const web_analyze = {
 
     // performance
     "w.analyze.perf.emptyTitle": "Brak danych treningowych",
-    "w.analyze.perf.emptyBody": "Zapisz sesję, a Twój Stan formy — HPI, gotowość, zmęczenie i ryzyko kontuzji na poziomie tkanek — pojawi się tutaj, obliczony z Twoich rzeczywistych treningów.",
     "w.analyze.perf.title": "Wydajność",
-    "w.analyze.perf.twinHpi": "Stan formy – HPI",
     "w.analyze.perf.limiter": "ogranicznik",
     "w.analyze.perf.strength": "Siła",
     "w.analyze.perf.endurance": "Wytrzymałość",
@@ -1084,9 +1080,7 @@ export const web_analyze = {
 
     // performance
     "w.analyze.perf.emptyTitle": "Noch keine Trainingsdaten",
-    "w.analyze.perf.emptyBody": "Protokolliere eine Einheit und dein Leistungszustand — HPI, Bereitschaft, Ermüdung und gewebespezifisches Verletzungsrisiko — erscheint hier, berechnet aus deinem echten Training.",
     "w.analyze.perf.title": "Leistung",
-    "w.analyze.perf.twinHpi": "Leistungszustand – HPI",
     "w.analyze.perf.limiter": "Begrenzer",
     "w.analyze.perf.strength": "Kraft",
     "w.analyze.perf.endurance": "Ausdauer",
