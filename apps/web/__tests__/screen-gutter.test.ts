@@ -165,45 +165,37 @@ describe("the guard can see the screens that actually drifted", () => {
     expect(gutter).toBe(edge);
   });
 
-  it("web publishes the same gutter at mobile widths", () => {
-    const shell = readFileSync(join(__dirname, "..", "components", "app-shell.tsx"), "utf8");
-    const kit = readFileSync(join(MOBILE, "components", "aurora", "kit.tsx"), "utf8");
-    const gutter = kit.match(/export const GUTTER = (\d+)/)?.[1];
-    const pad = shell.match(/"--page-pad-x":\s*isMobile\s*\?\s*"(\d+)px"/)?.[1];
-    expect(pad, "app-shell must publish --page-pad-x").toBeDefined();
-    expect(pad).toBe(gutter);
-  });
 });
 
 /**
- * THE SAME RULE ON WEB.
+ * THE SAME RULE ON WEB (what is left of it).
  *
- * Web has the token by construction — a rail bleeds `var(--page-pad-x)`, and
- * changing the shell moves every rail at once. That is why the 16 -> 12 sweep
- * left web correct while mobile drifted five ways.
- *
- * But the token is written `var(--page-pad-x, 16px)`, and the FALLBACK is a
- * bare number with all the same problems: it went on saying 16 for as long as
- * nobody read it, and it is not decoration — it is what a rail resolves to in
- * any shell that pads a page without publishing the variable. The admin console
- * was exactly that shell.
+ * The web client is retired — web ships only the admin panel now — but the
+ * token survives it: globals.css and any shared chrome still bleed
+ * `var(--page-pad-x, …)`, and the FALLBACK is a bare number with all the same
+ * problems: it goes on saying the wrong width for as long as nobody reads it,
+ * and it is not decoration — it is what a bleed resolves to in any shell that
+ * pads a page without publishing the variable. The admin console was exactly
+ * that shell. With the app shell gone, the source of truth for the mobile-width
+ * gutter is the kit's GUTTER itself.
  */
 const WEB = join(__dirname, "..");
 const WEB_FILES = [join(WEB, "components"), join(WEB, "app")].flatMap((d) => walk(d));
 
 function mobileGutterPx(): string {
-  const shell = readFileSync(join(WEB, "components", "app-shell.tsx"), "utf8");
-  return shell.match(/"--page-pad-x":\s*isMobile\s*\?\s*"(\d+px)"/)?.[1] ?? "";
+  const kit = readFileSync(join(MOBILE, "components", "aurora", "kit.tsx"), "utf8");
+  const gutter = kit.match(/export const GUTTER = (\d+)/)?.[1];
+  return gutter ? `${gutter}px` : "";
 }
 
 describe("web — the gutter fallback tells the truth", () => {
   it("finds web source to check", () => {
-    expect(WEB_FILES.length).toBeGreaterThan(50);
+    expect(WEB_FILES.length).toBeGreaterThan(25);
   });
 
-  it("every --page-pad-x fallback matches what the app shell publishes", () => {
+  it("every --page-pad-x fallback matches the kit's GUTTER", () => {
     const want = mobileGutterPx();
-    expect(want, "app-shell must publish --page-pad-x at mobile widths").toMatch(/^\d+px$/);
+    expect(want, "the mobile kit must export GUTTER").toMatch(/^\d+px$/);
     const hits: string[] = [];
     for (const f of [...WEB_FILES, join(WEB, "app", "globals.css")]) {
       const src = readFileSync(f, "utf8");
@@ -215,7 +207,7 @@ describe("web — the gutter fallback tells the truth", () => {
     }
     expect(
       hits,
-      `the shell publishes ${want} on mobile — a stale fallback is what a rail bleeds ` +
+      `the kit's GUTTER is ${want} — a stale fallback is what a rail bleeds ` +
         `in any shell that does not publish the variable:\n${hits.join("\n")}`,
     ).toEqual([]);
   });

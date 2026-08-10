@@ -3,47 +3,29 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
-import { useSession, type Role } from "@/lib/session";
+import { useSession } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { useTemplate } from "@/lib/use-template";
-import AuroraLogin from "@/components/aurora/login";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, RED, ON_ACCENT, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
 
-// Ported from the prototype's Auth screen (reference/HybridApp.jsx).
+// Admin sign-in. The web client is retired — the product ships on mobile — so
+// this page exists for one audience: operators entering the /admin panel.
+// Accounts are created in the mobile app; there is no web sign-up.
 // When Supabase keys are present this drives real Apple/Google/email auth;
-// otherwise it's a demo entry that lets you preview each role.
-const ROLE_INFO: { id: Role; label: string; accent: string; blurb: string }[] = [
-  { id: "client", label: "Client", accent: LIME, blurb: "Your own training, plans, history." },
-  { id: "coach", label: "Coach", accent: VIOLET, blurb: "Roster + the athlete view." },
-  { id: "admin", label: "Admin", accent: AMBER, blurb: "Operator dashboard + roles. The admin panel." },
-];
-
+// otherwise it's a demo entry into the panel.
 export default function LoginPage() {
-  const { template } = useTemplate();
-  if (template === "aurora") return <AuroraLogin />;
-  return <ClassicLoginPage />;
-}
-
-function ClassicLoginPage() {
   const router = useRouter();
   const { login, session } = useSession();
   const live = isSupabaseConfigured();
-  const [role, setRole] = useState<Role>("admin");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   // MFA step-up: set after a password sign-in when a second factor is required.
   const [mfaStep, setMfaStep] = useState<{ factorId: string; challengeId: string } | null>(null);
   const [mfaCode, setMfaCode] = useState("");
-  // Navigate only once the session actually lands in context. Pushing to /app
-  // the instant signInWithPassword resolves races the SessionProvider's
-  // onAuthStateChange listener, so the app-shell guard sees no session yet and
-  // bounces back to /login — the "first login fails, second works" bug. Mirror
-  // the mobile login: defer the redirect until `session` is populated.
+  // Navigate only once the session actually lands in context. Pushing the
+  // instant signInWithPassword resolves races the SessionProvider's
+  // onAuthStateChange listener — the "first login fails, second works" bug.
   const [navTo, setNavTo] = useState<string | null>(null);
   useEffect(() => {
     if (navTo && session) {
@@ -91,27 +73,19 @@ function ClassicLoginPage() {
       setBusy(false);
       return;
     }
-    setNavTo("/app");
+    setNavTo("/admin");
   };
 
-  // --- DEMO entry (no backend): set a local session and go ---
+  // --- DEMO entry (no backend): set a local operator session and go ---
   const demoEnter = (provider: "apple" | "google" | "email") => {
-    const base =
-      provider === "email" && email.trim()
-        ? email.trim().split("@")[0]!
-        : role === "admin"
-          ? "Operator"
-          : role === "coach"
-            ? "Coach"
-            : "Athlete";
     login({
-      name: base.charAt(0).toUpperCase() + base.slice(1),
-      email: email.trim() || `${role}@hybrid.app`,
-      role,
+      name: "Operator",
+      email: email.trim() || "admin@hybrid.app",
+      role: "admin",
       entitlement: "free",
       provider,
     });
-    setNavTo("/app");
+    setNavTo("/admin");
   };
 
   // --- LIVE entry (Supabase) ---
@@ -121,7 +95,7 @@ function ClassicLoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/app` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/admin` },
     });
     if (error) {
       setError(error.message);
@@ -132,36 +106,7 @@ function ClassicLoginPage() {
   const emailSubmit = async () => {
     setBusy(true);
     setError("");
-    setNotice("");
     const supabase = createClient();
-
-    if (mode === "signup") {
-      // New users start as CLIENT. Elevate to admin/coach server-side
-      // (see reference/SETUP_SPRINT1.md) — never self-assign privileged roles.
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { name: name.trim() || email.split("@")[0], role: "client" } },
-      });
-      if (error) {
-        setError(error.message);
-        setBusy(false);
-        return;
-      }
-      // Fresh registration → /app, where the app-shell routes a not-yet-onboarded
-      // client into the questionnaire (gated on server-side `onboardedAt`, so it
-      // lands whether the session is immediate or arrives after email confirm).
-      if (data.session) {
-        setNavTo("/app");
-        return;
-      }
-      // Email confirmation is on — no session yet.
-      setNotice("Account created. Check your email to confirm, then sign in.");
-      setMode("signin");
-      setBusy(false);
-      return;
-    }
-
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError(error.message);
@@ -169,7 +114,7 @@ function ClassicLoginPage() {
       return;
     }
     if (await maybeStepUp(supabase)) return; // a TOTP code is now required
-    setNavTo("/app");
+    setNavTo("/admin");
   };
 
   const provs = [
@@ -201,7 +146,7 @@ function ClassicLoginPage() {
             HYBRID<span style={{ color: txt(LIME) }}>.</span>
           </div>
           <Mono s={{ fontSize: fs.caption, letterSpacing: ".25em", textTransform: "uppercase", marginTop: 6 }} c={LIME}>
-            Strength – Conditioning
+            Admin panel
           </Mono>
         </div>
 
@@ -242,45 +187,6 @@ function ClassicLoginPage() {
           </>
         ) : (
         <>
-        {/* DEMO ONLY: pick which role to sign in as so you can see each surface */}
-        {!live && (
-          <>
-            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".1em", display: "block", marginBottom: 8 }}>
-              Sign in as (demo)
-            </Mono>
-            <div style={{ display: "flex", gap: space.sm, marginBottom: 8 }}>
-              {ROLE_INFO.map((r) => {
-                const on = role === r.id;
-                return (
-                  <button className="pressable"
-                    key={r.id}
-                    onClick={() => setRole(r.id)}
-                    style={{
-                      flex: 1,
-                      ...cond,
-                      fontSize: fs.body,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: ".04em",
-                      padding: "10px 0",
-                      borderRadius: 10,
-                      cursor: "pointer",
-                      border: `1px solid ${on ? r.accent : LINE}`,
-                      background: on ? r.accent : "transparent",
-                      color: on ? ON_ACCENT : ASH,
-                    }}
-                  >
-                    {r.label}
-                  </button>
-                );
-              })}
-            </div>
-            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 22, minHeight: 18 }}>
-              {ROLE_INFO.find((r) => r.id === role)!.blurb}
-            </Mono>
-          </>
-        )}
-
         {provs.map((p) => (
           <button className="pressable"
             key={p.key}
@@ -314,16 +220,6 @@ function ClassicLoginPage() {
           <Mono s={{ fontSize: fs.body }}>or sign in with email</Mono>
         </div>
 
-        {live && mode === "signup" && (
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-label="Name"
-            placeholder="name"
-            style={inputStyle}
-          />
-        )}
         <input
           type="email"
           value={email}
@@ -350,13 +246,6 @@ function ClassicLoginPage() {
             </Mono>
           )}
         </div>
-        <div role="status">
-          {notice && (
-            <Mono s={{ fontSize: fs.caption, display: "block", marginBottom: 10 }} c={LIME}>
-              {notice}
-            </Mono>
-          )}
-        </div>
 
         <button className="pressable"
           disabled={busy}
@@ -375,28 +264,8 @@ function ClassicLoginPage() {
             color: ON_ACCENT,
           }}
         >
-          {busy ? "…" : mode === "signup" ? "Create account →" : "Sign in →"}
+          {busy ? "…" : "Sign in →"}
         </button>
-
-        {live && (
-          <div style={{ textAlign: "center", marginTop: 14 }}>
-            <button className="pressable"
-              onClick={() => {
-                setMode((m) => (m === "signin" ? "signup" : "signin"));
-                setError("");
-                setNotice("");
-              }}
-              style={{ background: "none", border: "none", cursor: "pointer" }}
-            >
-              <Mono s={{ fontSize: fs.caption }} c={ASH}>
-                {mode === "signin" ? "Need an account? " : "Have an account? "}
-                <span style={{ color: txt(LIME) }}>
-                  {mode === "signin" ? "Create one →" : "Sign in →"}
-                </span>
-              </Mono>
-            </button>
-          </div>
-        )}
 
         <div style={{ textAlign: "center", marginTop: 22 }}>
           <button className="pressable" onClick={() => router.push("/")} style={{ background: "none", border: "none", cursor: "pointer" }}>
@@ -408,7 +277,7 @@ function ClassicLoginPage() {
 
         <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 24, textAlign: "center", lineHeight: 1.5 }}>
           {live
-            ? "Real auth – Supabase (Apple – Google – email)."
+            ? "Operators only. The HYBRID app lives on your phone."
             : "Demo sign-in. Add Supabase keys to switch on real Apple / Google / email auth."}
         </Mono>
         </>

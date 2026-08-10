@@ -29,23 +29,18 @@ const code = (p: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
 
-/** Every surface that shows the day-streak, both clients. */
+/** Every surface that shows the day-streak. (The web twins were retired with
+ *  the web client — mobile is the product.) */
 const STREAK_SURFACES = [
   // the app header's lockup (Today + Nutrition wear it)
   "apps/mobile/components/aurora/app-header.tsx",
-  "apps/web/components/aurora/app-header.tsx",
   // the done-today sheet
   "apps/mobile/components/aurora/home.tsx",
-  "apps/web/components/aurora/today.tsx",
   // under the profile's activity heat-map
   "apps/mobile/components/aurora/profile.tsx",
-  "apps/web/components/aurora/profile.tsx",
 ];
 
-const MARK_COMPONENTS = [
-  "apps/mobile/components/aurora/streak-mark.tsx",
-  "apps/web/components/aurora/streak-mark.tsx",
-];
+const MARK_COMPONENTS = ["apps/mobile/components/aurora/streak-mark.tsx"];
 
 describe("the streak mark contract", () => {
   it("is two densities of one mark, both off the scale", () => {
@@ -131,25 +126,18 @@ describe("the streak mark guard — no screen may draw its own", () => {
     // than a "history" of its own, so the tile and the mark can never point at
     // two screens, and it reuses the mark's aria key so both announce the same
     // sentence. It also keeps the long-press: a tap opens, a hold rearranges.
-    for (const file of ["apps/mobile/components/aurora/profile.tsx", "apps/web/components/aurora/profile.tsx"]) {
-      const src = code(file);
-      expect(src, file).toContain("to: STREAK_DESTINATION");
-      expect(src, file).toContain("aria: t(STREAK_ARIA_KEY)");
-      // The destination is on the TILE, generic, not an `hkey === "streak"`
-      // special case buried in the grid.
-      expect(src, file).toMatch(/onOpen[:=]/);
-      expect(src, file).not.toMatch(/hkey === "streak"/);
-    }
+    const src = code("apps/mobile/components/aurora/profile.tsx");
+    expect(src).toContain("to: STREAK_DESTINATION");
+    expect(src).toContain("aria: t(STREAK_ARIA_KEY)");
+    // The destination is on the TILE, generic, not an `hkey === "streak"`
+    // special case buried in the grid.
+    expect(src).toMatch(/onOpen[:=]/);
+    expect(src).not.toMatch(/hkey === "streak"/);
   });
 
   it("never lets the grid's edit mode double as a link", () => {
-    // In edit mode the press belongs to the rearrange. Mobile gates onPress on
-    // it; web additionally refuses to navigate on a pointercancel, which is how
-    // a touch-scroll that started on a tile ends.
+    // In edit mode the press belongs to the rearrange — onPress is gated on it.
     expect(code("apps/mobile/components/aurora/profile.tsx")).toContain("tile.to && !editMode");
-    const web = code("apps/web/components/aurora/profile.tsx");
-    expect(web).toMatch(/if \(editMode \|\| !shortPress\) return;/);
-    expect(web).toContain("onPointerCancel={onCancel}");
   });
 
   it("takes data and not style", () => {
