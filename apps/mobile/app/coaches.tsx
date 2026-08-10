@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { Loading, F, PressScale as Pressable } from "../lib/ui";
+import { Loading, LoadSwap, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -117,7 +117,10 @@ export default function CoachesScreen() {
       {tab === "storefront" && isCoach ? <Storefront /> : (
         <>
           <ASearch value={q} onChange={setQ} placeholder={t("w.coaches.search")} />
-          {!coaches ? <Loading /> : coaches.length === 0 ? <Empty title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} /> : coaches.map((c) => (
+          {/* The placeholder HANDS OVER to the coaches — it fades out where they
+              fade in rather than being replaced in one frame (lib/ui LoadSwap). */}
+          <LoadSwap loading={!coaches}>
+          {coaches?.length === 0 ? <Empty title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} /> : coaches?.map((c) => (
             <Pressable key={c.userId} onPress={() => { seedPerson({ handle: c.handle, displayName: c.name, avatarUrl: c.avatarUrl, coachVerified: c.coachVerified }); router.push(userPagePath(c.handle)); }}>
               <ACard style={cardStack}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
@@ -134,6 +137,7 @@ export default function CoachesScreen() {
               </ACard>
             </Pressable>
           ))}
+          </LoadSwap>
         </>
       )}
     </AuroraScreen>

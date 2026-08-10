@@ -97,6 +97,12 @@ export const durations = {
    *  as the row LEAVING rather than blinking out, short enough that deleting
    *  five sets in a row doesn't become a queue. */
   collapse: 180,
+  /** A PLACEHOLDER handing over to the thing it was holding space for.
+   *  Deliberately longer than `dissolve`: a crossfade between two states of the
+   *  same box is the one transition where the eye is comparing them, and 200ms
+   *  reads as a flicker rather than a hand-over. This is what makes skeleton →
+   *  content an arrival instead of a swap. */
+  crossfade: 250,
   /** The Reduce Motion cross-dissolve SUBSTITUTION. Never zero. */
   reduced: 150,
 } as const;
@@ -122,6 +128,32 @@ export const motion = {
   pushOffset: 0.16,
   /** Sibling entrance offset, as a fraction of screen width. */
   slideOffset: 1,
+} as const;
+
+/**
+ * THE SKELETON BREATH — one placeholder pulse, shared so the two clients cannot
+ * breathe at different rates.
+ *
+ * A spinner is only correct when you cannot predict the shape of what is
+ * coming, and this app almost always can: a session card, a macro ring, a set
+ * row, a chart. Everything else should reserve its own geometry and fill in.
+ * The two clients had different loading languages entirely — web occasionally
+ * reserved space and breathed, mobile spun — and where both had a pulse it was
+ * 1.4s on each by coincidence rather than by construction.
+ *
+ * The breath is a NICETY; reserving the space is the actual job, and that part
+ * never depends on motion — which is why Reduce Motion stills the placeholder
+ * rather than removing it.
+ */
+export const skeleton = {
+  /** One full breath (dim → bright → dim), in ms. */
+  pulseMs: 1400,
+  /** The opacity the breath falls to. */
+  dim: 0.25,
+  /** The opacity it rises to. */
+  bright: 0.6,
+  /** Reduce Motion: held still, and still clearly a placeholder. */
+  still: 0.45,
 } as const;
 
 /**

@@ -620,8 +620,15 @@ html {
   --e-exit: cubic-bezier(.4,0,.9,.4);
   --d-fast: 160ms;
   --d-dissolve: 200ms;
+  --d-collapse: 180ms;
+  --d-crossfade: 250ms;
   /* the Reduce Motion cross-dissolve SUBSTITUTION — never zero */
   --d-reduced: 150ms;
+  /* the skeleton breath — one rate for both clients */
+  --skel-pulse: 1400ms;
+  --skel-dim: 0.25;
+  --skel-bright: 0.6;
+  --skel-still: 0.45;
 }
 /* ─ END GENERATED ─ */
 
@@ -861,10 +868,27 @@ html[data-sheet-open] body { background: #000; }
 
 /* Loading-skeleton pulse — a placeholder block gently breathes while its data
    is in flight, so a section reserves its space and fills in rather than
-   popping in from nothing (e.g. the Today Feed strip). */
-@keyframes skelPulse { 0%, 100% { opacity: .6; } 50% { opacity: .25; } }
-.skeleton { animation: skelPulse 1.4s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; opacity: .45; } }
+   popping in from nothing.
+
+   Every number comes from the generated block above (@hybrid/core `skeleton`),
+   which the mobile primitive reads too: the two clients used to pulse at 1.4s
+   each by coincidence rather than by construction, and a placeholder breathing
+   at two rates across one product is the drift the shared file exists for. */
+@keyframes skelPulse { 0%, 100% { opacity: var(--skel-bright); } 50% { opacity: var(--skel-dim); } }
+.skeleton { animation: skelPulse var(--skel-pulse) ease-in-out infinite; background: var(--color-line); }
+/* Reduce Motion stills it — it does NOT remove it. Reserving the space is the
+   placeholder's actual job and never depended on the breath. */
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; opacity: var(--skel-still); } }
+
+/* SKELETON → CONTENT IS A HAND-OVER, NOT A SWAP. Both states occupy the same
+   grid cell, so the arriving content fades up exactly where the placeholder was
+   holding space instead of replacing it in one frame. The placeholder is
+   removed once it has faded, so it never eats a click on the content under it. */
+.load-swap { display: grid; }
+.load-swap > * { grid-area: 1 / 1; }
+.load-swap > .load-ph { pointer-events: none; }
+.load-swap-in { animation: motionDissolveIn var(--d-crossfade) var(--e-fade) both; }
+.load-swap-out { animation: motionDissolveOut var(--d-crossfade) var(--e-fade) both; }
 
 /* Inline busy spinner — a ring that spins next to an in-flight action label
    (e.g. the admin "Deleting…" button), so a working button reads as active

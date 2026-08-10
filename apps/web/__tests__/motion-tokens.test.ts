@@ -5,6 +5,7 @@ import {
   SHARED_ELEMENTS,
   motion,
   screenAnimation,
+  skeleton,
   springs,
   springToCss,
   springDurationMs,
@@ -47,7 +48,21 @@ describe("globals.css motion tokens", () => {
     expect(css).toContain(`--e-exit: ${easings.exit};`);
     expect(css).toContain(`--d-fast: ${durations.fast}ms;`);
     expect(css).toContain(`--d-dissolve: ${durations.dissolve}ms;`);
+    expect(css).toContain(`--d-collapse: ${durations.collapse}ms;`);
+    expect(css).toContain(`--d-crossfade: ${durations.crossfade}ms;`);
     expect(css).toContain(`--d-reduced: ${durations.reduced}ms;`);
+  });
+
+  it("breathes the skeleton at the SHARED rate, not its own", () => {
+    // The two clients pulsed at 1.4s each by coincidence rather than by
+    // construction — mobile hard-coded 700ms halves, this stylesheet hard-coded
+    // 1.4s, and nothing connected them. Both read @hybrid/core `skeleton` now.
+    expect(css).toContain(`--skel-pulse: ${skeleton.pulseMs}ms;`);
+    expect(css).toContain(`--skel-dim: ${skeleton.dim};`);
+    expect(css).toContain(`--skel-bright: ${skeleton.bright};`);
+    expect(css).toContain(`--skel-still: ${skeleton.still};`);
+    // …and the class must READ them rather than restating the numbers.
+    expect(css).toMatch(/\.skeleton \{[^}]*var\(--skel-pulse\)/);
   });
 
   it("defines every keyframe screenAnimation() can name", () => {

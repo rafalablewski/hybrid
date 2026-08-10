@@ -14,6 +14,7 @@ import type {
 } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy, type OpenUser } from "./social-ui";
 import { useLang } from "@/lib/i18n";
+import { Loading, LoadSwap } from "./aurora/skeleton";
 
 /**
  * THE MARKETPLACE — the directory, and a coach's own storefront EDITOR.
@@ -53,7 +54,7 @@ function Storefront() {
   const togglePublish = (p: CoachProgramData) => busy.run(p.id, async () => { await jsend(`/api/coach/programs/${p.id}`, "PATCH", { published: !p.published }); await load(); });
   const respond = (id: string, action: string) => busy.run(id, async () => { await jsend("/api/coach/enrollments", "POST", { enrollmentId: id, action }); await load(); });
 
-  if (!data) return <EmptyState title={t("common.loading")} />;
+  if (!data) return <Loading />;
   if (!data.isCoach) return <EmptyState title={t("w.coaches.coachesOnly")} sub={t("w.coaches.coachesOnlySub")} />;
 
   const inp = { width: "100%", padding: "10px 12px", borderRadius: aurora ? 14 : 8, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontSize: 14 } as const;
@@ -141,11 +142,15 @@ export default function Coaches({ onOpenUser }: { onOpenUser?: OpenUser } = {}) 
       ) : (
         <>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("w.coaches.search")} style={{ width: "100%", padding: "12px 14px", borderRadius: aurora ? 16 : 10, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, marginBottom: 16 }} />
-          {!coaches ? <EmptyState title={t("common.loading")} /> : coaches.length === 0 ? (
+          {/* The placeholder HANDS OVER to the coaches — it fades out where they
+              fade in, rather than an empty-state card being replaced by a full
+              list in one frame (aurora/skeleton.tsx LoadSwap). */}
+          <LoadSwap loading={!coaches}>
+          {coaches?.length === 0 ? (
             <EmptyState title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} />
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
-              {coaches.map((c) => (
+              {coaches?.map((c) => (
                 <button className="pressable" key={c.userId} onClick={() => onOpenUser?.(c.handle, { handle: c.handle, displayName: c.name, avatarUrl: c.avatarUrl, coachVerified: c.coachVerified })} style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                     <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
@@ -166,6 +171,7 @@ export default function Coaches({ onOpenUser }: { onOpenUser?: OpenUser } = {}) 
               ))}
             </div>
           )}
+          </LoadSwap>
         </>
       )}
     </div>

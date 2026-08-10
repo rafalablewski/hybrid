@@ -9,7 +9,6 @@ export const web_teams = {
     "w.teams.coach.athleteFallback": "Athlete",
     "w.teams.coach.inviteSent": "Invite sent to",
     "w.teams.coach.inviteFailed": "Couldn't send invite.",
-    "w.teams.coach.loading": "Loading…",
     "w.teams.coach.requestsTitle": "Coaching requests",
     "w.teams.coach.wantsToCoach": "wants to coach you",
     "w.teams.coach.accept": "Accept",
@@ -148,7 +147,6 @@ export const web_teams = {
     "w.teams.compare.metricBarSpeed": "Best bar speed",
     "w.teams.compare.metricVolume": "Total volume",
     "w.teams.compare.metricReps": "Total reps",
-    "w.teams.compare.loadingRoster": "Loading roster…",
     "w.teams.compare.emptyTitle": "No comparable athletes yet",
     "w.teams.compare.emptyBody": "Team Compare lines up your athletes side by side on any lift — best e1RM, the velocity-based 1RM, bar speed, volume and reps. It reads your active roster (Coach screen → accepted clients) and computes from their real logged sessions. Invite and connect athletes, have them log strength work, and they'll appear here.",
     "w.teams.compare.exercise": "Exercise",
@@ -162,7 +160,6 @@ export const web_teams = {
     "w.teams.compare.thSessions": "Sessions",
 
     // team-monitor.tsx
-    "w.teams.monitor.loadingSquad": "Loading squad…",
     "w.teams.monitor.emptyTitle": "No athletes to monitor yet",
     "w.teams.monitor.emptyBody": "The squad monitor is the screen you open every morning: each athlete's readiness (RAG), training-load ACWR, and injury-risk flag at a glance. It reads your active roster (Coach screen → accepted clients) and computes from their real sessions + check-ins.",
     "w.teams.monitor.athletes": "Athletes",
@@ -223,7 +220,6 @@ export const web_teams = {
     "w.teams.coach.athleteFallback": "Zawodnik",
     "w.teams.coach.inviteSent": "Zaproszenie wysłane do",
     "w.teams.coach.inviteFailed": "Nie udało się wysłać zaproszenia.",
-    "w.teams.coach.loading": "Ładowanie…",
     "w.teams.coach.requestsTitle": "Prośby o trening",
     "w.teams.coach.wantsToCoach": "chce Cię trenować",
     "w.teams.coach.accept": "Akceptuj",
@@ -362,7 +358,6 @@ export const web_teams = {
     "w.teams.compare.metricBarSpeed": "Najlepsza prędkość gryfu",
     "w.teams.compare.metricVolume": "Całkowita objętość",
     "w.teams.compare.metricReps": "Całkowita liczba powtórzeń",
-    "w.teams.compare.loadingRoster": "Ładowanie składu…",
     "w.teams.compare.emptyTitle": "Brak porównywalnych zawodników",
     "w.teams.compare.emptyBody": "Porównanie zespołu zestawia Twoich zawodników obok siebie na dowolnym ćwiczeniu — najlepsze e1RM, 1RM oparte na prędkości, prędkość gryfu, objętość i powtórzenia. Odczytuje Twój aktywny skład (ekran Trenera → zaakceptowani klienci) i oblicza na podstawie ich realnie zalogowanych sesji. Zaproś i połącz zawodników, niech logują pracę siłową, a pojawią się tutaj.",
     "w.teams.compare.exercise": "Ćwiczenie",
@@ -376,7 +371,6 @@ export const web_teams = {
     "w.teams.compare.thSessions": "Sesje",
 
     // team-monitor.tsx
-    "w.teams.monitor.loadingSquad": "Ładowanie składu…",
     "w.teams.monitor.emptyTitle": "Brak zawodników do monitorowania",
     "w.teams.monitor.emptyBody": "Monitor składu to ekran, który otwierasz każdego ranka: gotowość każdego zawodnika (RAG), ACWR obciążenia treningowego i flaga ryzyka kontuzji na jednym widoku. Odczytuje Twój aktywny skład (ekran Trenera → zaakceptowani klienci) i oblicza na podstawie ich realnych sesji + meldunków.",
     "w.teams.monitor.athletes": "Zawodnicy",
@@ -437,7 +431,6 @@ export const web_teams = {
     "w.teams.coach.athleteFallback": "Athlet",
     "w.teams.coach.inviteSent": "Einladung gesendet an",
     "w.teams.coach.inviteFailed": "Einladung konnte nicht gesendet werden.",
-    "w.teams.coach.loading": "Lädt…",
     "w.teams.coach.requestsTitle": "Coaching-Anfragen",
     "w.teams.coach.wantsToCoach": "möchte dich coachen",
     "w.teams.coach.accept": "Annehmen",
@@ -576,7 +569,6 @@ export const web_teams = {
     "w.teams.compare.metricBarSpeed": "Beste Hantelgeschwindigkeit",
     "w.teams.compare.metricVolume": "Gesamtvolumen",
     "w.teams.compare.metricReps": "Gesamtwiederholungen",
-    "w.teams.compare.loadingRoster": "Kader wird geladen…",
     "w.teams.compare.emptyTitle": "Noch keine vergleichbaren Athleten",
     "w.teams.compare.emptyBody": "Team-Vergleich stellt deine Athleten bei jeder Übung nebeneinander — bestes e1RM, das geschwindigkeitsbasierte 1RM, Hantelgeschwindigkeit, Volumen und Wiederholungen. Er liest deinen aktiven Kader (Coach-Bildschirm → akzeptierte Klienten) und berechnet aus ihren real geloggten Einheiten. Lade Athleten ein und verbinde sie, lass sie Krafttraining loggen, und sie erscheinen hier.",
     "w.teams.compare.exercise": "Übung",
@@ -590,7 +582,6 @@ export const web_teams = {
     "w.teams.compare.thSessions": "Einheiten",
 
     // team-monitor.tsx
-    "w.teams.monitor.loadingSquad": "Kader wird geladen…",
     "w.teams.monitor.emptyTitle": "Noch keine Athleten zu überwachen",
     "w.teams.monitor.emptyBody": "Der Kader-Monitor ist der Bildschirm, den du jeden Morgen öffnest: die Bereitschaft jedes Athleten (RAG), die ACWR der Trainingslast und das Verletzungsrisiko-Flag auf einen Blick. Er liest deinen aktiven Kader (Coach-Bildschirm → akzeptierte Klienten) und berechnet aus ihren realen Einheiten + Check-ins.",
     "w.teams.monitor.athletes": "Athleten",

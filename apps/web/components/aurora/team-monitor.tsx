@@ -1,6 +1,7 @@
 "use client";
 
 import { accentText } from "@/lib/ui";
+import { Loading } from "./skeleton";
 import { useEffect, useState } from "react";
 import { fs, space, athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
@@ -61,7 +62,7 @@ export default function AuroraTeamMonitor() {
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
   const chip = (color: string, label: React.ReactNode) => <span style={{ background: `color-mix(in srgb, ${C(color)} 14%, transparent)`, color: C(color), borderRadius: 999, padding: "3px 10px", fontFamily: "var(--font-mono)", fontSize: fs.micro, marginRight: 4, marginBottom: 4, display: "inline-block" }}>{label}</span>;
 
-  if (loading) return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.monitor.loadingSquad")}</span>;
+  if (loading) return <Loading />;
 
   if (squad.length === 0)
     return (
