@@ -210,8 +210,8 @@ describe("the navigation button", () => {
     expect(HERO.radius.nav).toBe(999);
   });
 
-  it("changes material with what is behind it, not with which screen it is on", () => {
-    expect(heroNavMaterial("field", false)).toBe("clear");
+  it("wears glass on every ground — one control, one material", () => {
+    expect(heroNavMaterial("field", false)).toBe("glass");
     expect(heroNavMaterial("field", true)).toBe("glass");
     expect(heroNavMaterial("art", false)).toBe("glass");
     expect(heroNavMaterial("story", false)).toBe("glass");

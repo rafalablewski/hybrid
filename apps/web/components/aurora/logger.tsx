@@ -507,11 +507,22 @@ export default function AuroraLogger({
             accessory strip riding above the nav capsule. The flanks both take
             flex:1 so the clock stays optically centred. */}
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
+          {/* The same control family as HeroNav's back circle, wearing the same
+              glass: no drawn ring or fill — a pane with a specular rim (the
+              mobile twin is a real SwiftUI glass button on iOS 26). */}
           <button className="pressable"
             onClick={leave}
             aria-label={t("workout.minimize")}
             title={t("workout.minimize")}
-            style={{ width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center", color: C("chalk"), background: "color-mix(in srgb, var(--color-chalk) 6%, transparent)", border: `1px solid color-mix(in srgb, var(--color-chalk) 14%, transparent)`, cursor: "pointer" }}
+            style={{
+              width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center",
+              color: C("chalk"), background: "none", border: "none", cursor: "pointer",
+              WebkitBackdropFilter: "blur(3px) saturate(170%) brightness(1.06)",
+              backdropFilter: "blur(3px) saturate(170%) brightness(1.06)",
+              // The .liquid-glass rim grammar, theme-aware: highlight above,
+              // shade below, a hair of body — no drawn ring.
+              boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 -1px 1px var(--inner-lo), inset 0 0 0 0.5px rgba(var(--text-rgb), 0.08)",
+            }}
           >
             <AuroraIcon name="chevron-down" size={19} />
           </button>

@@ -58,6 +58,7 @@ import {
   sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
   recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
+  PICKER_SOURCES, pickerSourceLabelKey,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -83,6 +84,7 @@ import { leading, fs, space, tracking, F, serifIf, PressScale, PressScale as Pre
 import { useListMotion } from "../../lib/list-motion";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
+import { GlassSegment, GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
 import { HubMasthead } from "./hub-masthead";
 import { CoverScreen, type CoverScreenApi } from "../plan-hero";
@@ -1406,7 +1408,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
    *  trailing slot. See reference/hero-system.md. */
   const screenHead = (title: ReactNode, onBack: () => void, opts?: { icon?: "x" | "back"; right?: ReactNode }) => (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, height: HERO.rail.height, marginBottom: HERO.rail.bottom }}>
-      <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} material="clear" />
+      {/* Glass, like every other nav circle — the bare `clear` glyph this head
+          used to draw was retired with core's clear state (hero.ts §7). */}
+      <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} />
       <View style={{ flex: 1, alignItems: "center" }}>
         {typeof title === "string" ? (
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: C.chalk }}>{title}</Text>
@@ -1484,9 +1488,27 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(
-          <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
-          </Pressable>,
+          // The meal switcher. On iOS 26 it IS a system menu — the meals as an
+          // inline picker (checkmark on the one in force) with "Add a meal
+          // part" behind a divider; elsewhere it opens the chooser sheet.
+          LIQUID_GLASS_RENDERED ? (
+            <GlassSelectMenu
+              label={partLabel(mealType)}
+              fontFamily={F.black}
+              fontSize={19}
+              labelColor={C.chalk}
+              a11yLabel={t("w.recovery.nutrition.chooseMeal")}
+              options={partList.map((p) => ({ id: p.key, label: p.label }))}
+              value={mealType}
+              onPick={(k) => setMealType(k)}
+              extras={full ? [{ key: "addPart", label: t("w.recovery.nutrition.addPart") }] : undefined}
+              onExtra={() => setPartSheet(true)}
+            />
+          ) : (
+            <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
+            </Pressable>
+          ),
           () => setView("home"),
           // BACK, not a second dismiss chevron: the head used to draw a ⌄ on the
           // left and the meal switcher a ⌄ beside the title — one glyph, two
@@ -1547,7 +1569,19 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           /* AT REST — all four sources, switchable, with the box gone. */
           <>
             <View style={{ marginTop: 16 }}>
-              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
+              {/* The four sources as the SYSTEM segmented control where it
+                  renders (iOS 26) — the counts stay on the underline form,
+                  which every other platform keeps: a native segment carries
+                  labels only, and the list itself is the count. */}
+              {LIQUID_GLASS_RENDERED ? (
+                <GlassSegment
+                  options={PICKER_SOURCES.map((key) => ({ id: key, label: t(pickerSourceLabelKey(key)) }))}
+                  value={foodTab}
+                  onPick={setFoodTab}
+                />
+              ) : (
+                <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
+              )}
             </View>
             {foodTab === "meals" ? (
               meals.length === 0 ? (

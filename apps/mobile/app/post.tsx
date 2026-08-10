@@ -21,7 +21,7 @@ import { Avatar, Empty } from "../components/social-kit";
 import { Comments } from "../components/feed-comments";
 import { FeedActions } from "../components/feed-card";
 import { FeedWorkout } from "../components/feed-workout";
-import FeedMenu, { feedMenuFor, type FeedMenuAnchor } from "../components/feed-menu";
+import { FeedMenuTrigger } from "../components/feed-menu";
 import { usePersonSource } from "../lib/shared-element";
 
 /**
@@ -55,7 +55,6 @@ export default function PostScreen() {
   // Either shape resolves: two params (what `feedPostPath` writes) or the one
   // `type:id` key kudos, comments and saves already use.
   const ref = parseFeedSubjectKey(typeof params.key === "string" ? params.key : `${params.type ?? ""}:${params.id ?? ""}`);
-  const [menu, setMenu] = useState<FeedMenuAnchor | null>(null);
   // The comment button has nothing to expand here — the thread is already open
   // below — so it puts the cursor in the box instead.
   const [focusBox, setFocusBox] = useState(0);
@@ -102,7 +101,6 @@ export default function PostScreen() {
 
   const headline = feedHeadlineText(item, t);
   const session = q.data?.session;
-  const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: false });
   const handle = item.author.handle ? `@${item.author.handle}` : null;
 
   return (
@@ -130,9 +128,17 @@ export default function PostScreen() {
             </Text>
           ) : null}
         </View>
-        {menuRows.length > 0 ? (
-          <MoreButton onOpen={setMenu} label={t("feed.menu.title")} color={C.ash} />
-        ) : null}
+        {/* The overflow menu — trigger + menu in one, the system's glass menu
+            on iOS 26. Renders nothing when core says there are no rows. */}
+        <FeedMenuTrigger
+          handle={item.author.handle}
+          authorId={item.author.id}
+          mine={item.mine}
+          subjectType={item.subjectType}
+          subjectId={item.subjectId}
+          relation={item.relation}
+          onAuthorChanged={authorChanged}
+        />
       </View>
 
       {/* The caption the athlete wrote FOR the feed. The private post-workout
@@ -162,38 +168,6 @@ export default function PostScreen() {
       ) : null}
 
       <Comments item={item} focusSignal={focusBox} onCount={(n) => setLive((x) => (x ? { ...x, comments: n } : x))} />
-
-      <FeedMenu
-        anchor={menu}
-        onClose={() => setMenu(null)}
-        handle={item.author.handle}
-        authorId={item.author.id}
-        mine={item.mine}
-        subjectType={item.subjectType}
-        subjectId={item.subjectId}
-        relation={item.relation}
-        onAuthorChanged={authorChanged}
-      />
     </AuroraScreen>
-  );
-}
-
-/** The ⋯. The menu renders in its own native window, so the glyph's WINDOW rect
- *  has to be measured and handed over (same as the feed row's). */
-function MoreButton({ onOpen, label, color }: { onOpen: (a: FeedMenuAnchor) => void; label: string; color: string }) {
-  const [node, setNode] = useState<View | null>(null);
-  return (
-    // collapsable={false} keeps this View in the native tree — RN prunes
-    // layout-only Views on Android, and a pruned view cannot be measured.
-    <View ref={setNode} collapsable={false}>
-      <Pressable
-        onPress={() => node?.measureInWindow((x, y, w, h) => onOpen({ x, y, w, h }))}
-        hitSlop={10}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color, paddingHorizontal: 4 }}>⋯</Text>
-      </Pressable>
-    </View>
   );
 }

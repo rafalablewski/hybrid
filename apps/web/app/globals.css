@@ -338,6 +338,22 @@ html {
   backdrop-filter: none;
 }
 
+/* ---- the ⋯ menu's entrance ----------------------------------------------
+   Zoom-morphs out of its anchor, the way the system presents the mobile
+   twin's SwiftUI Menu on iOS 26. Origin top-right = the glyph's corner. */
+.feed-menu-zoom {
+  transform-origin: top right;
+  animation: feed-menu-zoom 0.34s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+@keyframes feed-menu-zoom {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-menu-zoom { animation: feed-menu-fade 0.12s ease; }
+  @keyframes feed-menu-fade { from { opacity: 0; } to { opacity: 1; } }
+}
+
 /* ---- AURORA bottom-nav glass -------------------------------------------
    The ONE Liquid Glass surface in Aurora (the cards above are deliberately
    solid). Liquid Glass is a nearly CLEAR body whose identity lives at the rim,
