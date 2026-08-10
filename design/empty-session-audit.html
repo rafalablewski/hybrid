@@ -99,6 +99,17 @@
   .hdr .side { flex: 1; display: flex; align-items: center; gap: 6px; }
   .hdr .side.r { justify-content: flex-end; }
   .glassbtn { width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; background: var(--glass); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 0 0 .5px rgba(140,140,140,.22); font-size: 15px; color: var(--chalk); flex: none; }
+  /* the Apple-Music toolbar capsule — two native leaves fused in one glass lozenge */
+  .tbgroup { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: var(--glass); box-shadow: inset 0 1px 0 rgba(255,255,255,.09), inset 0 0 0 .5px rgba(140,140,140,.24); }
+  .tbgroup .tb { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border-radius: 999px; color: var(--chalk); font-size: 14px; line-height: 1; }
+  .tbgroup .tb .sec { font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: .06em; }
+  .tbgroup .tb.armed { color: var(--blue-t); }
+  .tbgroup .tb.off { color: var(--ash); }
+
+  pre.code { margin: 20px 0 0; padding: 17px 18px; background: var(--ink2); border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.72; color: var(--chalk); }
+  pre.code .c { color: var(--ash2); }
+  pre.code .k { color: var(--blue-t); }
+
   .clock { text-align: center; }
   .clock b { display: block; font-weight: 900; font-size: 22px; letter-spacing: .04em; line-height: 1.1; }
   .clock i { font-family: ui-monospace, monospace; font-style: normal; font-size: 9.5px; letter-spacing: .16em; color: var(--ash); }
@@ -241,7 +252,7 @@
     </div>
 
     <div class="metrics">
-      <div><span class="label">Tap targets</span><div class="n">22</div></div>
+      <div><span class="label">Controls</span><div class="n">20 <small>each row type counted once</small></div></div>
       <div><span class="label">Accent colours at rest</span><div class="n">5 <small>lime, blue, amber, chalk, ash</small></div></div>
       <div><span class="label">Distinct glyph sets</span><div class="n">16 <small>text chars, zero SF Symbols</small></div></div>
       <div><span class="label">Ways to end it</span><div class="n">2 <small>both labelled Finish</small></div></div>
@@ -461,6 +472,11 @@
           </tr>
           <tr>
             <td><span class="sev s-erg">ergonomics</span></td>
+            <td><b>The rest-timer control scrolls away.</b> The <span class="mono">&#9201; Off</span> chip lives inside the <code>ScrollView</code>, in the meta row above the first card. Add a second exercise and the only way to arm the timer is off-screen — during the one activity, mid-workout, when you actually decide you want it.</td>
+            <td class="n">workout.tsx:1123, 1137</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-erg">ergonomics</span></td>
             <td><b>Instruction as furniture.</b> "tap &check; as you go" is permanent, and there is already a dismissible first-run tip card doing the same job twelve lines below it.</td>
             <td class="n">workout.tsx:1129, 1202</td>
           </tr>
@@ -499,7 +515,7 @@
       </div>
       <div>
         <h4>One accent, one go</h4>
-        <p>Chartreuse appears exactly once, on <i>Log set</i>. The exercise mark, the add glyph, the exits and Finish all go to chalk and ash. Amber survives only as <i>paused</i>; blue only inside the rest countdown.</p>
+        <p>Chartreuse appears exactly once, on <i>Log set</i>. The exercise mark, the add glyph, the exits and Finish all go to chalk and ash. Amber survives only as <i>paused</i>; blue only where a rest is armed or running. Those two are state, not decoration — they earn their colour by changing.</p>
       </div>
       <div>
         <h4>The thumb owns the primary</h4>
@@ -507,7 +523,7 @@
       </div>
       <div>
         <h4>Deference, not chrome</h4>
-        <p>Help, presets, set type, special sets, the rest-timer preference and Discard all fold into one system menu. Six permanent objects become one glyph and a long-press.</p>
+        <p>Help, presets, set type, special sets and Discard fold into system menus. Six permanent objects become one glass capsule and a long-press. The rest timer keeps its own tap, because you arm it mid-workout — see the capsule below.</p>
       </div>
       <div>
         <h4>Marks obey their own grammar</h4>
@@ -520,8 +536,8 @@
       <table>
         <thead><tr><th style="width: 210px;">Today</th><th>Becomes</th></tr></thead>
         <tbody>
-          <tr><td><b>Header <span class="mono">&ctdot;</span></b> (discard only)</td><td>The one menu: rest timer (inline picker, checkmark on the value in force), <i>What's RPE?</i>, <i>Save as routine</i>, <i>Discard workout</i> as a destructive row.</td></tr>
-          <tr><td><b>&#9201; Off chip</b></td><td>Into that menu. It is a preference, consulted once a month.</td></tr>
+          <tr><td><b>Header <span class="mono">&ctdot;</span></b> (discard only)</td><td>Half of a native glass toolbar capsule — the Apple Music arrangement. The menu itself carries the rest durations as an inline picker, <i>What's RPE?</i>, <i>Save as routine</i>, and <i>Discard workout</i> as a destructive row.</td></tr>
+          <tr><td><b>&#9201; Off chip</b></td><td>The other half of that capsule, and it stays a <em>one-tap</em> toggle: tap to arm or disarm the rest timer mid-workout, the symbol fills and the duration appears beside it. Duration lives one level in, in the menu next to it. See below.</td></tr>
           <tr><td><b>What's RPE?</b></td><td>Into that menu, and onto the RPE control itself as a <span class="mono">&#9432;</span> — already a ring, so it needs no second one drawn round it.</td></tr>
           <tr><td><b>"1 exercises – tap &check; as you go"</b></td><td>Deleted. The first-run tip card already teaches this once and dismisses itself.</td></tr>
           <tr><td><b>Elapsed clock (22pt black, centred)</b></td><td>Mono, ash, small, in the header beside the lift's name. It is context, not content. Tap it to pause — the clock turns amber and the word PAUSED replaces ELAPSED. That deletes the Pause button.</td></tr>
@@ -553,9 +569,9 @@
         <thead><tr><th style="width: 150px;">Control</th><th style="width: 190px;">Native form</th><th>Why the system's version is better</th><th style="width: 96px;">Status</th></tr></thead>
         <tbody>
           <tr>
-            <td><b>The one menu</b><br><span class="mono" style="font-size: 11px; color: var(--ash);">rest, help, routine, discard</span></td>
-            <td><code>Menu</code> with an inline <code>Picker</code> section and <code>Button(role:&nbsp;.destructive)</code></td>
-            <td>On iOS 26 the menu is Liquid Glass zoom-morphing out of the anchor — the material animates from the glyph, which no sheet can imitate. Destructive rows get the system's red and its confirmation semantics for free, and the radio-with-checkmark is the pattern every iPhone owner already reads. We ship <code>GlassMenuButton</code> and <code>GlassSelectMenu</code> today; this is one more caller, not new code.</td>
+            <td><b>The toolbar capsule</b><br><span class="mono" style="font-size: 11px; color: var(--ash);">timer + the &ctdot; menu</span></td>
+            <td><code>GlassEffectContainer</code> fusing a <code>Button</code> and a <code>Menu</code> — with an inline <code>Picker</code> section and <code>Button(role:&nbsp;.destructive)</code></td>
+            <td>This is the Apple Music arrangement: two native leaves sharing one lozenge, the material answering the press, and the menu zoom-morphing out of the anchor rather than a sheet sliding up. Destructive rows get the system's red and its semantics for free, and the radio-with-checkmark is the pattern every iPhone owner already reads. We ship <code>GlassMenuButton</code>, <code>GlassSelectMenu</code> and the fusing container (<code>GlassPillRow</code>) today — this is those three joined up. Detailed below.</td>
             <td><span class="sev s-erg">extend</span></td>
           </tr>
           <tr>
@@ -598,6 +614,105 @@
       </table>
     </div>
 
+    <h3 class="sub">The toolbar capsule — and where the rest timer lives</h3>
+    <p style="max-width: 66ch; color: var(--ash); margin-top: 14px;">
+      The <span class="mono">&ctdot;</span> in Apple Music is not a glyph with a circle drawn round
+      it. It is a native SwiftUI button inside a <code>GlassEffectContainer</code>, sharing one
+      lozenge with the button beside it — two leaves, one piece of glass, and when either is
+      pressed the material itself answers: the specular rim travels, the capsule bounces, the
+      menu zoom-morphs out of the anchor. That is the thing we want, and the kit can already
+      build it. <code>GlassPillRow</code> does the fusing today for the nav dock; it just draws
+      glass and lets React Native handle the taps. A toolbar group is the same construction with
+      real <code>Button</code> and <code>Menu</code> leaves inside, so the touch lands on SwiftUI.
+    </p>
+
+    <p style="max-width: 66ch; color: var(--ash);">
+      Which answers the second question too. A capsule wants two related actions, and this screen
+      has exactly two: <b>the rest timer</b> and <b>everything else</b>. So the timer is not buried
+      in the menu — it is the left half of the capsule, one tap to arm or disarm, mid-set, with
+      the duration reading out beside the symbol when it is on. The durations live one level in,
+      as an inline picker in the menu next to it, which is where a value you change once a month
+      belongs.
+    </p>
+
+    <div class="pair" style="margin-top: 26px; align-items: stretch;">
+      <div class="pane" style="flex: 1 1 300px; max-width: 380px;">
+        <div class="cap"><b>The capsule</b><span class="tag t-new">three states</span></div>
+        <div style="display: grid; gap: 16px; border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px; background: var(--ink2);">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span class="tbgroup"><span class="tb off">&#9201;</span><span class="tb">&ctdot;</span></span>
+            <span class="mono" style="font-size: 11px; color: var(--ash);">OFF – tap to arm</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span class="tbgroup"><span class="tb armed">&#9201; <span class="sec">1:30</span></span><span class="tb">&ctdot;</span></span>
+            <span class="mono" style="font-size: 11px; color: var(--ash);">ARMED – tap to disarm</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <span class="tbgroup"><span class="tb armed">&#9201; <span class="sec">0:47</span></span><span class="tb">&ctdot;</span></span>
+            <span class="mono" style="font-size: 11px; color: var(--ash);">RESTING – counts down in place</span>
+          </div>
+        </div>
+        <ul class="notes" style="margin-top: 18px;">
+          <li><span class="mark ok">&check;</span><span>Armed, the symbol fills and takes the blue it already uses in the rest banner. Off, it is ash. State is in the mark, not in a word.</span></li>
+          <li><span class="mark ok">&check;</span><span>While a rest is running the same slot counts down, so the capsule is a clock when there is a clock to show and a switch the rest of the time.</span></li>
+          <li><span class="mark ok">&check;</span><span>Long-press it, or open the <span class="mono">&ctdot;</span> beside it, for the durations — the existing <code>GlassSelectMenu</code>, unchanged.</span></li>
+        </ul>
+      </div>
+
+      <div class="pane" style="flex: 1 1 400px; max-width: 560px;">
+        <div class="cap"><b>How it's built</b><span class="tag t-new">swiftui.tsx</span></div>
+<pre class="code"><span class="c">// One Host, one container, two native leaves — the composition rule
+// holds better than today, where the timer chip and the menu are two
+// separate Hosts sitting next to each other pretending to be a group.</span>
+&lt;<span class="k">Host</span> matchContents&gt;
+  &lt;<span class="k">Namespace</span> id={ns}&gt;
+    &lt;<span class="k">GlassEffectContainer</span> spacing={2}&gt;
+      &lt;<span class="k">HStack</span> spacing={2}&gt;
+
+        <span class="c">{/* LEFT — the rest timer, one tap */}</span>
+        &lt;<span class="k">Button</span> onPress={toggleRest}
+          modifiers={[buttonStyle(<span class="k">"glass"</span>), accessibilityLabel(restA11y)]}&gt;
+          &lt;<span class="k">HStack</span> spacing={5}&gt;
+            &lt;<span class="k">Image</span> systemName={armed ? <span class="k">"timer"</span> : <span class="k">"timer.slash"</span>}
+              color={armed ? blue : ash} /&gt;
+            {armed &amp;&amp; &lt;<span class="k">Text</span>&gt;{mmss(remaining ?? restSeconds)}&lt;/<span class="k">Text</span>&gt;}
+          &lt;/<span class="k">HStack</span>&gt;
+        &lt;/<span class="k">Button</span>&gt;
+
+        <span class="c">{/* RIGHT — the menu, exactly the Apple Music slot */}</span>
+        &lt;<span class="k">Menu</span> label={&lt;<span class="k">Image</span> systemName=<span class="k">"ellipsis"</span> /&gt;}&gt;
+          &lt;<span class="k">Picker</span> selection={restValue} onSelectionChange={pickRest}&gt;
+            <span class="c">…Off / 60 s / 90 s / 2 min / 3 min</span>
+          &lt;/<span class="k">Picker</span>&gt;
+          &lt;<span class="k">Divider</span> /&gt;
+          &lt;<span class="k">Button</span> label={whatsRpe} onPress={openRpeHelp} /&gt;
+          &lt;<span class="k">Button</span> label={saveRoutine} onPress={openRoutine} /&gt;
+          &lt;<span class="k">Button</span> label={discard} role=<span class="k">"destructive"</span> onPress={discard} /&gt;
+        &lt;/<span class="k">Menu</span>&gt;
+
+      &lt;/<span class="k">HStack</span>&gt;
+    &lt;/<span class="k">GlassEffectContainer</span>&gt;
+  &lt;/<span class="k">Namespace</span>&gt;
+&lt;/<span class="k">Host</span>&gt;</pre>
+        <p style="margin-top: 16px; font-size: 14px; color: var(--ash);">
+          Every import is already in <code>swiftui.tsx</code>. Gate it on
+          <code>LIQUID_GLASS_RENDERED</code> like the other leaves, and keep the RN pair — a
+          bordered <span class="mono">&#9201;</span> chip and a <span class="mono">&ctdot;</span> —
+          as the floor for Android and pre-26 iOS. Web draws the same two-slot lozenge in
+          <code>.liquid-glass</code> with a hairline between the halves; it is one capsule there
+          too, so the two clients read as one product.
+        </p>
+      </div>
+    </div>
+
+    <p style="max-width: 66ch; color: var(--ash); margin-top: 26px;">
+      One piece of state, three places it shows, no contradiction between them: the capsule (armed
+      or not, and counting when it counts), the dock hint under the set you are about to bank
+      (<span class="mono">REST 1:30 AFTER</span> / <span class="mono">NO REST TIMER</span>), and the
+      Dynamic Island once ActivityKit lands. Today it shows in one place, as a chip in the row you
+      read least.
+    </p>
+
     <h3 class="sub">Keep these ours</h3>
     <div class="tablewrap">
       <table>
@@ -633,11 +748,12 @@
     </p>
 
     <div class="delta">
-      <div><span class="label">Tap targets</span><div class="n">22 &rarr; <span class="down">9</span></div></div>
+      <div><span class="label">Controls</span><div class="n">20 &rarr; <span class="down">11</span></div></div>
       <div><span class="label">Accents at rest</span><div class="n">5 &rarr; <span class="down">1</span></div></div>
       <div><span class="label">Plus glyphs</span><div class="n">3 &rarr; <span class="down">1</span></div></div>
       <div><span class="label">Ways to finish</span><div class="n">2 &rarr; <span class="down">1</span></div></div>
       <div><span class="label">Taps to log set 1</span><div class="n">3 &rarr; <span class="down">1</span></div></div>
+      <div><span class="label">Rest control</span><div class="n" style="font-size: 13px; line-height: 1.4;">scrolls away &rarr; <span class="down">pinned</span></div></div>
       <div><span class="label">Screen unused</span><div class="n">30% &rarr; <span class="down">0%</span></div></div>
     </div>
 
@@ -696,8 +812,8 @@
                 <div style="font-weight: 800; font-size: 14px; letter-spacing: -.01em;">Pull-Up</div>
                 <div class="mono" style="font-size: 10.5px; letter-spacing: .14em; color: var(--ash);">0:05</div>
               </div>
-              <div class="side r" style="gap: 12px;">
-                <span class="mono" style="color: var(--ash); font-size: 16px;">&ctdot;</span>
+              <div class="side r" style="gap: 10px;">
+                <span class="tbgroup"><span class="tb armed">&#9201; <span class="sec">1:30</span></span><span class="tb">&ctdot;</span></span>
                 <span style="font-weight: 800; font-size: 15px; color: var(--chalk);">Finish</span>
               </div>
             </div>
@@ -751,6 +867,7 @@
       <li><span class="mark ok">&check;</span><span><b>One accent.</b> Chartreuse appears once, in the dock, on the only button you will press repeatedly.</span></li>
       <li><span class="mark ok">&check;</span><span><b>The dock never moves</b> and tells you what you are about to bank and what happens next. When you bank it, the same dock becomes the countdown — and the Dynamic Island picks it up.</span></li>
       <li><span class="mark ok">&check;</span><span><b>The marks obey the grammar:</b> bare plus grows the set list in place, ringed chevron leaves for the exercise picker.</span></li>
+      <li><span class="mark ok">&check;</span><span><b>The rest timer is pinned and one tap away</b> — the left half of the glass capsule, armed and reading 1:30, which is why the dock says what happens after you bank. Today that control sits in a scrolling row and disappears the moment you add a second exercise.</span></li>
     </ul>
   </section>
 
@@ -768,7 +885,8 @@
       <li><span>Disable <i>Log set</i> until the set has a value, and default the value from last time.</span><span class="where">workout.tsx</span></li>
       <li><span>Fix the plural, and drop the literal <code>+</code> from both add strings in all three languages.</span><span class="where">core/i18n.ts</span></li>
       <li><span>Default <code>SwipeRow</code>'s content layer to transparent — the card-inside-a-card goes away.</span><span class="where">swipe-row.tsx</span></li>
-      <li><span>Move rest timer, RPE help and discard into one system <code>Menu</code>; delete the meta row.</span><span class="where">workout.tsx<br>logger.tsx</span></li>
+      <li><span>Build <code>GlassToolbarGroup</code> — the Apple Music capsule: a <code>GlassEffectContainer</code> holding the rest-timer <code>Button</code> and the <code>Menu</code>, with the RN chip pair as the floor.</span><span class="where">swiftui.tsx</span></li>
+      <li><span>Pin that capsule in the header and delete the meta row — the timer becomes a one-tap arm/disarm that never scrolls away, RPE help and discard go inside the menu.</span><span class="where">workout.tsx<br>logger.tsx</span></li>
       <li><span>Dock the primary. One <i>Finish</i>, in the header; pause moves onto the clock.</span><span class="where">both clients</span></li>
       <li><span>Fold set type, special sets and schemes into one menu on the set row.</span><span class="where">both clients</span></li>
       <li><span>Retire the ringed <i>Add set</i> box for a bare plus; make <i>Add exercise</i> a door row.</span><span class="where">both clients</span></li>
