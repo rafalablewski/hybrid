@@ -3,6 +3,7 @@ import { Platform, View, StyleSheet } from "react-native";
 import {
   Button,
   ContextMenu,
+  Divider,
   GlassEffectContainer,
   HStack,
   Host,
@@ -19,8 +20,12 @@ import {
   Animation,
   accessibilityLabel,
   animation,
+  buttonBorderShape,
   buttonStyle,
   contentShape,
+  disabled as swiftDisabled,
+  font,
+  foregroundColor,
   frame,
   glassEffect,
   glassEffectId,
@@ -209,6 +214,121 @@ export function GlassMenuButton({
       >
         {items.map((it) => (
           <Button key={it.key} label={it.label} role={it.destructive ? "destructive" : "default"} onPress={() => onSelect(it.key)} />
+        ))}
+      </Menu>
+    </Host>
+  );
+}
+
+/**
+ * THE PROMINENT PILL'S NATIVE FORM — SwiftUI's `.glassProminent` button
+ * carrying the BRAND fill as its tint: the chartreuse stays (a tinted pane of
+ * prominent glass, not a flat painted rect), and the material answers the
+ * touch. The label rides in the app's own face via expo-font's registered
+ * family names — the font, the size and the foreground come from the caller so
+ * this leaf stays dumb about the type system.
+ */
+export function GlassPillButton({
+  label,
+  onPress,
+  tintColor,
+  fg,
+  fontFamily,
+  fontSize,
+  height = 56,
+  glyph,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  /** The pill's fill — the brand accent, carried IN the material. */
+  tintColor: string;
+  /** Label colour (the accent's on-colour). */
+  fg: string;
+  fontFamily: string;
+  fontSize: number;
+  height?: number;
+  /** Optional leading SF mark (the logger's ✓). */
+  glyph?: "checkmark";
+  disabled?: boolean;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host matchContents={{ vertical: true }} style={{ width: "100%" }}>
+      <Button
+        onPress={onPress}
+        modifiers={[
+          buttonStyle("glassProminent"),
+          buttonBorderShape("capsule"),
+          tint(tintColor),
+          frame({ maxWidth: 9999, minHeight: height }),
+          swiftDisabled(!!disabled),
+          accessibilityLabel(label),
+        ]}
+      >
+        <HStack spacing={8}>
+          {glyph ? <SwiftImage systemName={glyph} size={fontSize} color={fg} /> : null}
+          <SwiftText modifiers={[font({ family: fontFamily, size: fontSize }), foregroundColor(fg)]}>{label}</SwiftText>
+        </HStack>
+      </Button>
+    </Host>
+  );
+}
+
+/**
+ * A SELECT that answers from a MENU — the system Menu with an inline Picker
+ * (the radio group with the checkmark), plus optional extra action rows behind
+ * a divider (the meal chooser's "Add a meal part"). The TRIGGER is the value
+ * itself as text — the app's inline-select idiom ("Breakfast ⌄", "⏱ 90s") —
+ * drawn by SwiftUI in the caller's own face so the head reads unchanged.
+ */
+export function GlassSelectMenu<T extends string>({
+  label,
+  fontFamily,
+  fontSize,
+  labelColor,
+  a11yLabel,
+  options,
+  value,
+  onPick,
+  extras,
+  onExtra,
+}: {
+  /** The trigger's text — usually the selected value's own label. */
+  label: string;
+  fontFamily: string;
+  fontSize: number;
+  labelColor: string;
+  a11yLabel: string;
+  options: { id: T; label: string }[];
+  value: T;
+  onPick: (v: T) => void;
+  /** Action rows appended after a divider — things that are not a selection. */
+  extras?: { key: string; label: string; destructive?: boolean }[];
+  onExtra?: (key: string) => void;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host matchContents>
+      <Menu
+        label={
+          <HStack spacing={6} modifiers={[contentShape(shapes.rectangle())]}>
+            <SwiftText modifiers={[font({ family: fontFamily, size: fontSize }), foregroundColor(labelColor)]}>{label}</SwiftText>
+            <SwiftImage systemName="chevron.down" size={Math.round(fontSize * 0.8)} color={labelColor} />
+          </HStack>
+        }
+        modifiers={[accessibilityLabel(a11yLabel)]}
+      >
+        <Picker selection={value} onSelectionChange={(v) => onPick(v as T)}>
+          {options.map((o) => (
+            <SwiftText key={o.id} modifiers={[tag(o.id)]}>
+              {o.label}
+            </SwiftText>
+          ))}
+        </Picker>
+        {extras?.length ? <Divider /> : null}
+        {extras?.map((e) => (
+          <Button key={e.key} label={e.label} role={e.destructive ? "destructive" : "default"} onPress={() => onExtra?.(e.key)} />
         ))}
       </Menu>
     </Host>

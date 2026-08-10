@@ -125,7 +125,7 @@ import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER } from "../components/aurora/kit";
-import { GlassMenuButton, GlassNavButton, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
+import { GlassMenuButton, GlassNavButton, GlassPillButton, GlassSelectMenu, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
@@ -1093,22 +1093,48 @@ export default function Workout() {
               ? `${exercises.length} ${t("workout.exercises")} – ${t("workout.tapAsYouGo")}`
               : t("workout.firstExercise")}
           </Mono>
-          {/* On-demand rest-timer switch — same persisted pref as Logger settings,
-              so flipping it mid-workout sticks for next time too. */}
-          <Pressable
-            onPress={() => {
-              const next = !prefs.restTimer;
-              setLoggerPref("restTimer", next);
-              if (!next) setRestSince(null);
-            }}
-            hitSlop={8}
-            accessibilityLabel={t("loggerPrefs.restTimer")}
-            style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: prefs.restTimer ? C.blue : C.line }}
-          >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: prefs.restTimer ? txt(C, C.blue) : C.ash }}>
-              ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
-            </Text>
-          </Pressable>
+          {/* On-demand rest-timer control — same persisted pref as Logger
+              settings, so a change mid-workout sticks for next time too. On
+              iOS 26 the chip IS a system menu: the presets and Off as an
+              inline picker, checkmark on the one in force. Elsewhere it stays
+              the toggle chip (the presets live in the rest banner). */}
+          {LIQUID_GLASS_RENDERED ? (
+            <GlassSelectMenu
+              label={`⏱ ${prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}`}
+              fontFamily={F.mono}
+              fontSize={fs.caption}
+              labelColor={prefs.restTimer ? txt(C, C.blue) : C.ash}
+              a11yLabel={t("loggerPrefs.restTimer")}
+              options={[
+                { id: "off", label: t("common.off") },
+                { id: "60", label: "60 s" },
+                { id: "90", label: "90 s" },
+                { id: "120", label: "2 min" },
+                { id: "180", label: "3 min" },
+              ]}
+              value={prefs.restTimer ? String(prefs.restSeconds) : "off"}
+              onPick={(v) => {
+                if (v === "off") { setLoggerPref("restTimer", false); setRestSince(null); return; }
+                setLoggerPref("restTimer", true);
+                setLoggerPref("restSeconds", Number(v));
+              }}
+            />
+          ) : (
+            <Pressable
+              onPress={() => {
+                const next = !prefs.restTimer;
+                setLoggerPref("restTimer", next);
+                if (!next) setRestSince(null);
+              }}
+              hitSlop={8}
+              accessibilityLabel={t("loggerPrefs.restTimer")}
+              style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: prefs.restTimer ? C.blue : C.line }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: prefs.restTimer ? txt(C, C.blue) : C.ash }}>
+                ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
+              </Text>
+            </Pressable>
+          )}
           <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("w.train.blocks.whatsRpe")}</Text>
           </Pressable>
@@ -1411,11 +1437,28 @@ export default function Workout() {
                             )}
                             {/* Primary action — a proper, sized Log button (the old
                                 floating ＋ is retired). Banks the set + starts rest.
-                                The screen's one lime fill in the logging loop. */}
-                            <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 16, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                              <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>
-                              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.logSet")}</Text>
-                            </Pressable>
+                                The screen's one lime fill in the logging loop — on
+                                iOS 26 that fill is prominent glass wearing the brand
+                                tint, and the material itself answers the press. */}
+                            {LIQUID_GLASS_RENDERED ? (
+                              <View style={{ marginTop: 16 }}>
+                                <GlassPillButton
+                                  label={t("workout.logSet")}
+                                  glyph="checkmark"
+                                  onPress={() => toggleDone(x.uid, i, true)}
+                                  tintColor={C.lime}
+                                  fg={C.onAccent}
+                                  fontFamily={F.bold}
+                                  fontSize={fs.subtitle}
+                                  height={54}
+                                />
+                              </View>
+                            ) : (
+                              <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 16, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
+                                <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>
+                                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.logSet")}</Text>
+                              </Pressable>
+                            )}
                           </View>
                         ) : (() => {
                           // Banked / queued → quiet one-line row (tap a banked one
@@ -1731,13 +1774,31 @@ export default function Workout() {
                 {paused ? `▶ ${t("workout.resume")}` : `❚❚ ${t("workout.pause")}`}
               </Text>
             </Pressable>
-            <Pressable
-              onPress={finish}
-              disabled={saving}
-              style={{ flex: 1, backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
-            >
-              {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.train.logger.finishWorkout")}</Text>}
-            </Pressable>
+            {/* The chartreuse stays — on iOS 26 it is prominent glass wearing
+                the brand tint rather than a painted rect. While saving, the
+                label yields to the same "…" the header's Finish shows. */}
+            {LIQUID_GLASS_RENDERED ? (
+              <View style={{ flex: 1 }}>
+                <GlassPillButton
+                  label={saving ? "…" : t("w.train.logger.finishWorkout")}
+                  onPress={finish}
+                  disabled={saving}
+                  tintColor={C.lime}
+                  fg={C.onAccent}
+                  fontFamily={F.black}
+                  fontSize={fs.subtitle}
+                  height={54}
+                />
+              </View>
+            ) : (
+              <Pressable
+                onPress={finish}
+                disabled={saving}
+                style={{ flex: 1, backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
+              >
+                {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.train.logger.finishWorkout")}</Text>}
+              </Pressable>
+            )}
           </View>
         )}
       </ScrollView>

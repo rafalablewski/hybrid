@@ -12,6 +12,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { IBarcode, IClose } from "./nutrition-kit";
 
 /**
@@ -49,7 +50,11 @@ export function PickerField({ value, onChange, onSubmit, onScan }: {
   const typed = value.trim().length > 0;
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: LIQUID_GLASS_SUPPORTED ? "transparent" : C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, overflow: "hidden" }}>
+      {/* The screen's one container wears the kit's glass where the platform
+          has it (the ACard treatment) — the input inside is already a native
+          UITextField; only its ground changes. */}
+      {LIQUID_GLASS_SUPPORTED && <GlassSurface radius={RADIUS.field} />}
       <AuroraIcon name="search" size={18} color={C.ash} />
       <TextInput
         value={value}
