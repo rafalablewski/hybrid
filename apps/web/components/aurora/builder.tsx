@@ -6,6 +6,7 @@ import { fs, space, canSaveRoutine, isFullAccess, FREE_TEMPLATE_LIMIT, FUNNEL, s
 import type { SessionBlock, WeightUnit } from "@hybrid/core";
 import WorkoutBlocks, { uid, type EditableBlock } from "@/components/workout-blocks";
 import { MetaLine } from "./meta";
+import RollingNumber from "./rolling-number";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useLang } from "@/lib/i18n";
 import { useBodyweight } from "@/lib/use-bodyweight";
@@ -162,8 +163,12 @@ function SessionPulse({ blocks, units, bodyweightKg }: { blocks: EditableBlock[]
   ];
   return (
     <div style={{ margin: "10px 2px 20px" }}>
-      <div aria-label={`${sig.minutes} ${tr("w.train.signal.estTime")}`} style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 56, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
-        {sig.minutes}<span style={{ fontSize: 22, fontWeight: 500, color: C("ash"), letterSpacing: 0 }}> min</span>
+      {/* The One Number GROWS as exercises are added — composing a routine is
+          meant to feel like loading a bar — so it rolls to each new value
+          instead of swapping to it. */}
+      <div style={{ display: "flex", alignItems: "baseline", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 56, letterSpacing: "-.03em", lineHeight: 1, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>
+        <RollingNumber value={String(sig.minutes)} aria-label={`${sig.minutes} ${tr("w.train.signal.estTime")}`} />
+        <span style={{ fontSize: 22, fontWeight: 500, color: C("ash"), letterSpacing: 0 }}>&nbsp;min</span>
       </div>
       <MetaLine
         parts={[sig.tonnageKg > 0 ? fmtTonnage(sig.tonnageKg, units) : null, `${sig.moves} ${tr("w.train.signal.moves")}`]}

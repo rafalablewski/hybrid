@@ -104,6 +104,7 @@ import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import AuroraExerciseMedia from "../components/aurora/exercise-media";
 import { ArrowGlyph } from "../components/aurora/cta-label";
+import { RollingNumber } from "../components/aurora/rolling-number";
 import Sheet from "../components/aurora/sheet";
 import { useConfirm } from "../components/aurora/confirm";
 import { FeelPrompt } from "../components/feel-prompt";
@@ -628,13 +629,22 @@ export default function Workout() {
     setExercises(blocksToExercises(r.blocks));
   };
 
+  // EVERY MUTATION OF THE LIST TRAVELS. `animateListChange` before the commit
+  // animates all of its consequences at once — the row arriving or leaving AND
+  // the rows below opening or closing the gap. Without it the user's own edit
+  // is the one moment in the app with no motion at all: a card appears fully
+  // formed mid-list, or vanishes and everything under it teleports up.
   const addExercise = (name: string, kind?: WKind) => {
     const clean = name.trim();
     if (!clean) return;
+    animateListChange(reducedMotion);
     setExercises((xs) => [...xs, newExercise(clean, kind)]);
     setPickerOpen(false);
   };
-  const removeExercise = (u: string) => setExercises((xs) => xs.filter((x) => x.uid !== u));
+  const removeExercise = (u: string) => {
+    animateListChange(reducedMotion);
+    setExercises((xs) => xs.filter((x) => x.uid !== u));
+  };
   // Drop reorder (hold the grip handle and drag): move from one index to another.
   const moveExerciseTo = (from: number, to: number) => setExercises((xs) => moveItemTo(xs, from, to));
   const rename = (u: string, name: string) =>
@@ -674,10 +684,12 @@ export default function Workout() {
         return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, load: nextKg } : s)) };
       }),
     );
-  const addSet = (u: string) =>
+  const addSet = (u: string) => {
+    animateListChange(reducedMotion);
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
     );
+  };
   // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
   // in one tap. Each rep count is a SINGLE number (project rule), carrying the
   // current load. Banked sets are kept; the un-banked plan is replaced.
@@ -729,13 +741,10 @@ export default function Workout() {
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
-  // The row leaves AND the rows below close the gap. Without the first call the
-  // deleted row simply vanished and everything under it jumped up by its
-  // height — a teleport, in response to the user's own action.
-  const removeSet = (u: string, i: number) => {
-    animateListChange(reducedMotion);
+  // No animateListChange here: the only caller is a SwipeRow, and closing the
+  // gap after a swipe-delete belongs to SwipeRow itself now.
+  const removeSet = (u: string, i: number) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
-  };
   const toggleDone = (u: string, i: number, val: boolean) => {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.
@@ -1182,18 +1191,22 @@ export default function Workout() {
           const remaining = restTarget != null ? restTarget - restNow : null;
           const done = remaining != null && remaining <= 0;
           const accent = done ? C.lime : C.blue;
-          const clock =
-            restTarget == null
-              ? mmss(restNow)
-              : done
-                ? `+${mmss(restNow - restTarget)}`
-                : `${mmss(remaining!)} ${t("workout.restLeft")}`;
+          // The CLOCK is the one figure on this screen that changes while you
+          // watch it, so it rolls rather than swapping — its digits are split
+          // out of the label for that reason (the words around them never move).
+          const clock = restTarget == null ? mmss(restNow) : done ? `+${mmss(restNow - restTarget)}` : mmss(remaining!);
           return (
             <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
-                  {done ? t("workout.restDone") : t("workout.resting")} – {clock}
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
+                    {done ? t("workout.restDone") : t("workout.resting")} –{" "}
+                  </Text>
+                  <RollingNumber value={clock} style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }} />
+                  {restTarget != null && !done ? (
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}> {t("workout.restLeft")}</Text>
+                  ) : null}
+                </View>
                 <Pressable
                   onPress={() => setRestSince(null)}
                   hitSlop={8}
@@ -2622,7 +2635,9 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
 function LiveStat({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingVertical: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{value}</Text>
+      {/* Every figure here moves as sets are banked — the scoreboard IS the
+          feedback for banking one — so each rolls to its new value. */}
+      <RollingNumber value={value} align="center" style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }} />
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
     </View>
   );

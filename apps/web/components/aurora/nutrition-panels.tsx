@@ -77,27 +77,6 @@ export function Ring({ value, color, size = 44, center }: { value: number; color
   );
 }
 
-// 0 → 1 once on mount, rAF-driven with a cubic ease-out. Under
-// prefers-reduced-motion the factor stays at 1 (no animation, no flash) — and
-// staying at 1 is also what SSR/hydration render, so the markup never counts
-// again on later data refreshes.
-export function useCountUpFactor(ms = 700): number {
-  const [f, setF] = useState(1);
-  useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    let raf = 0;
-    const t0 = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - t0) / ms);
-      setF(1 - Math.pow(1 - p, 3));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    setF(0);
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [ms]);
-  return f;
-}
 
 // The SUMMARY dashboard — goal progress, week/month stat tiles, macro balance
 // and (for free users) the deep-insights ✦ Full lock.

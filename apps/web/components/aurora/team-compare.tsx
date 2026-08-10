@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fs, space } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
+import { Loading } from "./skeleton";
 
 import {
   BarChart,
@@ -80,8 +81,7 @@ export default function AuroraTeamCompare() {
   const card = { background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, boxShadow: "var(--shadow-card)", padding: 20 } as const;
   const kicker = (color: string): React.CSSProperties => ({ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: C(color) });
 
-  if (loading)
-    return <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash") }}>{t("w.teams.compare.loadingRoster")}</span>;
+  if (loading) return <Loading />;
 
   if (athletes.length === 0)
     return (

@@ -7,6 +7,89 @@ a file and line. Nothing is asserted from a screenshot or from the capabilities
 register — where the register disagrees with the code, the code wins and the
 register is marked stale.
 
+> **STATUS — the audit has been actioned. This document is the original finding
+> and is deliberately left as written; it is a record of what was true when it
+> was taken, not a description of the app today.** All twenty items on §20's
+> "worst transitions" list have shipped, plus the two follow-ups they opened.
+> See `motion-audit-followups` in `packages/core/src/capabilities.ts` for what
+> each fix actually was — that entry, not this file, is the current state.
+>
+> Where a finding below reads as present-tense fact, add "as of August 2026,
+> before the fix". The scores in §21 are the pre-fix scores.
+>
+> **Twenty of the twenty-two are fixed EVERYWHERE. Two are not, and the
+> difference is the honest part.** Most fixes live in one shared place — the
+> Sheet, the SwipeRow, the shell's history, a list in core — so every site gets
+> them by construction. The rest were swept in a third pass: the face flies at
+> all twenty doors to a person's page, filtering travels on twelve surfaces, and
+> web's stat tiles roll at the source, which reached thirty-one screens in one
+> change. Still open, tracked as their own items:
+> `loading-crossfade-adoption` (the placeholder hands over on one list per
+> client; forty-five mobile loading states are early returns and each needs its
+> body moved into a child before a crossfade has two things to fade between) and
+> `mobile-stat-tile` (web has one `Stat` that thirty-one screens render through;
+> mobile draws each by hand, so the primitive has to exist before the sweep).
+> `shared-elements-remaining` covers the pairs that were never in the twenty.
+
+### The twenty, and where each went
+
+| # | Finding | Where it was fixed |
+|---|---|---|
+| 1 | Browser Back exits the app (N1) | Wave 1 — `setScreen` pushes; popstate applies the direction the browser travelled |
+| 2 | Sheet grab handle bound to nothing (F1) | Wave 1 — pan on the panel, release by velocity projection in core |
+| 3 | Every list deletion teleports (§11) | Wave 1 (set rows) → Wave 3 — SwipeRow closes its own gap, so every host gets it |
+| 4 | 448 mobile taps with no feedback (M1) | Wave 1 — `PressScale` swept across 83 files |
+| 5 | 571 web buttons with no press state (M1) | Wave 1 — 574 buttons across 104 files |
+| 6 | Session card → detail, hard cut (§3) | Wave 1 — `SHARED_ELEMENTS.sessionHero` |
+| 7 | Plan cover → plan, hard cut (§3) | Wave 2 — `SHARED_ELEMENTS.planCover`; mobile's FLIP learned to fly a surface |
+| 8 | Mobile sheet running a cubic (F3) | Wave 1 — `springToRN(springs.sheet)` |
+| 9 | The hub lens at 629ms (T1) | Wave 1 — `springs.lens`, in the token set so the guard sees it |
+| 10 | Settings pushing like a drill-down (N3) | Wave 2 — core `MODAL_SCREENS`; `presentation: "modal"` |
+| 11 | Editors pushing like drill-downs (N3) | Wave 2 — same list |
+| 12 | Web sheet unmount racing itself (F4) | Wave 1 — `transitionend`, timeout as fallback only |
+| 13 | Swipe actions ignoring velocity (G1) | Wave 1 — core `projectSwipe` |
+| 14 | Reorder commit with no travel (§11) | Wave 2 — animated inside `useDragReorder` |
+| 15 | Spinner → fully-formed screen (§12) | Wave 1 (mobile `Skeleton`) → Wave 3 — web's twin, admin included |
+| 16 | Skeleton → content as a swap (§12) | Wave 2 — `LoadSwap`, `durations.crossfade`. **Still partial** — see the status note |
+| 17 | Numbers swapping, not rolling (§13) | Wave 2 — core `numericDiff` + `RollingNumber` → Wave 3 — web's 31 stat tiles + the calorie ring. **Mobile tiles still partial** |
+| 18 | No full-swipe-to-delete (G2) | Wave 1 — commit at `swipe.fullAt` |
+| 19 | Paywall bypassing the shared sheet (F5) | Wave 2 — it is the shared `Sheet` |
+| 20 | Filter replacing the list wholesale (§11) | Wave 2 (Exercises) → Wave 3 — twelve surfaces |
+
+### The two follow-ups the twenty opened
+
+| Finding | Where it went |
+|---|---|
+| No full-screen-cover vocabulary — entering the live logger looks like opening Settings (§2) | Wave 3 — core `COVER_SCREENS`; `fullScreenModal` + focus blur, and web's chrome leaves with the mode |
+| The remaining shared-element pairs (§3) | Wave 3 — `SHARED_ELEMENTS.personAvatar`, at all twenty doors to a person's page |
+
+Two more findings outside both lists were closed on the way, because the fixes
+turned out to be the same fix: **N4** (the recede-and-rise push was defined in
+shared tokens and performed by one client) — web's push is the horizontal
+travel now and recede-and-rise belongs to modality, which is what §2's table
+recommended; and the `motionPushOut` keyframe's scale, which was `.94` against
+`motion.recedeScale`'s `.92`, so a presented *screen* and a presented *panel*
+receded by different amounts. Both are guarded.
+
+### Corrections to the audit as written
+
+Three claims in this document did not survive contact with the code, and are
+left in place below rather than edited out:
+
+- **§12's count of 43 spinner sites** was right at the time and is no longer the
+  right *measure*. 18 `ActivityIndicator` render sites remain on mobile and
+  every one is an in-flight ACTION — `busy ? <spinner/> : "Save"`, an export, a
+  purchase, the AI coach thinking — which §12 itself says is what a spinner is
+  for. The number that mattered was arriving-CONTENT sites, and those are on the
+  skeleton. (Counting `grep ActivityIndicator` gives 37, but more than half of
+  those are import lines; the audit's own 43 was measured the same way and was
+  therefore also high.)
+- **§13's "every stat tile and the macro rings"** understated how cheap the web
+  half would be (one shared `Stat`, thirty-one screens) and understated the
+  mobile half, which needs a primitive that does not exist.
+- **The haptics register** claimed all sites were user-gated; four were not.
+  Fixed in wave 1, noted in `screen-transitions-wave3`.
+
 ---
 
 ## 0. The honest opening

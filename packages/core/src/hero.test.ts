@@ -221,6 +221,13 @@ describe("the navigation button", () => {
     expect(heroNavAction("page")).toEqual({ role: "pop", glyph: "back" });
     expect(heroNavAction("takeover")).toEqual({ role: "dismiss", glyph: "chevron-down" });
   });
+
+  it("dismisses a PRESENTED page — there is no stack under a detour", () => {
+    // A card modal wearing a back chevron points at a parent the dismiss
+    // gesture doesn't reach; the glyph has to agree with how the screen arrived.
+    expect(heroNavAction("page", true)).toEqual({ role: "dismiss", glyph: "chevron-down" });
+    expect(heroNavAction("page", false)).toEqual({ role: "pop", glyph: "back" });
+  });
 });
 
 describe("hero transitions", () => {

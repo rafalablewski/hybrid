@@ -27,6 +27,7 @@ export * from "./day-stamp";
 export * from "./duration";
 export * from "./masthead";
 export * from "./motion";
+export * from "./numeric-text";
 export * from "./spark";
 export * from "./chart-scrub";
 export * from "./nutrition-hub";

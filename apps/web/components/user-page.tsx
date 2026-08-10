@@ -40,6 +40,7 @@ import type {
 } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
+import { armPerson } from "@/lib/shared-element";
 import { HeroAccessory, HeroScreen } from "./aurora/hero";
 import {
   C, useSocialTheme, card, Avatar, Btn, EmptyState, Stars, VerifiedTick, jget, jsend, useBusy,
@@ -212,7 +213,7 @@ function People({ handle, tab, onTab, onOpenUser }: {
             <button
               className="pressable"
               key={c.userId}
-              onClick={() => onOpenUser?.(c.handle)}
+              onClick={() => { armPerson(c.handle); onOpenUser?.(c.handle); }}
               style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "10px 0", background: "none", border: "none", borderBottom: `1px solid ${C("line")}`, cursor: "pointer" }}
             >
               <Avatar url={c.avatarUrl} name={c.displayName} handle={c.handle} size={38} />
@@ -351,7 +352,7 @@ export default function UserPage({
       <HeroScreen hero={hero} back={onBack} backLabel={t("common.back")}>
         {seed ? (
           <div style={{ display: "flex", gap: 16, alignItems: "center", maxWidth: 640 }}>
-            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} />
+            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} shared />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: heading, fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{name}</div>
               <div style={{ color: C("ash"), fontFamily: mono, fontSize: fs.caption }}>@{seed.handle}</div>
@@ -381,7 +382,7 @@ export default function UserPage({
       <div style={{ maxWidth: 640 }}>
         {/* ── WHO ── the person, at the size a page allows. */}
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} />
+          <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} shared />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
               <span style={{ fontFamily: heading, fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{name}</span>
@@ -485,7 +486,7 @@ export default function UserPage({
                   units={units}
                   // Their own avatar on their own page goes nowhere — it is
                   // already here.
-                  onOpenProfile={(h) => { if (h && h !== p.handle) onOpenUser?.(h); }}
+                  onOpenProfile={(h) => { if (h && h !== p.handle) { armPerson(h); onOpenUser?.(h); } }}
                   onKudos={() => cheer(item)}
                   onComments={() => setThread(thread === item.id ? null : item.id)}
                   onOpen={onOpenPost ? () => { setThread(null); onOpenPost(feedSubjectKey(item), item); } : undefined}
@@ -738,7 +739,7 @@ function Coaching({
       ) : coach.reviews.map((rv: StorefrontReview) => (
         <div key={rv.id} style={{ padding: "10px 0", borderBottom: `1px solid ${C("line")}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button className="pressable" onClick={() => rv.author?.handle && onOpenUser?.(rv.author.handle)}
+            <button className="pressable" onClick={() => { if (!rv.author?.handle) return; armPerson(rv.author.handle); onOpenUser?.(rv.author.handle); }}
               style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, cursor: onOpenUser ? "pointer" : "default" }}>
               <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
               <span style={{ color: C("chalk"), fontWeight: 600, fontSize: fs.caption }}>{rv.author?.displayName || `@${rv.author?.handle}`}</span>

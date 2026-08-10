@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { fs, leading } from "@hybrid/core";
+import { fs, leading, SHARED_ELEMENTS } from "@hybrid/core";
 import { useTemplate } from "@/lib/use-template";
 import { useLang } from "@/lib/i18n";
+import { sharedElementStyle } from "@/lib/shared-element";
 import type { PersonSeed } from "@hybrid/core";
 
 // Shared primitives for the social + marketplace screens — kept here so the
@@ -48,20 +49,31 @@ export function Avatar({
   name,
   handle,
   size = 40,
+  shared,
 }: {
   url?: string | null;
   name?: string | null;
   handle?: string;
   size?: number;
+  /** This avatar is the DESTINATION of one that was armed on the way in — the
+   *  same person's face, 52px in a list and 84px here. Declared statically
+   *  because the destination is alone on its screen. Every avatar tags itself
+   *  with its HANDLE, so a door only has to say who it is opening — see
+   *  `armPerson`, which is why no list threads a ref. */
+  shared?: boolean;
 }) {
   const { t } = useLang();
+  const flight = sharedElementStyle(SHARED_ELEMENTS.personAvatar, !!shared);
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={name || handle || t("w.social.avatarAlt")} width={size} height={size} style={{ borderRadius: 999, objectFit: "cover", background: C("ink2") }} />;
+    return <img data-shared-avatar={handle ?? ""} data-shared-dest={shared ? "" : undefined} src={url} alt={name || handle || t("w.social.avatarAlt")} width={size} height={size} style={{ borderRadius: 999, objectFit: "cover", background: C("ink2"), ...flight }} />;
   }
   return (
     <div
+      data-shared-avatar={handle ?? ""}
+      data-shared-dest={shared ? "" : undefined}
       style={{
+        ...flight,
         width: size,
         height: size,
         borderRadius: 999,

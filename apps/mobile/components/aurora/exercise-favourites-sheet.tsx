@@ -15,6 +15,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useExerciseFavourites, toggleExerciseFavourite } from "../../lib/exercise-favourites";
 import { haptic } from "../../lib/haptics";
+import { useListMotion } from "../../lib/list-motion";
 
 /**
  * ADD AN EXERCISE — the Exercises rail's pin sheet (mobile), twin of the web
@@ -40,6 +41,8 @@ export default function ExerciseFavouritesSheet({
   onClose: () => void;
   sessions: LoggedSession[];
 }) {
+  // Survivors of a filter MOVE to their new positions; only arrivals fade.
+  const refilter = useListMotion();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const favourites = useExerciseFavourites();
@@ -107,7 +110,7 @@ export default function ExerciseFavouritesSheet({
         <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, paddingVertical: 12 }}>{t("w.home.exw.addEmpty")}</Text>
       ) : (
         <>
-          <ASearch value={query} onChange={setQuery} placeholder={t("w.analyze.ex.search")} />
+          <ASearch value={query} onChange={(v: string) => refilter(() => setQuery(v))} placeholder={t("w.analyze.ex.search")} />
           {full && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.6, color: C.accentText.amber, marginTop: 10 }}>
               {t("w.home.exw.addFull").replace("{n}", String(MAX_EXERCISE_FAVOURITES))}

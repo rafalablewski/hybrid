@@ -29,6 +29,7 @@ import {
 } from "@hybrid/core";
 import { fs, space, CARD_PAD, LINE_HEX, LIME_HEX, ASH, tip, accentText } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
+import RollingNumber from "./rolling-number";
 import { usePersona } from "@/lib/persona";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { AuroraIcon } from "./icons";
@@ -37,6 +38,7 @@ import RailTail from "./rail-tail";
 import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
+import { collapseAndRemove } from "@/lib/list-motion";
 import { useHeroCollapse } from "./cover-hero";
 import { HeroNav } from "./hero";
 import { AppHeader } from "./app-header";
@@ -54,7 +56,7 @@ import {
   collectionTitle, RecipesLibrary, RecipeCollectionScreen, RecipeDetail, CookPlate, RecipeTile,
 } from "./recipe-library";
 import {
-  CDivider, NutritionNudgeLine, Ring, SummaryDashboard, OnboardingGoal, useCountUpFactor,
+  CDivider, NutritionNudgeLine, Ring, SummaryDashboard, OnboardingGoal,
 } from "./nutrition-panels";
 import { PantryScreen, UndoBar, UNDO_MS } from "./pantry";
 import GroupMark from "./group-mark";
@@ -1146,10 +1148,6 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
   // another screen is a tile you can't trust.
   const weekSummary = useMemo(() => nutritionSummary(signals, { targets, windowDays: 7 }), [signals, targets]);
   const nudge = useMemo(() => nutritionNudge(today, targets), [today, targets]);
-  // Mount count-up for the hero's kcal number (0 → target, rAF ease-out).
-  // core's statCountUp is the wrapped-slides string formatter, not a hook —
-  // the hub number is a plain int, so a 0→1 factor is all we need here.
-  const kcalCountF = useCountUpFactor();
   // ── The sticky HUD ────────────────────────────────────────────────────────
   // The one number you came for is what's LEFT, and it used to exist only at
   // the top of the hub: scroll into the picker or the libraries to choose food
@@ -2491,7 +2489,16 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
               <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
                 <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} color={kcalOver ? C("red") : C("lime")} size={200} center={
                   <span style={{ display: "block", textAlign: "center" }}>
-                    <span style={{ display: "block", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}>{Math.round((targets.kcal - heroDay.kcal) * kcalCountF)}</span>
+                    {/* THE NUMBER YOU CAME FOR, and the one that moves most: it
+                        changes every time food is logged. It used to run a
+                        MOUNT count-up (0 → value, web only) and then swap on
+                        every change after that — an entrance flourish on the
+                        one figure whose changes are the content, and a
+                        behaviour mobile never had. It rolls now, on both. */}
+                    <RollingNumber
+                      value={String(Math.round(targets.kcal - heroDay.kcal))}
+                      style={{ justifyContent: "center", fontWeight: 900, fontSize: 46, letterSpacing: "-.03em", lineHeight: 0.95, fontVariantNumeric: "tabular-nums", color: kcalOver ? "var(--red-text)" : C("chalk") }}
+                    />
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", textTransform: "uppercase", color: C("ash") }}>{Math.round(heroDay.kcal)} / {targets.kcal}</span>
                   </span>
                 } />
@@ -2876,7 +2883,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         const shown = l.derived ? mult : l.qty;
         const time = new Date(l.ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
         return (
-        <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 2px 8px 31px" }}>
+        <div key={l.id} data-list-row style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 2px 8px 31px" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name || t("w.recovery.nutrition.loggedEntry")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{l.derived ? `${time} — ` : ""}{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</div>
@@ -2887,7 +2894,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <span style={{ minWidth: 26, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{l.derived ? `×${shown}` : shown}</span>
             <button className="pressable" onClick={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 12, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
           </div>
-          <button className="pressable" onClick={() => deleteLog(l.id)} aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
+          <button
+            className="pressable"
+            /* The row leaves before it is removed, and the gap closes with it:
+               `height` is a layout property, so animating it to zero reflows
+               everything below on every frame. No container ref is needed —
+               the row finds itself from the button that deletes it. */
+            onClick={(e) => collapseAndRemove(e.currentTarget.closest<HTMLElement>("[data-list-row]"), () => { void deleteLog(l.id); })}
+            aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
         </div>
         );
       };

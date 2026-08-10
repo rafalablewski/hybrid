@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { EMAIL_AUDIENCES, EMAIL_TRIGGERS } from "@hybrid/core";
 import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { Loading } from "../aurora/skeleton";
 
 // Admin Email & Marketing console. Three panes: an overview (provider status +
 // ledger), one-off Campaigns (broadcasts to an audience segment), and automated
@@ -105,7 +106,7 @@ export default function AdminEmail() {
 }
 
 function OverviewPane({ ov }: { ov: Overview | null }) {
-  if (!ov) return <Mono c={ASH}>Loading…</Mono>;
+  if (!ov) return <Loading />;
   const tiles: { label: string; value: number | string; c: string }[] = [
     { label: "Provider", value: ov.configured ? "Resend ✓" : "not set", c: ov.configured ? LIME : RED },
     { label: "Emails sent", value: ov.totals.sent, c: LIME },

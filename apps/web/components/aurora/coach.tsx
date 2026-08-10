@@ -17,6 +17,7 @@ import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import { Loading } from "./skeleton";
 import { CtaLabel } from "./cta-label";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -101,7 +102,9 @@ export default function AuroraCoach() {
 
   if (openLink) return <ClientDetail link={openLink} back={() => setOpenLink(null)} />;
 
-  if (!data) return <Mono>{t("w.teams.coach.loading")}</Mono>;
+  // A skeleton of the shape that is coming, not a word saying to wait — see
+  // aurora/skeleton.tsx. (The i18n key stays: Loading names itself for AT.)
+  if (!data) return <Loading />;
 
   const incoming = data.asClient.filter((l) => l.status === "PENDING");
   const coaches = data.asClient.filter((l) => l.status === "ACTIVE");

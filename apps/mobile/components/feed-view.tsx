@@ -21,6 +21,7 @@ import { useNavScrollProps } from "../lib/nav-scroll";
 import { AuroraScreen } from "./aurora/kit";
 import type { HeroScrollProps } from "./aurora/hero";
 import { useConfirm } from "./aurora/confirm";
+import { usePersonSource } from "../lib/shared-element";
 
 /**
  * CONNECT — the feed (mobile). Twin of apps/web/components/social-feed.tsx.
@@ -32,6 +33,8 @@ import { useConfirm } from "./aurora/confirm";
 type FeedTab = "forYou" | "following";
 
 export default function FeedView({ top }: { top?: ReactNode }) {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const { notify, confirm } = useConfirm();
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -183,7 +186,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       </View>
 
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
-      <FeedLiveStrip live={live} onOpen={(h) => { if (h) router.push(userPagePath(h)); }} />
+      <FeedLiveStrip live={live} onOpen={(h) => { if (h) { armPerson(h); router.push(userPagePath(h)); } }} />
 
       {/* COMPOSER — the X compose box's grammar, not a card: my avatar beside
           a bare auto-growing field, then one accent glyph row with the Share
@@ -263,7 +266,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       <FeedCard
         item={item}
         units={units}
-        onOpenProfile={(h) => { if (h) { seedPerson(item.author); router.push(userPagePath(h)); } }}
+        onOpenProfile={(h) => { if (h) { armPerson(h); seedPerson(item.author); router.push(userPagePath(h)); } }}
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
         // EVERY post opens its own screen — a workout, a record, a status

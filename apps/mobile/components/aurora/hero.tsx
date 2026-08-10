@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import {
   HERO,
   HERO_INK,
@@ -22,6 +22,7 @@ import {
   heroSnapTarget,
   heroStatusBar,
   heroTitleType,
+  isDetour,
   type HeroBackdrop as HeroBackdropKind,
   type HeroGeometry,
   type HeroMode,
@@ -57,6 +58,21 @@ import { GlassNavButton, LIQUID_GLASS_RENDERED } from "./swiftui";
 
 /* ── HeroNav — the one navigation control, everywhere, forever ───────────── */
 
+/**
+ * Is the screen being drawn a presented DETOUR?
+ *
+ * Read from the ROUTE against the shared list in @hybrid/core rather than
+ * passed down, for the same reason the presentation itself is declared from
+ * that list in app/_layout.tsx: the two would otherwise be set in different
+ * files and drift, and a card modal wearing a back chevron is precisely the
+ * confusion the split was made to end. One list decides how the screen arrives
+ * AND how its nav button says to leave.
+ */
+function usePresented(): boolean {
+  const path = usePathname();
+  return isDetour(path.replace(/^\/+/, ""));
+}
+
 export function HeroNav({
   onPress,
   /** Names the ORIGIN, not the action: "Olympic Weightlifting", not "Back".
@@ -65,6 +81,7 @@ export function HeroNav({
   mode = "page",
   material = "glass",
   onDark = true,
+  presented,
   style,
 }: {
   onPress: () => void;
@@ -73,14 +90,22 @@ export function HeroNav({
   material?: "clear" | "glass";
   /** Whether the button sits on a dark ground (every cover and takeover does). */
   onDark?: boolean;
+  /** The screen arrived as a presented DETOUR, so the button dismisses rather
+   *  than pops. Resolved from the route by HeroScreen — see `usePresented`. */
+  presented?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const { role, glyph } = heroNavAction(mode);
+  const routePresented = usePresented();
+  const { role, glyph } = heroNavAction(mode, presented ?? routePresented);
   const fg = onDark ? "#fff" : C.chalk;
   const glass = material === "glass";
-  const label = fromLabel ? `← ${fromLabel}` : t(role === "dismiss" ? "common.close" : "common.back");
+  // `fromLabel` names the ORIGIN, and prefixing it with ← claims the button
+  // goes back there. A presented detour DISMISSES — there is no stack under it
+  // — so it announces the close instead. On the const, not at one call site,
+  // so the native glass button and the fallback circle cannot disagree.
+  const label = fromLabel && role === "pop" ? `← ${fromLabel}` : t(role === "dismiss" ? "common.close" : "common.back");
   const inset = (HERO.nav.hit - HERO.nav.size) / 2;
   // Where Liquid Glass actually renders (iOS 26+), the button IS SwiftUI — a
   // native interactive glass circle, no drawn ring, no fill, no JS press
@@ -481,7 +506,12 @@ export function HeroScreen({
   const insets = useSafeAreaInsets();
   const mode = hero.mode ?? "page";
   const accent = hero.accent ?? C.lime;
-  const geom = heroGeometry(hero.rank, insets.top, mode);
+  // A PRESENTED detour is a card, not a full screen: it reports no top inset
+  // because there is no status bar over it, which would put the rail 4pt from
+  // the card's own rounded top edge. `presentedTop` is the inset it stands in
+  // with — see @hybrid/core HERO.
+  const safeTop = usePresented() ? Math.max(insets.top, HERO.presentedTop) : insets.top;
+  const geom = heroGeometry(hero.rank, safeTop, mode);
   const backdrop = heroBackdrop(hero.rank, mode, !!hero.glyph || !!hero.artPaths?.length);
   const onDark = backdrop !== "field" || scheme === "dark";
   const dark = backdrop !== "field";
@@ -685,7 +715,7 @@ export function HeroScreen({
               artOpacity={artOpacity}
               artShift={artShift}
               scrimOpacity={scrimOpacity}
-              safeTop={insets.top}
+              safeTop={safeTop}
             />
 
             {/* THE RAIL — the system's spatial constant. It counter-translates

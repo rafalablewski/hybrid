@@ -2,7 +2,7 @@
 
 import { CARD_PAD, accentText } from "@/lib/ui";
 import { useEffect, useRef, useState } from "react";
-import { fs, space, DOCK_RAIL, GOAL_TREE, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
+import { fs, space, DOCK_RAIL, GOAL_TREE, SHARED_ELEMENTS, GOAL_CATEGORIES, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, planProgramView, planCoverView, goalCoverView, planHeroView, splitInputsTitle, inputEcho, efficacyLine, type GoalGroup, type GoalNode, type GoalPlan, type PlanProgram, type PlanWeekBar, type ProgramEfficacy } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useMacrocycle } from "@/lib/use-macrocycle";
 import { useRevalidate } from "@/lib/use-invalidate";
@@ -12,6 +12,9 @@ import ProgramDays from "../program-days";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { CoverHero, useHeroCollapse, COVER_INK, COVER_BAR } from "./cover-hero";
+import { armSharedElement } from "@/lib/shared-element";
+import { runStackTransition } from "@/lib/use-screen-transition";
+import { useListFilter } from "@/lib/list-motion";
 import { DockRail, DockChip } from "./dock-rail";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -38,11 +41,16 @@ export default function AuroraPlans({ onEnrolled }: { onEnrolled?: () => void })
 
   if (plan && goal) {
     const program = programFor(plan.id);
-    if (program) return <PercentDetail goal={goal} plan={plan} program={program} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
-    return <Detail goal={goal} plan={plan} back={() => setPlanId(null)} onEnrolled={onEnrolled} />;
+    const back = () => runStackTransition(() => setPlanId(null));
+    if (program) return <PercentDetail goal={goal} plan={plan} program={program} back={back} onEnrolled={onEnrolled} />;
+    return <Detail goal={goal} plan={plan} back={back} onEnrolled={onEnrolled} />;
   }
-  if (goal) return <List goal={goal} pick={setPlanId} back={() => { setGoalId(null); setPlanId(null); }} />;
-  return <Library query={query} setQuery={setQuery} pick={setGoalId} />;
+  // Every move in the stack runs as a real transition, so the cover armed by the
+  // tile has something to fly during. Back too: the poster shrinks to the tile
+  // it came from, which is what makes the pair a relationship rather than an
+  // effect on the way in.
+  if (goal) return <List goal={goal} pick={(id) => runStackTransition(() => setPlanId(id))} back={() => runStackTransition(() => { setGoalId(null); setPlanId(null); })} />;
+  return <Library query={query} setQuery={setQuery} pick={(id) => runStackTransition(() => setGoalId(id))} />;
 }
 
 /** The library ROOT — its OWN component, not an early-return branch of
@@ -57,6 +65,8 @@ function Library({ query, setQuery, pick }: { query: string; setQuery: (v: strin
   const rootRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   useHeroCollapse(rootRef, heroRef); // no dock at the root — collapse + snap only
+  // Searching the library re-shelves the goals; the ones that survive travel.
+  const [listRef, refilter] = useListFilter();
 
   // ── the library cover: the SAME scaffold the goal and plan screens ride, so
   // every depth of the Plans stack is one object at a different compression.
@@ -85,18 +95,20 @@ function Library({ query, setQuery, pick }: { query: string; setQuery: (v: strin
         <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}><AuroraIcon name="search" size={16} color={C("ash")} /></span>
         <input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => refilter(() => setQuery(e.target.value))}
           placeholder={t("w.train.plans.searchGoals")}
           aria-label={t("w.train.plans.searchGoals")}
           style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px 12px 40px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body, outline: "none" }}
         />
       </div>
       <div style={{ marginTop: 16 }}><EnrolledCard /></div>
+      <div ref={listRef}>
       {shelves.length === 0 ? (
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), padding: "8px 2px" }}>{t("w.train.plans.noMatches")}</p>
       ) : (
         shelves.map((group) => <GoalShelf key={group.category} group={group} pick={pick} />)
       )}
+      </div>
     </div>
   );
 }
@@ -202,11 +214,21 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
   const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <button className="pressable"
-      onClick={onOpen}
+      // THE TILE IS THE POSTER, SEEN SMALL. Arming it at click time makes the
+      // browser interpolate this 172×140 tile into the full-bleed cover on the
+      // screen it opens, instead of cutting between two drawings of the same
+      // recipe. Armed imperatively rather than through state because
+      // startViewTransition snapshots synchronously — a state update would not
+      // have committed by then (lib/shared-element documents this).
+      onClick={(e) => {
+        armSharedElement(e.currentTarget, SHARED_ELEMENTS.planCover);
+        onOpen();
+      }}
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       aria-label={`${goal.name} – ${cover.count}`}
+      data-list-row
       style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 28, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
     >
       <span aria-hidden style={{ position: "absolute", inset: 0, opacity: cover.ready ? 1 : 0.45, background: `linear-gradient(202deg, color-mix(in srgb, ${cover.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${cover.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />
@@ -255,7 +277,7 @@ function List({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => void
   const rule = `color-mix(in srgb, ${C("chalk")} 14%, transparent)`;
   return (
     <div ref={rootRef} style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
-      <CoverHero cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} />
+      <CoverHero cover={{ ...cover, duration: cover.count, stats: [], variant: "goal" }} back={back} backLabel={t("w.train.plans.allGoals")} heroRef={heroRef} shared />
       {goal.plans.length === 0 && <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), marginTop: 16 }}>{t("w.train.plans.noPlansYet")}</p>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg, marginTop: 16 }}>
         {goal.plans.map((p) => {

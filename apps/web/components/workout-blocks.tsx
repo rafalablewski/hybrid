@@ -7,6 +7,7 @@ import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp
 import { AuroraIcon } from "./aurora/icons";
 import { useExercises } from "@/lib/use-exercises";
 import SwipeRow from "@/components/swipe-row";
+import { animateListChange } from "@/lib/list-motion";
 import Sheet from "@/components/aurora/sheet";
 import AuroraExerciseMedia from "@/components/aurora/exercise-media";
 import AuroraBodyMark from "@/components/aurora/body-mark";
@@ -184,6 +185,8 @@ export default function WorkoutBlocks({
   const [sportPicker, setSportPicker] = useState(false);
   // The block currently being dragged by its grip handle (for drop reordering).
   const [dragUid, setDragUid] = useState<string | null>(null);
+  // The FLIP root — see `flip` below.
+  const listRef = useRef<HTMLDivElement>(null);
   // The set row currently dragged by its ⠿ grip (block uid + set index) — a
   // set drag never crosses into another block.
   const [dragSet, setDragSet] = useState<{ uid: string; i: number } | null>(null);
@@ -217,19 +220,29 @@ export default function WorkoutBlocks({
   const patch = (u: string, fn: (b: EditableBlock) => EditableBlock) =>
     setBlocks((bs) => bs.map((b) => (b.uid === u ? fn(b) : b)));
 
+  // EVERY MUTATION OF THE LIST TRAVELS. `flip` measures the rows, commits the
+  // change synchronously, measures again and animates each row from where it
+  // was — so a set arriving mid-exercise pushes the rows under it down and a
+  // reorder slides the displaced cards into their new slots. Without it these
+  // are the moments the USER caused and the only ones in the app with no motion
+  // at all. Deletion is the exception and belongs to SwipeRow: a removed row is
+  // gone from the DOM before anything can animate it, so it has to leave first
+  // (`collapseAndRemove`) and unmount after.
+  const flip = (apply: () => void) => animateListChange(listRef.current, apply);
+
   const addStrength = () =>
-    setBlocks((bs) => [
+    flip(() => setBlocks((bs) => [
       ...bs,
       { uid: uid(), kind: "strength", name: "Back Squat", sets: [{ load: "", reps: "", rpe: "" }] },
-    ]);
+    ]));
   const addCardio = () =>
-    setBlocks((bs) => [...bs, { uid: uid(), kind: "cardio", name: "Run" }]);
+    flip(() => setBlocks((bs) => [...bs, { uid: uid(), kind: "cardio", name: "Run" }]));
   const addConditioning = () =>
-    setBlocks((bs) => [...bs, { uid: uid(), kind: "conditioning", name: "Row Intervals", format: "" }]);
+    flip(() => setBlocks((bs) => [...bs, { uid: uid(), kind: "conditioning", name: "Row Intervals", format: "" }]));
   // Manual sport session — logged as a cardio activity named after the sport, so
   // pace, PRs, history and the training log read it with no special-casing.
   const addSport = (name: string) => {
-    setBlocks((bs) => [...bs, { uid: uid(), kind: "cardio", name }]);
+    flip(() => setBlocks((bs) => [...bs, { uid: uid(), kind: "cardio", name }]));
     setSportPicker(false);
   };
   // Add a named block of the inferred kind — used by the searchable exercise
@@ -237,17 +250,17 @@ export default function WorkoutBlocks({
   const addNamed = (name: string, kind: SessionBlock["kind"]) => {
     const clean = name.trim();
     if (!clean) return;
-    setBlocks((bs) => [
+    flip(() => setBlocks((bs) => [
       ...bs,
       kind === "strength"
         ? { uid: uid(), kind: "strength", name: clean, sets: [{ load: "", reps: "", rpe: "" }] }
         : kind === "cardio"
           ? { uid: uid(), kind: "cardio", name: clean }
           : { uid: uid(), kind: "conditioning", name: clean, format: "" },
-    ]);
+    ]));
     setSportPicker(false);
   };
-  const removeBlock = (u: string) => setBlocks((bs) => bs.filter((b) => b.uid !== u));
+  const removeBlock = (u: string) => flip(() => setBlocks((bs) => bs.filter((b) => b.uid !== u)));
   const rename = (u: string, name: string) => {
     // Drop the distance text buffer so the field reflows from the stored km in
     // the new sport's unit (the block keeps km; only the typed buffer was in the
@@ -267,14 +280,14 @@ export default function WorkoutBlocks({
 
   // Drag-and-drop reorder: drop the block being dragged onto another's card.
   const moveTo = (fromU: string, toU: string) =>
-    setBlocks((bs) => moveItemTo(bs, bs.findIndex((b) => b.uid === fromU), bs.findIndex((b) => b.uid === toU)));
+    flip(() => setBlocks((bs) => moveItemTo(bs, bs.findIndex((b) => b.uid === fromU), bs.findIndex((b) => b.uid === toU))));
   const duplicate = (u: string) =>
-    setBlocks((bs) => {
+    flip(() => setBlocks((bs) => {
       const i = bs.findIndex((b) => b.uid === u);
       if (i < 0) return bs;
       const copy = { ...structuredClone(bs[i]!), uid: uid() } as EditableBlock;
       return [...bs.slice(0, i + 1), copy, ...bs.slice(i + 1)];
-    });
+    }));
 
   const updateSet = (u: string, i: number, key: keyof StrengthSet, val: string) =>
     patch(u, (b) =>
@@ -283,7 +296,7 @@ export default function WorkoutBlocks({
         : b,
     );
   const addSet = (u: string) =>
-    patch(u, (b) => {
+    flip(() => patch(u, (b) => {
       if (b.kind !== "strength") return b;
       // Carry-over (logger only): seed the new set from the last one's numbers
       // so the incremental lifter just taps + and logs. A fresh working set —
@@ -293,7 +306,7 @@ export default function WorkoutBlocks({
         ? { load: prev.load, reps: prev.reps, rpe: prev.rpe ?? "" }
         : { load: "", reps: "", rpe: "" };
       return { ...b, sets: [...b.sets, next] };
-    });
+    }));
   // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
   // in one tap. Each rep count is a SINGLE number (project rule), carrying the
   // block's current load. Banked sets are kept; the un-banked plan is replaced.
@@ -330,14 +343,14 @@ export default function WorkoutBlocks({
   // A cool-down set — light back-off work, excluded from working volume/PRs like
   // a warm-up. Add it pre-flagged; cool-downs come last, so it appends.
   const addCooldownSet = (u: string) =>
-    patch(u, (b) =>
+    flip(() => patch(u, (b) =>
       b.kind === "strength" ? { ...b, sets: [...b.sets, { load: "", reps: "", rpe: "", role: "cooldown" }] } : b,
-    );
+    ));
   const removeSet = (u: string, i: number) =>
-    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b));
+    flip(() => patch(u, (b) => (b.kind === "strength" ? { ...b, sets: b.sets.filter((_, j) => j !== i) } : b)));
   // Reorder a set within its block (drag the row's ⠿ grip onto another row).
   const moveSetTo = (u: string, from: number, to: number) =>
-    patch(u, (b) => (b.kind === "strength" ? { ...b, sets: moveItemTo(b.sets, from, to) } : b));
+    flip(() => patch(u, (b) => (b.kind === "strength" ? { ...b, sets: moveItemTo(b.sets, from, to) } : b)));
   // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
   const cycleType = (u: string, i: number) =>
     patch(u, (b) =>
@@ -384,7 +397,11 @@ export default function WorkoutBlocks({
   };
 
   return (
-    <>
+    // display:contents so the wrapper is layout-neutral — it exists only to give
+    // the FLIP in lib/list-motion a root to find `[data-list-row]` under. Every
+    // mutation below runs through `flip()`, so a set added to one exercise
+    // pushes the sets under it AND the cards under that one, together.
+    <div ref={listRef} style={{ display: "contents" }}>
       {blocks.length === 0 && (
         <Card style={{ textAlign: "center", padding: 32, marginBottom: 12 }}>
           <Mono s={{ fontSize: fs.body }}>{emptyHint}</Mono>
@@ -394,6 +411,7 @@ export default function WorkoutBlocks({
       {blocks.map((b, idx) => (
         <div
           key={b.uid}
+          data-list-row
           // The whole card is a drop target so dragging the grip handle onto it
           // drops the dragged block here (slides the rest along).
           onDragOver={reorder && dragUid && dragUid !== b.uid ? (e) => e.preventDefault() : undefined}
@@ -1121,7 +1139,7 @@ export default function WorkoutBlocks({
           {t("w.train.blocks.whatsRpe")}
         </button>
       </div>
-    </>
+    </div>
   );
 }
 

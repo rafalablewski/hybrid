@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, seedPerson, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, auroraNavAction, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, seedPerson, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, auroraNavAction, isCover, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 // The AI coach screen, reached from the Cockpit module tile (see below).
 const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { AuroraIcon } from "./aurora/icons";
@@ -33,6 +33,7 @@ import { fs, space,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useScreenTransition } from "@/lib/use-screen-transition";
+import { ScreenProvider } from "@/lib/screen";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, currentDeepLinkIndex } from "@/lib/deep-link";
 import { useScrollCollapse } from "@/lib/use-scroll-collapse";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -162,6 +163,9 @@ export default function AppShell() {
   // transition rather than a hard cut. Direction comes from the shared
   // hierarchy in @hybrid/core, so mobile can't drift. See use-screen-transition.
   const [screen, setScreenRaw] = useState("today");
+  // In a MODE (the live logger), the shell's own chrome is not on screen — see
+  // the sidebar and pill-nav render sites below.
+  const covered = isCover(screen);
   // Monotonic position in OUR navigation, stamped onto each pushed entry so a
   // popstate can tell a Back from a Forward (see lib/deep-link.ts).
   const navIdx = useRef(0);
@@ -451,7 +455,11 @@ export default function AppShell() {
   const initial = session.name.charAt(0).toUpperCase();
 
   return (
-    <>
+    // The shell's location, published to everything under it. Only the hero's
+    // nav button reads it today (a PRESENTED detour dismisses where a pushed
+    // screen pops), but it is the shell's own state and nothing else can know
+    // it — see lib/screen.tsx for why the URL is not a substitute.
+    <ScreenProvider value={screen}>
     <PremiumAccentStyle />
     {/* motion-recede-host — the surface that scales back while a sheet is up
         (globals.css). NOTE: it is transformed, so anything position:fixed
@@ -478,9 +486,17 @@ export default function AppShell() {
       {/* sidebar — the DESKTOP rail. Below the breakpoint it is not rendered at
           all: mobile navigation is the pill bar plus the side menu behind the
           Today header's avatar. */}
-      {!isMobile && (
+      {/* THE SHELL'S CHROME GOES AWAY IN A MODE. Entering the live logger is not
+          a place in the app, it is the app becoming a stopwatch — mobile has
+          always shown it with no tab bar (it is a route outside the tabs, and a
+          full-screen cover now), while web kept the sidebar and the pill bar up
+          and left the biggest state change in the product looking like every
+          other screen. Which screens are modes is @hybrid/core `isCover`, the
+          same list the transition reads, so the chrome cannot disagree with the
+          motion about whether the app changed. */}
+      {!isMobile && !covered && (
       <aside
-        className="lg-sidebar"
+        className="lg-sidebar motion-rail"
         style={
             {
                 width: railCollapsed ? 72 : 240,
@@ -750,7 +766,11 @@ export default function AppShell() {
       {/* Mobile side gutter is 12px — matches the native app's GUTTER (12dp)
           so content fills the same share of the screen on both clients.
           Vertical rhythm stays 16. */}
-      <main id="main" tabIndex={-1} style={{ flex: 1, minWidth: 0, overflowX: "clip", padding: isMobile ? (aurora ? "16px 12px 120px" : "16px 12px 40px") : (aurora ? "24px 32px 120px" : "24px 32px"), maxWidth: 1180, margin: "0 auto", position: "relative", zIndex: 1, outline: "none", ...({ "--page-pad-x": isMobile ? "12px" : "32px", "--page-pad-top": isMobile ? "16px" : "24px" } as Record<string, string>) }}>
+      <main id="main" tabIndex={-1} style={{ flex: 1, minWidth: 0, overflowX: "clip", // The 120px tail is CLEARANCE FOR THE PILL BAR, so it goes when the bar
+        // does. A mode hides the bar (see `covered`), and a reservation for
+        // something that is not on screen is just a dead band under the last
+        // row — the same defect the sheet-pad rule exists to stop.
+        padding: isMobile ? (aurora ? `16px 12px ${covered ? 40 : 120}px` : "16px 12px 40px") : (aurora ? `24px 32px ${covered ? 40 : 120}px` : "24px 32px"), maxWidth: 1180, margin: "0 auto", position: "relative", zIndex: 1, outline: "none", ...({ "--page-pad-x": isMobile ? "12px" : "32px", "--page-pad-top": isMobile ? "16px" : "24px" } as Record<string, string>) }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         {/* Desktop-only utility header (Classic shows the app kicker + screen
@@ -1041,15 +1061,17 @@ export default function AppShell() {
           Today's feed hub tab. Add post opens no second editor: it hands focus
           to the feed's always-open composer (social-feed.tsx listens for the
           event), so there is exactly one place a post is written. */}
-      <AuroraPillNav
-        activeId={screen}
-        action={auroraNavAction(screen === "today" ? todayHub : screen)}
-        onSelect={navigate}
-        onAction={(id) => {
-          if (id === "post") window.dispatchEvent(new Event("hybrid:compose"));
-          else navigate("train");
-        }}
-      />
+      {!covered && (
+        <AuroraPillNav
+          activeId={screen}
+          action={auroraNavAction(screen === "today" ? todayHub : screen)}
+          onSelect={navigate}
+          onAction={(id) => {
+            if (id === "post") window.dispatchEvent(new Event("hybrid:compose"));
+            else navigate("train");
+          }}
+        />
+      )}
 
       {/* One-line outcome chips (the ⋯ menu's results land here — twin of the
           mobile ToastHost mounted in app/_layout.tsx). */}
@@ -1058,7 +1080,7 @@ export default function AppShell() {
       {/* First-run guided tour overlay (#2) — only on Today so its anchors exist. */}
       {showTour && screen === "today" && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
     </div>
-    </>
+    </ScreenProvider>
   );
 }
 
