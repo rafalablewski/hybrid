@@ -1,7 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { SHARED_ELEMENTS, springs, springToCss, springDurationMs, durations, easings } from "@hybrid/core";
+import {
+  SHARED_ELEMENTS,
+  motion,
+  screenAnimation,
+  springs,
+  springToCss,
+  springDurationMs,
+  durations,
+  easings,
+  type ScreenTransition,
+} from "@hybrid/core";
 
 /**
  * The spring curves in globals.css are GENERATED from packages/core/src/motion.ts
@@ -41,13 +51,46 @@ describe("globals.css motion tokens", () => {
   });
 
   it("defines every keyframe screenAnimation() can name", () => {
-    for (const name of [
-      "motionSlideInRight", "motionSlideInLeft", "motionSlideOutLeft", "motionSlideOutRight",
-      "motionPushIn", "motionPushOut", "motionPopIn", "motionPopOut",
-      "motionDissolveIn", "motionDissolveOut",
-    ]) {
+    // Enumerated from the FUNCTION rather than from a hand-written list, so a
+    // new transition kind cannot ship naming a keyframe nobody wrote. (The list
+    // was hand-written and went stale the moment `present`/`dismiss` were
+    // added — the guard named four keyframes that no longer existed and missed
+    // the four that had replaced them.)
+    const kinds: ScreenTransition[] = [
+      { kind: "sibling", dir: 1 },
+      { kind: "sibling", dir: -1 },
+      { kind: "push", dir: 0 },
+      { kind: "pop", dir: 0 },
+      { kind: "present", dir: 0 },
+      { kind: "dismiss", dir: 0 },
+      { kind: "replace", dir: 0 },
+    ];
+    const names = new Set<string>();
+    for (const t of kinds) {
+      for (const role of ["enter", "exit"] as const) {
+        names.add(screenAnimation(t, role).name);
+        names.add(screenAnimation(t, role, true).name);
+      }
+    }
+    for (const name of names) {
       expect(css, `missing @keyframes ${name}`).toContain(`@keyframes ${name}`);
     }
+  });
+
+  it("selects a rule for every transition kind", () => {
+    for (const kind of ["sibling", "push", "pop", "present", "dismiss", "replace"]) {
+      expect(css, `no CSS selects data-nav-kind="${kind}"`).toContain(`html[data-nav-kind="${kind}"]`);
+    }
+  });
+
+  it("recedes a presented parent by exactly motion.recedeScale", () => {
+    // The presented SCREEN and the presented PANEL are the same event; a screen
+    // that recedes to .94 while a sheet recedes to .92 is two answers to one
+    // question. (It was .94 here for as long as the keyframe existed.)
+    const at = css.indexOf("@keyframes motionRecedeBack");
+    const block = css.slice(at, css.indexOf("}", css.indexOf("to", at)));
+    expect(block).toContain(`scale(${String(motion.recedeScale).replace(/^0/, "")})`);
+    expect(block).toContain(`brightness(${String(motion.recedeBrightness).replace(/^0/, "")})`);
   });
 
   it("SUBSTITUTES a dissolve under Reduce Motion rather than zeroing it", () => {

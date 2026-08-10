@@ -15,7 +15,7 @@ import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fo
 // (parity with web's --font-heading); Aurora keeps Archivo. Loaded here,
 // applied via serifIf().
 import { ShipporiMincho_500Medium, ShipporiMincho_600SemiBold, ShipporiMincho_700Bold, ShipporiMincho_800ExtraBold } from "@expo-google-fonts/shippori-mincho";
-import { springs, springDurationMs } from "@hybrid/core";
+import { springs, springDurationMs, MODAL_SCREENS } from "@hybrid/core";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
@@ -29,6 +29,16 @@ import { NavScrollProvider } from "../lib/nav-scroll";
 import { SheetRecedeProvider, useRecedeStyle, useRecedeDim } from "../lib/sheet-recede";
 import { SharedElementProvider } from "../lib/shared-element";
 import { ConfirmProvider } from "../components/aurora/confirm";
+/**
+ * The DETOURS that exist as routes on this client, from the shared list in
+ * @hybrid/core. `timer` is web's id for the interval timer — mobile's file is
+ * `interval-timer.tsx`, which is in the list under its own name — so it is the
+ * one entry with no route here, and expo-router would throw on a Stack.Screen
+ * naming a file that does not exist. Derived from the shared list rather than
+ * retyped, so adding a detour in core reaches BOTH clients.
+ */
+const MOBILE_DETOURS = MODAL_SCREENS.filter((r) => r !== "timer");
+
 // The bottom nav is the SYSTEM tab bar now (app/(tabs)/_layout.tsx uses
 // expo-router native tabs), so there is no app-rendered bar to mount here.
 // The Classic template keeps its floating command orb, which used to be
@@ -103,10 +113,32 @@ function Shell() {
         <Stack.Screen name="login" options={{ gestureEnabled: false }} />
         <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
-        {/* Upgrade is a slide-up BOTTOM SHEET — a transparent modal so the screen
-            behind stays visible through the scrim (the component animates the
-            panel up itself). */}
-        <Stack.Screen name="upgrade" options={{ presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
+        {/* THE DETOURS. `presentation: "modal"` is a real iOS card modal: the
+            screen behind recedes and stays visibly there, and the card is
+            dismissed by dragging DOWN from anywhere on it. Which routes get it
+            is not decided here — @hybrid/core `MODAL_SCREENS` decides, and the
+            web shell reads the same list, so a detour cannot be a detour on one
+            client and a drill-down on the other.
+
+            Before this, `presentation:` appeared exactly ONCE in the whole app
+            (upgrade), so Settings, the editors and the check-in all inherited
+            `slide_from_right` — the same motion as opening a session's
+            breakdown. A right-slide claims "deeper in the same tree"; a modal
+            claims "a detour, and you will come back", and the two exit by
+            different gestures. Teaching one motion for both taught the wrong
+            exit for half the app.
+
+            Depth is untouched: a session, a plan, an exercise page still push,
+            because a destination is not a detour however deep it sits. */}
+        {MOBILE_DETOURS.map((route) => (
+          <Stack.Screen key={route} name={route} options={{ presentation: "modal" }} />
+        ))}
+        {/* Upgrade is the shared SHEET now (components/aurora/upgrade.tsx renders
+            <Sheet>), so the route itself must be a transparent, un-animated pane
+            for the sheet to present over: the panel's travel, its scrim, the
+            parent's recede and the drag are all the Sheet's, and a second
+            animation from the navigator would fight all four. */}
+        <Stack.Screen name="upgrade" options={{ presentation: "transparentModal", animation: "none", contentStyle: { backgroundColor: "transparent" } }} />
       </Stack>
       {/* The brightness drop, drawn as a wash rather than a `filter` — RN's
           filter support is uneven across platforms. pointerEvents none so it

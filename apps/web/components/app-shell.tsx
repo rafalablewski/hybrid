@@ -33,6 +33,7 @@ import { fs, space,
 } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useScreenTransition } from "@/lib/use-screen-transition";
+import { ScreenProvider } from "@/lib/screen";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, currentDeepLinkIndex } from "@/lib/deep-link";
 import { useScrollCollapse } from "@/lib/use-scroll-collapse";
 import { useIsMobile } from "@/lib/use-media-query";
@@ -450,7 +451,11 @@ export default function AppShell() {
   const initial = session.name.charAt(0).toUpperCase();
 
   return (
-    <>
+    // The shell's location, published to everything under it. Only the hero's
+    // nav button reads it today (a PRESENTED detour dismisses where a pushed
+    // screen pops), but it is the shell's own state and nothing else can know
+    // it — see lib/screen.tsx for why the URL is not a substitute.
+    <ScreenProvider value={screen}>
     <PremiumAccentStyle />
     {/* motion-recede-host — the surface that scales back while a sheet is up
         (globals.css). NOTE: it is transformed, so anything position:fixed
@@ -1053,7 +1058,7 @@ export default function AppShell() {
       {/* First-run guided tour overlay (#2) — only on Today so its anchors exist. */}
       {showTour && screen === "today" && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
     </div>
-    </>
+    </ScreenProvider>
   );
 }
 

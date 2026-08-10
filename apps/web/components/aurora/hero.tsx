@@ -18,6 +18,7 @@ import {
   type HeroMode,
   type HeroRank,
 } from "@hybrid/core";
+import { usePresented } from "@/lib/screen";
 import { AuroraIcon } from "./icons";
 
 /**
@@ -99,6 +100,7 @@ export function HeroNav({
   mode = "page",
   material = "glass",
   onDark = true,
+  presented,
   style,
 }: {
   onClick: () => void;
@@ -107,16 +109,21 @@ export function HeroNav({
   mode?: HeroMode;
   material?: "clear" | "glass";
   onDark?: boolean;
+  /** The screen arrived as a presented DETOUR, so the button dismisses rather
+   *  than pops. Resolved from the shell's own screen id by default — see
+   *  lib/screen.tsx, whose mobile twin is `usePresented` in aurora/hero.tsx. */
+  presented?: boolean;
   style?: CSSProperties;
 }) {
-  const { role, glyph } = heroNavAction(mode);
+  const screenPresented = usePresented();
+  const { role, glyph } = heroNavAction(mode, presented ?? screenPresented);
   const glass = material === "glass";
   const fg = onDark ? "#fff" : C("chalk");
   return (
     <button
       className="pressable"
       onClick={onClick}
-      aria-label={fromLabel ? `← ${fromLabel}` : role === "dismiss" ? "Close" : "Back"}
+      aria-label={fromLabel && role === "pop" ? `← ${fromLabel}` : role === "dismiss" ? "Close" : "Back"}
       style={{
         // 40pt circle in a 44pt hit target — Apple's minimum, and the identical
         // geometry the mobile twin renders.

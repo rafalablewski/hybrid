@@ -116,7 +116,9 @@ export const motion = {
   scrimWithRecede: 0.28,
   /** Scrim opacity when the parent does NOT recede (the legacy look). */
   scrimFlat: 0.6,
-  /** Entrance offset for a drill-down, as a fraction of screen height. */
+  /** Entrance offset for a PRESENTED detour, as a fraction of screen height.
+   *  (It was the drill-down's offset until the drill-down became horizontal —
+   *  the rise belongs to the thing that rises over a receding parent.) */
   pushOffset: 0.16,
   /** Sibling entrance offset, as a fraction of screen width. */
   slideOffset: 1,
@@ -458,28 +460,86 @@ export function navRootRank(screen: string): number {
   return (NAV_ROOT_ORDER as readonly string[]).indexOf(id);
 }
 
+/**
+ * THE DETOURS — screens that are a self-contained TASK rather than a place.
+ *
+ * The app had one spatial gesture for two different relationships. Everything
+ * that was not a tab arrived from the right, whether it was genuinely deeper in
+ * the hierarchy (a session's breakdown) or a detour you would finish and leave
+ * (Settings, the Builder, the daily check-in). A right-slide makes the spatial
+ * claim "this is deeper in the same tree"; a presented sheet makes the claim
+ * "this is a detour, and you will come back" — and they exit by different
+ * gestures, so teaching one motion for both teaches the wrong exit.
+ *
+ * Both clients' ids are listed here for the same reason ROOT_ALIAS exists: the
+ * two name some of these screens differently (web `timer`, mobile
+ * `interval-timer`), and a detour that is only a detour on one client is exactly
+ * the drift the shared file is for.
+ *
+ * The test is "would the user say they FINISHED it?" — you finish editing your
+ * profile; you do not finish History. A screen that is a destination in its own
+ * right (a session, a plan, an exercise) is depth, not a detour, however deep.
+ */
+export const MODAL_SCREENS = [
+  /** Settings, and the logger's own settings page reached from inside it. */
+  "settings",
+  "logger-settings",
+  /** Editors: you open them to change a thing, and leave when it is changed. */
+  "profile-edit",
+  "builder",
+  /** The daily check-in — a form with an end. */
+  "checkin",
+  /** The interval timer: a tool you use and put down. (`timer` on web.) */
+  "timer",
+  "interval-timer",
+] as const;
+
+const MODAL_SET = new Set<string>(MODAL_SCREENS);
+
+/** Is this screen a self-contained task rather than a place in the hierarchy? */
+export function isDetour(screen: string): boolean {
+  return MODAL_SET.has(screen);
+}
+
 export type ScreenTransition =
   /** Between two bottom-nav destinations. `dir` is +1 rightward, −1 leftward. */
   | { kind: "sibling"; dir: 1 | -1 }
-  /** Going deeper: the parent recedes, the child rises. */
+  /** Going deeper: the child slides in over a parallaxing parent. */
   | { kind: "push"; dir: 0 }
   /** Coming back out: the exact inverse of the push. */
   | { kind: "pop"; dir: 0 }
+  /** A DETOUR arriving: the parent recedes and the task rises over it. */
+  | { kind: "present"; dir: 0 }
+  /** The detour leaving: the exact inverse of the presentation. */
+  | { kind: "dismiss"; dir: 0 }
   /** Same screen, or nothing meaningful to say — crossfade. */
   | { kind: "replace"; dir: 0 };
 
 /**
  * The transition between two screens, derived from the nav hierarchy.
  *
- * Sibling ⇄ sibling slides in bar order; root → detail pushes; detail → root
- * pops; detail → detail replaces (there is no defensible direction between two
- * unrelated leaves, and inventing one is worse than a crossfade).
+ * A detour presents and dismisses; sibling ⇄ sibling slides in bar order; root →
+ * detail pushes; detail → root pops; detail → detail replaces (there is no
+ * defensible direction between two unrelated leaves, and inventing one is worse
+ * than a crossfade).
+ *
+ * The detour test runs FIRST and ignores `back`, because a presentation is a
+ * property of the DESTINATION, not of the direction travelled: going forward
+ * through history into Settings must present exactly as tapping Settings did,
+ * or Forward and Back stop being inverses of each other.
  *
  * `back` forces the inverse when the caller knows it is a back-navigation (a
  * browser Back, a hardware back, a swipe) even though the ids alone can't say.
  */
 export function screenTransition(from: string, to: string, back = false): ScreenTransition {
   if (from === to) return { kind: "replace", dir: 0 };
+  const fromDetour = isDetour(from);
+  const toDetour = isDetour(to);
+  // Detour → detour (Settings → the logger's settings) is neither: nothing rises
+  // over anything, so it crossfades like any two unrelated leaves.
+  if (toDetour && fromDetour) return { kind: "replace", dir: 0 };
+  if (toDetour) return { kind: "present", dir: 0 };
+  if (fromDetour) return { kind: "dismiss", dir: 0 };
   const a = navRootRank(from);
   const b = navRootRank(to);
   if (a >= 0 && b >= 0) return { kind: "sibling", dir: b > a ? 1 : -1 };
@@ -506,8 +566,17 @@ export function screenAnimation(
       easing: "linear",
     };
   }
-  if (t.kind === "sibling") {
-    const right = t.dir === 1;
+  // SIBLING and PUSH/POP are the same horizontal travel, and that is deliberate.
+  // The push used to be a rise over a receding parent — the sheet's motion —
+  // which meant the shared token defined for "web and mobile can't disagree"
+  // described a move only web performed (mobile's whole Stack is
+  // `slide_from_right`, rendered natively and reversed by the OS's own
+  // interruptible edge-swipe, which is better than anything hand-rolled). The
+  // resolution is the one the audit recommended: keep mobile's native push, move
+  // WEB onto the horizontal push, and reserve recede-and-rise for what it
+  // actually is — modality.
+  if (t.kind === "sibling" || t.kind === "push" || t.kind === "pop") {
+    const right = t.kind === "sibling" ? t.dir === 1 : t.kind === "push";
     return {
       name: role === "enter"
         ? (right ? "motionSlideInRight" : "motionSlideInLeft")
@@ -516,19 +585,23 @@ export function screenAnimation(
       easing: `var(--e-slide, ${easings.fade})`,
     };
   }
-  if (t.kind === "push" || t.kind === "pop") {
-    const push = t.kind === "push";
-    // Timing is a function of ROLE, not direction: the arriving screen rides the
-    // spring, the departing one leaves fast on an accelerating curve. (Keying
-    // this off `push` instead gave enter and exit the same duration — the
-    // "leaves faster than it arrives" rule was silently unenforced.)
-    return {
-      name: role === "enter"
-        ? (push ? "motionPushIn" : "motionPopIn")
-        : (push ? "motionPushOut" : "motionPopOut"),
-      durationMs: role === "enter" ? springDurationMs(springs.sheet) : durations.fast,
-      easing: role === "enter" ? `var(--e-sheet, ${easings.fade})` : easings.exit,
-    };
+  if (t.kind === "present" || t.kind === "dismiss") {
+    const present = t.kind === "present";
+    // Timing is a function of ROLE, not direction: the arriving task rides the
+    // sheet spring, and the departing one leaves fast on an accelerating curve.
+    // (Keying this off the direction instead gave enter and exit the same
+    // duration — the "leaves faster than it arrives" rule was silently
+    // unenforced.) The PARENT is the other half of both moves and rides the
+    // sheet spring in both directions: receding and returning are one physical
+    // gesture with the panel, not a thing that leaves.
+    if (present) {
+      return role === "enter"
+        ? { name: "motionPresentIn", durationMs: springDurationMs(springs.sheet), easing: `var(--e-sheet, ${easings.fade})` }
+        : { name: "motionRecedeBack", durationMs: springDurationMs(springs.sheet), easing: `var(--e-sheet, ${easings.fade})` };
+    }
+    return role === "enter"
+      ? { name: "motionRecedeForward", durationMs: springDurationMs(springs.sheet), easing: `var(--e-sheet, ${easings.fade})` }
+      : { name: "motionDismissOut", durationMs: durations.fast, easing: easings.exit };
   }
   return {
     name: role === "enter" ? "motionDissolveIn" : "motionDissolveOut",

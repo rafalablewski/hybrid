@@ -630,10 +630,14 @@ html {
 @keyframes motionSlideInLeft   { from { transform: translateX(-100%); } to { transform: none; } }
 @keyframes motionSlideOutLeft  { from { transform: none; opacity: 1; } to { transform: translateX(-33%); opacity: .45; } }
 @keyframes motionSlideOutRight { from { transform: none; opacity: 1; } to { transform: translateX(33%);  opacity: .45; } }
-@keyframes motionPushIn  { from { transform: translateY(16%); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes motionPushOut { from { transform: scale(1); opacity: 1; filter: brightness(1); } to { transform: scale(.94); opacity: .4; filter: brightness(.72); } }
-@keyframes motionPopIn   { from { transform: scale(.94); opacity: .4; filter: brightness(.72); } to { transform: none; opacity: 1; filter: brightness(1); } }
-@keyframes motionPopOut  { from { transform: none; opacity: 1; } to { transform: translateY(16%); opacity: 0; } }
+/* MODALITY — the detour rises, the parent it covers recedes. The scale is
+   motion.recedeScale (0.92) and the dim motion.recedeBrightness (0.72), the same
+   two numbers the shared Sheet reads, because a presented SCREEN and a presented
+   PANEL are the same event and must recede by the same amount. */
+@keyframes motionPresentIn      { from { transform: translateY(16%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes motionRecedeBack     { from { transform: scale(1); opacity: 1; filter: brightness(1); } to { transform: scale(.92); opacity: .4; filter: brightness(.72); } }
+@keyframes motionRecedeForward  { from { transform: scale(.92); opacity: .4; filter: brightness(.72); } to { transform: none; opacity: 1; filter: brightness(1); } }
+@keyframes motionDismissOut     { from { transform: none; opacity: 1; } to { transform: translateY(16%); opacity: 0; } }
 @keyframes motionDissolveIn  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes motionDissolveOut { from { opacity: 1; } to { opacity: 0; } }
 
@@ -654,14 +658,32 @@ html[data-nav-kind="sibling"][data-nav-dir="fwd"]::view-transition-new(hybrid-sc
 html[data-nav-kind="sibling"][data-nav-dir="back"]::view-transition-old(hybrid-screen) { animation: motionSlideOutRight var(--d-slide) var(--e-slide) both; }
 html[data-nav-kind="sibling"][data-nav-dir="back"]::view-transition-new(hybrid-screen) { animation: motionSlideInLeft   var(--d-slide) var(--e-slide) both; }
 
-/* PUSH — the parent recedes, the child rises through it. */
-html[data-nav-kind="push"]::view-transition-old(hybrid-screen) { animation: motionPushOut var(--d-fast)  var(--e-exit)  both; }
-html[data-nav-kind="push"]::view-transition-new(hybrid-screen) { animation: motionPushIn  var(--d-sheet) var(--e-sheet) both; }
+/* PUSH — deeper in the same tree. The child slides in from the right and the
+   parent parallaxes under it, which is what mobile's whole Stack already does
+   natively (slide_from_right) and what the OS edge-swipe reverses exactly.
+   This used to be a rise over a receding parent — the SHEET's motion — so the
+   shared token that exists precisely so the two clients can't disagree
+   described a push only one of them performed. The recede now belongs to
+   modality, where the claim it makes ("you will come back") is true. */
+html[data-nav-kind="push"]::view-transition-old(hybrid-screen) { animation: motionSlideOutLeft var(--d-slide) var(--e-slide) both; }
+html[data-nav-kind="push"]::view-transition-new(hybrid-screen) { animation: motionSlideInRight var(--d-slide) var(--e-slide) both; }
 
 /* POP — the exact inverse. If back doesn't reverse forward, the spatial model
    breaks and the motion becomes noise. */
-html[data-nav-kind="pop"]::view-transition-old(hybrid-screen) { animation: motionPopOut var(--d-fast)  var(--e-exit)  both; }
-html[data-nav-kind="pop"]::view-transition-new(hybrid-screen) { animation: motionPopIn  var(--d-sheet) var(--e-sheet) both; }
+html[data-nav-kind="pop"]::view-transition-old(hybrid-screen) { animation: motionSlideOutRight var(--d-slide) var(--e-slide) both; }
+html[data-nav-kind="pop"]::view-transition-new(hybrid-screen) { animation: motionSlideInLeft   var(--d-slide) var(--e-slide) both; }
+
+/* PRESENT — a DETOUR (Settings, an editor, the check-in): a self-contained task
+   you will finish and leave. The parent recedes and stays visibly there behind
+   it, which is the whole spatial claim; a drill-down makes the opposite one. */
+html[data-nav-kind="present"]::view-transition-old(hybrid-screen) { animation: motionRecedeBack var(--d-sheet) var(--e-sheet) both; }
+html[data-nav-kind="present"]::view-transition-new(hybrid-screen) { animation: motionPresentIn  var(--d-sheet) var(--e-sheet) both; }
+
+/* DISMISS — the task leaves fast on the accelerating curve while the parent
+   comes back on the sheet spring, so the screen you return to settles rather
+   than snapping into place under the departing one. */
+html[data-nav-kind="dismiss"]::view-transition-old(hybrid-screen) { animation: motionDismissOut    var(--d-fast)  var(--e-exit)  both; }
+html[data-nav-kind="dismiss"]::view-transition-new(hybrid-screen) { animation: motionRecedeForward var(--d-sheet) var(--e-sheet) both; }
 
 /* REPLACE — two unrelated leaves. There is no defensible direction between
    them, and inventing one is worse than a crossfade. */

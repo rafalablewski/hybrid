@@ -97,6 +97,16 @@ export const HERO = {
    *  spatial constant — the reason a push never moves the back button. */
   rail: { height: 44, top: 4, /** rail + top + bottom breathing = the collapsed bar */ bottom: 8 },
 
+  /** The safe-top a PRESENTED screen stands in for.
+   *
+   *  `railTop` is measured from the safe area because on a full-screen push the
+   *  thing above the rail is the status bar. A presented card has no status bar
+   *  to clear — its inset is 0 — so the rail would sit 4pt from the card's own
+   *  rounded top edge, which is not breathing room, it is a collision. This is
+   *  the inset that card stands in with instead: enough that the nav circle
+   *  clears the corner radius, and nowhere near a status bar's worth. */
+  presentedTop: 12,
+
   /** Side gutters. `edge` is the screen gutter every client uses (12 — dropped
    *  from 16 in the density pass: wider content, less dead space at the edges);
    *  `hero` is the hero's own inset — 2pt wider so a display title's optical
@@ -474,9 +484,20 @@ export function heroNavMaterial(backdrop: HeroBackdrop, barred: boolean): "clear
 
 /** What the nav button DOES, which decides its glyph. A page pops (chevron); a
  *  takeover dismisses (chevron-down is Apple's dismiss for a presented
- *  full-screen, and it is the honest signal that there is no stack under it). */
-export function heroNavAction(mode: HeroMode): { role: "pop" | "dismiss"; glyph: AuroraIconName } {
-  return mode === "takeover" ? { role: "dismiss", glyph: "chevron-down" } : { role: "pop", glyph: "back" };
+ *  full-screen, and it is the honest signal that there is no stack under it).
+ *
+ *  `presented` says the screen arrived as a DETOUR (motion.ts `isDetour` — a
+ *  self-contained task rather than a place), which dismisses for the same
+ *  reason a takeover does: there is no stack beneath it to go back UP. A back
+ *  chevron on a card modal points at a parent the gesture doesn't reach, and it
+ *  is exactly the confusion the modality split was made to end. */
+export function heroNavAction(
+  mode: HeroMode,
+  presented = false,
+): { role: "pop" | "dismiss"; glyph: AuroraIconName } {
+  return mode === "takeover" || presented
+    ? { role: "dismiss", glyph: "chevron-down" }
+    : { role: "pop", glyph: "back" };
 }
 
 /* ── 8. TRANSITIONS — the one family ─────────────────────────────────────── */
