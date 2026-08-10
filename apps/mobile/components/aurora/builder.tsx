@@ -43,6 +43,7 @@ import ExercisePickerSheet from "./exercise-picker";
 import AuroraExerciseMedia from "./exercise-media";
 import SwipeRow from "../swipe-row";
 import { animateListChange } from "../../lib/list-motion";
+import { RollingNumber } from "./rolling-number";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import DragHandle from "../drag-handle";
 import { useDragReorder } from "../../lib/use-drag-reorder";
@@ -231,10 +232,17 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
     { pct: sig.split.endurance, fill: C.blue, label: t("w.train.signal.end") },
   ];
   return (
-    <View style={{ marginTop: 4, marginBottom: 16, marginHorizontal: 2 }} accessible accessibilityLabel={`${sig.minutes} min`}>
-      <Text style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: -2, lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}>
-        {sig.minutes}<Text style={{ fontFamily: F.mono, fontSize: 20, color: C.ash, letterSpacing: 0 }}> min</Text>
-      </Text>
+    <View style={{ marginTop: 4, marginBottom: 16, marginHorizontal: 2 }}>
+      {/* The One Number GROWS as exercises are added — composing a routine is
+          meant to feel like loading a bar — so it rolls to each new value
+          instead of swapping to it. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+        <RollingNumber
+          value={String(sig.minutes)}
+          style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: -2, lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}
+        />
+        <Text style={{ fontFamily: F.mono, fontSize: 20, color: C.ash, letterSpacing: 0 }}> min</Text>
+      </View>
       <View style={{ marginTop: 6 }}>
         <MetaLine
           parts={[sig.tonnageKg > 0 ? fmtTonnage(sig.tonnageKg, units) : null, `${sig.moves} ${t("w.train.signal.moves")}`]}

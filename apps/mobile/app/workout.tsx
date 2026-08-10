@@ -104,6 +104,7 @@ import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import AuroraExerciseMedia from "../components/aurora/exercise-media";
 import { ArrowGlyph } from "../components/aurora/cta-label";
+import { RollingNumber } from "../components/aurora/rolling-number";
 import Sheet from "../components/aurora/sheet";
 import { useConfirm } from "../components/aurora/confirm";
 import { FeelPrompt } from "../components/feel-prompt";
@@ -1132,18 +1133,22 @@ export default function Workout() {
           const remaining = restTarget != null ? restTarget - restNow : null;
           const done = remaining != null && remaining <= 0;
           const accent = done ? C.lime : C.blue;
-          const clock =
-            restTarget == null
-              ? mmss(restNow)
-              : done
-                ? `+${mmss(restNow - restTarget)}`
-                : `${mmss(remaining!)} ${t("workout.restLeft")}`;
+          // The CLOCK is the one figure on this screen that changes while you
+          // watch it, so it rolls rather than swapping — its digits are split
+          // out of the label for that reason (the words around them never move).
+          const clock = restTarget == null ? mmss(restNow) : done ? `+${mmss(restNow - restTarget)}` : mmss(remaining!);
           return (
             <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
-                  {done ? t("workout.restDone") : t("workout.resting")} – {clock}
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
+                    {done ? t("workout.restDone") : t("workout.resting")} –{" "}
+                  </Text>
+                  <RollingNumber value={clock} style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }} />
+                  {restTarget != null && !done ? (
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}> {t("workout.restLeft")}</Text>
+                  ) : null}
+                </View>
                 <Pressable
                   onPress={() => setRestSince(null)}
                   hitSlop={8}
@@ -2569,7 +2574,9 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
 function LiveStat({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingVertical: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{value}</Text>
+      {/* Every figure here moves as sets are banked — the scoreboard IS the
+          feedback for banking one — so each rolls to its new value. */}
+      <RollingNumber value={value} align="center" style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }} />
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
     </View>
   );

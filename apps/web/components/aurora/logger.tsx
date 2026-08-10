@@ -54,6 +54,7 @@ import { loadWorkoutDraft, saveWorkoutDraft, clearWorkoutDraft } from "@/lib/wor
 import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type StorySlide } from "@/lib/workout-share";
 import { StoryCard } from "./story-card";
 import { AuroraIcon } from "./icons";
+import RollingNumber from "./rolling-number";
 import Sheet from "./sheet";
 import { ArrowGlyph } from "./cta-label";
 import { useLang } from "@/lib/i18n";
@@ -546,12 +547,17 @@ export default function AuroraLogger({
         const remaining = restTarget != null ? restTarget - restNow : null;
         const over = remaining != null && remaining <= 0;
         const accent = over ? C("lime") : C("ash");
-        const clock = restTarget == null ? mmss(restNow) : over ? `+${mmss(restNow - restTarget)}` : `${mmss(remaining!)} ${t("workout.restLeft")}`;
+        // The CLOCK is the one figure on this screen that changes while you
+        // watch it, so it ROLLS rather than swapping — its digits are split out
+        // of the label for that reason (the words around them never move).
+        const clock = restTarget == null ? mmss(restNow) : over ? `+${mmss(restNow - restTarget)}` : mmss(remaining!);
         return (
           <div style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 40%, transparent)`, borderRadius: 16, padding: "10px 16px", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: accent }}>
-                {over ? t("workout.restDone") : t("workout.resting")} – {clock}
+              <span style={{ display: "inline-flex", alignItems: "center", fontFamily: "var(--font-display)", fontWeight: 800, fontSize: fs.body, color: accent }}>
+                {over ? t("workout.restDone") : t("workout.resting")}&nbsp;–&nbsp;
+                <RollingNumber value={clock} />
+                {restTarget != null && !over ? <>&nbsp;{t("workout.restLeft")}</> : null}
               </span>
               <button className="pressable" onClick={() => setRestSince(null)} style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: accent, background: "transparent", border: `1px solid ${accent}`, borderRadius: 12, padding: "5px 12px", cursor: "pointer" }}>
                 ■ {t("workout.stopRest")}
@@ -1090,7 +1096,11 @@ function BodyweightNudge({ units }: { units: WeightUnit }) {
 function LiveStat({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ flex: 1, textAlign: "center", borderRadius: 16, padding: "10px 8px", background: C("ink2"), border: `1px solid ${C("line")}` }}>
-      <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk") }}>{value}</div>
+      {/* Every figure here moves as sets are banked — the scoreboard IS the
+          feedback for banking one — so each rolls to its new value. */}
+      <div style={{ display: "flex", justifyContent: "center", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 22, color: C("chalk") }}>
+        <RollingNumber value={value} />
+      </div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: C("ash") }}>{label}</div>
     </div>
   );

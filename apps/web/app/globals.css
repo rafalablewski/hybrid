@@ -890,6 +890,24 @@ html[data-sheet-open] body { background: #000; }
 .load-swap-in { animation: motionDissolveIn var(--d-crossfade) var(--e-fade) both; }
 .load-swap-out { animation: motionDissolveOut var(--d-crossfade) var(--e-fade) both; }
 
+/* A DIGIT ROLLING to its new value — the web half of SwiftUI's
+   contentTransition(.numericText()); see aurora/rolling-number.tsx. The two
+   faces of a changed column share one grid cell: the old one leaves in the
+   direction the VALUE moved and the new one arrives from the opposite side, so
+   the column reads as a wheel turning rather than as two characters
+   cross-fading. `up` means the number went up, so the old face exits upward.
+
+   On the collapse duration, not a spring: a digit travels its own height and
+   overshooting a character out of its own box and back reads as a wobble. */
+@keyframes rollOutUp    { from { transform: none; opacity: 1; } to { transform: translateY(-100%); opacity: 0; } }
+@keyframes rollInUp     { from { transform: translateY(100%);  opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rollOutDown  { from { transform: none; opacity: 1; } to { transform: translateY(100%);  opacity: 0; } }
+@keyframes rollInDown   { from { transform: translateY(-100%); opacity: 0; } to { transform: none; opacity: 1; } }
+.roll-out-up   { animation: rollOutUp   var(--d-collapse) var(--e-exit) both; }
+.roll-in-up    { animation: rollInUp    var(--d-collapse) var(--e-slide) both; }
+.roll-out-down { animation: rollOutDown var(--d-collapse) var(--e-exit) both; }
+.roll-in-down  { animation: rollInDown  var(--d-collapse) var(--e-slide) both; }
+
 /* Inline busy spinner — a ring that spins next to an in-flight action label
    (e.g. the admin "Deleting…" button), so a working button reads as active
    rather than stalled. Honours reduced-motion by slowing rather than freezing
