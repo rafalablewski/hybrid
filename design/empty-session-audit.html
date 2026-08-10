@@ -106,6 +106,11 @@
   .tbgroup .tb.armed { color: var(--blue-t); }
   .tbgroup .tb.off { color: var(--ash); }
 
+  /* the dock cluster — filled pill flanked by glass satellites */
+  .cluster { display: flex; align-items: center; gap: 10px; }
+  .orb { width: 44px; height: 44px; flex: none; border-radius: 999px; display: grid; place-items: center; font-size: 14px; color: var(--chalk); background: var(--glass); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.10), inset 0 -1px 1px rgba(0,0,0,.18), inset 0 0 0 .5px rgba(140,140,140,.26); }
+  .orbpill { height: 44px; flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; border-radius: 999px; font-weight: 700; font-size: 15px; color: var(--chalk); background: var(--glass); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.10), inset 0 -1px 1px rgba(0,0,0,.18), inset 0 0 0 .5px rgba(140,140,140,.26); }
+
   pre.code { margin: 20px 0 0; padding: 17px 18px; background: var(--ink2); border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.72; color: var(--chalk); }
   pre.code .c { color: var(--ash2); }
   pre.code .k { color: var(--blue-t); }
@@ -519,7 +524,7 @@
       </div>
       <div>
         <h4>The thumb owns the primary</h4>
-        <p><i>Log set</i> docks above the home indicator and stays there whatever the session length. Between sets the same dock becomes the rest countdown — the dead third of the screen becomes the part you look at.</p>
+        <p><i>Log set</i> docks above the home indicator and stays there whatever the session length, with Pause and Finish flanking it as glass satellites. Between sets the same dock becomes the rest countdown — the dead third of the screen becomes the part you look at.</p>
       </div>
       <div>
         <h4>Deference, not chrome</h4>
@@ -540,8 +545,8 @@
           <tr><td><b>&#9201; Off chip</b></td><td>The other half of that capsule, and it stays a <em>one-tap</em> toggle: tap to arm or disarm the rest timer mid-workout, the symbol fills and the duration appears beside it. Duration lives one level in, in the menu next to it. See below.</td></tr>
           <tr><td><b>What's RPE?</b></td><td>Into that menu, and onto the RPE control itself as a <span class="mono">&#9432;</span> — already a ring, so it needs no second one drawn round it.</td></tr>
           <tr><td><b>"1 exercises – tap &check; as you go"</b></td><td>Deleted. The first-run tip card already teaches this once and dismisses itself.</td></tr>
-          <tr><td><b>Elapsed clock (22pt black, centred)</b></td><td>Mono, ash, small, in the header beside the lift's name. It is context, not content. Tap it to pause — the clock turns amber and the word PAUSED replaces ELAPSED. That deletes the Pause button.</td></tr>
-          <tr><td><b>Two Finishes</b></td><td>One, in the header, in chalk. Ending a session is a deliberate act, not the brightest thing in the room.</td></tr>
+          <tr><td><b>Elapsed clock (22pt black, centred)</b></td><td>Mono, ash, small, in the header beside the lift's name. It is context, not content — so it reads, and nothing else. It turns amber and says PAUSED when it is.</td></tr>
+          <tr><td><b>Two Finishes</b></td><td>One, at the bottom, as a native glass pill beside a native glass Pause — the two session controls, in the two places your thumb already is, flanking the primary. Neither is chartreuse: the accent belongs to <i>Log set</i>. See the cluster below.</td></tr>
           <tr><td><b>&times; remove exercise</b></td><td>Long-press the card for the system context menu (rename, replace, superset, remove) and swipe the row. Both native, both undoable, neither sitting one tap from your thumb.</td></tr>
           <tr><td><b>Exercise name as a live TextInput</b></td><td>A title. Rename lives in the context menu and opens a proper field.</td></tr>
           <tr><td><b>&#65291; type + &#9889; special + &ctdot; presets</b></td><td>One menu on the set row: a set-type picker section (working / warm-up / drop / cool-down) then the plan-ahead schemes as action rows.</td></tr>
@@ -560,7 +565,8 @@
     <p class="lede">
       The kit already renders real SwiftUI on iOS through <code>@expo/ui</code>, and it already
       has a doctrine: nativize <em>controls</em>, never the brand. The gap is that this screen
-      hand-rolls six things the system does better, and hands the system one thing it should keep.
+      hand-rolls seven things the system does better — and the line between the two moves the
+      moment a control stops wearing brand paint.
     </p>
 
     <h3 class="sub">Make these native</h3>
@@ -596,6 +602,12 @@
             <td><b>Every glyph</b></td>
             <td><code>Image(systemName:)</code> — SF Symbols</td>
             <td>Optical sizes, weight matching against the surrounding text, Dynamic Type tracking, right-to-left mirroring and a real accessibility name. Sixteen text characters in a display face have none of that: <span class="mono">&#10074;&#10074;</span> and <span class="mono">&#9632;</span> are typography pretending to be controls. A native control must wear native type.</td>
+            <td><span class="sev s-bug">new</span></td>
+          </tr>
+          <tr>
+            <td><b>Pause &amp; Finish</b><br><span class="mono" style="font-size: 11px; color: var(--ash);">the dock satellites</span></td>
+            <td><code>Button</code> + <code>glassEffect({ interactive: true, shape: "circle" | "capsule" })</code></td>
+            <td>The moment Finish stops being a chartreuse fill, it becomes nativizable — a neutral glass control is exactly what <code>.glass</code> is for, and it is the kit's existing rule (the <code>soft</code> <code>APill</code> already goes glass on iOS). This is not the reverted <code>GlassPillButton</code>: that revert was about restyling the brand's one "go" surface, and these two are the opposite of that surface. Interactive glass means the press is answered by the material, which matters most on the two controls you hit with a sweaty thumb without looking.</td>
             <td><span class="sev s-bug">new</span></td>
           </tr>
           <tr>
@@ -713,6 +725,100 @@
       read least.
     </p>
 
+    <h3 class="sub">The dock cluster — one filled pill, two glass satellites</h3>
+    <p style="max-width: 66ch; color: var(--ash); margin-top: 14px;">
+      This is a shape the product has already chosen once. The finish summary ships a lime
+      Share pill flanked by two glass satellite orbs, with the app's one exit as a third
+      — <code>finish-liquid-field</code>, and it works. The live screen should end the same way,
+      because it is the same sentence: <b>one thing you do, two things you can do to the session
+      itself.</b> Pause and Finish are not peers of <i>Log set</i> and should never be drawn as
+      peers; they are satellites, and satellites are glass.
+    </p>
+
+    <div class="pair" style="margin-top: 26px; align-items: stretch;">
+      <div class="pane" style="flex: 1 1 320px; max-width: 400px;">
+        <div class="cap"><b>The cluster</b><span class="tag t-new">recommended</span></div>
+        <div style="border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; background: var(--ink2);">
+          <div class="dockhint" style="padding-bottom: 12px;"><span>Set 1 of 5 &ndash; 5 reps</span><span>Rest 1:30 after</span></div>
+          <div class="cluster">
+            <span class="orb">&#10074;&#10074;</span>
+            <span class="cta" style="flex: 1; margin-top: 0;">&check; Log set</span>
+            <span class="orbpill">&#9873; Finish</span>
+          </div>
+          <p style="margin: 18px 0 0; font-size: 13.5px; color: var(--ash); line-height: 1.55;">
+            Pause is a circle, because <span class="mono">pause.fill</span> is a glyph nobody has
+            to read. Finish is a labelled capsule, because ending a session is the one thing on
+            this screen that should never be guessed at. The asymmetry is the point: they are not
+            equals. Pause is reversible and frequent; Finish happens once.
+          </p>
+        </div>
+
+        <div class="cap" style="margin: 26px 0 14px;"><b>The symmetric variant</b><span class="tag t-now">not recommended</span></div>
+        <div style="border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; background: var(--ink2);">
+          <div class="cluster">
+            <span class="orb">&#10074;&#10074;</span>
+            <span class="cta" style="flex: 1; margin-top: 0;">&check; Log set</span>
+            <span class="orb">&#9873;</span>
+          </div>
+          <p style="margin: 18px 0 0; font-size: 13.5px; color: var(--ash); line-height: 1.55;">
+            Prettier, and it matches the finish screen's two-orb balance exactly. But a bare
+            chequered flag is a guess, and the thing it does cannot be undone by tapping it again.
+            If we take this one, it needs a confirm — at which point the label was cheaper.
+          </p>
+        </div>
+      </div>
+
+      <div class="pane" style="flex: 1 1 400px; max-width: 560px;">
+        <div class="cap"><b>How it's built</b><span class="tag t-new">swiftui.tsx</span></div>
+<pre class="code"><span class="c">// GlassSatellite — the same construction as GlassNavButton, with the
+// shape and an optional label opened up. Two callers today; the finish
+// screen's orbs are the third once they come off their RN drawing.</span>
+&lt;<span class="k">Host</span> style={{ width: hit, height: hit }}&gt;
+  &lt;<span class="k">Button</span> onPress={onPress}
+    modifiers={[buttonStyle(<span class="k">"plain"</span>), accessibilityLabel(label)]}&gt;
+    &lt;<span class="k">HStack</span> spacing={6}&gt;
+      &lt;<span class="k">Image</span> systemName={glyph} size={glyphSize} color={fg} /&gt;
+      {word &amp;&amp; &lt;<span class="k">Text</span> modifiers={[font({ family: F.bold, size: 15 })]}&gt;
+        {word}
+      &lt;/<span class="k">Text</span>&gt;}
+    &lt;/<span class="k">HStack</span>&gt;
+    <span class="c">// chain order IS the construction: size the content, glass THAT
+    // shape, then pad the frame out to the 44pt target and make the
+    // whole frame tappable — circle for the orb, capsule for the pill.</span>
+    &lt;/&gt;.modifiers([
+      padding({ horizontal: word ? 16 : 0 }),
+      frame(word ? { height: 44 } : { width: 44, height: 44 }),
+      glassEffect({
+        glass: { variant: <span class="k">"regular"</span>, interactive: <span class="k">true</span> },
+        shape: word ? <span class="k">"capsule"</span> : <span class="k">"circle"</span>,
+      }),
+      contentShape(word ? shapes.capsule() : shapes.circle()),
+    ])
+  &lt;/<span class="k">Button</span>&gt;
+&lt;/<span class="k">Host</span>&gt;
+
+<span class="c">// pause.fill / play.fill for the orb — it swaps in place, amber when
+// held, and the elapsed clock in the header goes amber with it.
+// flag.checkered for Finish. NOT xmark: an X reads as discard, and
+// discard is a different, destructive row inside the menu.</span></pre>
+        <p style="margin-top: 16px; font-size: 14px; color: var(--ash);">
+          <code>glassEffect</code> already takes <code>shape: "capsule"</code> in the installed
+          <code>@expo/ui</code>, so the labelled pill is one modifier away from the circle we ship
+          today. Gate on <code>LIQUID_GLASS_RENDERED</code>, keep the RN pair below it, and web
+          draws both in <code>.liquid-glass</code> — the rim grammar it already uses on the
+          logger's chevron.
+        </p>
+        <p style="margin-top: 14px; font-size: 14px; color: var(--ash);">
+          <b style="color: var(--chalk);">One risk, stated:</b> this parks a terminal action
+          permanently beside the button pressed thirty times a session. It is survivable — Finish
+          saves and lands on the summary, where the session can be renamed, edited or deleted, so
+          a mis-tap costs a broken set, not data. Still: give Finish a confirm when queued sets
+          remain unbanked, and let the two satellites sit on the outer edges with the pill
+          centred, so the thumb's resting arc falls on chartreuse.
+        </p>
+      </div>
+    </div>
+
     <h3 class="sub">Keep these ours</h3>
     <div class="tablewrap">
       <table>
@@ -723,8 +829,8 @@
             <td>The goal is native <em>controls</em>, not a glass skin. A full-width chartreuse CTA has no system counterpart: <code>.glassProminent</code> would restyle the brand's one "go" surface, not nativize it — it would tint it with the system accent and take the shape away. This is the button the whole product is about; it is drawn, on every platform, identically. The codebase already reverted a <code>GlassPillButton</code> on exactly this reasoning, and that reversal was right.</td>
           </tr>
           <tr>
-            <td><b>Finish</b></td>
-            <td>Same family. It is a brand action with brand copy and a celebration flight attached to it — the PR badge flies from the card into the summary's trophy chip. A system button cannot carry a shared-element transition out of itself.</td>
+            <td><b><s style="color: var(--ash2);">Finish</s></b><br><span class="mono" style="font-size: 10px; letter-spacing: .1em; color: var(--red-t);">CORRECTED</span></td>
+            <td>An earlier draft of this page kept Finish app-drawn, on the grounds that it carries the celebration flight out of itself. That was wrong, and worth saying plainly: the flight is anchored on the <b>PR badge</b> in the exercise card (<code>prBadgeRefs</code>), which <code>finish()</code> arms on the way to the summary's trophy chip. The button is only the trigger. Once Finish loses the chartreuse fill it is a neutral control with nothing brand-shaped left in it — so it goes native, in the table above.</td>
           </tr>
           <tr>
             <td><b>The big number</b></td>
@@ -748,7 +854,7 @@
     </p>
 
     <div class="delta">
-      <div><span class="label">Controls</span><div class="n">20 &rarr; <span class="down">11</span></div></div>
+      <div><span class="label">Controls</span><div class="n">20 &rarr; <span class="down">12</span></div></div>
       <div><span class="label">Accents at rest</span><div class="n">5 &rarr; <span class="down">1</span></div></div>
       <div><span class="label">Plus glyphs</span><div class="n">3 &rarr; <span class="down">1</span></div></div>
       <div><span class="label">Ways to finish</span><div class="n">2 &rarr; <span class="down">1</span></div></div>
@@ -812,9 +918,8 @@
                 <div style="font-weight: 800; font-size: 14px; letter-spacing: -.01em;">Pull-Up</div>
                 <div class="mono" style="font-size: 10.5px; letter-spacing: .14em; color: var(--ash);">0:05</div>
               </div>
-              <div class="side r" style="gap: 10px;">
+              <div class="side r">
                 <span class="tbgroup"><span class="tb armed">&#9201; <span class="sec">1:30</span></span><span class="tb">&ctdot;</span></span>
-                <span style="font-weight: 800; font-size: 15px; color: var(--chalk);">Finish</span>
               </div>
             </div>
 
@@ -848,11 +953,15 @@
 
             <div class="doorrow"><span>Add exercise</span><span class="doorring">&rsaquo;</span></div>
 
-            <div class="void" style="min-height: 74px;"></div>
+            <div class="void" style="min-height: 60px;"></div>
 
             <div class="dock">
               <div class="dockhint"><span>Set 1 of 5 &ndash; 5 reps</span><span>Rest 1:30 after</span></div>
-              <div class="cta" style="margin-top: 0;">&check; Log set</div>
+              <div class="cluster">
+                <span class="orb">&#10074;&#10074;</span>
+                <span class="cta" style="flex: 1; margin-top: 0;">&check; Log set</span>
+                <span class="orbpill">&#9873; Finish</span>
+              </div>
             </div>
           </div>
           <div class="homebar"></div>
@@ -866,6 +975,7 @@
       <li><span class="mark ok">&check;</span><span><b>The number is chalk, not grey,</b> because it is a value, not a prompt. Five sets of five are already queued as quiet ledger rows. Logging the session is now five taps, not five taps plus five numbers typed.</span></li>
       <li><span class="mark ok">&check;</span><span><b>One accent.</b> Chartreuse appears once, in the dock, on the only button you will press repeatedly.</span></li>
       <li><span class="mark ok">&check;</span><span><b>The dock never moves</b> and tells you what you are about to bank and what happens next. When you bank it, the same dock becomes the countdown — and the Dynamic Island picks it up.</span></li>
+      <li><span class="mark ok">&check;</span><span><b>Pause and Finish flank the primary as native glass</b> — a <span class="mono">pause.fill</span> circle and a labelled <span class="mono">flag.checkered</span> capsule, both real SwiftUI buttons whose material answers the press. The three session controls are now in the one place your thumb rests, and only one of them is chartreuse.</span></li>
       <li><span class="mark ok">&check;</span><span><b>The marks obey the grammar:</b> bare plus grows the set list in place, ringed chevron leaves for the exercise picker.</span></li>
       <li><span class="mark ok">&check;</span><span><b>The rest timer is pinned and one tap away</b> — the left half of the glass capsule, armed and reading 1:30, which is why the dock says what happens after you bank. Today that control sits in a scrolling row and disappears the moment you add a second exercise.</span></li>
     </ul>
@@ -887,7 +997,8 @@
       <li><span>Default <code>SwipeRow</code>'s content layer to transparent — the card-inside-a-card goes away.</span><span class="where">swipe-row.tsx</span></li>
       <li><span>Build <code>GlassToolbarGroup</code> — the Apple Music capsule: a <code>GlassEffectContainer</code> holding the rest-timer <code>Button</code> and the <code>Menu</code>, with the RN chip pair as the floor.</span><span class="where">swiftui.tsx</span></li>
       <li><span>Pin that capsule in the header and delete the meta row — the timer becomes a one-tap arm/disarm that never scrolls away, RPE help and discard go inside the menu.</span><span class="where">workout.tsx<br>logger.tsx</span></li>
-      <li><span>Dock the primary. One <i>Finish</i>, in the header; pause moves onto the clock.</span><span class="where">both clients</span></li>
+      <li><span>Dock the cluster: <i>Log set</i> centred with a glass Pause circle and a glass <i>Finish</i> capsule flanking it. Delete the header <i>Finish</i> and the bottom lime one — there is now exactly one of each.</span><span class="where">both clients</span></li>
+      <li><span>Build <code>GlassSatellite</code> (circle or capsule, optional label) and point Pause, Finish and the finish screen's orbs at it.</span><span class="where">swiftui.tsx</span></li>
       <li><span>Fold set type, special sets and schemes into one menu on the set row.</span><span class="where">both clients</span></li>
       <li><span>Retire the ringed <i>Add set</i> box for a bare plus; make <i>Add exercise</i> a door row.</span><span class="where">both clients</span></li>
       <li><span>Swap every glyph for an SF Symbol on iOS, with the shared vector marks as the floor.</span><span class="where">aurora/icon</span></li>
