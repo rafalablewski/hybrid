@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { allTranslationKeys, baselineString, LANGS, type Lang } from "@hybrid/core";
-import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -108,86 +108,92 @@ export default function AdminTranslations() {
     });
   }
 
-  if (!loaded && !failed) return <Loading />;
-  if (failed) return <ErrorNote error="Couldn't load translations. Pull to retry." />;
-  if (unavailable)
-    return (
-      <Banner tone="amber" title="Localization not initialized">
-        The Translation table doesn&apos;t exist yet. Run reference/sql-translation.sql in the Supabase SQL Editor, then
-        reload.
-      </Banner>
-    );
-
-  const capped = visible.slice(0, CAP);
-
   return (
-    <View>
-      <Input value={q} onChangeText={setQ} placeholder="Search keys or text…" />
-      <FilterGroup<FilterMode>
-        options={[
-          { value: "all", label: "All keys" },
-          { value: "overridden", label: "Overridden" },
-          { value: "missing", label: "Missing" },
-        ]}
-        value={filter}
-        onChange={setFilter}
-      />
-      <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
-        {`${keys.length} keys – ${overrideCount} override${overrideCount === 1 ? "" : "s"}`} – edits layer over the
-        shipped strings live — empty a field to revert to baseline.
-      </Mono>
+    <LoadSwap loading={!loaded && !failed}>
+      {() => {
+        if (!loaded && !failed) return null;
+        if (failed) return <ErrorNote error="Couldn't load translations. Pull to retry." />;
+        if (unavailable)
+          return (
+            <Banner tone="amber" title="Localization not initialized">
+              The Translation table doesn&apos;t exist yet. Run reference/sql-translation.sql in the Supabase SQL Editor, then
+              reload.
+            </Banner>
+          );
 
-      {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
+        const capped = visible.slice(0, CAP);
 
-      {capped.map((key) => (
-        <ACard key={key} style={cardStack}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.chalk, marginBottom: 8 }}>{key}</Text>
-          {LANG_LIST.map((lang) => {
-            const ck = `${lang}:${key}`;
-            const eff = effective(lang, key);
-            const val = edits[ck] ?? eff;
-            const overridden = isOverridden(lang, key);
-            const missing = !baselineString(lang, key) && !overridden;
-            const dirty = (edits[ck] ?? eff) !== eff;
-            return (
-              <View key={lang} style={{ marginBottom: 10 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: space.xs, marginBottom: 4 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash }}>{LANGS[lang]}</Text>
-                  {overridden ? <Chip color={palette.lime}>override</Chip> : null}
-                  {missing ? <Chip color={palette.amber}>missing</Chip> : null}
-                </View>
-                <Input
-                  value={val}
-                  onChangeText={(t) => setEdits((s) => ({ ...s, [ck]: t }))}
-                  placeholder={missing ? "— missing —" : ""}
-                  multiline
-                  style={{ marginBottom: 6 }}
-                />
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
-                  {dirty ? (
-                    <PillBtn label="Save" disabled={savingCell === ck} onPress={() => save(lang, key, edits[ck] ?? "")} />
-                  ) : null}
-                  {overridden ? (
-                    <PillBtn label="↺ Revert" outline color={palette.ash} disabled={savingCell === ck} onPress={() => save(lang, key, "")} />
-                  ) : null}
-                </View>
-              </View>
-            );
-          })}
-        </ACard>
-      ))}
+        return (
+          <View>
+            <Input value={q} onChangeText={setQ} placeholder="Search keys or text…" />
+            <FilterGroup<FilterMode>
+              options={[
+                { value: "all", label: "All keys" },
+                { value: "overridden", label: "Overridden" },
+                { value: "missing", label: "Missing" },
+              ]}
+              value={filter}
+              onChange={setFilter}
+            />
+            <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
+              {`${keys.length} keys – ${overrideCount} override${overrideCount === 1 ? "" : "s"}`} – edits layer over the
+              shipped strings live — empty a field to revert to baseline.
+            </Mono>
 
-      {loaded && visible.length === 0 ? (
-        <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 24 }}>
-          No keys match.
-        </Mono>
-      ) : null}
+            {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
-      {visible.length > capped.length ? (
-        <Mono color={palette.ash} style={{ textAlign: "center", marginTop: 8 }}>
-          {`Showing ${capped.length} of ${visible.length} — refine the search or filter to narrow.`}
-        </Mono>
-      ) : null}
-    </View>
+            {capped.map((key) => (
+              <ACard key={key} style={cardStack}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.chalk, marginBottom: 8 }}>{key}</Text>
+                {LANG_LIST.map((lang) => {
+                  const ck = `${lang}:${key}`;
+                  const eff = effective(lang, key);
+                  const val = edits[ck] ?? eff;
+                  const overridden = isOverridden(lang, key);
+                  const missing = !baselineString(lang, key) && !overridden;
+                  const dirty = (edits[ck] ?? eff) !== eff;
+                  return (
+                    <View key={lang} style={{ marginBottom: 10 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: space.xs, marginBottom: 4 }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash }}>{LANGS[lang]}</Text>
+                        {overridden ? <Chip color={palette.lime}>override</Chip> : null}
+                        {missing ? <Chip color={palette.amber}>missing</Chip> : null}
+                      </View>
+                      <Input
+                        value={val}
+                        onChangeText={(t) => setEdits((s) => ({ ...s, [ck]: t }))}
+                        placeholder={missing ? "— missing —" : ""}
+                        multiline
+                        style={{ marginBottom: 6 }}
+                      />
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
+                        {dirty ? (
+                          <PillBtn label="Save" disabled={savingCell === ck} onPress={() => save(lang, key, edits[ck] ?? "")} />
+                        ) : null}
+                        {overridden ? (
+                          <PillBtn label="↺ Revert" outline color={palette.ash} disabled={savingCell === ck} onPress={() => save(lang, key, "")} />
+                        ) : null}
+                      </View>
+                    </View>
+                  );
+                })}
+              </ACard>
+            ))}
+
+            {loaded && visible.length === 0 ? (
+              <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 24 }}>
+                No keys match.
+              </Mono>
+            ) : null}
+
+            {visible.length > capped.length ? (
+              <Mono color={palette.ash} style={{ textAlign: "center", marginTop: 8 }}>
+                {`Showing ${capped.length} of ${visible.length} — refine the search or filter to narrow.`}
+              </Mono>
+            ) : null}
+          </View>
+        );
+      }}
+    </LoadSwap>
   );
 }

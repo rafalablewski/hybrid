@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Image, AccessibilityInfo } from "react-native";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
-import { leading, Loading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, LoadSwap, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
@@ -67,166 +67,172 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
     return true;
   };
 
-  if (!data) return <Loading />;
-  const claimed = !!data.profile;
-  const inp = inpStyle(C);
-  const initials = (acct.name || form.displayName || form.handle || "?").slice(0, 1).toUpperCase();
-  const hNorm = normalizeHandle(form.handle);
-  const fmtValid = isValidHandle(hNorm);
-  const isMine = !!data?.profile && hNorm === data.profile.handle;
-  const bioLen = (form.bio ?? "").length;
-  const feedbackColor = (!fmtValid || avail === "taken" ? C.red : avail === "checking" ? C.ash : txt(C, C.lime)) as string;
-  const lime = txt(C, C.lime) as string;
-
-  // ── FOCUSED FIELD EDITOR ──────────────────────────────────────────────────
-  if (editing) {
-    const back = () => { setErr(null); setEditing(null); };
-    const titles: Record<FieldKey, string> = { name: t("w.profile.titleName"), handle: t("w.profile.username"), displayName: t("w.profile.displayName"), bio: t("w.profile.bioLabel"), email: t("w.profile.email"), visibility: t("w.profile.whoCanSee") };
-    return (
-      <ACard style={cardStack}>
-        {/* An editor inside a Card, not a screen — so it has no rail of its
-            own and takes the system's nav CONTROL rather than a hero. Same
-            circle, same 40pt, same glyph as every screen head. */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <HeroNav onPress={back} onDark={false} />
-          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{titles[editing]}</Text>
-        </View>
-
-        {editing === "name" && (<>
-          <TextInput value={acct.name} onChangeText={acct.setName} placeholder={t("w.profile.namePlaceholder")} placeholderTextColor={C.ash} style={inp} autoFocus />
-          <SButton label={acct.busy ? t("w.profile.saving") : t("common.save")} onPress={() => { acct.saveName(); back(); }} />
-        </>)}
-
-        {editing === "email" && (<>
-          <TextInput value={acct.newEmail} onChangeText={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} placeholderTextColor={C.ash} autoCapitalize="none" keyboardType="email-address" style={inp} autoFocus />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8, marginBottom: 2 }}>{t("w.profile.emailConfirm")}</Text>
-          <SButton label={t("w.profile.updateEmail")} onPress={() => { acct.changeEmail(); back(); }} />
-        </>)}
-
-        {editing === "handle" && (<>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 15 }}>@</Text>
-            <TextInput value={form.handle} onChangeText={(v) => setForm({ ...form, handle: v })} placeholder={t("w.profile.handlePlaceholder")} placeholderTextColor={C.ash} autoCapitalize="none" autoFocus style={{ ...inp, flex: 1 }} />
-          </View>
-          {form.handle.length > 0 && (
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: feedbackColor, marginTop: 8 }}>
-              {!fmtValid ? `✕ ${t("w.profile.handleRule")}` : avail === "taken" ? `✕ ${t("w.profile.handleTaken").replace("{h}", hNorm)}` : avail === "checking" ? t("w.profile.checking") : `✓ ${isMine ? t("w.profile.yourHandle") : t("w.profile.handleAvailable").replace("{h}", hNorm)}`}
-            </Text>
-          )}
-          {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
-          <SButton label={claimed ? t("common.save") : t("w.profile.claimHandle")} onPress={async () => { if (await saveSocial()) back(); }} />
-        </>)}
-
-        {editing === "displayName" && (<>
-          <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder={t("w.profile.optional")} placeholderTextColor={C.ash} autoFocus style={inp} />
-          {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
-          <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
-        </>)}
-
-        {editing === "bio" && (<>
-          <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline maxLength={280} placeholder={t("w.profile.bioPlaceholder")} placeholderTextColor={C.ash} autoFocus style={{ ...inp, minHeight: 96, textAlignVertical: "top" }} />
-          <Text style={{ fontFamily: F.mono, fontSize: 10, color: bioLen >= 280 ? C.red : C.ash, textAlign: "right", marginTop: 6 }}>{bioLen}/280</Text>
-          {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
-          <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
-        </>)}
-
-        {editing === "visibility" && (<>
-          <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
-            {(["public", "followers", "private"] as const).map((v) => <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
-          </View>
-          {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
-          <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
-        </>)}
-      </ACard>
-    );
-  }
-
-  // ── SECTIONED editor ──────────────────────────────────────────────────────
-  // Every part of the screen lives in a labelled section (Photo · Identity ·
-  // Contact · Visibility) — the app-wide settings pattern. Text fields still
-  // open the focused editor; Visibility is an inline segment that saves on tap.
-  const pickVisibility = (v: "public" | "followers" | "private") => {
-    setForm({ ...form, visibility: v });
-    if (claimed) void saveSocial({ visibility: v });
-  };
-
-  // A tappable field row → opens the focused editor. A plain render function
-  // (not a <Component/>) so the rows aren't remounted on every parent render.
-  const fieldRow = ({ rk, label, value, muted, first }: { rk: FieldKey; label: string; value: string; muted: boolean; first?: boolean }): ReactNode => (
-    <Pressable key={rk} onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 16, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
-      <Text style={{ width: 96, color: C.ash, fontSize: 13 }}>{label}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: 14 }}>{value}</Text>
-      <Text style={{ color: C.ash, fontSize: 18 }}>›</Text>
-    </Pressable>
-  );
-
   return (
-    <>
-      {/* ── PHOTO ── avatar + one-tap branded gradient presets (upload soon). */}
-      <SectionLabel first>{t("w.profile.secPhoto")}</SectionLabel>
-      <ACard style={cardStack}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-          <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
-            <View style={{ width: 53, height: 53, borderRadius: 27, borderWidth: 2.5, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-              {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: 22, color: lime }}>{initials}</Text>}
-            </View>
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.profile.presetAvatar")}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-              {AVATAR_PRESETS.map((p) => {
-                const on = form.avatarUrl === p.uri;
-                return (
-                  <Pressable key={p.id} onPress={() => setForm({ ...form, avatarUrl: p.uri })} accessibilityRole="button" accessibilityLabel={t("w.profile.presetAria").replace("{n}", String(p.id))} style={{ width: 30, height: 30, borderRadius: 15, padding: on ? 2 : 0, borderWidth: 2, borderColor: on ? lime : "transparent" }}>
-                    <Image source={{ uri: p.uri }} style={{ width: "100%", height: "100%", borderRadius: 15 }} />
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 }}>
-          {form.avatarUrl ? <SButton label={t("w.profile.savePhoto")} small onPress={() => saveSocial()} /> : null}
-          <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.profile.uploadSoon")}</Text>
+    <LoadSwap loading={!data}>
+      {() => {
+        if (!data) return null;
+        const claimed = !!data.profile;
+        const inp = inpStyle(C);
+        const initials = (acct.name || form.displayName || form.handle || "?").slice(0, 1).toUpperCase();
+        const hNorm = normalizeHandle(form.handle);
+        const fmtValid = isValidHandle(hNorm);
+        const isMine = !!data?.profile && hNorm === data.profile.handle;
+        const bioLen = (form.bio ?? "").length;
+        const feedbackColor = (!fmtValid || avail === "taken" ? C.red : avail === "checking" ? C.ash : txt(C, C.lime)) as string;
+        const lime = txt(C, C.lime) as string;
+
+        // ── FOCUSED FIELD EDITOR ──────────────────────────────────────────────────
+        if (editing) {
+          const back = () => { setErr(null); setEditing(null); };
+          const titles: Record<FieldKey, string> = { name: t("w.profile.titleName"), handle: t("w.profile.username"), displayName: t("w.profile.displayName"), bio: t("w.profile.bioLabel"), email: t("w.profile.email"), visibility: t("w.profile.whoCanSee") };
+          return (
+            <ACard style={cardStack}>
+              {/* An editor inside a Card, not a screen — so it has no rail of its
+                  own and takes the system's nav CONTROL rather than a hero. Same
+                  circle, same 40pt, same glyph as every screen head. */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <HeroNav onPress={back} onDark={false} />
+                <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{titles[editing]}</Text>
+              </View>
+
+              {editing === "name" && (<>
+                <TextInput value={acct.name} onChangeText={acct.setName} placeholder={t("w.profile.namePlaceholder")} placeholderTextColor={C.ash} style={inp} autoFocus />
+                <SButton label={acct.busy ? t("w.profile.saving") : t("common.save")} onPress={() => { acct.saveName(); back(); }} />
+              </>)}
+
+              {editing === "email" && (<>
+                <TextInput value={acct.newEmail} onChangeText={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} placeholderTextColor={C.ash} autoCapitalize="none" keyboardType="email-address" style={inp} autoFocus />
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8, marginBottom: 2 }}>{t("w.profile.emailConfirm")}</Text>
+                <SButton label={t("w.profile.updateEmail")} onPress={() => { acct.changeEmail(); back(); }} />
+              </>)}
+
+              {editing === "handle" && (<>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 15 }}>@</Text>
+                  <TextInput value={form.handle} onChangeText={(v) => setForm({ ...form, handle: v })} placeholder={t("w.profile.handlePlaceholder")} placeholderTextColor={C.ash} autoCapitalize="none" autoFocus style={{ ...inp, flex: 1 }} />
+                </View>
+                {form.handle.length > 0 && (
+                  <Text style={{ fontFamily: F.mono, fontSize: 12, color: feedbackColor, marginTop: 8 }}>
+                    {!fmtValid ? `✕ ${t("w.profile.handleRule")}` : avail === "taken" ? `✕ ${t("w.profile.handleTaken").replace("{h}", hNorm)}` : avail === "checking" ? t("w.profile.checking") : `✓ ${isMine ? t("w.profile.yourHandle") : t("w.profile.handleAvailable").replace("{h}", hNorm)}`}
+                  </Text>
+                )}
+                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
+                <SButton label={claimed ? t("common.save") : t("w.profile.claimHandle")} onPress={async () => { if (await saveSocial()) back(); }} />
+              </>)}
+
+              {editing === "displayName" && (<>
+                <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder={t("w.profile.optional")} placeholderTextColor={C.ash} autoFocus style={inp} />
+                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
+                <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
+              </>)}
+
+              {editing === "bio" && (<>
+                <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline maxLength={280} placeholder={t("w.profile.bioPlaceholder")} placeholderTextColor={C.ash} autoFocus style={{ ...inp, minHeight: 96, textAlignVertical: "top" }} />
+                <Text style={{ fontFamily: F.mono, fontSize: 10, color: bioLen >= 280 ? C.red : C.ash, textAlign: "right", marginTop: 6 }}>{bioLen}/280</Text>
+                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
+                <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
+              </>)}
+
+              {editing === "visibility" && (<>
+                <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+                  {(["public", "followers", "private"] as const).map((v) => <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
+                </View>
+                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
+                <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
+              </>)}
+            </ACard>
+          );
+        }
+
+        // ── SECTIONED editor ──────────────────────────────────────────────────────
+        // Every part of the screen lives in a labelled section (Photo · Identity ·
+        // Contact · Visibility) — the app-wide settings pattern. Text fields still
+        // open the focused editor; Visibility is an inline segment that saves on tap.
+        const pickVisibility = (v: "public" | "followers" | "private") => {
+          setForm({ ...form, visibility: v });
+          if (claimed) void saveSocial({ visibility: v });
+        };
+
+        // A tappable field row → opens the focused editor. A plain render function
+        // (not a <Component/>) so the rows aren't remounted on every parent render.
+        const fieldRow = ({ rk, label, value, muted, first }: { rk: FieldKey; label: string; value: string; muted: boolean; first?: boolean }): ReactNode => (
+          <Pressable key={rk} onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 16, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
+            <Text style={{ width: 96, color: C.ash, fontSize: 13 }}>{label}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: 14 }}>{value}</Text>
+            <Text style={{ color: C.ash, fontSize: 18 }}>›</Text>
           </Pressable>
-        </View>
-      </ACard>
+        );
 
-      {/* ── IDENTITY ── name, handle, display name, bio. */}
-      <SectionLabel>{t("w.profile.secIdentity")}</SectionLabel>
-      <ACard style={cardStack}>
-        {fieldRow({ rk: "name", label: t("w.profile.name"), value: acct.name || t("w.profile.addName"), muted: !acct.name, first: true })}
-        {fieldRow({ rk: "handle", label: t("w.profile.username"), value: form.handle ? `@${form.handle}` : t("w.profile.claimAHandle"), muted: !form.handle })}
-        {fieldRow({ rk: "displayName", label: t("w.profile.displayName"), value: form.displayName || t("w.profile.optional"), muted: !form.displayName })}
-        {fieldRow({ rk: "bio", label: t("w.profile.bioLabel"), value: form.bio || t("w.profile.addBio"), muted: !form.bio })}
-      </ACard>
+        return (
+          <>
+            {/* ── PHOTO ── avatar + one-tap branded gradient presets (upload soon). */}
+            <SectionLabel first>{t("w.profile.secPhoto")}</SectionLabel>
+            <ACard style={cardStack}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+                <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
+                  <View style={{ width: 53, height: 53, borderRadius: 27, borderWidth: 2.5, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
+                    {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: 22, color: lime }}>{initials}</Text>}
+                  </View>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.profile.presetAvatar")}</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                    {AVATAR_PRESETS.map((p) => {
+                      const on = form.avatarUrl === p.uri;
+                      return (
+                        <Pressable key={p.id} onPress={() => setForm({ ...form, avatarUrl: p.uri })} accessibilityRole="button" accessibilityLabel={t("w.profile.presetAria").replace("{n}", String(p.id))} style={{ width: 30, height: 30, borderRadius: 15, padding: on ? 2 : 0, borderWidth: 2, borderColor: on ? lime : "transparent" }}>
+                          <Image source={{ uri: p.uri }} style={{ width: "100%", height: "100%", borderRadius: 15 }} />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 }}>
+                {form.avatarUrl ? <SButton label={t("w.profile.savePhoto")} small onPress={() => saveSocial()} /> : null}
+                <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.profile.uploadSoon")}</Text>
+                </Pressable>
+              </View>
+            </ACard>
 
-      {/* ── CONTACT ── account email. */}
-      <SectionLabel>{t("w.profile.secContact")}</SectionLabel>
-      <ACard style={cardStack}>
-        {fieldRow({ rk: "email", label: t("w.profile.email"), value: acct.email || t("w.profile.addEmail"), muted: !acct.email, first: true })}
-      </ACard>
+            {/* ── IDENTITY ── name, handle, display name, bio. */}
+            <SectionLabel>{t("w.profile.secIdentity")}</SectionLabel>
+            <ACard style={cardStack}>
+              {fieldRow({ rk: "name", label: t("w.profile.name"), value: acct.name || t("w.profile.addName"), muted: !acct.name, first: true })}
+              {fieldRow({ rk: "handle", label: t("w.profile.username"), value: form.handle ? `@${form.handle}` : t("w.profile.claimAHandle"), muted: !form.handle })}
+              {fieldRow({ rk: "displayName", label: t("w.profile.displayName"), value: form.displayName || t("w.profile.optional"), muted: !form.displayName })}
+              {fieldRow({ rk: "bio", label: t("w.profile.bioLabel"), value: form.bio || t("w.profile.addBio"), muted: !form.bio })}
+            </ACard>
 
-      {/* ── VISIBILITY ── inline segment, saves on tap. */}
-      <SectionLabel>{t("w.profile.secVisibility")}</SectionLabel>
-      <ACard style={cardStack}>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {(["public", "followers", "private"] as const).map((v) => (
-            <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => pickVisibility(v)} />
-          ))}
-        </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: leading(fs.micro, "snug") }}>{t("w.profile.visibilityNote")}</Text>
-      </ACard>
+            {/* ── CONTACT ── account email. */}
+            <SectionLabel>{t("w.profile.secContact")}</SectionLabel>
+            <ACard style={cardStack}>
+              {fieldRow({ rk: "email", label: t("w.profile.email"), value: acct.email || t("w.profile.addEmail"), muted: !acct.email, first: true })}
+            </ACard>
 
-      {onDone && (
-        <View style={{ marginTop: 16 }}>
-          <SButton label={t("common.done")} onPress={onDone} />
-        </View>
-      )}
-      {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10, textAlign: "center" }}>{err}</Text>}
-      {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? lime : C.ash, marginTop: 10, textAlign: "center" }}>{acct.profileMsg}</Text>}
-    </>
+            {/* ── VISIBILITY ── inline segment, saves on tap. */}
+            <SectionLabel>{t("w.profile.secVisibility")}</SectionLabel>
+            <ACard style={cardStack}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {(["public", "followers", "private"] as const).map((v) => (
+                  <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => pickVisibility(v)} />
+                ))}
+              </View>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10, lineHeight: leading(fs.micro, "snug") }}>{t("w.profile.visibilityNote")}</Text>
+            </ACard>
+
+            {onDone && (
+              <View style={{ marginTop: 16 }}>
+                <SButton label={t("common.done")} onPress={onDone} />
+              </View>
+            )}
+            {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10, textAlign: "center" }}>{err}</Text>}
+            {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? lime : C.ash, marginTop: 10, textAlign: "center" }}>{acct.profileMsg}</Text>}
+          </>
+        );
+      }}
+    </LoadSwap>
   );
 }
 

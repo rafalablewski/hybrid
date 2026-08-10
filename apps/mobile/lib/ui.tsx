@@ -477,12 +477,34 @@ export function LoadSwap({
   loading,
   placeholder,
   children,
+  fill,
   style,
 }: {
   loading: boolean;
   /** What holds the space. Give it the geometry of the real thing. */
   placeholder?: ReactNode;
-  children: ReactNode;
+  /**
+   * The content. Pass a FUNCTION where the body would crash without its data —
+   * which is almost everywhere, because the shape these loading states are
+   * written in is `if (!data) return <Loading />` and everything after that
+   * guard dereferences `data`. Children only render when the data has landed,
+   * so a function is never called while loading; an eagerly-built node would
+   * still have been evaluated.
+   *
+   * That laziness is what lets a body stay where it is. The alternative — the
+   * reason this adoption stalled — was moving every body into a child
+   * component so it could take the data as a prop, which for these screens
+   * would mean threading their derived values and mutation handlers through as
+   * props too.
+   */
+  children: ReactNode | (() => ReactNode);
+  /**
+   * The content fills the swap rather than sizing to itself — for a screen
+   * whose body is a virtualized list that needs a height to scroll in. Without
+   * it the content sits in a plain wrapper that sizes to its children, so a
+   * `flex: 1` list inside would collapse the moment it moved in here.
+   */
+  fill?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const reduced = useReducedMotion();
@@ -510,7 +532,11 @@ export function LoadSwap({
       {/* The content is laid out normally and the placeholder floats OVER it:
           the box is the content's own size the moment it exists, so the
           hand-over is a fade and not also a resize. */}
-      {!loading && <Animated.View style={{ opacity: inOpacity }}>{children}</Animated.View>}
+      {!loading && (
+        <Animated.View style={fill ? { opacity: inOpacity, flex: 1 } : { opacity: inOpacity }}>
+          {typeof children === "function" ? children() : children}
+        </Animated.View>
+      )}
       {held && (
         <Animated.View
           pointerEvents="none"

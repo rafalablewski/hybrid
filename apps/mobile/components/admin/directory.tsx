@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, ErrorNote, FilterGroup, KV } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -64,20 +64,23 @@ export default function AdminDirectory() {
       {view === "orgs" && (
         <View>
           <Intro>Organizations across the platform — teams and membership counts.</Intro>
-          {orgs === null ? (
-            <Loading />
-          ) : orgs.length === 0 ? (
-            <Mono color={palette.ash}>No organizations yet.</Mono>
-          ) : (
-            orgs.map((o) => (
-              <ACard key={o.id} style={cardStack}>
-                <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk, marginBottom: 6 }}>{o.name}</Text>
-                <KV k="Teams" v={o.teams} />
-                <KV k="Members" v={o.members} />
-                <KV k="Created" v={fmt(o.createdAt)} />
-              </ACard>
-            ))
-          )}
+          <LoadSwap loading={orgs === null}>
+            {() => {
+              if (orgs === null) return null;
+              return orgs.length === 0 ? (
+                <Mono color={palette.ash}>No organizations yet.</Mono>
+              ) : (
+                orgs.map((o) => (
+                  <ACard key={o.id} style={cardStack}>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk, marginBottom: 6 }}>{o.name}</Text>
+                    <KV k="Teams" v={o.teams} />
+                    <KV k="Members" v={o.members} />
+                    <KV k="Created" v={fmt(o.createdAt)} />
+                  </ACard>
+                ))
+              );
+            }}
+          </LoadSwap>
         </View>
       )}
 
@@ -93,24 +96,27 @@ export default function AdminDirectory() {
               ))}
             </View>
           )}
-          {links === null ? (
-            <Loading />
-          ) : links.length === 0 ? (
-            <Mono color={palette.ash}>No coaching links yet.</Mono>
-          ) : (
-            links.map((l) => (
-              <ACard key={l.id} style={cardStack}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: palette.chalk, flexShrink: 1 }}>
-                    {l.coach} → {l.client}
-                  </Text>
-                  <Chip color={statusColor[l.status] ?? palette.chalk}>{l.status}</Chip>
-                </View>
-                <KV k="Notes" v={l.notes} />
-                <KV k="Since" v={fmt(l.createdAt)} />
-              </ACard>
-            ))
-          )}
+          <LoadSwap loading={links === null}>
+            {() => {
+              if (links === null) return null;
+              return links.length === 0 ? (
+                <Mono color={palette.ash}>No coaching links yet.</Mono>
+              ) : (
+                links.map((l) => (
+                  <ACard key={l.id} style={cardStack}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: palette.chalk, flexShrink: 1 }}>
+                        {l.coach} → {l.client}
+                      </Text>
+                      <Chip color={statusColor[l.status] ?? palette.chalk}>{l.status}</Chip>
+                    </View>
+                    <KV k="Notes" v={l.notes} />
+                    <KV k="Since" v={fmt(l.createdAt)} />
+                  </ACard>
+                ))
+              );
+            }}
+          </LoadSwap>
         </View>
       )}
     </View>

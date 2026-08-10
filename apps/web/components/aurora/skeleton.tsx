@@ -78,7 +78,21 @@ export function LoadSwap({
   loading: boolean;
   /** What holds the space. Give it the geometry of the real thing. */
   placeholder?: ReactNode;
-  children: ReactNode;
+  /**
+   * The content. Pass a FUNCTION where the body would crash without its data —
+   * which is almost everywhere, because the shape these loading states are
+   * written in is `if (!data) return <Loading />` and everything after that
+   * guard dereferences `data`. Children only render when the data has landed,
+   * so a function is never called while loading; an eagerly-built node would
+   * still have been evaluated.
+   *
+   * That laziness is what lets a body stay where it is. The alternative — the
+   * reason this adoption stalled — was moving every body into a child
+   * component so it could take the data as a prop, which for these screens
+   * would mean threading their derived values and mutation handlers through as
+   * props too.
+   */
+  children: ReactNode | (() => ReactNode);
   style?: CSSProperties;
 }) {
   // `held` lags `loading` by one crossfade so the outgoing placeholder is still
@@ -102,7 +116,7 @@ export function LoadSwap({
           No entrance on a first render that was never loading: there was no
           placeholder to hand over from, and fading in anyway would make every
           already-cached screen blink. */}
-      {!loading && <div className={first.current ? undefined : "load-swap-in"}>{children}</div>}
+      {!loading && <div className={first.current ? undefined : "load-swap-in"}>{typeof children === "function" ? children() : children}</div>}
     </div>
   );
 }
