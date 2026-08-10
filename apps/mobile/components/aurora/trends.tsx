@@ -3,7 +3,7 @@ import { View, Text, type StyleProp, type TextStyle } from "react-native";
 import { useRouter } from "expo-router";
 import Svg, { Path, Circle, Line as SvgLine } from "react-native-svg";
 import {
-  weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
+  weeklyVolumeTrend, exerciseTable, EXERCISE_TABLE_FOLD, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
   volumeTrendReading,
   type ExercisePeriod, type TrendDir, type ExerciseTableRow,
 } from "@hybrid/core";
@@ -42,8 +42,15 @@ export default function AuroraTrends({ top, unified = false }: {
   const { t } = useLang();
   const router = useRouter();
   const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
-  const [period, setPeriod] = useState<ExercisePeriod>("all");
+  // The DEFAULT window is bounded (audit/10 T9): "all" ran one per-exercise
+  // dashboard pass over full history for every movement ever logged, on mount,
+  // to show a table most visits never scroll to the bottom of. Eight weeks
+  // matches the two measure bands above it; "all" stays one tap away.
+  const [period, setPeriod] = useState<ExercisePeriod>("8w");
   const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
+  // The table wears EXERCISE_TABLE_FOLD rows until the athlete asks for all of
+  // them — the fold is the engine's constant, so both clients fold at one depth.
+  const [allRows, setAllRows] = useState(false);
 
   const load = () => refetch();
   useRefreshOnFocus(refetch);
@@ -63,6 +70,8 @@ export default function AuroraTrends({ top, unified = false }: {
     return arr;
   }, [table, sort]);
   const sortBy = (k: keyof ExerciseTableRow) => setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "name" ? 1 : -1 }));
+  const shownRows = allRows ? sortedTable : sortedTable.slice(0, EXERCISE_TABLE_FOLD);
+  const folded = sortedTable.length - EXERCISE_TABLE_FOLD;
 
   // One meaning per colour: chartreuse marks the CURRENT week and the live
   // selection, teal is the second measure, and a change is signed text tinted by
@@ -193,7 +202,7 @@ export default function AuroraTrends({ top, unified = false }: {
               <Col k="topWeight" label={t("w.analyze.trends.colHeaviest")} style={{ width: 78, textAlign: "right" }} />
               <Col k="change" label={t("w.analyze.trends.colChange")} style={{ width: 62, textAlign: "right" }} />
             </View>
-            {sortedTable.map((r) => (
+            {shownRows.map((r) => (
               <Pressable
                 key={r.name}
                 onPress={() => router.push({ pathname: "/exercise", params: { name: r.name } })}
@@ -213,6 +222,27 @@ export default function AuroraTrends({ top, unified = false }: {
                 </Text>
               </Pressable>
             ))}
+            {/* The list's END CONTROL — an EXPANDER, so it wears the expander
+                grammar (endurance-lanes' All-sports control): chromeless, a
+                BARE ＋/− with no ring (the ring promises a screen; this only
+                grows the list in place), and an ash count naming exactly how
+                many rows are folded — a cap is never silent. Mirrors web. */}
+            {folded > 0 && (
+              <Pressable
+                onPress={() => setAllRows((v) => !v)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: allRows }}
+                style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 10, paddingBottom: 13, borderTopWidth: 1, borderTopColor: C.line }}
+              >
+                <View style={{ width: 32, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 18, color: C.ash }}>{allRows ? "−" : "＋"}</Text>
+                </View>
+                <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
+                  {allRows ? t("w.analyze.trends.fewerRows") : t("w.analyze.trends.allRows")}
+                </Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{allRows ? "−" : "+"}{folded}</Text>
+              </Pressable>
+            )}
           </View>
         </ACard>
       )}

@@ -2,7 +2,7 @@
 
 import { createElement, useMemo, useState, type CSSProperties } from "react";
 import {
-  weeklyVolumeTrend, exerciseTable, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
+  weeklyVolumeTrend, exerciseTable, EXERCISE_TABLE_FOLD, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
   volumeTrendReading, scrubPosition,
   type LoggedSession, type ExercisePeriod, type TrendDir, type ExerciseTableRow, type WeekVolume,
 } from "@hybrid/core";
@@ -53,8 +53,15 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
   unified?: boolean;
 }) {
   const { t } = useLang();
-  const [period, setPeriod] = useState<ExercisePeriod>("all");
+  // The DEFAULT window is bounded (audit/10 T9): "all" ran one per-exercise
+  // dashboard pass over full history for every movement ever logged, on mount,
+  // to show a table most visits never scroll to the bottom of. Eight weeks
+  // matches the two measure bands above it; "all" stays one tap away.
+  const [period, setPeriod] = useState<ExercisePeriod>("8w");
   const [sort, setSort] = useState<{ k: keyof ExerciseTableRow; dir: 1 | -1 }>({ k: "volume", dir: -1 });
+  // The table wears EXERCISE_TABLE_FOLD rows until the athlete asks for all of
+  // them — the fold is the engine's constant, so both clients fold at one depth.
+  const [allRows, setAllRows] = useState(false);
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume, units = prefs.units;
   const bw = useBodyweightLookup();
@@ -70,6 +77,8 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
     return arr;
   }, [table, sort]);
   const sortBy = (k: keyof ExerciseTableRow) => setSort((s) => (s.k === k ? { k, dir: (s.dir * -1) as 1 | -1 } : { k, dir: k === "name" ? 1 : -1 }));
+  const shownRows = allRows ? sortedTable : sortedTable.slice(0, EXERCISE_TABLE_FOLD);
+  const folded = sortedTable.length - EXERCISE_TABLE_FOLD;
 
   // One meaning per colour: chartreuse marks the CURRENT week and the live
   // selection, teal is the second measure, and a change is signed text tinted by
@@ -206,7 +215,7 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
             <Col k="topWeight" label={t("w.analyze.trends.colHeaviest")} style={{ textAlign: "right" }} />
             <Col k="change" label={t("w.analyze.trends.colChange")} style={{ textAlign: "right" }} />
           </div>
-          {sortedTable.map((r) => (
+          {shownRows.map((r) => (
             <button
               type="button"
               className="pressable"
@@ -228,6 +237,26 @@ export default function AuroraTrends({ sessions, onOpenExercise, unified = false
               </span>
             </button>
           ))}
+          {/* The list's END CONTROL — an EXPANDER, so it wears the expander
+              grammar (endurance-lanes' All-sports control): chromeless, a BARE
+              ＋/− with no ring (the ring promises a screen; this only grows the
+              list in place), and an ash count naming exactly how many rows are
+              folded — a cap is never silent. Mirrors mobile. */}
+          {folded > 0 && (
+            <button
+              type="button"
+              className="pressable"
+              aria-expanded={allRows}
+              onClick={() => setAllRows((v) => !v)}
+              style={{ display: "flex", width: "100%", alignItems: "center", gap: 12, padding: "10px 0 13px", background: "none", border: "none", borderTop: `1px solid ${C("line")}`, cursor: "pointer", textAlign: "left", color: C("chalk") }}
+            >
+              <span style={{ width: 32, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: C("ash"), flex: "0 0 32px" }} aria-hidden>{allRows ? "−" : "＋"}</span>
+              <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg }}>
+                {allRows ? t("w.analyze.trends.fewerRows") : t("w.analyze.trends.allRows")}
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: C("ash"), fontVariantNumeric: "tabular-nums" }}>{allRows ? "−" : "+"}{folded}</span>
+            </button>
+          )}
         </div>
       </div>
     </div>,
