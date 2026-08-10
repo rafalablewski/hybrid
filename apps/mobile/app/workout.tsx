@@ -125,7 +125,7 @@ import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER } from "../components/aurora/kit";
-import { GlassNavButton, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
+import { GlassMenuButton, GlassNavButton, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
@@ -1047,17 +1047,30 @@ export default function Workout() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: 0.9 }}>{paused ? t("workout.paused") : t("workout.elapsed")}</Text>
         </View>
         {/* Finish keeps the right edge it has always had; the ⋯ beside it is the
-            way in to everything that must NOT be one tap. */}
+            way in to everything that must NOT be one tap. On iOS 26 the ⋯ is
+            the SYSTEM menu (the same glass Menu leaf the feed wears) — the
+            discard still lands in its confirm sheet after; elsewhere it stays
+            the options Sheet. */}
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
-          <Pressable
-            onPress={() => setMenuOpen(true)}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel={t("workout.moreOptions")}
-            style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}
-          >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
-          </Pressable>
+          {LIQUID_GLASS_RENDERED ? (
+            <GlassMenuButton
+              items={[{ key: "discard", label: t("workout.discardSession"), destructive: true }]}
+              onSelect={() => discard()}
+              label={t("workout.moreOptions")}
+              glyphColor={C.ash}
+              size={32}
+            />
+          ) : (
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t("workout.moreOptions")}
+              style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
+            </Pressable>
+          )}
           <Pressable onPress={finish} disabled={saving} hitSlop={10}>
             <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: saving ? C.ash : txt(C, C.lime) }}>
               {saving ? "…" : t("workout.finish")}

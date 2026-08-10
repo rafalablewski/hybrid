@@ -1401,7 +1401,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
    *  trailing slot. See reference/hero-system.md. */
   const screenHead = (title: ReactNode, onBack: () => void, opts?: { icon?: "x" | "back"; right?: ReactNode }) => (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, height: HERO.rail.height, marginBottom: HERO.rail.bottom }}>
-      <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} material="clear" />
+      {/* Glass, like every other nav circle — the bare `clear` glyph this head
+          used to draw was retired with core's clear state (hero.ts §7). */}
+      <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} />
       <View style={{ flex: 1, alignItems: "center" }}>
         {typeof title === "string" ? (
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: C.chalk }}>{title}</Text>
