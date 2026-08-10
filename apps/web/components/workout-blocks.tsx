@@ -657,13 +657,14 @@ export default function WorkoutBlocks({
                               })}
                             </div>
                           )}
-                          {/* Primary action — a proper, sized Log button (the old
-                              floating + is retired). Full-width, banks the set and
-                              starts the rest timer. The screen's one lime fill in
-                              the logging loop. */}
-                          <button className="pressable" onClick={() => onToggleDone?.(b.uid, i, true)} title={t("workout.logSet")} aria-label={t("workout.logSet")} style={{ ...disp, marginTop: 16, width: "100%", borderRadius: 16, background: LIME, color: "var(--color-ink)", fontSize: fs.subtitle, fontWeight: 800, letterSpacing: "-.01em", padding: "16px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, border: "none", cursor: "pointer", boxShadow: "0 10px 24px -14px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.35)" }}>
-                            <span style={{ fontSize: 17, lineHeight: 0, fontWeight: 900 }}>✓</span> {t("workout.logSet")}
-                          </button>
+                          {/* NO Log button here. The live logger's primary is
+                              DOCKED at the bottom of the screen now — pinned,
+                              56px tall, flanked by the pause and finish
+                              satellites — so a second one inside the card
+                              would be two primaries competing, and the one in
+                              the card is the one that travels down the page as
+                              the session grows. The dock reads the same shared
+                              `nextSetCursor` this card does. */}
                         </div>
                         </SwipeRow>
                       );
@@ -890,13 +891,27 @@ export default function WorkoutBlocks({
                   // another lime fill (de-greened; the Log CTA keeps lime).
                   const ghost = live && addSetIsNext(b.sets as { done?: boolean }[]);
                   return (
+                    live ? (
+                      /* It GROWS the list in place, so per the kit's grammar it
+                         is a BARE plus with no chrome at all. It used to be a
+                         RINGED plus inside a filled, bordered, rounded box at
+                         the end of a list — which is the mark for something
+                         that LEAVES. Mobile made the same move. */
+                      <button className="pressable"
+                        onClick={() => addSet(b.uid)}
+                        style={{ ...disp, display: "inline-flex", alignItems: "center", gap: 9, fontWeight: 700, fontSize: fs.body, color: ghost ? txt(CHALK) : txt(ASH), background: "transparent", border: "none", padding: "12px 2px", cursor: "pointer" }}
+                      >
+                        <span style={{ ...mono, fontSize: 16, lineHeight: 1 }}>＋</span>
+                        {t("w.train.blocks.addSet")}
+                      </button>
+                    ) : (
                     <div style={{ flex: 1, display: "flex", alignItems: "stretch", borderRadius: 16, overflow: "hidden", background: INK2, border: `1px solid ${ghost ? `${CHALK}59` : LINE}` }}>
                       <button className="pressable"
                         onClick={() => addSet(b.uid)}
                         style={{ ...disp, flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontWeight: 700, fontSize: fs.caption, color: txt(CHALK), background: "transparent", border: "none", padding: "12px 16px", cursor: "pointer" }}
                       >
                         <span style={{ width: 20, height: 20, borderRadius: 999, border: `1.5px solid ${ghost ? CHALK : ASH}`, color: ghost ? txt(CHALK) : txt(ASH), display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 15, lineHeight: 0 }}>+</span>
-                        {t("w.train.blocks.addSet").replace(/^\+\s*/, "")}
+                        {t("w.train.blocks.addSet")}
                       </button>
                       <button className="pressable"
                         onClick={() => { setPlanUid((u) => (u === b.uid ? null : b.uid)); setSpecialUid(null); }}
@@ -907,6 +922,7 @@ export default function WorkoutBlocks({
                         ⋯
                       </button>
                     </div>
+                    )
                   );
                 })()}
                 {/* Special = glyph only (the ⚡). Opens the special-set menu. */}

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View, Animated, StyleSheet } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import {
   useFonts,
   Archivo_400Regular,
@@ -205,7 +205,15 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <SafeAreaProvider>
+      {/* SEEDED with the window's metrics at launch. Without this the provider
+          starts every consumer at a ZERO inset and only corrects after its own
+          view lays out — and a screen presented as a native `fullScreenModal`
+          (the logger, and every other cover) lives in its own view controller,
+          outside that measurement, so it can keep the zero. That is how the
+          live logger came to draw its clock and its Finish across the status
+          bar. `initialWindowMetrics` is synchronous and correct from the first
+          frame, which is the only frame a cover gets. */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <QueryProvider>
           <ThemeProvider>
             <TemplateProvider>

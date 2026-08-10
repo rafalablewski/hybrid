@@ -243,7 +243,7 @@
 <div class="wrap">
 
   <header class="top">
-    <div class="label">HYBRID – mobile logger – audit &amp; redesign – 10 Aug 2026</div>
+    <div class="label">HYBRID – mobile logger – audit, redesign, shipped – 10 Aug 2026</div>
     <h1>The empty session.</h1>
     <p class="sub">
       One exercise on the board, no sets banked, five seconds on the clock. This is the
@@ -258,6 +258,7 @@
       <div><span class="label">State captured</span><span class="v">source=empty, 1 strength exercise (Pull-Up), 0 sets banked, 0:05 elapsed</span></div>
       <div><span class="label">Also affects</span><span class="v"><code>apps/web/components/aurora/logger.tsx</code> – the same loop, same grammar debts</span></div>
       <div><span class="label">Verdict</span><span class="v">5 real defects, 7 grammar violations against our own rules, 1 ergonomic inversion</span></div>
+      <div><span class="label">Status</span><span class="v">Built on both clients. Core 3,180 tests green, iOS bundle exports, two capability entries recorded.</span></div>
     </div>
 
     <div class="metrics">
@@ -669,7 +670,7 @@
           </div>
         </div>
         <ul class="notes" style="margin-top: 18px;">
-          <li><span class="mark ok">&check;</span><span>Armed, the symbol fills and takes the blue it already uses in the rest banner. Off, it is ash. State is in the mark, not in a word.</span></li>
+          <li><span class="mark ok">&check;</span><span>Armed, the symbol takes the blue it already uses in the rest banner. Off, it is ash. <b>As built:</b> SF Symbols 7 has no <code>timer.slash</code>, and two different drawings for one control would read as two controls — so it stays one <code>timer</code> mark and carries its state in colour plus an accessibility label naming the value, rather than in a second glyph.</span></li>
           <li><span class="mark ok">&check;</span><span>While a rest is running the same slot counts down, so the capsule is a clock when there is a clock to show and a switch the rest of the time.</span></li>
           <li><span class="mark ok">&check;</span><span>Long-press it, or open the <span class="mono">&ctdot;</span> beside it, for the durations — the existing <code>GlassSelectMenu</code>, unchanged.</span></li>
         </ul>
@@ -1017,7 +1018,7 @@
       <li><span>Fix the plural, and drop the literal <code>+</code> from both add strings in all three languages.</span><span class="where">core/i18n.ts</span></li>
       <li><span>Default <code>SwipeRow</code>'s content layer to transparent — the card-inside-a-card goes away.</span><span class="where">swipe-row.tsx</span></li>
       <li><span>Build <code>GlassToolbarGroup</code> — the Apple Music capsule: a <code>GlassEffectContainer</code> holding the rest-timer <code>Button</code> and the <code>Menu</code>, with the RN chip pair as the floor.</span><span class="where">swiftui.tsx</span></li>
-      <li><span>Pin that capsule in the header and delete the meta row — the timer becomes a one-tap arm/disarm that never scrolls away, RPE help and discard go inside the menu.</span><span class="where">workout.tsx<br>logger.tsx</span></li>
+      <li><span>Pin that capsule in the header and delete the meta row — the timer becomes a one-tap arm/disarm that never scrolls away, RPE help and discard go inside the menu. <b>Shipped, with one gap:</b> web's <i>What's RPE?</i> still lives in the block editor's add-block row, because that component owns the modal; mobile has it in the menu.</span><span class="where">workout.tsx<br>logger.tsx</span></li>
       <li><span>Dock the cluster: a 56pt <i>Log set</i> between two 44pt glass circles. Delete the header <i>Finish</i> and the bottom lime one — there is now exactly one of each.</span><span class="where">both clients</span></li>
       <li><span>Finish confirms in the dock, in place, naming what is still queued — no sheet, no alert.</span><span class="where">both clients</span></li>
       <li><span>Build <code>GlassSatellite</code> (circle or capsule, optional label) and point Pause, Finish, the confirm's ghost pill and the finish screen's orbs at it.</span><span class="where">swiftui.tsx</span></li>

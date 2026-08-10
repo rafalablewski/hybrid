@@ -43,10 +43,17 @@ import {
   toggleSuperset,
   isSupersettedWithPrev,
   setType,
-  cycleSetType,
+  setTypeTo as setTypeToSet,
+  type SetType,
+  type StrengthBlock,
   setTypeBadge,
   setFocus,
   addSetIsNext,
+  activeSetIndex,
+  nextSetCursor,
+  queuedSetCount,
+  setIsLoggable,
+  exerciseCountKey,
   moveItemTo,
   warmupRamp,
   defaultSessionTitle,
@@ -129,10 +136,12 @@ import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE 
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
+import type { AuroraIconName } from "@hybrid/core";
 import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER } from "../components/aurora/kit";
-import { GlassMenuButton, GlassNavButton, GlassSelectMenu, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
+import { GlassNavButton, GlassSatellite, GlassSelectMenu, GlassSurface, GlassToolbarGroup, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED, type SFSymbol } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
 // helpers let the live logger pick up the new look without duplicating its
@@ -164,6 +173,35 @@ type WSet = { uid: string; reps: string; load: string; rpe: string; vel?: string
 // Default rest the countdown targets before you pick a preset — so a new user
 // always sees a counting-down timer (not a stopwatch climbing with no end).
 const DEFAULT_REST = 90;
+
+/** The rest durations, in one place: the capsule's inline picker and the rest
+ *  banner's preset row are the same four numbers and must not drift. */
+const REST_PRESETS = [60, 90, 120, 180] as const;
+/** "What kind of set" — the picker section, then the rows that follow it.
+ *  One question, one menu: these three tables replaced a ＋ that cycled, a ⚡
+ *  tile and a ⋯ zone. */
+const SET_TYPE_OPTIONS: { id: SetType; k: string }[] = [
+  { id: "working", k: "workout.setTypeWorking" },
+  { id: "warmup", k: "workout.warmupSetTitle" },
+  { id: "drop", k: "workout.dropSetTitle" },
+  { id: "cooldown", k: "workout.cooldownSetTitle" },
+];
+const SET_SCHEMES = [
+  { key: "3x3", sets: 3, reps: 3, k: "workout.schemeHeavy" },
+  { key: "5x5", sets: 5, reps: 5, k: "workout.schemeStrength" },
+  { key: "3x12", sets: 3, reps: 12, k: "workout.schemeHypertrophy" },
+  { key: "4x8", sets: 4, reps: 8, k: "workout.schemeVolume" },
+  { key: "10x10", sets: 10, reps: 10, k: "workout.schemeGvt" },
+] as const;
+const SET_EXTRAS: { key: string; k: string }[] = [
+  { key: "ramp", k: "workout.warmupRampTitle" },
+  ...SET_SCHEMES.map((p) => ({ key: p.key, k: p.k })),
+];
+
+const REST_OPTIONS: { id: string; label: string }[] = [
+  { id: "off", label: "Off" },
+  ...REST_PRESETS.map((s) => ({ id: String(s), label: s < 120 ? `${s} s` : `${s / 60} min` })),
+];
 // Sources that are always a deliberate fresh start (so we can show the get-ready
 // count-in from the first frame). An empty source may instead resume a draft.
 const FRESH_SOURCES = new Set(["new", "ai", "last", "template", "plan", "plan-day", "sport"]);
@@ -211,6 +249,24 @@ const newExercise = (name: string, kind: WKind = inferBlockKind(name)): WExercis
   zone: "",
 });
 
+
+/**
+ * Carry a lift's last session forward as its opening queue.
+ *
+ * Only the WORKING sets, and only their numbers — the previous session's
+ * warm-up ramp is not this session's plan, and nothing is marked done. If the
+ * lift is new, or last time was a single empty set, the exercise arrives as it
+ * always did: one blank set to type into.
+ */
+const seedFromLast = (x: WExercise, last?: StrengthBlock): WExercise => {
+  if (x.kind !== "strength" || !last) return x;
+  const carried = last.sets.filter((s) => setType(s) === "working" && (s.reps || s.load));
+  if (!carried.length) return x;
+  return {
+    ...x,
+    sets: carried.map((s) => ({ uid: uid(), load: s.load ?? "", reps: s.reps ?? "", rpe: "", done: false })),
+  };
+};
 
 type Summ = {
   /** The saved session's id (null for guests / offline) — backs the rename. */
@@ -272,17 +328,21 @@ export default function Workout() {
   // Auto-titled — no name input while logging; a name is only entered on the
   // summary (Save as routine, or the optional rename). Seeded by source below.
   const [title, setTitle] = useState(() => defaultSessionTitle());
-  // Which exercise has its "Special ▾" add-set menu open (warm-up / ramp /
-  // cool-down / drop). One primary "+ Add set" keeps the common path one tap.
+  // Which exercise has its SET-OPTIONS panel open — the RN floor for the one
+  // menu that answers "what kind of set": the type, the warm-up/ramp/cool-down/
+  // drop rows, and the rep schemes. It replaced a ＋ that cycled, a ⚡ tile and
+  // a ⋯ zone, and absorbed the standalone preset rail with them.
   const [specialUid, setSpecialUid] = useState<string | null>(null);
-  // Popular-preset rail: which exercise has its preset rail open. One tap lays
-  // out the whole exercise before the first rep instead of "+ Add set" one-by-one.
-  const [planUid, setPlanUid] = useState<string | null>(null);
   // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
   // exercise (only one set is active per exercise, so keying by uid is enough).
   const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
   // Which exercise has its detail sheet up (per-set bar speed + live summary).
   const [sheetUid, setSheetUid] = useState<string | null>(null);
+  // Finish, tapped: the dock swaps to a confirm IN PLACE rather than throwing a
+  // sheet. It is what buys back the word the glass satellite doesn't carry —
+  // the label lives in the moment it is read, instead of taxing the primary's
+  // width for the whole session.
+  const [confirmFinish, setConfirmFinish] = useState(false);
   // Refs to the active set's load/reps inputs (keyed `${uid}:load|reps`) so
   // tapping the unit label focuses the field — the RN twin of a web <label for>.
   const inputRefs = useRef<Record<string, TextInput | null>>({});
@@ -643,7 +703,13 @@ export default function Workout() {
     const clean = name.trim();
     if (!clean) return;
     animateListChange(reducedMotion);
-    setExercises((xs) => [...xs, newExercise(clean, kind)]);
+    // SEEDED FROM LAST TIME. A lift you have done before arrives with its last
+    // session's sets already queued and their numbers filled IN — chalk, not a
+    // grey placeholder zero — so logging set one is a single tap instead of a
+    // tap, a keyboard, a number and a dismissal. The default is the answer;
+    // it is also, unlike a 0, a true statement about your training.
+    const last = lastByLift.get(clean);
+    setExercises((xs) => [...xs, seedFromLast(newExercise(clean, kind), last)]);
     setPickerOpen(false);
   };
   const removeExercise = (u: string) => {
@@ -738,11 +804,23 @@ export default function Workout() {
         return { ...x, sets: [...rampSets, ...x.sets] };
       }),
     );
-  // Tap the set badge to cycle its type: working → warm-up → cool-down → drop.
-  const cycleType = (u: string, i: number) =>
+  // The set's type, CHOSEN rather than cycled — the control behind it is a
+  // picker now, so tapping four times to reach the fourth state is over.
+  const setTypeTo = (u: string, i: number, type: SetType) =>
     setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? cycleSetType(s) : s)) } : x)),
+      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? setTypeToSet(s, type) : s)) } : x)),
     );
+  // The rest of "what kind of set" — the rows that follow the type picker in
+  // the same menu, so warm-ups, ramps, drops and the rep schemes are all
+  // answers to one question in one place instead of a ⚡ tile and a ⋯ zone.
+  const runSetExtra = (u: string, key: string) => {
+    if (key === "warmup") return addWarmupSet(u);
+    if (key === "ramp") return addWarmupRamp(u);
+    if (key === "cooldown") return addCooldownSet(u);
+    if (key === "drop") return addDropSet(u);
+    const scheme = SET_SCHEMES.find((p) => p.key === key);
+    if (scheme) applyPreset(u, scheme.sets, scheme.reps);
+  };
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
@@ -1031,6 +1109,46 @@ export default function Workout() {
 
   const ssLabels = supersetLabels(exercises);
 
+  // ── THE DOCK ────────────────────────────────────────────────────────────
+  // The primary used to live inside each set, so it never had to be told which
+  // set it meant. One button at the bottom of the screen does: the shared
+  // cursor resolves the session's ONE active set, and everything the dock says
+  // — the label, the count, what happens after — reads off it.
+  const cursor = nextSetCursor(exercises.map((x) => ({ sets: x.kind === "strength" ? x.sets : undefined })));
+  const cursorEx = cursor ? exercises[cursor.index] : undefined;
+  const cursorName = cursorEx?.name ?? exercises[0]?.name ?? "";
+  const cursorSet = cursorEx?.kind === "strength" ? cursorEx.sets[cursor!.setIndex] : undefined;
+  const cursorTotal = cursorEx?.kind === "strength" ? cursorEx.sets.length : 0;
+  const canLog = !!cursorSet && setIsLoggable(cursorSet);
+  const queued = queuedSetCount(exercises.map((x) => ({ sets: x.kind === "strength" ? x.sets : undefined })));
+  const insets = useSafeAreaInsets();
+  // The dock sits ON the bottom edge, so the home-indicator inset is the FLOOR
+  // of its pad, never an addition to it — the same arithmetic a sheet uses.
+  const dockPad = Math.max(insets.bottom, 12);
+
+  // The rest timer's readout: the live countdown while one is running, the
+  // armed duration otherwise. One piece of state, and the capsule is a clock
+  // when there is a clock to show and a switch the rest of the time.
+  const restLeft = restSince != null && restTarget != null ? restTarget - restNow : null;
+  const restReadout =
+    restLeft != null ? (restLeft > 0 ? mmss(restLeft) : `+${mmss(-restLeft)}`) : mmss(prefs.restSeconds);
+  const toggleRestArmed = () => {
+    const next = !prefs.restTimer;
+    haptic.light();
+    setLoggerPref("restTimer", next);
+    if (!next) setRestSince(null);
+  };
+  const pickRestPref = (v: string) => {
+    if (v === "off") { setLoggerPref("restTimer", false); setRestSince(null); return; }
+    setLoggerPref("restTimer", true);
+    setLoggerPref("restSeconds", Number(v));
+  };
+  // Bank the session's active set — what the docked primary does.
+  const logActiveSet = () => {
+    if (!cursor || !cursorEx || !canLog) return;
+    toggleDone(cursorEx.uid, cursor.setIndex, true);
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
       {/* Aurora's ambient blob field behind the logger — the live screen owns its
@@ -1078,40 +1196,74 @@ export default function Workout() {
             </Pressable>
           )}
         </View>
+        {/* WHERE YOU ARE, then how long you have been there. The clock used to
+            be the largest type on the screen — 22pt black, centred — which is
+            the wrong claim: the set is the content, the clock is context. It
+            reads small and mono now, and goes amber when held. */}
         <View style={{ alignItems: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: paused ? txt(C, C.amber) : C.chalk, letterSpacing: 0.9 }}>{mmss(elapsed)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: 0.9 }}>{paused ? t("workout.paused") : t("workout.elapsed")}</Text>
+          {cursorName ? (
+            <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, maxWidth: 160 }}>{cursorName}</Text>
+          ) : null}
+          <Text style={{ fontFamily: F.mono, fontSize: cursorName ? fs.micro : fs.body, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: 1.4 }}>
+            {mmss(elapsed)}{paused ? ` – ${t("workout.paused").toUpperCase()}` : ""}
+          </Text>
         </View>
-        {/* Finish keeps the right edge it has always had; the ⋯ beside it is the
-            way in to everything that must NOT be one tap. On iOS 26 the ⋯ is
-            the SYSTEM menu (the same glass Menu leaf the feed wears) — the
-            discard still lands in its confirm sheet after; elsewhere it stays
-            the options Sheet. */}
-        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+        {/* THE TOOLBAR CAPSULE — the rest timer and the way in to everything
+            that must not be one tap, fused into one lozenge of glass. The
+            timer keeps its own tap because you arm it mid-workout; its
+            DURATION is a preference, so it sits one level in, in the menu
+            beside it. Finish is not here any more: it lives in the dock with
+            Pause, where the thumb is. */}
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
           {LIQUID_GLASS_RENDERED ? (
-            <GlassMenuButton
-              items={[{ key: "discard", label: t("workout.discardSession"), destructive: true }]}
-              onSelect={() => discard()}
-              label={t("workout.moreOptions")}
+            <GlassToolbarGroup
+              // ONE mark, `timer` — SF Symbols 7 has no `timer.slash`, and two
+              // different drawings for one control would read as two controls.
+              // The state is carried by colour and, for anyone not reading
+              // colour, by the accessibility label naming the value.
+              toggleGlyph="timer"
+              toggleReadout={prefs.restTimer ? restReadout : undefined}
+              toggleColor={prefs.restTimer ? txt(C, C.blue) : C.ash}
+              toggleLabel={`${t("workout.armRest")} – ${prefs.restTimer ? restReadout : t("common.off")}`}
+              onToggle={toggleRestArmed}
+              menuLabel={t("workout.sessionOptions")}
+              options={REST_OPTIONS.map((o) => ({ id: o.id, label: o.id === "off" ? t("common.off") : o.label }))}
+              value={prefs.restTimer ? String(prefs.restSeconds) : "off"}
+              onPick={pickRestPref}
+              actions={[
+                { key: "rpe", label: t("w.train.blocks.whatsRpe") },
+                { key: "discard", label: t("workout.discardSession"), destructive: true },
+              ]}
+              onAction={(k) => (k === "rpe" ? setRpeHelp(true) : discard())}
               glyphColor={C.ash}
-              size={32}
+              fontFamily={F.mono}
             />
           ) : (
-            <Pressable
-              onPress={() => setMenuOpen(true)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={t("workout.moreOptions")}
-              style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
-            </Pressable>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 2, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.chalk, 0.05), padding: 3 }}>
+              <Pressable
+                onPress={toggleRestArmed}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityState={{ selected: prefs.restTimer }}
+                accessibilityLabel={`${t("workout.armRest")} – ${prefs.restTimer ? restReadout : t("common.off")}`}
+                style={{ flexDirection: "row", alignItems: "center", gap: 5, height: 28, paddingHorizontal: 10, borderRadius: 999 }}
+              >
+                <AuroraIcon name="stopwatch" size={13} color={prefs.restTimer ? txt(C, C.blue) : C.ash} />
+                {prefs.restTimer ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>{restReadout}</Text>
+                ) : null}
+              </Pressable>
+              <Pressable
+                onPress={() => setMenuOpen(true)}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={t("workout.sessionOptions")}
+                style={{ height: 28, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", borderRadius: 999 }}
+              >
+                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
+              </Pressable>
+            </View>
           )}
-          <Pressable onPress={finish} disabled={saving} hitSlop={10}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: saving ? C.ash : txt(C, C.lime) }}>
-              {saving ? "…" : t("workout.finish")}
-            </Text>
-          </Pressable>
         </View>
       </View>
 
@@ -1122,59 +1274,18 @@ export default function Workout() {
           is the mobile half of that parity. */}
       <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         {/* No session-title input — the workout auto-titles itself; a name is
-            only entered on the summary (Save as routine / optional rename). */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 16 }}>
-          <Mono style={{ flex: 1 }}>
-            {exercises.length
-              ? `${exercises.length} ${t("workout.exercises")} – ${t("workout.tapAsYouGo")}`
-              : t("workout.firstExercise")}
-          </Mono>
-          {/* On-demand rest-timer control — same persisted pref as Logger
-              settings, so a change mid-workout sticks for next time too. On
-              iOS 26 the chip IS a system menu: the presets and Off as an
-              inline picker, checkmark on the one in force. Elsewhere it stays
-              the toggle chip (the presets live in the rest banner). */}
-          {LIQUID_GLASS_RENDERED ? (
-            <GlassSelectMenu
-              label={`⏱ ${prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}`}
-              fontFamily={F.mono}
-              fontSize={fs.caption}
-              labelColor={prefs.restTimer ? txt(C, C.blue) : C.ash}
-              a11yLabel={t("loggerPrefs.restTimer")}
-              options={[
-                { id: "off", label: t("common.off") },
-                { id: "60", label: "60 s" },
-                { id: "90", label: "90 s" },
-                { id: "120", label: "2 min" },
-                { id: "180", label: "3 min" },
-              ]}
-              value={prefs.restTimer ? String(prefs.restSeconds) : "off"}
-              onPick={(v) => {
-                if (v === "off") { setLoggerPref("restTimer", false); setRestSince(null); return; }
-                setLoggerPref("restTimer", true);
-                setLoggerPref("restSeconds", Number(v));
-              }}
-            />
-          ) : (
-            <Pressable
-              onPress={() => {
-                const next = !prefs.restTimer;
-                setLoggerPref("restTimer", next);
-                if (!next) setRestSince(null);
-              }}
-              hitSlop={8}
-              accessibilityLabel={t("loggerPrefs.restTimer")}
-              style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: prefs.restTimer ? C.blue : C.line }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: prefs.restTimer ? txt(C, C.blue) : C.ash }}>
-                ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
-              </Text>
-            </Pressable>
-          )}
-          <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("w.train.blocks.whatsRpe")}</Text>
-          </Pressable>
-        </View>
+            only entered on the summary (Save as routine / optional rename).
+
+            The meta row that used to sit here — an exercise count, a permanent
+            "tap ✓ as you go", the rest-timer chip and a standing "What's RPE?"
+            link — is gone. The count restated the cards below it, the
+            instruction is what the dismissible tip card is for, and the two
+            controls moved into the header capsule where they cannot scroll
+            away mid-workout. What is left is the one line that is genuinely a
+            state: no exercises yet. */}
+        {exercises.length === 0 && (
+          <Mono style={{ marginBottom: 16 }}>{t("workout.firstExercise")}</Mono>
+        )}
 
         {/* Live in-session scoreboard — appears once the first set is logged. */}
         {live.sets > 0 && (
@@ -1294,7 +1405,12 @@ export default function Workout() {
                   gear it takes (via the drawing), and becomes the hand-drawn
                   demo once that lift is drawn. */}
               <View accessibilityRole="image" accessibilityLabel={x.kind}>
-                <AuroraExerciseMedia name={x.name} variant="thumb" size={20} tint={x.kind === "strength" ? txt(C, C.lime) : x.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet)} />
+                {/* Ash, not the modality tint. On a LIST that mixes kinds the
+                    tint is doing real work; here every card is the exercise
+                    you are doing and the fields below already say which kind
+                    it is — so it was just spending the accent. Chartreuse now
+                    appears once on this screen, on Log set. */}
+                <AuroraExerciseMedia name={x.name} variant="thumb" size={20} tint={C.ash} />
               </View>
               {ssLabels[xi] && (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
@@ -1376,7 +1492,7 @@ export default function Workout() {
                         onLayout={setDrag.onRowLayout(x.uid, i)}
                         style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
                       >
-                      <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, i)}>
+                      <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, i)} background="transparent">
                         {focus === "active" ? (
                           // FLAT active section — no inner card (the exercise card
                           // is the one surface): the set you're on reads as focus
@@ -1415,13 +1531,43 @@ export default function Workout() {
                                     </Pressable>
                                   );
                                 })()}
-                                <Pressable
-                                  onPress={() => cycleType(x.uid, i)}
-                                  hitSlop={8}
-                                  style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.field, borderWidth: typeAccent ? 1 : 0, borderColor: typeAccent ?? "transparent", backgroundColor: typeAccent ? `${typeAccent}1f` : "transparent" }}
-                                >
-                                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{typeAccent ? setTypeBadge(s, i) : "＋"}</Text>
-                                </Pressable>
+                                {/* WHAT KIND OF SET — one control, one question.
+                                    It used to be three: a bare ＋ here that
+                                    CYCLED the type (a bare plus means "grows in
+                                    place" everywhere else in the kit), a ⚡ tile
+                                    for warm-up / ramp / cool-down / drop, and a
+                                    ⋯ zone for the rep schemes. On iOS 26 it is
+                                    the system menu — the type as an inline
+                                    picker with a checkmark on the one in force,
+                                    then the rest as action rows; elsewhere it
+                                    opens the one RN panel below. */}
+                                {LIQUID_GLASS_RENDERED ? (
+                                  <GlassSelectMenu
+                                    label={typeAccent ? setTypeBadge(s, i) : t("workout.setTypeWorking").toUpperCase()}
+                                    fontFamily={F.mono}
+                                    fontSize={10}
+                                    labelColor={typeAccent ? txt(C, typeAccent) : C.ash}
+                                    a11yLabel={t("workout.setOptions")}
+                                    options={SET_TYPE_OPTIONS.map((o) => ({ id: o.id, label: t(o.k) }))}
+                                    value={st}
+                                    onPick={(v) => setTypeTo(x.uid, i, v)}
+                                    extras={SET_EXTRAS.map((e) => ({ key: e.key, label: t(e.k) }))}
+                                    onExtra={(k) => runSetExtra(x.uid, k)}
+                                  />
+                                ) : (
+                                  <Pressable
+                                    onPress={() => setSpecialUid((u) => (u === x.uid ? null : x.uid))}
+                                    hitSlop={8}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={t("workout.setOptions")}
+                                    style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.field, borderWidth: typeAccent ? 1 : 0, borderColor: typeAccent ?? "transparent", backgroundColor: typeAccent ? `${typeAccent}1f` : "transparent" }}
+                                  >
+                                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>
+                                      {typeAccent ? setTypeBadge(s, i) : t("workout.setTypeWorking").toUpperCase()}
+                                    </Text>
+                                    <AuroraIcon name="chevron-down" size={10} color={typeAccent ? txt(C, typeAccent) : C.ash} />
+                                  </Pressable>
+                                )}
                               </View>
                             </View>
                             {/* Numbers centred; weight & reps read at one size and
@@ -1485,17 +1631,7 @@ export default function Workout() {
                                 })}
                               </View>
                             )}
-                            {/* Primary action — a proper, sized Log button (the old
-                                floating ＋ is retired). Banks the set + starts rest.
-                                The screen's one lime fill in the logging loop. The
-                                BRAND pill, deliberately not a SwiftUI button: a
-                                full-width chartreuse CTA has no system counterpart —
-                                .glassProminent would restyle it, not nativize it. */}
-                            <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 16, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
-                              <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>
-                              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.logSet")}</Text>
-                            </Pressable>
-                          </View>
+                                                    </View>
                         ) : (() => {
                           // Banked / queued → quiet one-line row (tap a banked one
                           // to re-open it as the active card).
@@ -1520,97 +1656,65 @@ export default function Workout() {
                     );
                   });
                 })()}
-                {/* "+ Add set" is a split glass tile: the wide zone quick-adds one
-                    carry-over set (the incremental lifter's tap loop); the ⋯ zone
-                    opens the plan-ahead panel to queue several at once. "⚡ Special"
-                    holds warm-up / ramp / cool-down / drop. */}
-                <View style={{ flexDirection: "row", gap: space.sm, alignItems: "stretch", marginTop: 8 }}>
-                  {(() => {
-                    const ghost = addSetIsNext(x.sets);
-                    return (
-                      // "Next move" emphasis is a brighter hairline + bold text —
-                      // not another lime fill (de-greened; the Log CTA keeps lime).
-                      <View style={{ flexGrow: 1, flexDirection: "row", alignItems: "stretch", borderRadius: R.cta, overflow: "hidden", backgroundColor: C.ink2, borderWidth: 1, borderColor: ghost ? withAlpha(C.chalk, 0.35) : C.line }}>
-                        <Pressable onPress={() => addSet(x.uid)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 16 }}>
-                          <View style={{ width: 20, height: 20, borderRadius: 999, borderWidth: 1.5, borderColor: ghost ? C.chalk : C.ash, alignItems: "center", justifyContent: "center" }}>
-                            <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 16, color: ghost ? C.chalk : C.ash }}>＋</Text>
-                          </View>
-                          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("workout.addSet").replace(/^\+\s*/, "")}</Text>
-                        </Pressable>
-                        <Pressable onPress={() => { setPlanUid((u) => (u === x.uid ? null : x.uid)); setSpecialUid(null); }} accessibilityLabel={t("w.train.blocks.presetsTitle")} style={{ paddingHorizontal: 16, alignItems: "center", justifyContent: "center", borderLeftWidth: 1, borderLeftColor: ghost ? withAlpha(C.chalk, 0.25) : C.line }}>
-                          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
-                        </Pressable>
-                      </View>
-                    );
-                  })()}
-                  {/* Special = glyph only (the ⚡). Opens the special-set menu. */}
-                  <Pressable
-                    onPress={() => { setSpecialUid((u) => (u === x.uid ? null : x.uid)); setPlanUid(null); }}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("w.train.blocks.special")}
-                    style={{ width: 48, alignItems: "center", justifyContent: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.cta }}
-                  >
-                    <AuroraIcon name="bolt" size={18} color={txt(C, C.amber)} />
-                  </Pressable>
-                </View>
+                {/* ADD SET grows the list in place, so per the kit's grammar it
+                    is a BARE plus with no chrome at all — no ring, no fill, no
+                    border. It used to be a ringed plus inside a filled,
+                    bordered, rounded box at the end of a list, which is the
+                    mark for something that LEAVES, three rules at once. The
+                    split ⋯ zone and the ⚡ tile that sat beside it are gone
+                    too: schemes and special sets are answers to "what kind of
+                    set", which is one question and now one menu, on the set
+                    row itself. */}
+                <Pressable
+                  onPress={() => addSet(x.uid)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("workout.addSet")}
+                  hitSlop={8}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 2, marginTop: 2 }}
+                >
+                  <Text style={{ fontFamily: F.mono, fontSize: 16, lineHeight: 18, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>＋</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>{t("workout.addSet")}</Text>
+                </Pressable>
                 {/* Popular-preset rail — one tap lays out the whole exercise. A
                     single horizontal rail replaces the old nested grid + manual
                     planner; it bleeds to the card's edges (negative margin =
                     card gutter, matching inner padding) so cards slide under the
                     edge, matching the exercise-widget idiom. */}
-                {planUid === x.uid && (
-                  <View style={{ marginTop: 10 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("w.train.blocks.presetsTitle")}</Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={{ marginHorizontal: -space.lg }}
-                      contentContainerStyle={{ paddingHorizontal: space.lg, gap: 10 }}
-                    >
-                      {([
-                        { sets: 3, reps: 3, k: "workout.schemeHeavy" },
-                        { sets: 5, reps: 5, k: "workout.schemeStrength" },
-                        { sets: 3, reps: 12, k: "workout.schemeHypertrophy" },
-                        { sets: 4, reps: 8, k: "workout.schemeVolume" },
-                        { sets: 10, reps: 10, k: "workout.schemeGvt" },
-                      ] as const).map((p, pi) => (
-                        <Pressable
-                          key={p.k}
-                          onPress={() => { applyPreset(x.uid, p.sets, p.reps); setPlanUid(null); }}
-                          style={{ width: 116, paddingVertical: 16, paddingHorizontal: 16, borderRadius: 16, backgroundColor: C.card, borderWidth: 1, borderColor: pi === 0 ? withAlpha(C.chalk, 0.3) : C.line }}
-                        >
-                          <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -1, color: C.chalk }}>{p.sets}<Text style={{ fontFamily: F.reg, fontSize: 19, color: C.ash }}>×</Text>{p.reps}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 8 }}>{t(p.k)}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 10 }}>{p.sets * p.reps} {t("w.train.blocks.presetReps")}</Text>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-                {specialUid === x.uid && (
+                {/* THE SET-OPTIONS PANEL — the RN floor for what iOS gets as a
+                    system menu, and it carries the SAME rows in the same order:
+                    the type first (a selection, checkmarked), then everything
+                    that adds sets. It absorbed the separate preset rail, which
+                    is why there is no `planUid` any more. */}
+                {specialUid === x.uid && (() => {
+                  const ai = activeSetIndex(x.sets);
+                  const current = ai >= 0 ? setType(x.sets[ai]!) : "working";
+                  return (
                   <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, backgroundColor: C.ink2, overflow: "hidden" }}>
-                    {[
-                      { run: addWarmupSet, c: C.amber, badge: "W", label: t("workout.warmupSetTitle"), desc: t("workout.warmupSetDesc") },
-                      { run: addWarmupRamp, c: C.amber, badge: "↗", label: t("workout.warmupRampTitle"), desc: t("workout.warmupRampDesc") },
-                      { run: addCooldownSet, c: C.blue, badge: "C", label: t("workout.cooldownSetTitle"), desc: t("workout.cooldownSetDesc") },
-                      { run: addDropSet, c: C.ash, badge: "↓", label: t("workout.dropSetTitle"), desc: t("workout.dropSetDesc") },
-                    ].map((it, ii) => (
+                    {SET_TYPE_OPTIONS.map((o, ii) => (
                       <Pressable
-                        key={it.badge}
-                        onPress={() => { it.run(x.uid); setSpecialUid(null); }}
+                        key={o.id}
+                        onPress={() => { if (ai >= 0) setTypeTo(x.uid, ai, o.id); setSpecialUid(null); }}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: current === o.id }}
                         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
                       >
-                        <View style={{ width: 30, height: 30, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
-                          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, it.c) }}>{it.badge}</Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{it.label}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{it.desc}</Text>
-                        </View>
+                        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{t(o.k)}</Text>
+                        {current === o.id ? <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>✓</Text> : null}
+                      </Pressable>
+                    ))}
+                    {SET_EXTRAS.map((e) => (
+                      <Pressable
+                        key={e.key}
+                        onPress={() => { runSetExtra(x.uid, e.key); setSpecialUid(null); }}
+                        accessibilityRole="button"
+                        style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: C.line }}
+                      >
+                        <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t(e.k)}</Text>
                       </Pressable>
                     ))}
                   </View>
-                )}
+                  );
+                })()}
                 {/* Quick-increment + plate hint for the last set's load */}
                 {(prefs.quickIncrement > 0 || prefs.plateCalc) && (() => {
                   const last = x.sets[x.sets.length - 1];
@@ -1731,14 +1835,31 @@ export default function Workout() {
           );
         })}
 
-        {/* Field-styled trigger → searchable modal (matches the sport picker). */}
+        {/* ADD EXERCISE ends the exercise LIST, and it LEAVES — it opens the
+            searchable picker — so per the kit's grammar it is a DOOR ROW: the
+            list's own hairline, and a ringed chevron. It used to be a filled,
+            bordered field wearing a lime ⊕, a literal "+" inside its own
+            string (two plus signs on one control) and a ▾ that promised a
+            dropdown and opened a full-screen sheet. */}
         <Pressable
           onPress={() => setPickerOpen(true)}
-          style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel={t("workout.addExercise")}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: space.ms,
+            marginTop: exercises.length ? 4 : 0,
+            paddingVertical: 14,
+            paddingHorizontal: 2,
+            borderTopWidth: exercises.length ? 1 : 0,
+            borderTopColor: C.line,
+          }}
         >
-          <AuroraIcon name="add" size={18} color={txt(C, C.lime)} />
           <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t("workout.addExercise")}</Text>
-          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>▾</Text>
+          <View style={{ width: 32, height: 32, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(C.chalk, 0.06), borderWidth: 1, borderColor: withAlpha(C.chalk, 0.14) }}>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>›</Text>
+          </View>
         </Pressable>
 
         {/* Empty-state quick-starts (parity with the web logger): pull today's
@@ -1798,28 +1919,130 @@ export default function Workout() {
 
         {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={C.red} style={{ marginTop: 16, textAlign: "center" }}>{error}</Mono></View>}
 
-        {exercises.length > 0 && (
-          <View style={{ flexDirection: "row", gap: space.ms, marginTop: 16 }}>
-            {/* Pause/hold sits next to Finish — freeze the clock for a phone call,
-                a long queue for the rack, or a between-blocks breather. */}
-            <Pressable
-              onPress={togglePause}
-              style={{ paddingHorizontal: 16, borderRadius: R.cta, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: paused ? C.amber : C.line, backgroundColor: paused ? `${C.amber}1f` : "transparent" }}
-            >
-              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: paused ? txt(C, C.amber) : C.ash }}>
-                {paused ? `▶ ${t("workout.resume")}` : `❚❚ ${t("workout.pause")}`}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={finish}
-              disabled={saving}
-              style={{ flex: 1, backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", opacity: saving ? 0.6 : 1 }}
-            >
-              {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.train.logger.finishWorkout")}</Text>}
-            </Pressable>
-          </View>
-        )}
       </ScrollView>
+
+      {/* ── THE DOCK ─────────────────────────────────────────────────────────
+          One primary, pinned, whatever the session's length — the button an
+          athlete presses thirty times used to float in the middle of the
+          screen and move further down it with every exercise added, while the
+          brightest, largest, lowest control on the screen ENDED the workout.
+
+          Pause and Finish flank it as glass satellites: not peers of Log set,
+          and not drawn as peers — neither is chartreuse, both are 44pt against
+          the primary's 56. It is the same shape the finish summary already
+          uses (one filled pill, two glass orbs), because it is the same
+          sentence: one thing you do, two things you can do to the session. */}
+      {exercises.length > 0 && (
+        <View
+          style={{
+            paddingHorizontal: GUTTER,
+            paddingTop: 12,
+            paddingBottom: dockPad,
+            borderTopWidth: 1,
+            borderTopColor: C.line,
+            backgroundColor: withAlpha(C.ink2, 0.94),
+          }}
+        >
+          {confirmFinish ? (
+            /* FINISH, TAPPED — the confirm lands in the dock, in place, naming
+               what is still queued. This is what buys back the word the glass
+               satellite doesn't carry: the label lives in the moment it is
+               read rather than taxing the primary's width all session. */
+            <View accessibilityLiveRegion="polite">
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+                {queued === 0 ? t("workout.setsWord") : queued === 1 ? t("workout.oneSetQueued") : `${queued} ${t("workout.setsQueued")}`}
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+                <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("workout.finishConfirm")}</Text>
+                <Pressable
+                  onPress={() => setConfirmFinish(false)}
+                  accessibilityRole="button"
+                  style={{ height: 44, paddingHorizontal: 16, justifyContent: "center", borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.chalk, 0.05) }}
+                >
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("workout.keepGoing")}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => { setConfirmFinish(false); void finish(); }}
+                  disabled={saving}
+                  accessibilityRole="button"
+                  style={{ height: 44, paddingHorizontal: 20, justifyContent: "center", borderRadius: 999, backgroundColor: C.lime, opacity: saving ? 0.6 : 1 }}
+                >
+                  {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>{t("workout.finish")}</Text>}
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <>
+              {/* The hint line says what you are about to bank and what happens
+                  after it — and becomes the rest countdown when one is running,
+                  so a countdown costs a LINE rather than a banner that shoves
+                  the layout down every time you finish a set. */}
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 10 }}>
+                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.1, textTransform: "uppercase", color: restSince != null ? txt(C, C.blue) : C.ash }}>
+                  {restSince != null
+                    ? `${restLeft != null && restLeft <= 0 ? t("workout.restDone") : t("workout.resting")} – ${restReadout}`
+                    : cursor
+                      ? `${t("workout.setWord")} ${cursor.setIndex + 1}${cursorTotal > 1 ? ` ${t("workout.ofWord")} ${cursorTotal}` : ""}`
+                      : t("workout.setsWord")}
+                </Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash }}>
+                  {prefs.restTimer ? `${t("w.train.blocks.rest")} ${mmss(prefs.restSeconds)}` : t("workout.noRestTimer")}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+                <DockSatellite
+                  onPress={togglePause}
+                  glyph={paused ? "play.fill" : "pause.fill"}
+                  mark={paused ? "play" : "pause"}
+                  label={paused ? t("workout.resume") : t("workout.pause")}
+                  fg={paused ? txt(C, C.amber) : C.chalk}
+                  C={C}
+                />
+                {/* THE ONE FILLED SURFACE ON THE SCREEN. Deliberately not a
+                    SwiftUI button: a full-width chartreuse CTA has no system
+                    counterpart, and `.glassProminent` would restyle the brand's
+                    one "go" surface rather than nativize a control. It is 56pt
+                    tall — taller than its satellites, not merely wider — because
+                    height is the dimension a thumb hits without looking. */}
+                <Pressable
+                  onPress={logActiveSet}
+                  disabled={!canLog}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !canLog }}
+                  accessibilityLabel={t("workout.logSet")}
+                  style={{
+                    flex: 1,
+                    height: 56,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    borderRadius: 999,
+                    backgroundColor: canLog ? C.lime : withAlpha(C.lime, 0.22),
+                    shadowColor: "#000",
+                    shadowOpacity: canLog ? 0.22 : 0,
+                    shadowRadius: 10,
+                    shadowOffset: { width: 0, height: 5 },
+                    elevation: canLog ? 3 : 0,
+                  }}
+                >
+                  <Text style={{ fontFamily: F.black, fontSize: fs.body, color: canLog ? C.onAccent : C.ash }}>✓</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: canLog ? C.onAccent : C.ash }}>{t("workout.logSet")}</Text>
+                </Pressable>
+                <DockSatellite
+                  onPress={() => setConfirmFinish(true)}
+                  glyph="flag.checkered"
+                  mark="flag"
+                  label={t("w.train.logger.finishWorkout")}
+                  fg={C.chalk}
+                  C={C}
+                />
+              </View>
+            </>
+          )}
+        </View>
+      )}
       </KeyboardAvoidingView>
 
       <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
@@ -1828,7 +2051,17 @@ export default function Workout() {
           single top-level exit, and the irreversible one is reached through a
           menu and then a confirm. Anything added here later inherits that
           protection for free. */}
-      <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.moreOptions")}>
+      <Sheet visible={menuOpen} onClose={() => setMenuOpen(false)} title={t("workout.sessionOptions")}>
+        {/* What the native Menu carries on iOS 26, for everywhere else. The
+            rest DURATIONS live in the rest banner's preset row; the arm/disarm
+            is the capsule's own tap. */}
+        <Pressable
+          onPress={() => { setMenuOpen(false); setRpeHelp(true); }}
+          accessibilityRole="button"
+          style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }}
+        >
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.train.blocks.whatsRpe")}</Text>
+        </Pressable>
         <Pressable
           onPress={discard}
           accessibilityRole="button"
@@ -2683,6 +2916,56 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
 }
 
 // One live-scoreboard stat cell shown during the workout (parity with web).
+
+/**
+ * A DOCK SATELLITE — the neutral glass button that orbits the primary.
+ *
+ * On iOS 26 this is a real SwiftUI `Button` wearing interactive Liquid Glass:
+ * the material itself answers the press, which is worth most on exactly these
+ * two controls, hit with a chalked thumb without looking. Everywhere else the
+ * same 44pt circle is drawn in React Native over the kit's rim grammar, with
+ * the SHARED vector mark — so the control reads the same whichever renderer
+ * answers, and if the native layer never mounts it is still a button.
+ */
+function DockSatellite({
+  onPress,
+  glyph,
+  mark,
+  label,
+  fg,
+  C,
+}: {
+  onPress: () => void;
+  glyph: SFSymbol;
+  mark: AuroraIconName;
+  label: string;
+  fg: string;
+  C: Palette;
+}) {
+  if (LIQUID_GLASS_RENDERED) {
+    return <GlassSatellite onPress={onPress} label={label} glyph={glyph} fg={fg} size={44} glyphSize={17} />;
+  }
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: 999,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: withAlpha(C.chalk, 0.06),
+        borderWidth: 1,
+        borderColor: withAlpha(C.chalk, 0.14),
+      }}
+    >
+      <AuroraIcon name={mark} size={18} color={fg} />
+    </Pressable>
+  );
+}
+
 function LiveStat({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingVertical: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>

@@ -63,3 +63,50 @@ export function addSetIsNext(sets: readonly FocusableSet[]): boolean {
   const active = activeSetIndex(sets);
   return active === -1 || active === sets.length - 1;
 }
+
+/**
+ * Whether a set carries enough to be banked.
+ *
+ * The logger's big number is a PLACEHOLDER until it is typed into, and the Log
+ * button used to be live beside it — so one tap wrote a set with no reps into
+ * the session, the tonnage and the athlete's history. `reps` holds the count
+ * for a normal lift, the seconds for a hold and the metres for a carry, so one
+ * check covers every measure. Load is deliberately NOT required: plenty of
+ * real sets have no external weight.
+ */
+export const setIsLoggable = (s: { reps?: string }): boolean => (parseFloat(s.reps ?? "") || 0) > 0;
+
+/** An exercise, as far as the session-level cursor is concerned. Cardio and
+ *  conditioning entries carry no sets, and are skipped. */
+export interface FocusableExercise {
+  sets?: readonly FocusableSet[];
+}
+
+/**
+ * The session's ONE active set — the first un-banked set of the first exercise
+ * that still has one.
+ *
+ * `setFocus` answers "how should this row read" inside a single exercise; this
+ * answers "what is the athlete about to do" across the whole session, which is
+ * the question a DOCKED primary has to ask. When the Log button lived inside
+ * each set there was nothing to resolve: the button you tapped named its own
+ * set. A single button at the bottom of the screen has to be told.
+ *
+ * Returns null when nothing is left to bank — the session is complete, and the
+ * dock says so instead of offering a set that does not exist.
+ */
+export function nextSetCursor(exercises: readonly FocusableExercise[]): { index: number; setIndex: number } | null {
+  for (let index = 0; index < exercises.length; index++) {
+    const sets = exercises[index]?.sets;
+    if (!sets?.length) continue;
+    const setIndex = activeSetIndex(sets);
+    if (setIndex !== -1) return { index, setIndex };
+  }
+  return null;
+}
+
+/** How many sets across the session are still un-banked. Finishing with a
+ *  queue left is the case the confirm exists to name. */
+export function queuedSetCount(exercises: readonly FocusableExercise[]): number {
+  return exercises.reduce((n, x) => n + (x.sets?.filter((s) => !s.done).length ?? 0), 0);
+}

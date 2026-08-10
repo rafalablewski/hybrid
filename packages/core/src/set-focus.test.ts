@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activeSetIndex, setFocus, addSetIsNext } from "./set-focus";
+import { activeSetIndex, setFocus, addSetIsNext, nextSetCursor, queuedSetCount } from "./set-focus";
 
 describe("set-focus", () => {
   const done = { done: true };
@@ -59,5 +59,32 @@ describe("set-focus", () => {
       expect(addSetIsNext([done, done, todo, todo])).toBe(false);
       expect(addSetIsNext([todo, todo, todo])).toBe(false);
     });
+  });
+});
+
+describe("nextSetCursor", () => {
+  const ex = (...done: boolean[]) => ({ sets: done.map((d) => ({ done: d })) });
+
+  it("finds the first un-banked set of the first exercise that has one", () => {
+    expect(nextSetCursor([ex(true, true), ex(false, false)])).toEqual({ index: 1, setIndex: 0 });
+    expect(nextSetCursor([ex(true, false, false)])).toEqual({ index: 0, setIndex: 1 });
+  });
+
+  // A run or a metcon has no sets — the cursor steps over it rather than
+  // stopping the dock dead on an exercise it cannot bank.
+  it("skips exercises that carry no sets", () => {
+    expect(nextSetCursor([{}, { sets: [] }, ex(false)])).toEqual({ index: 2, setIndex: 0 });
+  });
+
+  it("returns null when everything is banked", () => {
+    expect(nextSetCursor([ex(true), ex(true, true)])).toBeNull();
+    expect(nextSetCursor([])).toBeNull();
+  });
+});
+
+describe("queuedSetCount", () => {
+  it("counts un-banked sets across the whole session", () => {
+    expect(queuedSetCount([{ sets: [{ done: true }, { done: false }] }, { sets: [{ done: false }] }])).toBe(3 - 1);
+    expect(queuedSetCount([{}, { sets: [] }])).toBe(0);
   });
 });
