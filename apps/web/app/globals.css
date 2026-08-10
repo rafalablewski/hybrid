@@ -631,6 +631,10 @@ html {
   --e-lens: cubic-bezier(.2,.7,.3,1);
   --e-lens: linear(0,0.01679,0.06137,0.12594,0.20384,0.2895,0.37839,0.4669,0.55227,0.63248,0.70613,0.77235,0.83072,0.88115,0.92384,0.9592,0.98776,1.01017,1.02711,1.0393,1.04742,1.05216,1.05414,1.05391,1.05201,1.04886,1.04487,1.04035,1.03556,1.03073,1.02602,1.02155,1.01741,1.01366,1.01033,1.00743,1.00496);
   --d-lens: 384ms;
+  /* spring.pop — response .32 / damping .40, settles in 604ms */
+  --e-pop: cubic-bezier(.2,.7,.3,1);
+  --e-pop: linear(0,0.04935,0.17715,0.35313,0.5495,0.74297,0.91591,1.05674,1.15958,1.2235,1.25149,1.24921,1.2239,1.18329,1.13475,1.08472,1.03828,0.99897,0.96887,0.94868,0.93802,0.9357,0.93999,0.94896,0.96067,0.9734,0.98568,0.99648,1.00511,1.01125,1.01491,1.01631,1.01585,1.01399,1.01124,1.00807,1.00486);
+  --d-pop: 604ms;
   /* opacity-only — nothing positional, so nothing to interrupt */
   --e-fade: cubic-bezier(.2,.7,.3,1);
   --e-exit: cubic-bezier(.4,0,.9,.4);
@@ -836,7 +840,13 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
 ::view-transition-new(hybrid-plan-cover),
 ::view-transition-group(hybrid-person-avatar),
 ::view-transition-old(hybrid-person-avatar),
-::view-transition-new(hybrid-person-avatar) {
+::view-transition-new(hybrid-person-avatar),
+::view-transition-group(hybrid-calendar-day),
+::view-transition-old(hybrid-calendar-day),
+::view-transition-new(hybrid-calendar-day),
+::view-transition-group(hybrid-pr-badge),
+::view-transition-old(hybrid-pr-badge),
+::view-transition-new(hybrid-pr-badge) {
   animation-duration: var(--d-zoom);
   animation-timing-function: var(--e-zoom);
 }
@@ -860,6 +870,15 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
    flight is the one visible seam this pair can have. */
 ::view-transition-old(hybrid-person-avatar) { animation-name: motionDissolveOut; }
 ::view-transition-new(hybrid-person-avatar) { animation-name: motionDissolveIn; }
+/* A DAY CELL becoming the day-detail card is a small tile growing into a tall
+   panel — geometry, like the cover, so the snapshots cross-fade across the
+   whole flight rather than snapping to the destination's aspect early. */
+::view-transition-old(hybrid-calendar-day) { animation-name: motionDissolveOut; }
+::view-transition-new(hybrid-calendar-day) { animation-name: motionDissolveIn; }
+/* The PR badge is the same small chip at both ends, so it takes the fast
+   hand-over like the travelling figures above. */
+::view-transition-old(hybrid-pr-badge) { animation-name: motionDissolveOut; animation-duration: var(--d-fast); }
+::view-transition-new(hybrid-pr-badge) { animation-name: motionDissolveIn;  animation-duration: var(--d-fast); }
 
 /* ── SHEET PRESENTATION ──────────────────────────────────────────────
    The presenting screen recedes so the sheet sits on a real stack instead of

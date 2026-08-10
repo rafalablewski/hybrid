@@ -6,6 +6,7 @@ import { STREAK_MARK, STREAK_ARIA_KEY, STREAK_SUFFIX_KEY, STREAK_DESTINATION, st
 import { useSessions } from "@/lib/use-sessions";
 import { useLang } from "@/lib/i18n";
 import { AuroraIcon } from "./icons";
+import RollingNumber from "./rolling-number";
 
 /**
  * THE STREAK MARK — web.
@@ -74,7 +75,15 @@ export function StreakMark({
       }}
     >
       <AuroraIcon name="flame" size={type.icon} color="var(--red-text)" />
-      {days}{t(STREAK_SUFFIX_KEY)}
+      {/* The COUNT rolls to its new value when a session extends the run —
+          this is the number the mark exists to celebrate, so it moves like
+          every other figure in the app (core numericDiff; the suffix is prose
+          and never travels). One wrapper so the row's gap separates the flame
+          from the text, never the count from its "-day streak" suffix. */}
+      <span style={{ display: "inline-flex" }}>
+        <RollingNumber value={String(days)} />
+        {t(STREAK_SUFFIX_KEY)}
+      </span>
     </button>
   );
 }

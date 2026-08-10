@@ -1,8 +1,10 @@
 "use client";
 
 import { accentText } from "@/lib/ui";
-import { useEffect, useMemo, useState } from "react";
-import { fs, space, sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, localDayKey, localTodayKey, type LoggedSession } from "@hybrid/core";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { fs, space, sessionsByDay, monthMatrix, loadIntensity, sessionVolume, sessionLoad, localDayKey, localTodayKey, SHARED_ELEMENTS, type LoggedSession } from "@hybrid/core";
+import { armSharedElement, releaseSharedElements } from "@/lib/shared-element";
+import { runStackTransition } from "@/lib/use-screen-transition";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { useLang } from "@/lib/i18n";
@@ -23,6 +25,12 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
   const [year, setYear] = useState(now.getUTCFullYear());
   const [month, setMonth] = useState(now.getUTCMonth());
   const [selected, setSelected] = useState<string>(todayKey());
+  // The day-detail card — the DESTINATION frame of the calendarDay pair. Both
+  // ends of this flight live on this one screen, so the arm has to move from
+  // the tapped cell to this card inside the transition's apply (see the cell's
+  // onClick): the cell stays mounted after the swap, and a name present twice
+  // in one snapshot makes the browser silently skip the whole transition.
+  const detailRef = useRef<HTMLDivElement | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const isMobile = useIsMobile();
@@ -64,7 +72,19 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
             const day = byDay[cell.date]; const ev = eventsByDay[cell.date]; const asg = assignmentsByDay[cell.date];
             const inten = intensity(cell.date); const isToday = cell.date === today; const isSel = cell.date === selected;
             return (
-              <button className="pressable" key={cell.date} onClick={() => setSelected(cell.date)} style={{ textAlign: "left", minHeight: 62, borderRadius: 16, padding: 6, cursor: "pointer", opacity: cell.inMonth ? 1 : 0.35, border: `1px solid ${isSel ? C("lime") : isToday ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, background: day ? `color-mix(in srgb, ${C("lime")} ${Math.round((0.08 + inten * 0.5) * 100)}%, transparent)` : C("ink") }}>
+              <button className="pressable" key={cell.date} onClick={(e) => {
+                if (cell.date === selected) return;
+                // The tapped CELL is the source frame; the detail card claims
+                // the name in the new snapshot, inside the apply, so each
+                // snapshot carries the pair exactly once. The transition's own
+                // finally releases the card once the flight lands.
+                armSharedElement(e.currentTarget, SHARED_ELEMENTS.calendarDay);
+                runStackTransition(() => {
+                  setSelected(cell.date);
+                  releaseSharedElements();
+                  armSharedElement(detailRef.current, SHARED_ELEMENTS.calendarDay);
+                });
+              }} style={{ textAlign: "left", minHeight: 62, borderRadius: 16, padding: 6, cursor: "pointer", opacity: cell.inMonth ? 1 : 0.35, border: `1px solid ${isSel ? C("lime") : isToday ? `color-mix(in srgb, ${C("lime")} 40%, transparent)` : C("line")}`, background: day ? `color-mix(in srgb, ${C("lime")} ${Math.round((0.08 + inten * 0.5) * 100)}%, transparent)` : C("ink") }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, color: isToday ? C("lime") : C("chalk"), fontWeight: isToday ? 700 : 400 }}>{Number(cell.date.slice(8, 10))}</span>
                   <span style={{ display: "flex", gap: 3 }}>{asg && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("violet") }} />}{ev && <span style={{ width: 6, height: 6, borderRadius: 3, background: C("amber") }} />}</span>
@@ -77,7 +97,7 @@ export default function AuroraCalendar({ sessions }: { sessions: LoggedSession[]
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, marginTop: 10, color: C("ash") }}>{t("w.analyze.cal.legendPre")} <span style={{ color: accentText("violet") }}>●</span> {t("w.analyze.cal.legendAssigned")} <span style={{ color: accentText("amber") }}>●</span> {t("w.analyze.cal.legendEvent")}</div>
       </div>
 
-      <div style={card}>
+      <div ref={detailRef} style={card}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em", color: accentText("lime") }}>{new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}</div>
         {selEvents.map((e) => <div key={e.id} style={{ marginTop: 10 }}>{chip(C("amber"), t("w.analyze.cal.event"))}<div style={{ fontWeight: 700, fontSize: fs.note, marginTop: 4 }}>{e.name}</div><div style={{ fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("ash") }}>{e.sport}</div></div>)}
         {selAssignments.map((a) => (

@@ -93,6 +93,7 @@ export default function WorkoutBlocks({
   lastByLift,
   restSec = null,
   onToggleDone,
+  prLifts,
 }: {
   blocks: EditableBlock[];
   setBlocks: Dispatch<SetStateAction<EditableBlock[]>>;
@@ -138,6 +139,12 @@ export default function WorkoutBlocks({
   lastByLift?: Map<string, string>;
   /** Live mode: called when a set's ✓ is toggled (parent owns done + rest). */
   onToggleDone?: (blockUid: string, setIndex: number, done: boolean) => void;
+  /** LIVE: lifts that have set a new record so far this session (core
+   *  livePrLifts, heaviest-first). The matching card wears a PR badge the
+   *  moment the record set is banked; on finish the badge flies into the
+   *  summary's trophy chip (SHARED_ELEMENTS.prBadge — the logger arms
+   *  `[data-pr-badge="<lift>"]` for the flight). */
+  prLifts?: readonly string[];
 }) {
   const { t } = useLang();
   const { catalog: libraryCatalog = [], aliases = new Set<string>(), categoryByName = {} } = useExercises();
@@ -463,6 +470,14 @@ export default function WorkoutBlocks({
               onChange={(e) => rename(b.uid, e.target.value)}
               style={{ ...input, ...disp, fontWeight: 700, flex: 1 }}
             />
+            {live && prLifts?.includes(b.name) && (
+              // A record was set on this lift THIS session — the badge appears
+              // the moment the record set banks, and flies into the finish
+              // summary's trophy chip when the workout ends.
+              <span data-pr-badge={b.name} style={{ ...mono, display: "inline-flex", alignItems: "center", gap: 4, fontSize: fs.micro, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, ${LIME} 16%, transparent)`, border: `1px solid ${LIME}`, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" }}>
+                <AuroraIcon name="trophy" size={11} color={txt(LIME)} /> PR
+              </span>
+            )}
             {isCollapsed(b.uid) && (
               <Mono s={{ fontSize: fs.micro, whiteSpace: "nowrap" }}>{blockSignalSummary(b)}</Mono>
             )}

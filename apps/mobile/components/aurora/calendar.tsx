@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, type LoggedSession } from "@hybrid/core";
+import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, SHARED_ELEMENTS } from "@hybrid/core";
+import { useSharedSurfaceSource, useSharedSurfaceTarget } from "../../lib/shared-element";
 import { useSessionsQuery } from "../../lib/queries";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -31,6 +32,13 @@ export default function AuroraCalendar() {
   const [selected, setSelected] = useState(todayKey());
   const [events, setEvents] = useState<EventRow[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  // The calendarDay pair: the tapped CELL is the source frame and the detail
+  // section below the grid is the destination — both on this one screen, so
+  // the "navigation" is the `selected` swap. Each cell registers its node here;
+  // the detail section remounts per selection (key={selected}) so the target
+  // hook claims a fresh flight every time (a claim is once-per-mount).
+  const cellRefs = useRef<Record<string, View | null>>({});
+  const armDay = useSharedSurfaceSource();
 
   // Coach/self layers — fetched with the Supabase bearer token via lib/api (both
   // helpers swallow errors → []). Normalize the date to YYYY-MM-DD so it keys the
@@ -87,8 +95,22 @@ export default function AuroraCalendar() {
               const inten = intensity(cell.date);
               const isToday = cell.date === today;
               const isSel = cell.date === selected;
+              const cellBg = day ? `${C.lime}${Math.round(Math.min(1, 0.1 + inten * 0.5) * 255).toString(16).padStart(2, "0")}` : C.ink;
               return (
-                <Pressable key={cell.date} onPress={() => setSelected(cell.date)} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: 12, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? `${C.lime}66` : C.line, backgroundColor: day ? `${C.lime}${Math.round(Math.min(1, 0.1 + inten * 0.5) * 255).toString(16).padStart(2, "0")}` : C.ink }}>
+                <Pressable key={cell.date} ref={(r: View | null) => { cellRefs.current[cell.date] = r; }} onPress={() => {
+                  if (cell.date !== selected) {
+                    // The clone the overlay flies is the cell's own face —
+                    // frozen at press time, drawn selected (that is what the
+                    // tap made it).
+                    armDay(SHARED_ELEMENTS.calendarDay, cellRefs.current[cell.date], (
+                      <View style={{ flex: 1, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.lime, backgroundColor: cellBg }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: isToday ? txt(C, C.lime) : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
+                        {day ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.nano, color: C.onAccent, backgroundColor: C.lime, borderRadius: 4, paddingHorizontal: 3, marginTop: 1 }}>{day.count}</Text> : null}
+                      </View>
+                    ));
+                  }
+                  setSelected(cell.date);
+                }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: 12, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? `${C.lime}66` : C.line, backgroundColor: cellBg }}>
                   {(asg || ev) ? (
                     <View style={{ position: "absolute", top: 3, right: 3, flexDirection: "row", gap: 2 }}>
                       {asg ? <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.violet }} /> : null}
@@ -107,6 +129,9 @@ export default function AuroraCalendar() {
         </Text>
       </ACard>
 
+      {/* key={selected}: the destination hook claims once per mount, so the
+          detail section must be a fresh mount for each day it describes. */}
+      <DayDetail key={selected}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
         {new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
       </Text>
@@ -141,6 +166,16 @@ export default function AuroraCalendar() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg – {s.blocks.length} {t("w.analyze.cal.blocks")}</Text>
         </ACard>
       ))}
+      </DayDetail>
     </AuroraScreen>
   );
+}
+
+/** The destination frame of the calendarDay pair — the whole detail section,
+ *  so the tapped cell is seen growing into the region its contents land in.
+ *  A plain wrapper because ACard doesn't forward a ref, and the frame is the
+ *  section, not any one card. */
+function DayDetail({ children }: { children: ReactNode }) {
+  const { ref } = useSharedSurfaceTarget(SHARED_ELEMENTS.calendarDay);
+  return <View ref={ref} collapsable={false}>{children}</View>;
 }

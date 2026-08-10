@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, seedPerson, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, auroraNavAction, isCover, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
+import { groupedNavWithLocks, sanitizePersonaAccess, analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey, normalizeAuthRole, feedSubjectKey, seedPerson, parseFeedSubjectKey, sportFromSlug, sportSlug, AURORA_NAV_ICONS, auroraNavAction, isCover, navRootRank, FUNNEL, type FeedItemView, type SessionBlock, type AnalyticsScope } from "@hybrid/core";
 // The AI coach screen, reached from the Cockpit module tile (see below).
 const AuroraAskCoach = dynamic(() => import("./aurora/ai-coach"), { ssr: false });
 import { AuroraIcon } from "./aurora/icons";
@@ -166,6 +166,15 @@ export default function AppShell() {
   // In a MODE (the live logger), the shell's own chrome is not on screen — see
   // the sidebar and pill-nav render sites below.
   const covered = isCover(screen);
+  // THE PILL BAR ONLY STANDS ON A NAV ROOT. On mobile the native tab bar is
+  // hidden by ANY pushed screen — a detail screen sits on top of the tab, not
+  // inside it — while web kept the pill up everywhere, so the two clients
+  // disagreed about the app's basic spatial model (the audit's N5). The roots
+  // are core's NAV_ROOT_ORDER, the same list the sibling-slide reads, so the
+  // bar and the motion cannot disagree about what counts as a root. Ways back
+  // off a detail screen are the hero's own nav button and browser Back — the
+  // exact pair a pushed screen has on iOS.
+  const barUp = !covered && navRootRank(screen) >= 0;
   // Monotonic position in OUR navigation, stamped onto each pushed entry so a
   // popstate can tell a Back from a Forward (see lib/deep-link.ts).
   const navIdx = useRef(0);
@@ -770,7 +779,7 @@ export default function AppShell() {
         // does. A mode hides the bar (see `covered`), and a reservation for
         // something that is not on screen is just a dead band under the last
         // row — the same defect the sheet-pad rule exists to stop.
-        padding: isMobile ? (aurora ? `16px 12px ${covered ? 40 : 120}px` : "16px 12px 40px") : (aurora ? `24px 32px ${covered ? 40 : 120}px` : "24px 32px"), maxWidth: 1180, margin: "0 auto", position: "relative", zIndex: 1, outline: "none", ...({ "--page-pad-x": isMobile ? "12px" : "32px", "--page-pad-top": isMobile ? "16px" : "24px" } as Record<string, string>) }}>
+        padding: isMobile ? (aurora ? `16px 12px ${barUp ? 120 : 40}px` : "16px 12px 40px") : (aurora ? `24px 32px ${barUp ? 120 : 40}px` : "24px 32px"), maxWidth: 1180, margin: "0 auto", position: "relative", zIndex: 1, outline: "none", ...({ "--page-pad-x": isMobile ? "12px" : "32px", "--page-pad-top": isMobile ? "16px" : "24px" } as Record<string, string>) }}>
         {isEnabled("app.announcements") && <AnnouncementBanner />}
         <CoachInviteBanner />
         {/* Desktop-only utility header (Classic shows the app kicker + screen
@@ -1055,13 +1064,16 @@ export default function AppShell() {
           floats over whatever screen is active. */}
       <AuroraUpgrade open={upgradeOpen} onClose={() => setUpgradeOpen(false)} onUpgraded={() => { setUpgradeOpen(false); setScreen("today"); }} />
 
-      {/* The floating pill bottom nav (coexists with the sidebar). The action
-          circle resolves per surface (core auroraNavAction): Train everywhere,
-          Add post while the feed is the visible surface — its own screen or
-          Today's feed hub tab. Add post opens no second editor: it hands focus
-          to the feed's always-open composer (social-feed.tsx listens for the
-          event), so there is exactly one place a post is written. */}
-      {!covered && (
+      {/* The floating pill bottom nav (coexists with the sidebar). Stands only
+          on a nav ROOT (`barUp`) — a pushed detail screen or a presented detour
+          covers it, exactly as any pushed screen hides mobile's native tab bar.
+          The action circle resolves per surface (core auroraNavAction): Train
+          everywhere, Add post while the feed is the visible surface — its own
+          screen or Today's feed hub tab. Add post opens no second editor: it
+          hands focus to the feed's always-open composer (social-feed.tsx
+          listens for the event), so there is exactly one place a post is
+          written. */}
+      {barUp && (
         <AuroraPillNav
           activeId={screen}
           action={auroraNavAction(screen === "today" ? todayHub : screen)}
