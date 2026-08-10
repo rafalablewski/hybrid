@@ -1,9 +1,11 @@
 import { useId } from "react";
 import { Platform, View, StyleSheet } from "react-native";
 import {
+  Button,
   GlassEffectContainer,
   HStack,
   Host,
+  Image as SwiftImage,
   Namespace,
   Picker,
   RoundedRectangle,
@@ -12,12 +14,16 @@ import {
 } from "@expo/ui/swift-ui";
 import {
   Animation,
+  accessibilityLabel,
   animation,
+  buttonStyle,
+  contentShape,
   frame,
   glassEffect,
   glassEffectId,
   padding,
   pickerStyle,
+  shapes,
   tag,
   tint,
 } from "@expo/ui/swift-ui/modifiers";
@@ -49,6 +55,16 @@ import { RADIUS, withAlpha } from "./kit";
  *  module degrades and the RN floor below stays visible.) */
 export const LIQUID_GLASS_SUPPORTED = Platform.OS === "ios";
 
+/** Where the material actually RENDERS — Liquid Glass is an iOS 26 material,
+ *  and below 26 `glassEffect` is a no-op: only whatever RN floor sits under it
+ *  shows. Surfaces that layer glass over their own floor can ignore the
+ *  distinction; a control that hands its WHOLE rendering to SwiftUI (the nav
+ *  button) must not, or pre-26 phones would get a bare native button with no
+ *  material at all. Those callers gate on this and keep their full RN
+ *  treatment below 26. */
+export const LIQUID_GLASS_RENDERED =
+  LIQUID_GLASS_SUPPORTED && (parseInt(String(Platform.Version), 10) || 0) >= 26;
+
 /**
  * Liquid Glass surface — a native SwiftUI `glassEffect` rounded rectangle that
  * fills its parent, dropped BEHIND ordinary RN card content. A translucent RN
@@ -77,6 +93,71 @@ export function GlassSurface({ radius = RADIUS.card, tintColor }: { radius?: num
         />
       </Host>
     </View>
+  );
+}
+
+/**
+ * THE NAV BUTTON'S NATIVE FORM — a real SwiftUI `Button` wearing real Liquid
+ * Glass, interactive: the material itself answers the touch (the specular
+ * shimmer, the press bounce), which no RN scale transform over a static
+ * backdrop can do. This is a self-contained LEAF per the composition rule
+ * above — like `GlassSegment`'s Picker, the tap is handled by SwiftUI, so it
+ * mounts ONLY where the material is known to render (`LIQUID_GLASS_RENDERED`);
+ * everywhere else the caller keeps its whole RN button, glyph and all.
+ *
+ * The glyph is the platform's (an SF Symbol): a native control wears native
+ * type. `arrow.left` / `chevron.down` are the same drawings as the kit's
+ * `back` / `chevron-down` marks, so the RN fallback and the native form read
+ * as one control.
+ */
+export function GlassNavButton({
+  onPress,
+  label,
+  glyph,
+  material = "glass",
+  size,
+  hit,
+  glyphSize,
+  fg,
+}: {
+  onPress: () => void;
+  /** The full accessibility phrase ("← Olympic Weightlifting", "Back"). */
+  label: string;
+  glyph: "arrow.left" | "chevron.down";
+  /** `clear` keeps the BUTTON but strips the material (glass variant
+   *  `identity`), so the field screens' clear↔glass cross-fade changes only
+   *  the material — never the renderer, never the glyph. */
+  material?: "clear" | "glass";
+  /** The visual circle. */
+  size: number;
+  /** The hit target the circle sits centred in. */
+  hit: number;
+  glyphSize: number;
+  fg: string;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host style={{ width: hit, height: hit }}>
+      <Button onPress={onPress} modifiers={[buttonStyle("plain"), accessibilityLabel(label)]}>
+        <SwiftImage
+          systemName={glyph}
+          size={glyphSize}
+          color={fg}
+          modifiers={[
+            // Chain order is the construction: centre the glyph in the visual
+            // circle, glass THAT circle, then pad the frame out to the hit
+            // target and make the whole frame tappable.
+            frame({ width: size, height: size }),
+            glassEffect({
+              glass: { variant: material === "glass" ? "regular" : "identity", interactive: true },
+              shape: "circle",
+            }),
+            frame({ width: hit, height: hit }),
+            contentShape(shapes.circle()),
+          ]}
+        />
+      </Button>
+    </Host>
   );
 }
 

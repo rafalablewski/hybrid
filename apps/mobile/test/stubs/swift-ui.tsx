@@ -20,14 +20,18 @@ export const Namespace = Box;
 
 /* modifiers — chainable no-ops */
 const modifier = () => ({});
+export const accessibilityLabel = modifier;
 export const animation = modifier;
 export const Animation = { easeInOut: modifier, spring: modifier, default: modifier };
 export const background = modifier;
+export const buttonStyle = modifier;
 export const clipShape = modifier;
+export const contentShape = modifier;
 export const frame = modifier;
 export const glassEffect = modifier;
 export const glassEffectId = modifier;
 export const padding = modifier;
 export const pickerStyle = modifier;
+export const shapes = { rectangle: modifier, circle: modifier, capsule: modifier, ellipse: modifier, roundedRectangle: modifier, containerRelativeShape: modifier };
 export const tag = modifier;
 export const tint = modifier;

@@ -462,10 +462,13 @@ export function heroStatusBar(rank: HeroRank, mode: HeroMode, scheme: "light" | 
  * not with which screen it is on:
  *  - over the plain field → `clear`: no fill, chalk glyph. A chip floating on an
  *    empty page is noise.
- *  - over art, or once content has scrolled under the rail → `glass`: Liquid
- *    Glass where supported, white-12% + blur as the fallback, hairline at 18%.
+ *  - over art, or once content has scrolled under the rail → `glass`: on iOS 26
+ *    the button IS a native SwiftUI Liquid Glass button (interactive — the
+ *    material itself answers the touch; no drawn ring, no fill); elsewhere the
+ *    white-12% + blur fallback with the hairline at 18%.
  * The transition between the two is a cross-fade on the same circle, so the
- * control's SHAPE is never in motion.
+ * control's SHAPE is never in motion — on iOS 26 both materials are the same
+ * native button (`clear` is the glass stripped, not a different control).
  */
 export function heroNavMaterial(backdrop: HeroBackdrop, barred: boolean): "clear" | "glass" {
   if (backdrop === "field") return barred ? "glass" : "clear";
