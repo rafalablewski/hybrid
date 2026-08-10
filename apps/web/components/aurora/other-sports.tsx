@@ -83,9 +83,18 @@ export default function AuroraOtherSports({
           total and contradicts it. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, margin: "0 2px 8px" }}>
         <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{t("w.home.other.title")}</span>
-        <span style={kicker}>
-          {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.enduranceMinutes, u))}
-        </span>
+        {/* THE DENOMINATOR IS THE GATE, not the numerator. A quiet week for
+            these sports still has something to say — "0min of 3h 12min this
+            week" is a real fact, and the whole point of a parentage quote. A
+            week with no endurance at all has no whole to be a part of, and the
+            head printed "0MIN OF 0MIN THIS WEEK": a fraction with a zero
+            denominator, set in mono uppercase as though it were a measurement.
+            No parent, no quote. Mirrors mobile. */}
+        {parentage.enduranceMinutes > 0 && (
+          <span style={kicker}>
+            {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.enduranceMinutes, u))}
+          </span>
+        )}
       </div>
 
       <div

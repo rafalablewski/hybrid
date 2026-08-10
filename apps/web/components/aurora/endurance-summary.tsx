@@ -103,6 +103,33 @@ export default function AuroraEnduranceSummary({
   const delta = lead.deltaPct;
   const tone = dirColor(enduranceDirection(w, "minutes"));
 
+  /* AN EMPTY PERIOD KEEPS ITS PLACE AND DROPS ITS CHROME.
+   *
+   * The block's never-disappear doctrine (above) is right, and this honours it
+   * — but keeping its PLACE is not the same as keeping its CARD. A border, a
+   * fill, a shadow and 14px of padding drawn around "nothing happened" is the
+   * bordered-box exit all over again: a card carries a THING, and an empty
+   * period carries none, so the box reads as one more item that turned out to
+   * be blank.
+   *
+   * The kicker pair goes with it. On the populated card "This week" beside
+   * "Aug 10 – Aug 16" is the shared RangeHead idiom and stays; with no sentence
+   * under it, the two are one fact printed twice above a third line that said
+   * it a third time ("...in this period"). What is left is the line this always
+   * was: the verdict left, the span right, no panel. Mirrors mobile.
+   */
+  if (lead.sports === 0) {
+    return (
+      <div style={{
+        marginTop: 20, margin: "20px 2px 0",
+        display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12,
+      }}>
+        <p style={{ margin: 0, fontSize: fs.bodyLg, lineHeight: 1.4, color: C("chalk") }}>{sentence}</p>
+        <span style={{ ...kicker, color: C("ash"), whiteSpace: "nowrap" }}>{span}</span>
+      </div>
+    );
+  }
+
   return (
     <div style={{ marginTop: 20 }}>
       <div style={{
@@ -118,22 +145,22 @@ export default function AuroraEnduranceSummary({
 
         <p style={{ margin: "8px 0 0", fontSize: fs.bodyLg, lineHeight: 1.4, color: C("chalk") }}>{sentence}</p>
 
-        {lead.sports > 0 && (
-          <p style={{
-            margin: "4px 0 0", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums",
-            fontSize: fs.micro, color: C("ash"),
-          }}>
-            {whyBefore}
-            {whyAfter !== undefined && delta !== null && (
-              <>
-                <em style={{ fontStyle: "normal", color: tone }}>
-                  {`${delta > 0 ? "+" : delta < 0 ? "−" : ""}${Math.abs(delta)}%`}
-                </em>
-                {whyAfter}
-              </>
-            )}
-          </p>
-        )}
+        {/* Unconditional now: the empty window returned above, so anything
+            reaching here has at least one sport and a duration to state. */}
+        <p style={{
+          margin: "4px 0 0", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums",
+          fontSize: fs.micro, color: C("ash"),
+        }}>
+          {whyBefore}
+          {whyAfter !== undefined && delta !== null && (
+            <>
+              <em style={{ fontStyle: "normal", color: tone }}>
+                {`${delta > 0 ? "+" : delta < 0 ? "−" : ""}${Math.abs(delta)}%`}
+              </em>
+              {whyAfter}
+            </>
+          )}
+        </p>
       </div>
     </div>
   );
