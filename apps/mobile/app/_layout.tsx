@@ -15,7 +15,7 @@ import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fo
 // (parity with web's --font-heading); Aurora keeps Archivo. Loaded here,
 // applied via serifIf().
 import { ShipporiMincho_500Medium, ShipporiMincho_600SemiBold, ShipporiMincho_700Bold, ShipporiMincho_800ExtraBold } from "@expo-google-fonts/shippori-mincho";
-import { springs, springDurationMs, MODAL_SCREENS } from "@hybrid/core";
+import { springs, springDurationMs, MODAL_SCREENS, COVER_SCREENS } from "@hybrid/core";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
@@ -38,6 +38,19 @@ import { ConfirmProvider } from "../components/aurora/confirm";
  * retyped, so adding a detour in core reaches BOTH clients.
  */
 const MOBILE_DETOURS = MODAL_SCREENS.filter((r) => r !== "timer");
+
+/**
+ * The MODES that exist as routes on this client.
+ *
+ * `log` is dropped, and it is the one exclusion in this file that is not merely
+ * a naming difference: on WEB `log` IS the live logger, while on mobile `log`
+ * is the Train LAUNCHER tab (app/(tabs)/log.tsx) and the live logger is
+ * `workout`. Declaring a Stack.Screen for it would name a route that is inside
+ * the tab group, and treating the launcher as a mode would be wrong anyway —
+ * it is a place, not a stopwatch. @hybrid/core COVER_SCREENS documents the
+ * collision at the source; this is the client half of it.
+ */
+const MOBILE_COVERS = COVER_SCREENS.filter((r) => r !== "log");
 
 // The bottom nav is the SYSTEM tab bar now (app/(tabs)/_layout.tsx uses
 // expo-router native tabs), so there is no app-rendered bar to mount here.
@@ -109,7 +122,26 @@ function Shell() {
             Everything else inherits the interactive pop, which on iOS is the
             OS's own gesture: genuinely finger-tracked, interruptible, and
             parallaxed — better than anything hand-rolled. */}
-        <Stack.Screen name="workout" options={{ gestureEnabled: false }} />
+        {/* THE ONE MODE. Entering the live logger takes the tab bar away, turns
+            the back-swipe off and makes the app a stopwatch with a keyboard —
+            and it used to arrive as `slide_from_right`, the identical motion to
+            opening Settings. `fullScreenModal` + a rise from the bottom edge is
+            the third spatial claim the system was missing: not "deeper" (a
+            push) and not "a detour you'll come back from" (a present), but
+            "the app is something else now". Which screens are modes is
+            @hybrid/core `isCover`, the same list `screenTransition` reads, so
+            the presentation and the motion cannot disagree.
+
+            `gestureEnabled: false` stays and now agrees with the presentation:
+            a cover is left deliberately — by finishing or by abandoning —
+            never by brushing the edge of the screen. */}
+        {MOBILE_COVERS.map((route) => (
+          <Stack.Screen
+            key={route}
+            name={route}
+            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom", animationDuration: springDurationMs(springs.zoom), gestureEnabled: false }}
+          />
+        ))}
         <Stack.Screen name="login" options={{ gestureEnabled: false }} />
         <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />

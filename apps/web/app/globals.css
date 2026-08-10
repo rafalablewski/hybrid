@@ -645,6 +645,17 @@ html {
 @keyframes motionRecedeBack     { from { transform: scale(1); opacity: 1; filter: brightness(1); } to { transform: scale(.92); opacity: .4; filter: brightness(.72); } }
 @keyframes motionRecedeForward  { from { transform: scale(.92); opacity: .4; filter: brightness(.72); } to { transform: none; opacity: 1; filter: brightness(1); } }
 @keyframes motionDismissOut     { from { transform: none; opacity: 1; } to { transform: translateY(16%); opacity: 0; } }
+/* THE MODE CHANGE — a full-screen cover. The scale is motion.coverScale (0.88),
+   the blur motion.coverBlur (8px) and the dim motion.coverBrightness (0.55):
+   further back, softer and darker than a sheet's parent, because a sheet's
+   parent is coming back in a moment and a covered screen is not. The blur is
+   the part that says "not for you right now" — a recede alone only says
+   "behind". This is the focus blur the wave-3 notes carried as a separate
+   flourish; it belongs to the transition, not beside it. */
+@keyframes motionCoverIn  { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes motionCoverOut { from { transform: none; } to { transform: translateY(100%); } }
+@keyframes motionFocusOut { from { transform: scale(1); opacity: 1; filter: brightness(1) blur(0); } to { transform: scale(.88); opacity: .35; filter: brightness(.55) blur(8px); } }
+@keyframes motionFocusIn  { from { transform: scale(.88); opacity: .35; filter: brightness(.55) blur(8px); } to { transform: none; opacity: 1; filter: brightness(1) blur(0); } }
 @keyframes motionDissolveIn  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes motionDissolveOut { from { opacity: 1; } to { opacity: 0; } }
 
@@ -691,6 +702,41 @@ html[data-nav-kind="present"]::view-transition-new(hybrid-screen) { animation: m
    than snapping into place under the departing one. */
 html[data-nav-kind="dismiss"]::view-transition-old(hybrid-screen) { animation: motionDismissOut    var(--d-fast)  var(--e-exit)  both; }
 html[data-nav-kind="dismiss"]::view-transition-new(hybrid-screen) { animation: motionRecedeForward var(--d-sheet) var(--e-sheet) both; }
+
+/* COVER — a MODE CHANGE (entering the live logger). The full screen rises from
+   the bottom edge while the app behind it recedes out of focus. On the zoom
+   spring, the longest in the system: this is the biggest state change in the
+   product and it used to be the same right-slide as opening Settings. */
+html[data-nav-kind="cover"]::view-transition-old(hybrid-screen) { animation: motionFocusOut var(--d-zoom) var(--e-zoom) both; }
+html[data-nav-kind="cover"]::view-transition-new(hybrid-screen) { animation: motionCoverIn  var(--d-zoom) var(--e-zoom) both; }
+
+/* UNCOVER — the exact inverse. The exit rides the same spring rather than the
+   fast exit curve, because the app coming BACK is not a thing being dismissed. */
+html[data-nav-kind="uncover"]::view-transition-old(hybrid-screen) { animation: motionCoverOut var(--d-zoom) var(--e-zoom) both; }
+html[data-nav-kind="uncover"]::view-transition-new(hybrid-screen) { animation: motionFocusIn  var(--d-zoom) var(--e-zoom) both; }
+
+/* THE SHELL'S CHROME leaves with the mode and comes back with it. The sidebar
+   and the pill bar are UNMOUNTED on a covered screen (app-shell `covered`), and
+   an unmounted node cannot animate — so they are lifted into their own groups
+   for the duration of the move and the browser animates the halves that exist:
+   old-only on the way in, new-only on the way out.
+
+   Named ONLY under these two attributes, exactly as the hub chrome is: a
+   permanent name would make every ordinary navigation capture the sidebar as
+   its own group and cross-fade a thing that did not change. `data-nav-kind` is
+   set before startViewTransition, so the name is on the node at capture time. */
+html[data-nav-kind="cover"] .motion-rail,
+html[data-nav-kind="uncover"] .motion-rail { view-transition-name: hybrid-rail; }
+html[data-nav-kind="cover"] .motion-bar,
+html[data-nav-kind="uncover"] .motion-bar { view-transition-name: hybrid-bar; }
+@keyframes motionChromeOutLeft { from { transform: none; opacity: 1; } to { transform: translateX(-100%); opacity: 0; } }
+@keyframes motionChromeInLeft  { from { transform: translateX(-100%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes motionChromeOutDown { from { transform: none; opacity: 1; } to { transform: translateY(140%); opacity: 0; } }
+@keyframes motionChromeInUp    { from { transform: translateY(140%); opacity: 0; } to { transform: none; opacity: 1; } }
+html[data-nav-kind="cover"]::view-transition-old(hybrid-rail)   { animation: motionChromeOutLeft var(--d-fast) var(--e-exit) both; }
+html[data-nav-kind="cover"]::view-transition-old(hybrid-bar)    { animation: motionChromeOutDown var(--d-fast) var(--e-exit) both; }
+html[data-nav-kind="uncover"]::view-transition-new(hybrid-rail) { animation: motionChromeInLeft  var(--d-zoom) var(--e-zoom) both; }
+html[data-nav-kind="uncover"]::view-transition-new(hybrid-bar)  { animation: motionChromeInUp    var(--d-zoom) var(--e-zoom) both; }
 
 /* REPLACE — two unrelated leaves. There is no defensible direction between
    them, and inventing one is worse than a crossfade. */

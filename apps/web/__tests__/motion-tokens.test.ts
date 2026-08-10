@@ -78,6 +78,8 @@ describe("globals.css motion tokens", () => {
       { kind: "pop", dir: 0 },
       { kind: "present", dir: 0 },
       { kind: "dismiss", dir: 0 },
+      { kind: "cover", dir: 0 },
+      { kind: "uncover", dir: 0 },
       { kind: "replace", dir: 0 },
     ];
     const names = new Set<string>();
@@ -93,7 +95,7 @@ describe("globals.css motion tokens", () => {
   });
 
   it("selects a rule for every transition kind", () => {
-    for (const kind of ["sibling", "push", "pop", "present", "dismiss", "replace"]) {
+    for (const kind of ["sibling", "push", "pop", "present", "dismiss", "cover", "uncover", "replace"]) {
       expect(css, `no CSS selects data-nav-kind="${kind}"`).toContain(`html[data-nav-kind="${kind}"]`);
     }
   });
@@ -106,6 +108,19 @@ describe("globals.css motion tokens", () => {
     const block = css.slice(at, css.indexOf("}", css.indexOf("to", at)));
     expect(block).toContain(`scale(${String(motion.recedeScale).replace(/^0/, "")})`);
     expect(block).toContain(`brightness(${String(motion.recedeBrightness).replace(/^0/, "")})`);
+  });
+
+  it("blurs the app out of focus under a COVER, further back than a sheet", () => {
+    // A sheet's parent is coming back in a moment; a covered screen is not, so
+    // it goes further away, darker, and OUT OF FOCUS — the blur is what says
+    // "not for you right now" where a recede alone only says "behind".
+    const at = css.indexOf("@keyframes motionFocusOut");
+    const block = css.slice(at, css.indexOf("}", css.indexOf("to", at)));
+    expect(block).toContain(`scale(${String(motion.coverScale).replace(/^0/, "")})`);
+    expect(block).toContain(`brightness(${String(motion.coverBrightness).replace(/^0/, "")})`);
+    expect(block).toContain(`blur(${motion.coverBlur}px)`);
+    expect(motion.coverScale).toBeLessThan(motion.recedeScale);
+    expect(motion.coverBrightness).toBeLessThan(motion.recedeBrightness);
   });
 
   it("SUBSTITUTES a dissolve under Reduce Motion rather than zeroing it", () => {

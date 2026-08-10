@@ -128,6 +128,18 @@ export const motion = {
   pushOffset: 0.16,
   /** Sibling entrance offset, as a fraction of screen width. */
   slideOffset: 1,
+  /** Parent scale under a full-screen COVER. Further back than `recedeScale`
+   *  deliberately: a sheet's parent is coming back in a moment and stays a
+   *  legible page behind it; a covered screen is not coming back until the mode
+   *  ends, so it goes further away and stops being something you could read. */
+  coverScale: 0.88,
+  /** Focus blur (px) on the covered screen. The recede alone says "behind"; the
+   *  blur is what says "not for you right now" — and it is the difference
+   *  between a screen that is merely underneath and an app that changed mode. */
+  coverBlur: 8,
+  /** Brightness of the covered screen. Darker than a sheet's parent for the
+   *  same reason it is smaller. */
+  coverBrightness: 0.55,
 } as const;
 
 /**
@@ -543,6 +555,45 @@ export function isDetour(screen: string): boolean {
   return MODAL_SET.has(screen);
 }
 
+/**
+ * THE MODE CHANGES — screens where the app stops being the same tool.
+ *
+ * Entering the live logger takes the tab bar away, disables the back-swipe and
+ * turns the app into a stopwatch with a keyboard. That is not "deeper" and it is
+ * not "a detour"; it is the app becoming something else, and it is the one KIND
+ * of transition the system had no vocabulary for. It arrived as an ordinary
+ * right-slide — the identical motion to opening Settings — so the biggest state
+ * change in the product was also its quietest.
+ *
+ * A cover rises from the bottom edge over a parent that recedes FURTHER than a
+ * sheet's parent does and blurs, because a sheet's parent is coming back in a
+ * moment and a covered screen is not: you leave a cover deliberately, by
+ * finishing or by abandoning, never by brushing the edge of the screen.
+ *
+ * ⚠ `log` MEANS DIFFERENT THINGS ON THE TWO CLIENTS, and it is the only id in
+ * this file that does. On WEB `log` is the live logger (app-shell renders
+ * AuroraLogger for it). On MOBILE `log` is the Train LAUNCHER tab
+ * (app/(tabs)/log.tsx renders AuroraTrain) and the live logger is the `workout`
+ * route. Both ids are listed because a mode change must be a mode change on
+ * both clients — but it means nothing on mobile may test one of ITS routes
+ * against this set: `isCover("/log")` would be true for a tab. Mobile reaches
+ * this set through the explicit route list in app/_layout.tsx and nowhere else,
+ * and motion.test.ts states that so it cannot be quietly wired up elsewhere.
+ */
+export const COVER_SCREENS = [
+  /** The live session — mobile's route. */
+  "workout",
+  /** The live session — WEB's screen id. On mobile this is the launcher tab. */
+  "log",
+] as const;
+
+const COVER_SET = new Set<string>(COVER_SCREENS);
+
+/** Does arriving at this screen change what the app IS? */
+export function isCover(screen: string): boolean {
+  return COVER_SET.has(screen);
+}
+
 export type ScreenTransition =
   /** Between two bottom-nav destinations. `dir` is +1 rightward, −1 leftward. */
   | { kind: "sibling"; dir: 1 | -1 }
@@ -554,6 +605,11 @@ export type ScreenTransition =
   | { kind: "present"; dir: 0 }
   /** The detour leaving: the exact inverse of the presentation. */
   | { kind: "dismiss"; dir: 0 }
+  /** A MODE CHANGE arriving: the full screen rises, the app behind it recedes
+   *  and blurs out of focus. */
+  | { kind: "cover"; dir: 0 }
+  /** The mode ending: the exact inverse of the cover. */
+  | { kind: "uncover"; dir: 0 }
   /** Same screen, or nothing meaningful to say — crossfade. */
   | { kind: "replace"; dir: 0 };
 
@@ -575,6 +631,13 @@ export type ScreenTransition =
  */
 export function screenTransition(from: string, to: string, back = false): ScreenTransition {
   if (from === to) return { kind: "replace", dir: 0 };
+  // A MODE CHANGE outranks every other reading of a move, and that is the whole
+  // point of it: entering the live logger from Nutrition is not a sideways
+  // sibling slide that happens to land in a stopwatch. Tested first for the
+  // same reason detours are tested before `back` — it is a property of what the
+  // destination IS, and nothing about where you came from can change it.
+  if (isCover(to)) return { kind: "cover", dir: 0 };
+  if (isCover(from)) return { kind: "uncover", dir: 0 };
   const fromDetour = isDetour(from);
   const toDetour = isDetour(to);
   // Detour → detour (Settings → the logger's settings) is neither: nothing rises
@@ -644,6 +707,23 @@ export function screenAnimation(
     return role === "enter"
       ? { name: "motionRecedeForward", durationMs: springDurationMs(springs.sheet), easing: `var(--e-sheet, ${easings.fade})` }
       : { name: "motionDismissOut", durationMs: durations.fast, easing: easings.exit };
+  }
+  if (t.kind === "cover" || t.kind === "uncover") {
+    // On the ZOOM spring, which is the longest in the system (429ms) — a mode
+    // change earns the longest ordinary transition, and this is the audit's
+    // "350ms full-screen cover" honoured in the system's own vocabulary rather
+    // than by inventing a duration+bezier for the one transition that most
+    // wants to be interruptible. Both halves ride it, including the exit: a
+    // cover leaving is the app coming BACK, not a thing being dismissed, so
+    // hurrying it on the exit curve would undercut the return to normal.
+    const cover = t.kind === "cover";
+    return {
+      name: role === "enter"
+        ? (cover ? "motionCoverIn" : "motionFocusIn")
+        : (cover ? "motionFocusOut" : "motionCoverOut"),
+      durationMs: springDurationMs(springs.zoom),
+      easing: `var(--e-zoom, ${easings.fade})`,
+    };
   }
   return {
     name: role === "enter" ? "motionDissolveIn" : "motionDissolveOut",

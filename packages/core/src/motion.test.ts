@@ -21,7 +21,9 @@ import {
   screenTransition,
   screenAnimation,
   isDetour,
+  isCover,
   MODAL_SCREENS,
+  COVER_SCREENS,
   NAV_ROOT_ORDER,
 } from "./motion";
 
@@ -140,7 +142,11 @@ describe("screenTransition", () => {
   it("resolves client-specific ids onto their nav root", () => {
     expect(navRootRank("log")).toBe(NAV_ROOT_ORDER.indexOf("train"));
     expect(navRootRank("you")).toBe(NAV_ROOT_ORDER.indexOf("profile"));
-    expect(screenTransition("today", "log")).toEqual({ kind: "sibling", dir: 1 });
+    // `you` and not `log` demonstrates the aliasing now: `log` still ranks as
+    // the train root (mobile's log tab IS that root), but it is also WEB's live
+    // logger, so the mode-change test claims it before the sibling test is
+    // reached. See the "modality" block for the collision in full.
+    expect(screenTransition("today", "you")).toEqual({ kind: "sibling", dir: 1 });
   });
 
   it("pushes into a detail screen and pops back out", () => {
@@ -198,6 +204,43 @@ describe("modality", () => {
       expect(isDetour(deep), `${deep} should be depth, not a detour`).toBe(false);
     }
     for (const task of MODAL_SCREENS) expect(isDetour(task)).toBe(true);
+  });
+
+  it("covers a MODE CHANGE, and uncovers when it ends", () => {
+    // Entering the live logger takes the tab bar away, turns the back-swipe off
+    // and makes the app a stopwatch. It used to arrive as the same right-slide
+    // as opening Settings.
+    expect(screenTransition("today", "workout")).toEqual({ kind: "cover", dir: 0 });
+    expect(screenTransition("workout", "today")).toEqual({ kind: "uncover", dir: 0 });
+  });
+
+  it("lets a mode change outrank every other reading of the move", () => {
+    // From a SIBLING root, from a detour, and travelling backwards through
+    // history: none of them turn entering a mode into something else.
+    expect(screenTransition("nutrition", "workout").kind).toBe("cover");
+    expect(screenTransition("settings", "workout").kind).toBe("cover");
+    expect(screenTransition("today", "workout", true).kind).toBe("cover");
+    expect(screenTransition("workout", "today", true).kind).toBe("uncover");
+  });
+
+  it("keeps `log` a cover — and states why mobile must not ask about ITS routes", () => {
+    // The one id in motion.ts that means different things on the two clients:
+    // WEB's `log` is the live logger; MOBILE's `log` is the Train launcher TAB
+    // and its live logger is `workout`. Both are listed because a mode has to
+    // be a mode on both clients — which is exactly why mobile reaches this set
+    // through an explicit route list (app/_layout.tsx MOBILE_COVERS) and never
+    // by testing a pathname, where `/log` would wrongly read as a mode.
+    expect(isCover("log")).toBe(true);
+    expect(isCover("workout")).toBe(true);
+    expect(COVER_SCREENS.filter((r) => r !== "log")).toEqual(["workout"]);
+  });
+
+  it("keeps a mode change out of the detour and depth sets", () => {
+    // A mode is not a detour (you do not "finish and come back" from a workout
+    // the way you finish editing a profile) and not depth.
+    for (const mode of COVER_SCREENS) expect(isDetour(mode)).toBe(false);
+    expect(isCover("settings")).toBe(false);
+    expect(isCover("plans")).toBe(false);
   });
 
   it("names the same detour on BOTH clients", () => {

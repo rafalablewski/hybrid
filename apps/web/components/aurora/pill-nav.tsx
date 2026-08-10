@@ -234,7 +234,12 @@ export default function AuroraPillNav({ activeId, action = "train", onSelect, on
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, display: "flex", justifyContent: "center", padding: "0 16px 16px", pointerEvents: "none" }}>
         {/* The bar stack: [session accessory] over [glass capsule with the four
             tabs + the detached action circle], shrinking together on scroll. */}
-        <div ref={wrapRef} style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: ACC_GAP, width: "100%", maxWidth: 480 }}>
+        {/* `motion-bar` lifts this stack into its own view-transition group when
+            the app enters or leaves a MODE (globals.css scopes the name to
+            data-nav-kind cover/uncover), so the bar drops away and comes back
+            with the cover instead of popping out of existence when the shell
+            stops rendering it. */}
+        <div ref={wrapRef} className="motion-bar" style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", alignItems: "stretch", gap: ACC_GAP, width: "100%", maxWidth: 480 }}>
           {showAccessory && draft && (
             <SessionAccessory draft={draft} nowTs={nowTs} reduced={reduced} onResume={() => go("train")} resumeLabel={t("common.resume") === "common.resume" ? "Resume" : t("common.resume")} />
           )}
