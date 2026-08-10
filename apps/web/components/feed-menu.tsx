@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { feedMenuActions, fs, tracking, type FeedMenuAction, type Relation } from "@hybrid/core";
+import { feedMenuActions, fs, type FeedMenuAction, type Relation } from "@hybrid/core";
 import { useLang } from "@/lib/i18n";
 import { useDialog } from "@/lib/use-dialog";
 import { accentText } from "@/lib/ui";
+import { toast } from "./aurora/toast";
 import { C, jsend } from "./social-ui";
 
 /**
@@ -28,19 +29,20 @@ import { C, jsend } from "./social-ui";
  * LEFTWARD (`right: 0`) because the button sits against the row's right edge —
  * a menu anchored left would immediately leave the column.
  *
- * FOLLOW, REPORT AND BLOCK ARE REAL, and each one reports its OUTCOME in place
- * rather than closing on you: the row swaps to a past-tense tag (Following /
- * Reported / Blocked) so the press has a visible result. Only block closes the
- * card, because after it there is nothing left to act on — the author's rows
- * leave the stream in the same beat.
+ * GLASS, AND IT ZOOM-MORPHS OUT OF THE ANCHOR — the same presentation the
+ * mobile menu now gets from the system (a SwiftUI Menu is real Liquid Glass on
+ * iOS 26). Aurora's cards are deliberately solid, but a menu is a TRANSIENT
+ * overlay, not a content surface — it joins the pill nav as a glass film, it
+ * doesn't join the cards.
  *
- * MUTE AND "NOT INTERESTED" ARE STILL PLACEHOLDERS, and say so: pressing one
- * tags that row SOON and leaves the card open, rather than firing a silent
- * no-op the athlete reads as a broken button. Each needs state that doesn't
- * exist yet (core feed-actions.ts spells out which).
+ * SELECT DISMISSES, AND THE OUTCOME IS A TOAST. The card used to hold its row
+ * open and tag it in place ("Followed ✓") — a system menu cannot do that, and
+ * two dismissal behaviours for one menu would be worse than either, so both
+ * clients now close on select and report through the shared toast chip
+ * (aurora/toast.tsx). A placeholder row (mute, not interested — core says
+ * which) toasts SOON rather than firing a silent no-op the athlete reads as a
+ * broken button.
  */
-
-const mono = "var(--font-mono)";
 
 export interface FeedMenuProps {
   open: boolean;
@@ -77,10 +79,6 @@ export default function FeedMenu({
   open, onClose, handle, authorId, mine, subjectType, subjectId, relation, onDelete, onAuthorChanged,
 }: FeedMenuProps) {
   const { t } = useLang();
-  // What each pressed row is now showing: "soon" for a placeholder, or the
-  // past-tense outcome of a real action. Reset on close, so the card doesn't
-  // reopen wearing the last visit's tags.
-  const [tag, setTag] = useState<Record<string, string>>({});
   // The follow row is a toggle, so the menu holds the live relation while it is
   // open — the screen gets told too, but the row must not wait on a re-render
   // from above to stop saying "Follow" after you pressed it.
@@ -88,8 +86,11 @@ export default function FeedMenu({
   const [busy, setBusy] = useState(false);
   const actions = feedMenuFor({ mine, subjectType, canDelete: !!onDelete, relation: rel });
 
-  const close = () => { setTag({}); onClose(); };
+  const close = () => onClose();
 
+  /** The menu is CLOSED by the caller of this (select dismisses), so the
+   *  outcome lands as a toast — or as the visible effect itself (a delete or
+   *  a block removes rows in the same beat). */
   const act = async (key: string) => {
     if (busy) return;
     setBusy(true);
@@ -99,7 +100,7 @@ export default function FeedMenu({
         await jsend(`/api/social/follow`, following ? "DELETE" : "POST", { followeeId: authorId });
         const next: Relation = following ? "none" : "following";
         setRel(next);
-        setTag((s) => ({ ...s, follow: following ? "" : t("feed.menu.followed") }));
+        toast(t(following ? "feed.menu.unfollowed" : "feed.menu.followed"));
         onAuthorChanged?.({ authorId, relation: next });
       } else if (key === "report") {
         // A POST is a content row and is filed against directly; a session or
@@ -109,15 +110,15 @@ export default function FeedMenu({
           ? { targetType: "post", targetId: subjectId }
           : { targetType: "socialProfile", targetId: authorId };
         await jsend("/api/reports", "POST", { ...target, reason: "inappropriate" });
-        setTag((s) => ({ ...s, report: t("feed.menu.reported") }));
+        toast(t("feed.menu.reported"));
       } else if (key === "block") {
         await jsend("/api/social/block", "POST", { userId: authorId });
+        toast(t("feed.menu.blocked"));
         // Nothing left to act on: the author's rows leave the stream now.
         onAuthorChanged?.({ authorId, blocked: true });
-        close();
       }
     } catch {
-      /* the row simply doesn't tag — no alert for a menu action */
+      /* the action simply doesn't toast — no alert for a menu action */
     } finally {
       setBusy(false);
     }
@@ -140,6 +141,7 @@ export default function FeedMenu({
         role="menu"
         aria-label={t("feed.menu.title")}
         tabIndex={-1}
+        className="feed-menu-zoom"
         style={{
           position: "absolute",
           top: "calc(100% + 6px)",
@@ -147,60 +149,54 @@ export default function FeedMenu({
           zIndex: 41,
           minWidth: 210,
           maxWidth: "min(280px, calc(100vw - 32px))",
-          background: C("ink2"),
-          border: `1px solid ${C("line")}`,
-          borderRadius: 14,
-          // The app's own card lift — theme-aware (a warm sumi-wash on Kyoto
-          // Hour, the black bloom on Aurora), never a hardcoded black.
-          boxShadow: "var(--shadow-card)",
+          // The pill nav's glass grammar, not the cards': a light film under a
+          // modest blur whose identity lives at the rim.
+          background: "rgba(var(--glass-base), 0.55)",
+          WebkitBackdropFilter: "blur(22px) saturate(160%)",
+          backdropFilter: "blur(22px) saturate(160%)",
+          borderRadius: 20,
+          boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 0 0 1px rgba(255,255,255,0.08), var(--shadow-card)",
           padding: 5,
           overflow: "hidden",
         }}
       >
-        {actions.map((a) => {
-          const shown = tag[a.key];
-          return (
-            <button
-              key={a.key}
-              className="pressable"
-              role="menuitem"
-              onClick={() => {
-                if (a.placeholder) { setTag((s) => (s[a.key] ? s : { ...s, [a.key]: t("feed.menu.soon") })); return; }
-                if (a.key === "delete") { close(); onDelete?.(); return; }
-                void act(a.key);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                width: "100%",
-                textAlign: "left",
-                background: "none",
-                border: "none",
-                borderRadius: 10,
-                padding: "9px 10px",
-                cursor: "pointer",
-                fontFamily: "var(--font-display)",
-                fontWeight: 600,
-                fontSize: fs.body,
-                // Destructive rows draw in the AA-guarded red text channel —
-                // the same channel every other glyph in the row is held to.
-                color: a.destructive ? accentText("red") : C("chalk"),
-                whiteSpace: "nowrap",
-              }}
-            >
-              <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{label(a.labelKey)}</span>
-              {/* What the press did. SOON on a placeholder — pressed, nothing
-                  behind it yet — and the past tense on a real one, so an action
-                  that leaves the card open still has a visible result. */}
-              {shown && (
-                <span style={{ fontFamily: mono, fontSize: fs.nano, fontWeight: 600, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash") }}>
-                  {shown}
-                </span>
-              )}
-            </button>
-          );
-        })}
+        {actions.map((a, i) => (
+          <button
+            key={a.key}
+            className="pressable"
+            role="menuitem"
+            onClick={() => {
+              // Select DISMISSES — the outcome arrives as a toast (or as the
+              // rows leaving the stream), never as a row held open.
+              close();
+              if (a.placeholder) { toast(t("feed.menu.soon")); return; }
+              if (a.key === "delete") { onDelete?.(); return; }
+              void act(a.key);
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              width: "100%",
+              textAlign: "left",
+              background: "none",
+              border: "none",
+              borderTop: i > 0 ? "1px solid rgba(var(--text-rgb), 0.08)" : "none",
+              borderRadius: 10,
+              padding: "9px 10px",
+              cursor: "pointer",
+              fontFamily: "var(--font-display)",
+              fontWeight: 600,
+              fontSize: fs.body,
+              // Destructive rows draw in the AA-guarded red text channel —
+              // the same channel every other glyph in the row is held to.
+              color: a.destructive ? accentText("red") : C("chalk"),
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{label(a.labelKey)}</span>
+          </button>
+        ))}
       </div>
     </>
   );

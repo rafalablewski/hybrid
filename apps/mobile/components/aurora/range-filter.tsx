@@ -9,6 +9,7 @@ import {
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
+import { GlassWheel, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -193,8 +194,8 @@ export function RangeFilter({
         trackStyle={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, marginBottom: 10 }}
       />
 
-      {/* ── THE MONTH PICKER — the iOS grouped list: sections, a row per
-          period, a check on the one in force. ─────────────────────────────── */}
+      {/* ── THE MONTH PICKER — preset rows, then the months: the system wheel
+          where it renders (iOS 26), the grouped rows everywhere else. ──────── */}
       <Sheet visible={picker} onClose={() => setPicker(false)} title={t("w.home.act.pickTitle")} sub={t("w.home.act.pickSub")}>
         <PickerSection label={t("w.home.act.presets")}>
           {ACTIVITY_RANGE_PRESETS.map((p) => (
@@ -207,14 +208,31 @@ export function RangeFilter({
           ))}
         </PickerSection>
         <PickerSection label={t("w.home.act.monthsHead")}>
-          {months.map((id) => (
-            <PickerRow
-              key={id}
-              label={monthLabel(id)}
-              active={range.id === id}
-              onPress={() => { onPick(id); setPicker(false); }}
+          {/* Where the system wheel renders (iOS 26) and there is genuinely
+              something to spin through, the months are the native
+              `.pickerStyle(.wheel)` — detented spin, the glass selection band.
+              Selection applies as the wheel SETTLES and the sheet stays up, so
+              the surface behind updates live under your thumb (the same
+              direct-manipulation contract the sheet's own drag keeps); the
+              preset rows above still pick-and-close. A wheel of one item is
+              ceremony, so a single month keeps its row. Android, iOS < 26 and
+              web keep the grouped rows. */}
+          {LIQUID_GLASS_RENDERED && months.length > 1 ? (
+            <GlassWheel
+              options={months.map((id) => ({ id, label: monthLabel(id) }))}
+              value={(months.includes(range.id) ? range.id : months[0]!) as string}
+              onPick={(id) => onPick(id)}
             />
-          ))}
+          ) : (
+            months.map((id) => (
+              <PickerRow
+                key={id}
+                label={monthLabel(id)}
+                active={range.id === id}
+                onPress={() => { onPick(id); setPicker(false); }}
+              />
+            ))
+          )}
         </PickerSection>
       </Sheet>
     </>

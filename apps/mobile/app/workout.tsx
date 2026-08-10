@@ -125,7 +125,7 @@ import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER } from "../components/aurora/kit";
-import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
+import { GlassNavButton, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
@@ -1008,20 +1008,39 @@ export default function Workout() {
             same job. The flanks both take flex:1 so the clock stays optically
             centred whatever the side content measures. */}
         <View style={{ flex: 1, alignItems: "flex-start" }}>
-          <Pressable
-            onPress={minimize}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel={t("workout.minimize")}
-            style={{
-              width: 34, height: 34, borderRadius: 17,
-              alignItems: "center", justifyContent: "center",
-              backgroundColor: withAlpha(C.chalk, 0.06),
-              borderWidth: 1, borderColor: withAlpha(C.chalk, 0.14),
-            }}
-          >
-            <AuroraIcon name="chevron-down" size={19} color={C.chalk} />
-          </Pressable>
+          {/* The same control family as HeroNav's back circle, so it takes the
+              same native form: on iOS 26 a real SwiftUI glass button (the
+              34pt circle centred in a 44pt hit box — the negative margin keeps
+              it optically where the drawn circle sat); the drawn chalk-6%
+              circle stays the fallback. */}
+          {LIQUID_GLASS_RENDERED ? (
+            <View style={{ margin: -5 }}>
+              <GlassNavButton
+                onPress={minimize}
+                label={t("workout.minimize")}
+                glyph="chevron.down"
+                size={34}
+                hit={44}
+                glyphSize={15}
+                fg={C.chalk}
+              />
+            </View>
+          ) : (
+            <Pressable
+              onPress={minimize}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t("workout.minimize")}
+              style={{
+                width: 34, height: 34, borderRadius: 17,
+                alignItems: "center", justifyContent: "center",
+                backgroundColor: withAlpha(C.chalk, 0.06),
+                borderWidth: 1, borderColor: withAlpha(C.chalk, 0.14),
+              }}
+            >
+              <AuroraIcon name="chevron-down" size={19} color={C.chalk} />
+            </Pressable>
+          )}
         </View>
         <View style={{ alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 22, color: paused ? txt(C, C.amber) : C.chalk, letterSpacing: 0.9 }}>{mmss(elapsed)}</Text>

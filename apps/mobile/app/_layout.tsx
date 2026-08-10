@@ -25,6 +25,7 @@ import { C } from "../lib/ui";
 import { startIap } from "../lib/iap";
 import { supabase } from "../lib/supabase";
 import { ErrorBoundary } from "../components/error-boundary";
+import { ToastHost } from "../components/aurora/toast";
 import { NavScrollProvider } from "../lib/nav-scroll";
 import { SheetRecedeProvider, useRecedeStyle, useRecedeDim } from "../lib/sheet-recede";
 import { SharedElementProvider } from "../lib/shared-element";
@@ -115,6 +116,9 @@ function Shell() {
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: dim }]} />
       ) : null}
       </Animated.View>
+      {/* Outside the receding plane: an outcome chip must not scale away with
+          the screen a sheet is presenting over. */}
+      <ToastHost />
     </NavScrollProvider>
   );
 }

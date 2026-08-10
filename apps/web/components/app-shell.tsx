@@ -72,6 +72,7 @@ const Tour = dynamic(() => import("./tour"), { ssr: false });
 import AuroraToday from "./aurora/today";
 const AuroraProfile = dynamic(() => import("./aurora/profile"), { ssr: false });
 import AuroraPillNav from "./aurora/pill-nav";
+import { ToastHost } from "./aurora/toast";
 import { useTemplate } from "@/lib/use-template";
 const AuroraNutrition = dynamic(() => import("./aurora/nutrition"), { ssr: false });
 const AuroraOnboarding = dynamic(() => import("./aurora/onboarding"), { ssr: false });
@@ -1049,6 +1050,10 @@ export default function AppShell() {
           else navigate("train");
         }}
       />
+
+      {/* One-line outcome chips (the ⋯ menu's results land here — twin of the
+          mobile ToastHost mounted in app/_layout.tsx). */}
+      <ToastHost />
 
       {/* First-run guided tour overlay (#2) — only on Today so its anchors exist. */}
       {showTour && screen === "today" && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
