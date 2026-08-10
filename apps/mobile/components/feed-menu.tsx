@@ -7,7 +7,7 @@ import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { GUTTER, RADIUS } from "./aurora/kit";
-import { GlassMenuButton, LIQUID_GLASS_RENDERED } from "./aurora/swiftui";
+import { GlassContextMenu, GlassMenuButton, LIQUID_GLASS_RENDERED } from "./aurora/swiftui";
 import { toast } from "./aurora/toast";
 import { follow as apiFollow, unfollow as apiUnfollow, blockUser, reportTarget } from "../lib/social-api";
 
@@ -98,26 +98,31 @@ const ROW_H = 40;
 const CARD_PAD = 5;
 const GAP = 6;
 
-export function FeedMenuTrigger({
+/** The rows AND the one handler behind every renderer of this menu — the ⋯
+ *  trigger (native or card) and the card's long-press context menu all read
+ *  the same instance shape, so a row added in core cannot fire differently by
+ *  door. The menu is CLOSED by the time `run` executes (the system dismisses
+ *  itself; the RN card closes before calling), so the outcome lands as a
+ *  toast — or as the visible effect itself (a delete or a block removes rows
+ *  in the same beat). */
+export function useFeedMenu({
   handle, authorId, mine, subjectType, subjectId, relation, onDelete, onAuthorChanged,
-}: FeedMenuTriggerProps) {
-  const { palette: C } = useTheme();
+}: FeedMenuTriggerProps): {
+  actions: FeedMenuAction[];
+  /** The rows as a renderer-agnostic list: key, localized label, tint. */
+  items: { key: string; label: string; destructive?: boolean }[];
+  run: (key: string) => void;
+} {
   const { t } = useLang();
-  // The follow row is a toggle, so the trigger holds the live relation — the
+  // The follow row is a toggle, so the menu holds the live relation — the
   // screen gets told too, but the row must not wait on a re-render from above
   // to stop saying "Follow" after you pressed it.
   const [rel, setRel] = useState<Relation | undefined>(relation);
   const busy = useRef(false);
-  const [anchor, setAnchor] = useState<FeedMenuAnchor | null>(null);
-  const moreRef = useRef<View>(null);
 
   const actions = feedMenuFor({ mine, subjectType, canDelete: !!onDelete, relation: rel });
   const label = (key: string) => t(key).replace("{h}", handle ? `@${handle}` : t("w.social.you"));
 
-  /** One handler for every renderer. The menu is CLOSED by the time this runs
-   *  (the system dismisses itself; the RN card closes before calling), so the
-   *  outcome lands as a toast — or as the visible effect itself (a delete or a
-   *  block removes rows in the same beat). */
   const run = async (key: string) => {
     const action = actions.find((a) => a.key === key);
     if (action?.placeholder) { toast(t("feed.menu.soon")); return; }
@@ -154,6 +159,37 @@ export function FeedMenuTrigger({
     }
   };
 
+  return {
+    actions,
+    items: actions.map((a) => ({ key: a.key, label: label(a.labelKey), destructive: a.destructive })),
+    run: (key: string) => { void run(key); },
+  };
+}
+
+/**
+ * LONG-PRESS PREVIEW around a card's content — the system ContextMenu carrying
+ * this menu's rows (the `context-menu-previews` trial; see GlassContextMenu in
+ * aurora/swiftui.tsx for the containment contract). Off iOS 26 it renders the
+ * children untouched — the ⋯ remains the only door, and it remains a door on
+ * every platform, so the long-press is additive everywhere it exists.
+ */
+export function FeedContextMenu({ children, ...props }: FeedMenuTriggerProps & { children: React.ReactNode }) {
+  const { items, run } = useFeedMenu(props);
+  if (!LIQUID_GLASS_RENDERED || items.length === 0) return <>{children}</>;
+  return (
+    <GlassContextMenu items={items} onSelect={run}>
+      {children}
+    </GlassContextMenu>
+  );
+}
+
+export function FeedMenuTrigger(props: FeedMenuTriggerProps) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const { actions, items, run } = useFeedMenu(props);
+  const [anchor, setAnchor] = useState<FeedMenuAnchor | null>(null);
+  const moreRef = useRef<View>(null);
+
   if (actions.length === 0) return null;
 
   // The system's menu, where the material renders. The negative margin keeps
@@ -163,8 +199,8 @@ export function FeedMenuTrigger({
     return (
       <View style={{ marginRight: -8 }}>
         <GlassMenuButton
-          items={actions.map((a) => ({ key: a.key, label: label(a.labelKey), destructive: a.destructive }))}
-          onSelect={(key) => { void run(key); }}
+          items={items}
+          onSelect={run}
           label={t("feed.menu.title")}
           glyphColor={C.ash}
         />
@@ -189,10 +225,9 @@ export function FeedMenuTrigger({
       </View>
       <FeedMenuCard
         anchor={anchor}
-        actions={actions}
-        label={label}
+        items={items}
         onClose={() => setAnchor(null)}
-        onSelect={(key) => { setAnchor(null); void run(key); }}
+        onSelect={(key) => { setAnchor(null); run(key); }}
       />
     </>
   );
@@ -200,11 +235,10 @@ export function FeedMenuTrigger({
 
 /** The anchored RN card (every platform where the system menu doesn't render). */
 function FeedMenuCard({
-  anchor, actions, label, onClose, onSelect,
+  anchor, items, onClose, onSelect,
 }: {
   anchor: FeedMenuAnchor | null;
-  actions: FeedMenuAction[];
-  label: (key: string) => string;
+  items: { key: string; label: string; destructive?: boolean }[];
   onClose: () => void;
   onSelect: (key: string) => void;
 }) {
@@ -228,7 +262,7 @@ function FeedMenuCard({
   // Right-aligned to the glyph, clamped inside the screen gutter so the card
   // can never sit under the bezel.
   const right = Math.max(GUTTER, screenW - (anchor.x + anchor.w));
-  const cardH = actions.length * ROW_H + CARD_PAD * 2;
+  const cardH = items.length * ROW_H + CARD_PAD * 2;
   const below = anchor.y + anchor.h + GAP;
   // FLIP when the card would run off the bottom.
   const fitsBelow = below + cardH < screenH - 24;
@@ -269,13 +303,13 @@ function FeedMenuCard({
           ...lift,
         }}
       >
-        {actions.map((a) => (
+        {items.map((a) => (
           <PressScale key={a.key} onPress={() => onSelect(a.key)} accessibilityRole="menuitem">
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 9, borderRadius: RADIUS.inner - 2 }}>
               {/* Destructive rows draw in the AA-guarded red text channel —
                   the same channel every other glyph in the row is held to. */}
               <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.body, color: a.destructive ? txt(C, colors.red) : C.chalk }}>
-                {label(a.labelKey)}
+                {a.label}
               </Text>
             </View>
           </PressScale>

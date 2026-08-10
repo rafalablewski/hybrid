@@ -26,7 +26,7 @@ import { useLang } from "../lib/i18n";
 import { runShare, toggleSavedPost, useFeedSaved } from "../lib/feed-actions";
 import { Avatar } from "./social-kit";
 import { GUTTER, RADIUS } from "./aurora/kit";
-import { FeedMenuTrigger } from "./feed-menu";
+import { FeedContextMenu, FeedMenuTrigger } from "./feed-menu";
 
 /**
  * THE FEED ROW (mobile) — twin of apps/web/components/feed-card.tsx. Both
@@ -360,8 +360,12 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const reason = item.reason ? t(item.reason.key) : null;
   const handle = item.author.handle ? `@${item.author.handle}` : null;
 
-  return (
-    <View style={{ marginHorizontal: -GUTTER, paddingHorizontal: GUTTER, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
+  // The row's body, separated from its full-bleed frame so the long-press
+  // context menu can wrap CONTENT of the row's true width: the frame keeps the
+  // negative margin and the divider (a preview snapshot should not carry the
+  // stream's hairline), the body keeps the gutter padding.
+  const body = (
+    <View style={{ paddingHorizontal: GUTTER, paddingVertical: 12 }}>
       {/* "Why you're seeing this" — a kicker over the row, because it is the
           feed explaining ITSELF, not a fact about the athlete. */}
       {reason ? (
@@ -445,6 +449,28 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       <FeedActions item={item} headline={headline || item.title} onKudos={onKudos} onComments={onComments} />
 
       {children}
+    </View>
+  );
+
+  return (
+    <View style={{ marginHorizontal: -GUTTER, borderBottomWidth: 1, borderBottomColor: C.line }}>
+      {/* LONG-PRESS PREVIEW (the context-menu-previews trial, feed card only):
+          hold the row and it lifts off the receding screen with the same menu
+          the ⋯ opens riding under it — the system's ContextMenu on iOS 26,
+          plain content everywhere else. The ⋯ stays the accessible door on
+          every platform; this is additive. */}
+      <FeedContextMenu
+        handle={item.author.handle}
+        authorId={item.author.id}
+        mine={item.mine}
+        subjectType={item.subjectType}
+        subjectId={item.subjectId}
+        relation={item.relation}
+        onDelete={onDelete}
+        onAuthorChanged={onAuthorChanged}
+      >
+        {body}
+      </FeedContextMenu>
     </View>
   );
 }

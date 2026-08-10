@@ -1,7 +1,8 @@
-import { useId } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Platform, View, StyleSheet } from "react-native";
 import {
   Button,
+  ContextMenu,
   GlassEffectContainer,
   HStack,
   Host,
@@ -9,6 +10,7 @@ import {
   Menu,
   Namespace,
   Picker,
+  RNHostView,
   RoundedRectangle,
   Spacer,
   Text as SwiftText,
@@ -48,7 +50,8 @@ import { RADIUS, withAlpha } from "./kit";
  * Composition rule: a SwiftUI subtree must live entirely inside a `<Host>`, so
  * we only use SwiftUI for self-contained leaves (segment, button) and for a
  * glass BACKDROP that sits behind ordinary RN content (GlassSurface). RN
- * children are never placed inside a Host.
+ * children are never placed inside a Host — with ONE contained, watchdogged
+ * exception (`GlassContextMenu` below), which documents why it is allowed.
  */
 
 /** True only where SwiftUI exists — the kit's single gate for the native
@@ -208,6 +211,64 @@ export function GlassMenuButton({
           <Button key={it.key} label={it.label} role={it.destructive ? "destructive" : "default"} onPress={() => onSelect(it.key)} />
         ))}
       </Menu>
+    </Host>
+  );
+}
+
+/**
+ * LONG-PRESS PREVIEW — the system ContextMenu around ordinary RN content, and
+ * THE ONE SANCTIONED EXCEPTION to the composition rule above.
+ *
+ * `ContextMenu.Trigger` requires the pressed content to live inside the native
+ * host, so the RN children here ride in an `RNHostView` (RN-inside-SwiftUI).
+ * Everywhere else the rule "RN children are never placed inside a Host" stands,
+ * because its reason stands: if the native layer fails, whatever it was
+ * carrying vanishes — and here that would be CONTENT, not a control. This
+ * component is allowed to exist only because it CONTAINS that risk itself:
+ *
+ *  - a WATCHDOG: the RN child reports its first layout; if none arrives within
+ *    the window, the native wrapper is declared dead and the children remount
+ *    as plain RN. The failure case costs a beat of blank, never the content.
+ *    A false positive merely loses the long-press — also safe.
+ *  - the TRIAL SURFACE is one card type (the feed card), per the
+ *    capabilities plan (`context-menu-previews`), until an iOS 26 device build
+ *    proves the seam — scroll arbitration, nested Hosts, press-through.
+ *
+ * No custom Preview element: the system's default preview IS the pressed view
+ * lifting off the receding screen, which is exactly the treatment wanted.
+ */
+export function GlassContextMenu({
+  items,
+  onSelect,
+  children,
+}: {
+  items: { key: string; label: string; destructive?: boolean }[];
+  onSelect: (key: string) => void;
+  children: ReactNode;
+}) {
+  const alive = useRef(false);
+  const [dead, setDead] = useState(false);
+  useEffect(() => {
+    if (!LIQUID_GLASS_RENDERED) return;
+    const t = setTimeout(() => { if (!alive.current) setDead(true); }, 1200);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!LIQUID_GLASS_RENDERED || dead || items.length === 0) return <>{children}</>;
+  return (
+    <Host matchContents={{ vertical: true }} style={{ width: "100%" }}>
+      <ContextMenu>
+        <ContextMenu.Trigger>
+          <RNHostView matchContents>
+            <View onLayout={() => { alive.current = true; }}>{children}</View>
+          </RNHostView>
+        </ContextMenu.Trigger>
+        <ContextMenu.Items>
+          {items.map((it) => (
+            <Button key={it.key} label={it.label} role={it.destructive ? "destructive" : "default"} onPress={() => onSelect(it.key)} />
+          ))}
+        </ContextMenu.Items>
+      </ContextMenu>
     </Host>
   );
 }
