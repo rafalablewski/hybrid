@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import {
   FEED_ROW_PAD,
   feedFigureText,
@@ -468,6 +468,28 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const [menu, setMenu] = useState(false);
   const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: !!onDelete });
 
+  // LONG-PRESS opens the same menu — the web half of the mobile trial (the
+  // system ContextMenu on iOS 26; capabilities `context-menu-previews`), so
+  // the gesture cannot exist on one client only. Hold the row ~half a second
+  // without moving and the ⋯ menu opens; any drift past a thumb-wobble (8px)
+  // is a scroll, not a hold, and cancels. The click that ends a completed hold
+  // is swallowed in capture so it cannot also open the post underneath.
+  const hold = useRef<{ timer: number; x: number; y: number } | null>(null);
+  const held = useRef(false);
+  const cancelHold = () => { if (hold.current) { window.clearTimeout(hold.current.timer); hold.current = null; } };
+  const startHold = (e: ReactPointerEvent) => {
+    if (menuRows.length === 0 || menu || !e.isPrimary) return;
+    cancelHold();
+    const timer = window.setTimeout(() => { held.current = true; hold.current = null; setMenu(true); }, 500);
+    hold.current = { timer, x: e.clientX, y: e.clientY };
+  };
+  const moveHold = (e: ReactPointerEvent) => {
+    if (hold.current && (Math.abs(e.clientX - hold.current.x) > 8 || Math.abs(e.clientY - hold.current.y) > 8)) cancelHold();
+  };
+  const swallowHeldClick = (e: ReactMouseEvent) => {
+    if (held.current) { held.current = false; e.preventDefault(); e.stopPropagation(); }
+  };
+
   // The headline: core names the lift, the client speaks the language. It is
   // still COMPOSED for every card — the share payload and the opened post both
   // need it. What changed is whether ZONE B draws it: core answers that
@@ -499,6 +521,12 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
 
   return (
     <article
+      onPointerDown={startHold}
+      onPointerMove={moveHold}
+      onPointerUp={cancelHold}
+      onPointerLeave={cancelHold}
+      onPointerCancel={cancelHold}
+      onClickCapture={swallowHeldClick}
       style={{
         // At mobile widths the row bleeds under the shell's gutter
         // (--page-pad-x, 12px — the app-wide side inset) so the divider runs

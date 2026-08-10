@@ -36,7 +36,7 @@ import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
 import { AuroraField, withAlpha } from "./field";
 import { AuroraIcon } from "./icons";
-import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { GlassNavButton, LIQUID_GLASS_RENDERED } from "./swiftui";
 
 /**
  * THE HERO SYSTEM — mobile.
@@ -80,16 +80,38 @@ export function HeroNav({
   const { role, glyph } = heroNavAction(mode);
   const fg = onDark ? "#fff" : C.chalk;
   const glass = material === "glass";
-  // Liquid Glass where the platform has it; the white-12% + blur fallback
-  // otherwise. Same circle either way — only the material differs, and it
-  // differs with what is BEHIND the button, never with which screen it is on.
-  const native = glass && LIQUID_GLASS_SUPPORTED;
+  const label = fromLabel ? `← ${fromLabel}` : t(role === "dismiss" ? "common.close" : "common.back");
   const inset = (HERO.nav.hit - HERO.nav.size) / 2;
+  // Where Liquid Glass actually renders (iOS 26+), the button IS SwiftUI — a
+  // native interactive glass circle, no drawn ring, no fill, no JS press
+  // animation; the material answers the touch itself. `clear` stays the same
+  // native button with the glass stripped, so the field screens' clear↔glass
+  // cross-fade never swaps renderers mid-scroll.
+  if (LIQUID_GLASS_RENDERED) {
+    return (
+      <View style={[{ marginLeft: -inset }, style]}>
+        <GlassNavButton
+          onPress={onPress}
+          label={label}
+          glyph={glyph === "chevron-down" ? "chevron.down" : "arrow.left"}
+          material={material}
+          size={HERO.nav.size}
+          hit={HERO.nav.hit}
+          glyphSize={HERO.nav.glyph}
+          fg={fg}
+        />
+      </View>
+    );
+  }
+  // The fallback circle — Android, web-parity styling, iOS < 26 (where the
+  // native module exists but the material doesn't render): white-12% + blur,
+  // hairline ring, same geometry. It differs with what is BEHIND the button,
+  // never with which screen it is on.
   return (
     <PressScale
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={fromLabel ? `← ${fromLabel}` : t(role === "dismiss" ? "common.close" : "common.back")}
+      accessibilityLabel={label}
       hitSlop={8}
       style={[{ width: HERO.nav.hit, height: HERO.nav.hit, alignItems: "center", justifyContent: "center", marginLeft: -inset }, style]}
     >
@@ -101,13 +123,12 @@ export function HeroNav({
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
-          backgroundColor: glass && !native ? withAlpha(onDark ? "#ffffff" : C.ink2, HERO.alpha.navFill) : "transparent",
+          backgroundColor: glass ? withAlpha(onDark ? "#ffffff" : C.ink2, HERO.alpha.navFill) : "transparent",
           borderWidth: glass ? HERO.nav.stroke : 0,
           borderColor: withAlpha(onDark ? "#ffffff" : C.chalk, HERO.alpha.navStroke),
         }}
       >
-        {native && <GlassSurface radius={HERO.radius.nav} />}
-        {glass && !native && <BlurView intensity={22} tint={onDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />}
+        {glass && <BlurView intensity={22} tint={onDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />}
         <AuroraIcon name={glyph} size={HERO.nav.glyph} color={fg} />
       </View>
     </PressScale>
