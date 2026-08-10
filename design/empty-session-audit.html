@@ -109,7 +109,11 @@
   /* the dock cluster — filled pill flanked by glass satellites */
   .cluster { display: flex; align-items: center; gap: 10px; }
   .orb { width: 44px; height: 44px; flex: none; border-radius: 999px; display: grid; place-items: center; font-size: 14px; color: var(--chalk); background: var(--glass); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.10), inset 0 -1px 1px rgba(0,0,0,.18), inset 0 0 0 .5px rgba(140,140,140,.26); }
-  .orbpill { height: 44px; flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; border-radius: 999px; font-weight: 700; font-size: 15px; color: var(--chalk); background: var(--glass); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.10), inset 0 -1px 1px rgba(0,0,0,.18), inset 0 0 0 .5px rgba(140,140,140,.26); }
+  .cta.tall { padding: 19px 15px; font-size: 17px; border-radius: 999px; }
+  .orb.warn { color: var(--amber-t); }
+  .confirmbar { display: flex; align-items: center; gap: 10px; }
+  .confirmbar .q { flex: 1; font-weight: 700; font-size: 15px; }
+  .ghostpill { height: 44px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; font-weight: 700; font-size: 15px; color: var(--chalk); background: var(--glass); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.10), inset 0 -1px 1px rgba(0,0,0,.18), inset 0 0 0 .5px rgba(140,140,140,.26); }
 
   pre.code { margin: 20px 0 0; padding: 17px 18px; background: var(--ink2); border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.72; color: var(--chalk); }
   pre.code .c { color: var(--ash2); }
@@ -546,7 +550,7 @@
           <tr><td><b>What's RPE?</b></td><td>Into that menu, and onto the RPE control itself as a <span class="mono">&#9432;</span> — already a ring, so it needs no second one drawn round it.</td></tr>
           <tr><td><b>"1 exercises – tap &check; as you go"</b></td><td>Deleted. The first-run tip card already teaches this once and dismisses itself.</td></tr>
           <tr><td><b>Elapsed clock (22pt black, centred)</b></td><td>Mono, ash, small, in the header beside the lift's name. It is context, not content — so it reads, and nothing else. It turns amber and says PAUSED when it is.</td></tr>
-          <tr><td><b>Two Finishes</b></td><td>One, at the bottom, as a native glass pill beside a native glass Pause — the two session controls, in the two places your thumb already is, flanking the primary. Neither is chartreuse: the accent belongs to <i>Log set</i>. See the cluster below.</td></tr>
+          <tr><td><b>Two Finishes</b></td><td>One, at the bottom, as a native glass circle beside a native glass Pause — both flanking the primary, neither chartreuse, and Finish confirming in place rather than carrying a permanent label. See the cluster below.</td></tr>
           <tr><td><b>&times; remove exercise</b></td><td>Long-press the card for the system context menu (rename, replace, superset, remove) and swipe the row. Both native, both undoable, neither sitting one tap from your thumb.</td></tr>
           <tr><td><b>Exercise name as a live TextInput</b></td><td>A title. Rename lives in the context menu and opens a proper field.</td></tr>
           <tr><td><b>&#65291; type + &#9889; special + &ctdot; presets</b></td><td>One menu on the set row: a set-type picker section (working / warm-up / drop / cool-down) then the plan-ahead schemes as action rows.</td></tr>
@@ -732,39 +736,49 @@
       — <code>finish-liquid-field</code>, and it works. The live screen should end the same way,
       because it is the same sentence: <b>one thing you do, two things you can do to the session
       itself.</b> Pause and Finish are not peers of <i>Log set</i> and should never be drawn as
-      peers; they are satellites, and satellites are glass.
+      peers — not in colour, not in shape, and not in size. They are satellites, and satellites
+      are glass.
+    </p>
+
+    <p style="max-width: 66ch; color: var(--ash);">
+      The first cut of this cluster put a word on Finish and squeezed the primary to fit it.
+      That is the same inversion as the shipped screen, one layer down: two controls you press
+      <em>once</em> a session were eating the width of the one you press <em>thirty</em> times.
+      The fix is not to shuffle the row. It is to notice that <b>Log set does not need to be
+      wide — it needs to be the biggest target</b>, and the dimension a thumb actually cares
+      about is height.
     </p>
 
     <div class="pair" style="margin-top: 26px; align-items: stretch;">
       <div class="pane" style="flex: 1 1 320px; max-width: 400px;">
-        <div class="cap"><b>The cluster</b><span class="tag t-new">recommended</span></div>
+        <div class="cap"><b>Logging</b><span class="tag t-new">the resting state</span></div>
         <div style="border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; background: var(--ink2);">
           <div class="dockhint" style="padding-bottom: 12px;"><span>Set 1 of 5 &ndash; 5 reps</span><span>Rest 1:30 after</span></div>
           <div class="cluster">
             <span class="orb">&#10074;&#10074;</span>
-            <span class="cta" style="flex: 1; margin-top: 0;">&check; Log set</span>
-            <span class="orbpill">&#9873; Finish</span>
-          </div>
-          <p style="margin: 18px 0 0; font-size: 13.5px; color: var(--ash); line-height: 1.55;">
-            Pause is a circle, because <span class="mono">pause.fill</span> is a glyph nobody has
-            to read. Finish is a labelled capsule, because ending a session is the one thing on
-            this screen that should never be guessed at. The asymmetry is the point: they are not
-            equals. Pause is reversible and frequent; Finish happens once.
-          </p>
-        </div>
-
-        <div class="cap" style="margin: 26px 0 14px;"><b>The symmetric variant</b><span class="tag t-now">not recommended</span></div>
-        <div style="border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; background: var(--ink2);">
-          <div class="cluster">
-            <span class="orb">&#10074;&#10074;</span>
-            <span class="cta" style="flex: 1; margin-top: 0;">&check; Log set</span>
+            <span class="cta tall" style="flex: 1; margin-top: 0;">&check; Log set</span>
             <span class="orb">&#9873;</span>
           </div>
-          <p style="margin: 18px 0 0; font-size: 13.5px; color: var(--ash); line-height: 1.55;">
-            Prettier, and it matches the finish screen's two-orb balance exactly. But a bare
-            chequered flag is a guess, and the thing it does cannot be undone by tapping it again.
-            If we take this one, it needs a confirm — at which point the label was cheaper.
-          </p>
+        </div>
+
+        <div class="cap" style="margin: 24px 0 14px;"><b>Finish, tapped</b><span class="tag t-new">the confirm, in place</span></div>
+        <div style="border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; background: var(--ink2);">
+          <div class="dockhint" style="padding-bottom: 12px;"><span>4 sets still queued</span></div>
+          <div class="confirmbar">
+            <span class="q">Finish workout?</span>
+            <span class="ghostpill">Keep going</span>
+            <span class="cta" style="margin-top: 0; padding: 13px 18px;">Finish</span>
+          </div>
+        </div>
+
+        <div class="cap" style="margin: 24px 0 14px;"><b>Between sets</b><span class="tag t-new">the dock is the clock</span></div>
+        <div style="border: 1px solid var(--line); border-radius: 18px; padding: 22px 18px; background: var(--ink2);">
+          <div class="dockhint" style="padding-bottom: 12px; color: var(--blue-t);"><span>Resting &ndash; 1:12 left</span><span>Next: set 2 &ndash; 5 reps</span></div>
+          <div class="cluster">
+            <span class="orb warn">&#10074;&#10074;</span>
+            <span class="cta tall" style="flex: 1; margin-top: 0;">&check; Log set 2</span>
+            <span class="orb">&#9873;</span>
+          </div>
         </div>
       </div>
 
@@ -797,24 +811,31 @@
   &lt;/<span class="k">Button</span>&gt;
 &lt;/<span class="k">Host</span>&gt;
 
-<span class="c">// pause.fill / play.fill for the orb — it swaps in place, amber when
-// held, and the elapsed clock in the header goes amber with it.
-// flag.checkered for Finish. NOT xmark: an X reads as discard, and
-// discard is a different, destructive row inside the menu.</span></pre>
-        <p style="margin-top: 16px; font-size: 14px; color: var(--ash);">
-          <code>glassEffect</code> already takes <code>shape: "capsule"</code> in the installed
-          <code>@expo/ui</code>, so the labelled pill is one modifier away from the circle we ship
-          today. Gate on <code>LIQUID_GLASS_RENDERED</code>, keep the RN pair below it, and web
-          draws both in <code>.liquid-glass</code> — the rim grammar it already uses on the
-          logger's chevron.
+<span class="c">// pause.fill / play.fill for the left orb — it swaps in place, goes
+// amber when held, and the header clock goes amber with it.
+// flag.checkered for the right. NOT xmark: an X reads as discard, and
+// discard is a different, destructive row inside the menu.
+// The capsule form is still needed — it is the confirm's "Keep going".</span></pre>
+
+        <h4 style="margin: 26px 0 0; font-size: 15.5px; font-weight: 800; letter-spacing: -.015em;">Three moves, and why each one</h4>
+        <ul class="notes" style="margin-top: 14px;">
+          <li><span class="mark ok">1</span><span><b>Both satellites are 44pt circles.</b> 44 + 44 + two gaps leaves 260pt for the primary in a 392pt screen — comfortable, where the labelled capsule left 200 and looked it.</span></li>
+          <li><span class="mark ok">2</span><span><b><i>Log set</i> grows to 56pt tall.</b> It differentiates by <em>height</em>, not width, and height is the dimension that decides whether a thumb hits a target without looking. It becomes the tallest object on the screen, which is exactly what the most-pressed control should be. A wide short pill and a tall broad one read very differently under a bar.</span></li>
+          <li><span class="mark ok">3</span><span><b>Finish confirms in place</b> — tapping the flag turns the dock into <i>Finish workout?</i> with a count of what is still queued. That is what buys back the word: the label now lives in the moment it is actually read, instead of sitting there permanently taxing the primary. And we wanted the confirm anyway, so it costs nothing we were not already spending.</span></li>
+        </ul>
+
+        <p style="margin-top: 18px; font-size: 14px; color: var(--ash);">
+          The rest state then falls out for free. A countdown needs a line, not a row, so the
+          hint line becomes the clock and the cluster stays put — same three objects, same
+          places, the primary pre-loaded with the next set. Nothing moves between states, which
+          is the whole reason to have a dock.
         </p>
         <p style="margin-top: 14px; font-size: 14px; color: var(--ash);">
-          <b style="color: var(--chalk);">One risk, stated:</b> this parks a terminal action
-          permanently beside the button pressed thirty times a session. It is survivable — Finish
-          saves and lands on the summary, where the session can be renamed, edited or deleted, so
-          a mis-tap costs a broken set, not data. Still: give Finish a confirm when queued sets
-          remain unbanked, and let the two satellites sit on the outer edges with the pill
-          centred, so the thumb's resting arc falls on chartreuse.
+          <code>glassEffect</code> already takes <code>shape: "capsule"</code> alongside
+          <code>"circle"</code> in the installed <code>@expo/ui</code>, so one
+          <code>GlassSatellite</code> covers the orbs and the confirm's ghost pill. Gate on
+          <code>LIQUID_GLASS_RENDERED</code>, keep the RN pair below it, and web draws the same
+          in <code>.liquid-glass</code> — the rim grammar it already uses on the logger's chevron.
         </p>
       </div>
     </div>
@@ -959,8 +980,8 @@
               <div class="dockhint"><span>Set 1 of 5 &ndash; 5 reps</span><span>Rest 1:30 after</span></div>
               <div class="cluster">
                 <span class="orb">&#10074;&#10074;</span>
-                <span class="cta" style="flex: 1; margin-top: 0;">&check; Log set</span>
-                <span class="orbpill">&#9873; Finish</span>
+                <span class="cta tall" style="flex: 1; margin-top: 0;">&check; Log set</span>
+                <span class="orb">&#9873;</span>
               </div>
             </div>
           </div>
@@ -975,7 +996,7 @@
       <li><span class="mark ok">&check;</span><span><b>The number is chalk, not grey,</b> because it is a value, not a prompt. Five sets of five are already queued as quiet ledger rows. Logging the session is now five taps, not five taps plus five numbers typed.</span></li>
       <li><span class="mark ok">&check;</span><span><b>One accent.</b> Chartreuse appears once, in the dock, on the only button you will press repeatedly.</span></li>
       <li><span class="mark ok">&check;</span><span><b>The dock never moves</b> and tells you what you are about to bank and what happens next. When you bank it, the same dock becomes the countdown — and the Dynamic Island picks it up.</span></li>
-      <li><span class="mark ok">&check;</span><span><b>Pause and Finish flank the primary as native glass</b> — a <span class="mono">pause.fill</span> circle and a labelled <span class="mono">flag.checkered</span> capsule, both real SwiftUI buttons whose material answers the press. The three session controls are now in the one place your thumb rests, and only one of them is chartreuse.</span></li>
+      <li><span class="mark ok">&check;</span><span><b>Pause and Finish flank the primary as native glass circles</b> — <span class="mono">pause.fill</span> and <span class="mono">flag.checkered</span>, real SwiftUI buttons whose material answers the press. All three session controls sit where the thumb rests, only one is chartreuse, and the one you press thirty times is the tallest object on the screen.</span></li>
       <li><span class="mark ok">&check;</span><span><b>The marks obey the grammar:</b> bare plus grows the set list in place, ringed chevron leaves for the exercise picker.</span></li>
       <li><span class="mark ok">&check;</span><span><b>The rest timer is pinned and one tap away</b> — the left half of the glass capsule, armed and reading 1:30, which is why the dock says what happens after you bank. Today that control sits in a scrolling row and disappears the moment you add a second exercise.</span></li>
     </ul>
@@ -997,8 +1018,9 @@
       <li><span>Default <code>SwipeRow</code>'s content layer to transparent — the card-inside-a-card goes away.</span><span class="where">swipe-row.tsx</span></li>
       <li><span>Build <code>GlassToolbarGroup</code> — the Apple Music capsule: a <code>GlassEffectContainer</code> holding the rest-timer <code>Button</code> and the <code>Menu</code>, with the RN chip pair as the floor.</span><span class="where">swiftui.tsx</span></li>
       <li><span>Pin that capsule in the header and delete the meta row — the timer becomes a one-tap arm/disarm that never scrolls away, RPE help and discard go inside the menu.</span><span class="where">workout.tsx<br>logger.tsx</span></li>
-      <li><span>Dock the cluster: <i>Log set</i> centred with a glass Pause circle and a glass <i>Finish</i> capsule flanking it. Delete the header <i>Finish</i> and the bottom lime one — there is now exactly one of each.</span><span class="where">both clients</span></li>
-      <li><span>Build <code>GlassSatellite</code> (circle or capsule, optional label) and point Pause, Finish and the finish screen's orbs at it.</span><span class="where">swiftui.tsx</span></li>
+      <li><span>Dock the cluster: a 56pt <i>Log set</i> between two 44pt glass circles. Delete the header <i>Finish</i> and the bottom lime one — there is now exactly one of each.</span><span class="where">both clients</span></li>
+      <li><span>Finish confirms in the dock, in place, naming what is still queued — no sheet, no alert.</span><span class="where">both clients</span></li>
+      <li><span>Build <code>GlassSatellite</code> (circle or capsule, optional label) and point Pause, Finish, the confirm's ghost pill and the finish screen's orbs at it.</span><span class="where">swiftui.tsx</span></li>
       <li><span>Fold set type, special sets and schemes into one menu on the set row.</span><span class="where">both clients</span></li>
       <li><span>Retire the ringed <i>Add set</i> box for a bare plus; make <i>Add exercise</i> a door row.</span><span class="where">both clients</span></li>
       <li><span>Swap every glyph for an SF Symbol on iOS, with the shared vector marks as the floor.</span><span class="where">aurora/icon</span></li>
