@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   cardLead,
+  cardQualifier,
   cardRecords,
   cardSetLines,
   feedHeadlineEarnsLead,
+  feedStatParts,
   prLines,
   sessionDetail,
   sessionStats,
@@ -225,10 +227,55 @@ describe("formatting", () => {
   });
 
   it("converts volume into the athlete's own unit", () => {
-    const kg = feedStatText({ key: "volume", value: 12400 }, "kg");
-    const lb = feedStatText({ key: "volume", value: 12400 }, "lb");
-    expect(kg).toBe((12400).toLocaleString());
+    const kg = feedStatText({ key: "volume", value: 12400 }, "kg", "en");
+    const lb = feedStatText({ key: "volume", value: 12400 }, "lb", "en");
+    expect(kg).toBe("12,400");
     expect(Number(lb.replace(/\D/g, ""))).toBeGreaterThan(12400);
+  });
+
+  it("groups digits in the APP's language, never the device's", () => {
+    // THE DEFECT, pinned. These calls used to reach `toLocaleString()` with no
+    // argument, so grouping resolved against the handset: 5360 kg rendered
+    // "5.360" on a German or Polish device while the interface was in English,
+    // and an English reader parses that as five point three six. It is
+    // invisible to anyone testing on an English device, which is how it
+    // shipped — so the guard states all three explicitly.
+    const vol = (locale: string) => feedStatText({ key: "volume", value: 12400 }, "kg", locale);
+    expect(vol("en")).toBe("12,400");
+    expect(vol("de")).toBe("12.400");
+    expect(vol("pl")).toBe("12 400");
+    // Every branch takes the locale, not just tonnage.
+    expect(feedStatText({ key: "sets", value: 12400 }, "kg", "de")).toBe("12.400");
+    expect(feedStatText({ key: "distance", value: 12400 }, "kg", "de")).toBe("12.400");
+    // A pace is a clock and has no grouping to get wrong in any language.
+    expect(feedStatText({ key: "pace", value: 342 }, "kg", "de")).toBe("5:42");
+  });
+
+  it("gives every footer figure a unit, tonnage included", () => {
+    // The card's stat row named tonnage "volume" and never said kg — the one
+    // figure on the card with no unit at all.
+    expect(feedStatParts({ key: "volume", value: 5360 }, "kg", "en")).toMatchObject({ value: "5,360", unit: "kg" });
+    expect(feedStatParts({ key: "volume", value: 5360 }, "lb", "en").unit).toBe("lb");
+    // Everything else already reads as a unit, so it stays a translated key.
+    expect(feedStatParts({ key: "duration", value: 50 }, "kg", "en")).toMatchObject({ value: "50", unitKey: "feed.stat.min" });
+    // The watch signature survives the collapse from three columns to one line.
+    expect(feedStatParts({ key: "duration", value: 71, device: true }, "kg", "en").device).toBe(true);
+    expect(feedStatParts({ key: "duration", value: 50 }, "kg", "en").device).toBe(false);
+  });
+
+  it("gives a figure ONE qualifier, and the delta outranks the first-ever", () => {
+    // They are mutually exclusive by construction — a lift trained for the
+    // first time has no previous best — but they had two slots on one line.
+    expect(cardQualifier({ deltaPct: 14.3 })).toEqual({ kind: "delta", text: "+14.3%" });
+    expect(cardQualifier({ firstEver: true })).toEqual({ kind: "first", labelKey: "feed.firstShort" });
+    expect(cardQualifier({})).toBeNull();
+    expect(cardQualifier({ firstEver: false })).toBeNull();
+    // Defensive: an older payload carrying both gets the stronger claim, the
+    // one measured against a real previous best.
+    expect(cardQualifier({ deltaPct: 5, firstEver: true })!.kind).toBe("delta");
+    // A regression, not an improvement, still owns the slot — the card must not
+    // go quiet about a number moving the wrong way.
+    expect(cardQualifier({ deltaPct: -2.5 })).toEqual({ kind: "delta", text: "-2.5%" });
   });
 
   it("shows NO badge for a claimed lift — absence is the mark, not a scarlet letter", () => {

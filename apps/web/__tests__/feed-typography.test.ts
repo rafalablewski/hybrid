@@ -88,3 +88,79 @@ describe("the feed sizes off the shared ladder", () => {
     }
   });
 });
+
+/**
+ * THE FEED'S GRAMMAR — one qualifier, one accent, a footer rather than a table.
+ *
+ * These are the rules the row kept breaking quietly, because each break looked
+ * reasonable in the file it lived in. A record line had grown SIX type
+ * treatments on one baseline; the tier chip wore the accent that the delta two
+ * columns away was also wearing; the aggregates were a three-column table
+ * arguing with the content above them; and two of the four actions wore words
+ * while the other two stood bare.
+ *
+ * Every decision now lives in packages/core/src/feed-card.ts. What is asserted
+ * here is that the CLIENTS keep reading it rather than re-growing their own.
+ */
+describe("the feed's grammar stays in core", () => {
+  const CARDS = [["web", web("feed-card.tsx")], ["mobile", mobile("feed-card.tsx")]] as const;
+
+  it("gives a figure ONE qualifier slot, not a delta beside a sentence", () => {
+    for (const [name, src] of CARDS) {
+      expect(src, name).toContain("cardQualifier");
+      // "first time trained" is prose doing a badge's job. It belongs to the
+      // opened post, where a line has room for a sentence — never to the row.
+      expect(src, name).not.toContain('t("feed.firstEver")');
+    }
+  });
+
+  it("never draws the tier chip in the accent — provenance is not a score", () => {
+    // ONE accent per row, and it marks the improvement. The chip is ash, in the
+    // footer, because provenance qualifies the POST rather than one lift in it.
+    expect(web("feed-card.tsx")).not.toMatch(/Chip tone="lime"/);
+    expect(mobile("feed-card.tsx")).not.toMatch(/Chip tone=\{colors\.lime\}/);
+  });
+
+  it("draws the aggregates as a footer line, not the two-row table", () => {
+    for (const [name, src] of CARDS) {
+      expect(src, name).toContain("feedStatParts");
+      // FEED_STAT_LABEL_KEY is the table's second row — the descriptive label
+      // under each figure. The opened post still uses it; the row must not.
+      expect(src, name).not.toContain("FEED_STAT_LABEL_KEY");
+    }
+  });
+
+  it("formats every figure in the APP's language, never the device's", () => {
+    // THE DEFECT: toLocaleString() with no locale groups against the handset,
+    // so 5360 kg reads "5.360" under an English interface on a German phone.
+    // Core keeps the parameter optional for pure callers, so the guard has to
+    // live at the CALL SITES — all four of them, both clients.
+    const callers = [
+      ["web/feed-card.tsx", web("feed-card.tsx")],
+      ["web/feed-workout.tsx", web("feed-workout.tsx")],
+      ["mobile/feed-card.tsx", mobile("feed-card.tsx")],
+      ["mobile/feed-workout.tsx", mobile("feed-workout.tsx")],
+    ] as const;
+    let seen = 0;
+    for (const [name, src] of callers) {
+      for (const call of src.match(/feedStat(?:Text|Parts)\([^)]*\)/g) ?? []) {
+        seen += 1;
+        expect(call, `${name} — ${call} must pass the active language`).toMatch(/,\s*lang\)$/);
+      }
+    }
+    // A guard that quietly stops matching reads exactly like a clean codebase.
+    expect(seen, "no feedStat* call sites found — the guard has lost its target").toBe(4);
+  });
+
+  it("labels the actions for screen readers instead of on screen", () => {
+    // Four glyphs, one visual class. The words are gone and a count takes their
+    // place only when there IS one — "0" beside a bolt is worse than silence —
+    // so the label has to exist somewhere, and the somewhere is a11y.
+    expect(web("feed-card.tsx")).toContain('aria-label={t("feed.kudos")}');
+    expect(web("feed-card.tsx")).toContain('{item.kudos > 0 ? item.kudos : null}');
+    expect(mobile("feed-card.tsx")).toContain('accessibilityLabel={t("feed.kudos")}');
+    // The old shape: the visible text WAS the label, so removing it without
+    // this would have taken the only name the control had.
+    expect(mobile("feed-card.tsx")).not.toContain('String(item.kudos) : t("feed.kudos")');
+  });
+});

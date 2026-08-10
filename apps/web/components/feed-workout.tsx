@@ -54,7 +54,9 @@ function setTag(type: FeedWorkoutSet["type"]): { key: string; accent: string } |
 /** The session's figures, wrapping — the post carries the whole set, so this is
  *  a grid rather than the card's single row of three. */
 export function StatGrid({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
-  const { t } = useLang();
+  // `lang`, not the device's locale: without it the tonnage groups its digits
+  // against the handset, so 5360 reads "5.360" under an English interface.
+  const { t, lang } = useLang();
   if (!stats.length) return null;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))", gap: 12, borderTop: `1px solid ${C("line")}`, marginTop: 10, paddingTop: 10 }}>
@@ -62,7 +64,7 @@ export function StatGrid({ stats, units }: { stats: FeedStat[]; units: WeightUni
         <div key={s.key} style={{ minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: mono, fontSize: fs.note, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: s.key === "hr" ? accentText("blue") : C("chalk") }}>
             {s.device && <WatchGlyph />}
-            {feedStatText(s, units)}
+            {feedStatText(s, units, lang)}
           </div>
           <div style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash"), marginTop: 2 }}>
             {t(FEED_STAT_LABEL_KEY[s.key])}

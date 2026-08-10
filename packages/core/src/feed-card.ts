@@ -151,23 +151,66 @@ export const FEED_STAT_LABEL_KEY: Record<FeedStatKey, string> = {
   kcal: "feed.stat.kcal",
 };
 
-/** The VALUE of a stat, formatted for display (no label, no unit suffix — the
- *  label carries the unit so the number stays a number). */
-export function feedStatText(stat: FeedStat, units: WeightUnit): string {
+/**
+ * The VALUE of a stat, formatted for display (no label, no unit suffix — the
+ * label carries the unit so the number stays a number).
+ *
+ * `locale` IS NOT OPTIONAL IN SPIRIT, only in signature. Left out, these calls
+ * resolve grouping against the DEVICE rather than against the app: 5360 kg
+ * renders "5.360" on a German or Polish handset while the interface is in
+ * English, and an English reader parses that as five point three six. The
+ * failure is invisible to anyone testing on an English device, which is exactly
+ * how it shipped. Every caller passes the ACTIVE LANGUAGE — both clients hold
+ * it on `useLang()` — and the parameter stays optional only so a pure caller
+ * with no language in hand (a test, a server-side aggregate) still compiles.
+ */
+export function feedStatText(stat: FeedStat, units: WeightUnit, locale?: string): string {
   switch (stat.key) {
     case "volume": {
-      // Tonnage in the athlete's unit, thin-spaced so 12 400 stays readable.
+      // Tonnage in the athlete's unit, grouped so 12 400 stays readable.
       const v = units === "lb" ? stat.value / 0.45359237 : stat.value;
-      return Math.round(v).toLocaleString();
+      return Math.round(v).toLocaleString(locale);
     }
     case "distance":
-      return roundKm(stat.value).toLocaleString();
+      return roundKm(stat.value).toLocaleString(locale);
     case "pace":
       // A pace is a CLOCK, not a count — "5:42", with the label carrying /km.
       return paceClock(stat.value);
     default:
-      return Math.round(stat.value).toLocaleString();
+      return Math.round(stat.value).toLocaleString(locale);
   }
+}
+
+/**
+ * A stat as it reads in the card's FOOTER LINE — the figure and the unit that
+ * belongs to it, kept as two pieces so the client can set the unit quieter than
+ * the number without re-parsing a joined string.
+ *
+ * The card's stat row used to be three equal columns, each stacking a value
+ * over an uppercase label: a data TABLE, competing for attention with the
+ * content above it and giving tonnage no unit at all. As one line it is a
+ * footer, which is what a session's aggregates are.
+ *
+ * Every stat's label already reads as a unit ("min", "sets", "km", "min/km",
+ * "avg bpm") — every stat but VOLUME, whose unit is the athlete's own weight
+ * preference and so a literal rather than a word to translate.
+ */
+export interface FeedStatParts {
+  value: string;
+  /** i18n key for the unit. Absent on volume, which carries `unit` instead. */
+  unitKey?: string;
+  /** a literal unit that must not be translated (kg / lb). */
+  unit?: string;
+  /** the DEVICE measured it — the client draws the watch signature. */
+  device: boolean;
+}
+
+export function feedStatParts(stat: FeedStat, units: WeightUnit, locale?: string): FeedStatParts {
+  return {
+    value: feedStatText(stat, units, locale),
+    ...(stat.key === "volume" ? { unit: units } : { unitKey: FEED_STAT_LABEL_KEY[stat.key] }),
+    device: !!stat.device,
+  };
 }
 
 /** A hero figure split into its number and its unit, so the client can set the
@@ -210,6 +253,35 @@ export function feedHeadlineText(
 export function feedDeltaText(pct: number): string {
   const r = Math.round(pct * 10) / 10;
   return `${r > 0 ? "+" : ""}${r}%`;
+}
+
+/**
+ * WHAT QUALIFIES A FIGURE — and there is only ever ONE of them.
+ *
+ * `deltaPct` and `firstEver` are mutually exclusive by construction: a lift
+ * trained for the first time has no previous best to improve on, so `prLines`
+ * can never emit both. They were nevertheless drawn in two separate slots on a
+ * line that already carried six type treatments on one baseline — a bold lift
+ * name, a mono-bold figure, a mono-ash unit, a mono-accent delta, the LOWERCASE
+ * SENTENCE "first time trained" doing a badge's job, and a tier chip flung to
+ * the far edge.
+ *
+ * One slot, two possible contents, and the distinction carried by colour alone:
+ *   • a delta wears the card's ACCENT — an improvement is the thing worth
+ *     seeing across a room, and it is the only accent the card spends;
+ *   • a first-ever is ASH, and short. It is context, not a score.
+ *
+ * The delta wins if both somehow arrive (an older payload, a hand-built
+ * detail): the stronger claim is the one measured against a real previous best.
+ */
+export type CardQualifier =
+  | { kind: "delta"; text: string }
+  | { kind: "first"; labelKey: "feed.firstShort" };
+
+export function cardQualifier(of: { deltaPct?: number; firstEver?: boolean }): CardQualifier | null {
+  if (of.deltaPct != null) return { kind: "delta", text: feedDeltaText(of.deltaPct) };
+  if (of.firstEver) return { kind: "first", labelKey: "feed.firstShort" };
+  return null;
 }
 
 // ------------------------------------------------------------- builders -----

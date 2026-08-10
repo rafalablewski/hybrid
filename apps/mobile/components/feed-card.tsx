@@ -2,16 +2,15 @@ import { useRef, useState, type ReactNode } from "react";
 import { View, Text, type TextStyle } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import {
-  FEED_STAT_LABEL_KEY,
-  feedDeltaText,
   feedFigureText,
   cardLead,
+  cardQualifier,
   cardRecords,
   cardSetLines,
   feedHeadlineEarnsLead,
   feedHeadlineText,
   feedSharePayload,
-  feedStatText,
+  feedStatParts,
   feedSubjectKey,
   feedTierChip,
   isFeedSaved,
@@ -134,22 +133,71 @@ export function Chip({ children, tone }: { children: ReactNode; tone?: string })
   );
 }
 
-function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
+/**
+ * THE FOOTER — the session's aggregates, and the card's provenance.
+ *
+ * It used to be three equal columns, each stacking a value over an uppercase
+ * label: a data TABLE, arguing with the content above it for the same
+ * attention, and giving tonnage no unit at all. A session's aggregates are a
+ * footnote to the record, so they read as one quiet line.
+ *
+ * NO SEPARATOR CHARACTER. The house rule prefers real layout to a joined
+ * string, and here it is available: the figure is chalk and its unit is ash, so
+ * a gap alone divides "50 MIN" from "5,360 KG" without a dash between them.
+ *
+ * The HR figure is no longer drawn in teal. On a card whose one accent is
+ * already spent on the improvement, a single coloured number in the footer is
+ * the only colour left and reads as emphasis it hasn't earned — the opened post
+ * keeps the channel, where the figure has room to mean something.
+ *
+ * The TIER CHIP lives here now rather than on a record line: provenance
+ * qualifies the whole post, not one lift inside it. So the footer draws
+ * whenever there are stats OR a tier — a shared PR post has no aggregates and
+ * must still be able to say how the claim was corroborated.
+ */
+function FooterLine({ stats, tier, units }: { stats: FeedStat[]; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+  const C = useTheme().palette;
+  const { t, lang } = useLang();
+  const chip = feedTierChip(tier);
+  if (!stats.length && !chip) return null;
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12, rowGap: 6, borderTopWidth: 1, borderTopColor: C.line, marginTop: 10, paddingTop: 9 }}>
+      {stats.map((s) => {
+        const p = feedStatParts(s, units, lang);
+        return (
+          <View key={s.key} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            {p.device ? <WatchGlyph color={C.ash} /> : null}
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", color: C.chalk }}>
+              {p.value}
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "400", letterSpacing: tracking.caps, color: C.ash }}>
+                {` ${(p.unit ?? t(p.unitKey!)).toUpperCase()}`}
+              </Text>
+            </Text>
+          </View>
+        );
+      })}
+      {chip ? (
+        // ASH, not the accent. The accent is the "go" colour and it is spent on
+        // the improvement; provenance is a fact about the claim, not a score.
+        <View style={{ marginLeft: "auto" }}>
+          <Chip>{`${chip.short} ${t(chip.labelKey)}`}</Chip>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** ZONE C's one qualifier — a delta in the accent or a short ash FIRST, never
+ *  both and never two slots. Core decides which (`cardQualifier`). */
+function Qualifier({ of }: { of: { deltaPct?: number; firstEver?: boolean } }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  if (!stats.length) return null;
+  const q = cardQualifier(of);
+  if (!q) return null;
   return (
-    <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.line, marginTop: 8, paddingTop: 8 }}>
-      {stats.map((s) => (
-        <View key={s.key} style={{ flex: 1, minWidth: 0 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            {s.device ? <WatchGlyph color={C.ash} /> : null}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "600", color: s.key === "hr" ? txt(C, colors.blue) : C.chalk }}>{feedStatText(s, units)}</Text>
-          </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash, marginTop: 2 }}>{t(FEED_STAT_LABEL_KEY[s.key]).toUpperCase()}</Text>
-        </View>
-      ))}
-    </View>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", letterSpacing: q.kind === "first" ? tracking.caps : undefined, color: q.kind === "delta" ? txt(C, colors.lime) : C.ash }}>
+      {q.kind === "delta" ? q.text : t(q.labelKey).toUpperCase()}
+    </Text>
   );
 }
 
@@ -162,13 +210,15 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
  * and up into the hero figure (core `cardRecords`). What is left here is the
  * runner-up, and past that a count that opens (the post has all of them).
  *
- * `tier` arrives undefined when the hero already carried the chip — provenance
- * belongs to the claim, and the claim is up there now.
+ * THREE TREATMENTS ON THE LINE, not six: the lift, its figure, and ONE
+ * qualifier at the far edge. The tier chip left for the footer (provenance
+ * belongs to the post, not to one lift in it) and "first time trained" — a
+ * lowercase sentence doing a badge's job — collapsed into the same slot as the
+ * delta, which it can never collide with.
  */
-function PrLines({ records, tier, units }: { records: CardRecords; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+function PrLines({ records, units }: { records: CardRecords; units: WeightUnit }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const chip = feedTierChip(tier);
   const shown = records.lines;
   const rest = records.rest;
   const total = records.shown.length + rest;
@@ -183,13 +233,7 @@ function PrLines({ records, tier, units }: { records: CardRecords; tier?: FeedDe
               {fig.value}
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{` ${fig.unit}`}</Text>
             </Text>
-            {pr.deltaPct != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, colors.lime) }}>{feedDeltaText(pr.deltaPct)}</Text> : null}
-            {pr.firstEver ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("feed.firstEver")}</Text> : null}
-            {i === 0 && chip ? (
-              <View style={{ marginLeft: "auto" }}>
-                <Chip tone={colors.lime}>{`${chip.short} ${t(chip.labelKey)}`}</Chip>
-              </View>
-            ) : null}
+            <View style={{ marginLeft: "auto" }}><Qualifier of={pr} /></View>
           </View>
         );
       })}
@@ -231,13 +275,8 @@ function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units
 function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const tier = feedTierChip(lead.tier);
   const fig = lead.figureKg != null && lead.figureKg > 0 ? feedFigureText(lead.figureKg, units) : null;
   const e1 = lead.e1rmKg != null ? feedFigureText(lead.e1rmKg, units) : null;
-  const deltaLine = [
-    e1 ? t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`) : null,
-    lead.deltaPct != null ? feedDeltaText(lead.deltaPct) : null,
-  ].filter(Boolean).join(" ");
   return (
     <>
       {/* THE LIFT, as the figure's own label. On a session the headline no
@@ -250,26 +289,22 @@ function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
           {lead.label.toUpperCase()}
         </Text>
       ) : null}
-      {fig || tier ? (
+      {fig ? (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4 }}>
-          {fig ? (
-            <>
-              <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: tracking.display, color: C.chalk }}>{fig.value}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: C.ash }}>{fig.unit}</Text>
-            </>
-          ) : null}
-          {/* Provenance sits on the FIGURE's line, never beside the name. */}
-          {tier ? (
-            <View style={{ marginLeft: "auto" }}>
-              <Chip tone={colors.lime}>{`${tier.short} ${t(tier.labelKey)}`}</Chip>
-            </View>
-          ) : null}
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: tracking.display, color: C.chalk }}>{fig.value}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: C.ash }}>{fig.unit}</Text>
+          {/* THE ONE QUALIFIER, at the far edge of the figure's own line. The
+              tier chip used to hold this slot and has gone to the footer:
+              provenance qualifies the post, an improvement qualifies THIS
+              number. */}
+          <View style={{ marginLeft: "auto" }}><Qualifier of={lead} /></View>
         </View>
       ) : null}
-      {deltaLine || lead.firstEver ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: lead.deltaPct != null ? txt(C, colors.lime) : C.ash, marginTop: 4 }}>
-          {deltaLine}
-          {lead.firstEver ? <Text style={{ color: C.ash }}>{deltaLine ? " — " : ""}{t("feed.firstEver")}</Text> : null}
+      {/* The honest second number, and only that — the delta left for the slot
+          above rather than sharing this line with an estimate. */}
+      {e1 ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
+          {t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`)}
         </Text>
       ) : null}
     </>
@@ -317,19 +352,25 @@ export function FeedActions({
   // so the glyph fills on the press frame (lib/feed-actions.ts).
   const saved = isFeedSaved(useFeedSaved(), feedSubjectKey(item));
   return (
+  // FOUR GLYPHS, ONE VISUAL CLASS. Kudos and comment used to wear their names
+  // while save and share stood bare, so the row read as two labelled buttons
+  // plus two unexplained marks. The words are gone and a COUNT takes their
+  // place — but only when there is one, because "0" beside a bolt is worse than
+  // silence. The labels themselves move to the accessibility layer, where they
+  // were missing entirely: the visible text had been doing that job.
   <View style={{ flexDirection: "row", alignItems: "center", gap: 18, marginTop: 10 }}>
-    <Pressable onPress={onKudos}>
+    <Pressable onPress={onKudos} hitSlop={8} accessibilityRole="button" accessibilityState={{ selected: item.kudosedByMe }} accessibilityLabel={t("feed.kudos")}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <Bolt color={item.kudosedByMe ? txt(C, colors.lime) : C.ash} filled={item.kudosedByMe} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: item.kudosedByMe ? txt(C, colors.lime) : C.ash }}>
-          {item.kudos > 0 ? String(item.kudos) : t("feed.kudos")}
-        </Text>
+        {item.kudos > 0 ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: item.kudosedByMe ? txt(C, colors.lime) : C.ash }}>{item.kudos}</Text>
+        ) : null}
       </View>
     </Pressable>
-    <Pressable onPress={onComments}>
+    <Pressable onPress={onComments} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("w.social.comment")}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <Bubble color={C.ash} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{item.comments > 0 ? String(item.comments) : t("w.social.comment")}</Text>
+        {item.comments > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{item.comments}</Text> : null}
       </View>
     </Pressable>
 
@@ -486,12 +527,14 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         {/* …then the runner-up records, without the one the hero took. The tier
             chip goes with whichever of the two is drawing the loudest claim. */}
         {records.lines.length > 0 || records.rest > 0 ? (
-          <PrLines records={records} tier={lead ? undefined : d?.tier} units={units} />
+          <PrLines records={records} units={units} />
         ) : null}
         {/* The lifts the records above already named are dropped from the top
             sets — the same lift twice in one card is noise (core cardSetLines). */}
         {setLines.length > 0 ? <TopSets sets={setLines} units={units} /> : null}
-        {d?.stats && d.stats.length > 0 ? <StatRow stats={d.stats} units={units} /> : null}
+        {/* The footer draws for a tier alone, so a shared PR post with no
+            aggregates can still say how its claim was corroborated. */}
+        <FooterLine stats={d?.stats ?? []} tier={d?.tier} units={units} />
 
         {/* ZONE E — words */}
         {/* RN has no inherited font: a Text with no fontFamily draws in the

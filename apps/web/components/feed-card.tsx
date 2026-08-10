@@ -2,16 +2,15 @@
 
 import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import {
-  FEED_STAT_LABEL_KEY,
-  feedDeltaText,
   feedFigureText,
   feedSharePayload,
   cardLead,
+  cardQualifier,
   cardRecords,
   cardSetLines,
   feedHeadlineEarnsLead,
   feedHeadlineText,
-  feedStatText,
+  feedStatParts,
   feedSubjectKey,
   feedTierChip,
   fs,
@@ -149,24 +148,79 @@ export function Chip({ children, tone, title }: { children: ReactNode; tone?: st
   );
 }
 
-/** Zone C — the stat row. Device-measured cells carry the watch signature. */
-function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
-  const { t } = useLang();
-  if (!stats.length) return null;
+/**
+ * THE FOOTER — the session's aggregates, and the card's provenance.
+ *
+ * It used to be three equal columns, each stacking a value over an uppercase
+ * label: a data TABLE, arguing with the content above it for the same
+ * attention, and giving tonnage no unit at all. A session's aggregates are a
+ * footnote to the record, so they read as one quiet line.
+ *
+ * NO SEPARATOR CHARACTER. The house rule prefers real layout to a joined
+ * string, and here it is available: the figure is chalk and its unit is ash, so
+ * a flex gap alone divides "50 MIN" from "5,360 KG" without a dash between them.
+ *
+ * The HR figure is no longer drawn in teal. On a card whose one accent is
+ * already spent on the improvement, a single coloured number in the footer is
+ * the only colour left and reads as emphasis it hasn't earned — the opened post
+ * keeps the channel, where the figure has room to mean something.
+ *
+ * The TIER CHIP lives here now rather than on a record line: provenance
+ * qualifies the whole post, not one lift inside it. So the footer draws
+ * whenever there are stats OR a tier — a shared PR post has no aggregates and
+ * must still be able to say how the claim was corroborated.
+ */
+function FooterLine({ stats, tier, units }: { stats: FeedStat[]; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+  const { t, lang } = useLang();
+  const chip = feedTierChip(tier);
+  if (!stats.length && !chip) return null;
   return (
-    <div style={{ display: "flex", borderTop: `1px solid ${C("line")}`, marginTop: 8, paddingTop: 8 }}>
-      {stats.map((s) => (
-        <div key={s.key} style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: mono, fontSize: fs.note, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: s.key === "hr" ? accentVar("blue") : C("chalk") }}>
-            {s.device && <WatchGlyph />}
-            {feedStatText(s, units)}
-          </div>
-          <div style={{ fontFamily: mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash"), marginTop: 2 }}>
-            {t(FEED_STAT_LABEL_KEY[s.key])}
-          </div>
-        </div>
-      ))}
+    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px 12px", borderTop: `1px solid ${C("line")}`, marginTop: 10, paddingTop: 9 }}>
+      {stats.map((s) => {
+        const p = feedStatParts(s, units, lang);
+        return (
+          <span key={s.key} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: mono, fontSize: fs.micro, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: C("chalk") }}>
+            {p.device && <WatchGlyph />}
+            {p.value}
+            <span style={{ fontSize: fs.nano, fontWeight: 400, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash") }}>
+              {p.unit ?? t(p.unitKey!)}
+            </span>
+          </span>
+        );
+      })}
+      {chip && (
+        // ASH, not the accent. The accent is the "go" colour and it is spent on
+        // the improvement; provenance is a fact about the claim, not a score.
+        <span style={{ marginLeft: "auto" }}>
+          <Chip title={t(`feed.tierExplain.${tier}`)}>
+            <b>{chip.short}</b> {t(chip.labelKey)}
+          </Chip>
+        </span>
+      )}
     </div>
+  );
+}
+
+/** ZONE C's one qualifier — a delta in the accent or a short ash FIRST, never
+ *  both and never two slots. Core decides which (`cardQualifier`). */
+function Qualifier({ of }: { of: { deltaPct?: number; firstEver?: boolean } }) {
+  const { t } = useLang();
+  const q = cardQualifier(of);
+  if (!q) return null;
+  return (
+    <span
+      style={{
+        fontFamily: mono,
+        fontSize: fs.micro,
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+        ...(q.kind === "first"
+          ? { letterSpacing: tracking.caps, textTransform: "uppercase" as const, color: C("ash") }
+          : { color: accentVar("lime") }),
+      }}
+    >
+      {q.kind === "delta" ? q.text : t(q.labelKey)}
+    </span>
   );
 }
 
@@ -179,12 +233,14 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
  * and up into the hero figure (core `cardRecords`). What is left here is the
  * runner-up, and past that a count that opens (the post has all of them).
  *
- * `tier` arrives undefined when the hero already carried the chip — provenance
- * belongs to the claim, and the claim is up there now.
+ * THREE TREATMENTS ON THE LINE, not six: the lift, its figure, and ONE
+ * qualifier at the far edge. The tier chip left for the footer (provenance
+ * belongs to the post, not to one lift in it) and "first time trained" — a
+ * lowercase sentence doing a badge's job — collapsed into the same slot as the
+ * delta, which it can never collide with.
  */
-function PrLines({ records, tier, units }: { records: CardRecords; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+function PrLines({ records, units }: { records: CardRecords; units: WeightUnit }) {
   const { t } = useLang();
-  const chip = feedTierChip(tier);
   const shown = records.lines;
   const rest = records.rest;
   const total = records.shown.length + rest;
@@ -198,13 +254,7 @@ function PrLines({ records, tier, units }: { records: CardRecords; tier?: FeedDe
             <span style={{ fontFamily: mono, fontSize: fs.note, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: C("chalk"), whiteSpace: "nowrap" }}>
               {fig.value} <span style={{ fontSize: fs.micro, color: C("ash") }}>{fig.unit}</span>
             </span>
-            {pr.deltaPct != null && <span style={{ fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: accentVar("lime") }}>{feedDeltaText(pr.deltaPct)}</span>}
-            {pr.firstEver && <span style={{ fontFamily: mono, fontSize: fs.micro, color: C("ash") }}>{t("feed.firstEver")}</span>}
-            {i === 0 && chip && (
-              <span style={{ marginLeft: "auto" }}>
-                <Chip tone="lime" title={t(`feed.tierExplain.${tier}`)}><b>{chip.short}</b> {t(chip.labelKey)}</Chip>
-              </span>
-            )}
+            <span style={{ marginLeft: "auto" }}><Qualifier of={pr} /></span>
           </div>
         );
       })}
@@ -251,7 +301,6 @@ function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units
  */
 function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
   const { t } = useLang();
-  const tier = feedTierChip(lead.tier);
   const fig = lead.figureKg != null && lead.figureKg > 0 ? feedFigureText(lead.figureKg, units) : null;
   const e1 = lead.e1rmKg != null ? feedFigureText(lead.e1rmKg, units) : null;
   return (
@@ -266,30 +315,22 @@ function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
           {lead.label}
         </div>
       )}
-      {(fig || tier) && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4, flexWrap: "wrap" }}>
-          {fig && (
-            <>
-              <span style={{ fontFamily: mono, fontSize: fs.stat, fontWeight: 700, lineHeight: 1, letterSpacing: tracking.display, fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{fig.value}</span>
-              <span style={{ fontFamily: mono, fontSize: fs.title, fontWeight: 600, color: C("ash") }}>{fig.unit}</span>
-            </>
-          )}
-          {/* Provenance belongs to the CLAIM, so the tier chip sits on the
-              figure's line — not up beside the athlete's name. */}
-          {tier && (
-            <span style={{ marginLeft: "auto" }}>
-              <Chip tone="lime" title={t(`feed.tierExplain.${lead.tier}`)}>
-                <b>{tier.short}</b> {t(tier.labelKey)}
-              </Chip>
-            </span>
-          )}
+      {fig && (
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4 }}>
+          <span style={{ fontFamily: mono, fontSize: fs.stat, fontWeight: 700, lineHeight: 1, letterSpacing: tracking.display, fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{fig.value}</span>
+          <span style={{ fontFamily: mono, fontSize: fs.title, fontWeight: 600, color: C("ash") }}>{fig.unit}</span>
+          {/* THE ONE QUALIFIER, at the far edge of the figure's own line. The
+              tier chip used to hold this slot and has gone to the footer:
+              provenance qualifies the post, an improvement qualifies THIS
+              number. */}
+          <span style={{ marginLeft: "auto" }}><Qualifier of={lead} /></span>
         </div>
       )}
-      {(lead.deltaPct != null || e1 || lead.firstEver) && (
-        <div style={{ fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: lead.deltaPct != null ? accentVar("lime") : C("ash"), marginTop: 4 }}>
-          {e1 ? t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`) : null}
-          {lead.deltaPct != null && <> {feedDeltaText(lead.deltaPct)}</>}
-          {lead.firstEver && <span style={{ color: C("ash"), fontWeight: 500 }}>{lead.firstEver && (e1 || lead.deltaPct != null) ? " — " : ""}{t("feed.firstEver")}</span>}
+      {/* The honest second number, and only that — the delta left for the slot
+          above rather than sharing this line with an estimate. */}
+      {e1 && (
+        <div style={{ fontFamily: mono, fontSize: fs.micro, color: C("ash"), marginTop: 4 }}>
+          {t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`)}
         </div>
       )}
     </>
@@ -327,24 +368,38 @@ export function FeedActions({
   // No border of its own — the row's closing hairline is the only line a post
   // gets, X-style.
   return (
+  // FOUR GLYPHS, ONE VISUAL CLASS. Kudos and comment used to wear their names
+  // while save and share stood bare, so the row read as two labelled buttons
+  // plus two unexplained marks. The words are gone and a COUNT takes their
+  // place — but only when there is one, because "0" beside a bolt is worse than
+  // silence. The labels themselves move to the accessibility layer, where the
+  // visible text had been doing that job.
   <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 10 }}>
     <button
       className="pressable"
       onClick={onKudos}
       aria-pressed={item.kudosedByMe}
+      aria-label={t("feed.kudos")}
+      title={t("feed.kudos")}
       style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: item.kudosedByMe ? accentVar("lime") : C("ash") }}
     >
       {/* The bolt, not a heart: given reads across the room. */}
       <svg width="17" height="17" viewBox="0 0 16 16" fill={item.kudosedByMe ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
         <path d="M8.8 1.5 3.6 9h3.2l-.9 5.5L11.4 7H8.1Z" />
       </svg>
-      {item.kudos > 0 ? item.kudos : t("feed.kudos")}
+      {item.kudos > 0 ? item.kudos : null}
     </button>
-    <button className="pressable" onClick={onComments} style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: C("ash") }}>
+    <button
+      className="pressable"
+      onClick={onComments}
+      aria-label={t("w.social.comment")}
+      title={t("w.social.comment")}
+      style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: C("ash") }}
+    >
       <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
         <path d="M13.5 7.2c0 2.9-2.5 5-5.5 5-.7 0-1.4-.1-2-.3L2.7 13l.6-2.6a5 5 0 0 1-1.3-3.2c0-2.9 2.5-5 5.5-5s6 2.1 6 5Z" />
       </svg>
-      {item.comments > 0 ? item.comments : t("w.social.comment")}
+      {item.comments > 0 ? item.comments : null}
     </button>
 
     {/* THE RIGHT-HAND PAIR — the two PRIVATE verbs, pushed to the far edge
@@ -545,15 +600,14 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         {/* ZONE C — the figures. The hero first: a shared PR's own number, or
             the loudest record a session set. */}
         {lead && <Figure lead={lead} units={units} />}
-        {/* …then the runner-up records, without the one the hero took. The tier
-            chip goes with whichever of the two is drawing the loudest claim. */}
-        {(records.lines.length > 0 || records.rest > 0) && (
-          <PrLines records={records} tier={lead ? undefined : d?.tier} units={units} />
-        )}
+        {/* …then the runner-up records, without the one the hero took. */}
+        {(records.lines.length > 0 || records.rest > 0) && <PrLines records={records} units={units} />}
         {/* The lifts the records above already named are dropped from the top
             sets — the same lift twice in one card is noise (core cardSetLines). */}
         {setLines.length > 0 && <TopSets sets={setLines} units={units} />}
-        {d?.stats && d.stats.length > 0 && <StatRow stats={d.stats} units={units} />}
+        {/* The footer draws for a tier alone, so a shared PR post with no
+            aggregates can still say how its claim was corroborated. */}
+        <FooterLine stats={d?.stats ?? []} tier={d?.tier} units={units} />
 
         {/* ZONE E — words. A caption is written FOR the feed; the private session
             note is owner-only by schema and never arrives here. */}
