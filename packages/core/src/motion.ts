@@ -479,6 +479,14 @@ export const SHARED_ELEMENTS = {
    *  stack already calls itself "one object at three compressions"; this is the
    *  compression happening in front of you instead of being cut to. */
   planCover: "hybrid-plan-cover",
+  /** A PERSON'S AVATAR on a row or a rail ⇄ the portrait heading their page.
+   *
+   *  The most obviously "same object" element there is: not a figure that
+   *  happens to be equal at both ends, not a recipe drawn twice — literally the
+   *  same image of the same person, at 52px in a list and 84px on the page it
+   *  opens. A circle growing into a circle is also the cheapest possible
+   *  matched geometry, which is why the audit put it third. */
+  personAvatar: "hybrid-person-avatar",
 } as const;
 
 export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELEMENTS];

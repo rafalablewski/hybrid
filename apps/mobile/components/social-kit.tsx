@@ -3,9 +3,10 @@ import { View, Text, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { F, fs, leading, serifIf, tracking, PressScale as Pressable, Loading } from "../lib/ui";
-import { LEVEL_KEY } from "@hybrid/core";
+import { LEVEL_KEY, SHARED_ELEMENTS } from "@hybrid/core";
 import type { PublicProfileResponse, CompareResult, SharedLift, BadgeAccent } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
+import { useSharedSurfaceTarget } from "../lib/shared-element";
 import { useConfirm } from "./aurora/confirm";
 import Sheet from "./aurora/sheet";
 
@@ -24,14 +25,29 @@ export function initials(name?: string | null, handle?: string) {
   return s.slice(0, 2).toUpperCase();
 }
 
-export function Avatar({ url, name, handle, size = 44 }: { url?: string | null; name?: string | null; handle?: string; size?: number }) {
+/**
+ * A person's face. `shared` makes this instance the DESTINATION of an avatar
+ * armed on the way in — the same image of the same person, 52px in a list and
+ * 84px on the page it opens, so the circle grows instead of being re-rendered
+ * at the far end with no thread back to what was touched.
+ *
+ * The web twin declares a `view-transition-name`; here the clone is a SURFACE
+ * flight (lib/shared-element), which is why the face is a component the arming
+ * row can render into the flight rather than something to re-draw.
+ */
+export function Avatar({ url, name, handle, size = 44, shared }: { url?: string | null; name?: string | null; handle?: string; size?: number; shared?: boolean }) {
   const C = useTheme().palette;
-  if (url) return <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2 }} />;
-  return (
-    <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
-    </View>
-  );
+  const { ref } = useSharedSurfaceTarget(shared ? SHARED_ELEMENTS.personAvatar : "");
+  const face = url
+    ? <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2 }} />
+    : (
+      <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
+      </View>
+    );
+  // The ref only exists on the destination: a list of forty avatars must not
+  // each measure themselves on mount for a flight only one of them can claim.
+  return shared ? <View ref={ref} collapsable={false}>{face}</View> : face;
 }
 
 export function Stars({ rating, size = 13 }: { rating: number | null; size?: number }) {

@@ -817,7 +817,10 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
 ::view-transition-new(hybrid-session-hero),
 ::view-transition-group(hybrid-plan-cover),
 ::view-transition-old(hybrid-plan-cover),
-::view-transition-new(hybrid-plan-cover) {
+::view-transition-new(hybrid-plan-cover),
+::view-transition-group(hybrid-person-avatar),
+::view-transition-old(hybrid-person-avatar),
+::view-transition-new(hybrid-person-avatar) {
   animation-duration: var(--d-zoom);
   animation-timing-function: var(--e-zoom);
 }
@@ -834,6 +837,13 @@ html[data-nav-kind="hub"]::view-transition-new(hybrid-screen) { animation: motio
    show it at the tile's aspect for most of the way. */
 ::view-transition-old(hybrid-plan-cover) { animation-name: motionDissolveOut; }
 ::view-transition-new(hybrid-plan-cover) { animation-name: motionDissolveIn; }
+/* An AVATAR is the same image at both ends, so the two snapshots are already
+   identical and the cross-fade between them is invisible either way — but it
+   runs across the whole flight rather than snapping, because the fallback
+   initials tile changes its type size as it grows and a hard swap of that mid-
+   flight is the one visible seam this pair can have. */
+::view-transition-old(hybrid-person-avatar) { animation-name: motionDissolveOut; }
+::view-transition-new(hybrid-person-avatar) { animation-name: motionDissolveIn; }
 
 /* ── SHEET PRESENTATION ──────────────────────────────────────────────
    The presenting screen recedes so the sheet sits on a real stack instead of

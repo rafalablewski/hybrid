@@ -155,7 +155,7 @@ export default function UserScreen() {
       <AuroraScreen hero={hero}>
         {seed ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} />
+            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} shared />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.title }}>{name}</Text>
               <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.caption }}>@{seed.handle}</Text>
@@ -182,7 +182,7 @@ export default function UserScreen() {
     >
       {/* ── WHO ── the person, at the size a page allows. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-        <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} />
+        <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} shared />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.title }}>
             {name}{p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}

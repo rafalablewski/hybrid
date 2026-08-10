@@ -15,6 +15,8 @@ import type {
 import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy, type OpenUser } from "./social-ui";
 import { useLang } from "@/lib/i18n";
 import { Loading, LoadSwap } from "./aurora/skeleton";
+import { SHARED_ELEMENTS } from "@hybrid/core";
+import { armSharedElement } from "@/lib/shared-element";
 
 /**
  * THE MARKETPLACE — the directory, and a coach's own storefront EDITOR.
@@ -151,7 +153,21 @@ export default function Coaches({ onOpenUser }: { onOpenUser?: OpenUser } = {}) 
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {coaches?.map((c) => (
-                <button className="pressable" key={c.userId} onClick={() => onOpenUser?.(c.handle, { handle: c.handle, displayName: c.name, avatarUrl: c.avatarUrl, coachVerified: c.coachVerified })} style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}>
+                <button
+                  className="pressable"
+                  key={c.userId}
+                  // THE FACE TRAVELS. A row's avatar and the portrait heading
+                  // the page it opens are literally the same image of the same
+                  // person, so it grows from 52px to 84px instead of being
+                  // re-rendered there with no thread back to what was touched.
+                  // Found by attribute rather than a ref per row: Avatar marks
+                  // itself, so a list does not have to keep a map of them.
+                  onClick={(e) => {
+                    armSharedElement(e.currentTarget.querySelector<HTMLElement>("[data-shared-avatar]"), SHARED_ELEMENTS.personAvatar);
+                    onOpenUser?.(c.handle, { handle: c.handle, displayName: c.name, avatarUrl: c.avatarUrl, coachVerified: c.coachVerified });
+                  }}
+                  style={{ ...card(aurora), textAlign: "left", cursor: "pointer" }}
+                >
                   <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                     <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
                     <div style={{ flex: 1, minWidth: 0 }}>

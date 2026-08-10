@@ -351,7 +351,7 @@ export default function UserPage({
       <HeroScreen hero={hero} back={onBack} backLabel={t("common.back")}>
         {seed ? (
           <div style={{ display: "flex", gap: 16, alignItems: "center", maxWidth: 640 }}>
-            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} />
+            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} shared />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: heading, fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{name}</div>
               <div style={{ color: C("ash"), fontFamily: mono, fontSize: fs.caption }}>@{seed.handle}</div>
@@ -381,7 +381,7 @@ export default function UserPage({
       <div style={{ maxWidth: 640 }}>
         {/* ── WHO ── the person, at the size a page allows. */}
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} />
+          <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} shared />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
               <span style={{ fontFamily: heading, fontWeight: 800, fontSize: fs.title, color: C("chalk") }}>{name}</span>
