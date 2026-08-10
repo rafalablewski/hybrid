@@ -1,0 +1,794 @@
+<title>The empty session — audit &amp; redesign</title>
+<style>
+  /* ============================================================
+     TOKENS — HYBRID's own two palettes, verbatim, so the mockups
+     theme exactly as the product does. Dark is the product's
+     native ground; Kyoto-Hour light is the second theme.
+     ============================================================ */
+  :root {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86; --ash2: #6d716a;
+    --accent: #c6f84f; --on-accent: #0c0d0c;
+    --lime-t: #c6f84f; --blue-t: #6cb6bd; --violet-t: #8ba0cc; --amber-t: #d0cd94; --red-t: #e58a5c;
+    --shadow: 0 1px 0 rgba(255,255,255,.03), 0 18px 40px -30px rgba(0,0,0,.95);
+    --glass: rgba(255,255,255,.055);
+    --scrim: rgba(255,255,255,.045);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+      --chalk: #2b2a26; --ash: #6f6b5e; --ash2: #837e6f;
+      --accent: #44584c; --on-accent: #f2f5ef;
+      --lime-t: #3c4f43; --blue-t: #4f5c3a; --violet-t: #4c5a78; --amber-t: #875427; --red-t: #a3442f;
+      --shadow: 0 1px 0 rgba(255,255,255,.7), 0 14px 32px -28px rgba(70,58,34,.55);
+      --glass: rgba(43,42,38,.045);
+      --scrim: rgba(43,42,38,.04);
+    }
+  }
+  :root[data-theme="light"] {
+    --ink: #f6f3ea; --ink2: #faf7ef; --card: #fcfaf3; --line: #e6e1d2;
+    --chalk: #2b2a26; --ash: #6f6b5e; --ash2: #837e6f;
+    --accent: #44584c; --on-accent: #f2f5ef;
+    --lime-t: #3c4f43; --blue-t: #4f5c3a; --violet-t: #4c5a78; --amber-t: #875427; --red-t: #a3442f;
+    --shadow: 0 1px 0 rgba(255,255,255,.7), 0 14px 32px -28px rgba(70,58,34,.55);
+    --glass: rgba(43,42,38,.045);
+    --scrim: rgba(43,42,38,.04);
+  }
+  :root[data-theme="dark"] {
+    --ink: #0c0d0c; --ink2: #141614; --card: #151715; --line: #242724;
+    --chalk: #f3f4ef; --ash: #8b8f86; --ash2: #6d716a;
+    --accent: #c6f84f; --on-accent: #0c0d0c;
+    --lime-t: #c6f84f; --blue-t: #6cb6bd; --violet-t: #8ba0cc; --amber-t: #d0cd94; --red-t: #e58a5c;
+    --shadow: 0 1px 0 rgba(255,255,255,.03), 0 18px 40px -30px rgba(0,0,0,.95);
+    --glass: rgba(255,255,255,.055);
+    --scrim: rgba(255,255,255,.045);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
+  body {
+    margin: 0; background: var(--ink); color: var(--chalk);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-size: 16.5px; line-height: 1.62; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 120px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .label { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+  h1, h2, h3 { font-weight: 800; letter-spacing: -.035em; line-height: 1.05; text-wrap: balance; margin: 0; }
+  p { margin: 0 0 1em; }
+  a { color: inherit; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em; color: var(--chalk); background: var(--scrim); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; white-space: nowrap; }
+
+  /* ---------- masthead ---------- */
+  header.top { padding: 76px 0 0; }
+  header.top h1 { font-size: clamp(38px, 7.4vw, 68px); margin-top: 16px; }
+  header.top .sub { max-width: 60ch; margin-top: 20px; font-size: 18.5px; color: var(--ash); }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(172px, 1fr)); gap: 18px 30px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .facts .v { display: block; font-size: 14.5px; margin-top: 5px; line-height: 1.45; }
+
+  /* ---------- headline metrics ---------- */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 34px; }
+  .metrics div { background: var(--ink2); padding: 17px 16px; }
+  .metrics .n { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 25px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+  .metrics .n small { font-size: 13px; font-weight: 400; color: var(--ash); letter-spacing: 0; }
+
+  /* ---------- sticky section rail ---------- */
+  nav.rail { position: sticky; top: 0; z-index: 30; margin-top: 60px; background: var(--ink); border-bottom: 1px solid var(--line); display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; padding-top: 10px; }
+  nav.rail::-webkit-scrollbar { display: none; }
+  nav.rail a { flex: none; text-decoration: none; color: var(--ash); font-family: ui-monospace, monospace; font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; padding: 12px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  nav.rail a:hover { color: var(--chalk); }
+  nav.rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 4px; }
+
+  section { padding-top: 66px; scroll-margin-top: 54px; }
+  section > h2 { font-size: clamp(26px, 4.2vw, 36px); }
+  section > .lede { max-width: 66ch; color: var(--ash); font-size: 17.5px; margin-top: 12px; }
+  h3.sub { font-size: 19px; margin-top: 44px; }
+
+  /* ---------- device ---------- */
+  .device { width: 100%; max-width: 392px; border: 1px solid var(--line); border-radius: 42px; background: var(--ink); box-shadow: var(--shadow); overflow: hidden; }
+  .device .status { display: flex; justify-content: space-between; align-items: center; padding: 14px 26px 4px; position: relative; }
+  .device .status span { font-family: ui-monospace, monospace; font-size: 11px; color: var(--ash); letter-spacing: .04em; }
+  .device .screen { padding: 4px 12px 0; position: relative; }
+  .device .homebar { width: 118px; height: 4px; border-radius: 2px; background: var(--line); margin: 14px auto 12px; }
+  .device .void { min-height: 132px; }
+  .device .void.marked { background: repeating-linear-gradient(135deg, transparent 0 9px, color-mix(in srgb, var(--red-t) 9%, transparent) 9px 10px); border-top: 1px dashed color-mix(in srgb, var(--red-t) 40%, transparent); margin: 0 -12px; }
+
+  /* app primitives — mirror aurora/kit */
+  .hdr { display: flex; align-items: center; gap: 8px; padding: 8px 4px; border-bottom: 1px solid var(--line); }
+  .hdr .side { flex: 1; display: flex; align-items: center; gap: 6px; }
+  .hdr .side.r { justify-content: flex-end; }
+  .glassbtn { width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; background: var(--glass); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 0 0 .5px rgba(140,140,140,.22); font-size: 15px; color: var(--chalk); flex: none; }
+  .clock { text-align: center; }
+  .clock b { display: block; font-weight: 900; font-size: 22px; letter-spacing: .04em; line-height: 1.1; }
+  .clock i { font-family: ui-monospace, monospace; font-style: normal; font-size: 9.5px; letter-spacing: .16em; color: var(--ash); }
+
+  .metarow { display: flex; align-items: center; gap: 10px; padding: 14px 4px 16px; }
+  .metarow .m { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--ash); flex: 1; }
+  .chip { font-family: ui-monospace, monospace; font-size: 11px; border: 1px solid var(--line); border-radius: 10px; padding: 3px 9px; color: var(--ash); white-space: nowrap; }
+  .link-blue { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--blue-t); white-space: nowrap; }
+
+  .xcard { background: var(--glass); border: 1px solid var(--line); border-radius: 26px; padding: 16px; box-shadow: var(--shadow); }
+  .xcard.solid { background: var(--ink2); }
+  .xhead { display: flex; align-items: center; gap: 9px; }
+  .grip { color: var(--ash2); font-size: 12px; letter-spacing: -1px; line-height: 1; flex: none; }
+  .xname { font-weight: 800; font-size: 17px; letter-spacing: -.02em; flex: 1; }
+  .xicon { color: var(--lime-t); font-size: 15px; flex: none; }
+  .xicon.quiet { color: var(--ash); }
+  .xkill { color: var(--ash); font-size: 15px; flex: none; }
+  .lastline { font-family: ui-monospace, monospace; font-size: 11px; color: var(--ash); margin-top: 10px; }
+
+  .setpanel { background: var(--card); border-radius: 18px; padding: 14px 12px; margin-top: 12px; }
+  .setflat { padding: 14px 2px 4px; margin-top: 6px; }
+  .setlab { display: flex; align-items: center; gap: 8px; }
+  .setlab .k { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .setlab .sp { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .rpechip { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .08em; color: var(--ash); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; }
+  .plusbare { font-family: ui-monospace, monospace; font-size: 13px; color: var(--ash); }
+
+  .bignum { text-align: center; padding: 16px 0 4px; display: flex; align-items: baseline; justify-content: center; gap: 7px; }
+  .bignum b { font-weight: 900; font-size: 52px; letter-spacing: -.045em; line-height: 1; }
+  .bignum b.ghost { color: var(--ash2); }
+  .bignum i { font-style: normal; font-family: ui-monospace, monospace; font-size: 16px; color: var(--ash); }
+
+  .cta { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent); color: var(--on-accent); border-radius: 18px; padding: 15px; font-weight: 800; font-size: 16px; margin-top: 14px; box-shadow: 0 6px 16px -10px rgba(0,0,0,.8); }
+  .cta.dead { background: color-mix(in srgb, var(--accent) 26%, var(--ink2)); color: var(--ash); box-shadow: none; }
+
+  .splitrow { display: flex; gap: 9px; margin-top: 10px; }
+  .splittile { flex: 1; display: flex; align-items: stretch; border: 1px solid var(--line); background: var(--ink2); border-radius: 18px; overflow: hidden; }
+  .splittile .wide { flex: 1; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 12px; font-weight: 700; font-size: 14px; }
+  .splittile .dots { padding: 0 15px; display: grid; place-items: center; border-left: 1px solid var(--line); font-family: ui-monospace, monospace; color: var(--ash); }
+  .ringplus { width: 20px; height: 20px; border-radius: 999px; border: 1.5px solid var(--ash); display: grid; place-items: center; font-size: 12px; color: var(--ash); flex: none; }
+  .boltbtn { width: 48px; border: 1px solid var(--line); background: var(--ink2); border-radius: 18px; display: grid; place-items: center; color: var(--amber-t); font-size: 16px; }
+
+  .footrow { display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--ash); }
+  .footrow .ch { margin-left: auto; }
+
+  .fieldrow { display: flex; align-items: center; gap: 11px; margin-top: 14px; background: var(--ink2); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+  .fieldrow .t { flex: 1; font-weight: 600; font-size: 16px; }
+  .fieldrow .c { color: var(--ash); }
+
+  .dockrow { display: flex; gap: 10px; margin-top: 16px; }
+  .pausebtn { border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; color: var(--ash); font-weight: 700; font-size: 15px; }
+  .finishbtn { flex: 1; background: var(--accent); color: var(--on-accent); border-radius: 18px; padding: 15px; text-align: center; font-weight: 900; font-size: 16px; }
+
+  /* queued set ledger (after) */
+  .ledger { margin-top: 4px; }
+  .ledger .lrow { display: flex; align-items: center; gap: 10px; padding: 11px 2px; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); font-family: ui-monospace, monospace; font-size: 13px; color: var(--ash); }
+  .ledger .lrow .idx { width: 16px; color: var(--ash2); font-size: 11px; }
+  .ledger .lrow .st { margin-left: auto; color: var(--ash2); }
+  .growrow { display: flex; align-items: center; gap: 9px; padding: 12px 2px 2px; font-size: 14px; font-weight: 700; color: var(--ash); }
+  .growrow .pl { font-family: ui-monospace, monospace; font-size: 15px; }
+  .doorrow { display: flex; align-items: center; gap: 10px; margin-top: 4px; padding: 15px 4px; border-top: 1px solid var(--line); font-weight: 700; font-size: 15px; }
+  .doorring { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; margin-left: auto; background: var(--glass); box-shadow: inset 0 0 0 .5px rgba(140,140,140,.28); color: var(--chalk); font-size: 13px; flex: none; }
+  .dock { margin: 0 -12px; padding: 12px 12px 0; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--ink2) 88%, transparent); }
+  .dockhint { display: flex; align-items: center; justify-content: space-between; font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); padding-bottom: 9px; }
+
+  /* ---------- markers ---------- */
+  .mark { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--red-t); color: var(--ink); font-family: ui-monospace, monospace; font-size: 9.5px; font-weight: 700; vertical-align: middle; margin-left: 5px; flex: none; }
+  .mark.ok { background: var(--lime-t); }
+  .mark.free { position: absolute; z-index: 4; margin: 0; box-shadow: 0 0 0 2px var(--ink); }
+
+  .notes { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  .notes li { display: grid; grid-template-columns: 16px 1fr; gap: 10px; font-size: 14px; color: var(--ash); line-height: 1.5; }
+  .notes li b { color: var(--chalk); font-weight: 700; }
+  .notes .mark { margin: 4px 0 0; }
+
+  /* ---------- panes ---------- */
+  .pair { display: flex; gap: 36px; margin-top: 30px; align-items: flex-start; flex-wrap: wrap; }
+  .pane { flex: 1 1 392px; min-width: 300px; max-width: 470px; }
+  .pane > .cap { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .pane > .cap b { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  .tag { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .13em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor; }
+  .t-now { color: var(--red-t); }
+  .t-new { color: var(--lime-t); }
+
+  /* ---------- defect table ---------- */
+  .tablewrap { overflow-x: auto; margin-top: 22px; border: 1px solid var(--line); border-radius: 14px; }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; background: var(--ink2); }
+  th, td { text-align: left; padding: 13px 15px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 14px; }
+  th { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); font-weight: 400; background: var(--ink); }
+  tr:last-child td { border-bottom: 0; }
+  td.n { font-family: ui-monospace, monospace; font-size: 11px; color: var(--ash); white-space: nowrap; }
+  td b { font-weight: 700; }
+  .sev { font-family: ui-monospace, monospace; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
+  .s-bug { color: var(--red-t); }
+  .s-gram { color: var(--amber-t); }
+  .s-erg { color: var(--blue-t); }
+
+  /* ---------- principle cards ---------- */
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(238px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 28px; }
+  .principles div { background: var(--ink2); padding: 20px 18px; }
+  .principles h4 { margin: 0 0 8px; font-size: 15px; font-weight: 800; letter-spacing: -.015em; }
+  .principles p { margin: 0; font-size: 13.5px; color: var(--ash); line-height: 1.55; }
+
+  blockquote { margin: 30px 0 0; padding: 0 0 0 20px; border-left: 2px solid var(--accent); font-size: 18px; line-height: 1.55; max-width: 60ch; letter-spacing: -.01em; }
+  blockquote cite { display: block; margin-top: 10px; font-style: normal; font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+
+  /* ---------- delta ---------- */
+  .delta { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 20px 26px; margin: 32px 0 6px; padding: 20px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .delta .n { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 19px; font-weight: 700; margin-top: 5px; }
+  .down { color: var(--lime-t); }
+  .up { color: var(--red-t); }
+  .flat { color: var(--ash); }
+
+  .ship { margin: 24px 0 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .ship li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr auto; gap: 14px; align-items: baseline; background: var(--ink2); padding: 14px 16px; font-size: 14.5px; }
+  .ship li::before { content: counter(s, decimal-leading-zero); font-family: ui-monospace, monospace; font-size: 11px; color: var(--ash2); }
+  .ship li .where { font-family: ui-monospace, monospace; font-size: 10.5px; color: var(--ash); text-align: right; }
+
+  footer.end { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--ash); font-size: 13.5px; }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="label">HYBRID – mobile logger – audit &amp; redesign – 10 Aug 2026</div>
+    <h1>The empty session.</h1>
+    <p class="sub">
+      One exercise on the board, no sets banked, five seconds on the clock. This is the
+      screen an athlete sees more than any other in the app, and right now it is the
+      least finished. Twenty-two tap targets, five accent colours, two buttons called
+      Finish, three different plus signs, a header drawn on top of the status bar, and a
+      reference line that reads <span class="mono">–×5, –×5, –×5, –×5, –×5</span>.
+    </p>
+
+    <div class="facts">
+      <div><span class="label">Screen</span><span class="v"><code>apps/mobile/app/workout.tsx</code> – the live logger, entered as a full-screen cover</span></div>
+      <div><span class="label">State captured</span><span class="v">source=empty, 1 strength exercise (Pull-Up), 0 sets banked, 0:05 elapsed</span></div>
+      <div><span class="label">Also affects</span><span class="v"><code>apps/web/components/aurora/logger.tsx</code> – the same loop, same grammar debts</span></div>
+      <div><span class="label">Verdict</span><span class="v">5 real defects, 7 grammar violations against our own rules, 1 ergonomic inversion</span></div>
+    </div>
+
+    <div class="metrics">
+      <div><span class="label">Tap targets</span><div class="n">22</div></div>
+      <div><span class="label">Accent colours at rest</span><div class="n">5 <small>lime, blue, amber, chalk, ash</small></div></div>
+      <div><span class="label">Distinct glyph sets</span><div class="n">16 <small>text chars, zero SF Symbols</small></div></div>
+      <div><span class="label">Ways to end it</span><div class="n">2 <small>both labelled Finish</small></div></div>
+      <div><span class="label">Screen unused</span><div class="n">30% <small>below the last control</small></div></div>
+      <div><span class="label">Taps to log set 1</span><div class="n">3 <small>+ typing a number</small></div></div>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Sections">
+    <a href="#screen">The screen</a>
+    <a href="#defects">Every defect</a>
+    <a href="#redesign">The redesign</a>
+    <a href="#native">Native SwiftUI</a>
+    <a href="#beforeafter">Before / after</a>
+    <a href="#ship">What to ship</a>
+  </nav>
+
+  <!-- ============================================================ -->
+  <section id="screen">
+    <h2>1 – Where the problems are</h2>
+    <p class="lede">
+      The capture, redrawn at 392pt in the product's own tokens. Every marker is a
+      defect I could reproduce in the source, not a matter of taste. Taste comes later.
+    </p>
+
+    <div class="pair">
+      <div class="pane">
+        <div class="cap"><b>Today</b><span class="tag t-now">shipped</span></div>
+        <div class="device">
+          <div class="status">
+            <span>23:14 &#9788;</span>
+            <span>&#9679;&#9679;&#9679; &#9727; 18</span>
+            <span class="mark free" style="left: 50%; top: 6px; transform: translateX(-50%);">1</span>
+          </div>
+          <!-- the header, drawn OVER the status bar row -->
+          <div class="screen">
+            <div style="position: relative; margin-top: -34px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: 0 4px;">
+                <span style="width: 34px;"></span>
+                <div class="clock"><b>0:05</b><i>ELAPSED</i></div>
+                <span style="font-weight: 900; font-size: 16px; color: var(--lime-t); padding-top: 3px;">Finish</span>
+              </div>
+              <div class="hdr" style="margin-top: 4px;">
+                <div class="side"><span class="glassbtn">&#8964;</span></div>
+                <div class="side r"><span class="mono" style="color: var(--ash); font-size: 16px;">&ctdot;</span><span class="mark">2</span></div>
+              </div>
+            </div>
+
+            <div class="metarow">
+              <span class="m">1 exercises &ndash; tap &check; as you go<span class="mark">3</span></span>
+              <span class="chip">&#9201; Off &#8964;</span>
+              <span class="link-blue">What's RPE?<span class="mark">4</span></span>
+            </div>
+
+            <div class="xcard">
+              <div class="xhead">
+                <span class="grip">&#8942;&#8942;</span>
+                <span class="xicon">&#128694;</span>
+                <span class="xname">Pull-Up</span>
+                <span class="xkill">&times;<span class="mark">5</span></span>
+              </div>
+              <div class="lastline">last time &ndash; &ndash;&times;5, &ndash;&times;5, &ndash;&times;5, &ndash;&times;5, &ndash;&times;5<span class="mark">6</span></div>
+
+              <div class="setpanel">
+                <div class="setlab">
+                  <span class="grip">&#8942;&#8942;</span>
+                  <span class="k">Set 1 &mdash; up now</span>
+                  <span class="sp">
+                    <span class="rpechip">RPE &ndash;<span class="mark">7</span></span>
+                    <span class="plusbare">&#65291;<span class="mark">8</span></span>
+                  </span>
+                </div>
+                <div class="bignum"><b class="ghost">0</b><i>reps</i><span class="mark">9</span></div>
+                <div class="cta">&check; Log set</div>
+              </div>
+
+              <div class="splitrow">
+                <div class="splittile">
+                  <div class="wide"><span class="ringplus">&#65291;</span> Add set<span class="mark">10</span></div>
+                  <div class="dots">&ctdot;</div>
+                </div>
+                <div class="boltbtn">&#9889;</div>
+              </div>
+
+              <div class="footrow"><span>0/1 sets<span class="mark">11</span></span><span class="ch">&rsaquo;</span></div>
+            </div>
+
+            <div class="fieldrow">
+              <span style="color: var(--lime-t); font-size: 16px;">&oplus;</span>
+              <span class="t">+ Add exercise<span class="mark">12</span></span>
+              <span class="c">&#9662;<span class="mark">13</span></span>
+            </div>
+
+            <div class="dockrow">
+              <span class="pausebtn">&#10074;&#10074; Pause</span>
+              <span class="finishbtn">Finish session<span class="mark">14</span></span>
+            </div>
+
+            <div class="void marked"></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="pane" style="max-width: 560px; flex: 1 1 420px;">
+        <div class="cap"><b>What each marker is</b><span class="tag t-now">reproduced in source</span></div>
+        <ul class="notes">
+          <li><span class="mark">1</span><span><b>The header is drawn over the status bar.</b> The clock sits on the carrier row and <i>Finish</i> lands on the battery. The top safe-area inset is not being applied: the logger is a <code>fullScreenModal</code> cover, and <code>SafeAreaProvider</code> is mounted with no <code>initialWindowMetrics</code>, so the inset the modal measures is zero.</span></li>
+          <li><span class="mark">2</span><span><b>Two overflow menus, two grammars.</b> A <span class="mono">&ctdot;</span> in the header and another <span class="mono">&ctdot;</span> inside the Add-set tile, doing unrelated things. Same mark, different promise.</span></li>
+          <li><span class="mark">3</span><span><b>"1 exercises".</b> The count is interpolated against a hard-coded plural noun. Polish needs three forms and gets one.</span></li>
+          <li><span class="mark">4</span><span><b>Permanent help text in the best row on the screen.</b> "What's RPE?" is the only blue thing here, so the eye goes to the one control an athlete will tap once, ever.</span></li>
+          <li><span class="mark">5</span><span><b>One tap destroys the exercise.</b> No confirm, no undo, no accessibility label — a bare <span class="mono">&times;</span> beside a text field.</span></li>
+          <li><span class="mark">6</span><span><b>Five dashes where the reference should be.</b> The shared formatter prints <code>load × reps</code>, and a pull-up has no load, so the one line that exists to give you something to beat says nothing at all.</span></li>
+          <li><span class="mark">7</span><span><b>A value that is a dash.</b> "RPE –" reads as a broken field, not an empty optional.</span></li>
+          <li><span class="mark">8</span><span><b>A bare plus that adds nothing.</b> It cycles the set type. Our own rule says a bare <span class="mono">&#65291;</span> means <i>grows in place</i>.</span></li>
+          <li><span class="mark">9</span><span><b>The biggest thing on the screen is a placeholder.</b> Grey zero, no target, and <i>Log set</i> is live beside it — one tap writes a 0-rep set into the session, the tonnage and your history.</span></li>
+          <li><span class="mark">10</span><span><b>A ringed plus that does not leave.</b> Ring means <i>leaves</i> in this app. This one grows the set list in place, inside a bordered box, at the end of a list — three rules at once.</span></li>
+          <li><span class="mark">11</span><span><b>"0/1 sets" restates the set list directly above it.</b> A summary of one visible row.</span></li>
+          <li><span class="mark">12</span><span><b>Two plus signs on one control.</b> A lime <span class="mono">&oplus;</span> glyph and the literal "+" that lives inside the string.</span></li>
+          <li><span class="mark">13</span><span><b>A caret that promises a dropdown</b> and opens a full-screen searchable sheet.</span></li>
+          <li><span class="mark">14</span><span><b>The loudest button on the screen ends the workout.</b> It sits in the thumb zone; <i>Log set</i> — the action you perform thirty times — sits in the middle of the screen. And there are two Finishes, one lime fill and one lime word.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="defects">
+    <h2>2 – Every defect, with its line</h2>
+    <p class="lede">
+      Three kinds. <span class="sev s-bug">bug</span> is wrong output.
+      <span class="sev s-gram">grammar</span> is a violation of a rule this codebase already
+      wrote down for itself. <span class="sev s-erg">ergonomics</span> is the screen working
+      against the hand holding it.
+    </p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th style="width: 88px;">Kind</th><th>What's wrong</th><th style="width: 250px;">Where</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="sev s-bug">bug</span></td>
+            <td><b>The top safe-area inset is lost.</b> The header renders under the status bar. <code>SafeAreaView edges={["top"]}</code> inside a native <code>fullScreenModal</code> resolves to a zero inset when the provider has no seeded metrics. Fix both ends: seed <code>initialWindowMetrics</code> on the provider, and read <code>useSafeAreaInsets()</code> in the logger with a floor.</td>
+            <td class="n">workout.tsx:1035<br>_layout.tsx:139, 208</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-bug">bug</span></td>
+            <td><b>Bodyweight lifts have no "last time".</b> <code>blockSummary</code> renders <code>`${s.load || "–"}×${s.reps || "–"}`</code>. A pull-up carries reps and no load, so the line degrades to a row of dashes. It needs a load-mode-aware branch: reps only for bodyweight, <code>+N kg</code> when loaded.</td>
+            <td class="n">core/engines/session.ts:620</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-bug">bug</span></td>
+            <td><b>An empty set can be banked.</b> <i>Log set</i> carries no <code>disabled</code>, and <code>toggleDone</code> validates nothing. The "0" is a placeholder, so one tap saves a set with no reps — which then counts as a set, moves the scoreboard and enters history.</td>
+            <td class="n">workout.tsx:1494, 753</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-bug">bug</span></td>
+            <td><b>"1 exercises".</b> <code>"workout.exercises": "exercises"</code> is interpolated with a raw count in all three languages. Needs a plural helper — and Polish needs the few/many forms, not just one/other.</td>
+            <td class="n">core/i18n.ts:274<br>workout.tsx:1129</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-bug">bug</span></td>
+            <td><b>"+ Add exercise" renders two plus signs</b> — the <code>AuroraIcon name="add"</code> glyph plus the literal <code>+</code> inside the string. The same bug in <i>Add set</i> is already being papered over at runtime with <code>.replace(/^\+\s*/, "")</code>. Fix the strings; delete the strip.</td>
+            <td class="n">core/i18n.ts:291, 331<br>workout.tsx:1538, 1739</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-gram">grammar</span></td>
+            <td><b>Card inside a card.</b> The active-set block is written flat, and the comment above it says so — but <code>SwipeRow</code> paints <code>backgroundColor: background ?? C.card</code> on its content layer, so an opaque <code>#151715</code> panel lands inside the translucent glass card. On Aurora it reads as a hole. The row wrapper should default to transparent.</td>
+            <td class="n">swipe-row.tsx:164<br>workout.tsx:1380</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-gram">grammar</span></td>
+            <td><b>Ring means "leaves". This ring grows.</b> <i>Add set</i> wears a ringed <span class="mono">&#65291;</span> in a filled, bordered, rounded box, at the end of a list, and all it does is append a row. The rule wants a bare <span class="mono">&#65291;</span> with no chrome.</td>
+            <td class="n">workout.tsx:1533-1539</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-gram">grammar</span></td>
+            <td><b>And the bare plus cycles set type</b> — the exact inverse. Two marks, both wrong way round.</td>
+            <td class="n">workout.tsx:1423</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-gram">grammar</span></td>
+            <td><b>Five accents at rest on a screen with one job.</b> Lime is spent four times (exercise icon, Log set, the add glyph, both Finishes), blue once, amber once. Lime is the "go" colour; it should appear once.</td>
+            <td class="n">workout.tsx:1297, 1494, 1739, 1111, 1816</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-gram">grammar</span></td>
+            <td><b>Sixteen glyph systems, none of them the platform's.</b> <span class="mono">&#8942;&#8942; &times; &#9201; &#9662; &#65291; &oplus; &check; &ctdot; &#9889; &rsaquo; &#10074;&#10074; &#9632; &#9741; &#8599; &#8595; &#9675;</span> are text characters in a display face. They don't weight-match, don't follow Dynamic Type, and VoiceOver reads several of them aloud as punctuation.</td>
+            <td class="n">workout.tsx, throughout</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-gram">grammar</span></td>
+            <td><b>Dynamic Type is capped</b> on the reference line and the exercise summary via <code>maxFontSizeMultiplier={FIXED_FONT_SCALE}</code> — the two lines carrying the numbers an athlete squints at mid-set.</td>
+            <td class="n">workout.tsx:1340, 1659</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-gram">grammar</span></td>
+            <td><b>The exercise name is a live, unlabelled text input</b> with no visible affordance. Tapping the title to read it opens the keyboard over the set you were about to log.</td>
+            <td class="n">workout.tsx:1302</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-erg">ergonomics</span></td>
+            <td><b>The thumb zone is given to ending the workout.</b> <i>Finish session</i> is the largest, brightest, lowest control. <i>Log set</i> — the one you press thirty times — floats mid-screen and moves down the page as the session grows.</td>
+            <td class="n">workout.tsx:1494 vs 1813</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-erg">ergonomics</span></td>
+            <td><b>Numeric keypad with no way out.</b> <code>keyboardType="numeric"</code> has no return key on iOS and there is no keyboard accessory, so dismissing means tapping somewhere safe.</td>
+            <td class="n">workout.tsx:1432, 1447</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-erg">ergonomics</span></td>
+            <td><b>Three controls for one idea.</b> Set type (<span class="mono">&#65291;</span>), special sets (<span class="mono">&#9889;</span>) and rep schemes (<span class="mono">&ctdot;</span>) are three separate hand-rolled surfaces that all answer "what kind of set is this".</td>
+            <td class="n">workout.tsx:1418, 1540, 1547</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-erg">ergonomics</span></td>
+            <td><b>Instruction as furniture.</b> "tap &check; as you go" is permanent, and there is already a dismissible first-run tip card doing the same job twelve lines below it.</td>
+            <td class="n">workout.tsx:1129, 1202</td>
+          </tr>
+          <tr>
+            <td><span class="sev s-erg">ergonomics</span></td>
+            <td><b>Thirty per cent of the screen is unused</b> while the rest countdown — the thing you actually stare at between sets — has nowhere permanent to live and pushes the layout when it appears.</td>
+            <td class="n">workout.tsx:1214</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="redesign">
+    <h2>3 – The redesign</h2>
+    <p class="lede">
+      Nothing here is a new feature. Every capability on the screen today survives; almost
+      all of them stop being a permanent object and become something you reach for.
+    </p>
+
+    <blockquote>
+      Simplicity is not the absence of clutter. That's a consequence of simplicity. Simplicity
+      is somehow essentially describing the purpose and place of an object and product.
+      <cite>Jony Ive</cite>
+    </blockquote>
+
+    <div class="principles">
+      <div>
+        <h4>The set is the screen</h4>
+        <p>One exercise, one surface, one set in focus. No panel inside the card, no summary of the row you can already see. The card <em>is</em> the exercise; the number <em>is</em> the set.</p>
+      </div>
+      <div>
+        <h4>The default is the answer</h4>
+        <p>You did 5, 5, 5, 5, 5 last time. So the queue is five sets of five, pre-filled, in chalk not grey. Logging set one is one tap. A placeholder zero asks a question the app already knows the answer to.</p>
+      </div>
+      <div>
+        <h4>One accent, one go</h4>
+        <p>Chartreuse appears exactly once, on <i>Log set</i>. The exercise mark, the add glyph, the exits and Finish all go to chalk and ash. Amber survives only as <i>paused</i>; blue only inside the rest countdown.</p>
+      </div>
+      <div>
+        <h4>The thumb owns the primary</h4>
+        <p><i>Log set</i> docks above the home indicator and stays there whatever the session length. Between sets the same dock becomes the rest countdown — the dead third of the screen becomes the part you look at.</p>
+      </div>
+      <div>
+        <h4>Deference, not chrome</h4>
+        <p>Help, presets, set type, special sets, the rest-timer preference and Discard all fold into one system menu. Six permanent objects become one glyph and a long-press.</p>
+      </div>
+      <div>
+        <h4>Marks obey their own grammar</h4>
+        <p>Ringed glyph leaves — <i>Add exercise</i> opens the picker, so it is a door row with a ring. Bare plus grows — <i>Add set</i> appends a row, so it is a bare plus with no box at all.</p>
+      </div>
+    </div>
+
+    <h3 class="sub">What moved where</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th style="width: 210px;">Today</th><th>Becomes</th></tr></thead>
+        <tbody>
+          <tr><td><b>Header <span class="mono">&ctdot;</span></b> (discard only)</td><td>The one menu: rest timer (inline picker, checkmark on the value in force), <i>What's RPE?</i>, <i>Save as routine</i>, <i>Discard workout</i> as a destructive row.</td></tr>
+          <tr><td><b>&#9201; Off chip</b></td><td>Into that menu. It is a preference, consulted once a month.</td></tr>
+          <tr><td><b>What's RPE?</b></td><td>Into that menu, and onto the RPE control itself as a <span class="mono">&#9432;</span> — already a ring, so it needs no second one drawn round it.</td></tr>
+          <tr><td><b>"1 exercises – tap &check; as you go"</b></td><td>Deleted. The first-run tip card already teaches this once and dismisses itself.</td></tr>
+          <tr><td><b>Elapsed clock (22pt black, centred)</b></td><td>Mono, ash, small, in the header beside the lift's name. It is context, not content. Tap it to pause — the clock turns amber and the word PAUSED replaces ELAPSED. That deletes the Pause button.</td></tr>
+          <tr><td><b>Two Finishes</b></td><td>One, in the header, in chalk. Ending a session is a deliberate act, not the brightest thing in the room.</td></tr>
+          <tr><td><b>&times; remove exercise</b></td><td>Long-press the card for the system context menu (rename, replace, superset, remove) and swipe the row. Both native, both undoable, neither sitting one tap from your thumb.</td></tr>
+          <tr><td><b>Exercise name as a live TextInput</b></td><td>A title. Rename lives in the context menu and opens a proper field.</td></tr>
+          <tr><td><b>&#65291; type + &#9889; special + &ctdot; presets</b></td><td>One menu on the set row: a set-type picker section (working / warm-up / drop / cool-down) then the plan-ahead schemes as action rows.</td></tr>
+          <tr><td><b>Add set (ringed &#65291; in a box)</b></td><td>A bare <span class="mono">&#65291;</span> and a word at the end of the set ledger. It grows in place; it wears nothing.</td></tr>
+          <tr><td><b>+ Add exercise (field + caret)</b></td><td>A door row at the end of the exercise list — the list's own hairline, the list's own ring. It leaves, so it rings.</td></tr>
+          <tr><td><b>"0/1 sets &rsaquo;"</b></td><td>Deleted while the list is short; it returns as the collapsed summary once an exercise is done and the card folds.</td></tr>
+          <tr><td><b>Rest countdown (pushes the layout)</b></td><td>Takes over the dock. Same place, same size, no reflow — and mirrors to the Dynamic Island so the phone can go back in your pocket.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="native">
+    <h2>4 – What should be native SwiftUI, and why</h2>
+    <p class="lede">
+      The kit already renders real SwiftUI on iOS through <code>@expo/ui</code>, and it already
+      has a doctrine: nativize <em>controls</em>, never the brand. The gap is that this screen
+      hand-rolls six things the system does better, and hands the system one thing it should keep.
+    </p>
+
+    <h3 class="sub">Make these native</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th style="width: 150px;">Control</th><th style="width: 190px;">Native form</th><th>Why the system's version is better</th><th style="width: 96px;">Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>The one menu</b><br><span class="mono" style="font-size: 11px; color: var(--ash);">rest, help, routine, discard</span></td>
+            <td><code>Menu</code> with an inline <code>Picker</code> section and <code>Button(role:&nbsp;.destructive)</code></td>
+            <td>On iOS 26 the menu is Liquid Glass zoom-morphing out of the anchor — the material animates from the glyph, which no sheet can imitate. Destructive rows get the system's red and its confirmation semantics for free, and the radio-with-checkmark is the pattern every iPhone owner already reads. We ship <code>GlassMenuButton</code> and <code>GlassSelectMenu</code> today; this is one more caller, not new code.</td>
+            <td><span class="sev s-erg">extend</span></td>
+          </tr>
+          <tr>
+            <td><b>Set type &amp; schemes</b></td>
+            <td><code>Menu</code> + <code>Picker</code> section on the set row</td>
+            <td>Collapses three hand-rolled surfaces into one, and the picker's checkmark states what the tri-state <span class="mono">&#65291;</span> currently hides. Long-press a set row for the same menu as a context menu — one definition, two gestures.</td>
+            <td><span class="sev s-bug">new</span></td>
+          </tr>
+          <tr>
+            <td><b>Reps &amp; weight entry</b></td>
+            <td><code>TextField</code> + <code>.keyboardType(.decimalPad)</code> + <code>ToolbarItemGroup(placement:&nbsp;.keyboard)</code>, with a <code>Stepper</code> for reps</td>
+            <td>The decimal pad has no return key — that is a platform fact, and the platform's answer is a keyboard toolbar. Every other iOS app the athlete owns puts <i>Done</i> there. A <code>Stepper</code> for reps is the system's control for a discrete count, repeat-on-hold included, and it means chalky hands never have to hit a 44pt digit.</td>
+            <td><span class="sev s-bug">new</span></td>
+          </tr>
+          <tr>
+            <td><b>Remove exercise / delete set</b></td>
+            <td><code>.contextMenu</code> and <code>.swipeActions(role:&nbsp;.destructive)</code></td>
+            <td>The system's swipe is finger-tracked, interruptible, has the correct rubber-banding and full-swipe threshold, and announces itself to VoiceOver as a row action. Our <code>SwipeRow</code> reimplements it — and that reimplementation is what paints the card-inside-a-card. Deleting it fixes a visual bug as a side effect. <code>GlassContextMenu</code> exists and is on trial on the feed card; the logger card is the second surface.</td>
+            <td><span class="sev s-gram">planned</span></td>
+          </tr>
+          <tr>
+            <td><b>Every glyph</b></td>
+            <td><code>Image(systemName:)</code> — SF Symbols</td>
+            <td>Optical sizes, weight matching against the surrounding text, Dynamic Type tracking, right-to-left mirroring and a real accessibility name. Sixteen text characters in a display face have none of that: <span class="mono">&#10074;&#10074;</span> and <span class="mono">&#9632;</span> are typography pretending to be controls. A native control must wear native type.</td>
+            <td><span class="sev s-bug">new</span></td>
+          </tr>
+          <tr>
+            <td><b>Minimize <span class="mono">&#8964;</span></b></td>
+            <td><code>Button</code> + <code>.glassEffect(interactive:&nbsp;true)</code></td>
+            <td>Already correct: the material itself answers the touch — specular shimmer and press bounce that no RN scale transform over a static backdrop can produce.</td>
+            <td><span class="sev s-erg">shipped</span></td>
+          </tr>
+          <tr>
+            <td><b>Rest &amp; elapsed clock</b></td>
+            <td>ActivityKit — Live Activity + Dynamic Island</td>
+            <td>Not a button, but the same argument: this is the system's own surface for "a timed thing is happening", and it is the only way the phone goes back in the pocket between sets. Already logged as <code>live-activity-rest</code>, and this screen is the reason it matters.</td>
+            <td><span class="sev s-gram">planned</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub">Keep these ours</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th style="width: 150px;">Control</th><th>Why it stays app-drawn</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>Log set</b></td>
+            <td>The goal is native <em>controls</em>, not a glass skin. A full-width chartreuse CTA has no system counterpart: <code>.glassProminent</code> would restyle the brand's one "go" surface, not nativize it — it would tint it with the system accent and take the shape away. This is the button the whole product is about; it is drawn, on every platform, identically. The codebase already reverted a <code>GlassPillButton</code> on exactly this reasoning, and that reversal was right.</td>
+          </tr>
+          <tr>
+            <td><b>Finish</b></td>
+            <td>Same family. It is a brand action with brand copy and a celebration flight attached to it — the PR badge flies from the card into the summary's trophy chip. A system button cannot carry a shared-element transition out of itself.</td>
+          </tr>
+          <tr>
+            <td><b>The big number</b></td>
+            <td>It is data, not a control. It wears the brand's display face at 52pt because that is the one figure you read from arm's length with the bar still racked.</td>
+          </tr>
+          <tr>
+            <td><b>The exercise card surface</b></td>
+            <td>Glass <em>backdrop</em> under RN content, per the composition rule — SwiftUI subtrees stay self-contained leaves. If the native layer ever fails to mount, a control disappearing is survivable; content disappearing is not.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="beforeafter">
+    <h2>5 – Before / after</h2>
+    <p class="lede">
+      Same session, same state: Pull-Up on the board, nothing banked, five seconds gone.
+      The right-hand screen has every capability the left one has.
+    </p>
+
+    <div class="delta">
+      <div><span class="label">Tap targets</span><div class="n">22 &rarr; <span class="down">9</span></div></div>
+      <div><span class="label">Accents at rest</span><div class="n">5 &rarr; <span class="down">1</span></div></div>
+      <div><span class="label">Plus glyphs</span><div class="n">3 &rarr; <span class="down">1</span></div></div>
+      <div><span class="label">Ways to finish</span><div class="n">2 &rarr; <span class="down">1</span></div></div>
+      <div><span class="label">Taps to log set 1</span><div class="n">3 &rarr; <span class="down">1</span></div></div>
+      <div><span class="label">Screen unused</span><div class="n">30% &rarr; <span class="down">0%</span></div></div>
+    </div>
+
+    <div class="pair">
+      <div class="pane">
+        <div class="cap"><b>Before</b><span class="tag t-now">shipped</span></div>
+        <div class="device">
+          <div class="status"><span>23:14 &#9788;</span><span>&#9679;&#9679;&#9679; &#9727; 18</span></div>
+          <div class="screen">
+            <div style="position: relative; margin-top: -34px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: 0 4px;">
+                <span style="width: 34px;"></span>
+                <div class="clock"><b>0:05</b><i>ELAPSED</i></div>
+                <span style="font-weight: 900; font-size: 16px; color: var(--lime-t); padding-top: 3px;">Finish</span>
+              </div>
+              <div class="hdr" style="margin-top: 4px;">
+                <div class="side"><span class="glassbtn">&#8964;</span></div>
+                <div class="side r"><span class="mono" style="color: var(--ash); font-size: 16px;">&ctdot;</span></div>
+              </div>
+            </div>
+            <div class="metarow">
+              <span class="m">1 exercises &ndash; tap &check; as you go</span>
+              <span class="chip">&#9201; Off &#8964;</span>
+              <span class="link-blue">What's RPE?</span>
+            </div>
+            <div class="xcard">
+              <div class="xhead"><span class="grip">&#8942;&#8942;</span><span class="xicon">&#128694;</span><span class="xname">Pull-Up</span><span class="xkill">&times;</span></div>
+              <div class="lastline">last time &ndash; &ndash;&times;5, &ndash;&times;5, &ndash;&times;5, &ndash;&times;5, &ndash;&times;5</div>
+              <div class="setpanel">
+                <div class="setlab"><span class="grip">&#8942;&#8942;</span><span class="k">Set 1 &mdash; up now</span><span class="sp"><span class="rpechip">RPE &ndash;</span><span class="plusbare">&#65291;</span></span></div>
+                <div class="bignum"><b class="ghost">0</b><i>reps</i></div>
+                <div class="cta">&check; Log set</div>
+              </div>
+              <div class="splitrow">
+                <div class="splittile"><div class="wide"><span class="ringplus">&#65291;</span> Add set</div><div class="dots">&ctdot;</div></div>
+                <div class="boltbtn">&#9889;</div>
+              </div>
+              <div class="footrow"><span>0/1 sets</span><span class="ch">&rsaquo;</span></div>
+            </div>
+            <div class="fieldrow"><span style="color: var(--lime-t); font-size: 16px;">&oplus;</span><span class="t">+ Add exercise</span><span class="c">&#9662;</span></div>
+            <div class="dockrow"><span class="pausebtn">&#10074;&#10074; Pause</span><span class="finishbtn">Finish session</span></div>
+            <div class="void"></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="pane">
+        <div class="cap"><b>After</b><span class="tag t-new">proposed</span></div>
+        <div class="device">
+          <div class="status"><span>23:14 &#9788;</span><span>&#9679;&#9679;&#9679; &#9727; 18</span></div>
+          <div class="screen">
+            <div class="hdr" style="margin-top: 10px;">
+              <div class="side"><span class="glassbtn">&#8964;</span></div>
+              <div style="text-align: center;">
+                <div style="font-weight: 800; font-size: 14px; letter-spacing: -.01em;">Pull-Up</div>
+                <div class="mono" style="font-size: 10.5px; letter-spacing: .14em; color: var(--ash);">0:05</div>
+              </div>
+              <div class="side r" style="gap: 12px;">
+                <span class="mono" style="color: var(--ash); font-size: 16px;">&ctdot;</span>
+                <span style="font-weight: 800; font-size: 15px; color: var(--chalk);">Finish</span>
+              </div>
+            </div>
+
+            <div class="xcard" style="margin-top: 16px;">
+              <div class="xhead">
+                <span class="xicon quiet">&#128694;</span>
+                <span class="xname">Pull-Up</span>
+                <span class="mono" style="font-size: 10px; letter-spacing: .12em; color: var(--ash2);">BODYWEIGHT</span>
+              </div>
+              <div class="lastline">last time &nbsp;5, 5, 5, 5, 5 reps</div>
+
+              <div class="setflat">
+                <div class="setlab">
+                  <span class="k">Set 1 of 5</span>
+                  <span class="sp">
+                    <span class="rpechip">RPE &#9432;</span>
+                    <span class="mono" style="font-size: 10px; letter-spacing: .12em; color: var(--ash);">WORKING &#8964;</span>
+                  </span>
+                </div>
+                <div class="bignum"><b>5</b><i>reps</i></div>
+              </div>
+
+              <div class="ledger">
+                <div class="lrow"><span class="idx">2</span><span>5 reps</span><span class="st">queued</span></div>
+                <div class="lrow"><span class="idx">3</span><span>5 reps</span><span class="st">queued</span></div>
+                <div class="lrow"><span class="idx">4</span><span>5 reps</span><span class="st">queued</span></div>
+                <div class="lrow"><span class="idx">5</span><span>5 reps</span><span class="st">queued</span></div>
+              </div>
+              <div class="growrow"><span class="pl">&#65291;</span> Add set</div>
+            </div>
+
+            <div class="doorrow"><span>Add exercise</span><span class="doorring">&rsaquo;</span></div>
+
+            <div class="void" style="min-height: 74px;"></div>
+
+            <div class="dock">
+              <div class="dockhint"><span>Set 1 of 5 &ndash; 5 reps</span><span>Rest 1:30 after</span></div>
+              <div class="cta" style="margin-top: 0;">&check; Log set</div>
+            </div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes" style="margin-top: 34px; max-width: 78ch;">
+      <li><span class="mark ok">&check;</span><span><b>The header now clears the status bar</b> and carries three things: where you are, how long you've been there, and the two exits.</span></li>
+      <li><span class="mark ok">&check;</span><span><b>The reference line reads.</b> "last time 5, 5, 5, 5, 5 reps" — and because it reads, the queue below it could be built from it.</span></li>
+      <li><span class="mark ok">&check;</span><span><b>The number is chalk, not grey,</b> because it is a value, not a prompt. Five sets of five are already queued as quiet ledger rows. Logging the session is now five taps, not five taps plus five numbers typed.</span></li>
+      <li><span class="mark ok">&check;</span><span><b>One accent.</b> Chartreuse appears once, in the dock, on the only button you will press repeatedly.</span></li>
+      <li><span class="mark ok">&check;</span><span><b>The dock never moves</b> and tells you what you are about to bank and what happens next. When you bank it, the same dock becomes the countdown — and the Dynamic Island picks it up.</span></li>
+      <li><span class="mark ok">&check;</span><span><b>The marks obey the grammar:</b> bare plus grows the set list in place, ringed chevron leaves for the exercise picker.</span></li>
+    </ul>
+  </section>
+
+  <!-- ============================================================ -->
+  <section id="ship">
+    <h2>6 – What to ship, in order</h2>
+    <p class="lede">
+      The first five are bugs and cost almost nothing. Everything below the line is the
+      redesign, and every step of it has to land on web in the same change.
+    </p>
+
+    <ol class="ship">
+      <li><span>Seed <code>initialWindowMetrics</code> and read the real top inset in the logger — the header stops sitting on the status bar.</span><span class="where">_layout.tsx<br>workout.tsx</span></li>
+      <li><span>Make <code>blockSummary</code> load-mode aware, so a bodyweight lift's reference reads reps.</span><span class="where">core/engines/session.ts</span></li>
+      <li><span>Disable <i>Log set</i> until the set has a value, and default the value from last time.</span><span class="where">workout.tsx</span></li>
+      <li><span>Fix the plural, and drop the literal <code>+</code> from both add strings in all three languages.</span><span class="where">core/i18n.ts</span></li>
+      <li><span>Default <code>SwipeRow</code>'s content layer to transparent — the card-inside-a-card goes away.</span><span class="where">swipe-row.tsx</span></li>
+      <li><span>Move rest timer, RPE help and discard into one system <code>Menu</code>; delete the meta row.</span><span class="where">workout.tsx<br>logger.tsx</span></li>
+      <li><span>Dock the primary. One <i>Finish</i>, in the header; pause moves onto the clock.</span><span class="where">both clients</span></li>
+      <li><span>Fold set type, special sets and schemes into one menu on the set row.</span><span class="where">both clients</span></li>
+      <li><span>Retire the ringed <i>Add set</i> box for a bare plus; make <i>Add exercise</i> a door row.</span><span class="where">both clients</span></li>
+      <li><span>Swap every glyph for an SF Symbol on iOS, with the shared vector marks as the floor.</span><span class="where">aurora/icon</span></li>
+      <li><span>Native swipe actions and context menu on the exercise card and the set rows.</span><span class="where">swiftui.tsx</span></li>
+      <li><span>Keyboard toolbar with <i>Done</i>, and a <code>Stepper</code> on reps.</span><span class="where">swiftui.tsx</span></li>
+      <li><span>Rest countdown to the Dynamic Island via ActivityKit.</span><span class="where">live-activity-rest</span></li>
+    </ol>
+
+    <p style="margin-top: 26px; color: var(--ash); max-width: 66ch;">
+      Steps 6 through 13 are capability-registry work: each one either flips an entry to
+      <span class="mono">shipped</span> or needs a new <span class="mono">planned</span> row, and each one
+      owes web the same change in the same commit. That is the parity rule, and this screen is
+      the reason it exists — the web logger carries the same duplicated Finish, the same
+      three plus signs and the same permanent help text.
+    </p>
+  </section>
+
+  <footer class="end">
+    HYBRID – empty session audit – drawn at 392pt in the product's own tokens, both themes.
+    Line references are against <span class="mono">claude/empty-session-page-audit-c3ywgo</span>.
+  </footer>
+</div>
