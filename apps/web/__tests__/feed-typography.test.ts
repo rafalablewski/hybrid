@@ -186,4 +186,19 @@ describe("the feed's grammar stays in core", () => {
       expect(mobile(f), `mobile/${f}`).toContain("sessionTitleText(s.title, t)");
     }
   });
+  it("reveals the composer's toolbar by intent, and survives the blur-before-click race", () => {
+    // A disabled Share pill held open through every read of the feed is a band
+    // of chrome advertising something you are not doing. It reveals on focus OR
+    // on content — focus is not optional, since a PR attached with no words is
+    // a valid post and content-only gating would make the glyph unreachable.
+    expect(web("social-feed.tsx")).toContain("const composing = focused || !!text.trim() || attachPr;");
+    expect(mobile("feed-view.tsx")).toContain("const composing = composerFocused || !!text.trim() || attachPr;");
+    // WEB: focusout fires before click, so a bare blur would unmount the button
+    // under the cursor and swallow the press. Focus moving INTO the block is
+    // not leaving it.
+    expect(web("social-feed.tsx")).toContain("e.currentTarget.contains(e.relatedTarget");
+    // MOBILE: the same race is answered by the list, which delivers a handled
+    // tap without dismissing the keyboard first.
+    expect(mobile("feed-view.tsx")).toContain('keyboardShouldPersistTaps="handled"');
+  });
 });

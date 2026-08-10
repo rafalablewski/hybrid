@@ -6,10 +6,11 @@ import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type { FeedItemView, LiveAthlete, OwnProfile, Relation } from "@hybrid/core";
-import { colors, feedPostPath, HUB_MASTHEAD, seedPerson, userPagePath } from "@hybrid/core";
+import { colors, feedPostPath, seedPerson, userPagePath } from "@hybrid/core";
 import { getFeed, getMyProfile, toggleKudos, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, SButton } from "./social-kit";
 import { GUTTER, RADIUS } from "./aurora/kit";
+import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
 import FeedLiveStrip from "./feed-live-strip";
@@ -43,6 +44,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
+  // The composer's toolbar is revealed by INTENT — the field has focus, or
+  // there is already something to post. See the note on the toolbar itself.
+  const [composerFocused, setComposerFocused] = useState(false);
+  const composing = composerFocused || !!text.trim() || attachPr;
   // My own face beside the composer — the one identity the feed response
   // doesn't carry, so the screen fetches it once itself.
   const [me, setMe] = useState<OwnProfile | null>(null);
@@ -119,25 +124,29 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const header = (
     <>
       {top}
-      {/* AS A HUB TAB THERE IS NO HEAD AT ALL, and that is the point.
-          The feed used to draw the SHARED hub masthead here — "Feed", in the
-          display face, directly under a segmented control whose Feed pill was
-          already lit. A screen may name itself once, and the control that
-          selected it counts as the naming; saying it twice cost ~70dp of a
-          852dp screen and pushed the first post past the 40% mark.
+      <Animated.View style={fade} onLayout={startHubFade}>
+      {/* THE HEAD — the SHARED hub masthead (aurora/hub-masthead.tsx), the same
+          component Dashboard and Performance render, at the same rung. Standing
+          alone the head is the HERO's instead (a pushed screen has a rail and a
+          back affordance).
 
-          It took the empty meta row with it. That row existed only to reserve
-          height so the title's y matched Dashboard's and Performance's — a
-          baseline for a title that no longer exists. `hub-feed-meta` is
-          therefore closed by DELETION rather than by inventing a figure to fill
-          it (capabilities.ts).
+          IT WAS CUT AND PUT BACK. The argument for cutting it was that the
+          segmented control above already names the tab, so the title says it
+          twice and costs ~70dp — but the three hub tabs are ONE screen in three
+          states, and a head on two of them and not the third makes the title's
+          y jump on every pill tap. Consistency across the hub outranks the
+          reclaimed band; the head stays, and it emits its own gaps again.
 
-          What remains is the gap the masthead used to emit above itself
-          (HUB_MASTHEAD.gap.control) — the pills-to-content distance, which is
-          the feed's to keep now that nothing sits between them. Standing alone
-          (a pushed screen, `top` absent) the hero still titles the screen:
-          there is no control up there to do it instead. */}
-      <Animated.View style={[fade, top ? { marginTop: HUB_MASTHEAD.gap.control } : null]} onLayout={startHubFade}>
+          THE META ROW IS EMPTY HERE, ON PURPOSE. It still renders and still
+          reserves its height — that is what keeps the title's y identical
+          across the three tabs — but Feed has nothing true to put in it yet.
+          The live count would restate the "Now training" strip 30 pt below, and
+          an unread count doesn't exist: FeedResponse carries `feed` and `live`
+          and nothing that says what is NEW since the last look. Tracked as
+          `hub-feed-meta` in capabilities.ts rather than filled with a
+          duplicate. */}
+      {top && <HubMasthead title={t("w.social.feedTitle")} />}
+
       {/* Verified-record witness requests addressed to ME — a person is waiting
           on this answer, so it outranks every piece of content below it, and
           every request is also an invite. See core/attestation.ts. */}
@@ -180,8 +189,8 @@ export default function FeedView({ top }: { top?: ReactNode }) {
           a bare auto-growing field, then one accent glyph row with the Share
           pill on its right, the whole block running edge to edge between two
           hairlines. No fill, no border, no radius, no open/close state — the
-          box is always one tap from typing, and the pill sits dimmed until
-          there is something to post. It bleeds under the screen gutter exactly
+          box is always one tap from typing, and its toolbar arrives with the
+          intent to post rather than sitting dimmed through every read. It bleeds under the screen gutter exactly
           like the timeline rows below it, so its hairline and the stream's run
           the same edge-to-edge width. Twin of web's Composer
           (apps/web/components/social-feed.tsx). */}
@@ -194,29 +203,49 @@ export default function FeedView({ top }: { top?: ReactNode }) {
             <TextInput
               value={text}
               onChangeText={setText}
+              onFocus={() => setComposerFocused(true)}
+              onBlur={() => setComposerFocused(false)}
               multiline
               maxLength={500}
               placeholder={t("w.social.sharePlaceholder")}
               placeholderTextColor={C.ash}
               style={{ color: C.chalk, fontSize: fs.heading, lineHeight: leading(fs.heading), fontFamily: F.reg, paddingTop: 7, paddingBottom: 2, paddingHorizontal: 0, textAlignVertical: "top" }}
             />
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
-              {/* The one attachment this product has — the latest PR — as an
-                  accent glyph in X's toolbar position. It fills when attached. */}
-              <Pressable
-                onPress={() => setAttachPr((v) => !v)}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityState={{ selected: attachPr }}
-                accessibilityLabel={t("w.social.attachPr")}
-              >
-                <Svg width={19} height={19} viewBox="0 0 18 18" fill={attachPr ? txt(C, colors.lime) : "none"}>
-                  <Circle cx={9} cy={6.8} r={4.1} stroke={txt(C, colors.lime)} strokeWidth={1.5} />
-                  <Path d="M6.6 10.3 5.2 15.2l3.8-1.9 3.8 1.9-1.4-4.9" fill="none" stroke={txt(C, colors.lime)} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-                </Svg>
-              </Pressable>
-              <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
-            </View>
+            {/* THE TOOLBAR ARRIVES WITH THE INTENT TO POST, not before it.
+                It used to be permanent: an accent glyph and a Share pill that
+                sat DIMMED AND DISABLED on every visit to the feed, because
+                almost every visit is a read. A disabled control held open at
+                the top of a stream is a band of chrome advertising something
+                you are not doing — ~36dp of it, above the first post.
+
+                It reveals on FOCUS as well as on content, and the focus term is
+                not optional: a PR attached with no words is a valid post, so
+                gating purely on "is there something to post" would make the
+                attach glyph unreachable — you could never start one.
+
+                The tap is safe. The list sets keyboardShouldPersistTaps
+                ="handled", so a press on these controls is delivered without
+                dismissing the keyboard first — otherwise blur would unmount the
+                row out from under the finger and swallow the press. */}
+            {composing ? (
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
+                {/* The one attachment this product has — the latest PR — as an
+                    accent glyph in X's toolbar position. It fills when attached. */}
+                <Pressable
+                  onPress={() => setAttachPr((v) => !v)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: attachPr }}
+                  accessibilityLabel={t("w.social.attachPr")}
+                >
+                  <Svg width={19} height={19} viewBox="0 0 18 18" fill={attachPr ? txt(C, colors.lime) : "none"}>
+                    <Circle cx={9} cy={6.8} r={4.1} stroke={txt(C, colors.lime)} strokeWidth={1.5} />
+                    <Path d="M6.6 10.3 5.2 15.2l3.8-1.9 3.8 1.9-1.4-4.9" fill="none" stroke={txt(C, colors.lime)} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                </Pressable>
+                <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+              </View>
+            ) : null}
           </View>
         </View>
       </View>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { feedSubjectKey, fs, HUB_MASTHEAD, leading, tracking } from "@hybrid/core";
+import { feedSubjectKey, fs, leading, tracking } from "@hybrid/core";
 import type { FeedItemView, FeedResponse, KudosResponse, LiveAthlete, MutationResult, OwnProfileResponse, Relation } from "@hybrid/core";
 import { C, Avatar, Btn, EmptyState, jget, jsend, type OpenUser } from "./social-ui";
 import { CosignInbox } from "./pr-attestation";
@@ -36,8 +36,9 @@ type Tab = "forYou" | "following";
 /** The composer — the X compose box's grammar, not a card: my avatar beside a
  *  bare auto-growing field, then one accent glyph row with the Share pill on
  *  its right, the whole block running edge to edge between two hairlines. No
- *  fill, no border, no radius, no open/close state — the box is always one tap
- *  from typing, and the pill sits dimmed until there is something to post.
+ *  fill, no border, no radius — the box is always one tap from typing, and its
+ *  toolbar arrives with the intent to post rather than sitting dimmed and
+ *  disabled through every read of the feed.
  *  Twin of the mobile composer in components/feed-view.tsx. The nav's Add post
  *  circle focuses THIS box (the "hybrid:compose" event) rather than opening a
  *  second editor, so there is exactly one place a post is written. */
@@ -47,6 +48,10 @@ function Composer({ onPosted }: { onPosted: () => void }) {
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
+  // The composer's toolbar is revealed by INTENT — the block has focus, or
+  // there is already something to post. See the note on the toolbar itself.
+  const [focused, setFocused] = useState(false);
+  const composing = focused || !!text.trim() || attachPr;
   const box = useRef<HTMLTextAreaElement>(null);
   // My own face beside the box — the one identity the feed response doesn't
   // carry, so the composer fetches it itself (and keeps it for the session).
@@ -86,6 +91,14 @@ function Composer({ onPosted }: { onPosted: () => void }) {
     // the timeline rows below it (feed-card.tsx), so its hairline and the
     // stream's run the same edge-to-edge width — no side gaps.
     <div
+      // FOCUS IS TRACKED ON THE BLOCK, not on the field, and the containment
+      // check is the whole reason. React's onFocus/onBlur are focusin/focusout,
+      // so they bubble — and a mouse click on the Share pill fires blur BEFORE
+      // click. Hiding the toolbar on a bare blur would unmount the button under
+      // the cursor and swallow the press. Focus moving to a child of this block
+      // is not leaving it, so the toolbar stays.
+      onFocus={() => setFocused(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}
       style={{
         borderTop: `1px solid ${C("line")}`,
         padding: isMobile ? "10px var(--page-pad-x, 12px) 8px" : "10px 0 8px",
@@ -110,6 +123,17 @@ function Composer({ onPosted }: { onPosted: () => void }) {
             placeholder={t("w.social.sharePlaceholder")}
             style={{ display: "block", width: "100%", border: "none", background: "transparent", color: C("chalk"), fontFamily: "var(--font-display)", fontSize: fs.heading, lineHeight: `${leading(fs.heading)}px`, outline: "none", resize: "none", overflow: "hidden", padding: "7px 0 2px" }}
           />
+          {/* THE TOOLBAR ARRIVES WITH THE INTENT TO POST, not before it.
+              It used to be permanent: an accent glyph and a Share pill that sat
+              DIMMED AND DISABLED on every visit to the feed, because almost
+              every visit is a read. A disabled control held open at the top of a
+              stream is a band of chrome advertising something you are not doing.
+
+              It reveals on FOCUS as well as on content, and the focus term is
+              not optional: a PR attached with no words is a valid post, so
+              gating purely on "is there something to post" would make the attach
+              glyph unreachable — you could never start one. */}
+          {composing && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
             {/* The one attachment this product has — the latest PR — as an
                 accent glyph in X's toolbar position. It fills when attached. */}
@@ -128,6 +152,7 @@ function Composer({ onPosted }: { onPosted: () => void }) {
             </button>
             <Btn small onClick={share} disabled={posting || (!text.trim() && !attachPr)}>{posting ? t("w.social.sharing") : t("w.social.share")}</Btn>
           </div>
+          )}
         </div>
       </div>
     </div>
@@ -135,16 +160,10 @@ function Composer({ onPosted }: { onPosted: () => void }) {
 }
 
 export default function SocialFeed({
-  hub,
   onNavigate,
   onOpenUser,
   onOpenPost,
 }: {
-  /** Rendered as a TODAY HUB TAB, under the segmented control that selected it
-   *  — so the screen does not title itself (see the head below). Absent on the
-   *  standalone `feed` screen, which has no control above it and keeps its
-   *  masthead. Mirrors mobile's `top` (components/feed-view.tsx). */
-  hub?: boolean;
   onNavigate?: (screen: string) => void;
   /** A person, on their own page (the shell's `user` screen). An avatar in the
    *  stream opens the whole human, not a peek at them. */
@@ -230,25 +249,23 @@ export default function SocialFeed({
     // — belt and braces over the body-level default now set in globals.css,
     // which is what the feed had been falling through (into the platform UI
     // font) for its captions, comments and empty state.
-    <div style={{ maxWidth: 600, fontFamily: "var(--font-display)", color: C("chalk"), ...(hub ? { marginTop: HUB_MASTHEAD.gap.control } : null) }}>
-      {/* AS A HUB TAB THERE IS NO HEAD AT ALL, and that is the point.
-          The feed used to draw the SHARED hub masthead unconditionally — "Feed",
-          in the display face, directly under a segmented control whose Feed pill
-          was already lit. A screen may name itself once, and the control that
-          selected it counts as the naming.
+    <div style={{ maxWidth: 600, fontFamily: "var(--font-display)", color: C("chalk") }}>
+      {/* THE HEAD — the SHARED hub masthead (aurora/hub-masthead.tsx), the same
+          component Dashboard and Performance render, on the hub tab and on the
+          standalone screen alike.
 
-          It took the empty meta row with it. That row existed only to reserve
-          height so the title's y matched Dashboard's and Performance's — a
-          baseline for a title that no longer exists. `hub-feed-meta` is
-          therefore closed by DELETION rather than by inventing a figure to fill
-          it (capabilities.ts).
-
-          The gap the masthead used to emit above itself (HUB_MASTHEAD.gap.control)
-          moves onto this root: it is the control-to-content distance, which is
-          the feed's to keep now that nothing sits between them. On the
-          STANDALONE feed screen there is no control up there, so the masthead
-          stays and titles the screen. Mirrors mobile feed-view.tsx. */}
-      {!hub && <HubMasthead title={t("w.social.feedTitle")} />}
+          IT WAS CUT AND PUT BACK. The argument for cutting it on the hub tab
+          was that the segmented control above already names the tab, so the
+          title says it twice — but the three hub tabs are ONE screen in three
+          states, and a head on two of them and not the third makes the title's
+          y jump on every pill tap. Consistency across the hub outranks the
+          reclaimed band.
+          THE META ROW IS EMPTY, ON PURPOSE — it still reserves its height, which
+          is what keeps the title's y identical across the three tabs, but the
+          feed has nothing true to put in it yet: the live count would restate
+          the strip below, and FeedResponse carries no "new since you last
+          looked". Tracked as `hub-feed-meta` in capabilities.ts. */}
+      <HubMasthead title={t("w.social.feedTitle")} />
 
       {/* Verified-record witness requests addressed to ME. A person is waiting
           on this answer, so it outranks every piece of content below it — and

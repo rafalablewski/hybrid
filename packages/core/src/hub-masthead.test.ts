@@ -37,8 +37,7 @@ const code = (p: string) =>
     .replace(/^\s*\/\/.*$/gm, "")
     .replace(/\/\*[\s\S]*?\*\//g, "");
 
-/** Every surface in the hub's orbit, both clients — the blast radius for the
- *  rules below that apply whether or not the screen draws a head. */
+/** The six surfaces that render a hub head, both clients. */
 const HUB_SCREENS = [
   "apps/mobile/components/aurora/home.tsx",
   "apps/mobile/components/aurora/performance.tsx",
@@ -48,17 +47,7 @@ const HUB_SCREENS = [
   "apps/web/components/social-feed.tsx",
 ];
 
-/**
- * The surfaces that actually DRAW a head.
- *
- * The feed's hub tab is deliberately not one of them any more: the segmented
- * control directly above it already names the tab, and "Feed" in the display
- * face under a lit Feed pill is the screen naming itself twice. Mobile's feed
- * draws no head at all — standing alone it takes AuroraScreen's hero instead —
- * so it drops off this list entirely; web keeps the component for its
- * STANDALONE screen, where there is no control to do the naming.
- */
-const HEAD_SCREENS = HUB_SCREENS.filter((f) => f !== "apps/mobile/components/feed-view.tsx");
+
 
 const HEAD_COMPONENTS = [
   "apps/mobile/components/aurora/hub-masthead.tsx",
@@ -109,33 +98,10 @@ describe("the hub masthead contract", () => {
 });
 
 describe("the hub head guard — no screen may draw its own", () => {
-  it("renders the shared component on every surface that draws a head", () => {
-    for (const file of HEAD_SCREENS) {
+  it("renders the shared component on all six surfaces", () => {
+    for (const file of HUB_SCREENS) {
       expect(code(file), file).toContain("<HubMasthead");
       expect(code(file), file).toMatch(/import \{ HubMasthead \} from/);
-    }
-  });
-
-  it("draws NO head on the feed's hub tab — the control above it is the title", () => {
-    // A screen may name itself once, and the segmented control that selected it
-    // counts as the naming. The head also took the EMPTY meta row with it: that
-    // row reserved height purely to hold a baseline for a title that no longer
-    // exists, which is why `hub-feed-meta` is closed by deletion rather than by
-    // inventing a figure to fill it (capabilities.ts).
-    expect(code("apps/mobile/components/feed-view.tsx")).not.toContain("<HubMasthead");
-    // Web's feed is ONE component in two shapes, so its head is conditional
-    // rather than absent — standalone still titles itself.
-    expect(code("apps/web/components/social-feed.tsx")).toContain("{!hub && <HubMasthead");
-  });
-
-  it("keeps the control-to-content gap when the head that emitted it is gone", () => {
-    // The head used to emit HUB_MASTHEAD.gap.control above itself. With no head
-    // on the feed's hub tab that gap is the feed's to keep — from the SAME
-    // token on both clients, or the pills sit 16 closer to the stream on one of
-    // them. (Neither TodayTabs nor LiquidSeg emits a bottom margin, so this is
-    // the only gap in play and CSS has nothing to collapse it against.)
-    for (const file of ["apps/mobile/components/feed-view.tsx", "apps/web/components/social-feed.tsx"]) {
-      expect(code(file), file).toContain("HUB_MASTHEAD.gap.control");
     }
   });
 
