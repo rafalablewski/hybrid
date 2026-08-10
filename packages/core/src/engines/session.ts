@@ -156,13 +156,41 @@ export function warmupRamp(workingKg: number): WarmupStep[] {
  * real name is only entered when saving a routine (or the optional finish-screen
  * rename). Returns plain English; this is stored data, not a translated label.
  */
+/**
+ * Every title the clock can write, in clock order. ONE table, because the
+ * generator and the "did a human type this?" test below have to agree forever:
+ * a sixth time-of-day added to one and not the other would quietly make every
+ * such session look athlete-named, and the feed would go back to headlining
+ * "Afternoon workout" over twenty rows.
+ */
+const AUTO_TITLES: readonly { before: number; title: string }[] = [
+  { before: 5, title: "Late night workout" },
+  { before: 12, title: "Morning workout" },
+  { before: 17, title: "Afternoon workout" },
+  { before: 21, title: "Evening workout" },
+  { before: 24, title: "Night workout" },
+];
+
 export function defaultSessionTitle(date: Date = new Date()): string {
   const h = date.getHours();
-  if (h < 5) return "Late night workout";
-  if (h < 12) return "Morning workout";
-  if (h < 17) return "Afternoon workout";
-  if (h < 21) return "Evening workout";
-  return "Night workout";
+  return (AUTO_TITLES.find((a) => h < a.before) ?? AUTO_TITLES[AUTO_TITLES.length - 1]!).title;
+}
+
+/**
+ * Did the CLOCK write this title, or did the athlete?
+ *
+ * The feed needs the answer to decide whether a session's title is worth the
+ * card's loudest line: a name someone chose ("Lower — W4D2") is information,
+ * and "Afternoon workout" is the time of day rendered at heading size, the same
+ * on every post in the stream (see feed-card.ts `feedHeadlineEarnsLead`).
+ *
+ * A missing title counts as auto — an absent name is not a name the athlete
+ * chose either.
+ */
+export function isAutoSessionTitle(title: string | null | undefined): boolean {
+  if (!title?.trim()) return true;
+  const t = title.trim().toLowerCase();
+  return AUTO_TITLES.some((a) => a.title.toLowerCase() === t);
 }
 
 export interface StrengthBlock {

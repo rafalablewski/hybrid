@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
-  cardPrLines,
+  cardLead,
+  cardRecords,
   cardSetLines,
+  feedHeadlineEarnsLead,
   prLines,
   sessionDetail,
   sessionStats,
@@ -86,15 +88,24 @@ describe("the records a workout set", () => {
     expect(d.prs![1]).toMatchObject({ lift: "Back Squat", topLoadKg: 160, previousTopLoadKg: 155 });
   });
 
-  it("keeps a card readable: two records drawn, the rest counted, and no lift twice", () => {
+  it("keeps a card readable: two records named, the rest counted, and no lift twice", () => {
     const d = sessionDetail(session(), [hit(), hit({ lift: "Back Squat", topLoad: 160 }), hit({ lift: "Split Squat", topLoad: 40 })]);
-    expect(cardPrLines(d.prs).map((p) => p.lift)).toEqual(["Deadlift", "Back Squat"]);
+    const r = cardRecords(d);
+    // The loudest record takes the hero figure; the next takes a quiet line.
+    expect(r.lead!.lift).toBe("Deadlift");
+    expect(r.lines.map((p) => p.lift)).toEqual(["Back Squat"]);
+    expect(r.shown.map((p) => p.lift)).toEqual(["Deadlift", "Back Squat"]);
+    expect(r.rest).toBe(1);
+    // The record that took the hero never ALSO draws a line of its own.
+    expect(r.lines.map((p) => p.lift)).not.toContain("Deadlift");
     // Back Squat has said its numbers on its record line; the top sets drop it.
     expect(d.sets!.map((l) => l.name)).toContain("Back Squat");
-    expect(cardSetLines(d.sets, cardPrLines(d.prs)).map((l) => l.name)).toEqual(["Romanian Deadlift", "Split Squat"]);
-    // No records at all → the top sets are untouched.
+    expect(cardSetLines(d.sets, r.shown).map((l) => l.name)).toEqual(["Romanian Deadlift", "Split Squat"]);
+    // No records at all → no hero, and the top sets are untouched.
     const plain = sessionDetail(session());
-    expect(cardSetLines(plain.sets, cardPrLines(plain.prs))).toEqual(plain.sets);
+    const pr = cardRecords(plain);
+    expect(pr).toMatchObject({ lead: null, lines: [], rest: 0 });
+    expect(cardSetLines(plain.sets, pr.shown)).toEqual(plain.sets);
   });
 
   it("carries each record's own figure and the delta over the athlete's previous best", () => {
@@ -118,6 +129,80 @@ describe("the records a workout set", () => {
     expect(sessionDetail(session(), [hit()]).tier).toBe(0); // claimed, no badge
     const watched = session({ device: { provider: "apple", uuid: "u1", activityLabel: "Traditional Strength Training", start: "2026-03-02T17:30:00.000Z", end: "2026-03-02T18:41:00.000Z", durationMin: 71 } });
     expect(sessionDetail(watched, [hit()]).tier).toBe(1);
+  });
+});
+
+describe("the card's one big number", () => {
+  const hit = (over: Partial<PrHit> = {}): PrHit => ({ lift: "Deadlift", e1rm: 228, previous: 217, topLoad: 210, previousTopLoad: 200, ...over });
+
+  it("gives a record-setting SESSION the hero figure it could never reach before", () => {
+    // The gate used to be `archetype === "stat"`, and a session is always
+    // "sets" — so a p0 session drew its record at accessory-work size.
+    const d = sessionDetail(session(), [hit()]);
+    expect(d.archetype).toBe("sets");
+    expect(cardLead(d)).toMatchObject({ label: "Deadlift", figureKg: 210, e1rmKg: 228 });
+  });
+
+  it("labels the figure with the lift, because the headline no longer names it", () => {
+    expect(cardLead(sessionDetail(session(), [hit()]))!.label).toBe("Deadlift");
+    // A shared PR post's HEADLINE already says the lift, so the label stays
+    // null rather than printing it twice.
+    expect(cardLead(postDetail("pr", { lift: "Deadlift", topLoad: 210 }))!.label).toBeNull();
+  });
+
+  it("gives a p2 session NO hero — the quiet row is what makes the loud one loud", () => {
+    expect(cardLead(sessionDetail(session()))).toBeNull();
+    expect(cardLead(postDetail("status", {}))).toBeNull();
+    expect(cardLead(undefined)).toBeNull();
+  });
+
+  it("carries the record's own provenance onto the figure", () => {
+    const watched = session({ device: { provider: "apple", uuid: "u1", activityLabel: "Traditional Strength Training", start: "2026-03-02T17:30:00.000Z", end: "2026-03-02T18:41:00.000Z", durationMin: 71 } });
+    expect(cardLead(sessionDetail(watched, [hit()]))!.tier).toBe(1);
+    expect(cardLead(sessionDetail(session(), [hit()]))!.tier).toBe(0);
+  });
+
+  it("hands a first-ever lift the figure with no delta to show for it", () => {
+    const first = hit({ lift: "Pull-up", topLoad: 40, e1rm: 0, previousTopLoad: null, previous: null });
+    expect(cardLead(sessionDetail(session(), [first]))).toMatchObject({ label: "Pull-up", firstEver: true, deltaPct: undefined });
+  });
+});
+
+describe("a headline identical on every post is not a headline", () => {
+  const hit = (over: Partial<PrHit> = {}): PrHit => ({ lift: "Deadlift", e1rm: 228, previous: 217, topLoad: 210, previousTopLoad: 200, ...over });
+
+  it("leads with a title the ATHLETE chose", () => {
+    expect(feedHeadlineEarnsLead({ detail: sessionDetail(session()) })).toBe(true);
+  });
+
+  it("drops a title the CLOCK wrote — every one of them", () => {
+    for (const title of ["Late night workout", "Morning workout", "Afternoon workout", "Evening workout", "Night workout"]) {
+      expect(feedHeadlineEarnsLead({ detail: sessionDetail(session({ title })) })).toBe(false);
+    }
+    // Case and stray whitespace are still the clock's title, not a name.
+    expect(feedHeadlineEarnsLead({ detail: sessionDetail(session({ title: "  afternoon workout " })) })).toBe(false);
+  });
+
+  it("still leads with an auto title rather than leave the card anonymous", () => {
+    // No hero and no top sets — a bare cardio session. A generic name beats a
+    // row of numbers with nothing holding them.
+    const bare = sessionDetail(session({ title: "Morning workout", blocks: [] }));
+    expect(feedHeadlineEarnsLead({ detail: bare })).toBe(true);
+    // …but the moment it has a record to lead with, the auto title goes.
+    const withPr = sessionDetail(session({ title: "Morning workout" }), [hit()]);
+    expect(feedHeadlineEarnsLead({ detail: withPr })).toBe(false);
+  });
+
+  it("never puts 'Posted' over a status update — the words ARE the post", () => {
+    expect(feedHeadlineEarnsLead({ detail: postDetail("status", {}) })).toBe(false);
+  });
+
+  it("always leads a record headline, which names the lift", () => {
+    expect(feedHeadlineEarnsLead({ detail: postDetail("pr", { lift: "Deadlift", topLoad: 210 }) })).toBe(true);
+  });
+
+  it("leads a legacy card with no detail at all — there is nothing else", () => {
+    expect(feedHeadlineEarnsLead({})).toBe(true);
   });
 });
 

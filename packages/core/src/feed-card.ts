@@ -31,6 +31,7 @@ import { type AttestationTier } from "./attestation";
 import { deviceTrueSession } from "./device-truth";
 import { roundKm } from "./distance";
 import {
+  isAutoSessionTitle,
   paceClock,
   sessionMinutes,
   sessionVolume,
@@ -359,14 +360,95 @@ export function sessionDetail(session: LoggedSession, prs: PrHit[] = []): FeedDe
 }
 
 /**
- * How many records a CARD lists before it counts the rest. The post lists all
- * of them; a row that listed six would stop being a row.
+ * How many records a CARD names in total, counting the one promoted to the hero
+ * figure. The post lists all of them; a row that listed six would stop being a
+ * row.
  */
 export const FEED_CARD_PR_LINES = 2;
 
-/** The records a card draws in full. */
-export function cardPrLines(prs: FeedPrLine[] | undefined): FeedPrLine[] {
-  return (prs ?? []).slice(0, FEED_CARD_PR_LINES);
+/**
+ * THE CARD'S ONE BIG NUMBER, and where it comes from.
+ *
+ * The hero figure — the 44/46px number with its unit and its provenance — used
+ * to be reachable only by `archetype: "stat"`, which is a SHARED post. A
+ * session, which is the archetype that actually sets records, is always
+ * `"sets"`, so the two conditions could never both be true and a p0 session
+ * drew its record at the same size as its accessory work. "Moment drives
+ * weight" was documented in three files and inert in all of them.
+ *
+ * So the decision moves here, where both renderers read it:
+ *   • a stat post leads with its own figure, and its HEADLINE already names the
+ *     lift — so the label is null and nothing is said twice;
+ *   • a session that set records leads with the LOUDEST one, labelled with the
+ *     lift, because the record is why the post exists;
+ *   • everything else has no hero at all, which is what makes a p2 Tuesday
+ *     read as quieter than the record beside it.
+ */
+export interface CardLead {
+  /** the lift the figure belongs to, when the headline isn't already naming it
+   *  — drawn as a small mono label above the number. null for a stat post. */
+  label: string | null;
+  /** the hero number, kg. Absent on a legacy post that only stored an e1RM. */
+  figureKg?: number;
+  e1rmKg?: number;
+  deltaPct?: number;
+  firstEver: boolean;
+  tier?: AttestationTier;
+}
+
+export function cardLead(d: FeedDetail | undefined): CardLead | null {
+  if (!d) return null;
+  if (d.archetype === "stat") {
+    // Unchanged behaviour — the shared-PR post already had this treatment.
+    if (d.figureKg == null && d.e1rmKg == null) return null;
+    return {
+      label: null,
+      figureKg: d.figureKg,
+      e1rmKg: d.e1rmKg,
+      deltaPct: d.deltaPct,
+      firstEver: !!d.firstEver,
+      tier: d.tier,
+    };
+  }
+  // A session earns the hero only at p0 — which `sessionDetail` grants exactly
+  // when the session set a record. No record, no big number.
+  const top = d.moment === "p0" ? d.prs?.[0] : undefined;
+  if (!top) return null;
+  return {
+    label: top.lift,
+    figureKg: top.topLoadKg,
+    e1rmKg: top.e1rmKg,
+    deltaPct: top.deltaPct,
+    firstEver: top.firstEver,
+    // Provenance belongs to the CLAIM, and the claim is now the hero.
+    tier: d.tier,
+  };
+}
+
+/**
+ * How a card's records divide between the hero and the lines under it.
+ *
+ * The record promoted to `lead` must not also draw a line of its own — that
+ * would be the same lift twice in one card, which is the exact noise
+ * `cardSetLines` was written to prevent one rung further down.
+ */
+export interface CardRecords {
+  /** the record that took the hero figure, or null when nothing did. */
+  lead: FeedPrLine | null;
+  /** the records drawn as their own quiet lines beneath it. */
+  lines: FeedPrLine[];
+  /** lead + lines — every record the card NAMES, for `cardSetLines`. */
+  shown: FeedPrLine[];
+  /** records the card doesn't draw at all; the count line opens the post. */
+  rest: number;
+}
+
+export function cardRecords(d: FeedDetail | undefined): CardRecords {
+  const prs = d?.prs ?? [];
+  const lead = cardLead(d)?.label ? prs[0] ?? null : null;
+  const lines = prs.slice(lead ? 1 : 0, FEED_CARD_PR_LINES);
+  const shown = lead ? [lead, ...lines] : lines;
+  return { lead, lines, shown, rest: Math.max(0, prs.length - shown.length) };
 }
 
 /**
@@ -381,6 +463,42 @@ export function cardSetLines(sets: FeedSetLine[] | undefined, shownPrs: FeedPrLi
   if (!sets?.length || !shownPrs.length) return sets ?? [];
   const named = new Set(shownPrs.map((p) => p.lift));
   return sets.filter((l) => !named.has(l.name));
+}
+
+/**
+ * DOES THIS CARD'S HEADLINE EARN THE LOUDEST LINE ON IT?
+ *
+ * A headline that is the same on every post is not a headline. A session with
+ * no name of its own is titled by the CLOCK (`defaultSessionTitle`), so a feed
+ * of twenty workouts was a column of "Afternoon workout" set in the display
+ * face — the largest type on each card, carrying the one fact the timestamp
+ * beside the athlete's name had already given.
+ *
+ * The rule, and both clients read it from here so neither can soften it:
+ *   • a session/workout title leads only when the ATHLETE chose it;
+ *   • a record headline always leads — it names the lift;
+ *   • "Posted" over a status update never leads: the words are the post;
+ *   • an auto title leads anyway when the card would otherwise be anonymous —
+ *     no hero and no top sets (a bare cardio session) — because a generic name
+ *     still beats a row of numbers with nothing to hold them.
+ *
+ * This gates ZONE B only. `feedHeadlineText` is unchanged and still composes
+ * the string, which the share payload and the opened POST both need: a page may
+ * name itself, and what you share must read like what you tapped.
+ */
+export function feedHeadlineEarnsLead(it: { detail?: FeedDetail }): boolean {
+  const d = it.detail;
+  if (!d) return true; // legacy shape — there is nothing else to lead with
+  switch (d.headlineKey) {
+    case "feed.hl.session":
+    case "feed.hl.sharedWorkout":
+      if (!isAutoSessionTitle(d.headlineArg)) return true;
+      return !cardLead(d) && !d.sets?.length;
+    case "feed.hl.post":
+      return false;
+    default:
+      return true;
+  }
 }
 
 /*

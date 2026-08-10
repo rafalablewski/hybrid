@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { feedSubjectKey, fs, leading, tracking } from "@hybrid/core";
+import { feedSubjectKey, fs, HUB_MASTHEAD, leading, tracking } from "@hybrid/core";
 import type { FeedItemView, FeedResponse, KudosResponse, LiveAthlete, MutationResult, OwnProfileResponse, Relation } from "@hybrid/core";
 import { C, Avatar, Btn, EmptyState, jget, jsend, type OpenUser } from "./social-ui";
 import { CosignInbox } from "./pr-attestation";
@@ -135,10 +135,16 @@ function Composer({ onPosted }: { onPosted: () => void }) {
 }
 
 export default function SocialFeed({
+  hub,
   onNavigate,
   onOpenUser,
   onOpenPost,
 }: {
+  /** Rendered as a TODAY HUB TAB, under the segmented control that selected it
+   *  — so the screen does not title itself (see the head below). Absent on the
+   *  standalone `feed` screen, which has no control above it and keeps its
+   *  masthead. Mirrors mobile's `top` (components/feed-view.tsx). */
+  hub?: boolean;
   onNavigate?: (screen: string) => void;
   /** A person, on their own page (the shell's `user` screen). An avatar in the
    *  stream opens the whole human, not a peek at them. */
@@ -224,19 +230,25 @@ export default function SocialFeed({
     // — belt and braces over the body-level default now set in globals.css,
     // which is what the feed had been falling through (into the platform UI
     // font) for its captions, comments and empty state.
-    <div style={{ maxWidth: 600, fontFamily: "var(--font-display)", color: C("chalk") }}>
-      {/* THE HEAD — the SHARED hub masthead (aurora/hub-masthead.tsx), the same
-          component Dashboard and Performance render. Web had NO head here at
-          all: `w.social.feedTitle` existed and only mobile rendered it, so one
-          client titled this screen and the other simply did not. Mobile's
-          subtitle ("What your friends are training", under a title that says
-          Feed) is cut on both rather than copied over.
-          THE META ROW IS EMPTY, ON PURPOSE — it still reserves its height, which
-          is what keeps the title's y identical across the three tabs, but the
-          feed has nothing true to put in it yet: the live count would restate
-          the strip below, and FeedResponse carries no "new since you last
-          looked". Tracked as `hub-feed-meta` in capabilities.ts. */}
-      <HubMasthead title={t("w.social.feedTitle")} />
+    <div style={{ maxWidth: 600, fontFamily: "var(--font-display)", color: C("chalk"), ...(hub ? { marginTop: HUB_MASTHEAD.gap.control } : null) }}>
+      {/* AS A HUB TAB THERE IS NO HEAD AT ALL, and that is the point.
+          The feed used to draw the SHARED hub masthead unconditionally — "Feed",
+          in the display face, directly under a segmented control whose Feed pill
+          was already lit. A screen may name itself once, and the control that
+          selected it counts as the naming.
+
+          It took the empty meta row with it. That row existed only to reserve
+          height so the title's y matched Dashboard's and Performance's — a
+          baseline for a title that no longer exists. `hub-feed-meta` is
+          therefore closed by DELETION rather than by inventing a figure to fill
+          it (capabilities.ts).
+
+          The gap the masthead used to emit above itself (HUB_MASTHEAD.gap.control)
+          moves onto this root: it is the control-to-content distance, which is
+          the feed's to keep now that nothing sits between them. On the
+          STANDALONE feed screen there is no control up there, so the masthead
+          stays and titles the screen. Mirrors mobile feed-view.tsx. */}
+      {!hub && <HubMasthead title={t("w.social.feedTitle")} />}
 
       {/* Verified-record witness requests addressed to ME. A person is waiting
           on this answer, so it outranks every piece of content below it — and

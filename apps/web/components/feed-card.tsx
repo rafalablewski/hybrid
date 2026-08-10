@@ -6,8 +6,10 @@ import {
   feedDeltaText,
   feedFigureText,
   feedSharePayload,
-  cardPrLines,
+  cardLead,
+  cardRecords,
   cardSetLines,
+  feedHeadlineEarnsLead,
   feedHeadlineText,
   feedStatText,
   feedSubjectKey,
@@ -16,6 +18,8 @@ import {
   isFeedSaved,
   leading,
   tracking,
+  type CardLead,
+  type CardRecords,
   type FeedDetail,
   type FeedItemView,
   type FeedStat,
@@ -171,17 +175,21 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
  *
  * A record used to be a card of its own that named the heaviest lift and
  * reduced the others to "3 PRs this session". They are lines on the workout
- * now: the first two carry their own figure and their delta, and anything past
- * that is a count that opens (the post has all of them). The tier chip sits on
- * the LOUDEST line, because provenance belongs to the claim.
+ * now — and the LOUDEST of them has since been promoted again, out of this list
+ * and up into the hero figure (core `cardRecords`). What is left here is the
+ * runner-up, and past that a count that opens (the post has all of them).
+ *
+ * `tier` arrives undefined when the hero already carried the chip — provenance
+ * belongs to the claim, and the claim is up there now.
  */
-function PrLines({ prs, tier, units }: { prs: NonNullable<FeedDetail["prs"]>; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+function PrLines({ records, tier, units }: { records: CardRecords; tier?: FeedDetail["tier"]; units: WeightUnit }) {
   const { t } = useLang();
   const chip = feedTierChip(tier);
-  const shown = cardPrLines(prs);
-  const rest = prs.length - shown.length;
+  const shown = records.lines;
+  const rest = records.rest;
+  const total = records.shown.length + rest;
   return (
-    <div style={{ marginTop: 6 }}>
+    <div style={{ marginTop: 8 }}>
       {shown.map((pr, i) => {
         const fig = feedFigureText(pr.topLoadKg, units);
         return (
@@ -201,7 +209,7 @@ function PrLines({ prs, tier, units }: { prs: NonNullable<FeedDetail["prs"]>; ti
         );
       })}
       {rest > 0 && (
-        <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{t("feed.prCount").replace("{n}", String(prs.length))}</div>
+        <div style={{ fontFamily: mono, fontSize: fs.nano, color: C("ash"), marginTop: 2 }}>{t("feed.prCount").replace("{n}", String(total))}</div>
       )}
     </div>
   );
@@ -235,16 +243,31 @@ function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units
   );
 }
 
-/** Zone B+C for a p0/p1 moment — the hero figure with its provenance beside it. */
-function Figure({ detail, units }: { detail: FeedDetail; units: WeightUnit }) {
+/**
+ * ZONE C — THE ONE BIG NUMBER. Core decides whether a card gets one and where
+ * it comes from (`cardLead`); this only draws it. A record-setting SESSION now
+ * reaches this treatment, which it never could while the gate read
+ * `archetype === "stat"` — see the note on `cardLead`.
+ */
+function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
   const { t } = useLang();
-  const tier = feedTierChip(detail.tier);
-  const fig = detail.figureKg != null && detail.figureKg > 0 ? feedFigureText(detail.figureKg, units) : null;
-  const e1 = detail.e1rmKg != null ? feedFigureText(detail.e1rmKg, units) : null;
+  const tier = feedTierChip(lead.tier);
+  const fig = lead.figureKg != null && lead.figureKg > 0 ? feedFigureText(lead.figureKg, units) : null;
+  const e1 = lead.e1rmKg != null ? feedFigureText(lead.e1rmKg, units) : null;
   return (
     <>
+      {/* THE LIFT, as the figure's own label. On a session the headline no
+          longer names anything (feedHeadlineEarnsLead), so without this the
+          card would open on a bare "210" with nothing saying what was lifted.
+          A shared-PR post's headline already says it and passes label: null —
+          the same lift twice in one card is the noise this whole pass removes. */}
+      {lead.label && (
+        <div style={{ fontFamily: mono, fontSize: fs.nano, fontWeight: 600, letterSpacing: tracking.caps, textTransform: "uppercase", color: C("ash"), marginTop: 9, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {lead.label}
+        </div>
+      )}
       {(fig || tier) && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4, flexWrap: "wrap" }}>
           {fig && (
             <>
               <span style={{ fontFamily: mono, fontSize: fs.stat, fontWeight: 700, lineHeight: 1, letterSpacing: tracking.display, fontVariantNumeric: "tabular-nums", color: C("chalk") }}>{fig.value}</span>
@@ -255,18 +278,18 @@ function Figure({ detail, units }: { detail: FeedDetail; units: WeightUnit }) {
               figure's line — not up beside the athlete's name. */}
           {tier && (
             <span style={{ marginLeft: "auto" }}>
-              <Chip tone="lime" title={t(`feed.tierExplain.${detail.tier}`)}>
+              <Chip tone="lime" title={t(`feed.tierExplain.${lead.tier}`)}>
                 <b>{tier.short}</b> {t(tier.labelKey)}
               </Chip>
             </span>
           )}
         </div>
       )}
-      {(detail.deltaPct != null || e1 || detail.firstEver) && (
-        <div style={{ fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: detail.deltaPct != null ? accentVar("lime") : C("ash"), marginTop: 4 }}>
+      {(lead.deltaPct != null || e1 || lead.firstEver) && (
+        <div style={{ fontFamily: mono, fontSize: fs.micro, fontWeight: 600, color: lead.deltaPct != null ? accentVar("lime") : C("ash"), marginTop: 4 }}>
           {e1 ? t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`) : null}
-          {detail.deltaPct != null && <> {feedDeltaText(detail.deltaPct)}</>}
-          {detail.firstEver && <span style={{ color: C("ash"), fontWeight: 500 }}>{detail.firstEver && (e1 || detail.deltaPct != null) ? " — " : ""}{t("feed.firstEver")}</span>}
+          {lead.deltaPct != null && <> {feedDeltaText(lead.deltaPct)}</>}
+          {lead.firstEver && <span style={{ color: C("ash"), fontWeight: 500 }}>{lead.firstEver && (e1 || lead.deltaPct != null) ? " — " : ""}{t("feed.firstEver")}</span>}
         </div>
       )}
     </>
@@ -389,13 +412,25 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const [menu, setMenu] = useState(false);
   const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: !!onDelete });
 
-  // The headline: core names the lift, the client speaks the language.
+  // The headline: core names the lift, the client speaks the language. It is
+  // still COMPOSED for every card — the share payload and the opened post both
+  // need it. What changed is whether ZONE B draws it: core answers that
+  // (feedHeadlineEarnsLead), so an auto "Afternoon workout" stops being the
+  // largest type on twenty consecutive rows.
   const headline = feedHeadlineText(item, t);
-  const setLines = cardSetLines(d?.sets, cardPrLines(d?.prs));
+  const leadsWithHeadline = feedHeadlineEarnsLead(item);
+  const lead = cardLead(d);
+  const records = cardRecords(d);
+  const setLines = cardSetLines(d?.sets, records.shown);
 
   // Moment drives weight. A p0 record interrupts; a Tuesday session does not.
+  //
+  // ONE loud thing per card. A p0 that carries a hero figure sets its headline
+  // at the ordinary title rung: the number is the moment, and a display-weight
+  // heading above a 46px figure is two heroes arguing. A p0 with no figure —
+  // some future archetype that leads with words — still gets the big rung.
   const headlineStyle: CSSProperties =
-    moment === "p0"
+    moment === "p0" && !lead
       ? { fontFamily: heading, fontWeight: 800, fontSize: fs.headline, letterSpacing: tracking.display, lineHeight: `${leading(fs.headline, "tight")}px` }
       : { fontFamily: heading, fontWeight: 800, fontSize: fs.title, lineHeight: `${leading(fs.title, "snug")}px` };
 
@@ -503,12 +538,18 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
             }
           : {})}
       >
-        {/* ZONE B — headline */}
-        {headline && <div style={{ ...headlineStyle, color: C("chalk"), marginTop: 8 }}>{headline}</div>}
+        {/* ZONE B — the headline, drawn only when it earns the card's loudest
+            line. A title the CLOCK wrote is not a headline (core decides). */}
+        {leadsWithHeadline && headline && <div style={{ ...headlineStyle, color: C("chalk"), marginTop: 8 }}>{headline}</div>}
 
-        {/* ZONE C — the figures */}
-        {d?.archetype === "stat" && <Figure detail={d} units={units} />}
-        {d?.prs && d.prs.length > 0 && <PrLines prs={d.prs} tier={d.tier} units={units} />}
+        {/* ZONE C — the figures. The hero first: a shared PR's own number, or
+            the loudest record a session set. */}
+        {lead && <Figure lead={lead} units={units} />}
+        {/* …then the runner-up records, without the one the hero took. The tier
+            chip goes with whichever of the two is drawing the loudest claim. */}
+        {(records.lines.length > 0 || records.rest > 0) && (
+          <PrLines records={records} tier={lead ? undefined : d?.tier} units={units} />
+        )}
         {/* The lifts the records above already named are dropped from the top
             sets — the same lift twice in one card is noise (core cardSetLines). */}
         {setLines.length > 0 && <TopSets sets={setLines} units={units} />}

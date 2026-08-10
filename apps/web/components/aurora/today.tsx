@@ -645,7 +645,9 @@ export default function AuroraToday({
     return (
       <div style={shell}>
         {hubHeader}
-        <SocialFeed onNavigate={onNavigate} onOpenPost={onOpenPost} />
+        {/* hub — the segmented control above has already named this tab, so the
+            feed draws no head of its own (components/social-feed.tsx). */}
+        <SocialFeed hub onNavigate={onNavigate} onOpenPost={onOpenPost} />
       </div>
     );
   }

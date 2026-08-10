@@ -6,11 +6,10 @@ import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import type { FeedItemView, LiveAthlete, OwnProfile, Relation } from "@hybrid/core";
-import { colors, feedPostPath, seedPerson, userPagePath } from "@hybrid/core";
+import { colors, feedPostPath, HUB_MASTHEAD, seedPerson, userPagePath } from "@hybrid/core";
 import { getFeed, getMyProfile, toggleKudos, createPost, deletePost } from "../lib/social-api";
 import { Avatar, Empty, SButton } from "./social-kit";
 import { GUTTER, RADIUS } from "./aurora/kit";
-import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
 import FeedLiveStrip from "./feed-live-strip";
@@ -120,25 +119,25 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const header = (
     <>
       {top}
-      <Animated.View style={fade} onLayout={startHubFade}>
-      {/* Standing alone the head is the HERO's (a pushed screen has a rail and a
-          back affordance); as a Today hub tab it is the SHARED hub masthead —
-          the same component Dashboard and Performance render, at the same rung.
-          It used to be `fs.headline` 22, a SECTION heading doing a screen
-          title's job, with no eyebrow and a subtitle that restated the title.
-          "What your friends are training" under a title that says Feed told the
-          athlete nothing, so it is cut.
+      {/* AS A HUB TAB THERE IS NO HEAD AT ALL, and that is the point.
+          The feed used to draw the SHARED hub masthead here — "Feed", in the
+          display face, directly under a segmented control whose Feed pill was
+          already lit. A screen may name itself once, and the control that
+          selected it counts as the naming; saying it twice cost ~70dp of a
+          852dp screen and pushed the first post past the 40% mark.
 
-          THE META ROW IS EMPTY HERE, ON PURPOSE. It still renders and still
-          reserves its height — that is what keeps the title's y identical
-          across the three tabs — but Feed has nothing true to put in it yet.
-          The live count would restate the "Now training" strip 30 pt below, and
-          an unread count doesn't exist: FeedResponse carries `feed` and `live`
-          and nothing that says what is NEW since the last look. Tracked as
-          `hub-feed-meta` in capabilities.ts rather than filled with a
-          duplicate. */}
-      {top && <HubMasthead title={t("w.social.feedTitle")} />}
+          It took the empty meta row with it. That row existed only to reserve
+          height so the title's y matched Dashboard's and Performance's — a
+          baseline for a title that no longer exists. `hub-feed-meta` is
+          therefore closed by DELETION rather than by inventing a figure to fill
+          it (capabilities.ts).
 
+          What remains is the gap the masthead used to emit above itself
+          (HUB_MASTHEAD.gap.control) — the pills-to-content distance, which is
+          the feed's to keep now that nothing sits between them. Standing alone
+          (a pushed screen, `top` absent) the hero still titles the screen:
+          there is no control up there to do it instead. */}
+      <Animated.View style={[fade, top ? { marginTop: HUB_MASTHEAD.gap.control } : null]} onLayout={startHubFade}>
       {/* Verified-record witness requests addressed to ME — a person is waiting
           on this answer, so it outranks every piece of content below it, and
           every request is also an invite. See core/attestation.ts. */}

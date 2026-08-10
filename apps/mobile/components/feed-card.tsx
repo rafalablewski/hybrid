@@ -5,14 +5,18 @@ import {
   FEED_STAT_LABEL_KEY,
   feedDeltaText,
   feedFigureText,
-  cardPrLines,
+  cardLead,
+  cardRecords,
   cardSetLines,
+  feedHeadlineEarnsLead,
   feedHeadlineText,
   feedSharePayload,
   feedStatText,
   feedSubjectKey,
   feedTierChip,
   isFeedSaved,
+  type CardLead,
+  type CardRecords,
   type FeedDetail,
   type FeedItemView,
   type FeedStat,
@@ -154,18 +158,22 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
  *
  * A record used to be a card of its own that named the heaviest lift and
  * reduced the others to "3 PRs this session". They are lines on the workout
- * now: the first two carry their own figure and their delta, and anything past
- * that is a count that opens (the post has all of them). The tier chip sits on
- * the LOUDEST line, because provenance belongs to the claim.
+ * now — and the LOUDEST of them has since been promoted again, out of this list
+ * and up into the hero figure (core `cardRecords`). What is left here is the
+ * runner-up, and past that a count that opens (the post has all of them).
+ *
+ * `tier` arrives undefined when the hero already carried the chip — provenance
+ * belongs to the claim, and the claim is up there now.
  */
-function PrLines({ prs, tier, units }: { prs: NonNullable<FeedDetail["prs"]>; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+function PrLines({ records, tier, units }: { records: CardRecords; tier?: FeedDetail["tier"]; units: WeightUnit }) {
   const C = useTheme().palette;
   const { t } = useLang();
   const chip = feedTierChip(tier);
-  const shown = cardPrLines(prs);
-  const rest = prs.length - shown.length;
+  const shown = records.lines;
+  const rest = records.rest;
+  const total = records.shown.length + rest;
   return (
-    <View style={{ marginTop: 6 }}>
+    <View style={{ marginTop: 8 }}>
       {shown.map((pr, i) => {
         const fig = feedFigureText(pr.topLoadKg, units);
         return (
@@ -185,7 +193,7 @@ function PrLines({ prs, tier, units }: { prs: NonNullable<FeedDetail["prs"]>; ti
           </View>
         );
       })}
-      {rest > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("feed.prCount").replace("{n}", String(prs.length))}</Text> : null}
+      {rest > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("feed.prCount").replace("{n}", String(total))}</Text> : null}
     </View>
   );
 }
@@ -214,20 +222,36 @@ function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units
   );
 }
 
-function Figure({ detail, units }: { detail: FeedDetail; units: WeightUnit }) {
+/**
+ * ZONE C — THE ONE BIG NUMBER. Core decides whether a card gets one and where
+ * it comes from (`cardLead`); this only draws it. A record-setting SESSION now
+ * reaches this treatment, which it never could while the gate read
+ * `archetype === "stat"` — see the note on `cardLead`.
+ */
+function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const tier = feedTierChip(detail.tier);
-  const fig = detail.figureKg != null && detail.figureKg > 0 ? feedFigureText(detail.figureKg, units) : null;
-  const e1 = detail.e1rmKg != null ? feedFigureText(detail.e1rmKg, units) : null;
+  const tier = feedTierChip(lead.tier);
+  const fig = lead.figureKg != null && lead.figureKg > 0 ? feedFigureText(lead.figureKg, units) : null;
+  const e1 = lead.e1rmKg != null ? feedFigureText(lead.e1rmKg, units) : null;
   const deltaLine = [
     e1 ? t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`) : null,
-    detail.deltaPct != null ? feedDeltaText(detail.deltaPct) : null,
+    lead.deltaPct != null ? feedDeltaText(lead.deltaPct) : null,
   ].filter(Boolean).join(" ");
   return (
     <>
+      {/* THE LIFT, as the figure's own label. On a session the headline no
+          longer names anything (feedHeadlineEarnsLead), so without this the
+          card would open on a bare "210" with nothing saying what was lifted.
+          A shared-PR post's headline already says it and passes label: null —
+          the same lift twice in one card is the noise this whole pass removes. */}
+      {lead.label ? (
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash, marginTop: 9 }}>
+          {lead.label.toUpperCase()}
+        </Text>
+      ) : null}
       {fig || tier ? (
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 4 }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4 }}>
           {fig ? (
             <>
               <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: tracking.display, color: C.chalk }}>{fig.value}</Text>
@@ -242,10 +266,10 @@ function Figure({ detail, units }: { detail: FeedDetail; units: WeightUnit }) {
           ) : null}
         </View>
       ) : null}
-      {deltaLine || detail.firstEver ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: detail.deltaPct != null ? txt(C, colors.lime) : C.ash, marginTop: 4 }}>
+      {deltaLine || lead.firstEver ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: lead.deltaPct != null ? txt(C, colors.lime) : C.ash, marginTop: 4 }}>
           {deltaLine}
-          {detail.firstEver ? <Text style={{ color: C.ash }}>{deltaLine ? " — " : ""}{t("feed.firstEver")}</Text> : null}
+          {lead.firstEver ? <Text style={{ color: C.ash }}>{deltaLine ? " — " : ""}{t("feed.firstEver")}</Text> : null}
         </Text>
       ) : null}
     </>
@@ -365,16 +389,28 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
     moreRef.current?.measureInWindow((x, y, w, h) => setMenu({ x, y, w, h }));
   };
 
+  // The headline is still COMPOSED for every card — the share payload and the
+  // opened post both need it. What changed is whether ZONE B draws it: core
+  // answers that (feedHeadlineEarnsLead), so an auto "Afternoon workout" stops
+  // being the largest type on twenty consecutive rows.
   const headline = feedHeadlineText(item, t);
-  const setLines = cardSetLines(d?.sets, cardPrLines(d?.prs));
+  const leadsWithHeadline = feedHeadlineEarnsLead(item);
+  const lead = cardLead(d);
+  const records = cardRecords(d);
+  const setLines = cardSetLines(d?.sets, records.shown);
 
   // The app's TITLE face (serifIf — the twin of web's --font-heading): Archivo
   // under Aurora, Shippori Mincho under Kyoto Hour. A post's headline is a
   // heading, so it swaps with every other heading in the product — otherwise
   // the feed is the one tab still in sans on the light theme, with its own
   // "Now training" head in serif directly above it.
+  //
+  // ONE loud thing per card. A p0 that carries a hero figure sets its headline
+  // at the ordinary title rung: the number is the moment, and a display-weight
+  // heading above a 46pt figure is two heroes arguing. A p0 with no figure —
+  // some future archetype that leads with words — still gets the big rung.
   const headlineStyle: TextStyle =
-    moment === "p0"
+    moment === "p0" && !lead
       ? { fontFamily: serifIf(scheme, F.black), fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking.display }
       : { fontFamily: serifIf(scheme, F.bold), fontSize: fs.title, lineHeight: leading(fs.title, "snug") };
 
@@ -440,12 +476,18 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
           below stays outside it, so a kudos is never an accidental open.
           noScale — a timeline row is not a button that should shrink. */}
       <Zones onPress={onOpen}>
-        {/* ZONE B — headline */}
-        {headline ? <Text style={{ ...headlineStyle, color: C.chalk, marginTop: 8 }}>{headline}</Text> : null}
+        {/* ZONE B — the headline, drawn only when it earns the card's loudest
+            line. A title the CLOCK wrote is not a headline (core decides). */}
+        {leadsWithHeadline && headline ? <Text style={{ ...headlineStyle, color: C.chalk, marginTop: 8 }}>{headline}</Text> : null}
 
-        {/* ZONE C — figures */}
-        {d?.archetype === "stat" ? <Figure detail={d} units={units} /> : null}
-        {d?.prs && d.prs.length > 0 ? <PrLines prs={d.prs} tier={d.tier} units={units} /> : null}
+        {/* ZONE C — figures. The hero first: a shared PR's own number, or the
+            loudest record a session set. */}
+        {lead ? <Figure lead={lead} units={units} /> : null}
+        {/* …then the runner-up records, without the one the hero took. The tier
+            chip goes with whichever of the two is drawing the loudest claim. */}
+        {records.lines.length > 0 || records.rest > 0 ? (
+          <PrLines records={records} tier={lead ? undefined : d?.tier} units={units} />
+        ) : null}
         {/* The lifts the records above already named are dropped from the top
             sets — the same lift twice in one card is noise (core cardSetLines). */}
         {setLines.length > 0 ? <TopSets sets={setLines} units={units} /> : null}
