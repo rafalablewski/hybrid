@@ -163,4 +163,27 @@ describe("the feed's grammar stays in core", () => {
     // this would have taken the only name the control had.
     expect(mobile("feed-card.tsx")).not.toContain('String(item.kudos) : t("feed.kudos")');
   });
+  it("lets the MOMENT set the row's height, from core rather than a literal", () => {
+    // The last uniform thing about a row. Weight had lived in type size alone,
+    // which reads on one card and vanishes across twenty — a stream of
+    // identical heights gives the eye no rhythm to catch on, and that flatness
+    // is what "the feed is chaos" actually describes.
+    for (const [name, src] of CARDS) {
+      expect(src, name).toContain("FEED_ROW_PAD[moment]");
+      // The literal both clients used to carry, on the row container.
+      expect(src, name).not.toMatch(/paddingVertical: 12\b/);
+      expect(src, name).not.toMatch(/padding: isMobile \? "12px/);
+    }
+  });
+
+  it("translates a clock-written session title rather than printing it in English", () => {
+    // defaultSessionTitle produces STORED data and stays English, so every
+    // surface that shows a session's name resolves it on the way out. Missing
+    // it means a Polish athlete's history reads "Afternoon session" down the
+    // page in an otherwise translated app.
+    for (const f of ["aurora/history-views.tsx"]) {
+      expect(web(f), `web/${f}`).toContain("sessionTitleText(s.title, t)");
+      expect(mobile(f), `mobile/${f}`).toContain("sessionTitleText(s.title, t)");
+    }
+  });
 });

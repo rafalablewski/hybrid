@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  FEED_ROW_PAD,
   cardLead,
   cardQualifier,
   cardRecords,
@@ -16,6 +17,7 @@ import {
   feedTierChip,
   feedDeltaText,
 } from "./feed-card";
+import { space } from "./scale";
 import type { PrHit } from "./engines";
 import { buildSocialFeed, feedCardView } from "./social";
 import type { LoggedSession } from "./engines";
@@ -205,6 +207,30 @@ describe("a headline identical on every post is not a headline", () => {
 
   it("leads a legacy card with no detail at all — there is nothing else", () => {
     expect(feedHeadlineEarnsLead({})).toBe(true);
+  });
+});
+
+describe("the row's height is a function of its moment", () => {
+  it("gives p0 air and p2 none it hasn't earned", () => {
+    // Every row used to be padded 12/12 whatever it carried, so weight lived in
+    // type size alone — which reads on ONE card and vanishes across twenty.
+    expect(FEED_ROW_PAD.p0).toBeGreaterThan(FEED_ROW_PAD.p2);
+    expect(FEED_ROW_PAD.p1).toBeGreaterThan(FEED_ROW_PAD.p2);
+    expect(FEED_ROW_PAD.p0).toBeGreaterThanOrEqual(FEED_ROW_PAD.p1);
+    // The bread of the feed is quieter than it used to be, and the moment is
+    // louder — the OLD uniform value sits between them.
+    expect(FEED_ROW_PAD.p2).toBeLessThan(12);
+    expect(FEED_ROW_PAD.p0).toBeGreaterThan(12);
+  });
+
+  it("takes every value off the shared space scale, like every other gap", () => {
+    for (const [moment, pad] of Object.entries(FEED_ROW_PAD)) {
+      expect(Object.values(space), moment).toContain(pad);
+    }
+  });
+
+  it("covers every moment — a new one must not fall back to undefined", () => {
+    for (const m of ["p0", "p1", "p2", "p3"] as const) expect(typeof FEED_ROW_PAD[m], m).toBe("number");
   });
 });
 

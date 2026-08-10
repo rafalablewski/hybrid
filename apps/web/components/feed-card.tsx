@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import {
+  FEED_ROW_PAD,
   feedFigureText,
   feedSharePayload,
   cardLead,
@@ -502,7 +503,14 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         // At mobile widths the row bleeds under the shell's gutter
         // (--page-pad-x, 12px — the app-wide side inset) so the divider runs
         // edge to edge with content still on the column.
-        padding: isMobile ? "12px var(--page-pad-x, 12px)" : "12px 0",
+        //
+        // The VERTICAL value is a function of the row's MOMENT (core
+        // FEED_ROW_PAD): a p0 opens up, a p2 tightens, and the difference
+        // between them is the ranking expressed as rhythm rather than as order.
+        // Both clients read the same map.
+        padding: isMobile
+          ? `${FEED_ROW_PAD[moment]}px var(--page-pad-x, 12px)`
+          : `${FEED_ROW_PAD[moment]}px 0`,
         margin: isMobile ? "0 calc(-1 * var(--page-pad-x, 12px))" : 0,
         borderBottom: `1px solid ${C("line")}`,
       }}

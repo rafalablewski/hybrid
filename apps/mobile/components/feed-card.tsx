@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { View, Text, type TextStyle } from "react-native";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import {
+  FEED_ROW_PAD,
   feedFigureText,
   cardLead,
   cardQualifier,
@@ -463,7 +464,10 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const handle = item.author.handle ? `@${item.author.handle}` : null;
 
   return (
-    <View style={{ marginHorizontal: -GUTTER, paddingHorizontal: GUTTER, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
+    // The row's height is a function of its MOMENT (core FEED_ROW_PAD): a p0
+    // opens up, a p2 tightens, and the difference between them is the ranking
+    // expressed as rhythm rather than as order. Both clients read the same map.
+    <View style={{ marginHorizontal: -GUTTER, paddingHorizontal: GUTTER, paddingVertical: FEED_ROW_PAD[moment], borderBottomWidth: 1, borderBottomColor: C.line }}>
       {/* "Why you're seeing this" — a kicker over the row, because it is the
           feed explaining ITSELF, not a fact about the athlete. */}
       {reason ? (

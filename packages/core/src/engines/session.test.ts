@@ -32,6 +32,8 @@ import {
   setTypeBadge,
   warmupRamp,
   defaultSessionTitle,
+  isAutoSessionTitle,
+  sessionTitleText,
   blockBestE1rm,
   moveItem,
   moveItemTo,
@@ -71,6 +73,37 @@ describe("defaultSessionTitle", () => {
   it("covers the boundaries and is never empty", () => {
     for (let h = 0; h < 24; h++) expect(defaultSessionTitle(at(h)).length).toBeGreaterThan(0);
     expect(defaultSessionTitle()).toBeTruthy(); // default arg = now
+  });
+
+  it("knows its own output — every hour of the day round-trips", () => {
+    // The generator and the recogniser share one table precisely so this holds.
+    // If a sixth time-of-day is ever added to one and not the other, every such
+    // session silently starts looking athlete-named and the feed goes back to
+    // headlining the clock.
+    for (let h = 0; h < 24; h++) expect(isAutoSessionTitle(defaultSessionTitle(at(h))), String(h)).toBe(true);
+    expect(isAutoSessionTitle("Lower — W4D2")).toBe(false);
+    expect(isAutoSessionTitle("  afternoon workout ")).toBe(true); // case + padding
+    expect(isAutoSessionTitle("")).toBe(true);
+    expect(isAutoSessionTitle(undefined)).toBe(true);
+  });
+
+  it("translates a clock-written title on the way OUT, and leaves the athlete's own words alone", () => {
+    // defaultSessionTitle produces STORED data and stays English — a title
+    // already written to thousands of rows cannot become a key retroactively.
+    // So the translation happens at render time, which is what makes it work on
+    // every row already in the database.
+    const t = (k: string) => ({ "session.title.afternoon": "Trening po południu", "session.title.morning": "Trening rano" })[k] ?? k;
+    expect(sessionTitleText("Afternoon workout", t)).toBe("Trening po południu");
+    expect(sessionTitleText("Morning workout", t)).toBe("Trening rano");
+    // A name the athlete chose is never run through a dictionary.
+    expect(sessionTitleText("Lower — W4D2", t)).toBe("Lower — W4D2");
+    expect(sessionTitleText("", t)).toBe("");
+    expect(sessionTitleText(null, t)).toBe("");
+    // Every hour resolves to a key the caller can translate, not to the key
+    // string itself leaking to screen.
+    for (let h = 0; h < 24; h++) {
+      expect(sessionTitleText(defaultSessionTitle(at(h)), (k) => k)).toMatch(/^session\.title\./);
+    }
   });
 });
 

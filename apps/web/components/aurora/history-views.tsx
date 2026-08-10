@@ -28,6 +28,7 @@ import {
   type WeightUnit,
   type BodyweightLookup,
   type StatRange,
+  sessionTitleText,
 } from "@hybrid/core";
 import { CARD_PAD } from "@/lib/ui";
 import { useLang } from "@/lib/i18n";
@@ -100,7 +101,7 @@ function SessionCard({ s, ctx }: { s: LoggedSession; ctx: ViewCtx }) {
         <span style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C("ash") }}> {unitOf(h, t)}</span>
       </div>
       <div style={{ fontFamily: MONO, fontSize: fs.micro, color: C("ash"), marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {[s.title, ...headlineMeta(h, t)].join(" – ")}
+        {[sessionTitleText(s.title, t), ...headlineMeta(h, t)].join(" – ")}
         {prs > 0 && (
           <>
             {" – "}

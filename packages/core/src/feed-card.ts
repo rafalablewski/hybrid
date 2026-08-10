@@ -32,6 +32,7 @@ import { deviceTrueSession } from "./device-truth";
 import { roundKm } from "./distance";
 import {
   isAutoSessionTitle,
+  sessionTitleText,
   paceClock,
   sessionMinutes,
   sessionVolume,
@@ -40,12 +41,36 @@ import {
   type PrHit,
   type StrengthBlock,
 } from "./engines";
+import { space } from "./scale";
 import { fmtWeight, type WeightUnit } from "./units";
 
 // ------------------------------------------------------------- the model ----
 
 /** Ranking/visual weight class. p0 interrupts, p3 seasons. */
 export type FeedMoment = "p0" | "p1" | "p2" | "p3";
+
+/**
+ * THE ROW'S VERTICAL PADDING, BY MOMENT — and this is the piece that makes the
+ * rest of the card model legible as a system rather than as a pile of tweaks.
+ *
+ * Every row used to be padded 12/12 whatever it carried, so a first-ever
+ * deadlift and a Tuesday accessory day occupied the same slab of screen. Weight
+ * was expressed in type size alone, which reads on ONE card and disappears
+ * across twenty: scrolling a stream of identical heights, the eye has no rhythm
+ * to catch on, and that flatness is what "the feed is chaos" actually describes.
+ *
+ * A p0 gets air on both sides. A p2 tightens. The DIFFERENCE is the point — the
+ * quiet row is what makes the loud one loud — so these are read from here by
+ * both renderers rather than typed into either.
+ *
+ * Values come off the shared space scale, like every other gap in the product.
+ */
+export const FEED_ROW_PAD: Record<FeedMoment, number> = {
+  p0: space.lg, // the moment — 16
+  p1: space.md, // 12, the old uniform value
+  p2: space.ms, // the bread of the feed — 10
+  p3: space.ms,
+};
 
 /** Which layout renders the card. Every card type is a preset over one of
  *  these — adding a type must never add a component. */
@@ -245,7 +270,15 @@ export function feedHeadlineText(
 ): string {
   const d = it.detail;
   if (!d) return it.lead || it.title || "";
-  if (d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout") return d.headlineArg || t(d.headlineKey);
+  // A session's headline IS its stored title — and a title the CLOCK wrote is
+  // stored in English, because that is what `defaultSessionTitle` produces and
+  // what sits in every existing row. `sessionTitleText` resolves those five
+  // strings through the reader's own `t()` and leaves an athlete's own words
+  // alone, so the opened post and the share payload stop reading "Afternoon
+  // workout" in an otherwise Polish app.
+  if (d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout") {
+    return sessionTitleText(d.headlineArg, t) || t(d.headlineKey);
+  }
   return d.headlineArg ? t(d.headlineKey).replace("{lift}", d.headlineArg) : t(d.headlineKey);
 }
 

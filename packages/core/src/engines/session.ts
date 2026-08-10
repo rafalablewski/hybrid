@@ -163,12 +163,12 @@ export function warmupRamp(workingKg: number): WarmupStep[] {
  * such session look athlete-named, and the feed would go back to headlining
  * "Afternoon workout" over twenty rows.
  */
-const AUTO_TITLES: readonly { before: number; title: string }[] = [
-  { before: 5, title: "Late night workout" },
-  { before: 12, title: "Morning workout" },
-  { before: 17, title: "Afternoon workout" },
-  { before: 21, title: "Evening workout" },
-  { before: 24, title: "Night workout" },
+const AUTO_TITLES: readonly { before: number; title: string; key: string }[] = [
+  { before: 5, title: "Late night workout", key: "session.title.lateNight" },
+  { before: 12, title: "Morning workout", key: "session.title.morning" },
+  { before: 17, title: "Afternoon workout", key: "session.title.afternoon" },
+  { before: 21, title: "Evening workout", key: "session.title.evening" },
+  { before: 24, title: "Night workout", key: "session.title.night" },
 ];
 
 export function defaultSessionTitle(date: Date = new Date()): string {
@@ -191,6 +191,32 @@ export function isAutoSessionTitle(title: string | null | undefined): boolean {
   if (!title?.trim()) return true;
   const t = title.trim().toLowerCase();
   return AUTO_TITLES.some((a) => a.title.toLowerCase() === t);
+}
+
+/**
+ * A SESSION'S TITLE, IN THE READER'S LANGUAGE.
+ *
+ * `defaultSessionTitle` returns plain English and always will: it produces
+ * STORED data, and a title already written to thousands of rows cannot be
+ * retroactively turned into a translation key without rewriting them. So the
+ * translation happens on the way OUT instead — a stored title that the clock
+ * wrote is recognised here and resolved through the reader's `t()`, and a title
+ * the athlete chose is returned untouched, because nobody's own words should be
+ * run through a dictionary.
+ *
+ * That is why this works on every row already in the database, including ones
+ * logged years before the keys existed.
+ *
+ * Surfaces that show a session's name (History, the opened post, the finish
+ * summary) call this rather than printing `session.title` directly — otherwise
+ * a Polish athlete's history reads "Afternoon workout" down the page in an
+ * otherwise translated app.
+ */
+export function sessionTitleText(title: string | null | undefined, t: (key: string) => string): string {
+  const trimmed = title?.trim();
+  if (!trimmed) return "";
+  const auto = AUTO_TITLES.find((a) => a.title.toLowerCase() === trimmed.toLowerCase());
+  return auto ? t(auto.key) : trimmed;
 }
 
 export interface StrengthBlock {
