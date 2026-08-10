@@ -176,6 +176,14 @@ function paceTrend(pace: PacePoint[]): TrendDir {
 }
 
 /**
+ * HOW MANY ROWS THE TABLE WEARS COLLAPSED — shared so the two clients cannot
+ * fold at two different depths. Twelve rows cover a typical split's whole
+ * rotation; everything beyond them sits behind the bare ＋ expander, whose ash
+ * count names exactly how many are folded (a cap is never silent).
+ */
+export const EXERCISE_TABLE_FOLD = 12;
+
+/**
  * One row per movement trained in the period, each carrying headline stats
  * (frequency, heaviest lift, volume, improvement trend) and drilling into its
  * own per-exercise dashboard. Sorted by volume (then heaviest lift) descending;
@@ -190,6 +198,13 @@ export function exerciseTable(
 ): ExerciseTableRow[] {
   const cutoff = periodCutoff(period, now);
   return exerciseHistory(sessions)
+    // A movement last touched before the cutoff cannot produce a row — the
+    // sessions>0 filter below would drop it — so skip its dashboard pass
+    // instead of computing one to throw away. This is what makes a bounded
+    // period actually bound the COST: the pass runs per movement trained in
+    // the window, not per movement ever logged. On "all" the cutoff is
+    // -Infinity and nothing is skipped.
+    .filter((e) => ms(e.lastUsed) > cutoff)
     .map((e) => {
       const d = exerciseDashboard(sessions, e.name, period, now, includeWarmups, bw);
       if (d.kind === "cardio") {
