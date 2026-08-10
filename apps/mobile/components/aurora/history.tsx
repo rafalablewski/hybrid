@@ -12,7 +12,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, LoadSwap, PressScale as Pressable } from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
 import { ACard, APill, GUTTER, RADIUS, CARD_PAD } from "./kit";
 import { HeroScreen, HeroAccessory } from "./hero";
@@ -200,17 +200,24 @@ export default function AuroraHistory() {
   // Loading / error / empty all render as the FlatList's empty component (its
   // data is [] in each of those states), so the header (title + toggle) stays.
   // Pre-hydration (saved view not yet read) also shows the loader.
-  const empty = loading || !hydrated ? (
-    <Loading />
-  ) : q.isError ? (
-    // A real fetch failure — distinct from a genuine empty history, so an
-    // offline / 500 load never masquerades as "no sessions yet".
-    <FetchError onRetry={() => q.refetch()} style={{ marginTop: 16 }} />
-  ) : (
-    <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("history.emptyHint")}</Text>
-    </ACard>
+  // The placeholder HANDS OVER to whichever of the three outcomes lands, so an
+  // empty history and a failed fetch both arrive where the skeleton was rather
+  // than replacing it.
+  const empty = (
+    <LoadSwap loading={loading || !hydrated}>
+      {() =>
+        q.isError ? (
+          // A real fetch failure — distinct from a genuine empty history, so an
+          // offline / 500 load never masquerades as "no sessions yet".
+          <FetchError onRetry={() => q.refetch()} style={{ marginTop: 16 }} />
+        ) : (
+          <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("history.emptyHint")}</Text>
+          </ACard>
+        )
+      }
+    </LoadSwap>
   );
 
   return (

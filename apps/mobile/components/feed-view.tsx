@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, TextInput, FlatList, RefreshControl, Animated } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { Loading, F, fs, leading, serifIf, tracking, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
+import { LoadSwap, F, fs, leading, serifIf, tracking, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -304,14 +304,14 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       ListFooterComponent={footer}
       ListEmptyComponent={
         <Animated.View style={fade}>
-          {feed === null ? (
-            <Loading />
-          ) : (
-            <Empty
-              title={tab === "following" ? t("feed.followingEmpty") : t("w.social.feedQuietTitle")}
-              sub={tab === "following" ? t("feed.followingEmptySub") : t("w.social.feedQuietSub")}
-            />
-          )}
+          <LoadSwap loading={feed === null}>
+            {() => (
+              <Empty
+                title={tab === "following" ? t("feed.followingEmpty") : t("w.social.feedQuietTitle")}
+                sub={tab === "following" ? t("feed.followingEmptySub") : t("w.social.feedQuietSub")}
+              />
+            )}
+          </LoadSwap>
         </Animated.View>
       }
       keyboardShouldPersistTaps="handled"

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, RefreshControl } from "react-native";
 import { router } from "expo-router";
 import { FEED_SAVED_PAGE, feedPostPath, orderBySaved, seedPerson, userPagePath, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
-import { Loading, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
+import { LoadSwap, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
 import { AuroraScreen, GUTTER } from "../components/aurora/kit";
 import type { HeroScrollProps } from "../components/aurora/hero";
 import { useTheme } from "../lib/theme";
@@ -154,14 +154,12 @@ export default function SavedScreen() {
           ListHeaderComponent={header}
           ListFooterComponent={footer}
           ListEmptyComponent={
-            items === null ? (
-              <Loading />
-            ) : (
-              // The empty state TEACHES the gesture — this screen is reached
-              // from a glyph, and an empty shelf that doesn't say what fills it
-              // is a dead end.
-              <Empty title={t("feed.savedEmpty")} sub={t("feed.savedEmptySub")} />
-            )
+            // The empty state TEACHES the gesture — this screen is reached
+            // from a glyph, and an empty shelf that doesn't say what fills it
+            // is a dead end.
+            <LoadSwap loading={items === null}>
+              {() => <Empty title={t("feed.savedEmpty")} sub={t("feed.savedEmptySub")} />}
+            </LoadSwap>
           }
           contentContainerStyle={[scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER, paddingBottom: padBottom }]}
           keyboardShouldPersistTaps="handled"
