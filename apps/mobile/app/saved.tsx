@@ -15,6 +15,7 @@ import { Empty, SButton } from "../components/social-kit";
 import { useConfirm } from "../components/aurora/confirm";
 import FeedCard from "../components/feed-card";
 import { Comments } from "../components/feed-comments";
+import { usePersonSource } from "../lib/shared-element";
 
 /**
  * SAVED — the shelf behind the feed's bookmark (mobile). Twin of
@@ -40,6 +41,8 @@ import { Comments } from "../components/feed-comments";
  * that reverses.
  */
 export default function SavedScreen() {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const C = useTheme().palette;
   const { t } = useLang();
   const { confirm } = useConfirm();
@@ -99,7 +102,7 @@ export default function SavedScreen() {
     <FeedCard
       item={item}
       units={units}
-      onOpenProfile={(h) => { if (h) { seedPerson(item.author); router.push(userPagePath(h)); } }}
+      onOpenProfile={(h) => { if (h) { armPerson(h); seedPerson(item.author); router.push(userPagePath(h)); } }}
       onKudos={() => cheer(item)}
       onComments={() => setOpen(open === item.id ? null : item.id)}
       // A saved row opens the same post screen the feed's rows open.

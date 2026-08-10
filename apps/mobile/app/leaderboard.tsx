@@ -9,10 +9,13 @@ import { useLang } from "../lib/i18n";
 import { getLeaderboard } from "../lib/social-api";
 import { Avatar, Empty } from "../components/social-kit";
 import { useNavScrollProps } from "../lib/nav-scroll";
+import { usePersonSource } from "../lib/shared-element";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default function LeaderboardScreen() {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();
@@ -24,7 +27,7 @@ export default function LeaderboardScreen() {
   const navScroll = useNavScrollProps();
 
   const renderRow = ({ item: r }: { item: any }) => (
-    <Pressable onPress={() => { if (!r.isMe && r.handle) { seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
+    <Pressable onPress={() => { if (!r.isMe && r.handle) { armPerson(r.handle); seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
       <Text style={{ width: 28, textAlign: "center", fontFamily: F.bold, fontWeight: "800", color: r.rank <= 3 ? C.amber : C.ash, fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</Text>
       <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
       <View style={{ flex: 1 }}>

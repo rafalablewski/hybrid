@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View, Text, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -6,7 +6,7 @@ import { F, fs, leading, serifIf, tracking, PressScale as Pressable, Loading } f
 import { LEVEL_KEY, SHARED_ELEMENTS } from "@hybrid/core";
 import type { PublicProfileResponse, CompareResult, SharedLift, BadgeAccent } from "@hybrid/core";
 import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } from "../lib/social-api";
-import { useSharedSurfaceTarget } from "../lib/shared-element";
+import { registerPerson, useSharedSurfaceTarget } from "../lib/shared-element";
 import { useConfirm } from "./aurora/confirm";
 import Sheet from "./aurora/sheet";
 
@@ -38,6 +38,7 @@ export function initials(name?: string | null, handle?: string) {
 export function Avatar({ url, name, handle, size = 44, shared }: { url?: string | null; name?: string | null; handle?: string; size?: number; shared?: boolean }) {
   const C = useTheme().palette;
   const { ref } = useSharedSurfaceTarget(shared ? SHARED_ELEMENTS.personAvatar : "");
+  const srcRef = useRef<View | null>(null);
   const face = url
     ? <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2 }} />
     : (
@@ -45,9 +46,19 @@ export function Avatar({ url, name, handle, size = 44, shared }: { url?: string 
         <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
       </View>
     );
-  // The ref only exists on the destination: a list of forty avatars must not
-  // each measure themselves on mount for a flight only one of them can claim.
-  return shared ? <View ref={ref} collapsable={false}>{face}</View> : face;
+  // A SOURCE registers itself under the person's handle, so a door only has to
+  // say who it is opening — see lib/shared-element `usePersonSource`. Nothing
+  // is measured here: the list will have scrolled by the time anything is
+  // armed, and a flight starting where the face used to be is worse than none.
+  useEffect(() => {
+    if (shared || !handle) return undefined;
+    return registerPerson(handle, srcRef.current, face);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shared, handle, url, name, size]);
+
+  if (shared) return <View ref={ref} collapsable={false}>{face}</View>;
+  if (!handle) return face;
+  return <View ref={srcRef} collapsable={false}>{face}</View>;
 }
 
 export function Stars({ rating, size = 13 }: { rating: number | null; size?: number }) {

@@ -8,6 +8,7 @@ import { useLang } from "../lib/i18n";
 import { seedPerson, userPagePath, type PersonCard } from "@hybrid/core";
 import { searchPeople, getSuggestions, follow, unfollow } from "../lib/social-api";
 import { Avatar, Empty, SButton } from "../components/social-kit";
+import { usePersonSource } from "../lib/shared-element";
 
 function Row({ p, onChanged, onOpen }: { p: PersonCard; onChanged: () => void; onOpen: (h: string, card?: PersonCard) => void }) {
   const C = useTheme().palette;
@@ -33,6 +34,8 @@ function Row({ p, onChanged, onOpen }: { p: PersonCard; onChanged: () => void; o
 }
 
 export default function DiscoverScreen() {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();
@@ -53,11 +56,11 @@ export default function DiscoverScreen() {
     <AuroraScreen hero={{ rank: "title", title: t("w.social.findFriends"), meta: [t("w.social.findFriendsSub")] }}>
       <ASearch value={q} onChange={setQ} placeholder={t("w.social.searchPeople")} autoFocus />
       {results !== null ? (
-        <ACard style={cardStack}>{results.length === 0 ? <Empty title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
+        <ACard style={cardStack}>{results.length === 0 ? <Empty title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { armPerson(h); if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
       ) : (
         <>
           <Text style={{ color: C.ash, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</Text>
-          <ACard style={cardStack}>{sugg.length === 0 ? <Empty title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
+          <ACard style={cardStack}>{sugg.length === 0 ? <Empty title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { armPerson(h); if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
         </>
       )}
     </AuroraScreen>

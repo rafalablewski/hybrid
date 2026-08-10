@@ -1,5 +1,7 @@
 "use client";
 
+import { SHARED_ELEMENTS } from "@hybrid/core";
+
 /**
  * SHARED ELEMENTS (web) — the thing you tapped travels into the screen it opens.
  *
@@ -47,6 +49,25 @@ export function releaseSharedElements(): void {
 /** True while a shared-element pair is armed for the next navigation. */
 export function hasArmedSharedElement(): boolean {
   return armed.size > 0;
+}
+
+/**
+ * Arm the avatar of a named person as the source of the next navigation.
+ *
+ * Every Avatar tags itself `data-shared-avatar="<handle>"`, so a door only has
+ * to say WHO it is opening — it needs no ref, no event, and no knowledge of
+ * where in its subtree the face is drawn. That matters because half the doors
+ * to a person's page are callbacks (`onOpenProfile={(h) => …}`) fired from deep
+ * inside a post card, with no click target to walk up from.
+ *
+ * The destination carries `data-shared-dest` and is excluded: on a screen that
+ * is already showing the person, the page's own 84px portrait would otherwise
+ * be armed as the source of a flight to itself.
+ */
+export function armPerson(handle: string | null | undefined): void {
+  if (!handle || typeof document === "undefined") return;
+  const sel = `[data-shared-avatar="${CSS.escape(handle)}"]:not([data-shared-dest])`;
+  armSharedElement(document.querySelector<HTMLElement>(sel), SHARED_ELEMENTS.personAvatar);
 }
 
 /**

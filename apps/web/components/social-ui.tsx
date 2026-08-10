@@ -57,20 +57,21 @@ export function Avatar({
   size?: number;
   /** This avatar is the DESTINATION of one that was armed on the way in — the
    *  same person's face, 52px in a list and 84px here. Declared statically
-   *  because the destination is alone on its screen; a row arms itself at click
-   *  time (lib/shared-element). Every avatar also carries `data-shared-avatar`
-   *  so a row can find its own without threading a ref through the list. */
+   *  because the destination is alone on its screen. Every avatar tags itself
+   *  with its HANDLE, so a door only has to say who it is opening — see
+   *  `armPerson`, which is why no list threads a ref. */
   shared?: boolean;
 }) {
   const { t } = useLang();
   const flight = sharedElementStyle(SHARED_ELEMENTS.personAvatar, !!shared);
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img data-shared-avatar src={url} alt={name || handle || t("w.social.avatarAlt")} width={size} height={size} style={{ borderRadius: 999, objectFit: "cover", background: C("ink2"), ...flight }} />;
+    return <img data-shared-avatar={handle ?? ""} data-shared-dest={shared ? "" : undefined} src={url} alt={name || handle || t("w.social.avatarAlt")} width={size} height={size} style={{ borderRadius: 999, objectFit: "cover", background: C("ink2"), ...flight }} />;
   }
   return (
     <div
-      data-shared-avatar
+      data-shared-avatar={handle ?? ""}
+      data-shared-dest={shared ? "" : undefined}
       style={{
         ...flight,
         width: size,

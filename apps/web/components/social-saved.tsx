@@ -11,6 +11,7 @@ import { useLang } from "@/lib/i18n";
 import { forgetSavedPosts, syncSaved, useFeedSaved } from "@/lib/feed-actions";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useIsMobile } from "@/lib/use-media-query";
+import { armPerson } from "@/lib/shared-element";
 
 /**
  * SAVED — the shelf behind the feed's bookmark (web). Twin of
@@ -121,7 +122,7 @@ export default function SocialSaved({
               key={item.id}
               item={item}
               units={units}
-              onOpenProfile={(h) => onOpenUser?.(h, item.author)}
+              onOpenProfile={(h) => { armPerson(h); onOpenUser?.(h, item.author); }}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
               onOpen={onOpenPost ? () => { setOpen(null); onOpenPost(feedSubjectKey(item), item); } : undefined}

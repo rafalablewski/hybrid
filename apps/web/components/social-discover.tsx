@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { PersonCard, SearchResponse, SuggestionsResponse } from "@hybrid/core";
 import { C, useSocialTheme, card, Avatar, FollowButton, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy, type OpenUser } from "./social-ui";
 import { useLang } from "@/lib/i18n";
+import { armPerson } from "@/lib/shared-element";
 
 // Both /api/social/search and /api/social/suggestions return a real userId
 // (the row keys + follows on it), so this shape is shared across both sources.
@@ -61,13 +62,13 @@ export default function SocialDiscover({ onOpenUser }: { onOpenUser?: OpenUser }
 
       {results !== null ? (
         <div style={card(aurora)}>
-          {results.length === 0 ? <EmptyState title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => onOpenUser?.(h, c)} />)}
+          {results.length === 0 ? <EmptyState title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { armPerson(h); onOpenUser?.(h, c); }} />)}
         </div>
       ) : (
         <>
           <div style={{ fontSize: 12, color: C("ash"), textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</div>
           <div style={card(aurora)}>
-            {sugg.length === 0 ? <EmptyState title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => onOpenUser?.(h, c)} />)}
+            {sugg.length === 0 ? <EmptyState title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { armPerson(h); onOpenUser?.(h, c); }} />)}
           </div>
         </>
       )}

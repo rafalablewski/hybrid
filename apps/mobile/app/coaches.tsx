@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator, type StyleProp, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
 import { Loading, LoadSwap, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip, ASearch } from "../components/aurora/kit";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { seedPerson, userPagePath, SHARED_ELEMENTS } from "@hybrid/core";
+import { seedPerson, userPagePath } from "@hybrid/core";
 import type {
   CoachCard, CoachProfileResponse, CoachProgramData,
   CoachEnrollmentsResponse, EnrollmentRow,
@@ -16,7 +16,7 @@ import {
 import { Avatar, Stars, Empty, SButton } from "../components/social-kit";
 import { GlassToggle } from "../components/glass-toggle";
 import { useConfirm } from "../components/aurora/confirm";
-import { useSharedSurfaceSource } from "../lib/shared-element";
+import { usePersonSource } from "../lib/shared-element";
 
 /**
  * THE MARKETPLACE (mobile) — the directory, and a coach's own storefront EDITOR.
@@ -135,18 +135,17 @@ export default function CoachesScreen() {
  * One coach, and the FACE THAT TRAVELS. The row's 52px avatar and the 84px
  * portrait heading the page it opens are literally the same image of the same
  * person, so it grows rather than being re-rendered at the far end with no
- * thread back to what was touched. Its own component because arming needs a ref
- * to the avatar, and a ref per row inside a `.map` needs somewhere to live.
+ * thread back to what was touched. The row only has to say WHO it opens: the
+ * Avatar registered itself under that handle (lib/shared-element), which is
+ * what every other door to a person's page now does too.
  */
 function CoachRow({ c, C, t, onOpen, cardStack }: { c: CoachCard; C: Palette; t: (k: string) => string; onOpen: () => void; cardStack: StyleProp<ViewStyle> }) {
-  const armAvatar = useSharedSurfaceSource();
-  const avatarRef = useRef<View | null>(null);
-  const face = <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />;
+  const armPerson = usePersonSource();
   return (
-      <Pressable onPress={() => { armAvatar(SHARED_ELEMENTS.personAvatar, avatarRef.current, face); onOpen(); }}>
+      <Pressable onPress={() => { armPerson(c.handle); onOpen(); }}>
         <ACard style={cardStack}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <View ref={avatarRef} collapsable={false}>{face}</View>
+            <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700" }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}{!c.acceptingClients ? <Text style={{ color: C.ash, fontSize: 11 }}> – {t("w.coaches.full")}</Text> : null}</Text>
               <Text style={{ color: C.ash, fontSize: 13 }}>{c.headline || c.specialties.join(" – ") || `@${c.handle}`}</Text>

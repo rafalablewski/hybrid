@@ -14,6 +14,7 @@ import { useLang } from "@/lib/i18n";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { syncSaved } from "@/lib/feed-actions";
 import { useIsMobile } from "@/lib/use-media-query";
+import { armPerson } from "@/lib/shared-element";
 
 /**
  * CONNECT — the feed (web). Twin of apps/mobile/components/feed-view.tsx; both
@@ -275,7 +276,7 @@ export default function SocialFeed({
       </div>
 
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
-      <FeedLiveStrip live={live} onOpen={(h) => onOpenUser?.(h)} />
+      <FeedLiveStrip live={live} onOpen={(h) => { armPerson(h); onOpenUser?.(h); }} />
 
       {/* The always-open composer — it draws its own top hairline and, at
           mobile widths, bleeds edge to edge with the stream rows below. */}
@@ -299,7 +300,7 @@ export default function SocialFeed({
               key={item.id}
               item={item}
               units={units}
-              onOpenProfile={(h) => onOpenUser?.(h, item.author)}
+              onOpenProfile={(h) => { armPerson(h); onOpenUser?.(h, item.author); }}
               onKudos={() => cheer(item)}
               onComments={() => setOpen(open === item.id ? null : item.id)}
               // EVERY post opens its own page — a workout, a record, a status

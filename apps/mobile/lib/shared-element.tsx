@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { Animated, Easing, View, Text, type TextStyle } from "react-native";
-import { springs, springDurationMs, durations } from "@hybrid/core";
+import { springs, springDurationMs, durations, SHARED_ELEMENTS } from "@hybrid/core";
 import { useReducedMotion } from "./use-reduced-motion";
 import { FIXED_FONT_SCALE } from "./ui";
 
@@ -254,6 +254,51 @@ export function useSharedSurfaceSource() {
     },
     [ctx],
   );
+}
+
+/* ── The person registry ─────────────────────────────────────────────────
+ * Every Avatar drawn as a potential SOURCE puts its node and its face here
+ * under the person's handle, so a door only has to say WHO it is opening.
+ *
+ * A registry rather than a ref per row for the same reason the web twin uses an
+ * attribute: half the doors to a person's page are callbacks fired from deep
+ * inside a post card (`onOpenProfile={(h) => …}`) with nothing to thread a ref
+ * through, and the ones that could thread one would each need a component
+ * extracted to hold it.
+ *
+ * Registered on mount and REMOVED on unmount, so a scrolled-away row cannot arm
+ * a stale node. Two avatars for the same person on one screen is possible (a
+ * feed with two of their posts) and the last mounted wins — they are the same
+ * face, so the flight is right either way; only its start position differs.
+ */
+const people = new Map<string, { node: View | null; face: ReactNode }>();
+
+/** Register this avatar as the arm-able source for `handle`. */
+export function registerPerson(handle: string, node: View | null, face: ReactNode): () => void {
+  people.set(handle, { node, face });
+  return () => { if (people.get(handle)?.node === node) people.delete(handle); };
+}
+
+/**
+ * Arm the avatar of a named person as the source of the next navigation.
+ * Measured HERE rather than at registration: the list has almost certainly
+ * scrolled since the row mounted, and a flight that starts where the face used
+ * to be is worse than no flight.
+ */
+export function usePersonSource() {
+  const ctx = useContext(SharedCtx);
+  return useCallback((handle: string | null | undefined) => {
+    if (!ctx || !handle) return;
+    const entry = people.get(handle);
+    const node = entry?.node as unknown as {
+      measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
+    } | null;
+    if (!node?.measureInWindow) return;
+    node.measureInWindow((x, y, width, height) => {
+      if (!width || !height) return;
+      ctx.arm({ name: SHARED_ELEMENTS.personAvatar, rect: { x, y, width, height }, node: entry!.face });
+    });
+  }, [ctx]);
 }
 
 /**

@@ -12,6 +12,7 @@ import { AuroraIcon } from "../components/aurora/icons";
 import SwipeRow from "../components/swipe-row";
 import { useNotifications } from "../lib/use-notifications";
 import { dismissNotification, readAllNotifications, readNotification, sweepNotifications, unreadNotification } from "../lib/notif-read";
+import { usePersonSource } from "../lib/shared-element";
 
 /**
  * Notifications / activity — one real feed built in @hybrid/core
@@ -47,6 +48,8 @@ import { dismissNotification, readAllNotifications, readNotification, sweepNotif
 const SWEEP_MS = 1500;
 
 export default function Notifications() {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
@@ -100,7 +103,7 @@ export default function Notifications() {
     else if (a.kind === "social") {
       if (a.handle) {
         if (n.social?.actor) seedPerson({ handle: a.handle, displayName: n.social.actor.displayName, avatarUrl: n.social.actor.avatarUrl });
-        router.push(userPagePath(a.handle));
+        armPerson(a.handle); router.push(userPagePath(a.handle));
       } else router.push("/feed");
     }
   };
