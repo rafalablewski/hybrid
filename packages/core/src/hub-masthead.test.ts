@@ -21,14 +21,23 @@ import { fs, space, tracking } from "./scale";
 const ROOT = resolve(__dirname, "../../..");
 const read = (p: string) => readFileSync(resolve(ROOT, p), "utf8");
 
-/** Source with comments stripped — the guard must match CODE, not the prose
- *  that documents what the code stopped doing. */
+/**
+ * Source with comments stripped — the guard must match CODE, not the prose that
+ * documents what the code stopped doing.
+ *
+ * LINE comments go FIRST, and the order is not cosmetic: a `//` comment that
+ * mentions a path like `aurora/*.tsx` contains a `/*`, and stripping block
+ * comments ahead of it opens a phantom block that runs to the next `*​/` and
+ * swallows whatever real code lies between. That is not hypothetical — it was
+ * silently blanking the feed screen's root element, so every assertion below
+ * was passing on a file it could not fully see.
+ */
 const code = (p: string) =>
   read(p)
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/^\s*\/\/.*$/gm, "");
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
 
-/** The five surfaces that render a hub head, both clients. */
+/** The six surfaces that render a hub head, both clients. */
 const HUB_SCREENS = [
   "apps/mobile/components/aurora/home.tsx",
   "apps/mobile/components/aurora/performance.tsx",
@@ -37,6 +46,8 @@ const HUB_SCREENS = [
   "apps/web/components/aurora/performance.tsx",
   "apps/web/components/social-feed.tsx",
 ];
+
+
 
 const HEAD_COMPONENTS = [
   "apps/mobile/components/aurora/hub-masthead.tsx",

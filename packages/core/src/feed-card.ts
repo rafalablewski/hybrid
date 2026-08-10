@@ -31,6 +31,8 @@ import { type AttestationTier } from "./attestation";
 import { deviceTrueSession } from "./device-truth";
 import { roundKm } from "./distance";
 import {
+  isAutoSessionTitle,
+  sessionTitleText,
   paceClock,
   sessionMinutes,
   sessionVolume,
@@ -39,12 +41,36 @@ import {
   type PrHit,
   type StrengthBlock,
 } from "./engines";
+import { space } from "./scale";
 import { fmtWeight, type WeightUnit } from "./units";
 
 // ------------------------------------------------------------- the model ----
 
 /** Ranking/visual weight class. p0 interrupts, p3 seasons. */
 export type FeedMoment = "p0" | "p1" | "p2" | "p3";
+
+/**
+ * THE ROW'S VERTICAL PADDING, BY MOMENT — and this is the piece that makes the
+ * rest of the card model legible as a system rather than as a pile of tweaks.
+ *
+ * Every row used to be padded 12/12 whatever it carried, so a first-ever
+ * deadlift and a Tuesday accessory day occupied the same slab of screen. Weight
+ * was expressed in type size alone, which reads on ONE card and disappears
+ * across twenty: scrolling a stream of identical heights, the eye has no rhythm
+ * to catch on, and that flatness is what "the feed is chaos" actually describes.
+ *
+ * A p0 gets air on both sides. A p2 tightens. The DIFFERENCE is the point — the
+ * quiet row is what makes the loud one loud — so these are read from here by
+ * both renderers rather than typed into either.
+ *
+ * Values come off the shared space scale, like every other gap in the product.
+ */
+export const FEED_ROW_PAD: Record<FeedMoment, number> = {
+  p0: space.lg, // the moment — 16
+  p1: space.md, // 12, the old uniform value
+  p2: space.ms, // the bread of the feed — 10
+  p3: space.ms,
+};
 
 /** Which layout renders the card. Every card type is a preset over one of
  *  these — adding a type must never add a component. */
@@ -150,23 +176,66 @@ export const FEED_STAT_LABEL_KEY: Record<FeedStatKey, string> = {
   kcal: "feed.stat.kcal",
 };
 
-/** The VALUE of a stat, formatted for display (no label, no unit suffix — the
- *  label carries the unit so the number stays a number). */
-export function feedStatText(stat: FeedStat, units: WeightUnit): string {
+/**
+ * The VALUE of a stat, formatted for display (no label, no unit suffix — the
+ * label carries the unit so the number stays a number).
+ *
+ * `locale` IS NOT OPTIONAL IN SPIRIT, only in signature. Left out, these calls
+ * resolve grouping against the DEVICE rather than against the app: 5360 kg
+ * renders "5.360" on a German or Polish handset while the interface is in
+ * English, and an English reader parses that as five point three six. The
+ * failure is invisible to anyone testing on an English device, which is exactly
+ * how it shipped. Every caller passes the ACTIVE LANGUAGE — both clients hold
+ * it on `useLang()` — and the parameter stays optional only so a pure caller
+ * with no language in hand (a test, a server-side aggregate) still compiles.
+ */
+export function feedStatText(stat: FeedStat, units: WeightUnit, locale?: string): string {
   switch (stat.key) {
     case "volume": {
-      // Tonnage in the athlete's unit, thin-spaced so 12 400 stays readable.
+      // Tonnage in the athlete's unit, grouped so 12 400 stays readable.
       const v = units === "lb" ? stat.value / 0.45359237 : stat.value;
-      return Math.round(v).toLocaleString();
+      return Math.round(v).toLocaleString(locale);
     }
     case "distance":
-      return roundKm(stat.value).toLocaleString();
+      return roundKm(stat.value).toLocaleString(locale);
     case "pace":
       // A pace is a CLOCK, not a count — "5:42", with the label carrying /km.
       return paceClock(stat.value);
     default:
-      return Math.round(stat.value).toLocaleString();
+      return Math.round(stat.value).toLocaleString(locale);
   }
+}
+
+/**
+ * A stat as it reads in the card's FOOTER LINE — the figure and the unit that
+ * belongs to it, kept as two pieces so the client can set the unit quieter than
+ * the number without re-parsing a joined string.
+ *
+ * The card's stat row used to be three equal columns, each stacking a value
+ * over an uppercase label: a data TABLE, competing for attention with the
+ * content above it and giving tonnage no unit at all. As one line it is a
+ * footer, which is what a session's aggregates are.
+ *
+ * Every stat's label already reads as a unit ("min", "sets", "km", "min/km",
+ * "avg bpm") — every stat but VOLUME, whose unit is the athlete's own weight
+ * preference and so a literal rather than a word to translate.
+ */
+export interface FeedStatParts {
+  value: string;
+  /** i18n key for the unit. Absent on volume, which carries `unit` instead. */
+  unitKey?: string;
+  /** a literal unit that must not be translated (kg / lb). */
+  unit?: string;
+  /** the DEVICE measured it — the client draws the watch signature. */
+  device: boolean;
+}
+
+export function feedStatParts(stat: FeedStat, units: WeightUnit, locale?: string): FeedStatParts {
+  return {
+    value: feedStatText(stat, units, locale),
+    ...(stat.key === "volume" ? { unit: units } : { unitKey: FEED_STAT_LABEL_KEY[stat.key] }),
+    device: !!stat.device,
+  };
 }
 
 /** A hero figure split into its number and its unit, so the client can set the
@@ -201,7 +270,15 @@ export function feedHeadlineText(
 ): string {
   const d = it.detail;
   if (!d) return it.lead || it.title || "";
-  if (d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout") return d.headlineArg || t(d.headlineKey);
+  // A session's headline IS its stored title — and a title the CLOCK wrote is
+  // stored in English, because that is what `defaultSessionTitle` produces and
+  // what sits in every existing row. `sessionTitleText` resolves those five
+  // strings through the reader's own `t()` and leaves an athlete's own words
+  // alone, so the opened post and the share payload stop reading "Afternoon
+  // workout" in an otherwise Polish app.
+  if (d.headlineKey === "feed.hl.session" || d.headlineKey === "feed.hl.sharedWorkout") {
+    return sessionTitleText(d.headlineArg, t) || t(d.headlineKey);
+  }
   return d.headlineArg ? t(d.headlineKey).replace("{lift}", d.headlineArg) : t(d.headlineKey);
 }
 
@@ -209,6 +286,35 @@ export function feedHeadlineText(
 export function feedDeltaText(pct: number): string {
   const r = Math.round(pct * 10) / 10;
   return `${r > 0 ? "+" : ""}${r}%`;
+}
+
+/**
+ * WHAT QUALIFIES A FIGURE — and there is only ever ONE of them.
+ *
+ * `deltaPct` and `firstEver` are mutually exclusive by construction: a lift
+ * trained for the first time has no previous best to improve on, so `prLines`
+ * can never emit both. They were nevertheless drawn in two separate slots on a
+ * line that already carried six type treatments on one baseline — a bold lift
+ * name, a mono-bold figure, a mono-ash unit, a mono-accent delta, the LOWERCASE
+ * SENTENCE "first time trained" doing a badge's job, and a tier chip flung to
+ * the far edge.
+ *
+ * One slot, two possible contents, and the distinction carried by colour alone:
+ *   • a delta wears the card's ACCENT — an improvement is the thing worth
+ *     seeing across a room, and it is the only accent the card spends;
+ *   • a first-ever is ASH, and short. It is context, not a score.
+ *
+ * The delta wins if both somehow arrive (an older payload, a hand-built
+ * detail): the stronger claim is the one measured against a real previous best.
+ */
+export type CardQualifier =
+  | { kind: "delta"; text: string }
+  | { kind: "first"; labelKey: "feed.firstShort" };
+
+export function cardQualifier(of: { deltaPct?: number; firstEver?: boolean }): CardQualifier | null {
+  if (of.deltaPct != null) return { kind: "delta", text: feedDeltaText(of.deltaPct) };
+  if (of.firstEver) return { kind: "first", labelKey: "feed.firstShort" };
+  return null;
 }
 
 // ------------------------------------------------------------- builders -----
@@ -359,14 +465,95 @@ export function sessionDetail(session: LoggedSession, prs: PrHit[] = []): FeedDe
 }
 
 /**
- * How many records a CARD lists before it counts the rest. The post lists all
- * of them; a row that listed six would stop being a row.
+ * How many records a CARD names in total, counting the one promoted to the hero
+ * figure. The post lists all of them; a row that listed six would stop being a
+ * row.
  */
 export const FEED_CARD_PR_LINES = 2;
 
-/** The records a card draws in full. */
-export function cardPrLines(prs: FeedPrLine[] | undefined): FeedPrLine[] {
-  return (prs ?? []).slice(0, FEED_CARD_PR_LINES);
+/**
+ * THE CARD'S ONE BIG NUMBER, and where it comes from.
+ *
+ * The hero figure — the 44/46px number with its unit and its provenance — used
+ * to be reachable only by `archetype: "stat"`, which is a SHARED post. A
+ * session, which is the archetype that actually sets records, is always
+ * `"sets"`, so the two conditions could never both be true and a p0 session
+ * drew its record at the same size as its accessory work. "Moment drives
+ * weight" was documented in three files and inert in all of them.
+ *
+ * So the decision moves here, where both renderers read it:
+ *   • a stat post leads with its own figure, and its HEADLINE already names the
+ *     lift — so the label is null and nothing is said twice;
+ *   • a session that set records leads with the LOUDEST one, labelled with the
+ *     lift, because the record is why the post exists;
+ *   • everything else has no hero at all, which is what makes a p2 Tuesday
+ *     read as quieter than the record beside it.
+ */
+export interface CardLead {
+  /** the lift the figure belongs to, when the headline isn't already naming it
+   *  — drawn as a small mono label above the number. null for a stat post. */
+  label: string | null;
+  /** the hero number, kg. Absent on a legacy post that only stored an e1RM. */
+  figureKg?: number;
+  e1rmKg?: number;
+  deltaPct?: number;
+  firstEver: boolean;
+  tier?: AttestationTier;
+}
+
+export function cardLead(d: FeedDetail | undefined): CardLead | null {
+  if (!d) return null;
+  if (d.archetype === "stat") {
+    // Unchanged behaviour — the shared-PR post already had this treatment.
+    if (d.figureKg == null && d.e1rmKg == null) return null;
+    return {
+      label: null,
+      figureKg: d.figureKg,
+      e1rmKg: d.e1rmKg,
+      deltaPct: d.deltaPct,
+      firstEver: !!d.firstEver,
+      tier: d.tier,
+    };
+  }
+  // A session earns the hero only at p0 — which `sessionDetail` grants exactly
+  // when the session set a record. No record, no big number.
+  const top = d.moment === "p0" ? d.prs?.[0] : undefined;
+  if (!top) return null;
+  return {
+    label: top.lift,
+    figureKg: top.topLoadKg,
+    e1rmKg: top.e1rmKg,
+    deltaPct: top.deltaPct,
+    firstEver: top.firstEver,
+    // Provenance belongs to the CLAIM, and the claim is now the hero.
+    tier: d.tier,
+  };
+}
+
+/**
+ * How a card's records divide between the hero and the lines under it.
+ *
+ * The record promoted to `lead` must not also draw a line of its own — that
+ * would be the same lift twice in one card, which is the exact noise
+ * `cardSetLines` was written to prevent one rung further down.
+ */
+export interface CardRecords {
+  /** the record that took the hero figure, or null when nothing did. */
+  lead: FeedPrLine | null;
+  /** the records drawn as their own quiet lines beneath it. */
+  lines: FeedPrLine[];
+  /** lead + lines — every record the card NAMES, for `cardSetLines`. */
+  shown: FeedPrLine[];
+  /** records the card doesn't draw at all; the count line opens the post. */
+  rest: number;
+}
+
+export function cardRecords(d: FeedDetail | undefined): CardRecords {
+  const prs = d?.prs ?? [];
+  const lead = cardLead(d)?.label ? prs[0] ?? null : null;
+  const lines = prs.slice(lead ? 1 : 0, FEED_CARD_PR_LINES);
+  const shown = lead ? [lead, ...lines] : lines;
+  return { lead, lines, shown, rest: Math.max(0, prs.length - shown.length) };
 }
 
 /**
@@ -381,6 +568,42 @@ export function cardSetLines(sets: FeedSetLine[] | undefined, shownPrs: FeedPrLi
   if (!sets?.length || !shownPrs.length) return sets ?? [];
   const named = new Set(shownPrs.map((p) => p.lift));
   return sets.filter((l) => !named.has(l.name));
+}
+
+/**
+ * DOES THIS CARD'S HEADLINE EARN THE LOUDEST LINE ON IT?
+ *
+ * A headline that is the same on every post is not a headline. A session with
+ * no name of its own is titled by the CLOCK (`defaultSessionTitle`), so a feed
+ * of twenty workouts was a column of "Afternoon workout" set in the display
+ * face — the largest type on each card, carrying the one fact the timestamp
+ * beside the athlete's name had already given.
+ *
+ * The rule, and both clients read it from here so neither can soften it:
+ *   • a session/workout title leads only when the ATHLETE chose it;
+ *   • a record headline always leads — it names the lift;
+ *   • "Posted" over a status update never leads: the words are the post;
+ *   • an auto title leads anyway when the card would otherwise be anonymous —
+ *     no hero and no top sets (a bare cardio session) — because a generic name
+ *     still beats a row of numbers with nothing to hold them.
+ *
+ * This gates ZONE B only. `feedHeadlineText` is unchanged and still composes
+ * the string, which the share payload and the opened POST both need: a page may
+ * name itself, and what you share must read like what you tapped.
+ */
+export function feedHeadlineEarnsLead(it: { detail?: FeedDetail }): boolean {
+  const d = it.detail;
+  if (!d) return true; // legacy shape — there is nothing else to lead with
+  switch (d.headlineKey) {
+    case "feed.hl.session":
+    case "feed.hl.sharedWorkout":
+      if (!isAutoSessionTitle(d.headlineArg)) return true;
+      return !cardLead(d) && !d.sets?.length;
+    case "feed.hl.post":
+      return false;
+    default:
+      return true;
+  }
 }
 
 /*

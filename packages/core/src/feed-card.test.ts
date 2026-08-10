@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
-  cardPrLines,
+  FEED_ROW_PAD,
+  cardLead,
+  cardQualifier,
+  cardRecords,
   cardSetLines,
+  feedHeadlineEarnsLead,
+  feedStatParts,
   prLines,
   sessionDetail,
   sessionStats,
@@ -12,6 +17,7 @@ import {
   feedTierChip,
   feedDeltaText,
 } from "./feed-card";
+import { space } from "./scale";
 import type { PrHit } from "./engines";
 import { buildSocialFeed, feedCardView } from "./social";
 import type { LoggedSession } from "./engines";
@@ -86,15 +92,24 @@ describe("the records a workout set", () => {
     expect(d.prs![1]).toMatchObject({ lift: "Back Squat", topLoadKg: 160, previousTopLoadKg: 155 });
   });
 
-  it("keeps a card readable: two records drawn, the rest counted, and no lift twice", () => {
+  it("keeps a card readable: two records named, the rest counted, and no lift twice", () => {
     const d = sessionDetail(session(), [hit(), hit({ lift: "Back Squat", topLoad: 160 }), hit({ lift: "Split Squat", topLoad: 40 })]);
-    expect(cardPrLines(d.prs).map((p) => p.lift)).toEqual(["Deadlift", "Back Squat"]);
+    const r = cardRecords(d);
+    // The loudest record takes the hero figure; the next takes a quiet line.
+    expect(r.lead!.lift).toBe("Deadlift");
+    expect(r.lines.map((p) => p.lift)).toEqual(["Back Squat"]);
+    expect(r.shown.map((p) => p.lift)).toEqual(["Deadlift", "Back Squat"]);
+    expect(r.rest).toBe(1);
+    // The record that took the hero never ALSO draws a line of its own.
+    expect(r.lines.map((p) => p.lift)).not.toContain("Deadlift");
     // Back Squat has said its numbers on its record line; the top sets drop it.
     expect(d.sets!.map((l) => l.name)).toContain("Back Squat");
-    expect(cardSetLines(d.sets, cardPrLines(d.prs)).map((l) => l.name)).toEqual(["Romanian Deadlift", "Split Squat"]);
-    // No records at all → the top sets are untouched.
+    expect(cardSetLines(d.sets, r.shown).map((l) => l.name)).toEqual(["Romanian Deadlift", "Split Squat"]);
+    // No records at all → no hero, and the top sets are untouched.
     const plain = sessionDetail(session());
-    expect(cardSetLines(plain.sets, cardPrLines(plain.prs))).toEqual(plain.sets);
+    const pr = cardRecords(plain);
+    expect(pr).toMatchObject({ lead: null, lines: [], rest: 0 });
+    expect(cardSetLines(plain.sets, pr.shown)).toEqual(plain.sets);
   });
 
   it("carries each record's own figure and the delta over the athlete's previous best", () => {
@@ -121,6 +136,104 @@ describe("the records a workout set", () => {
   });
 });
 
+describe("the card's one big number", () => {
+  const hit = (over: Partial<PrHit> = {}): PrHit => ({ lift: "Deadlift", e1rm: 228, previous: 217, topLoad: 210, previousTopLoad: 200, ...over });
+
+  it("gives a record-setting SESSION the hero figure it could never reach before", () => {
+    // The gate used to be `archetype === "stat"`, and a session is always
+    // "sets" — so a p0 session drew its record at accessory-work size.
+    const d = sessionDetail(session(), [hit()]);
+    expect(d.archetype).toBe("sets");
+    expect(cardLead(d)).toMatchObject({ label: "Deadlift", figureKg: 210, e1rmKg: 228 });
+  });
+
+  it("labels the figure with the lift, because the headline no longer names it", () => {
+    expect(cardLead(sessionDetail(session(), [hit()]))!.label).toBe("Deadlift");
+    // A shared PR post's HEADLINE already says the lift, so the label stays
+    // null rather than printing it twice.
+    expect(cardLead(postDetail("pr", { lift: "Deadlift", topLoad: 210 }))!.label).toBeNull();
+  });
+
+  it("gives a p2 session NO hero — the quiet row is what makes the loud one loud", () => {
+    expect(cardLead(sessionDetail(session()))).toBeNull();
+    expect(cardLead(postDetail("status", {}))).toBeNull();
+    expect(cardLead(undefined)).toBeNull();
+  });
+
+  it("carries the record's own provenance onto the figure", () => {
+    const watched = session({ device: { provider: "apple", uuid: "u1", activityLabel: "Traditional Strength Training", start: "2026-03-02T17:30:00.000Z", end: "2026-03-02T18:41:00.000Z", durationMin: 71 } });
+    expect(cardLead(sessionDetail(watched, [hit()]))!.tier).toBe(1);
+    expect(cardLead(sessionDetail(session(), [hit()]))!.tier).toBe(0);
+  });
+
+  it("hands a first-ever lift the figure with no delta to show for it", () => {
+    const first = hit({ lift: "Pull-up", topLoad: 40, e1rm: 0, previousTopLoad: null, previous: null });
+    expect(cardLead(sessionDetail(session(), [first]))).toMatchObject({ label: "Pull-up", firstEver: true, deltaPct: undefined });
+  });
+});
+
+describe("a headline identical on every post is not a headline", () => {
+  const hit = (over: Partial<PrHit> = {}): PrHit => ({ lift: "Deadlift", e1rm: 228, previous: 217, topLoad: 210, previousTopLoad: 200, ...over });
+
+  it("leads with a title the ATHLETE chose", () => {
+    expect(feedHeadlineEarnsLead({ detail: sessionDetail(session()) })).toBe(true);
+  });
+
+  it("drops a title the CLOCK wrote — every one of them", () => {
+    for (const title of ["Late night workout", "Morning workout", "Afternoon workout", "Evening workout", "Night workout"]) {
+      expect(feedHeadlineEarnsLead({ detail: sessionDetail(session({ title })) })).toBe(false);
+    }
+    // Case and stray whitespace are still the clock's title, not a name.
+    expect(feedHeadlineEarnsLead({ detail: sessionDetail(session({ title: "  afternoon workout " })) })).toBe(false);
+  });
+
+  it("still leads with an auto title rather than leave the card anonymous", () => {
+    // No hero and no top sets — a bare cardio session. A generic name beats a
+    // row of numbers with nothing holding them.
+    const bare = sessionDetail(session({ title: "Morning workout", blocks: [] }));
+    expect(feedHeadlineEarnsLead({ detail: bare })).toBe(true);
+    // …but the moment it has a record to lead with, the auto title goes.
+    const withPr = sessionDetail(session({ title: "Morning workout" }), [hit()]);
+    expect(feedHeadlineEarnsLead({ detail: withPr })).toBe(false);
+  });
+
+  it("never puts 'Posted' over a status update — the words ARE the post", () => {
+    expect(feedHeadlineEarnsLead({ detail: postDetail("status", {}) })).toBe(false);
+  });
+
+  it("always leads a record headline, which names the lift", () => {
+    expect(feedHeadlineEarnsLead({ detail: postDetail("pr", { lift: "Deadlift", topLoad: 210 }) })).toBe(true);
+  });
+
+  it("leads a legacy card with no detail at all — there is nothing else", () => {
+    expect(feedHeadlineEarnsLead({})).toBe(true);
+  });
+});
+
+describe("the row's height is a function of its moment", () => {
+  it("gives p0 air and p2 none it hasn't earned", () => {
+    // Every row used to be padded 12/12 whatever it carried, so weight lived in
+    // type size alone — which reads on ONE card and vanishes across twenty.
+    expect(FEED_ROW_PAD.p0).toBeGreaterThan(FEED_ROW_PAD.p2);
+    expect(FEED_ROW_PAD.p1).toBeGreaterThan(FEED_ROW_PAD.p2);
+    expect(FEED_ROW_PAD.p0).toBeGreaterThanOrEqual(FEED_ROW_PAD.p1);
+    // The bread of the feed is quieter than it used to be, and the moment is
+    // louder — the OLD uniform value sits between them.
+    expect(FEED_ROW_PAD.p2).toBeLessThan(12);
+    expect(FEED_ROW_PAD.p0).toBeGreaterThan(12);
+  });
+
+  it("takes every value off the shared space scale, like every other gap", () => {
+    for (const [moment, pad] of Object.entries(FEED_ROW_PAD)) {
+      expect(Object.values(space), moment).toContain(pad);
+    }
+  });
+
+  it("covers every moment — a new one must not fall back to undefined", () => {
+    for (const m of ["p0", "p1", "p2", "p3"] as const) expect(typeof FEED_ROW_PAD[m], m).toBe("number");
+  });
+});
+
 describe("shared posts", () => {
   it("renders a legacy e1RM-only PR post as the estimate it is, never as a lifted weight", () => {
     const d = postDetail("pr", { lift: "Bench Press", e1rm: 133 });
@@ -140,10 +253,55 @@ describe("formatting", () => {
   });
 
   it("converts volume into the athlete's own unit", () => {
-    const kg = feedStatText({ key: "volume", value: 12400 }, "kg");
-    const lb = feedStatText({ key: "volume", value: 12400 }, "lb");
-    expect(kg).toBe((12400).toLocaleString());
+    const kg = feedStatText({ key: "volume", value: 12400 }, "kg", "en");
+    const lb = feedStatText({ key: "volume", value: 12400 }, "lb", "en");
+    expect(kg).toBe("12,400");
     expect(Number(lb.replace(/\D/g, ""))).toBeGreaterThan(12400);
+  });
+
+  it("groups digits in the APP's language, never the device's", () => {
+    // THE DEFECT, pinned. These calls used to reach `toLocaleString()` with no
+    // argument, so grouping resolved against the handset: 5360 kg rendered
+    // "5.360" on a German or Polish device while the interface was in English,
+    // and an English reader parses that as five point three six. It is
+    // invisible to anyone testing on an English device, which is how it
+    // shipped — so the guard states all three explicitly.
+    const vol = (locale: string) => feedStatText({ key: "volume", value: 12400 }, "kg", locale);
+    expect(vol("en")).toBe("12,400");
+    expect(vol("de")).toBe("12.400");
+    expect(vol("pl")).toBe("12 400");
+    // Every branch takes the locale, not just tonnage.
+    expect(feedStatText({ key: "sets", value: 12400 }, "kg", "de")).toBe("12.400");
+    expect(feedStatText({ key: "distance", value: 12400 }, "kg", "de")).toBe("12.400");
+    // A pace is a clock and has no grouping to get wrong in any language.
+    expect(feedStatText({ key: "pace", value: 342 }, "kg", "de")).toBe("5:42");
+  });
+
+  it("gives every footer figure a unit, tonnage included", () => {
+    // The card's stat row named tonnage "volume" and never said kg — the one
+    // figure on the card with no unit at all.
+    expect(feedStatParts({ key: "volume", value: 5360 }, "kg", "en")).toMatchObject({ value: "5,360", unit: "kg" });
+    expect(feedStatParts({ key: "volume", value: 5360 }, "lb", "en").unit).toBe("lb");
+    // Everything else already reads as a unit, so it stays a translated key.
+    expect(feedStatParts({ key: "duration", value: 50 }, "kg", "en")).toMatchObject({ value: "50", unitKey: "feed.stat.min" });
+    // The watch signature survives the collapse from three columns to one line.
+    expect(feedStatParts({ key: "duration", value: 71, device: true }, "kg", "en").device).toBe(true);
+    expect(feedStatParts({ key: "duration", value: 50 }, "kg", "en").device).toBe(false);
+  });
+
+  it("gives a figure ONE qualifier, and the delta outranks the first-ever", () => {
+    // They are mutually exclusive by construction — a lift trained for the
+    // first time has no previous best — but they had two slots on one line.
+    expect(cardQualifier({ deltaPct: 14.3 })).toEqual({ kind: "delta", text: "+14.3%" });
+    expect(cardQualifier({ firstEver: true })).toEqual({ kind: "first", labelKey: "feed.firstShort" });
+    expect(cardQualifier({})).toBeNull();
+    expect(cardQualifier({ firstEver: false })).toBeNull();
+    // Defensive: an older payload carrying both gets the stronger claim, the
+    // one measured against a real previous best.
+    expect(cardQualifier({ deltaPct: 5, firstEver: true })!.kind).toBe("delta");
+    // A regression, not an improvement, still owns the slot — the card must not
+    // go quiet about a number moving the wrong way.
+    expect(cardQualifier({ deltaPct: -2.5 })).toEqual({ kind: "delta", text: "-2.5%" });
   });
 
   it("shows NO badge for a claimed lift — absence is the mark, not a scarlet letter", () => {
