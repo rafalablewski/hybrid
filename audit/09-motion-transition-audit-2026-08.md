@@ -7,6 +7,51 @@ a file and line. Nothing is asserted from a screenshot or from the capabilities
 register — where the register disagrees with the code, the code wins and the
 register is marked stale.
 
+> **STATUS — the audit has been actioned. This document is the original finding
+> and is deliberately left as written; it is a record of what was true when it
+> was taken, not a description of the app today.** All twenty items on §20's
+> "worst transitions" list have shipped, in two waves. See
+> `motion-audit-followups` in `packages/core/src/capabilities.ts` for what each
+> fix actually was — that entry, not this file, is the current state. The
+> remaining work is tracked as `loading-crossfade-adoption`, `fullscreen-cover`
+> and `shared-elements-remaining`.
+>
+> Where a finding below reads as present-tense fact, add "as of August 2026,
+> before the fix". The scores in §21 are the pre-fix scores.
+
+### The twenty, and where each went
+
+| # | Finding | Where it was fixed |
+|---|---|---|
+| 1 | Browser Back exits the app (N1) | Wave 1 — `setScreen` pushes; popstate applies the direction the browser travelled |
+| 2 | Sheet grab handle bound to nothing (F1) | Wave 1 — pan on the panel, release by velocity projection in core |
+| 3 | Every list deletion teleports (§11) | Wave 1 (set rows) + Wave 2 (everything else) |
+| 4 | 448 mobile taps with no feedback (M1) | Wave 1 — `PressScale` swept across 83 files |
+| 5 | 571 web buttons with no press state (M1) | Wave 1 — 574 buttons across 104 files |
+| 6 | Session card → detail, hard cut (§3) | Wave 1 — `SHARED_ELEMENTS.sessionHero` |
+| 7 | Plan cover → plan, hard cut (§3) | Wave 2 — `SHARED_ELEMENTS.planCover`; mobile's FLIP learned to fly a surface |
+| 8 | Mobile sheet running a cubic (F3) | Wave 1 — `springToRN(springs.sheet)` |
+| 9 | The hub lens at 629ms (T1) | Wave 1 — `springs.lens`, in the token set so the guard sees it |
+| 10 | Settings pushing like a drill-down (N3) | Wave 2 — core `MODAL_SCREENS`; `presentation: "modal"` |
+| 11 | Editors pushing like drill-downs (N3) | Wave 2 — same list |
+| 12 | Web sheet unmount racing itself (F4) | Wave 1 — `transitionend`, timeout as fallback only |
+| 13 | Swipe actions ignoring velocity (G1) | Wave 1 — core `projectSwipe` |
+| 14 | Reorder commit with no travel (§11) | Wave 2 — animated inside `useDragReorder` |
+| 15 | Spinner → fully-formed screen (§12) | Wave 1 (mobile `Skeleton`) + Wave 2 (web's twin) |
+| 16 | Skeleton → content as a swap (§12) | Wave 2 — `LoadSwap`, `durations.crossfade` |
+| 17 | Numbers swapping, not rolling (§13) | Wave 2 — core `numericDiff` + `RollingNumber` |
+| 18 | No full-swipe-to-delete (G2) | Wave 1 — commit at `swipe.fullAt` |
+| 19 | Paywall bypassing the shared sheet (F5) | Wave 2 — it is the shared `Sheet` |
+| 20 | Filter replacing the list wholesale (§11) | Wave 2 — survivors move, only arrivals fade |
+
+Two findings outside that list were closed on the way, because the fixes turned
+out to be the same fix: **N4** (the recede-and-rise push was defined in shared
+tokens and performed by one client) — web's push is the horizontal travel now
+and recede-and-rise belongs to modality, which is what §2's table recommended;
+and the `motionPushOut` keyframe's scale, which was `.94` against
+`motion.recedeScale`'s `.92`, so a presented *screen* and a presented *panel*
+receded by different amounts. Both are guarded.
+
 ---
 
 ## 0. The honest opening
