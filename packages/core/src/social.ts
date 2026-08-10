@@ -202,7 +202,10 @@ export function feedCardView(
    * its load and tier, rather than flattening into an anonymous chip. Without
    * them the legacy shape is returned unchanged, so older callers are unaffected.
    */
-  opts?: { t?: (key: string) => string; units?: WeightUnit },
+  /** `locale` is the ACTIVE LANGUAGE, and it is not decoration: without it the
+   *  tonnage chip groups its digits against the DEVICE, so a preview under an
+   *  English interface reads "5.360" on a German handset. */
+  opts?: { t?: (key: string) => string; units?: WeightUnit; locale?: string },
 ): FeedCardView {
   // Prefer the real name; fall back to a handle only when it's a genuine one
   // (an empty handle means "no profile" — never render a bare "@").
@@ -233,7 +236,7 @@ export function feedCardView(
     const tier = feedTierChip(d.tier);
     if (tier) chips.push(`${tier.short} ${t(tier.labelKey)}`);
     if (d.deltaPct != null) chips.push(feedDeltaText(d.deltaPct));
-    for (const stat of d.stats ?? []) chips.push(`${feedStatText(stat, units)} ${t(FEED_STAT_LABEL_KEY[stat.key])}`);
+    for (const stat of d.stats ?? []) chips.push(`${feedStatText(stat, units, opts.locale)} ${t(FEED_STAT_LABEL_KEY[stat.key])}`);
     return { name, when: it.when, lead, body: it.body ?? null, chips: chips.slice(0, 4) };
   }
   return { name, when: it.when, lead: it.lead ?? null, body: it.body ?? null, chips: it.chips ?? [] };

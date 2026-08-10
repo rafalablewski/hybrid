@@ -21,6 +21,7 @@ import { useNavScrollProps } from "../lib/nav-scroll";
 import { AuroraScreen } from "./aurora/kit";
 import type { HeroScrollProps } from "./aurora/hero";
 import { useConfirm } from "./aurora/confirm";
+import { usePersonSource } from "../lib/shared-element";
 
 /**
  * CONNECT — the feed (mobile). Twin of apps/web/components/social-feed.tsx.
@@ -32,6 +33,8 @@ import { useConfirm } from "./aurora/confirm";
 type FeedTab = "forYou" | "following";
 
 export default function FeedView({ top }: { top?: ReactNode }) {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const { notify, confirm } = useConfirm();
   const { palette: C, scheme } = useTheme();
   const { t } = useLang();
@@ -44,6 +47,10 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const [text, setText] = useState("");
   const [attachPr, setAttachPr] = useState(false);
   const [posting, setPosting] = useState(false);
+  // The composer's toolbar is revealed by INTENT — the field has focus, or
+  // there is already something to post. See the note on the toolbar itself.
+  const [composerFocused, setComposerFocused] = useState(false);
+  const composing = composerFocused || !!text.trim() || attachPr;
   // My own face beside the composer — the one identity the feed response
   // doesn't carry, so the screen fetches it once itself.
   const [me, setMe] = useState<OwnProfile | null>(null);
@@ -121,13 +128,17 @@ export default function FeedView({ top }: { top?: ReactNode }) {
     <>
       {top}
       <Animated.View style={fade} onLayout={startHubFade}>
-      {/* Standing alone the head is the HERO's (a pushed screen has a rail and a
-          back affordance); as a Today hub tab it is the SHARED hub masthead —
-          the same component Dashboard and Performance render, at the same rung.
-          It used to be `fs.headline` 22, a SECTION heading doing a screen
-          title's job, with no eyebrow and a subtitle that restated the title.
-          "What your friends are training" under a title that says Feed told the
-          athlete nothing, so it is cut.
+      {/* THE HEAD — the SHARED hub masthead (aurora/hub-masthead.tsx), the same
+          component Dashboard and Performance render, at the same rung. Standing
+          alone the head is the HERO's instead (a pushed screen has a rail and a
+          back affordance).
+
+          IT WAS CUT AND PUT BACK. The argument for cutting it was that the
+          segmented control above already names the tab, so the title says it
+          twice and costs ~70dp — but the three hub tabs are ONE screen in three
+          states, and a head on two of them and not the third makes the title's
+          y jump on every pill tap. Consistency across the hub outranks the
+          reclaimed band; the head stays, and it emits its own gaps again.
 
           THE META ROW IS EMPTY HERE, ON PURPOSE. It still renders and still
           reserves its height — that is what keeps the title's y identical
@@ -175,14 +186,14 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       </View>
 
       {/* NOW TRAINING — presence, not authored ephemera. Hides when empty. */}
-      <FeedLiveStrip live={live} onOpen={(h) => { if (h) router.push(userPagePath(h)); }} />
+      <FeedLiveStrip live={live} onOpen={(h) => { if (h) { armPerson(h); router.push(userPagePath(h)); } }} />
 
       {/* COMPOSER — the X compose box's grammar, not a card: my avatar beside
           a bare auto-growing field, then one accent glyph row with the Share
           pill on its right, the whole block running edge to edge between two
           hairlines. No fill, no border, no radius, no open/close state — the
-          box is always one tap from typing, and the pill sits dimmed until
-          there is something to post. It bleeds under the screen gutter exactly
+          box is always one tap from typing, and its toolbar arrives with the
+          intent to post rather than sitting dimmed through every read. It bleeds under the screen gutter exactly
           like the timeline rows below it, so its hairline and the stream's run
           the same edge-to-edge width. Twin of web's Composer
           (apps/web/components/social-feed.tsx). */}
@@ -195,29 +206,49 @@ export default function FeedView({ top }: { top?: ReactNode }) {
             <TextInput
               value={text}
               onChangeText={setText}
+              onFocus={() => setComposerFocused(true)}
+              onBlur={() => setComposerFocused(false)}
               multiline
               maxLength={500}
               placeholder={t("w.social.sharePlaceholder")}
               placeholderTextColor={C.ash}
               style={{ color: C.chalk, fontSize: fs.heading, lineHeight: leading(fs.heading), fontFamily: F.reg, paddingTop: 7, paddingBottom: 2, paddingHorizontal: 0, textAlignVertical: "top" }}
             />
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
-              {/* The one attachment this product has — the latest PR — as an
-                  accent glyph in X's toolbar position. It fills when attached. */}
-              <Pressable
-                onPress={() => setAttachPr((v) => !v)}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityState={{ selected: attachPr }}
-                accessibilityLabel={t("w.social.attachPr")}
-              >
-                <Svg width={19} height={19} viewBox="0 0 18 18" fill={attachPr ? txt(C, colors.lime) : "none"}>
-                  <Circle cx={9} cy={6.8} r={4.1} stroke={txt(C, colors.lime)} strokeWidth={1.5} />
-                  <Path d="M6.6 10.3 5.2 15.2l3.8-1.9 3.8 1.9-1.4-4.9" fill="none" stroke={txt(C, colors.lime)} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-                </Svg>
-              </Pressable>
-              <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
-            </View>
+            {/* THE TOOLBAR ARRIVES WITH THE INTENT TO POST, not before it.
+                It used to be permanent: an accent glyph and a Share pill that
+                sat DIMMED AND DISABLED on every visit to the feed, because
+                almost every visit is a read. A disabled control held open at
+                the top of a stream is a band of chrome advertising something
+                you are not doing — ~36dp of it, above the first post.
+
+                It reveals on FOCUS as well as on content, and the focus term is
+                not optional: a PR attached with no words is a valid post, so
+                gating purely on "is there something to post" would make the
+                attach glyph unreachable — you could never start one.
+
+                The tap is safe. The list sets keyboardShouldPersistTaps
+                ="handled", so a press on these controls is delivered without
+                dismissing the keyboard first — otherwise blur would unmount the
+                row out from under the finger and swallow the press. */}
+            {composing ? (
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
+                {/* The one attachment this product has — the latest PR — as an
+                    accent glyph in X's toolbar position. It fills when attached. */}
+                <Pressable
+                  onPress={() => setAttachPr((v) => !v)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: attachPr }}
+                  accessibilityLabel={t("w.social.attachPr")}
+                >
+                  <Svg width={19} height={19} viewBox="0 0 18 18" fill={attachPr ? txt(C, colors.lime) : "none"}>
+                    <Circle cx={9} cy={6.8} r={4.1} stroke={txt(C, colors.lime)} strokeWidth={1.5} />
+                    <Path d="M6.6 10.3 5.2 15.2l3.8-1.9 3.8 1.9-1.4-4.9" fill="none" stroke={txt(C, colors.lime)} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                </Pressable>
+                <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+              </View>
+            ) : null}
           </View>
         </View>
       </View>
@@ -235,7 +266,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       <FeedCard
         item={item}
         units={units}
-        onOpenProfile={(h) => { if (h) { seedPerson(item.author); router.push(userPagePath(h)); } }}
+        onOpenProfile={(h) => { if (h) { armPerson(h); seedPerson(item.author); router.push(userPagePath(h)); } }}
         onKudos={() => cheer(item)}
         onComments={() => setOpen(open === item.id ? null : item.id)}
         // EVERY post opens its own screen — a workout, a record, a status

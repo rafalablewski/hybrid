@@ -48,6 +48,7 @@ import {
 import { Avatar, Empty, SButton, Stars, levelInk } from "../../components/social-kit";
 import FeedCard from "../../components/feed-card";
 import { Comments } from "../../components/feed-comments";
+import { usePersonSource } from "../../lib/shared-element";
 
 /**
  * THE INDIVIDUAL USER PAGE (mobile) — twin of apps/web/components/user-page.tsx.
@@ -155,7 +156,7 @@ export default function UserScreen() {
       <AuroraScreen hero={hero}>
         {seed ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} />
+            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} shared />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.title }}>{name}</Text>
               <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.caption }}>@{seed.handle}</Text>
@@ -182,7 +183,7 @@ export default function UserScreen() {
     >
       {/* ── WHO ── the person, at the size a page allows. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-        <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} />
+        <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} shared />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.title }}>
             {name}{p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}
@@ -434,6 +435,8 @@ function ListEnd({ text }: { text: string }) {
  *  own: a row opens the person, and acting on a person happens on their page,
  *  where the one button lives. */
 function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab: (t: PeopleTab) => void }) {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const [people, setPeople] = useState<PersonCard[] | null>(null);
@@ -486,7 +489,7 @@ function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab:
           {people.map((c: PersonCard) => (
             <Pressable
               key={c.userId}
-              onPress={() => router.push(userPagePath(c.handle))}
+              onPress={() => { armPerson(c.handle); router.push(userPagePath(c.handle)); }}
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}
             >
               <Avatar url={c.avatarUrl} name={c.displayName} handle={c.handle} size={38} />

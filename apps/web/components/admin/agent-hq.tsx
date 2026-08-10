@@ -6,6 +6,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContai
 import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
+import { Loading } from "../aurora/skeleton";
 
 type AgentLite = {
   id: string;
@@ -807,7 +808,7 @@ function MonthlyCostCard() {
         </button>
       </div>
       {!d ? (
-        <Mono s={{ fontSize: fs.body, display: "block" }} c={ASH}>Loading…</Mono>
+        <Loading />
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.md }}>
           {[d.current, d.previous].map((m, i) => (

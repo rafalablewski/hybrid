@@ -97,6 +97,12 @@ export const durations = {
    *  as the row LEAVING rather than blinking out, short enough that deleting
    *  five sets in a row doesn't become a queue. */
   collapse: 180,
+  /** A PLACEHOLDER handing over to the thing it was holding space for.
+   *  Deliberately longer than `dissolve`: a crossfade between two states of the
+   *  same box is the one transition where the eye is comparing them, and 200ms
+   *  reads as a flicker rather than a hand-over. This is what makes skeleton →
+   *  content an arrival instead of a swap. */
+  crossfade: 250,
   /** The Reduce Motion cross-dissolve SUBSTITUTION. Never zero. */
   reduced: 150,
 } as const;
@@ -116,10 +122,50 @@ export const motion = {
   scrimWithRecede: 0.28,
   /** Scrim opacity when the parent does NOT recede (the legacy look). */
   scrimFlat: 0.6,
-  /** Entrance offset for a drill-down, as a fraction of screen height. */
+  /** Entrance offset for a PRESENTED detour, as a fraction of screen height.
+   *  (It was the drill-down's offset until the drill-down became horizontal —
+   *  the rise belongs to the thing that rises over a receding parent.) */
   pushOffset: 0.16,
   /** Sibling entrance offset, as a fraction of screen width. */
   slideOffset: 1,
+  /** Parent scale under a full-screen COVER. Further back than `recedeScale`
+   *  deliberately: a sheet's parent is coming back in a moment and stays a
+   *  legible page behind it; a covered screen is not coming back until the mode
+   *  ends, so it goes further away and stops being something you could read. */
+  coverScale: 0.88,
+  /** Focus blur (px) on the covered screen. The recede alone says "behind"; the
+   *  blur is what says "not for you right now" — and it is the difference
+   *  between a screen that is merely underneath and an app that changed mode. */
+  coverBlur: 8,
+  /** Brightness of the covered screen. Darker than a sheet's parent for the
+   *  same reason it is smaller. */
+  coverBrightness: 0.55,
+} as const;
+
+/**
+ * THE SKELETON BREATH — one placeholder pulse, shared so the two clients cannot
+ * breathe at different rates.
+ *
+ * A spinner is only correct when you cannot predict the shape of what is
+ * coming, and this app almost always can: a session card, a macro ring, a set
+ * row, a chart. Everything else should reserve its own geometry and fill in.
+ * The two clients had different loading languages entirely — web occasionally
+ * reserved space and breathed, mobile spun — and where both had a pulse it was
+ * 1.4s on each by coincidence rather than by construction.
+ *
+ * The breath is a NICETY; reserving the space is the actual job, and that part
+ * never depends on motion — which is why Reduce Motion stills the placeholder
+ * rather than removing it.
+ */
+export const skeleton = {
+  /** One full breath (dim → bright → dim), in ms. */
+  pulseMs: 1400,
+  /** The opacity the breath falls to. */
+  dim: 0.25,
+  /** The opacity it rises to. */
+  bright: 0.6,
+  /** Reduce Motion: held still, and still clearly a placeholder. */
+  still: 0.45,
 } as const;
 
 /**
@@ -423,6 +469,24 @@ export const SHARED_ELEMENTS = {
    *  identically in two places to make that guarantee, and a shared element
    *  that lies mid-flight is worse than a hard cut. */
   sessionHero: "hybrid-session-hero",
+  /** A GOAL/PLAN COVER, tile-sized in the library ⇄ the same poster at screen
+   *  scale on the screen it opens.
+   *
+   *  The only pair in the app that wants FULL MATCHED GEOMETRY rather than a
+   *  travelling figure, and it is the one that earns it: the tile and the hero
+   *  are the same recipe (core `goalCoverView` / `planCoverView` — one accent
+   *  wash, one ghost glyph, one display title) drawn at two sizes. The Plans
+   *  stack already calls itself "one object at three compressions"; this is the
+   *  compression happening in front of you instead of being cut to. */
+  planCover: "hybrid-plan-cover",
+  /** A PERSON'S AVATAR on a row or a rail ⇄ the portrait heading their page.
+   *
+   *  The most obviously "same object" element there is: not a figure that
+   *  happens to be equal at both ends, not a recipe drawn twice — literally the
+   *  same image of the same person, at 52px in a list and 84px on the page it
+   *  opens. A circle growing into a circle is also the cheapest possible
+   *  matched geometry, which is why the audit put it third. */
+  personAvatar: "hybrid-person-avatar",
 } as const;
 
 export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELEMENTS];
@@ -458,28 +522,137 @@ export function navRootRank(screen: string): number {
   return (NAV_ROOT_ORDER as readonly string[]).indexOf(id);
 }
 
+/**
+ * THE DETOURS — screens that are a self-contained TASK rather than a place.
+ *
+ * The app had one spatial gesture for two different relationships. Everything
+ * that was not a tab arrived from the right, whether it was genuinely deeper in
+ * the hierarchy (a session's breakdown) or a detour you would finish and leave
+ * (Settings, the Builder, the daily check-in). A right-slide makes the spatial
+ * claim "this is deeper in the same tree"; a presented sheet makes the claim
+ * "this is a detour, and you will come back" — and they exit by different
+ * gestures, so teaching one motion for both teaches the wrong exit.
+ *
+ * Both clients' ids are listed here for the same reason ROOT_ALIAS exists: the
+ * two name some of these screens differently (web `timer`, mobile
+ * `interval-timer`), and a detour that is only a detour on one client is exactly
+ * the drift the shared file is for.
+ *
+ * The test is "would the user say they FINISHED it?" — you finish editing your
+ * profile; you do not finish History. A screen that is a destination in its own
+ * right (a session, a plan, an exercise) is depth, not a detour, however deep.
+ */
+export const MODAL_SCREENS = [
+  /** Settings, and the logger's own settings page reached from inside it. */
+  "settings",
+  "logger-settings",
+  /** Editors: you open them to change a thing, and leave when it is changed. */
+  "profile-edit",
+  "builder",
+  /** The daily check-in — a form with an end. */
+  "checkin",
+  /** The interval timer: a tool you use and put down. (`timer` on web.) */
+  "timer",
+  "interval-timer",
+] as const;
+
+const MODAL_SET = new Set<string>(MODAL_SCREENS);
+
+/** Is this screen a self-contained task rather than a place in the hierarchy? */
+export function isDetour(screen: string): boolean {
+  return MODAL_SET.has(screen);
+}
+
+/**
+ * THE MODE CHANGES — screens where the app stops being the same tool.
+ *
+ * Entering the live logger takes the tab bar away, disables the back-swipe and
+ * turns the app into a stopwatch with a keyboard. That is not "deeper" and it is
+ * not "a detour"; it is the app becoming something else, and it is the one KIND
+ * of transition the system had no vocabulary for. It arrived as an ordinary
+ * right-slide — the identical motion to opening Settings — so the biggest state
+ * change in the product was also its quietest.
+ *
+ * A cover rises from the bottom edge over a parent that recedes FURTHER than a
+ * sheet's parent does and blurs, because a sheet's parent is coming back in a
+ * moment and a covered screen is not: you leave a cover deliberately, by
+ * finishing or by abandoning, never by brushing the edge of the screen.
+ *
+ * ⚠ `log` MEANS DIFFERENT THINGS ON THE TWO CLIENTS, and it is the only id in
+ * this file that does. On WEB `log` is the live logger (app-shell renders
+ * AuroraLogger for it). On MOBILE `log` is the Train LAUNCHER tab
+ * (app/(tabs)/log.tsx renders AuroraTrain) and the live logger is the `workout`
+ * route. Both ids are listed because a mode change must be a mode change on
+ * both clients — but it means nothing on mobile may test one of ITS routes
+ * against this set: `isCover("/log")` would be true for a tab. Mobile reaches
+ * this set through the explicit route list in app/_layout.tsx and nowhere else,
+ * and motion.test.ts states that so it cannot be quietly wired up elsewhere.
+ */
+export const COVER_SCREENS = [
+  /** The live session — mobile's route. */
+  "workout",
+  /** The live session — WEB's screen id. On mobile this is the launcher tab. */
+  "log",
+] as const;
+
+const COVER_SET = new Set<string>(COVER_SCREENS);
+
+/** Does arriving at this screen change what the app IS? */
+export function isCover(screen: string): boolean {
+  return COVER_SET.has(screen);
+}
+
 export type ScreenTransition =
   /** Between two bottom-nav destinations. `dir` is +1 rightward, −1 leftward. */
   | { kind: "sibling"; dir: 1 | -1 }
-  /** Going deeper: the parent recedes, the child rises. */
+  /** Going deeper: the child slides in over a parallaxing parent. */
   | { kind: "push"; dir: 0 }
   /** Coming back out: the exact inverse of the push. */
   | { kind: "pop"; dir: 0 }
+  /** A DETOUR arriving: the parent recedes and the task rises over it. */
+  | { kind: "present"; dir: 0 }
+  /** The detour leaving: the exact inverse of the presentation. */
+  | { kind: "dismiss"; dir: 0 }
+  /** A MODE CHANGE arriving: the full screen rises, the app behind it recedes
+   *  and blurs out of focus. */
+  | { kind: "cover"; dir: 0 }
+  /** The mode ending: the exact inverse of the cover. */
+  | { kind: "uncover"; dir: 0 }
   /** Same screen, or nothing meaningful to say — crossfade. */
   | { kind: "replace"; dir: 0 };
 
 /**
  * The transition between two screens, derived from the nav hierarchy.
  *
- * Sibling ⇄ sibling slides in bar order; root → detail pushes; detail → root
- * pops; detail → detail replaces (there is no defensible direction between two
- * unrelated leaves, and inventing one is worse than a crossfade).
+ * A detour presents and dismisses; sibling ⇄ sibling slides in bar order; root →
+ * detail pushes; detail → root pops; detail → detail replaces (there is no
+ * defensible direction between two unrelated leaves, and inventing one is worse
+ * than a crossfade).
+ *
+ * The detour test runs FIRST and ignores `back`, because a presentation is a
+ * property of the DESTINATION, not of the direction travelled: going forward
+ * through history into Settings must present exactly as tapping Settings did,
+ * or Forward and Back stop being inverses of each other.
  *
  * `back` forces the inverse when the caller knows it is a back-navigation (a
  * browser Back, a hardware back, a swipe) even though the ids alone can't say.
  */
 export function screenTransition(from: string, to: string, back = false): ScreenTransition {
   if (from === to) return { kind: "replace", dir: 0 };
+  // A MODE CHANGE outranks every other reading of a move, and that is the whole
+  // point of it: entering the live logger from Nutrition is not a sideways
+  // sibling slide that happens to land in a stopwatch. Tested first for the
+  // same reason detours are tested before `back` — it is a property of what the
+  // destination IS, and nothing about where you came from can change it.
+  if (isCover(to)) return { kind: "cover", dir: 0 };
+  if (isCover(from)) return { kind: "uncover", dir: 0 };
+  const fromDetour = isDetour(from);
+  const toDetour = isDetour(to);
+  // Detour → detour (Settings → the logger's settings) is neither: nothing rises
+  // over anything, so it crossfades like any two unrelated leaves.
+  if (toDetour && fromDetour) return { kind: "replace", dir: 0 };
+  if (toDetour) return { kind: "present", dir: 0 };
+  if (fromDetour) return { kind: "dismiss", dir: 0 };
   const a = navRootRank(from);
   const b = navRootRank(to);
   if (a >= 0 && b >= 0) return { kind: "sibling", dir: b > a ? 1 : -1 };
@@ -506,8 +679,17 @@ export function screenAnimation(
       easing: "linear",
     };
   }
-  if (t.kind === "sibling") {
-    const right = t.dir === 1;
+  // SIBLING and PUSH/POP are the same horizontal travel, and that is deliberate.
+  // The push used to be a rise over a receding parent — the sheet's motion —
+  // which meant the shared token defined for "web and mobile can't disagree"
+  // described a move only web performed (mobile's whole Stack is
+  // `slide_from_right`, rendered natively and reversed by the OS's own
+  // interruptible edge-swipe, which is better than anything hand-rolled). The
+  // resolution is the one the audit recommended: keep mobile's native push, move
+  // WEB onto the horizontal push, and reserve recede-and-rise for what it
+  // actually is — modality.
+  if (t.kind === "sibling" || t.kind === "push" || t.kind === "pop") {
+    const right = t.kind === "sibling" ? t.dir === 1 : t.kind === "push";
     return {
       name: role === "enter"
         ? (right ? "motionSlideInRight" : "motionSlideInLeft")
@@ -516,18 +698,39 @@ export function screenAnimation(
       easing: `var(--e-slide, ${easings.fade})`,
     };
   }
-  if (t.kind === "push" || t.kind === "pop") {
-    const push = t.kind === "push";
-    // Timing is a function of ROLE, not direction: the arriving screen rides the
-    // spring, the departing one leaves fast on an accelerating curve. (Keying
-    // this off `push` instead gave enter and exit the same duration — the
-    // "leaves faster than it arrives" rule was silently unenforced.)
+  if (t.kind === "present" || t.kind === "dismiss") {
+    const present = t.kind === "present";
+    // Timing is a function of ROLE, not direction: the arriving task rides the
+    // sheet spring, and the departing one leaves fast on an accelerating curve.
+    // (Keying this off the direction instead gave enter and exit the same
+    // duration — the "leaves faster than it arrives" rule was silently
+    // unenforced.) The PARENT is the other half of both moves and rides the
+    // sheet spring in both directions: receding and returning are one physical
+    // gesture with the panel, not a thing that leaves.
+    if (present) {
+      return role === "enter"
+        ? { name: "motionPresentIn", durationMs: springDurationMs(springs.sheet), easing: `var(--e-sheet, ${easings.fade})` }
+        : { name: "motionRecedeBack", durationMs: springDurationMs(springs.sheet), easing: `var(--e-sheet, ${easings.fade})` };
+    }
+    return role === "enter"
+      ? { name: "motionRecedeForward", durationMs: springDurationMs(springs.sheet), easing: `var(--e-sheet, ${easings.fade})` }
+      : { name: "motionDismissOut", durationMs: durations.fast, easing: easings.exit };
+  }
+  if (t.kind === "cover" || t.kind === "uncover") {
+    // On the ZOOM spring, which is the longest in the system (429ms) — a mode
+    // change earns the longest ordinary transition, and this is the audit's
+    // "350ms full-screen cover" honoured in the system's own vocabulary rather
+    // than by inventing a duration+bezier for the one transition that most
+    // wants to be interruptible. Both halves ride it, including the exit: a
+    // cover leaving is the app coming BACK, not a thing being dismissed, so
+    // hurrying it on the exit curve would undercut the return to normal.
+    const cover = t.kind === "cover";
     return {
       name: role === "enter"
-        ? (push ? "motionPushIn" : "motionPopIn")
-        : (push ? "motionPushOut" : "motionPopOut"),
-      durationMs: role === "enter" ? springDurationMs(springs.sheet) : durations.fast,
-      easing: role === "enter" ? `var(--e-sheet, ${easings.fade})` : easings.exit,
+        ? (cover ? "motionCoverIn" : "motionFocusIn")
+        : (cover ? "motionFocusOut" : "motionCoverOut"),
+      durationMs: springDurationMs(springs.zoom),
+      easing: `var(--e-zoom, ${easings.fade})`,
     };
   }
   return {

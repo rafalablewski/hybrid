@@ -22,6 +22,7 @@ import { Comments } from "../components/feed-comments";
 import { FeedActions } from "../components/feed-card";
 import { FeedWorkout } from "../components/feed-workout";
 import { FeedMenuTrigger } from "../components/feed-menu";
+import { usePersonSource } from "../lib/shared-element";
 
 /**
  * THE POST (mobile) — twin of apps/web/components/feed-post.tsx.
@@ -45,6 +46,8 @@ import { FeedMenuTrigger } from "../components/feed-menu";
  *     actions still live in History and the post keeps a quiet door to them.
  */
 export default function PostScreen() {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const C = useTheme().palette;
   const { t } = useLang();
   const units = useLoggerPrefs().units;
@@ -106,7 +109,7 @@ export default function PostScreen() {
           screen of its own the post is the only thing here, so the person
           leads it. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Pressable onPress={() => { if (item.author.handle) { seedPerson(item.author); router.push(userPagePath(item.author.handle)); } }}>
+        <Pressable onPress={() => { if (item.author.handle) { armPerson(item.author.handle); seedPerson(item.author); router.push(userPagePath(item.author.handle)); } }}>
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={44} />
         </Pressable>
         {/* ONE line — avatar, name, handle, time — exactly as the row reads it

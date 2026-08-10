@@ -104,6 +104,7 @@ import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
 import AuroraExerciseMedia from "../components/aurora/exercise-media";
 import { ArrowGlyph } from "../components/aurora/cta-label";
+import { RollingNumber } from "../components/aurora/rolling-number";
 import Sheet from "../components/aurora/sheet";
 import { useConfirm } from "../components/aurora/confirm";
 import { FeelPrompt } from "../components/feel-prompt";
@@ -125,7 +126,7 @@ import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
 import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER } from "../components/aurora/kit";
-import { GlassNavButton, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
+import { GlassMenuButton, GlassNavButton, GlassSelectMenu, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
@@ -628,13 +629,22 @@ export default function Workout() {
     setExercises(blocksToExercises(r.blocks));
   };
 
+  // EVERY MUTATION OF THE LIST TRAVELS. `animateListChange` before the commit
+  // animates all of its consequences at once — the row arriving or leaving AND
+  // the rows below opening or closing the gap. Without it the user's own edit
+  // is the one moment in the app with no motion at all: a card appears fully
+  // formed mid-list, or vanishes and everything under it teleports up.
   const addExercise = (name: string, kind?: WKind) => {
     const clean = name.trim();
     if (!clean) return;
+    animateListChange(reducedMotion);
     setExercises((xs) => [...xs, newExercise(clean, kind)]);
     setPickerOpen(false);
   };
-  const removeExercise = (u: string) => setExercises((xs) => xs.filter((x) => x.uid !== u));
+  const removeExercise = (u: string) => {
+    animateListChange(reducedMotion);
+    setExercises((xs) => xs.filter((x) => x.uid !== u));
+  };
   // Drop reorder (hold the grip handle and drag): move from one index to another.
   const moveExerciseTo = (from: number, to: number) => setExercises((xs) => moveItemTo(xs, from, to));
   const rename = (u: string, name: string) =>
@@ -674,10 +684,12 @@ export default function Workout() {
         return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, load: nextKg } : s)) };
       }),
     );
-  const addSet = (u: string) =>
+  const addSet = (u: string) => {
+    animateListChange(reducedMotion);
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
     );
+  };
   // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
   // in one tap. Each rep count is a SINGLE number (project rule), carrying the
   // current load. Banked sets are kept; the un-banked plan is replaced.
@@ -729,13 +741,10 @@ export default function Workout() {
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
-  // The row leaves AND the rows below close the gap. Without the first call the
-  // deleted row simply vanished and everything under it jumped up by its
-  // height — a teleport, in response to the user's own action.
-  const removeSet = (u: string, i: number) => {
-    animateListChange(reducedMotion);
+  // No animateListChange here: the only caller is a SwipeRow, and closing the
+  // gap after a swipe-delete belongs to SwipeRow itself now.
+  const removeSet = (u: string, i: number) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
-  };
   const toggleDone = (u: string, i: number, val: boolean) => {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.
@@ -1047,17 +1056,30 @@ export default function Workout() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: 0.9 }}>{paused ? t("workout.paused") : t("workout.elapsed")}</Text>
         </View>
         {/* Finish keeps the right edge it has always had; the ⋯ beside it is the
-            way in to everything that must NOT be one tap. */}
+            way in to everything that must NOT be one tap. On iOS 26 the ⋯ is
+            the SYSTEM menu (the same glass Menu leaf the feed wears) — the
+            discard still lands in its confirm sheet after; elsewhere it stays
+            the options Sheet. */}
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
-          <Pressable
-            onPress={() => setMenuOpen(true)}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel={t("workout.moreOptions")}
-            style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}
-          >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
-          </Pressable>
+          {LIQUID_GLASS_RENDERED ? (
+            <GlassMenuButton
+              items={[{ key: "discard", label: t("workout.discardSession"), destructive: true }]}
+              onSelect={() => discard()}
+              label={t("workout.moreOptions")}
+              glyphColor={C.ash}
+              size={32}
+            />
+          ) : (
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t("workout.moreOptions")}
+              style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
+            </Pressable>
+          )}
           <Pressable onPress={finish} disabled={saving} hitSlop={10}>
             <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: saving ? C.ash : txt(C, C.lime) }}>
               {saving ? "…" : t("workout.finish")}
@@ -1080,22 +1102,48 @@ export default function Workout() {
               ? `${exercises.length} ${t("workout.exercises")} – ${t("workout.tapAsYouGo")}`
               : t("workout.firstExercise")}
           </Mono>
-          {/* On-demand rest-timer switch — same persisted pref as Logger settings,
-              so flipping it mid-workout sticks for next time too. */}
-          <Pressable
-            onPress={() => {
-              const next = !prefs.restTimer;
-              setLoggerPref("restTimer", next);
-              if (!next) setRestSince(null);
-            }}
-            hitSlop={8}
-            accessibilityLabel={t("loggerPrefs.restTimer")}
-            style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: prefs.restTimer ? C.blue : C.line }}
-          >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: prefs.restTimer ? txt(C, C.blue) : C.ash }}>
-              ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
-            </Text>
-          </Pressable>
+          {/* On-demand rest-timer control — same persisted pref as Logger
+              settings, so a change mid-workout sticks for next time too. On
+              iOS 26 the chip IS a system menu: the presets and Off as an
+              inline picker, checkmark on the one in force. Elsewhere it stays
+              the toggle chip (the presets live in the rest banner). */}
+          {LIQUID_GLASS_RENDERED ? (
+            <GlassSelectMenu
+              label={`⏱ ${prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}`}
+              fontFamily={F.mono}
+              fontSize={fs.caption}
+              labelColor={prefs.restTimer ? txt(C, C.blue) : C.ash}
+              a11yLabel={t("loggerPrefs.restTimer")}
+              options={[
+                { id: "off", label: t("common.off") },
+                { id: "60", label: "60 s" },
+                { id: "90", label: "90 s" },
+                { id: "120", label: "2 min" },
+                { id: "180", label: "3 min" },
+              ]}
+              value={prefs.restTimer ? String(prefs.restSeconds) : "off"}
+              onPick={(v) => {
+                if (v === "off") { setLoggerPref("restTimer", false); setRestSince(null); return; }
+                setLoggerPref("restTimer", true);
+                setLoggerPref("restSeconds", Number(v));
+              }}
+            />
+          ) : (
+            <Pressable
+              onPress={() => {
+                const next = !prefs.restTimer;
+                setLoggerPref("restTimer", next);
+                if (!next) setRestSince(null);
+              }}
+              hitSlop={8}
+              accessibilityLabel={t("loggerPrefs.restTimer")}
+              style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: prefs.restTimer ? C.blue : C.line }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: prefs.restTimer ? txt(C, C.blue) : C.ash }}>
+                ⏱ {prefs.restTimer ? `${prefs.restSeconds}s` : t("common.off")}
+              </Text>
+            </Pressable>
+          )}
           <Pressable onPress={() => setRpeHelp(true)} hitSlop={8}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.blue) }}>{t("w.train.blocks.whatsRpe")}</Text>
           </Pressable>
@@ -1143,18 +1191,22 @@ export default function Workout() {
           const remaining = restTarget != null ? restTarget - restNow : null;
           const done = remaining != null && remaining <= 0;
           const accent = done ? C.lime : C.blue;
-          const clock =
-            restTarget == null
-              ? mmss(restNow)
-              : done
-                ? `+${mmss(restNow - restTarget)}`
-                : `${mmss(remaining!)} ${t("workout.restLeft")}`;
+          // The CLOCK is the one figure on this screen that changes while you
+          // watch it, so it rolls rather than swapping — its digits are split
+          // out of the label for that reason (the words around them never move).
+          const clock = restTarget == null ? mmss(restNow) : done ? `+${mmss(restNow - restTarget)}` : mmss(remaining!);
           return (
             <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
-                  {done ? t("workout.restDone") : t("workout.resting")} – {clock}
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
+                    {done ? t("workout.restDone") : t("workout.resting")} –{" "}
+                  </Text>
+                  <RollingNumber value={clock} style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }} />
+                  {restTarget != null && !done ? (
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}> {t("workout.restLeft")}</Text>
+                  ) : null}
+                </View>
                 <Pressable
                   onPress={() => setRestSince(null)}
                   hitSlop={8}
@@ -1398,7 +1450,10 @@ export default function Workout() {
                             )}
                             {/* Primary action — a proper, sized Log button (the old
                                 floating ＋ is retired). Banks the set + starts rest.
-                                The screen's one lime fill in the logging loop. */}
+                                The screen's one lime fill in the logging loop. The
+                                BRAND pill, deliberately not a SwiftUI button: a
+                                full-width chartreuse CTA has no system counterpart —
+                                .glassProminent would restyle it, not nativize it. */}
                             <Pressable onPress={() => toggleDone(x.uid, i, true)} accessibilityRole="button" accessibilityLabel={t("workout.logSet")} style={{ marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: R.cta, backgroundColor: C.lime, paddingVertical: 16, shadowColor: "#000", shadowOpacity: 0.22, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }}>
                               <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>
                               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.onAccent }}>{t("workout.logSet")}</Text>
@@ -2580,7 +2635,9 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
 function LiveStat({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingVertical: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{value}</Text>
+      {/* Every figure here moves as sets are banked — the scoreboard IS the
+          feedback for banking one — so each rolls to its new value. */}
+      <RollingNumber value={value} align="center" style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }} />
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
     </View>
   );

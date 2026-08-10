@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, springs, springDurationMs, springToRN, durations } from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, springs, springDurationMs, springToRN, durations, skeleton } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -407,20 +407,24 @@ export function useScreenBottomPad(): number {
  * that reads as a jump rather than an arrival, and it costs the user the sense
  * that anything was ever going to appear there.
  *
- * The pulse is an opacity breath on the shared `durations`, and it stops under
- * Reduce Motion — a placeholder that animates is a nicety; a placeholder that
- * reserves space is the actual job, and that part never depends on motion.
+ * The pulse is an opacity breath on the SHARED @hybrid/core `skeleton` token —
+ * the same numbers globals.css generates its .skeleton class from, so the two
+ * clients cannot breathe at different rates (they matched at 1.4s by
+ * coincidence, not by construction). It stops under Reduce Motion: a
+ * placeholder that animates is a nicety; a placeholder that reserves space is
+ * the actual job, and that part never depends on motion.
  */
 export function Skeleton({ width = "100%", height = 14, radius = 8, style }: { width?: number | `${number}%`; height?: number; radius?: number; style?: ViewStyle }) {
   const { palette } = useTheme();
   const reduced = useReducedMotion();
-  const pulse = useRef(new Animated.Value(0.55)).current;
+  const pulse = useRef(new Animated.Value(skeleton.bright)).current;
   useEffect(() => {
-    if (reduced) { pulse.setValue(0.45); return; }
+    if (reduced) { pulse.setValue(skeleton.still); return; }
+    const half = skeleton.pulseMs / 2;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.25, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.6, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: skeleton.dim, duration: half, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: skeleton.bright, duration: half, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ]),
     );
     loop.start();
@@ -451,6 +455,70 @@ export function Loading() {
       <Skeleton width="62%" height={16} />
       <Skeleton height={12} />
       <Skeleton width="84%" height={12} />
+    </View>
+  );
+}
+
+/**
+ * The HAND-OVER from a placeholder to the thing it was holding space for.
+ *
+ * Skeleton → content was a SWAP on both clients: one frame of placeholder, the
+ * next a fully-formed screen. Here the two states are stacked in the same box
+ * and cross-fade over `durations.crossfade`, so the content arrives WHERE the
+ * placeholder was rather than replacing it.
+ *
+ * The placeholder outlives the flag by one crossfade on purpose: unmounting it
+ * the moment the data lands would leave nothing to fade out, which is the exact
+ * swap this replaces. Under Reduce Motion the substitution is the shorter
+ * `durations.reduced` dissolve — never an instant cut, or the arrival loses its
+ * only signal. Web twin: components/aurora/skeleton.tsx `LoadSwap`.
+ */
+export function LoadSwap({
+  loading,
+  placeholder,
+  children,
+  style,
+}: {
+  loading: boolean;
+  /** What holds the space. Give it the geometry of the real thing. */
+  placeholder?: ReactNode;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const reduced = useReducedMotion();
+  const ms = reduced ? durations.reduced : durations.crossfade;
+  const [held, setHeld] = useState(loading);
+  const inOpacity = useRef(new Animated.Value(loading ? 0 : 1)).current;
+  const phOpacity = useRef(new Animated.Value(loading ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (loading) {
+      setHeld(true);
+      inOpacity.setValue(0);
+      phOpacity.setValue(1);
+      return undefined;
+    }
+    Animated.parallel([
+      Animated.timing(inOpacity, { toValue: 1, duration: ms, useNativeDriver: true }),
+      Animated.timing(phOpacity, { toValue: 0, duration: ms, useNativeDriver: true }),
+    ]).start(({ finished }) => { if (finished) setHeld(false); });
+    return undefined;
+  }, [loading, ms, inOpacity, phOpacity]);
+
+  return (
+    <View style={style}>
+      {/* The content is laid out normally and the placeholder floats OVER it:
+          the box is the content's own size the moment it exists, so the
+          hand-over is a fade and not also a resize. */}
+      {!loading && <Animated.View style={{ opacity: inOpacity }}>{children}</Animated.View>}
+      {held && (
+        <Animated.View
+          pointerEvents="none"
+          style={[loading ? null : StyleSheet.absoluteFill, { opacity: phOpacity }]}
+        >
+          {placeholder ?? <Loading />}
+        </Animated.View>
+      )}
     </View>
   );
 }

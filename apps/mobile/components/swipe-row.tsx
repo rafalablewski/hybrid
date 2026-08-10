@@ -4,6 +4,8 @@ import { springs, springToRN, swipe, rubberBand, projectSwipe, durations } from 
 import { fs, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { haptic } from "../lib/haptics";
+import { animateListChange } from "../lib/list-motion";
+import { useReducedMotion } from "../lib/use-reduced-motion";
 
 // Swipe a row left to reveal a Delete action — for sets added by accident.
 // Built on Animated + PanResponder (no native gesture-handler dependency, so it
@@ -42,6 +44,7 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
   marginBottom?: number;
 }) {
   const C = useTheme().palette;
+  const reduced = useReducedMotion();
   const tx = useRef(new Animated.Value(0)).current;
   /** Which action is open: -1 delete (right edge), 0 closed, 1 leading. */
   const sideRef = useRef<-1 | 0 | 1>(0);
@@ -62,13 +65,21 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
     haptic.warning();
     sideRef.current = 0;
     // Run the row off the edge before removing it, so the delete has a
-    // direction instead of a disappearance. The list closes the gap (see the
-    // host's animated list).
+    // direction instead of a disappearance — THEN close the gap.
+    //
+    // Closing it is this component's job, not the host's. It used to be left to
+    // "the host's animated list", which meant the logger and the builder
+    // remembered and the notification list and the saved shelf did not, so the
+    // identical gesture healed smoothly on two screens and teleported on the
+    // others. A swipe row knows it is deleting a row; nothing else has to.
     Animated.timing(tx, {
       toValue: -(widthRef.current || 400),
       duration: durations.fast,
       useNativeDriver: true,
-    }).start(() => onDelete());
+    }).start(() => {
+      animateListChange(reduced);
+      onDelete();
+    });
   };
 
   const commitLeading = () => {

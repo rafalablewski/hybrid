@@ -15,6 +15,8 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useExerciseFavourites, toggleExerciseFavourite } from "../../lib/exercise-favourites";
 import { haptic } from "../../lib/haptics";
+import { animateListChange } from "../../lib/list-motion";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -37,6 +39,15 @@ export default function AuroraExercises() {
   const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<SortMode>("smart");
+  const reducedMotion = useReducedMotion();
+  // POSITION IS THE INFORMATION, so position is animated. Searching and
+  // re-sorting used to replace the list wholesale: the movements that SURVIVED
+  // a filter — the ones the athlete is actually looking at — were re-rendered
+  // somewhere new with no thread back to where they had been. Now they travel,
+  // and only genuine arrivals grow in. (The web twin runs FLIP for the same
+  // reason; here one LayoutAnimation before the commit animates every
+  // consequence of it at once.)
+  const refilter = (apply: () => void) => { animateListChange(reducedMotion); apply(); };
   const favourites = useExerciseFavourites();
   const full = exerciseFavouritesFull(favourites);
 
@@ -125,7 +136,7 @@ export default function AuroraExercises() {
       ) : (
         <>
           <View style={{ marginTop: 16 }}>
-            <ASearch value={query} onChange={setQuery} placeholder={t("w.analyze.ex.search")} />
+            <ASearch value={query} onChange={(v: string) => refilter(() => setQuery(v))} placeholder={t("w.analyze.ex.search")} />
           </View>
 
           {/* SORT PILLS — Smart (decay order) / Groups (fixed buckets) / A–Z */}
@@ -139,7 +150,7 @@ export default function AuroraExercises() {
               return (
                 <PressScale
                   key={p.id}
-                  onPress={() => setMode(p.id)}
+                  onPress={() => refilter(() => setMode(p.id))}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}

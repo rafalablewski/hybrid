@@ -55,6 +55,8 @@ const MEASURED: Record<string, string> = {
   // registry-may-not-rot assertion below is what caught the stale entry.
   "components/plan-hero.tsx":
     "Same as hero.tsx — the plan screen's rail height for the collapse offset, measured in an auto-height parent.",
+  "components/aurora/rolling-number.tsx":
+    "RollingNumber's digit column measures its own height to slide a face by exactly one glyph. It pins NO height at all: the incoming face is in flow and defines the box (the outgoing one is absolutely positioned over it), so the measured box is the glyph's real height and never a clipped 0. An unmeasured first frame translates by 0 — the digit simply appears — rather than collapsing.",
 };
 
 function walk(dir: string, out: string[] = []): string[] {

@@ -58,6 +58,7 @@ import {
   sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
   recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
+  PICKER_SOURCES, pickerSourceLabelKey,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -80,8 +81,10 @@ import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, tracking, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { useListMotion } from "../../lib/list-motion";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
+import { GlassSegment, GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
 import { HubMasthead } from "./hub-masthead";
 import { CoverScreen, type CoverScreenApi } from "../plan-hero";
@@ -111,6 +114,7 @@ import {
 import TargetSheet, { TargetMismatchLine } from "./target-sheet";
 import { PantryScreen, PantrySearchToggle, UndoBar, UNDO_MS } from "./pantry";
 import GroupMark from "./group-mark";
+import { RollingNumber } from "./rolling-number";
 
 const GOALS: { id: NutritionGoal; labelKey: string }[] = [
   { id: "lose", labelKey: "w.recovery.nutrition.goalLose" },
@@ -376,6 +380,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
   // ── Editable food log — the per-entry records the Diary lists + edit/delete.
   const [logs, setLogs] = useState<FoodLogRow[]>([]);
+  const listMotion = useListMotion();
   const loadLogs = useCallback(() => { fetchFoodLogs().then(setLogs).catch(() => {}); }, []);
   useEffect(() => { loadLogs(); }, [loadLogs]);
   // Log one food/meal → creates the editable entry AND the mirrored Signals the
@@ -481,7 +486,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     loadLogs(); refetch(); revalidate.recovery();
   };
   const deleteLogEntry = async (id: string) => {
-    setLogs((xs) => xs.filter((x) => x.id !== id)); // optimistic
+    // The OPTIMISTIC removal is what the eye sees, so it is the one that has to
+    // travel — the server round-trip below lands long after the gap has closed.
+    listMotion(() => setLogs((xs) => xs.filter((x) => x.id !== id)));
     await deleteFoodLog(id);
     loadLogs(); refetch(); revalidate.recovery();
   };
@@ -1401,7 +1408,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
    *  trailing slot. See reference/hero-system.md. */
   const screenHead = (title: ReactNode, onBack: () => void, opts?: { icon?: "x" | "back"; right?: ReactNode }) => (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, height: HERO.rail.height, marginBottom: HERO.rail.bottom }}>
-      <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} material="clear" />
+      {/* Glass, like every other nav circle — the bare `clear` glyph this head
+          used to draw was retired with core's clear state (hero.ts §7). */}
+      <HeroNav onPress={onBack} mode={opts?.icon === "back" ? "page" : "takeover"} onDark={false} />
       <View style={{ flex: 1, alignItems: "center" }}>
         {typeof title === "string" ? (
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: C.chalk }}>{title}</Text>
@@ -1479,9 +1488,27 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(
-          <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
-          </Pressable>,
+          // The meal switcher. On iOS 26 it IS a system menu — the meals as an
+          // inline picker (checkmark on the one in force) with "Add a meal
+          // part" behind a divider; elsewhere it opens the chooser sheet.
+          LIQUID_GLASS_RENDERED ? (
+            <GlassSelectMenu
+              label={partLabel(mealType)}
+              fontFamily={F.black}
+              fontSize={19}
+              labelColor={C.chalk}
+              a11yLabel={t("w.recovery.nutrition.chooseMeal")}
+              options={partList.map((p) => ({ id: p.key, label: p.label }))}
+              value={mealType}
+              onPick={(k) => setMealType(k)}
+              extras={full ? [{ key: "addPart", label: t("w.recovery.nutrition.addPart") }] : undefined}
+              onExtra={() => setPartSheet(true)}
+            />
+          ) : (
+            <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
+            </Pressable>
+          ),
           () => setView("home"),
           // BACK, not a second dismiss chevron: the head used to draw a ⌄ on the
           // left and the meal switcher a ⌄ beside the title — one glyph, two
@@ -1542,7 +1569,19 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           /* AT REST — all four sources, switchable, with the box gone. */
           <>
             <View style={{ marginTop: 16 }}>
-              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
+              {/* The four sources as the SYSTEM segmented control where it
+                  renders (iOS 26) — the counts stay on the underline form,
+                  which every other platform keeps: a native segment carries
+                  labels only, and the list itself is the count. */}
+              {LIQUID_GLASS_RENDERED ? (
+                <GlassSegment
+                  options={PICKER_SOURCES.map((key) => ({ id: key, label: t(pickerSourceLabelKey(key)) }))}
+                  value={foodTab}
+                  onPick={setFoodTab}
+                />
+              ) : (
+                <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
+              )}
             </View>
             {foodTab === "meals" ? (
               meals.length === 0 ? (
@@ -2375,7 +2414,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
                 <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
                   <View style={{ alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}>{Math.round(targets.kcal - heroDay.kcal)}</Text>
+                    {/* THE NUMBER YOU CAME FOR, and the one that moves most: it
+                        changes every time food is logged, so it rolls rather
+                        than swapping. Web parity — its side used to run a
+                        mount-only count-up this never had. */}
+                    <RollingNumber
+                      value={String(Math.round(targets.kcal - heroDay.kcal))}
+                      align="center"
+                      style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}
+                    />
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(heroDay.kcal)} / {targets.kcal}</Text>
                   </View>
                 </Ring>

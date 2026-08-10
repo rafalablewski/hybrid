@@ -3,6 +3,7 @@ import { Platform, View, StyleSheet } from "react-native";
 import {
   Button,
   ContextMenu,
+  Divider,
   GlassEffectContainer,
   HStack,
   Host,
@@ -21,6 +22,8 @@ import {
   animation,
   buttonStyle,
   contentShape,
+  font,
+  foregroundColor,
   frame,
   glassEffect,
   glassEffectId,
@@ -209,6 +212,76 @@ export function GlassMenuButton({
       >
         {items.map((it) => (
           <Button key={it.key} label={it.label} role={it.destructive ? "destructive" : "default"} onPress={() => onSelect(it.key)} />
+        ))}
+      </Menu>
+    </Host>
+  );
+}
+
+/*
+ * NOT HERE, ON PURPOSE: a native form for the brand CTA pill (Log set, Finish,
+ * APill's primary). The goal is native SwiftUI CONTROLS, not the glass skin —
+ * and a full-width chartreuse CTA has no system counterpart: `.glassProminent`
+ * would restyle the brand's one "go" surface, not nativize a control. Filled
+ * pills stay the app's own drawing on every platform. (A `GlassPillButton`
+ * shipped briefly and was reverted on that direction — see capabilities
+ * `swiftui-kit`, device round 2.)
+ */
+
+/**
+ * A SELECT that answers from a MENU — the system Menu with an inline Picker
+ * (the radio group with the checkmark), plus optional extra action rows behind
+ * a divider (the meal chooser's "Add a meal part"). The TRIGGER is the value
+ * itself as text — the app's inline-select idiom ("Breakfast ⌄", "⏱ 90s") —
+ * drawn by SwiftUI in the caller's own face so the head reads unchanged.
+ */
+export function GlassSelectMenu<T extends string>({
+  label,
+  fontFamily,
+  fontSize,
+  labelColor,
+  a11yLabel,
+  options,
+  value,
+  onPick,
+  extras,
+  onExtra,
+}: {
+  /** The trigger's text — usually the selected value's own label. */
+  label: string;
+  fontFamily: string;
+  fontSize: number;
+  labelColor: string;
+  a11yLabel: string;
+  options: { id: T; label: string }[];
+  value: T;
+  onPick: (v: T) => void;
+  /** Action rows appended after a divider — things that are not a selection. */
+  extras?: { key: string; label: string; destructive?: boolean }[];
+  onExtra?: (key: string) => void;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host matchContents>
+      <Menu
+        label={
+          <HStack spacing={6} modifiers={[contentShape(shapes.rectangle())]}>
+            <SwiftText modifiers={[font({ family: fontFamily, size: fontSize }), foregroundColor(labelColor)]}>{label}</SwiftText>
+            <SwiftImage systemName="chevron.down" size={Math.round(fontSize * 0.8)} color={labelColor} />
+          </HStack>
+        }
+        modifiers={[accessibilityLabel(a11yLabel)]}
+      >
+        <Picker selection={value} onSelectionChange={(v) => onPick(v as T)}>
+          {options.map((o) => (
+            <SwiftText key={o.id} modifiers={[tag(o.id)]}>
+              {o.label}
+            </SwiftText>
+          ))}
+        </Picker>
+        {extras?.length ? <Divider /> : null}
+        {extras?.map((e) => (
+          <Button key={e.key} label={e.label} role={e.destructive ? "destructive" : "default"} onPress={() => onExtra?.(e.key)} />
         ))}
       </Menu>
     </Host>

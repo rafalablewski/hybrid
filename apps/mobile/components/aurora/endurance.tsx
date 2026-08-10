@@ -32,10 +32,13 @@ export default function AuroraEndurance() {
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("endurance.title") }} refreshing={refreshing} onRefresh={() => refetch()}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 4, lineHeight: leading(fs.body) }}>
-        {t("endurance.compareIntro")}
-      </Text>
-
+      {/* NO INTRO PARAGRAPH. It read "Every endurance discipline you train, side
+          by side. Open one for its own page." — one sentence describing a
+          layout that is visible the instant the sentence is, and one narrating
+          an affordance the rails already carry: each ends in a ringed arrow,
+          which is this codebase's own promise that the thing leaves. A caption
+          explaining an arrow is a caption saying the arrow failed. The screen
+          opens on the lanes, which is what the screen is. Mirrors web. */}
       <AuroraEnduranceLanes
         sessions={sessions}
         head={false}

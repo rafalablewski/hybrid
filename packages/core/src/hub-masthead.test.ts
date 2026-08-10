@@ -21,12 +21,21 @@ import { fs, space, tracking } from "./scale";
 const ROOT = resolve(__dirname, "../../..");
 const read = (p: string) => readFileSync(resolve(ROOT, p), "utf8");
 
-/** Source with comments stripped — the guard must match CODE, not the prose
- *  that documents what the code stopped doing. */
+/**
+ * Source with comments stripped — the guard must match CODE, not the prose that
+ * documents what the code stopped doing.
+ *
+ * LINE comments go FIRST, and the order is not cosmetic: a `//` comment that
+ * mentions a path like `aurora/*.tsx` contains a `/*`, and stripping block
+ * comments ahead of it opens a phantom block that runs to the next `*​/` and
+ * swallows whatever real code lies between. That is not hypothetical — it was
+ * silently blanking the feed screen's root element, so every assertion below
+ * was passing on a file it could not fully see.
+ */
 const code = (p: string) =>
   read(p)
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/^\s*\/\/.*$/gm, "");
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
 
 /** The surfaces that render a hub head. (The web twins were retired with the
  *  web client — mobile is the product.) */
@@ -82,7 +91,7 @@ describe("the hub masthead contract", () => {
 });
 
 describe("the hub head guard — no screen may draw its own", () => {
-  it("renders the shared component on all six surfaces", () => {
+  it("renders the shared component on every hub surface", () => {
     for (const file of HUB_SCREENS) {
       expect(code(file), file).toContain("<HubMasthead");
       expect(code(file), file).toMatch(/import \{ HubMasthead \} from/);
