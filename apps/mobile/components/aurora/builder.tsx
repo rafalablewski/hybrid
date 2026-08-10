@@ -451,7 +451,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
             onLayout={setDrag.onRowLayout("", i)}
             style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
           >
-          <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => { animateListChange(reducedMotion); builder.removeSet(b.uid, i); }} background={C.ink2}>
+          <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => builder.removeSet(b.uid, i)} background={C.ink2}>
             <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
               <Pressable
                 onPress={() => builder.cycleType(b.uid, i)}

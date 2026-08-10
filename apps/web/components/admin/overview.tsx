@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
+import { Loading } from "../aurora/skeleton";
 
 type Stats = {
   totalUsers: number;
@@ -42,7 +43,7 @@ export default function AdminOverview() {
   }, []);
 
   if (err) return <Card style={{ textAlign: "center", padding: 60 }}><Mono>Failed to load platform analytics.</Mono></Card>;
-  if (!s) return <Card style={{ textAlign: "center", padding: 60 }}><Mono>Loading…</Mono></Card>;
+  if (!s) return <Card><Loading /></Card>;
 
   const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: VIOLET, CLIENT: LIME };
 

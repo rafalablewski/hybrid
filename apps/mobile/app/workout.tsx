@@ -741,10 +741,10 @@ export default function Workout() {
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
-  const removeSet = (u: string, i: number) => {
-    animateListChange(reducedMotion);
+  // No animateListChange here: the only caller is a SwipeRow, and closing the
+  // gap after a swipe-delete belongs to SwipeRow itself now.
+  const removeSet = (u: string, i: number) =>
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));
-  };
   const toggleDone = (u: string, i: number, val: boolean) => {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.

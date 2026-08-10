@@ -80,6 +80,7 @@ import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, tracking, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { useListMotion } from "../../lib/list-motion";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { AppHeader } from "./app-header";
@@ -377,6 +378,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
   // ── Editable food log — the per-entry records the Diary lists + edit/delete.
   const [logs, setLogs] = useState<FoodLogRow[]>([]);
+  const listMotion = useListMotion();
   const loadLogs = useCallback(() => { fetchFoodLogs().then(setLogs).catch(() => {}); }, []);
   useEffect(() => { loadLogs(); }, [loadLogs]);
   // Log one food/meal → creates the editable entry AND the mirrored Signals the
@@ -482,7 +484,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     loadLogs(); refetch(); revalidate.recovery();
   };
   const deleteLogEntry = async (id: string) => {
-    setLogs((xs) => xs.filter((x) => x.id !== id)); // optimistic
+    // The OPTIMISTIC removal is what the eye sees, so it is the one that has to
+    // travel — the server round-trip below lands long after the gap has closed.
+    listMotion(() => setLogs((xs) => xs.filter((x) => x.id !== id)));
     await deleteFoodLog(id);
     loadLogs(); refetch(); revalidate.recovery();
   };

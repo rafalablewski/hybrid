@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { useDialog } from "../../lib/use-dialog";
 import AdminAnonSessions from "./anon-sessions";
+import { Loading } from "../aurora/skeleton";
 
 type Row = {
   id: string;
@@ -519,7 +520,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
         </div>
 
         {!d ? (
-          <Mono>Loading…</Mono>
+          <Loading />
         ) : (
           <>
             <div style={{ display: "flex", gap: space.xs, flexWrap: "wrap", marginBottom: 18 }}>

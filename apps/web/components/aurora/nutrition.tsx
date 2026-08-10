@@ -38,6 +38,7 @@ import RailTail from "./rail-tail";
 import FetchError from "./fetch-error";
 import Sheet from "./sheet";
 import { readDeepLink, writeDeepLink, onDeepLinkChange, verifiedFoodUrl } from "@/lib/deep-link";
+import { collapseAndRemove } from "@/lib/list-motion";
 import { useHeroCollapse } from "./cover-hero";
 import { HeroNav } from "./hero";
 import { AppHeader } from "./app-header";
@@ -2882,7 +2883,7 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
         const shown = l.derived ? mult : l.qty;
         const time = new Date(l.ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
         return (
-        <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 2px 8px 31px" }}>
+        <div key={l.id} data-list-row style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 2px 8px 31px" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: fs.body, color: C("chalk"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name || t("w.recovery.nutrition.loggedEntry")}</div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, color: C("ash"), marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{l.derived ? `${time} — ` : ""}{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</div>
@@ -2893,7 +2894,14 @@ export default function AuroraNutrition({ onNavigate, compact = false }: { onNav
             <span style={{ minWidth: 26, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: C("chalk"), fontVariantNumeric: "tabular-nums" }}>{l.derived ? `×${shown}` : shown}</span>
             <button className="pressable" onClick={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} aria-label={t("w.recovery.nutrition.increase")} style={{ width: 26, height: 26, borderRadius: 12, border: `1px solid ${C("line")}`, background: "transparent", color: C("chalk"), cursor: "pointer", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 15, lineHeight: 1 }}>+</button>
           </div>
-          <button className="pressable" onClick={() => deleteLog(l.id)} aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
+          <button
+            className="pressable"
+            /* The row leaves before it is removed, and the gap closes with it:
+               `height` is a layout property, so animating it to zero reflows
+               everything below on every frame. No container ref is needed —
+               the row finds itself from the button that deletes it. */
+            onClick={(e) => collapseAndRemove(e.currentTarget.closest<HTMLElement>("[data-list-row]"), () => { void deleteLog(l.id); })}
+            aria-label={t("w.recovery.nutrition.deleteEntry")} style={{ flexShrink: 0, background: "none", border: "none", color: C("ash"), cursor: "pointer", padding: 4, display: "grid", placeItems: "center" }}><ITrash size={17} color={C("ash")} /></button>
         </div>
         );
       };
