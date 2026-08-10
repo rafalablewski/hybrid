@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   MAX_EXERCISE_FAVOURITES,
   exerciseBrowse,
@@ -15,6 +15,7 @@ import { HeroScreen } from "./hero";
 import AuroraExerciseMedia from "./exercise-media";
 import { fs, space } from "@/lib/ui";
 import { haptic } from "@/lib/haptics";
+import { animateListChange } from "@/lib/list-motion";
 import { useExerciseFavourites, toggleExerciseFavourite } from "@/lib/exercise-favourites";
 import { useLang } from "@/lib/i18n";
 
@@ -62,7 +63,7 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
     const on = isExerciseFavourite(favourites, e.name);
     const locked = !on && full;
     return (
-      <div style={{ display: "flex", alignItems: "center", borderBottom: last ? "none" : `1px solid ${C("line")}` }}>
+      <div data-list-row style={{ display: "flex", alignItems: "center", borderBottom: last ? "none" : `1px solid ${C("line")}` }}>
         <button
           onClick={() => onOpen(e.name)}
           className="pressable"
@@ -103,6 +104,16 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
     </div>
   );
 
+  // POSITION IS THE INFORMATION, so position is animated. Searching and
+  // re-sorting used to replace the list wholesale: the movements that survived
+  // a filter — the ones the athlete is actually looking at — were re-rendered
+  // somewhere new with no thread back to where they had been, which is the same
+  // teleport a delete used to cause, one screen up. Now the survivors MOVE and
+  // only genuine arrivals fade in. Keyed by name, so React hands the FLIP the
+  // same nodes to measure before and after.
+  const listRef = useRef<HTMLDivElement>(null);
+  const flip = (apply: () => void) => animateListChange(listRef.current, apply);
+
   return (
     <HeroScreen hero={{ rank: "title", title: t("w.analyze.ex.title") }}>
     <div style={{ maxWidth: 560, margin: "0 auto", fontFamily: "var(--font-display)", color: C("chalk") }}>
@@ -110,8 +121,8 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
       {entries.length === 0 ? (
         <div style={{ ...card, textAlign: "center", padding: 40, borderRadius: 28, marginTop: 16 }}><span style={{ fontFamily: "var(--font-mono)", fontSize: fs.bodyLg, color: C("ash") }}>{t("w.analyze.ex.empty")}</span></div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 16 }}>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("w.analyze.ex.search")} style={input} />
+        <div ref={listRef} style={{ display: "flex", flexDirection: "column", gap: space.ms, marginTop: 16 }}>
+          <input value={query} onChange={(e) => flip(() => setQuery(e.target.value))} placeholder={t("w.analyze.ex.search")} style={input} />
 
           {/* SORT PILLS — Smart (decay order) / Groups (fixed buckets) / A–Z */}
           <div style={{ display: "flex", gap: 8 }}>
@@ -124,7 +135,7 @@ export default function AuroraExercises({ sessions, onOpen }: { sessions: Logged
               return (
                 <button
                   key={p.id}
-                  onClick={() => setMode(p.id)}
+                  onClick={() => flip(() => setMode(p.id))}
                   className="pressable"
                   aria-pressed={on}
                   style={{ ...mono(10.5, on ? "var(--on-accent)" : C("ash")), letterSpacing: 0.8, fontWeight: on ? 700 : 400, padding: "8px 16px", borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? C("lime") : C("line")}`, background: on ? C("lime") : "transparent" }}

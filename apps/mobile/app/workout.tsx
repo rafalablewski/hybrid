@@ -628,13 +628,22 @@ export default function Workout() {
     setExercises(blocksToExercises(r.blocks));
   };
 
+  // EVERY MUTATION OF THE LIST TRAVELS. `animateListChange` before the commit
+  // animates all of its consequences at once — the row arriving or leaving AND
+  // the rows below opening or closing the gap. Without it the user's own edit
+  // is the one moment in the app with no motion at all: a card appears fully
+  // formed mid-list, or vanishes and everything under it teleports up.
   const addExercise = (name: string, kind?: WKind) => {
     const clean = name.trim();
     if (!clean) return;
+    animateListChange(reducedMotion);
     setExercises((xs) => [...xs, newExercise(clean, kind)]);
     setPickerOpen(false);
   };
-  const removeExercise = (u: string) => setExercises((xs) => xs.filter((x) => x.uid !== u));
+  const removeExercise = (u: string) => {
+    animateListChange(reducedMotion);
+    setExercises((xs) => xs.filter((x) => x.uid !== u));
+  };
   // Drop reorder (hold the grip handle and drag): move from one index to another.
   const moveExerciseTo = (from: number, to: number) => setExercises((xs) => moveItemTo(xs, from, to));
   const rename = (u: string, name: string) =>
@@ -674,10 +683,12 @@ export default function Workout() {
         return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, load: nextKg } : s)) };
       }),
     );
-  const addSet = (u: string) =>
+  const addSet = (u: string) => {
+    animateListChange(reducedMotion);
     setExercises((xs) =>
       xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
     );
+  };
   // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
   // in one tap. Each rep count is a SINGLE number (project rule), carrying the
   // current load. Banked sets are kept; the un-banked plan is replaced.
@@ -729,9 +740,6 @@ export default function Workout() {
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
   const supersetWithPrev = (u: string) =>
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
-  // The row leaves AND the rows below close the gap. Without the first call the
-  // deleted row simply vanished and everything under it jumped up by its
-  // height — a teleport, in response to the user's own action.
   const removeSet = (u: string, i: number) => {
     animateListChange(reducedMotion);
     setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.filter((_, j) => j !== i) } : x)));

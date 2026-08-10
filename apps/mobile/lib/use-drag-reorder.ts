@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { Animated, type LayoutChangeEvent } from "react-native";
 import { haptic } from "./haptics";
+import { animateListChange } from "./list-motion";
+import { useReducedMotion } from "./use-reduced-motion";
 
 /**
  * Hold-and-drag vertical reorder for a list of rows/cards — the one drag
@@ -15,6 +17,7 @@ import { haptic } from "./haptics";
  */
 export function useDragReorder(onMove: (group: string, from: number, to: number) => void) {
   const dragY = useRef(new Animated.Value(0)).current;
+  const reduced = useReducedMotion();
   const rows = useRef<Record<string, { y: number; height: number }>>({});
   const drag = useRef({ group: "", from: -1, to: -1, count: 0 });
   const [dragKey, setDragKey] = useState<string | null>(null);
@@ -56,6 +59,13 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
   const end = () => {
     const { group, from, to } = drag.current;
     if (from >= 0 && to >= 0 && from !== to) {
+      // THE COMMIT TRAVELS. Only the dragged row was ever animated: on release
+      // the rows it displaced jumped to their new slots, so the one moment the
+      // list's order visibly changed had no motion in it at all. Animating the
+      // commit here rather than at each caller means every reorderable list in
+      // the app — exercise cards, set ledgers, builder blocks — gets it from
+      // the mechanic they already share.
+      animateListChange(reduced);
       onMove(group, from, to);
       haptic.selection();
     }

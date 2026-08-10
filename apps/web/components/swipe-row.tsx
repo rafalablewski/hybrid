@@ -140,7 +140,11 @@ export default function SwipeRow({
   const action = (c: string) => ({ ...disp, position: "absolute" as const, top: 0, bottom: 0, width: swipe.action, display: "flex", alignItems: "center", justifyContent: "center", fontSize: fs.caption, fontWeight: 700, color: txt(c), background: `${c}26`, border: "none", cursor: "pointer" });
 
   return (
-    <div ref={hostRef} style={{ position: "relative", overflow: "hidden", borderRadius: radius, margin }}>
+    // `data-list-row` unconditionally: a swipeable row IS a list row, so it opts
+    // every one of them into the FLIP in lib/list-motion without a caller
+    // remembering to mark it. That is what makes a set arriving above this one
+    // push it down instead of teleporting it.
+    <div ref={hostRef} data-list-row style={{ position: "relative", overflow: "hidden", borderRadius: radius, margin }}>
       {leading && (
         <button onClick={commitLeading} style={{ ...action(leading.color ?? RED), left: 0 }}>
           {leading.label}

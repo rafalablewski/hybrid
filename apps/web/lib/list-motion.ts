@@ -33,30 +33,41 @@ const SLIDE_MS = springDurationMs(springs.slide);
 const reduced = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+/** Every element the FLIP measures, anywhere under the root. */
+const ROW = "[data-list-row]";
+
 /**
  * Apply a list mutation and animate the consequences.
  *
- * `container` is the element whose direct children are the rows. `apply` must
- * be the state update itself — it is flushed synchronously so the "after"
- * measurement sees the committed DOM.
+ * `root` is any ancestor of the rows; the rows themselves are marked
+ * `data-list-row`. Deliberately a marked descendant rather than "the
+ * container's direct children": a screen like the logger has a list of exercise
+ * cards each holding a list of set rows, and adding a set moves rows in BOTH —
+ * the set below it and every card below the card. Measuring one flat container
+ * would animate one of those two and teleport the other, and threading a ref
+ * per block to fix that puts a bookkeeping map in every caller. One root, one
+ * marker, and every row that moved for any reason travels.
+ *
+ * `apply` must be the state update itself — it is flushed synchronously so the
+ * "after" measurement sees the committed DOM.
  *
  * Under Reduce Motion the update still happens; only the travel is dropped, and
  * arriving rows still fade so an insertion remains perceptible.
  */
-export function animateListChange(container: HTMLElement | null, apply: () => void): void {
-  if (!container || reduced()) {
+export function animateListChange(root: HTMLElement | null, apply: () => void): void {
+  if (!root || reduced()) {
     apply();
     return;
   }
 
   const before = new Map<Element, DOMRect>();
-  for (const el of Array.from(container.children)) before.set(el, el.getBoundingClientRect());
+  for (const el of Array.from(root.querySelectorAll(ROW))) before.set(el, el.getBoundingClientRect());
 
   // Synchronous, for the same reason the screen transition flushes: the second
   // measurement has to see the result, not the queued update.
   flushSync(apply);
 
-  for (const el of Array.from(container.children)) {
+  for (const el of Array.from(root.querySelectorAll(ROW))) {
     const prev = before.get(el);
     const now = el.getBoundingClientRect();
 
@@ -76,6 +87,10 @@ export function animateListChange(container: HTMLElement | null, apply: () => vo
     const dy = prev.top - now.top;
     const dx = prev.left - now.left;
     if (!dy && !dx) continue;
+    // A row that moved because its ANCESTOR moved is already travelling: the
+    // parent carries it, and animating it a second time would double the
+    // distance. Only the outermost mover animates.
+    if (movedAncestor(el, before)) continue;
 
     // MOVED — travel from where it was. Neighbours closing a gap and a
     // reordered row swapping places are the same motion, which is right: both
@@ -85,6 +100,21 @@ export function animateListChange(container: HTMLElement | null, apply: () => vo
       { duration: SLIDE_MS, easing: SLIDE },
     );
   }
+}
+
+/**
+ * Did an enclosing row move too? Walks up to the nearest measured ancestor and
+ * asks whether IT is somewhere new. Nested lists (set rows inside exercise
+ * cards) are why this exists — see the note on `animateListChange`.
+ */
+function movedAncestor(el: Element, before: Map<Element, DOMRect>): boolean {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const prev = before.get(p);
+    if (!prev) continue;
+    const now = p.getBoundingClientRect();
+    return prev.top !== now.top || prev.left !== now.left;
+  }
+  return false;
 }
 
 /**

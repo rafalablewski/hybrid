@@ -76,12 +76,22 @@ export default function AuroraBuilder() {
   const b = useRoutineBuilder();
   const allowedSave = canSaveRoutine(persona, b.routines.length);
   const [picker, setPicker] = useState(false);
+  const reducedMotion = useReducedMotion();
   // Hold-and-drag reorder of the block cards (grip in each card header).
   const blockDrag = useDragReorder((_g, from, to) => b.moveBlockTo(from, to));
 
+  // The list's own mutations travel — the arriving card and every card it
+  // pushes down move together, rather than the new one appearing fully formed
+  // in space that was already made for it. (The reorder commit gets this from
+  // useDragReorder, which animates every reorderable list in the app.)
   const add = (name: string, kind?: BlockKind) => {
+    animateListChange(reducedMotion);
     b.addExercise(name, kind);
     setPicker(false);
+  };
+  const removeRoutine = (id: string) => {
+    animateListChange(reducedMotion);
+    b.remove(id);
   };
 
   return (
@@ -187,7 +197,7 @@ export default function AuroraBuilder() {
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.length} {t("w.train.builder.blocks")} – {t("w.train.builder.tapToEdit")}</Text>
               </Pressable>
-              <Pressable onPress={() => b.remove(r.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}>
+              <Pressable onPress={() => removeRoutine(r.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>
               </Pressable>
             </View>
@@ -274,6 +284,7 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
 }) {
   const { t } = useLang();
   const [open, setOpen] = useState(true);
+  const reducedMotion = useReducedMotion();
   const c = kindColor(b.kind, C);
   const minutes = Math.round(estimateBlockMinutes(b));
 
@@ -301,7 +312,7 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
         <Pressable onPress={() => setOpen((v) => !v)} hitSlop={8} accessibilityRole="button" accessibilityLabel={open ? t("w.train.blocks.collapse") : t("w.train.blocks.expand")}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>▾</Text>
         </Pressable>
-        <Pressable onPress={() => builder.removeItem(b.uid)} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>✕</Text></Pressable>
+        <Pressable onPress={() => { animateListChange(reducedMotion); builder.removeItem(b.uid); }} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>✕</Text></Pressable>
       </View>
 
       {/* signal metric row — the COLLAPSED summary only: expanded, the editor
@@ -468,7 +479,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
           to the primary Save action, not a repeated per-card control. The rarer
           set types tuck into "Special ▾" (parity with the live logger). */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 6 }}>
-        <Pressable onPress={() => builder.addSet(b.uid)} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
+        <Pressable onPress={() => { animateListChange(reducedMotion); builder.addSet(b.uid); }} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
           <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.addSet")}</Text>
         </Pressable>
         <Pressable onPress={() => setSpecial((v) => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
