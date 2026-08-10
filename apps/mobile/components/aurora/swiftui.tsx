@@ -20,10 +20,8 @@ import {
   Animation,
   accessibilityLabel,
   animation,
-  buttonBorderShape,
   buttonStyle,
   contentShape,
-  disabled as swiftDisabled,
   font,
   foregroundColor,
   frame,
@@ -220,60 +218,15 @@ export function GlassMenuButton({
   );
 }
 
-/**
- * THE PROMINENT PILL'S NATIVE FORM — SwiftUI's `.glassProminent` button
- * carrying the BRAND fill as its tint: the chartreuse stays (a tinted pane of
- * prominent glass, not a flat painted rect), and the material answers the
- * touch. The label rides in the app's own face via expo-font's registered
- * family names — the font, the size and the foreground come from the caller so
- * this leaf stays dumb about the type system.
+/*
+ * NOT HERE, ON PURPOSE: a native form for the brand CTA pill (Log set, Finish,
+ * APill's primary). The goal is native SwiftUI CONTROLS, not the glass skin —
+ * and a full-width chartreuse CTA has no system counterpart: `.glassProminent`
+ * would restyle the brand's one "go" surface, not nativize a control. Filled
+ * pills stay the app's own drawing on every platform. (A `GlassPillButton`
+ * shipped briefly and was reverted on that direction — see capabilities
+ * `swiftui-kit`, device round 2.)
  */
-export function GlassPillButton({
-  label,
-  onPress,
-  tintColor,
-  fg,
-  fontFamily,
-  fontSize,
-  height = 56,
-  glyph,
-  disabled,
-}: {
-  label: string;
-  onPress: () => void;
-  /** The pill's fill — the brand accent, carried IN the material. */
-  tintColor: string;
-  /** Label colour (the accent's on-colour). */
-  fg: string;
-  fontFamily: string;
-  fontSize: number;
-  height?: number;
-  /** Optional leading SF mark (the logger's ✓). */
-  glyph?: "checkmark";
-  disabled?: boolean;
-}) {
-  if (!LIQUID_GLASS_RENDERED) return null;
-  return (
-    <Host matchContents={{ vertical: true }} style={{ width: "100%" }}>
-      <Button
-        onPress={onPress}
-        modifiers={[
-          buttonStyle("glassProminent"),
-          buttonBorderShape("capsule"),
-          tint(tintColor),
-          frame({ maxWidth: 9999, minHeight: height }),
-          swiftDisabled(!!disabled),
-          accessibilityLabel(label),
-        ]}
-      >
-        <HStack spacing={8}>
-          {glyph ? <SwiftImage systemName={glyph} size={fontSize} color={fg} /> : null}
-          <SwiftText modifiers={[font({ family: fontFamily, size: fontSize }), foregroundColor(fg)]}>{label}</SwiftText>
-        </HStack>
-      </Button>
-    </Host>
-  );
-}
 
 /**
  * A SELECT that answers from a MENU — the system Menu with an inline Picker

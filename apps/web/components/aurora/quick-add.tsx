@@ -53,17 +53,7 @@ export function PickerField({ value, onChange, onSubmit, onScan }: {
   const typed = value.trim().length > 0;
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10, borderRadius: 16, padding: "13px 16px",
-      // The screen's one container wears the glass film (the mobile twin drops
-      // a native GlassSurface behind the same field): a light body under a
-      // modest blur, identity at the rim — not the solid card fill.
-      background: "rgba(var(--glass-base), 0.45)",
-      WebkitBackdropFilter: "blur(14px) saturate(150%)",
-      backdropFilter: "blur(14px) saturate(150%)",
-      border: "1px solid transparent",
-      boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 0 0 1px rgba(var(--text-rgb), 0.06)",
-    }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, padding: "13px 16px" }}>
       <AuroraIcon name="search" size={18} color={C("ash")} />
       <input
         value={value}

@@ -170,11 +170,7 @@ describe("touch targets", () => {
     // by RETIRING four hand-rolled rails (History and Plans, both clients) and
     // it carries a stricter guard of its own than this one —
     // apps/web/__tests__/dock-rail.test.ts, which checks both clients together.
-    // GlassPillButton is exempt for the same reason: it is not a tenth
-    // spelling of the pill but the pill's NATIVE FORM — the swiftui.tsx leaf
-    // the brand CTAs converge on where Liquid Glass renders (glassProminent
-    // wearing the accent as its tint), with the RN pill as its own fallback.
-    const SANCTIONED = /\b(?:DockChip|GlassPillButton)\b/;
+    const SANCTIONED = /\bDockChip\b/;
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
     expectAtMost(decls, 9, "chip-shaped component → Chip, AChip or DockChip");

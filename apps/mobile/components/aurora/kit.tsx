@@ -12,7 +12,7 @@ import { AuroraIcon } from "./icons";
 import { heroTitleType, springs, springToRN, durations, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
-import { GlassPillButton, GlassSurface, GlassSegment, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { LiquidSeg } from "./liquid-seg";
 import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
 
@@ -477,27 +477,6 @@ export function APill({
     : variant === "soft"
       ? palette.chalk
       : palette.onAccent;
-  // Where Liquid Glass renders, a FILLED pill is the system's prominent glass
-  // wearing its fill as the TINT — the same GlassPillButton the logger's CTAs
-  // ride, so every primary action in the app is one control. `soft` keeps its
-  // quiet GlassSurface below; `outline` stays the drawn hairline everywhere
-  // (a ghost has no fill to carry into the material).
-  if (LIQUID_GLASS_RENDERED && (variant === "primary" || variant === "light")) {
-    return (
-      <View style={[{ borderRadius: RADIUS.pill }, style]}>
-        <GlassPillButton
-          label={label}
-          onPress={onPress}
-          disabled={disabled}
-          tintColor={bg}
-          fg={fg}
-          fontFamily={F.bold}
-          fontSize={fs.subtitle}
-          height={56}
-        />
-      </View>
-    );
-  }
   return (
     <PressScale
       onPress={onPress}
