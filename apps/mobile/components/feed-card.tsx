@@ -1,6 +1,6 @@
-import { useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { View, Text, type TextStyle } from "react-native";
-import Svg, { Circle, Path, Rect } from "react-native-svg";
+import Svg, { Path, Rect } from "react-native-svg";
 import {
   FEED_STAT_LABEL_KEY,
   feedDeltaText,
@@ -26,7 +26,7 @@ import { useLang } from "../lib/i18n";
 import { runShare, toggleSavedPost, useFeedSaved } from "../lib/feed-actions";
 import { Avatar } from "./social-kit";
 import { GUTTER, RADIUS } from "./aurora/kit";
-import FeedMenu, { feedMenuFor, type FeedMenuAnchor } from "./feed-menu";
+import { FeedMenuTrigger } from "./feed-menu";
 
 /**
  * THE FEED ROW (mobile) — twin of apps/web/components/feed-card.tsx. Both
@@ -99,18 +99,6 @@ function ShareOut({ color }: { color: string }) {
     <Svg width={17} height={17} viewBox="0 0 16 16">
       <Path d="M8 10.5V2.2M5.3 4.9 8 2.2l2.7 2.7" fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
       <Path d="M3.2 8.6v4.2c0 .4.3.7.7.7h8.2c.4 0 .7-.3.7-.7V8.6" fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-/** The overflow ⋯. Filled dots, not stroked rings, which at this size read as
- *  three tiny doughnuts. */
-function More({ color }: { color: string }) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 16 16">
-      <Circle cx={3.2} cy={8} r={1.35} fill={color} />
-      <Circle cx={8} cy={8} r={1.35} fill={color} />
-      <Circle cx={12.8} cy={8} r={1.35} fill={color} />
     </Svg>
   );
 }
@@ -352,19 +340,6 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const d = item.detail;
   const moment = d?.moment ?? "p2";
 
-  // The overflow menu (zone A, right). The two PRIVATE verbs live in
-  // FeedActions, which the post screen renders too.
-  const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: !!onDelete });
-  // The menu is a card anchored to the ⋯, and it renders in its own native
-  // window (a Modal) because a card drawn inline would be clipped by the
-  // FlatList — so the glyph's WINDOW rect has to be measured and handed over.
-  // `menu` holds that rect; null is closed.
-  const moreRef = useRef<View>(null);
-  const [menu, setMenu] = useState<FeedMenuAnchor | null>(null);
-  const openMenu = () => {
-    moreRef.current?.measureInWindow((x, y, w, h) => setMenu({ x, y, w, h }));
-  };
-
   const headline = feedHeadlineText(item, t);
   const setLines = cardSetLines(d?.sets, cardPrLines(d?.prs));
 
@@ -418,21 +393,23 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
             </Text>
           ) : null}
         </View>
-        {/* ZONE A, right — the overflow menu. This corner used to hold a bare ×
+        {/* ZONE A, right — the overflow menu (trigger + menu in one, the
+            system's glass menu on iOS 26). This corner used to hold a bare ×
             on your own posts: an unlabelled destructive control, and nothing at
             all on everyone else's, so the stream had no answer to "I don't want
             to see this". Delete now lives INSIDE the menu, labelled and
-            explained. Drawn only when the menu would have rows (core decides —
-            my own session/PR row has nothing to offer). */}
-        {menuRows.length > 0 ? (
-          // collapsable={false} keeps this View in the native tree — RN prunes
-          // layout-only Views on Android, and a pruned view cannot be measured.
-          <View ref={moreRef} collapsable={false}>
-            <Pressable onPress={openMenu} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("feed.menu.title")}>
-              <More color={C.ash} />
-            </Pressable>
-          </View>
-        ) : null}
+            explained. Renders nothing when the menu would have no rows (core
+            decides — my own session/PR row has nothing to offer). */}
+        <FeedMenuTrigger
+          handle={item.author.handle}
+          authorId={item.author.id}
+          mine={item.mine}
+          subjectType={item.subjectType}
+          subjectId={item.subjectId}
+          relation={item.relation}
+          onDelete={onDelete}
+          onAuthorChanged={onAuthorChanged}
+        />
       </View>
 
       {/* ZONES B–E are ONE target: the post opens to the whole workout behind
@@ -468,19 +445,6 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       <FeedActions item={item} headline={headline || item.title} onKudos={onKudos} onComments={onComments} />
 
       {children}
-
-      <FeedMenu
-        anchor={menu}
-        onClose={() => setMenu(null)}
-        handle={item.author.handle}
-        authorId={item.author.id}
-        mine={item.mine}
-        subjectType={item.subjectType}
-        subjectId={item.subjectId}
-        relation={item.relation}
-        onDelete={onDelete}
-        onAuthorChanged={onAuthorChanged}
-      />
     </View>
   );
 }

@@ -10,6 +10,7 @@ export const Host = Box;
 export const HStack = Box;
 export const VStack = Box;
 export const Spacer = Box;
+export const Menu = Box;
 export const Picker = Box;
 export const Text = Box;
 export const Image = Box;

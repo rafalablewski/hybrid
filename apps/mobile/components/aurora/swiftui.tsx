@@ -6,6 +6,7 @@ import {
   HStack,
   Host,
   Image as SwiftImage,
+  Menu,
   Namespace,
   Picker,
   RoundedRectangle,
@@ -157,6 +158,86 @@ export function GlassNavButton({
           ]}
         />
       </Button>
+    </Host>
+  );
+}
+
+/**
+ * THE OVERFLOW MENU'S NATIVE FORM — a SwiftUI `Menu`: tap the glyph and the
+ * system presents its own menu, which on iOS 26 is Liquid Glass zoom-morphing
+ * out of the anchor. Another self-contained LEAF (trigger and items are one
+ * native view; selection is handled by SwiftUI, like `GlassSegment`'s Picker),
+ * so it mounts only where the material renders — the RN card fallback keeps
+ * every other platform.
+ *
+ * A system menu DISMISSES on select — it cannot hold a row open to tag it
+ * "Followed ✓" the way the RN card did — so callers report outcomes with a
+ * toast instead. Rows carry no icons: the RN card and the web twin are
+ * label-only, and the mark set must not fork by renderer.
+ */
+export function GlassMenuButton({
+  items,
+  onSelect,
+  label,
+  glyphColor,
+  size = 34,
+}: {
+  items: { key: string; label: string; destructive?: boolean }[];
+  onSelect: (key: string) => void;
+  /** The trigger's accessibility name ("Post options"). */
+  label: string;
+  glyphColor: string;
+  /** The square hit box the ⋯ sits in. */
+  size?: number;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host style={{ width: size, height: size }}>
+      <Menu
+        label={
+          <SwiftImage
+            systemName="ellipsis"
+            size={15}
+            color={glyphColor}
+            modifiers={[frame({ width: size, height: size }), contentShape(shapes.rectangle())]}
+          />
+        }
+        modifiers={[accessibilityLabel(label)]}
+      >
+        {items.map((it) => (
+          <Button key={it.key} label={it.label} role={it.destructive ? "destructive" : "default"} onPress={() => onSelect(it.key)} />
+        ))}
+      </Menu>
+    </Host>
+  );
+}
+
+/**
+ * THE WHEEL — SwiftUI `Picker` + `.pickerStyle(.wheel)`: the system's detented
+ * spin with its glass selection band, for choosing one value from a short
+ * dynamic list (the date filter's months). Selection applies as the wheel
+ * settles — the surface behind it updates live, which is the same
+ * direct-manipulation contract the sheet's own drag keeps.
+ */
+export function GlassWheel<T extends string>({
+  options,
+  value,
+  onPick,
+}: {
+  options: { id: T; label: string }[];
+  value: T;
+  onPick: (v: T) => void;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host matchContents={{ vertical: true }} style={{ width: "100%" }}>
+      <Picker selection={value} onSelectionChange={(v) => onPick(v as T)} modifiers={[pickerStyle("wheel")]}>
+        {options.map((o) => (
+          <SwiftText key={o.id} modifiers={[tag(o.id)]}>
+            {o.label}
+          </SwiftText>
+        ))}
+      </Picker>
     </Host>
   );
 }
