@@ -16,6 +16,7 @@ import { C, useSocialTheme, card, Avatar, Btn, Pill, Stars, VerifiedTick, EmptyS
 import { useLang } from "@/lib/i18n";
 import { Loading, LoadSwap } from "./aurora/skeleton";
 import { armPerson } from "@/lib/shared-element";
+import { useListFilter } from "@/lib/list-motion";
 
 /**
  * THE MARKETPLACE — the directory, and a coach's own storefront EDITOR.
@@ -122,6 +123,8 @@ export default function Coaches({ onOpenUser }: { onOpenUser?: OpenUser } = {}) 
   const { aurora } = useSocialTheme();
   const [tab, setTab] = useState<"browse" | "storefront">("browse");
   const [q, setQ] = useState("");
+  // Survivors of a filter MOVE; only genuine arrivals fade in.
+  const [listRef, refilter] = useListFilter();
   const [coaches, setCoaches] = useState<CoachCard[] | null>(null);
   const [isCoach, setIsCoach] = useState(false);
 
@@ -142,7 +145,7 @@ export default function Coaches({ onOpenUser }: { onOpenUser?: OpenUser } = {}) 
         <Storefront />
       ) : (
         <>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("w.coaches.search")} style={{ width: "100%", padding: "12px 14px", borderRadius: aurora ? 16 : 10, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, marginBottom: 16 }} />
+          <input value={q} onChange={(e) => refilter(() => setQ(e.target.value))} placeholder={t("w.coaches.search")} style={{ width: "100%", padding: "12px 14px", borderRadius: aurora ? 16 : 10, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, marginBottom: 16 }} />
           {/* The placeholder HANDS OVER to the coaches — it fades out where they
               fade in, rather than an empty-state card being replaced by a full
               list in one frame (aurora/skeleton.tsx LoadSwap). */}
@@ -150,9 +153,10 @@ export default function Coaches({ onOpenUser }: { onOpenUser?: OpenUser } = {}) 
           {coaches?.length === 0 ? (
             <EmptyState title={t("w.coaches.none")} sub={t("w.coaches.noneSub")} />
           ) : (
-            <div style={{ display: "grid", gap: 12 }}>
+            <div ref={listRef} style={{ display: "grid", gap: 12 }}>
               {coaches?.map((c) => (
                 <button
+                  data-list-row
                   className="pressable"
                   key={c.userId}
                   // THE FACE TRAVELS. A row's avatar and the portrait heading

@@ -1,4 +1,6 @@
+import { useCallback } from "react";
 import { LayoutAnimation, Platform, UIManager } from "react-native";
+import { useReducedMotion } from "./use-reduced-motion";
 import { durations, springs, springToRN } from "@hybrid/core";
 
 /**
@@ -53,4 +55,24 @@ export function animateListChange(reduced = false): void {
     create: { type: LayoutAnimation.Types.easeOut, property: LayoutAnimation.Properties.scaleY, duration: durations.collapse },
     delete: { type: LayoutAnimation.Types.easeIn, property: LayoutAnimation.Properties.scaleY, duration: durations.collapse },
   });
+}
+
+/**
+ * The same thing as a hook, for the common shape: a control that changes what a
+ * list contains.
+ *
+ *   const refilter = useListMotion();
+ *   <ASearch onChange={(v) => refilter(() => setQuery(v))} />
+ *
+ * It exists because the call sites were all writing the identical two lines —
+ * read Reduce Motion, call `animateListChange`, then apply — and a filter that
+ * animates on one screen and not the next is exactly the inconsistency the
+ * audit was about.
+ */
+export function useListMotion(): (apply: () => void) => void {
+  const reduced = useReducedMotion();
+  return useCallback((apply: () => void) => {
+    animateListChange(reduced);
+    apply();
+  }, [reduced]);
 }

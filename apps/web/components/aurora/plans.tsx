@@ -14,6 +14,7 @@ import { MetaLine } from "./meta";
 import { CoverHero, useHeroCollapse, COVER_INK, COVER_BAR } from "./cover-hero";
 import { armSharedElement } from "@/lib/shared-element";
 import { runStackTransition } from "@/lib/use-screen-transition";
+import { useListFilter } from "@/lib/list-motion";
 import { DockRail, DockChip } from "./dock-rail";
 
 const C = (v: string) => `var(--color-${v})`;
@@ -64,6 +65,8 @@ function Library({ query, setQuery, pick }: { query: string; setQuery: (v: strin
   const rootRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   useHeroCollapse(rootRef, heroRef); // no dock at the root — collapse + snap only
+  // Searching the library re-shelves the goals; the ones that survive travel.
+  const [listRef, refilter] = useListFilter();
 
   // ── the library cover: the SAME scaffold the goal and plan screens ride, so
   // every depth of the Plans stack is one object at a different compression.
@@ -92,18 +95,20 @@ function Library({ query, setQuery, pick }: { query: string; setQuery: (v: strin
         <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}><AuroraIcon name="search" size={16} color={C("ash")} /></span>
         <input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => refilter(() => setQuery(e.target.value))}
           placeholder={t("w.train.plans.searchGoals")}
           aria-label={t("w.train.plans.searchGoals")}
           style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px 12px 40px", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 16, color: C("chalk"), fontFamily: "var(--font-mono)", fontSize: fs.body, outline: "none" }}
         />
       </div>
       <div style={{ marginTop: 16 }}><EnrolledCard /></div>
+      <div ref={listRef}>
       {shelves.length === 0 ? (
         <p style={{ fontFamily: "var(--font-mono)", fontSize: fs.body, color: C("ash"), padding: "8px 2px" }}>{t("w.train.plans.noMatches")}</p>
       ) : (
         shelves.map((group) => <GoalShelf key={group.category} group={group} pick={pick} />)
       )}
+      </div>
     </div>
   );
 }
@@ -223,6 +228,7 @@ function GoalTile({ goal, onOpen }: { goal: GoalNode; onOpen: () => void }) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       aria-label={`${goal.name} – ${cover.count}`}
+      data-list-row
       style={{ flex: "0 0 172px", height: 140, position: "relative", overflow: "hidden", borderRadius: 28, border: "1px solid rgba(255,255,255,.07)", background: COVER_INK, color: "#fff", padding: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left", cursor: "pointer", transform: reduced ? undefined : `scale(${pressed ? 0.97 : 1})`, transition: reduced ? undefined : "transform .16s ease" }}
     >
       <span aria-hidden style={{ position: "absolute", inset: 0, opacity: cover.ready ? 1 : 0.45, background: `linear-gradient(202deg, color-mix(in srgb, ${cover.accent} 52%, ${COVER_INK}) 0%, color-mix(in srgb, ${cover.accent} 15%, ${COVER_INK}) 46%, ${COVER_INK} 100%)` }} />

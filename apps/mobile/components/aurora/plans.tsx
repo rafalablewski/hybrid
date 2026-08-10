@@ -15,6 +15,7 @@ import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
 import PercentProgram from "../percent-program";
 import MeasuredOutcome from "../measured-outcome";
 import PlanCoverScreen, { CoverScreen, PlanDockPill, COVER_GUTTER, type CoverScreenApi } from "../plan-hero";
+import { useListMotion } from "../../lib/list-motion";
 
 /** Cover ink — the goal tiles are dark in BOTH themes, exactly like the covers
  *  they expand into (Explore's PlanCover recipe). */
@@ -27,6 +28,8 @@ const TILE_H = 140;
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
 export default function AuroraPlans() {
+  // Survivors of a filter MOVE to their new positions; only arrivals fade.
+  const refilter = useListMotion();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
@@ -92,7 +95,7 @@ export default function AuroraPlans() {
       rail={shelves.length > 0 ? <CategoryRail categories={shelves.map((s) => s.category)} onJump={jumpTo} /> : undefined}
     >
       <View style={{ marginTop: 16 }}>
-        <AField value={query} onChange={setQuery} placeholder={t("w.train.plans.searchGoals")} icon="search" />
+        <AField value={query} onChange={(v: string) => refilter(() => setQuery(v))} placeholder={t("w.train.plans.searchGoals")} icon="search" />
       </View>
       <EnrolledCard enrolled={enrolled} />
       {shelves.length === 0 ? (

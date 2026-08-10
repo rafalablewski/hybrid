@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import { flushSync } from "react-dom";
 import { springs, springToCss, springDurationMs, durations, easings } from "@hybrid/core";
 
@@ -153,4 +154,21 @@ export function collapseAndRemove(row: HTMLElement | null, remove: () => void, s
   // A cancelled animation (the row unmounted underneath us) must still commit
   // the removal, or the caller's state and the DOM diverge.
   anim.oncancel = finish;
+}
+
+/**
+ * The common shape as a hook: a control that changes what a list CONTAINS.
+ *
+ *   const [listRef, refilter] = useListFilter();
+ *   <input onChange={(e) => refilter(() => setQuery(e.target.value))} />
+ *   <div ref={listRef}> … rows marked data-list-row … </div>
+ *
+ * The two halves have to travel together — a ref with no wrapped setter
+ * animates nothing, and a wrapped setter with no root has nothing to measure —
+ * so handing them out as a pair is the point.
+ */
+export function useListFilter(): [React.RefObject<HTMLDivElement | null>, (apply: () => void) => void] {
+  const ref = useRef<HTMLDivElement>(null);
+  const run = useCallback((apply: () => void) => animateListChange(ref.current, apply), []);
+  return [ref, run];
 }

@@ -19,6 +19,7 @@ import { useLang } from "../../lib/i18n";
 import { ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
+import { useListMotion } from "../../lib/list-motion";
 
 /**
  * YOUR RECIPES (mobile) — the twin of apps/web/components/aurora/user-recipes.tsx.
@@ -272,6 +273,8 @@ export function UserRecipeEditor({
   const { t } = useLang();
   const [picker, setPicker] = useState(false);
   const [query, setQuery] = useState("");
+  // Survivors of a filter MOVE to their new positions; only arrivals fade.
+  const refilter = useListMotion();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const totals = useMemo(() => recipeTotals(recipe), [recipe]);
@@ -500,7 +503,7 @@ export function UserRecipeEditor({
           <AuroraIcon name="search" size={18} color={C.ash} />
           <TextInput
             value={query}
-            onChangeText={setQuery}
+            onChangeText={(v) => refilter(() => setQuery(v))}
             placeholder={t("w.recovery.nutrition.searchProducts")}
             placeholderTextColor={C.ash}
             accessibilityLabel={t("w.recovery.nutrition.searchProducts")}

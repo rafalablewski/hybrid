@@ -18,6 +18,7 @@ import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import AuroraExerciseMedia from "./exercise-media";
 import AuroraBodyMark from "./body-mark";
+import { useListMotion } from "../../lib/list-motion";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 type Entry = { name: string; kind: BlockKind; icon?: string };
@@ -63,6 +64,8 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   /** Optional "Your lifts" shortcuts (the live logger's recent movements). */
   recent?: Entry[];
 }) {
+  // Survivors of a filter MOVE to their new positions; only arrivals fade.
+  const refilter = useListMotion();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const { catalog, aliases, categoryByName } = useExercises();
@@ -186,7 +189,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
             <AuroraIcon name="search" size={18} color={C.ash} />
             <TextInput
               value={query}
-              onChangeText={setQuery}
+              onChangeText={(v) => refilter(() => setQuery(v))}
               placeholder={t("w.train.builder.searchCustomPh")}
               placeholderTextColor={C.ash}
               onSubmitEditing={() => query.trim() && onPick(query.trim(), inferBlockKind(query.trim()))}

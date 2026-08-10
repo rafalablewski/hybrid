@@ -5,6 +5,7 @@ import type { PersonCard, SearchResponse, SuggestionsResponse } from "@hybrid/co
 import { C, useSocialTheme, card, Avatar, FollowButton, VerifiedTick, EmptyState, ScreenHead, jget, jsend, useBusy, type OpenUser } from "./social-ui";
 import { useLang } from "@/lib/i18n";
 import { armPerson } from "@/lib/shared-element";
+import { useListFilter } from "@/lib/list-motion";
 
 // Both /api/social/search and /api/social/suggestions return a real userId
 // (the row keys + follows on it), so this shape is shared across both sources.
@@ -16,7 +17,7 @@ function Row({ p, onChanged, onOpen }: { p: Person; onChanged: () => void; onOpe
   const follow = () => busy.run("f", async () => { await jsend("/api/social/follow", "POST", { followeeId: p.userId }); onChanged(); });
   const unfollow = () => busy.run("f", async () => { await jsend("/api/social/follow", "DELETE", { followeeId: p.userId }); onChanged(); });
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: `1px solid ${C("line")}` }}>
+    <div data-list-row style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 4px", borderBottom: `1px solid ${C("line")}` }}>
       <button className="pressable" onClick={() => onOpen(p.handle, p)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, textAlign: "left", padding: 0 }}>
         <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={42} />
         <div style={{ minWidth: 0 }}>
@@ -32,6 +33,8 @@ function Row({ p, onChanged, onOpen }: { p: Person; onChanged: () => void; onOpe
 }
 
 export default function SocialDiscover({ onOpenUser }: { onOpenUser?: OpenUser }) {
+  // Survivors of a filter MOVE; only genuine arrivals fade in.
+  const [listRef, refilter] = useListFilter();
   const { t } = useLang();
   const { aurora } = useSocialTheme();
   const [q, setQ] = useState("");
@@ -55,13 +58,13 @@ export default function SocialDiscover({ onOpenUser }: { onOpenUser?: OpenUser }
       <input
         autoFocus
         value={q}
-        onChange={(e) => setQ(e.target.value)}
+        onChange={(e) => refilter(() => setQ(e.target.value))}
         placeholder={t("w.social.searchPeople")}
         style={{ width: "100%", padding: "12px 14px", borderRadius: aurora ? 16 : 10, border: `1px solid ${C("line")}`, background: C("ink2"), color: C("chalk"), fontFamily: "var(--font-display)", fontSize: 15, marginBottom: 16 }}
       />
 
       {results !== null ? (
-        <div style={card(aurora)}>
+        <div ref={listRef} style={card(aurora)}>
           {results.length === 0 ? <EmptyState title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { armPerson(h); onOpenUser?.(h, c); }} />)}
         </div>
       ) : (

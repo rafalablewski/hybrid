@@ -17,6 +17,7 @@ import { Avatar, Stars, Empty, SButton } from "../components/social-kit";
 import { GlassToggle } from "../components/glass-toggle";
 import { useConfirm } from "../components/aurora/confirm";
 import { usePersonSource } from "../lib/shared-element";
+import { useListMotion } from "../lib/list-motion";
 
 /**
  * THE MARKETPLACE (mobile) — the directory, and a coach's own storefront EDITOR.
@@ -94,6 +95,8 @@ function Storefront() {
 }
 
 export default function CoachesScreen() {
+  // Survivors of a filter MOVE to their new positions; only arrivals fade.
+  const refilter = useListMotion();
   const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();
@@ -117,7 +120,7 @@ export default function CoachesScreen() {
 
       {tab === "storefront" && isCoach ? <Storefront /> : (
         <>
-          <ASearch value={q} onChange={setQ} placeholder={t("w.coaches.search")} />
+          <ASearch value={q} onChange={(v: string) => refilter(() => setQ(v))} placeholder={t("w.coaches.search")} />
           {/* The placeholder HANDS OVER to the coaches — it fades out where they
               fade in rather than being replaced in one frame (lib/ui LoadSwap). */}
           <LoadSwap loading={!coaches}>
