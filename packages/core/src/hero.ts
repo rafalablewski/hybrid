@@ -458,20 +458,18 @@ export function heroStatusBar(rank: HeroRank, mode: HeroMode, scheme: "light" | 
  * never scrolls away — on `title` rank the old header scrolled off, which meant
  * "back" existed only at the top of the page.
  *
- * MATERIAL is the one thing that varies, and it varies with what is behind it,
- * not with which screen it is on:
- *  - over the plain field → `clear`: no fill, chalk glyph. A chip floating on an
- *    empty page is noise.
- *  - over art, or once content has scrolled under the rail → `glass`: on iOS 26
- *    the button IS a native SwiftUI Liquid Glass button (interactive — the
- *    material itself answers the touch; no drawn ring, no fill); elsewhere the
- *    white-12% + blur fallback with the hairline at 18%.
- * The transition between the two is a cross-fade on the same circle, so the
- * control's SHAPE is never in motion — on iOS 26 both materials are the same
- * native button (`clear` is the glass stripped, not a different control).
+ * MATERIAL: glass, always. On iOS 26 the button IS a native SwiftUI Liquid
+ * Glass button (interactive — the material itself answers the touch; no drawn
+ * ring, no fill); elsewhere the white-12% + blur fallback with the hairline at
+ * 18%. There used to be a `clear` state over the plain field (bare glyph, on
+ * the theory that a chip floating on an empty page is noise) — retired on the
+ * first device round of the native build: one control, one material, every
+ * screen, so the circle the thumb learns on a cover is the identical object on
+ * a field screen, and nothing cross-fades. The signature keeps the backdrop
+ * and scroll inputs so a future material split has somewhere to live without
+ * touching every caller.
  */
-export function heroNavMaterial(backdrop: HeroBackdrop, barred: boolean): "clear" | "glass" {
-  if (backdrop === "field") return barred ? "glass" : "clear";
+export function heroNavMaterial(_backdrop: HeroBackdrop, _barred: boolean): "clear" | "glass" {
   return "glass";
 }
 

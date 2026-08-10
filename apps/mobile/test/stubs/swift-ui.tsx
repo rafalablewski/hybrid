@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 const Box = ({ children, ...p }: ViewProps & { children?: ReactNode }) => <View {...p}>{children}</View>;
 
+export const Divider = Box;
 export const Host = Box;
 export const HStack = Box;
 export const VStack = Box;
@@ -31,9 +32,13 @@ export const accessibilityLabel = modifier;
 export const animation = modifier;
 export const Animation = { easeInOut: modifier, spring: modifier, default: modifier };
 export const background = modifier;
+export const buttonBorderShape = modifier;
 export const buttonStyle = modifier;
 export const clipShape = modifier;
 export const contentShape = modifier;
+export const disabled = modifier;
+export const font = modifier;
+export const foregroundColor = modifier;
 export const frame = modifier;
 export const glassEffect = modifier;
 export const glassEffectId = modifier;

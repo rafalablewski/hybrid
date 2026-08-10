@@ -88,7 +88,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
             own and takes the system's nav CONTROL rather than a hero. Same
             circle, same 40pt, same glyph as every screen head. */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <HeroNav onPress={back} onDark={false} material="clear" />
+          <HeroNav onPress={back} onDark={false} />
           <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{titles[editing]}</Text>
         </View>
 
