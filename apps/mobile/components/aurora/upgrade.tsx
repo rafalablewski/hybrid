@@ -22,7 +22,7 @@ const BENEFITS = FULL_BENEFITS.map((b) => ({ t: b.title, d: b.desc }));
 /**
  * AURORA Upgrade — the Full paywall, in the SHARED Sheet (aurora/sheet.tsx).
  *
- * It used to hand-roll its own: a raw <Modal> route drawing its own scrim at
+ * It used to hand-roll its own: a raw RN Modal route drawing its own scrim at
  * motion.scrimFlat, its own panel on a 340ms cubic, and its own 40x4 grab
  * handle bound to nothing. Bypassing the shared component cost it everything
  * the component does — the parent's recede (so the paywall floated over a flat

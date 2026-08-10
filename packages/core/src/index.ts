@@ -150,6 +150,7 @@ export * from "./hero";
 export * from "./hub-masthead";
 export * from "./app-header";
 export * from "./streak-mark";
+export * from "./stat-tile";
 export * from "./dock-rail";
 export * from "./email";
 export * from "./format";

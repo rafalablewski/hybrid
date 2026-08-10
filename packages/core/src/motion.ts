@@ -75,6 +75,15 @@ export const springs = {
    *  not slow with overshoot: this is quicker AND bouncier (damping .68 vs
    *  .745). */
   lens: { response: 0.35, dampingFraction: 0.68 },
+  /** CELEBRATION — the finish card's entrance pop, and nothing else. The
+   *  bounciest spring in the system, and the one token allowed past the 450ms
+   *  ceiling (its own guard holds it under the celebration tier instead): a win
+   *  is allowed to take its time, and hurrying the one moment the app
+   *  congratulates you would spend the exception where it buys nothing. Both
+   *  finish surfaces hand-rolled their own version of this (friction 5 against
+   *  tension 120 and 90 — the same feel, tuned twice on different afternoons);
+   *  this is that feel, written down once so the guard can see it. */
+  pop: { response: 0.32, dampingFraction: 0.4 },
 } as const satisfies Record<string, Spring>;
 
 export type SpringToken = keyof typeof springs;
@@ -487,6 +496,25 @@ export const SHARED_ELEMENTS = {
    *  opens. A circle growing into a circle is also the cheapest possible
    *  matched geometry, which is why the audit put it third. */
   personAvatar: "hybrid-person-avatar",
+  /** A CALENDAR DAY CELL ⇄ the day-detail card it selects.
+   *
+   *  The one pair whose two ends live on the SAME screen: tapping a day swaps
+   *  which day the detail panel describes, so the "navigation" is a state
+   *  change the shell never sees. The cell is the source frame and the detail
+   *  card is the destination — the audit's own prescription ("the day cell →
+   *  the detail card's frame"), because what you selected is a REGION of the
+   *  month, and the region should be seen arriving where its contents land. */
+  calendarDay: "hybrid-calendar-day",
+  /** The PR BADGE on an exercise card ⇄ the trophy chip in the finish summary.
+   *
+   *  The badge appears on the card the moment the record set is banked (core
+   *  `livePrLifts`), and when the workout ends it FLIES into the summary's
+   *  trophy chip instead of one trophy vanishing and another appearing — the
+   *  handoff the wave-3 list called "the keyframes exist, only the handoff is
+   *  missing". One badge flies: the heaviest record's (prs[0]), the same one
+   *  the celebration headlines. Like calendarDay this pair never crosses a
+   *  navigation — finishing is a state swap inside the logger screen. */
+  prBadge: "hybrid-pr-badge",
 } as const;
 
 export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELEMENTS];
@@ -496,14 +524,20 @@ export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELE
    ──────────────────────────────────────────────────────────────────────── */
 
 /**
- * The bottom-nav destinations, in BAR ORDER (Today – Nutrition – [Train] – More
- * – Profile). Moving between two of these is a SIBLING move and travels
- * horizontally in this order; anything else is a drill-down.
+ * The bottom-nav destinations, in BAR ORDER: the capsule's four places
+ * (Today – Nutrition – Messages – Profile, nav-bar.ts AURORA_NAV_TABS) and then
+ * Train, whose action circle sits detached to the capsule's right. Moving
+ * between two of these is a SIBLING move and travels horizontally in this
+ * order; anything else is a drill-down.
  *
  * Kept here rather than in nav.ts because it is the *motion* ordering (what sits
- * left of what on screen), not the nav taxonomy.
+ * left of what on screen), not the nav taxonomy. It still has to FOLLOW the
+ * bar: this list once kept ranking the retired More tab and did not rank
+ * Messages after it took More's slot, so Today ⇄ Messages — two roots sitting
+ * beside each other in the capsule — animated as a drill-down on web while the
+ * native bar swapped them as siblings.
  */
-export const NAV_ROOT_ORDER = ["today", "nutrition", "train", "more", "profile"] as const;
+export const NAV_ROOT_ORDER = ["today", "nutrition", "messages", "profile", "train"] as const;
 
 /** Aliases so a client's own screen id resolves to its nav root. */
 // The social screens (feed / discover / coaches / leaderboard) used to alias to

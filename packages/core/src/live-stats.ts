@@ -75,6 +75,29 @@ export function liveSessionStats(
   return { exercises, sets, volume, prs, cardioPrs };
 }
 
+/**
+ * The LIFTS that have set a new record so far this session, heaviest-first —
+ * the per-lift half of the scoreboard's `prs` count, for the badge that sits
+ * on the exercise card the moment the record set is banked (and then flies
+ * into the finish summary — SHARED_ELEMENTS.prBadge). One helper so the two
+ * live loggers detect the same lifts from the same engine; `prs[0]`'s lift
+ * here is the same record the celebration headlines.
+ */
+export function livePrLifts(
+  blocks: SessionBlock[],
+  prior: LoggedSession[] = [],
+  opts: { bodyweightKg?: number | null } = {},
+): string[] {
+  if (!prior.length) return [];
+  const live: LoggedSession = {
+    id: "live",
+    title: "",
+    startedAt: new Date().toISOString(),
+    blocks,
+  };
+  return newPrsInSession(live, prior, opts.bodyweightKg).map((h) => h.lift);
+}
+
 /** The editor-side set shape both live loggers hold (a StrengthSet plus the
  *  in-progress `done` flag). Kept structural so either client's state fits. */
 export interface LiveSetInput {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, ScrollView, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { LEADERBOARD_METRICS, seedPerson, userPagePath, type LeaderboardMetric } from "@hybrid/core";
-import { Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
+import { LoadSwap, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -48,7 +48,10 @@ export default function LeaderboardScreen() {
           {LEADERBOARD_METRICS.map((m) => <AChip key={m.key} label={m.label} selected={metric === m.key} onPress={() => setMetric(m.key as LeaderboardMetric)} />)}
         </ScrollView>
       </View>
-      {!board ? <Loading /> : board.length <= 1 ? (
+      {/* The board's flex:1 has to survive the hand-over, or the list loses its
+          height while the placeholder fades — so the swap carries it. */}
+      <LoadSwap loading={!board} fill style={{ flex: 1 }}>
+        {() => !board ? null : board.length <= 1 ? (
         <View style={{ paddingHorizontal: 18 }}>
           <Empty title={t("w.social.noFriends")} sub={t("w.social.noFriendsSub")} />
         </View>
@@ -66,6 +69,7 @@ export default function LeaderboardScreen() {
           />
         </ACard>
       )}
+      </LoadSwap>
     </AuroraScreen>
   );
 }

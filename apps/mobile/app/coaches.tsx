@@ -47,50 +47,56 @@ function Storefront() {
     setEnroll(await getEnrollments());
   };
   useEffect(() => { load(); }, []);
-  if (!data) return <Loading />;
-  if (!data.isCoach) return <Empty title={t("w.coaches.coachesOnly")} sub={t("w.coaches.coachesOnlySub")} />;
-  const inp = { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 14, marginBottom: 12 } as const;
-
   return (
-    <View>
-      {!data.handle && <ACard style={cardStack}><Text style={{ color: txt(C, C.amber) }}>⚠ {t("w.coaches.claimHandle")}</Text></ACard>}
-      <ACard style={cardStack}>
-        <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 12 }}>{t("w.coaches.yourStorefront")}</Text>
-        <TextInput value={form.headline} onChangeText={(v) => setForm({ ...form, headline: v })} placeholder={t("w.coaches.headline")} placeholderTextColor={C.ash} style={inp} />
-        <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline placeholder={t("w.coaches.bio")} placeholderTextColor={C.ash} style={{ ...inp, minHeight: 70 }} />
-        <TextInput value={form.specialties} onChangeText={(v) => setForm({ ...form, specialties: v })} placeholder={t("w.coaches.specialties")} placeholderTextColor={C.ash} style={inp} />
-        <TextInput value={form.sports} onChangeText={(v) => setForm({ ...form, sports: v })} placeholder={t("w.coaches.sports")} placeholderTextColor={C.ash} style={inp} />
-        <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder={t("w.coaches.pricingNote")} placeholderTextColor={C.ash} style={inp} />
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.acceptingClients")}</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel={t("w.coaches.acceptingClients")} /></View>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.autoAccept")}</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel={t("w.coaches.autoAccept")} /></View>
-        <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { notify(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
-      </ACard>
+    <LoadSwap loading={!data}>
+      {() => {
+        if (!data) return null;
+        if (!data.isCoach) return <Empty title={t("w.coaches.coachesOnly")} sub={t("w.coaches.coachesOnlySub")} />;
+        const inp = { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 14, marginBottom: 12 } as const;
 
-      <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.programsCount")} ({programs.length})</Text>
-      <ACard style={cardStack}>
-        {programs.length === 0 ? <Empty title={t("w.coaches.noPrograms")} sub={t("w.coaches.noProgramsSub")} /> : programs.map((p) => (
-          <View key={p.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-            <View><Text style={{ color: C.chalk, fontWeight: "600" }}>{p.name}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{p.goal ?? "—"}</Text></View>
-            <SButton label={p.published ? `${t("w.coaches.published")} ✓` : t("w.coaches.publish")} ghost={!p.published} small onPress={async () => { await patchProgram(p.id, { published: !p.published }); load(); }} />
+        return (
+          <View>
+            {!data.handle && <ACard style={cardStack}><Text style={{ color: txt(C, C.amber) }}>⚠ {t("w.coaches.claimHandle")}</Text></ACard>}
+            <ACard style={cardStack}>
+              <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginBottom: 12 }}>{t("w.coaches.yourStorefront")}</Text>
+              <TextInput value={form.headline} onChangeText={(v) => setForm({ ...form, headline: v })} placeholder={t("w.coaches.headline")} placeholderTextColor={C.ash} style={inp} />
+              <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline placeholder={t("w.coaches.bio")} placeholderTextColor={C.ash} style={{ ...inp, minHeight: 70 }} />
+              <TextInput value={form.specialties} onChangeText={(v) => setForm({ ...form, specialties: v })} placeholder={t("w.coaches.specialties")} placeholderTextColor={C.ash} style={inp} />
+              <TextInput value={form.sports} onChangeText={(v) => setForm({ ...form, sports: v })} placeholder={t("w.coaches.sports")} placeholderTextColor={C.ash} style={inp} />
+              <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder={t("w.coaches.pricingNote")} placeholderTextColor={C.ash} style={inp} />
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.acceptingClients")}</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel={t("w.coaches.acceptingClients")} /></View>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.autoAccept")}</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel={t("w.coaches.autoAccept")} /></View>
+              <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { notify(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
+            </ACard>
+
+            <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.programsCount")} ({programs.length})</Text>
+            <ACard style={cardStack}>
+              {programs.length === 0 ? <Empty title={t("w.coaches.noPrograms")} sub={t("w.coaches.noProgramsSub")} /> : programs.map((p) => (
+                <View key={p.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                  <View><Text style={{ color: C.chalk, fontWeight: "600" }}>{p.name}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{p.goal ?? "—"}</Text></View>
+                  <SButton label={p.published ? `${t("w.coaches.published")} ✓` : t("w.coaches.publish")} ghost={!p.published} small onPress={async () => { await patchProgram(p.id, { published: !p.published }); load(); }} />
+                </View>
+              ))}
+            </ACard>
+
+            {enroll.incoming?.length > 0 && (
+              <>
+                <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.enrolmentRequests")}</Text>
+                <ACard style={cardStack}>
+                  {enroll.incoming.map((e: EnrollmentRow) => (
+                    <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                      <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
+                      <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontWeight: "600" }}>{e.client?.displayName || `@${e.client?.handle}`}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{e.programName} – {e.status}</Text></View>
+                      {e.status === "requested" && <View style={{ flexDirection: "row", gap: 6 }}><SButton label={t("w.coaches.accept")} small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "accept" }); load(); }} /><SButton label={t("w.coaches.decline")} ghost small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "decline" }); load(); }} /></View>}
+                    </View>
+                  ))}
+                </ACard>
+              </>
+            )}
           </View>
-        ))}
-      </ACard>
-
-      {enroll.incoming?.length > 0 && (
-        <>
-          <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", marginTop: 18, marginBottom: 8 }}>{t("w.coaches.enrolmentRequests")}</Text>
-          <ACard style={cardStack}>
-            {enroll.incoming.map((e: EnrollmentRow) => (
-              <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
-                <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontWeight: "600" }}>{e.client?.displayName || `@${e.client?.handle}`}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{e.programName} – {e.status}</Text></View>
-                {e.status === "requested" && <View style={{ flexDirection: "row", gap: 6 }}><SButton label={t("w.coaches.accept")} small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "accept" }); load(); }} /><SButton label={t("w.coaches.decline")} ghost small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "decline" }); load(); }} /></View>}
-              </View>
-            ))}
-          </ACard>
-        </>
-      )}
-    </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 

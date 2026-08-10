@@ -77,10 +77,23 @@ describe("springs", () => {
     // The rule from the motion spec: nothing over 450ms. The zoom is the
     // longest and earns it by moving the largest distance. This test caught the
     // first cut of these tokens at 521ms (slide) and 641ms (zoom).
+    //
+    // `pop` is the one sanctioned exception — the audit's grid reserves the
+    // tier past the ceiling for CELEBRATION only, and the finish card is the
+    // only celebration. It gets its own ceiling below rather than a free pass.
     for (const [name, s] of Object.entries(springs)) {
+      if (name === "pop") continue;
       expect(springDurationMs(s), `${name} settles too slowly`).toBeLessThanOrEqual(450);
     }
     expect(springDurationMs(springs.zoom)).toBeGreaterThan(springDurationMs(springs.slide));
+  });
+
+  it("holds the celebration pop to the celebration tier, not forever", () => {
+    // Past the ordinary ceiling by design (a win is allowed to take its time),
+    // but still bounded: the PR reveal's own keyframes sit at ~800ms and the
+    // pop must not out-linger the confetti it introduces.
+    expect(springDurationMs(springs.pop)).toBeGreaterThan(450);
+    expect(springDurationMs(springs.pop)).toBeLessThanOrEqual(700);
   });
 });
 
@@ -137,6 +150,11 @@ describe("screenTransition", () => {
     expect(screenTransition("nutrition", "today")).toEqual({ kind: "sibling", dir: -1 });
     expect(screenTransition("today", "profile")).toEqual({ kind: "sibling", dir: 1 });
     expect(screenTransition("profile", "nutrition")).toEqual({ kind: "sibling", dir: -1 });
+    // Messages took More's capsule slot; the motion order has to follow the bar
+    // (it once didn't, and Today ⇄ Messages drilled down instead of sliding).
+    expect(screenTransition("today", "messages")).toEqual({ kind: "sibling", dir: 1 });
+    expect(screenTransition("messages", "nutrition")).toEqual({ kind: "sibling", dir: -1 });
+    expect(NAV_ROOT_ORDER.indexOf("more" as never)).toBe(-1);
   });
 
   it("resolves client-specific ids onto their nav root", () => {

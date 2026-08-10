@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, Mono, Chip, Loading, LoadSwap, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Intro, ErrorNote, Input, PillBtn, FilterGroup, KV } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -102,12 +102,9 @@ function AccountsTab() {
         placeholder="Search email or name…"
       />
 
-      {data === null ? (
-        loading ? (
-          <Loading />
-        ) : (
-          <Mono color={palette.ash}>Couldn&apos;t load users — try again.</Mono>
-        )
+      <LoadSwap loading={data === null && loading}>
+        {() => data === null ? (
+        <Mono color={palette.ash}>Couldn&apos;t load users — try again.</Mono>
       ) : data.users.length === 0 ? (
         <Mono color={palette.ash}>{loading ? "Loading…" : "No users match."}</Mono>
       ) : (
@@ -143,6 +140,7 @@ function AccountsTab() {
           </View>
         ))
       )}
+      </LoadSwap>
 
       {data && data.pages > 1 && (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
@@ -232,116 +230,116 @@ function UserDetail({
     }
   };
 
-  if (!d)
-    return (
-      <ACard style={[cardStack, { marginTop: -4 }]}>
-        <Loading />
-      </ACard>
-    );
-
   return (
-    <ACard accent={palette.amber} style={[cardStack, { marginTop: -4 }]}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <View style={{ flexShrink: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
-            User record
-          </Text>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>{d.name || "—"}</Text>
-          <Mono color={palette.ash}>{d.email}</Mono>
-        </View>
-        <Pressable onPress={onClose} hitSlop={10}>
-          <Mono color={palette.ash}>Close</Mono>
-        </Pressable>
-      </View>
+    <LoadSwap loading={!d} placeholder={<ACard style={[cardStack, { marginTop: -4 }]}><Loading /></ACard>}>
+      {() => {
+        if (!d) return null;
+        return (
+          <ACard accent={palette.amber} style={[cardStack, { marginTop: -4 }]}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <View style={{ flexShrink: 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
+                  User record
+                </Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>{d.name || "—"}</Text>
+                <Mono color={palette.ash}>{d.email}</Mono>
+              </View>
+              <Pressable onPress={onClose} hitSlop={10}>
+                <Mono color={palette.ash}>Close</Mono>
+              </Pressable>
+            </View>
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12, marginBottom: 16 }}>
-        <Chip color={roleColor[d.role] ?? palette.chalk}>{d.role}</Chip>
-        <Chip color={d.linkedAuth ? palette.lime : palette.ash}>{d.linkedAuth ? "auth linked" : "no auth"}</Chip>
-        <Chip color={palette.blue}>joined {fmt(d.createdAt)}</Chip>
-        {d.lastActiveAt ? <Chip color={palette.chalk}>last active {fmt(d.lastActiveAt)}</Chip> : null}
-      </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12, marginBottom: 16 }}>
+              <Chip color={roleColor[d.role] ?? palette.chalk}>{d.role}</Chip>
+              <Chip color={d.linkedAuth ? palette.lime : palette.ash}>{d.linkedAuth ? "auth linked" : "no auth"}</Chip>
+              <Chip color={palette.blue}>joined {fmt(d.createdAt)}</Chip>
+              {d.lastActiveAt ? <Chip color={palette.chalk}>last active {fmt(d.lastActiveAt)}</Chip> : null}
+            </View>
 
-      {/* activity counts */}
-      <View>
-        {Object.entries(d.counts).map(([k, v]) => (
-          <KV key={k} k={k.replace(/([A-Z])/g, " $1")} v={v} />
-        ))}
-      </View>
+            {/* activity counts */}
+            <View>
+              {Object.entries(d.counts).map(([k, v]) => (
+                <KV key={k} k={k.replace(/([A-Z])/g, " $1")} v={v} />
+              ))}
+            </View>
 
-      {d.orgs.length > 0 && (
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
-            Organizations
-          </Text>
-          {d.orgs.map((o) => (
-            <KV key={o.id} k={o.name} v={o.role} />
-          ))}
-        </View>
-      )}
+            {d.orgs.length > 0 && (
+              <View style={{ marginTop: 16 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
+                  Organizations
+                </Text>
+                {d.orgs.map((o) => (
+                  <KV key={o.id} k={o.name} v={o.role} />
+                ))}
+              </View>
+            )}
 
-      {/* role / language editor */}
-      <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
-          Manage access
-        </Text>
+            {/* role / language editor */}
+            <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 16 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
+                Manage access
+              </Text>
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Role</Text>
-        <FilterGroup<RoleVal>
-          options={[
-            { value: "CLIENT", label: "Client" },
-            { value: "COACH", label: "Coach" },
-            { value: "ADMIN", label: "Admin" },
-          ]}
-          value={role}
-          onChange={setRole}
-        />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Role</Text>
+              <FilterGroup<RoleVal>
+                options={[
+                  { value: "CLIENT", label: "Client" },
+                  { value: "COACH", label: "Coach" },
+                  { value: "ADMIN", label: "Admin" },
+                ]}
+                value={role}
+                onChange={setRole}
+              />
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Language</Text>
-        <FilterGroup<LangVal>
-          options={[
-            { value: "en", label: "EN" },
-            { value: "pl", label: "PL" },
-            { value: "de", label: "DE" },
-          ]}
-          value={language}
-          onChange={setLanguage}
-        />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginBottom: 4 }}>Language</Text>
+              <FilterGroup<LangVal>
+                options={[
+                  { value: "en", label: "EN" },
+                  { value: "pl", label: "PL" },
+                  { value: "de", label: "DE" },
+                ]}
+                value={language}
+                onChange={setLanguage}
+              />
 
-        {msg ? (
-          <View accessibilityLiveRegion={msg.ok ? "polite" : "assertive"} accessibilityRole={msg.ok ? undefined : "alert"}>
-            <Mono color={msg.ok ? palette.lime : palette.red} style={{ marginBottom: 10 }}>
-              {msg.text}
-            </Mono>
-          </View>
-        ) : null}
+              {msg ? (
+                <View accessibilityLiveRegion={msg.ok ? "polite" : "assertive"} accessibilityRole={msg.ok ? undefined : "alert"}>
+                  <Mono color={msg.ok ? palette.lime : palette.red} style={{ marginBottom: 10 }}>
+                    {msg.text}
+                  </Mono>
+                </View>
+              ) : null}
 
-        <PillBtn
-          label={saving ? "Saving…" : "Save changes"}
-          onPress={save}
-          color={palette.amber}
-          disabled={!dirty || saving}
-        />
-      </View>
+              <PillBtn
+                label={saving ? "Saving…" : "Save changes"}
+                onPress={save}
+                color={palette.amber}
+                disabled={!dirty || saving}
+              />
+            </View>
 
-      {/* danger zone */}
-      <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: `${palette.red}44`, paddingTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
-          Danger zone
-        </Text>
-        <Mono color={palette.ash} style={{ lineHeight: 18, marginBottom: 12 }}>
-          Permanently delete this account and everything attached to it — sessions, check-ins, memberships. This cannot
-          be undone.
-        </Mono>
-        <PillBtn
-          label={deleting ? "Deleting…" : "Delete account"}
-          onPress={remove}
-          color={palette.red}
-          outline
-          disabled={deleting}
-          busy={deleting}
-        />
-      </View>
-    </ACard>
+            {/* danger zone */}
+            <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: `${palette.red}44`, paddingTop: 16 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
+                Danger zone
+              </Text>
+              <Mono color={palette.ash} style={{ lineHeight: 18, marginBottom: 12 }}>
+                Permanently delete this account and everything attached to it — sessions, check-ins, memberships. This cannot
+                be undone.
+              </Mono>
+              <PillBtn
+                label={deleting ? "Deleting…" : "Delete account"}
+                onPress={remove}
+                color={palette.red}
+                outline
+                disabled={deleting}
+                busy={deleting}
+              />
+            </View>
+          </ACard>
+        );
+      }}
+    </LoadSwap>
   );
 }
 

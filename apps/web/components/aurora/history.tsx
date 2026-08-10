@@ -2,7 +2,9 @@
 
 import { accentText, CARD_PAD } from "@/lib/ui";
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { fs, space, fmtKm, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type MoodDef } from "@hybrid/core";
+import { fs, space, fmtKm, sessionVolume, prsForSession, blockSummary, fmtTonnage, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type MoodDef } from "@hybrid/core";
+import { haptic } from "@/lib/haptics";
+import { toast } from "./toast";
 import { useLoggerPrefs } from "@/lib/logger-prefs";
 import { useBodyweightLookup } from "@/lib/use-bodyweight";
 import { usePlanOverrides } from "@/lib/plan-overrides";
@@ -109,17 +111,17 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
     setBusy(id);
     try {
       const res = await fetch(`/api/sessions/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ archived: value }) });
-      if (!res.ok) { alert(`${t("w.analyze.hist.couldntPre")} ${value ? t("w.analyze.hist.confirmArchive") : t("w.analyze.hist.confirmRestore")} ${t("w.analyze.hist.couldntTail")}`); return; }
+      if (!res.ok) { toast(`${t("w.analyze.hist.couldntPre")} ${value ? t("w.analyze.hist.confirmArchive") : t("w.analyze.hist.confirmRestore")} ${t("w.analyze.hist.couldntTail")}`, "error"); return; }
       // Only refresh the archived list when it's on screen — toggleArchived
       // loads it fresh anyway, so archiving from live needn't prefetch it.
       onChanged?.(); if (showArchived) await loadArchived();
-    } catch { alert(t("w.analyze.hist.networkError")); } finally { setBusy(null); }
+    } catch { toast(t("w.analyze.hist.networkError"), "error"); } finally { setBusy(null); }
   };
   const remove = async (id: string, title: string) => {
     if (!window.confirm(`${t("w.analyze.hist.confirmDeletePre")}${title}${t("w.analyze.hist.confirmDeleteTail")}`)) return;
     setBusy(id);
-    try { const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" }); if (!res.ok) { alert(t("w.analyze.hist.couldntDelete")); return; } onChanged?.(); if (showArchived) await loadArchived(); }
-    catch { alert(t("w.analyze.hist.networkError")); } finally { setBusy(null); }
+    try { const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" }); if (!res.ok) { toast(t("w.analyze.hist.couldntDelete"), "error"); return; } onChanged?.(); if (showArchived) await loadArchived(); }
+    catch { toast(t("w.analyze.hist.networkError"), "error"); } finally { setBusy(null); }
   };
   const toggleArchived = () => { const next = !showArchived; setShowArchived(next); if (next) void loadArchived(); };
 
@@ -224,17 +226,29 @@ export default function AuroraHistory({ sessions, planId, planStartedAt, initial
 /** A card whose manage actions are revealed by dragging it left (pointer or
  *  touch). Opaque surface so the actions don't bleed through; a tap while open
  *  closes the reveal (the card itself doesn't open anything — archived
- *  breakdowns aren't openable). */
+ *  breakdowns aren't openable).
+ *
+ *  The PHYSICS are the shared swipe rules from @hybrid/core, same as SwipeRow:
+ *  release decides on the velocity PROJECTION rather than displacement, travel
+ *  rubber-bands past the action width, and the settle rides `springs.slide` —
+ *  this card was the last swipe surface on a hand-tuned curve. The geometry
+ *  (104px tiles, several of them) stays this card's own: unlike SwipeRow it
+ *  can reveal more than one action, so its open position is not `swipe.action`. */
 function SwipeCard({ actions, busy, children }: { actions: SwipeAction[]; busy: boolean; children: ReactNode }) {
   const TILE = 104;
   const reveal = TILE * actions.length;
   const [tx, setTx] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const drag = useRef({ x0: 0, base: 0, active: false, moved: false });
+  const drag = useRef({ x0: 0, base: 0, active: false, moved: false, t: 0, last: 0, v: 0 });
   const openRef = useRef(false);
 
+  const settle = (open: boolean) => {
+    if (open !== openRef.current) haptic.light();
+    openRef.current = open;
+    setTx(open ? -reveal : 0);
+  };
   const down = (e: React.PointerEvent) => {
-    drag.current = { x0: e.clientX, base: tx, active: true, moved: false };
+    drag.current = { x0: e.clientX, base: tx, active: true, moved: false, t: performance.now(), last: e.clientX, v: 0 };
     setDragging(true);
     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
   };
@@ -242,16 +256,23 @@ function SwipeCard({ actions, busy, children }: { actions: SwipeAction[]; busy: 
     const d = drag.current; if (!d.active) return;
     const dx = e.clientX - d.x0;
     if (Math.abs(dx) > 5) d.moved = true;
-    setTx(Math.max(-reveal, Math.min(0, d.base + dx)));
+    // Track velocity in px/s for the projected release.
+    const now = performance.now();
+    const dt = Math.max(1, now - d.t);
+    d.v = ((e.clientX - d.last) / dt) * 1000;
+    d.t = now;
+    d.last = e.clientX;
+    setTx(Math.min(0, rubberBand(d.base + dx, reveal)));
   };
-  const up = () => {
+  const up = (e: React.PointerEvent) => {
     const d = drag.current; if (!d.active) return;
     d.active = false; setDragging(false);
-    setTx((cur) => { const willOpen = cur < -reveal / 2; openRef.current = willOpen; return willOpen ? -reveal : 0; });
+    const raw = Math.min(0, rubberBand(d.base + (e.clientX - d.x0), reveal));
+    settle(projectSwipe(raw, d.v) < -reveal * swipe.openAt);
   };
   const onClick = () => {
     if (drag.current.moved) return; // a drag, not a tap
-    if (openRef.current) { openRef.current = false; setTx(0); }
+    if (openRef.current) settle(false);
   };
 
   return (
@@ -277,7 +298,7 @@ function SwipeCard({ actions, busy, children }: { actions: SwipeAction[]; busy: 
           onPointerUp={up}
           onPointerCancel={up}
           onClick={onClick}
-          style={{ transform: `translateX(${tx}px)`, transition: dragging ? "none" : "transform .25s cubic-bezier(.22,1,.36,1)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD, cursor: "default", touchAction: "pan-y", userSelect: "none" }}
+          style={{ transform: `translateX(${tx}px)`, transition: dragging ? "none" : "transform var(--d-slide) var(--e-slide)", background: C("ink2"), border: `1px solid ${C("line")}`, borderRadius: 28, padding: CARD_PAD, cursor: "default", touchAction: "pan-y", userSelect: "none" }}
         >
           {children}
         </div>

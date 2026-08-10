@@ -8,6 +8,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import { haptic } from "../lib/haptics";
 import { animateListChange } from "../lib/list-motion";
+import { useSharedSurfaceSource, useSharedSurfaceTarget } from "../lib/shared-element";
 import {
   needsBodyweight,
   prescribeSession,
@@ -84,6 +85,10 @@ import {
   quickCheckinFeeling,
   localDayKey,
   localTodayKey,
+  springs,
+  springToRN,
+  livePrLifts,
+  SHARED_ELEMENTS,
   type ReadinessFeeling,
 } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
@@ -909,6 +914,14 @@ export default function Workout() {
   // shared core helper (same numbers the finish summary + share card show).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const live = useMemo(() => liveSessionStats(buildBlocks(), prior.current, { bodyweightKg }), [exercises, bodyweightKg]);
+  // Which LIFTS are records so far — the per-lift half of `live.prs`, for the
+  // PR badge on the matching exercise card (and the finish flight it seeds).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const prLifts = useMemo(() => livePrLifts(buildBlocks(), prior.current, { bodyweightKg }), [exercises, bodyweightKg]);
+  // The badge nodes by lift, so finish() can arm the record's badge as the
+  // source of the prBadge flight into the summary's trophy chip.
+  const prBadgeRefs = useRef<Record<string, View | null>>({});
+  const armPrBadge = useSharedSurfaceSource();
 
   // Nudge to set a bodyweight when the session has a bodyweight lift (dips,
   // pull-ups…) and none is on file — otherwise its tonnage reads 0.
@@ -977,6 +990,20 @@ export default function Workout() {
       .map(([name, weight]) => ({ name, weight, pr: prSet.has(name) }))
       .sort((a, b) => b.weight - a.weight);
 
+    // The record lift's badge flies into the summary's trophy chip
+    // (SHARED_ELEMENTS.prBadge). Armed HERE, after the awaited save and
+    // immediately before the phase swap — the arm has a 1.2s TTL, and a save
+    // round-trip from the finish tap can outlive it. prs[0] is the heaviest
+    // record, the same one the celebration headlines.
+    if (prs.length > 0) {
+      const lift = prs[0]!.lift;
+      armPrBadge(SHARED_ELEMENTS.prBadge, prBadgeRefs.current[lift] ?? null, (
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, flex: 1, backgroundColor: withAlpha(C.lime, 0.16), borderWidth: 1, borderColor: C.lime, borderRadius: 999 }}>
+          <AuroraIcon name="trophy" size={11} color={txt(C, C.lime)} />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>PR</Text>
+        </View>
+      ));
+    }
     setSummary({
       sessionId,
       title: payload.title,
@@ -1273,6 +1300,16 @@ export default function Workout() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
               )}
               <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }} />
+              {prLifts.includes(x.name) && (
+                // A record was set on this lift THIS session — the badge
+                // appears the moment the record set banks, and flies into the
+                // finish summary's trophy chip when the workout ends
+                // (SHARED_ELEMENTS.prBadge; finish() arms this node).
+                <View ref={(r) => { prBadgeRefs.current[x.name] = r; }} collapsable={false} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: withAlpha(C.lime, 0.16), borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+                  <AuroraIcon name="trophy" size={11} color={txt(C, C.lime)} />
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>PR</Text>
+                </View>
+              )}
               {/* Superset with the exercise BELOW — placed on the upper card so
                   even the FIRST exercise can start a superset (no rest between). */}
               {x.kind === "strength" && exercises[xi + 1]?.kind === "strength" && (() => {
@@ -1987,6 +2024,11 @@ function Summary({
   const C = useTheme().palette;
   const aurora = useTemplate().template === "aurora";
   const R = auroraRadii(aurora);
+  // THE TROPHY CHIP — where the record lift's PR badge LANDS
+  // (SHARED_ELEMENTS.prBadge): the badge that appeared on the exercise card
+  // when the record set banked flies here, so the win arrives carried rather
+  // than re-announced. "" declines the pair when nothing recorded.
+  const { ref: prChipRef } = useSharedSurfaceTarget(summary.prs.length ? SHARED_ELEMENTS.prBadge : "");
   const bodyweightKg = useBodyweightLookup()();
   const bwLookup = useBodyweightLookup();
   // "vs your usual" on the feel prompt — the athlete against THEMSELVES over the
@@ -2044,7 +2086,7 @@ function Summary({
       }
     }
     Animated.parallel([
-      Animated.spring(pop, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
+      Animated.spring(pop, { toValue: 1, ...springToRN(springs.pop), useNativeDriver: true }),
       Animated.timing(fade, { toValue: 1, duration: 320, useNativeDriver: true }),
     ]).start();
     return () => { if (knock) clearTimeout(knock); };
@@ -2118,6 +2160,15 @@ function Summary({
           a11y={t("summary.doneToday")}
           onPress={() => router.replace(summary.guest ? "/welcome" : "/(tabs)")}
         />
+
+        {summary.prs.length > 0 && (
+          <View style={{ alignItems: "center", marginTop: 10 }}>
+            <View ref={prChipRef} collapsable={false} style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: withAlpha(C.lime, 0.16), borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 }}>
+              <AuroraIcon name="trophy" size={13} color={txt(C, C.lime)} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{summary.prs[0]!.lift} PR</Text>
+            </View>
+          </View>
+        )}
 
         {/* The floating card IS the screen — the real 9:16 story (what you see
             is what you share). Swipe for slides; TAP to cycle the wrapped look

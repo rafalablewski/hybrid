@@ -4,7 +4,7 @@ import { athleteSegment, SEGMENT_LABELS, type AthleteSegment } from "@hybrid/cor
 import { fetchSquad, type SquadRow, type SquadSummary } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE, Loading } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE, Loading, LoadSwap } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—");
@@ -77,95 +77,97 @@ export default function AuroraTeamMonitor() {
 
   const SEGS: (AthleteSegment | "all")[] = ["all", "needs-attention", "dormant", "new", "on-track"];
 
-  const body = () => {
-    if (loading) {
-      return (
-        <Loading />
-      );
-    }
-    if (squad.length === 0) {
-      return (
-        <ACard style={{ marginTop: space.md }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.monitor.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.monitor.emptyBody")}</Text>
-        </ACard>
-      );
-    }
-    return (
-      <>
-        {summary ? (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: space.md }}>
-            <SummaryCard C={C} label={t("w.teams.monitor.athletes")} value={summary.athletes} color={C.chalk} />
-            <SummaryCard C={C} label={t("w.teams.monitor.lowReadiness")} value={summary.redReadiness} color={summary.redReadiness ? txt(C, C.red) : txt(C, C.lime)} />
-            <SummaryCard C={C} label={t("w.teams.monitor.acwrFlags")} value={summary.acwrFlags} color={summary.acwrFlags ? txt(C, C.amber) : txt(C, C.lime)} />
-            <SummaryCard C={C} label={t("w.teams.monitor.injuryFlags")} value={summary.injuryFlags} color={summary.injuryFlags ? txt(C, C.red) : txt(C, C.lime)} />
-          </View>
-        ) : null}
-
-        <Text style={kicker(C)}>{t("w.teams.monitor.segment")}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
-          {SEGS.map((s) => (
-            <AChip key={s} selected={seg === s} onPress={() => setSeg(s)}
-              label={s === "all" ? `${t("w.teams.monitor.all")} ${squad.length}` : `${SEGMENT_LABELS[s as AthleteSegment]} ${counts[s] ?? 0}`} />
-          ))}
-        </ScrollView>
-
-        {allTags.length > 0 ? (
-          <>
-            <Text style={kicker(C)}>{t("w.teams.monitor.tag")}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
-              <AChip selected={tag === ""} onPress={() => setTag("")} label={t("w.teams.monitor.all")} />
-              {allTags.map((tg) => (
-                <AChip key={tg} selected={tag === tg} onPress={() => setTag(tg)} label={tg} />
-              ))}
-            </ScrollView>
-          </>
-        ) : null}
-
-        <Text style={kicker(C)}>{t("w.teams.monitor.sortBy")}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
-          {(["readiness", "acwr", "risk"] as const).map((k) => (
-            <AChip key={k} selected={sort === k} onPress={() => setSort(k)} label={t(`w.teams.monitor.sort.${k}`)} />
-          ))}
-        </ScrollView>
-
-        {sorted.map((a) => {
-          const s = segOf(a);
+  // The placeholder hands over to whatever lands — the empty state or the
+  // real thing. `body` was already a function, which is exactly the shape
+  // LoadSwap's lazy children want, so nothing here had to move.
+  const body = () => (
+    <LoadSwap loading={loading}>
+      {() => {
+        if (squad.length === 0) {
           return (
-            <ACard key={a.linkId} style={{ marginTop: space.ms }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
-                <Chip color={segColor(s)}>{SEGMENT_LABELS[s]}</Chip>
-              </View>
-
-              {(a.tags ?? []).length > 0 ? (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
-                  {a.tags!.map((tg) => <Chip key={tg} color={txt(C, C.blue)}>{tg}</Chip>)}
-                </View>
-              ) : null}
-
-              <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10 }}>
-                {/* a SEMANTIC RAG status dot — kept by the no-decorative-dot rule */}
-                <Metric C={C} label={t("w.teams.monitor.thReadiness")} value={String(a.readiness)} color={readinessColor(a.readiness)} dot />
-                <Metric C={C} label="ACWR" value={a.acwr ? String(a.acwr) : "—"} sub={a.acwrBand} color={acwrColor(a.acwrBand)} />
-                <Metric C={C} label={t("w.teams.monitor.thAcuteLoad")} value={a.acute ? String(a.acute) : "—"} color={C.chalk} />
-                <Metric C={C} label={t("w.teams.monitor.thInjuryRisk")} value={String(a.riskOverall)} sub={a.flagged ?? undefined} color={riskColor(a.riskOverall)} />
-                <Metric C={C} label="HPI" value={String(a.hpi)} color={C.chalk} />
-                <Metric C={C} label={t("w.teams.monitor.thLast")} value={fmtDate(a.lastSession)} color={C.ash} />
-              </View>
+            <ACard style={{ marginTop: space.md }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.monitor.emptyTitle")}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.monitor.emptyBody")}</Text>
             </ACard>
           );
-        })}
+        }
+        return (
+          <>
+            {summary ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.ms, marginTop: space.md }}>
+                <SummaryCard C={C} label={t("w.teams.monitor.athletes")} value={summary.athletes} color={C.chalk} />
+                <SummaryCard C={C} label={t("w.teams.monitor.lowReadiness")} value={summary.redReadiness} color={summary.redReadiness ? txt(C, C.red) : txt(C, C.lime)} />
+                <SummaryCard C={C} label={t("w.teams.monitor.acwrFlags")} value={summary.acwrFlags} color={summary.acwrFlags ? txt(C, C.amber) : txt(C, C.lime)} />
+                <SummaryCard C={C} label={t("w.teams.monitor.injuryFlags")} value={summary.injuryFlags} color={summary.injuryFlags ? txt(C, C.red) : txt(C, C.lime)} />
+              </View>
+            ) : null}
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12, lineHeight: leading(fs.micro, "relaxed") }}>{t("w.teams.monitor.acwrNote")}</Text>
-        {/* Only when a row actually shows the dash — explain the gap so a coach
-            doesn't read it as missing data or a broken metric. */}
-        {sorted.some((a) => a.acwrBand === "insufficient") && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro, "relaxed") }}>{t("w.teams.monitor.acwrInsufficient")}</Text>
-        )}
-      </>
-    );
-  };
+            <Text style={kicker(C)}>{t("w.teams.monitor.segment")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
+              {SEGS.map((s) => (
+                <AChip key={s} selected={seg === s} onPress={() => setSeg(s)}
+                  label={s === "all" ? `${t("w.teams.monitor.all")} ${squad.length}` : `${SEGMENT_LABELS[s as AthleteSegment]} ${counts[s] ?? 0}`} />
+              ))}
+            </ScrollView>
+
+            {allTags.length > 0 ? (
+              <>
+                <Text style={kicker(C)}>{t("w.teams.monitor.tag")}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
+                  <AChip selected={tag === ""} onPress={() => setTag("")} label={t("w.teams.monitor.all")} />
+                  {allTags.map((tg) => (
+                    <AChip key={tg} selected={tag === tg} onPress={() => setTag(tg)} label={tg} />
+                  ))}
+                </ScrollView>
+              </>
+            ) : null}
+
+            <Text style={kicker(C)}>{t("w.teams.monitor.sortBy")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
+              {(["readiness", "acwr", "risk"] as const).map((k) => (
+                <AChip key={k} selected={sort === k} onPress={() => setSort(k)} label={t(`w.teams.monitor.sort.${k}`)} />
+              ))}
+            </ScrollView>
+
+            {sorted.map((a) => {
+              const s = segOf(a);
+              return (
+                <ACard key={a.linkId} style={{ marginTop: space.ms }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
+                    <Chip color={segColor(s)}>{SEGMENT_LABELS[s]}</Chip>
+                  </View>
+
+                  {(a.tags ?? []).length > 0 ? (
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+                      {a.tags!.map((tg) => <Chip key={tg} color={txt(C, C.blue)}>{tg}</Chip>)}
+                    </View>
+                  ) : null}
+
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10 }}>
+                    {/* a SEMANTIC RAG status dot — kept by the no-decorative-dot rule */}
+                    <Metric C={C} label={t("w.teams.monitor.thReadiness")} value={String(a.readiness)} color={readinessColor(a.readiness)} dot />
+                    <Metric C={C} label="ACWR" value={a.acwr ? String(a.acwr) : "—"} sub={a.acwrBand} color={acwrColor(a.acwrBand)} />
+                    <Metric C={C} label={t("w.teams.monitor.thAcuteLoad")} value={a.acute ? String(a.acute) : "—"} color={C.chalk} />
+                    <Metric C={C} label={t("w.teams.monitor.thInjuryRisk")} value={String(a.riskOverall)} sub={a.flagged ?? undefined} color={riskColor(a.riskOverall)} />
+                    <Metric C={C} label="HPI" value={String(a.hpi)} color={C.chalk} />
+                    <Metric C={C} label={t("w.teams.monitor.thLast")} value={fmtDate(a.lastSession)} color={C.ash} />
+                  </View>
+                </ACard>
+              );
+            })}
+
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12, lineHeight: leading(fs.micro, "relaxed") }}>{t("w.teams.monitor.acwrNote")}</Text>
+            {/* Only when a row actually shows the dash — explain the gap so a coach
+                doesn't read it as missing data or a broken metric. */}
+            {sorted.some((a) => a.acwrBand === "insufficient") && (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro, "relaxed") }}>{t("w.teams.monitor.acwrInsufficient")}</Text>
+            )}
+          </>
+        );
+      }}
+    </LoadSwap>
+  );
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("nav.squad") }}>

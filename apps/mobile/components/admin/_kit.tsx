@@ -3,7 +3,7 @@ import { View, Text, TextInput, ActivityIndicator, type ViewStyle } from "react-
 import { fs, space, F, Mono, PressScale, PressScale as Pressable, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "../aurora/cta-label";
-import { ACard, cardStack, RADIUS, AChip } from "../aurora/kit";
+import { ACard, AStat, cardStack, RADIUS, AChip } from "../aurora/kit";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
 // share one look (matching the web console's lib/ui primitives). Section bodies
@@ -42,16 +42,20 @@ export function ErrorNote({ error, onDismiss }: { error: string | null; onDismis
   );
 }
 
-/** A label/value stat tile (Overview/Financials/HQ). */
+/**
+ * A label/value stat tile (Overview/Financials/HQ) — the kit's `AStat`, kept
+ * behind this name so the thirty-six admin call sites read as they always did.
+ *
+ * It used to draw its own: the same anatomy at `fs.display` with an ash sub,
+ * which is how mobile ended up with a stat tile per neighbourhood while web had
+ * one for all thirty-one of its screens. Delegating means these figures ROLL
+ * like web's — and a financial dashboard is exactly where a number changing
+ * under you should be seen to change — and the sub-line picks up the shared
+ * sign rule, which is what these panels were already leaning on when they
+ * prefix a failing threshold with a minus ("−below 40").
+ */
 export function Stat({ label, value, sub, color }: { label: string; value: ReactNode; sub?: string; color?: string }) {
-  const { palette } = useTheme();
-  return (
-    <ACard style={cardStack}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: color ? txt(palette, color) : palette.chalk, marginTop: 4 }}>{value}</Text>
-      {sub ? <Mono color={palette.ash} style={{ marginTop: 2 }}>{sub}</Mono> : null}
-    </ACard>
-  );
+  return <AStat label={label} value={value} sub={sub} c={color} style={cardStack} />;
 }
 
 /** A labeled single-line/multiline text input. */

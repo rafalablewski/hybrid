@@ -30,6 +30,8 @@ import { fs, space,
   lastStrengthByLift,
   blockSummary,
   liveSessionStats,
+  livePrLifts,
+  SHARED_ELEMENTS,
   needsBodyweight,
   unitToKg,
   defaultSessionTitle,
@@ -55,6 +57,8 @@ import { shareWorkoutSlide, shareText as buildShareText, type ShareBest, type St
 import { StoryCard } from "./story-card";
 import { AuroraIcon } from "./icons";
 import RollingNumber from "./rolling-number";
+import { armSharedElement, sharedElementStyle } from "@/lib/shared-element";
+import { runStackTransition } from "@/lib/use-screen-transition";
 import Sheet from "./sheet";
 import { ArrowGlyph } from "./cta-label";
 import { useLang } from "@/lib/i18n";
@@ -268,6 +272,9 @@ export default function AuroraLogger({
   // Live in-session scoreboard — running exercises / sets / volume / PRs, off the
   // shared core helper so it matches the finish summary and the mobile logger.
   const live = useMemo(() => liveSessionStats(blocks as SessionBlock[], sessions, { bodyweightKg }), [blocks, sessions, bodyweightKg]);
+  // Which LIFTS are records so far — the per-lift half of `live.prs`, for the
+  // PR badge on the matching exercise card (and the finish flight it seeds).
+  const prLifts = useMemo(() => livePrLifts(blocks as SessionBlock[], sessions, { bodyweightKg }), [blocks, sessions, bodyweightKg]);
 
   // Nudge to set a bodyweight when the session has a bodyweight lift (dips,
   // pull-ups…) and none is on file — otherwise its tonnage reads 0.
@@ -421,11 +428,14 @@ export default function AuroraLogger({
         body: JSON.stringify(payload),
       });
       if (res.status === 401) {
+        haptic.error();
         setError(t("w.train.logger.signInSessions"));
         setSaving(false);
         return;
       }
       if (!res.ok) {
+        // The one failure that risks a whole workout — it must be felt (§15).
+        haptic.error();
         setError(`${t("w.train.logger.saveErrorPrefix")}${res.status}${t("w.train.logger.saveErrorSuffix")}`);
         setSaving(false);
         return;
@@ -461,7 +471,18 @@ export default function AuroraLogger({
       setSaving(false);
       stop(); // freeze the clock — the workout's done, the celebration is next
       clearWorkoutDraft();
-      setDone({
+      // The record lift's badge flies into the summary's trophy chip
+      // (SHARED_ELEMENTS.prBadge). Armed HERE, synchronously before the swap —
+      // startViewTransition snapshots at once, so an arm from the finish tap
+      // would be stale after the awaited save. prs[0] is the heaviest record,
+      // the same one the celebration headlines. The transition also turns the
+      // logger → summary swap into a cross-dissolve instead of the hard cut it
+      // was — the biggest moment in the app finally arrives instead of
+      // replacing the screen mid-frame.
+      if (prs.length > 0) {
+        armSharedElement(document.querySelector<HTMLElement>(`[data-pr-badge="${CSS.escape(prs[0]!.lift)}"]`), SHARED_ELEMENTS.prBadge);
+      }
+      runStackTransition(() => setDone({
         sessionId,
         title: payload.title,
         blocks: cleanBlocks,
@@ -472,8 +493,9 @@ export default function AuroraLogger({
         prs,
         cardioPrs,
         firstEver: sessions.length === 0,
-      });
+      }));
     } catch {
+      haptic.error();
       setError(t("w.train.logger.networkError"));
       setSaving(false);
     }
@@ -679,6 +701,7 @@ export default function AuroraLogger({
         lastByLift={lastByLift}
         restSec={prefs.restTimer ? prefs.restSeconds : null}
         onToggleDone={toggleDone}
+        prLifts={prLifts}
       />
 
       {error && (
@@ -879,6 +902,20 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
       <div style={{ position: "relative" }}>
         {/* The one exit — where dismissal muscle memory expects it. */}
         <FinishOrb glyph="✕" size={40} a11y={t("summary.doneToday")} onClick={onHome ?? onDone} />
+
+        {/* THE TROPHY CHIP — where the record lift's PR badge LANDS
+            (SHARED_ELEMENTS.prBadge): the badge that appeared on the exercise
+            card when the record set banked flies here, so the win arrives
+            carried rather than re-announced. Declares the name statically —
+            the logger tree (and the armed source with it) is gone from this
+            snapshot. */}
+        {prs.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
+            <span style={{ ...sharedElementStyle(SHARED_ELEMENTS.prBadge), display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "var(--font-mono)", fontSize: fs.caption, fontWeight: 700, color: accentText("lime"), background: `color-mix(in srgb, ${C("lime")} 16%, transparent)`, border: `1px solid ${C("lime")}`, borderRadius: 999, padding: "4px 12px", whiteSpace: "nowrap" }}>
+              <AuroraIcon name="trophy" size={13} color={accentText("lime")} /> {prs[0]!.lift} PR
+            </span>
+          </div>
+        )}
 
         {/* The floating card IS the screen — the real 9:16 story (what you see
             is what gets shared). Swipe for slides; TAP to cycle the wrapped

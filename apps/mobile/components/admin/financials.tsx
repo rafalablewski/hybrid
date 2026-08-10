@@ -18,7 +18,7 @@ import {
   type EntitlementCell,
 } from "@hybrid/core";
 import { adminGet } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Intro, Stat, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack, ASection, AMeter } from "../aurora/kit";
@@ -83,58 +83,63 @@ export default function AdminFinancials() {
   const reseed = () => setA({ ...DEFAULT_ASSUMPTIONS, ...(seed ?? {}) });
   const reset = () => setA(DEFAULT_ASSUMPTIONS);
 
-  if (!loaded) return <Loading />;
-
-  const h = r.health;
-  const ps = r.projectionSummary;
-  const ltvCacOk = Number.isFinite(r.ltvToCac) && r.ltvToCac >= 3;
-
-  const streamColor: Record<RevenueStreamId, string> = {
-    b2c: palette.lime, coach: palette.violet, org: palette.blue, data: palette.ash,
-  };
-
   return (
-    <View>
-      <Intro>
-        How HYBRID makes money, what it costs to run, and a live unit-economics model — seeded from
-        real platform counts, every key assumption editable. A planning tool; live charging is the
-        blocked billing capability.
-      </Intro>
+    <LoadSwap loading={!loaded}>
+      {() => {
+        if (!loaded) return null;
+        const h = r.health;
+        const ps = r.projectionSummary;
+        const ltvCacOk = Number.isFinite(r.ltvToCac) && r.ltvToCac >= 3;
 
-      {/* headline always on top */}
-      <View style={{ flexDirection: "row", gap: space.md }}>
-        <Stat label="MRR (modeled)" value={usdFull(r.revenue.total)} sub={`ARR ${usdFull(r.arr)}`} color={palette.lime} />
-        <Stat label="Gross margin" value={`${Math.round(r.grossMargin * 100)}%`}
-          sub={r.grossProfit >= 0 ? `+${usdFull(r.grossProfit)}/mo` : `−${usdFull(-r.grossProfit)}/mo`}
-          color={r.grossProfit >= 0 ? palette.lime : palette.red} />
-      </View>
-      <View style={{ flexDirection: "row", gap: space.md }}>
-        <Stat label="LTV : CAC" value={x1(r.ltvToCac)} sub={ltvCacOk ? "healthy (≥3×)" : "below 3×"} color={ltvCacOk ? palette.lime : palette.amber} />
-        <Stat label="Rule of 40" value={Math.round(h.ruleOf40).toString()} sub={h.ruleOf40 >= 40 ? "passes (≥40)" : "below 40"} color={band(palette, h.ruleOf40, 40, 25)} />
-      </View>
+        const streamColor: Record<RevenueStreamId, string> = {
+          b2c: palette.lime, coach: palette.violet, org: palette.blue, data: palette.ash,
+        };
 
-      <FilterGroup<Tab>
-        value={tab}
-        onChange={setTab}
-        options={[
-          { value: "revenue", label: "Revenue" },
-          { value: "costs", label: "Costs" },
-          { value: "calc", label: "Calculator" },
-          { value: "segments", label: "Segments" },
-          { value: "forecast", label: "Forecast" },
-        ]}
-      />
+        return (
+          <View>
+            <Intro>
+              How HYBRID makes money, what it costs to run, and a live unit-economics model — seeded from
+              real platform counts, every key assumption editable. A planning tool; live charging is the
+              blocked billing capability.
+            </Intro>
 
-      {tab === "revenue" && (
-        <RevenueTab r={r} streamColor={streamColor} showGlossary={showGlossary} setShowGlossary={setShowGlossary} />
-      )}
-      {tab === "costs" && <CostsTab r={r} agentCost={agentCost} />}
-      {tab === "calc" && (
-        <CalcTab a={a} r={r} seed={seed} seedErr={seedErr} setNum={setNum} reseed={reseed} reset={reset} />
-      )}
-      {tab === "segments" && <SegmentsTab r={r} />}
-      {tab === "forecast" && <ForecastTab r={r} a={a} h={h} ps={ps} />}
-    </View>
+            {/* headline always on top */}
+            <View style={{ flexDirection: "row", gap: space.md }}>
+              <Stat label="MRR (modeled)" value={usdFull(r.revenue.total)} sub={`ARR ${usdFull(r.arr)}`} color={palette.lime} />
+              <Stat label="Gross margin" value={`${Math.round(r.grossMargin * 100)}%`}
+                sub={r.grossProfit >= 0 ? `+${usdFull(r.grossProfit)}/mo` : `−${usdFull(-r.grossProfit)}/mo`}
+                color={r.grossProfit >= 0 ? palette.lime : palette.red} />
+            </View>
+            <View style={{ flexDirection: "row", gap: space.md }}>
+              <Stat label="LTV : CAC" value={x1(r.ltvToCac)} sub={ltvCacOk ? "healthy (≥3×)" : "below 3×"} color={ltvCacOk ? palette.lime : palette.amber} />
+              <Stat label="Rule of 40" value={Math.round(h.ruleOf40).toString()} sub={h.ruleOf40 >= 40 ? "passes (≥40)" : "below 40"} color={band(palette, h.ruleOf40, 40, 25)} />
+            </View>
+
+            <FilterGroup<Tab>
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: "revenue", label: "Revenue" },
+                { value: "costs", label: "Costs" },
+                { value: "calc", label: "Calculator" },
+                { value: "segments", label: "Segments" },
+                { value: "forecast", label: "Forecast" },
+              ]}
+            />
+
+            {tab === "revenue" && (
+              <RevenueTab r={r} streamColor={streamColor} showGlossary={showGlossary} setShowGlossary={setShowGlossary} />
+            )}
+            {tab === "costs" && <CostsTab r={r} agentCost={agentCost} />}
+            {tab === "calc" && (
+              <CalcTab a={a} r={r} seed={seed} seedErr={seedErr} setNum={setNum} reseed={reseed} reset={reset} />
+            )}
+            {tab === "segments" && <SegmentsTab r={r} />}
+            {tab === "forecast" && <ForecastTab r={r} a={a} h={h} ps={ps} />}
+          </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 
