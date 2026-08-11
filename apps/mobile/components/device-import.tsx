@@ -17,6 +17,7 @@ import { importDeviceWorkouts, type DeviceImportLanded } from "../lib/api";
 import { FeelPrompt } from "./feel-prompt";
 import { setLoggerPref, useLoggerPrefs } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
+import { haptic } from "../lib/haptics";
 import { DeviceMark } from "./aurora/device-mark";
 import { ToggleRow } from "./toggle-row";
 import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
@@ -220,12 +221,13 @@ export function DeviceImportSheet({
                     key={w.uuid}
                     onPress={() =>
                       !done &&
+                      (haptic.selection(),
                       setExcluded((prev) => {
                         const next = new Set(prev);
                         if (next.has(w.uuid)) next.delete(w.uuid);
                         else next.add(w.uuid);
                         return next;
-                      })
+                      }))
                     }
                     disabled={done}
                     accessibilityRole="checkbox"

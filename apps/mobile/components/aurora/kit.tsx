@@ -1081,6 +1081,169 @@ export function AStat({
   );
 }
 
+/**
+ * THE STEPPER — −/＋ around a figure that ROLLS to its new value.
+ *
+ * The audit's §13 table singles this control out, and it is right to: this is a
+ * training app, so a number changing IS the content. A weight going 80 → 82.5,
+ * a block going week 3 → 4. Every stepper in the app swapped the old string for
+ * the new one in a single frame and buzzed at nothing, which is the one place
+ * where the app's own `RollingNumber` was most obviously missing.
+ *
+ * It is a shared component because there were two hand-rolled ones (the volume
+ * model's and the velocity screen's) that agreed on neither their geometry nor
+ * their behaviour — the same drift the rail tails and the drag lifts had.
+ *
+ * `haptic.selection()` per step, never `light`: a stepper is movement through
+ * DISCRETE VALUES, which is what selection feedback is for (see lib/haptics).
+ * It fires only when the value actually changes, so holding ＋ at the maximum
+ * ticks once and then goes quiet rather than buzzing against the clamp.
+ */
+export function AStepper({
+  label,
+  a11y,
+  value,
+  format,
+  onChange,
+  min,
+  max,
+  step = 1,
+  suffix,
+  tone = "row",
+}: {
+  /** Row label. Omit for a bare −/figure/＋ cluster with no leading text. */
+  label?: string;
+  /** What the −/＋ buttons ANNOUNCE, when the control's name is already on
+   *  screen as a kicker and printing it again inside the row would duplicate
+   *  it. Without this a label-less stepper reads out as "minus", "plus". */
+  a11y?: string;
+  value: number;
+  /** How the figure reads. Defaults to the plain number; pass this for a
+   *  decimal or a unit that belongs INSIDE the rolling figure. */
+  format?: (v: number) => string;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  /** Static unit printed beside the figure — it never rolls, because it is
+   *  prose rather than part of the value. */
+  suffix?: string;
+  /** TWO RUNGS, not a free size. `row` is a settings line (mono, beside a
+   *  label); `hero` is a screen's primary control, where the figure is the
+   *  thing you came to set. Two named rungs is a vocabulary — a `size` number
+   *  would be how the two hand-rolled steppers diverged in the first place. */
+  tone?: "row" | "hero";
+}) {
+  const { palette: C } = useTheme();
+  const hero = tone === "hero";
+  const at = (next: number) => {
+    // Round to the step's own precision: 0.05 steps otherwise accumulate
+    // float error and the figure starts reading 0.7500000000000001.
+    const dp = String(step).split(".")[1]?.length ?? 0;
+    const v = Math.min(max, Math.max(min, Number(next.toFixed(dp))));
+    if (v === value) return;
+    haptic.selection();
+    onChange(v);
+  };
+  const btn = {
+    width: HIT_TARGET, height: HIT_TARGET - (hero ? 0 : 6), borderRadius: RADIUS.inner,
+    // Neutral, never lime. The velocity screen's copy tinted its −/＋ with the
+    // accent, but a stepper does not GO anywhere — it is the same reasoning
+    // that keeps an expander's count in ash (see the exit-affordance rule).
+    borderWidth: 1, borderColor: C.line, backgroundColor: C.ink,
+    alignItems: "center" as const, justifyContent: "center" as const,
+  };
+  const glyph = { fontFamily: F.mono, fontSize: hero ? fs.subtitle : fs.bodyLg, color: C.chalk };
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+      {label ? (
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{label}</Text>
+      ) : null}
+      <Pressable
+        onPress={() => at(value - step)}
+        disabled={value <= min}
+        accessibilityRole="button"
+        accessibilityLabel={`${a11y ?? label ?? ""} −`.trim()}
+        style={[btn, value <= min && { opacity: 0.4 }]}
+      >
+        <Text style={glyph}>−</Text>
+      </Pressable>
+      {/* Centred and min-width so the row does not shuffle as the figure
+          gains or loses a column mid-roll. */}
+      <View style={{ minWidth: hero ? 108 : 62, flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
+        <RollingNumber
+          value={(format ?? String)(value)}
+          align="center"
+          style={hero
+            ? { fontFamily: F.black, fontSize: fs.title, color: C.chalk }
+            : { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk }}
+        />
+        {suffix ? <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: hero ? fs.body : fs.caption, color: C.ash }}>{suffix}</Text> : null}
+      </View>
+      <Pressable
+        onPress={() => at(value + step)}
+        disabled={value >= max}
+        accessibilityRole="button"
+        accessibilityLabel={`${a11y ?? label ?? ""} ＋`.trim()}
+        style={[btn, value >= max && { opacity: 0.4 }]}
+      >
+        <Text style={glyph}>+</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * THE CHECK MARK — the box a checkbox row ticks.
+ *
+ * §13's row asks for the fill to scale FROM THE CENTRE and the tick to draw
+ * after it. Both halves matter and the order is the point: the box filling and
+ * the tick arriving in the same frame reads as a swap of two pictures, while
+ * filling then ticking reads as one thing being marked.
+ *
+ * Reduce Motion substitutes a cross-dissolve of the same two states — the mark
+ * still changes, it just does not travel to get there.
+ */
+export function ACheckMark({ on, size = 20, accent }: { on: boolean; size?: number; accent?: string }) {
+  const { palette: C } = useTheme();
+  const reduced = useReducedMotion();
+  const fill = accent ?? C.lime;
+  const a = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduced) { Animated.timing(a, { toValue: on ? 1 : 0, duration: durations.dissolve, useNativeDriver: true }).start(); return; }
+    Animated.timing(a, {
+      toValue: on ? 1 : 0,
+      // 120ms for the fill, per the audit's own figure — a mark is a state
+      // change, not a journey, so it is a short curve rather than a spring.
+      duration: 120,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [on, a, reduced, durations.dissolve]);
+  // The tick draws over the last third of the fill, so it lands ON a filled box.
+  const tick = a.interpolate({ inputRange: [0, 0.66, 1], outputRange: [0, 0, 1] });
+  return (
+    <View
+      style={{
+        width: size, height: size, borderRadius: 999, alignItems: "center", justifyContent: "center",
+        borderWidth: on ? 0 : 1.5, borderColor: `${C.ash}b3`,
+      }}
+    >
+      <Animated.View
+        style={{
+          position: "absolute", top: 0, right: 0, bottom: 0, left: 0,
+          borderRadius: 999, backgroundColor: fill,
+          opacity: reduced ? a : 1,
+          transform: reduced ? [] : [{ scale: a }],
+        }}
+      />
+      <Animated.View style={{ opacity: tick, transform: reduced ? [] : [{ scale: tick }] }}>
+        <AuroraIcon name="check" size={Math.round(size * 0.62)} color={C.ink} />
+      </Animated.View>
+    </View>
+  );
+}
+
 export function ASub({ children, style }: { children: ReactNode; style?: TextStyle }) {
   const { palette } = useTheme();
   return (

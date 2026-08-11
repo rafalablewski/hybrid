@@ -6,6 +6,7 @@ import { F, fs, PressScale } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { useReducedMotion } from "../lib/use-reduced-motion";
+import { haptic } from "../lib/haptics";
 import { GUTTER, RADIUS } from "./aurora/kit";
 import { GlassContextMenu, GlassMenuButton, LIQUID_GLASS_RENDERED } from "./aurora/swiftui";
 import { toast } from "./aurora/toast";
@@ -215,7 +216,14 @@ export function FeedMenuTrigger(props: FeedMenuTriggerProps) {
           layout-only Views on Android, and a pruned view cannot be measured. */}
       <View ref={moreRef} collapsable={false}>
         <PressScale
-          onPress={() => moreRef.current?.measureInWindow((x, y, w, h) => setAnchor({ x, y, w, h }))}
+          onPress={() => {
+            // Impact MEDIUM, per §13's table and lib/haptics' own rule: a menu
+            // is a surface PRESENTING itself, the same event class as picking a
+            // card up. The system menu on iOS 26 plays its own, so this fires
+            // only on the path that draws the RN card.
+            haptic.medium();
+            moreRef.current?.measureInWindow((x, y, w, h) => setAnchor({ x, y, w, h }));
+          }}
           hitSlop={10}
           accessibilityRole="button"
           accessibilityLabel={t("feed.menu.title")}
@@ -248,9 +256,19 @@ function FeedMenuCard({
   const reduced = useReducedMotion();
   const open = anchor != null;
 
-  // Drops from the glyph rather than appearing: 6dp of travel and a fade, over
-  // the dismissal duration. Under Reduce Motion the travel is dropped and the
-  // fade carries it alone — feedback, not motion, never nothing.
+  // GROWS OUT OF THE GLYPH rather than appearing: it scales 0.92 → 1 FROM THE
+  // ANCHOR'S CORNER while it fades, which is the motion the system menu makes
+  // on iOS 26 (§13's table asks for exactly this) and the reason the two paths
+  // now read as the same control. It used to drop 6dp and fade — a card
+  // arriving beside the glyph rather than out of it.
+  //
+  // The corner is set by transformOrigin, and the corner is the whole point: a
+  // menu scaling from its own centre grows in two directions and detaches from
+  // the thing that opened it. The card hangs off the ⋯'s right edge and flips
+  // above when there is no room below, so the origin follows on both axes.
+  //
+  // Under Reduce Motion the scale is dropped and the fade carries it alone —
+  // feedback, not motion, never nothing.
   const enter = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!open) { enter.setValue(0); return; }
@@ -295,9 +313,10 @@ function FeedMenuCard({
           borderRadius: RADIUS.inner + 2,
           padding: CARD_PAD,
           opacity: enter,
+          transformOrigin: `right ${fitsBelow ? "top" : "bottom"}`,
           transform: reduced
             ? []
-            : [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [fitsBelow ? -6 : 6, 0] }) }],
+            : [{ scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) }],
           ...lift,
         }}
       >

@@ -42,7 +42,23 @@ export interface ScrubOptions {
   holdMs?: number;
   /** What the press meant when it ended before the dwell. */
   onTap?: () => void;
+  /**
+   * PINCH TO CHANGE THE PERIOD. `+1` is a pinch OUT — fingers spreading, which
+   * zooms IN to a shorter range; `-1` is a pinch in. The host maps that onto
+   * its own range (core `stepActivityRange` is the ladder), because a chart
+   * knows it was pinched and nothing about what period it is drawing.
+   *
+   * Omit it and two fingers behave exactly as they did: the chart simply reads
+   * under the first one. A chart with no period to zoom must not pretend.
+   */
+  onZoom?: (dir: 1 | -1) => void;
 }
+
+/** How far the fingers must spread or close before it counts as one step.
+ *  Generous on purpose: a pinch that fires at 10% turns every two-finger
+ *  scroll into a range change, and the range is a destructive-feeling edit —
+ *  the whole screen redraws. One deliberate gesture, one rung. */
+const ZOOM_STEP = 1.4;
 
 export function useChartScrub(count: number, mode: ScrubMode, inset?: number, opts: ScrubOptions = {}) {
   const [index, setIndex] = useState(-1);
@@ -59,6 +75,8 @@ export function useChartScrub(count: number, mode: ScrubMode, inset?: number, op
   const last = useRef(-1);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const at = useRef(0);
+  /** Finger spread the current zoom step is measured FROM. 0 = not pinching. */
+  const spread = useRef(0);
 
   const pan = useRef(
     PanResponder.create({
@@ -81,17 +99,29 @@ export function useChartScrub(count: number, mode: ScrubMode, inset?: number, op
         }, hold);
       },
       onPanResponderMove: (e) => {
+        // TWO FINGERS IS A DIFFERENT GESTURE. A pinch is not a scrub with a
+        // spare finger: reading under one of them while the other is moving
+        // would flicker the readout across the series as the hand closes.
+        if (cfg.current.onZoom && e.nativeEvent.touches.length >= 2) {
+          if (last.current >= 0) clear();
+          pinch(e.nativeEvent.touches);
+          return;
+        }
+        spread.current = 0;
         at.current = e.nativeEvent.pageX;
         if (!timer.current) read(e.nativeEvent.pageX);
       },
       onPanResponderRelease: () => {
         // Nothing was read, so the press was the other thing this surface is —
-        // a button.
-        const tapped = cfg.current.holdMs != null && last.current < 0;
+        // a button. A pinch is neither: it already did its work per detent, and
+        // must not also fire the tap on the way out.
+        const pinched = spread.current > 0;
+        const tapped = cfg.current.holdMs != null && last.current < 0 && !pinched;
+        spread.current = 0;
         clear();
         if (tapped) cfg.current.onTap?.();
       },
-      onPanResponderTerminate: () => clear(),
+      onPanResponderTerminate: () => { spread.current = 0; clear(); },
     }),
   ).current;
 
@@ -119,6 +149,25 @@ export function useChartScrub(count: number, mode: ScrubMode, inset?: number, op
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     last.current = -1;
     setIndex(-1);
+  }
+  /**
+   * One rung per crossing, and RE-BASE after each — so a slow continuous
+   * spread walks the ladder rung by rung instead of firing once and then
+   * either going quiet or buzzing every frame. This is the audit's slider
+   * rule ("selection per detent only, never continuously") applied to a
+   * gesture that has no thumb: the detent is the ratio threshold.
+   */
+  function pinch(touches: { pageX: number; pageY: number }[]) {
+    const [a, b] = touches;
+    if (!a || !b) return;
+    const d = Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
+    if (!spread.current) { spread.current = d; return; }
+    const ratio = d / spread.current;
+    const dir: 1 | -1 | 0 = ratio > ZOOM_STEP ? 1 : ratio < 1 / ZOOM_STEP ? -1 : 0;
+    if (!dir) return;
+    spread.current = d;
+    haptic.selection();
+    cfg.current.onZoom?.(dir);
   }
 
   const bind = {

@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import Svg, { Path, Circle, Line as SvgLine } from "react-native-svg";
 import {
   weeklyVolumeTrend, exerciseTable, EXERCISE_TABLE_FOLD, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
-  volumeTrendReading,
+  volumeTrendReading, stepTrendWindow, TREND_WEEKS_DEFAULT,
   type ExercisePeriod, type TrendDir, type ExerciseTableRow,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -58,7 +58,14 @@ export default function AuroraTrends({ top, unified = false }: {
   const prefs = useLoggerPrefs();
   const iw = prefs.countWarmupsInVolume, units = prefs.units;
   const bw = useBodyweightLookup();
-  const weeks = useMemo(() => weeklyVolumeTrend(sessions, 8, Date.now(), iw, bw), [sessions, iw, bw]);
+  // THE WINDOW IS PINCHABLE (audit/09 §14's one missing gesture). It was the
+  // literal 8 at three call sites — a reasonable default that no athlete could
+  // ever change. The rungs and the gesture's inverted sense are core's
+  // (`stepTrendWindow`), so the spark and its label can never disagree about
+  // how many weeks are on screen.
+  const [trendWeeks, setTrendWeeks] = useState<number>(TREND_WEEKS_DEFAULT);
+  const zoom = (dir: 1 | -1) => setTrendWeeks((w) => stepTrendWindow(w, dir));
+  const weeks = useMemo(() => weeklyVolumeTrend(sessions, trendWeeks, Date.now(), iw, bw), [sessions, trendWeeks, iw, bw]);
   const table = useMemo(() => exerciseTable(sessions, period, Date.now(), iw, bw), [sessions, period, iw, bw]);
   // "Has this athlete lifted at all?" — asked of the weekly series this screen
   // actually draws, rather than of a second volumeStatus() pass whose only other
@@ -100,7 +107,7 @@ export default function AuroraTrends({ top, unified = false }: {
     const s = sparkline(series, SPARK);
     // sparkline() insets its points by `pad` at each end (the endpoint dot must
     // not clip), so the hit-testing has to know about the same inset.
-    const scrub = useChartScrub(series.length, "point", SPARK.pad / SPARK.width);
+    const scrub = useChartScrub(series.length, "point", SPARK.pad / SPARK.width, { onZoom: zoom });
     const read = scrub.index >= 0 ? volumeTrendReading(weeks, scrub.index, measure, units) : null;
     const hit = read ? s.points[read.index] : null;
     return (
@@ -159,7 +166,7 @@ export default function AuroraTrends({ top, unified = false }: {
           <Measure
             label={t("w.analyze.trends.setsMeasure")}
             value={String(last?.sets ?? 0)}
-            avg={`${t("w.analyze.trends.avg8w")} ${Number(avgSets.toFixed(1))}`}
+            avg={`${t("w.analyze.trends.avgNw").replace("{n}", String(trendWeeks))} ${Number(avgSets.toFixed(1))}`}
             series={setSeries}
             color={C.lime}
             measure="sets"
@@ -168,7 +175,7 @@ export default function AuroraTrends({ top, unified = false }: {
             label={t("w.analyze.trends.tonnageMeasure")}
             value={tonnageValue}
             unit={tonnageUnit}
-            avg={`${t("w.analyze.trends.avg8w")} ${fmtTonnage(avgTonnage, units)}`}
+            avg={`${t("w.analyze.trends.avgNw").replace("{n}", String(trendWeeks))} ${fmtTonnage(avgTonnage, units)}`}
             series={tonneSeries}
             color={C.blue}
             measure="tonnage"

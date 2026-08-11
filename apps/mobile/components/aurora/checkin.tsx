@@ -17,6 +17,7 @@ import {
 import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
+import { haptic } from "../../lib/haptics";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
@@ -400,7 +401,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           ) : null}
 
           <Pressable
-            onPress={() => paid && toggleShare()}
+            onPress={() => { if (!paid) return; haptic.selection(); toggleShare(); }}
             disabled={!paid || locked}
             accessibilityRole="checkbox"
             accessibilityLabel={t("w.recovery.checkins.shareCoach")}

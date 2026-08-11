@@ -31,6 +31,42 @@ export interface WeekVolume {
 }
 
 /**
+ * HOW MANY WEEKS A TREND CHART SHOWS, as a ladder rather than a literal.
+ *
+ * Every volume chart in the app was hard-coded to 8 — a reasonable default and
+ * the only window an athlete could ever see. `8` appears verbatim at three call
+ * sites on mobile alone, which is how a default becomes a fact.
+ *
+ * The rungs are the periods a training block is actually discussed in: a month,
+ * a mesocycle, a quarter, half a year, a year. Ordered SHORTEST → LONGEST, and
+ * `TREND_WEEKS_DEFAULT` stays 8 so nothing changes until the athlete asks.
+ */
+export const TREND_WINDOWS = [4, 8, 13, 26, 52] as const;
+export const TREND_WEEKS_DEFAULT = 8;
+
+/**
+ * One rung along that ladder, or the same window at either end.
+ *
+ * `dir` is the GESTURE's sense, not the list's: +1 is a pinch OUT, which zooms
+ * IN, which is FEWER weeks — so it walks toward the start of the list. That
+ * inversion is the easiest thing to get backwards in a pinch, so it is named
+ * once here instead of at each client's gesture code.
+ *
+ * It clamps rather than returning null: a pinch that has run out of ladder
+ * should feel like the end of the ladder, and the caller ticking a haptic for a
+ * step that then does nothing is the "listening but not responding" failure the
+ * audit's swipe findings were about.
+ */
+export function stepTrendWindow(weeks: number, dir: 1 | -1): number {
+  const i = TREND_WINDOWS.indexOf(weeks as (typeof TREND_WINDOWS)[number]);
+  // An off-ladder window (a caller still passing its own literal) snaps to the
+  // nearest rung rather than refusing to move.
+  const from = i >= 0 ? i : TREND_WINDOWS.reduce((best, w, k) => (Math.abs(w - weeks) < Math.abs(TREND_WINDOWS[best]! - weeks) ? k : best), 0);
+  const next = i >= 0 ? from - dir : from;
+  return TREND_WINDOWS[Math.min(TREND_WINDOWS.length - 1, Math.max(0, next))]!;
+}
+
+/**
  * Overall weekly WORKING-set count + tonnage over the last `weeks` (rolling
  * 7-day windows ending now), oldest → newest — the volume-trend chart's data.
  */

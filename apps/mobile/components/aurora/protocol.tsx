@@ -9,7 +9,8 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor, type Palette } from "../../lib/theme";
 import { fs, space, leading, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS } from "./kit";
+import { ACheckMark, RADIUS } from "./kit";
+import { haptic } from "../../lib/haptics";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { createRtpProtocol, mutateRtpProtocol, fetchRtpProtocols, type RtpProtocol as RtpProtocolRow } from "../../lib/api";
@@ -380,18 +381,12 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                         {v.gates.map((g) => (
                           <Pressable
                             key={g.key}
-                            onPress={() => mutate({ action: "toggleGate", gate: g.key })}
+                            onPress={() => { haptic.selection(); mutate({ action: "toggleGate", gate: g.key }); }}
                             accessibilityRole="checkbox"
                             accessibilityState={{ checked: g.done }}
                             style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 7 }}
                           >
-                            <View style={{
-                              width: 19, height: 19, borderRadius: 999, alignItems: "center", justifyContent: "center",
-                              borderWidth: g.done ? 0 : 1.5, borderColor: `${C.ash}b3`,
-                              backgroundColor: g.done ? accent : "transparent",
-                            }}>
-                              {g.done ? <AuroraIcon name="check" size={12} color={C.ink} /> : null}
-                            </View>
+                            <ACheckMark on={g.done} size={19} accent={accent} />
                             <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: g.done ? C.chalk : C.ash }}>{t(g.labelKey)}</Text>
                           </Pressable>
                         ))}
